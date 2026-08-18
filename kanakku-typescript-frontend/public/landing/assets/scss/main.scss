@@ -1,0 +1,52 @@
+/*---------------------------------------------------------------------------------
+
+    Template Name: Dreams Food
+    Version      : 1.0
+    Author: Dreams Technologies
+    Author URI: https://themeforest.net/user/dreamstechnologies
+
+-----------------------------------------------------------------------------------
+
+/*============================
+[Table of CSS]
+
+1.variables
+2.mixins
+3.base
+4.background
+5.accordion
+6.button
+7.navs-tabs
+8.typography
+9.header
+10.home
+
+
+============================*/
+
+/****** Utils ******/
+@use "utils/variables";
+@use "utils/mixins";
+
+/******* Base *******/
+@use "base/base";
+@use "base/background";
+
+/******* Components ******/
+@use "components/accordion";
+@use "components/avatar";
+@use "components/button";
+@use "components/navs-tabs";
+@use "components/typography";
+
+/****** Layout ******/
+@use "layout/header";
+
+/******* Pages ******/
+@use "pages/home";
+
+
+
+
+
+

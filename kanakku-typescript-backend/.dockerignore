@@ -1,0 +1,22 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+.env.*
+uploads/*
+!uploads/.gitkeep
+ssl.key
+ssl.crt
+*.md
+.DS_Store
+
+# TypeScript dev-only files
+tests
+tsconfig.build.json
+vitest.config.ts
+dist
+coverage
+*.tsbuildinfo
+# Note: tsconfig.json IS included in the image — ts-node reads it at runtime
+# (slice 0.1c). Once slice 0.1f compiles to dist/, we can ignore it again.

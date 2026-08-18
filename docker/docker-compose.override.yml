@@ -1,0 +1,25 @@
+# Dev hot-reload override for the api container.
+#
+# NOT auto-applied by the Makefile (the Makefile passes -f explicitly).
+# Apply explicitly with:
+#   docker compose --env-file docker/.env \
+#     -f docker/docker-compose.yml \
+#     -f docker/docker-compose.override.yml up -d --build
+#
+# (Web hot-reload is deferred to a later slice; for now you can `docker compose
+# build web` to rebuild after frontend changes.)
+
+services:
+  api:
+    image: kanakku-api:dev
+    build:
+      context: ../kanakku-typescript-backend
+      dockerfile: Dockerfile
+      target: deps
+    command: ["npx", "nodemon", "server.js"]
+    volumes:
+      - ../kanakku-typescript-backend:/app
+      - /app/node_modules
+      - kanakku-uploads:/app/uploads
+    environment:
+      NODE_ENV: development

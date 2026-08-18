@@ -1,0 +1,262 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap');
+@import "tailwindcss";
+
+:root {
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+@theme {
+  /* Default sans -> Instrument Sans (headings + body) */
+  --font-sans: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+
+  /* Brand purple ramp aliased to brand #7539FF (600) / #3d0ebf hover (700).
+     The ~1000 existing purple-* usages now render the brand color. */
+  --color-purple-50: #F8F5FF;
+  --color-purple-100: #ECE3FF;
+  --color-purple-200: #D6C2FF;
+  --color-purple-300: #BC9BFF;
+  --color-purple-400: #9D6BFF;
+  --color-purple-500: #8A4FFF;
+  --color-purple-600: #7539FF;
+  --color-purple-700: #3d0ebf;
+  --color-purple-800: #320b9c;
+  --color-purple-900: #270879;
+  --color-purple-950: #190550;
+
+  /* Semantic brand tokens -> bg-primary / text-primary etc. */
+  --color-primary: #7539FF;
+  --color-primary-hover: #3d0ebf;
+  --color-primary-soft: #F8F5FF;
+  --color-secondary: #2E3B48;
+
+  /* Status colors + soft surfaces */
+  --color-success: #27AE60;
+  --color-success-soft: #F4FBF7;
+  --color-danger: #EF1E1E;
+  --color-danger-soft: #FEF4F4;
+  --color-warning: #E2B93B;
+  --color-warning-soft: #FEFBF5;
+  --color-info: #06AED4;
+  --color-info-soft: #F4F9FE;
+
+  /* Richer accents for colorful cards/badges/charts */
+  --color-indigo: #3538CD;
+  --color-orange: #E04F16;
+  --color-orange-soft: #FDF6F3;
+  --color-pink: #DD2590;
+  --color-pink-soft: #FDF4F9;
+  --color-teal: #0E9384;
+  --color-teal-soft: #E9F5F4;
+
+  /* Text + surface */
+  --color-heading: #051321;
+  --color-body: #5D6772;
+  --color-border: #E2E4E6;
+  --color-surface: #F7F8F9;
+
+  /* Navy-tinted gray ramp */
+  --color-gray-100: #E2E4E6;
+  --color-gray-200: #C6CACE;
+  --color-gray-300: #AAB0B6;
+  --color-gray-400: #90979F;
+  --color-gray-500: #5D6772;
+  --color-gray-600: #45505C;
+  --color-gray-700: #2E3B48;
+  --color-gray-800: #182634;
+  --color-gray-900: #051321;
+
+  --color-indigo-600: oklch(0.6484 0.187 258.73);
+
+  /* Shadows + radii -> shadow-card / shadow-dropdown / rounded-control / rounded-card */
+  --shadow-card: 0px 4px 3px 0px rgba(126, 126, 126, 0.1);
+  --shadow-dropdown: 0px 4px 20px 0px rgba(92, 92, 92, 0.07);
+  --radius-control: 5px;
+  --radius-card: 10px;
+
+  /* --spacing: 4px; */
+  /* --text-base: 8pt; */
+  --text-sm: 0.875rem; /* 14px standard body, was 10pt (~13.3px) */
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.2s ease-out;
+}
+
+main {
+  scroll-behavior: smooth;
+}
+
+@layer base {
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
+
+@layer components {
+  .editor-container {
+    border-radius: theme('borderRadius.md');
+    border-width: 1px;
+    border-color: theme('colors.gray.300');
+  }
+
+  .editor-container {
+    border-radius: theme('borderRadius.md');
+    border-width: 1px;
+    border-color: theme('colors.gray.300');
+  }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: theme('spacing.2');
+    border-top-left-radius: theme('borderRadius.md');
+    border-top-right-radius: theme('borderRadius.md');
+    border-bottom-width: 1px;
+    border-color: theme('colors.gray.300');
+    background-color: theme('colors.gray.50');
+    padding: theme('spacing.2');
+  }
+
+  .toolbar button {
+    border-radius: theme('borderRadius.md');
+    padding: theme('spacing.2');
+    color: theme('colors.gray.700');
+  }
+
+  .toolbar button:hover {
+    background-color: theme('colors.gray.200');
+  }
+
+  .toolbar button.is-active {
+    background-color: theme('colors.gray.300');
+    color: theme('colors.gray.900');
+  }
+
+  /* Dark mode styles */
+  @media (prefers-color-scheme: dark) {
+    .editor-container {
+      border-color: theme('colors.gray.700');
+    }
+
+    .toolbar {
+      border-color: theme('colors.gray.700');
+      background-color: theme('colors.gray.900');
+    }
+
+    .toolbar button {
+      color: theme('colors.gray.300');
+    }
+
+    .toolbar button:hover {
+      background-color: theme('colors.gray.800');
+    }
+
+    .toolbar button.is-active {
+      background-color: theme('colors.gray.700');
+      color: theme('colors.gray.50');
+    }
+  }
+
+  .ProseMirror {
+    min-height: 250px;
+  }
+}
+
+/* Global Slim Scrollbar Start */
+
+/* For Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  /* track background */
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #d2d2d2;
+  /* gray thumb */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #4b5563;
+  /* darker on hover */
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #e4e0ec transparent;
+  /* thumb + track */
+}
+
+/* Global Slim Scrollbar End */
+button {
+  cursor: pointer;
+}
+
+/* ApexCharts Toolbar Menu Styling  */
+.apexcharts-menu {
+  background-color: #ffffff !important;
+  border: 1px solid #e8e7e7 !important;
+  border-radius: 0.5rem !important;
+  padding: 0 !important;
+}
+
+.apexcharts-menu-item {
+  color: #638192 !important;
+  font-size: 14px !important;
+  font-weight: 500;
+  padding: 6px 12px !important;
+}
+
+.apexcharts-theme-light .apexcharts-menu-item:hover {
+  background-color: #f5f4f4 !important;
+}
+
+/* === Tooltip Styling === */
+.apexcharts-tooltip {
+  background: #fff !important;
+  /* gray-800 */
+  border: 1px solid #d8d7d7 !important;
+  /* gray-600 */
+  border-radius: 0.5rem !important;
+  color: #000 !important;
+  /* gray-50 */
+  font-size: 13px !important;
+}
+
+.apexcharts-tooltip-title {
+  background: #f2f1f1 !important;
+  color: #000;
+  /* gray-900 */
+  border-bottom: 1px solid #e4e4e4 !important;
+}

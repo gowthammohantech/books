@@ -1,0 +1,14 @@
+ALTER TABLE "Expense" ADD COLUMN "isRecurring" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Expense" ADD COLUMN "parentExpense" TEXT;
+ALTER TABLE "Expense" ADD COLUMN "repeatEvery" "RecurrenceFrequency" DEFAULT 'month';
+ALTER TABLE "Expense" ADD COLUMN "customIntervalNumber" INTEGER;
+ALTER TABLE "Expense" ADD COLUMN "customIntervalType" "RecurrenceCustomIntervalType";
+ALTER TABLE "Expense" ADD COLUMN "startOn" TIMESTAMP(3);
+ALTER TABLE "Expense" ADD COLUMN "endsOn" TIMESTAMP(3);
+ALTER TABLE "Expense" ADD COLUMN "neverExpire" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Expense" ADD COLUMN "stopped" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Expense" ADD COLUMN "lastRecurringDate" TIMESTAMP(3);
+ALTER TABLE "Expense" ADD COLUMN "nextRecurringDate" TIMESTAMP(3);
+ALTER TABLE "Expense" ADD CONSTRAINT "Expense_parentExpense_fkey" FOREIGN KEY ("parentExpense") REFERENCES "Expense"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+CREATE INDEX "Expense_parentExpense_idx" ON "Expense"("parentExpense");
+CREATE INDEX "Expense_isRecurring_userId_idx" ON "Expense"("isRecurring", "userId");

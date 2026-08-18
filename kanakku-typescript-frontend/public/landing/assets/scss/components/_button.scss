@@ -1,0 +1,131 @@
+@use "sass:color";
+@use "../utils/variables";
+
+/*============================
+  12.button
+============================*/
+
+.btn-primary {
+    color: variables.$white;
+    background: variables.$primary;
+    border: 0px;
+    font-size: variables.$font-size-16;
+    font-weight: variables.$font-weight-semibold;
+}
+.btn-check:checked+.btn, .btn.active, .btn.show, .btn.show:hover, .btn:first-child:active, :not(.btn-check)+.btn:active {
+    background-color: variables.$primary;
+    border: 0px;
+    color: variables.$white;
+}
+.btn-check:checked+.btn.btn-outline-primary {
+  color: variables.$white !important;
+}
+button {
+    cursor: pointer;
+    &:focus{
+        outline: 0;
+        box-shadow: none;
+    }
+}
+.btn {
+    border-radius: 100px;
+    padding: 12px 24px;
+    font-size: variables.$font-size-16;
+    transition: all 0.5s;
+    font-weight: variables.$font-weight-semibold;
+    &:focus {
+        box-shadow: none !important;
+    }
+    &:hover {
+        transition: all 0.5s;
+    }
+    &.btn-xl {
+        padding: 9px 16px;
+        font-size: 16px;
+    }
+    &.btn-lg {
+      padding: 8px 16px;
+        font-size: 14px;
+    }
+    &.btn-sm {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+    &.btn-xs {
+        padding: 4px 8px;
+        font-size: 0.6rem;
+    }
+    &.btn-primary {
+        background-color: variables.$primary;
+        border: 0px;
+        color: variables.$white !important;
+        border-radius: 100px;
+        &:hover,
+        &:focus,
+        &.focus,
+        &:active,
+        &.active {
+            border: 0px;
+            color: variables.$white !important;
+            background-color: variables.$primary-800;
+        }
+    }
+    &.btn-dark {
+        background-color: variables.$dark;
+        border: 1px solid variables.$dark;
+        color: variables.$white !important;
+        &:hover,
+        &:focus,
+        &.focus,
+        &:active,
+        &.active {
+            background-color: variables.$primary;
+            border: 1px solid variables.$primary;
+            color: variables.$white !important;
+        }
+    }
+    &.btn-light {
+        background-color: variables.$light;
+        border: 1px solid variables.$light;
+        color: variables.$gray-900 !important;
+        &:hover,
+        &:focus,
+        &.focus,
+        &:active,
+        &.active {
+            background-color: variables.$primary;
+            border: 1px solid variables.$primary;
+            color: variables.$white !important;
+        }
+    }
+    &.btn-white {
+      background-color: variables.$white;
+      border-color: variables.$gray-100;
+      color: variables.$gray-900;
+      &:hover {
+        background: variables.$primary;
+        border-color: variables.$primary;
+        color: variables.$white;
+      }
+      &.show {
+        background-color: variables.$white;
+        border-color: variables.$primary;
+        color: variables.$gray-900;
+      }
+    }
+    &.btn-gray {
+      background-color: variables.$gray-200;
+      border-color: variables.$gray-200;
+      color: variables.$gray-900;
+      &:hover,
+        &:focus,
+        &.focus,
+        &:active,
+        &.active {
+        background-color: variables.$primary;
+        border-color: variables.$primary;
+        color: variables.$white;
+      }
+    }
+}
+
