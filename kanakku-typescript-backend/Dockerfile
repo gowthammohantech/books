@@ -36,7 +36,7 @@ RUN mkdir -p /app/uploads/products /app/uploads/company && chown -R app:app /app
 
 # Entrypoint runs `prisma migrate deploy` (+ idempotent seed) before the server,
 # so deploys/updates apply schema changes automatically.
-RUN chmod +x /app/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh && chmod +x /app/docker-entrypoint.sh
 
 USER app
 

@@ -19,7 +19,7 @@ COPY . .
 # Build args passed from docker-compose (or the shell env) override .env at build time.
 # Changing any ARG value busts this cache layer, so rebuilds always pick up config changes.
 ARG VITE_DEMO_MODE=false
-ARG VITE_API_BASE_URL=
+ARG VITE_API_BASE_URL=https://elixirbooks-kanaku-api-cagqg6fng5dtazbc.southeastasia-01.azurewebsites.net
 RUN VITE_DEMO_MODE=$VITE_DEMO_MODE VITE_API_BASE_URL=$VITE_API_BASE_URL npm run build
 
 # --- Serve stage -------------------------------------------------------------
