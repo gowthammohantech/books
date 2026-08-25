@@ -8,8 +8,8 @@ Two Docker volumes hold all persistent state:
 
 | Volume | Contents |
 |---|---|
-| `kanakku_kanakku-pg-data` | The entire PostgreSQL database (all invoices, customers, settings, transactions) |
-| `kanakku_kanakku-uploads` | Uploaded files: invoice and company logos, expense receipt attachments |
+| `elixirbooks_elixirbooks-pg-data` | The entire PostgreSQL database (all invoices, customers, settings, transactions) |
+| `elixirbooks_elixirbooks-uploads` | Uploaded files: invoice and company logos, expense receipt attachments |
 
 Back up both volumes. Losing either without a restore path means data loss.
 
@@ -22,8 +22,8 @@ Use `pg_dump` for a logical (SQL) dump. This runs inside the running
 
 ```bash
 docker compose --env-file docker/.env -f docker/docker-compose.yml \
-  exec -T postgres pg_dump -U kanakku kanakku \
-  | gzip > kanakku-$(date +%F).sql.gz
+  exec -T postgres pg_dump -U elixirbooks elixirbooks \
+  | gzip > elixirbooks-$(date +%F).sql.gz
 ```
 
 The `-T` flag disables pseudo-TTY allocation so the output pipes cleanly.
@@ -31,7 +31,7 @@ The dump is compressed with gzip. Check the file size is non-zero before
 assuming success:
 
 ```bash
-ls -lh kanakku-$(date +%F).sql.gz
+ls -lh elixirbooks-$(date +%F).sql.gz
 ```
 
 ---
@@ -43,13 +43,13 @@ has access to the volume:
 
 ```bash
 docker run --rm \
-  -v kanakku_kanakku-uploads:/data \
+  -v elixirbooks_elixirbooks-uploads:/data \
   -v "$PWD":/backup \
   alpine \
   tar czf /backup/uploads-$(date +%F).tar.gz -C /data .
 ```
 
-Note: the volume name is prefixed with the compose project name (`kanakku_`).
+Note: the volume name is prefixed with the compose project name (`elixirbooks_`).
 If you changed the compose project name, adjust accordingly.
 
 ---
@@ -59,17 +59,17 @@ If you changed the compose project name, adjust accordingly.
 Add a daily cron job on the host. Example crontab entry (runs at 02:00):
 
 ```cron
-0 2 * * * cd /path/to/kanakku && \
+0 2 * * * cd /path/to/elixirbooks && \
   docker compose --env-file docker/.env -f docker/docker-compose.yml \
-    exec -T postgres pg_dump -U kanakku kanakku \
-    | gzip > /backups/kanakku-$(date +\%F).sql.gz && \
+    exec -T postgres pg_dump -U elixirbooks elixirbooks \
+    | gzip > /backups/elixirbooks-$(date +\%F).sql.gz && \
   docker run --rm \
-    -v kanakku_kanakku-uploads:/data \
+    -v elixirbooks_elixirbooks-uploads:/data \
     -v /backups:/backup \
     alpine tar czf /backup/uploads-$(date +\%F).tar.gz -C /data .
 ```
 
-Replace `/path/to/kanakku` with your actual repo root and `/backups` with
+Replace `/path/to/elixirbooks` with your actual repo root and `/backups` with
 your backup destination.
 
 **Strongly recommended:** Copy backup files off-box (S3, rsync to another
@@ -82,9 +82,9 @@ server, etc.). On-box backups do not protect against host failure.
 To restore from a `.sql.gz` dump into the running database:
 
 ```bash
-gunzip -c kanakku-2026-01-15.sql.gz \
+gunzip -c elixirbooks-2026-01-15.sql.gz \
   | docker compose --env-file docker/.env -f docker/docker-compose.yml \
-    exec -T postgres psql -U kanakku kanakku
+    exec -T postgres psql -U elixirbooks elixirbooks
 ```
 
 If the database has existing data you want to replace, drop and recreate it
@@ -96,14 +96,14 @@ docker compose --env-file docker/.env -f docker/docker-compose.yml stop api
 
 # Drop and recreate the database
 docker compose --env-file docker/.env -f docker/docker-compose.yml \
-  exec postgres psql -U kanakku -c "DROP DATABASE kanakku;"
+  exec postgres psql -U elixirbooks -c "DROP DATABASE elixirbooks;"
 docker compose --env-file docker/.env -f docker/docker-compose.yml \
-  exec postgres psql -U kanakku -c "CREATE DATABASE kanakku;"
+  exec postgres psql -U elixirbooks -c "CREATE DATABASE elixirbooks;"
 
 # Restore
-gunzip -c kanakku-2026-01-15.sql.gz \
+gunzip -c elixirbooks-2026-01-15.sql.gz \
   | docker compose --env-file docker/.env -f docker/docker-compose.yml \
-    exec -T postgres psql -U kanakku kanakku
+    exec -T postgres psql -U elixirbooks elixirbooks
 
 # Restart the api (entrypoint will re-run migrations safely on clean DB)
 docker compose --env-file docker/.env -f docker/docker-compose.yml up -d api
@@ -115,7 +115,7 @@ docker compose --env-file docker/.env -f docker/docker-compose.yml up -d api
 
 ```bash
 docker run --rm \
-  -v kanakku_kanakku-uploads:/data \
+  -v elixirbooks_elixirbooks-uploads:/data \
   -v /path/to/backup:/backup \
   alpine \
   sh -c "cd /data && tar xzf /backup/uploads-2026-01-15.tar.gz"
@@ -125,13 +125,13 @@ docker run --rm \
 
 ## Upgrading to a New Version
 
-A Kanakku upgrade is:
+An Elixir Books upgrade is:
 
 ```bash
-cd kanakku
+cd elixirbooks
 git pull          # pull latest in the root repo
-cd kanakku-typescript-backend && git pull && cd ..
-cd kanakku-typescript-frontend && git pull && cd ..
+cd elixirbooks-typescript-backend && git pull && cd ..
+cd elixirbooks-typescript-frontend && git pull && cd ..
 make up
 ```
 
@@ -185,7 +185,7 @@ After any upgrade or restore, verify the stack is healthy:
 ```bash
 make ps
 curl -fsS http://localhost:8080/api/healthz
-# Expected: {"status":"ok","service":"kanakku-api",...}
+# Expected: {"status":"ok","service":"elixirbooks-api",...}
 ```
 
 The `/healthz` endpoint on the web container (served by nginx, no API involved):

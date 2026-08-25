@@ -1,4 +1,4 @@
-name: kanakku
+name: elixirbooks
 
 services:
   # Mongo is OPT-IN / legacy. The application uses PostgreSQL (Prisma) as its
@@ -9,13 +9,13 @@ services:
     profiles: ["mongo"]
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-kanakku}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-kanakku}
-      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-kanakku}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-elixirbooks}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-elixirbooks}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-elixirbooks}
     volumes:
-      - kanakku-mongo-data:/data/db
+      - elixirbooks-mongo-data:/data/db
     networks:
-      - kanakku
+      - elixirbooks
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 10s
@@ -31,9 +31,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - kanakku-pg-data:/var/lib/postgresql/data
+      - elixirbooks-pg-data:/var/lib/postgresql/data
     networks:
-      - kanakku
+      - elixirbooks
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -43,9 +43,9 @@ services:
 
   api:
     build:
-      context: ../kanakku-typescript-backend
+      context: ../elixirbooks-typescript-backend
       dockerfile: Dockerfile
-    image: kanakku-api:slice-0
+    image: elixirbooks-api:slice-0
     restart: unless-stopped
     environment:
       NODE_ENV: ${NODE_ENV}
@@ -72,26 +72,26 @@ services:
       SMTP_FROM: ${SMTP_FROM}
       REDIS_URL: ${REDIS_URL:-}
     volumes:
-      - kanakku-uploads:/app/uploads
+      - elixirbooks-uploads:/app/uploads
     networks:
-      - kanakku
+      - elixirbooks
     depends_on:
       postgres:
         condition: service_healthy
 
   web:
     build:
-      context: ../kanakku-typescript-frontend
+      context: ../elixirbooks-typescript-frontend
       dockerfile: Dockerfile
       args:
         VITE_DEMO_MODE: ${VITE_DEMO_MODE:-false}
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
-    image: kanakku-web:slice-0
+    image: elixirbooks-web:slice-0
     restart: unless-stopped
     ports:
       - "${WEB_PORT:-8080}:80"
     networks:
-      - kanakku
+      - elixirbooks
     depends_on:
       - api
 
@@ -105,9 +105,9 @@ services:
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
-      - kanakku-redis-data:/data
+      - elixirbooks-redis-data:/data
     networks:
-      - kanakku
+      - elixirbooks
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -117,9 +117,9 @@ services:
   worker:
     profiles: ["redis"]
     build:
-      context: ../kanakku-typescript-backend
+      context: ../elixirbooks-typescript-backend
       dockerfile: Dockerfile
-    image: kanakku-api:slice-0
+    image: elixirbooks-api:slice-0
     restart: unless-stopped
     # In Slice 0 the worker container is a placeholder: it boots the same image
     # but only runs the in-process cron registration (no separate BullMQ
@@ -133,17 +133,17 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       REDIS_URL: ${REDIS_URL}
     networks:
-      - kanakku
+      - elixirbooks
     depends_on:
       redis:
         condition: service_healthy
 
 volumes:
-  kanakku-mongo-data:
-  kanakku-pg-data:
-  kanakku-redis-data:
-  kanakku-uploads:
+  elixirbooks-mongo-data:
+  elixirbooks-pg-data:
+  elixirbooks-redis-data:
+  elixirbooks-uploads:
 
 networks:
-  kanakku:
+  elixirbooks:
     driver: bridge

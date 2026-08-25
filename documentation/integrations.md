@@ -1,6 +1,6 @@
 # Integrations
 
-All third-party integrations in Kanakku follow a BYOK (Bring Your Own Key)
+All third-party integrations in Elixir Books follow a BYOK (Bring Your Own Key)
 model — you supply your own API keys and credentials. Keys are never shipped
 with the software and there are no required paid integrations to run the
 application.
@@ -9,7 +9,7 @@ application.
 
 ## SMTP / Email
 
-Kanakku sends email for invoice delivery, payment reminders, quotations,
+Elixir Books sends email for invoice delivery, payment reminders, quotations,
 and user invitations. There are two ways to configure it.
 
 ### Option A — Environment variables (simple)
@@ -21,7 +21,7 @@ SMTP_HOST=smtp.yourprovider.com
 SMTP_PORT=587
 SMTP_USER=you@yourcompany.com
 SMTP_PASS=your-smtp-password
-SMTP_FROM=Kanakku <billing@yourcompany.com>
+SMTP_FROM=Elixir Books <billing@yourcompany.com>
 ```
 
 These are runtime variables — restart the API after changing them:
@@ -70,14 +70,14 @@ Razorpay enables online invoice payment collection for Indian businesses.
 
 1. Log in to your [Razorpay Dashboard](https://dashboard.razorpay.com).
 2. Go to **Settings → API Keys** and generate a key pair (Key ID + Key Secret).
-3. In Kanakku, go to **Settings → Payment Gateways → Razorpay**.
+3. In Elixir Books, go to **Settings → Payment Gateways → Razorpay**.
 4. Enter your Key ID, Key Secret, and (for webhook signature verification)
    your Webhook Secret.
 5. Toggle **Enabled** and save.
 
 ### Webhook
 
-Razorpay sends payment events to your Kanakku instance. The webhook endpoint
+Razorpay sends payment events to your Elixir Books instance. The webhook endpoint
 is:
 
 ```
@@ -85,8 +85,8 @@ https://your-domain.com/api/razorpay/webhook
 ```
 
 In the Razorpay Dashboard under **Settings → Webhooks**, add this URL and copy
-the generated webhook secret into the Kanakku Payment Gateway settings as
-**Webhook Secret**. Kanakku verifies every inbound webhook using HMAC-SHA256
+the generated webhook secret into the Elixir Books Payment Gateway settings as
+**Webhook Secret**. Elixir Books verifies every inbound webhook using HMAC-SHA256
 against this secret.
 
 The webhook endpoint is public (no authentication header) but signature
@@ -110,7 +110,7 @@ supported countries.
 
 1. Log in to your [Stripe Dashboard](https://dashboard.stripe.com).
 2. Go to **Developers → API keys** and copy your Publishable key and Secret key.
-3. In Kanakku, go to **Settings → Payment Gateways → Stripe**.
+3. In Elixir Books, go to **Settings → Payment Gateways → Stripe**.
 4. Enter your Secret key and Webhook Secret.
 5. Toggle **Enabled** and save.
 
@@ -123,8 +123,8 @@ https://your-domain.com/api/stripe/webhook
 ```
 
 In the Stripe Dashboard under **Developers → Webhooks**, add this endpoint.
-Copy the generated signing secret into Kanakku's Stripe settings as
-**Webhook Secret**. Kanakku verifies inbound events using
+Copy the generated signing secret into Elixir Books' Stripe settings as
+**Webhook Secret**. Elixir Books verifies inbound events using
 `stripe.webhooks.constructEvent` — tampered payloads are rejected.
 
 ### Live mode vs test mode
@@ -138,7 +138,7 @@ keys with live keys.
 
 ## AI Features (BYOK)
 
-Kanakku includes AI-powered document extraction (parse receipts and invoices)
+Elixir Books includes AI-powered document extraction (parse receipts and invoices)
 and an AI chat assistant. These features require a provider API key.
 
 ### Providers
@@ -206,16 +206,16 @@ on missing AI keys — it silently falls back.
 
 ## WhatsApp CRM Integration
 
-Kanakku includes a bridge for an external WhatsApp CRM service. This is an
+Elixir Books includes a bridge for an external WhatsApp CRM service. This is an
 optional integration for businesses that manage customer communication through
 a separate WhatsApp platform.
 
 ### What it does
 
-- **SSO exchange**: The WhatsApp CRM can authenticate users into Kanakku using
-  a signed JWT (HMAC). On success, Kanakku provisions or updates the user
+- **SSO exchange**: The WhatsApp CRM can authenticate users into Elixir Books using
+  a signed JWT (HMAC). On success, Elixir Books provisions or updates the user
   account.
-- **Customer sync**: The CRM can push customer/contact records into Kanakku
+- **Customer sync**: The CRM can push customer/contact records into Elixir Books
   via a server-to-server API call. Phone-only contacts get a synthetic email
   address (e.g. `external-{id}@whatsappcrm.local`).
 - **Invoice WhatsApp link**: From any invoice, generate a `wa.me` deep link
@@ -232,7 +232,7 @@ WHATSAPPCRM_API_KEY=a-long-random-shared-secret
 This is a runtime variable — apply with `make rebuild-api`.
 
 The same value must be configured on the WhatsApp CRM side as its
-`kanakku_api_key` setting. All inbound server-to-server requests from the
+`elixirbooks_api_key` setting. All inbound server-to-server requests from the
 CRM must include this key as a Bearer token:
 
 ```

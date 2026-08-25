@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Kanakku are documented here.
+All notable changes to Elixir Books are documented here.
 
 ---
 

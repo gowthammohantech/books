@@ -30,7 +30,7 @@ make up
 
 # 4. Verify it came up
 curl -fsS http://localhost:8080/api/healthz
-# Expected: {"status":"ok","service":"kanakku-api",...}
+# Expected: {"status":"ok","service":"elixirbooks-api",...}
 ```
 
 Open `http://localhost:8080` (or `https://your-domain.com` after setting up TLS)
@@ -46,12 +46,12 @@ The three project folders must sit side by side — the compose build contexts a
 relative paths and will fail if the layout is changed:
 
 ```
-kanakku/                          <- repo root (run all commands from here)
+elixirbooks/                          <- repo root (run all commands from here)
 ├── docker/
 │   ├── docker-compose.yml
 │   └── .env                      <- you create this from .env.example
-├── kanakku-typescript-backend/
-└── kanakku-typescript-frontend/
+├── elixirbooks-typescript-backend/
+└── elixirbooks-typescript-frontend/
 ```
 
 ### 2. Create and edit `docker/.env`
@@ -101,7 +101,7 @@ make ps
 # All three containers (postgres, api, web) should show status "healthy" or "running"
 
 curl -fsS http://localhost:8080/api/healthz
-# {"status":"ok","service":"kanakku-api","uptime":...}
+# {"status":"ok","service":"elixirbooks-api","uptime":...}
 
 make logs
 # tail api + web logs

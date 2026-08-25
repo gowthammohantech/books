@@ -1,6 +1,6 @@
 # First Run
 
-This guide covers what happens the first time you open Kanakku after installation,
+This guide covers what happens the first time you open Elixir Books after installation,
 and the decisions you make during initial setup.
 
 ---
@@ -26,7 +26,7 @@ After registration, the onboarding flow prompts you to create your company
 profile. Fill in:
 
 - Company name, address, phone, and email
-- Logo (uploaded file, stored in the `kanakku-uploads` volume)
+- Logo (uploaded file, stored in the `elixirbooks-uploads` volume)
 - Tax identification numbers relevant to your jurisdiction
 
 These settings are editable later under **Settings → Company Settings**.
@@ -35,7 +35,7 @@ These settings are editable later under **Settings → Company Settings**.
 
 ## 3. Accounting Country Pack and Ledger Setup
 
-Kanakku ships with six accounting country packs, each with a pre-configured
+Elixir Books ships with six accounting country packs, each with a pre-configured
 chart of accounts, tax codes, and report layouts:
 
 | Pack | Jurisdiction |
@@ -128,9 +128,9 @@ docker compose --env-file docker/.env -f docker/docker-compose.yml \
 ```
 
 This creates:
-- User: `admin@demo.kanakku.local`
+- User: `admin@demo.elixirbooks.local`
 - Password: `Demo123$`
-- A default company profile (Dreams Technologies)
+- A default company profile (Elixir Books)
 
 The demo seed is idempotent — re-running it updates the password without
 touching other data.
@@ -139,7 +139,7 @@ touching other data.
 
 | Field | Value |
 |---|---|
-| Email | `admin@demo.kanakku.local` |
+| Email | `admin@demo.elixirbooks.local` |
 | Password | `Demo123$` |
 
 ### Switching from demo to clean production
@@ -155,7 +155,7 @@ make down-clean
 make up
 ```
 
-The `down-clean` target removes the `kanakku-pg-data` and `kanakku-uploads`
+The `down-clean` target removes the `elixirbooks-pg-data` and `elixirbooks-uploads`
 volumes. This is irreversible — ensure you have a backup if there is any
 data worth keeping.
 

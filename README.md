@@ -1,6 +1,6 @@
-# Kanakku Deploy
+# Elixir Books Deploy
 
-Docker Compose stack for Kanakku Core (whitelabel single-tenant invoicing).
+Docker Compose stack for Elixir Books Core (whitelabel single-tenant invoicing).
 
 ## Quick start
 
@@ -30,4 +30,4 @@ Open http://localhost:8080.
 - `docs/` — design specs and implementation plans
 - `tasks/` — backlog (`todo.md`) and lessons (`lessons.md`)
 
-The two app repos `../kanakku-typescript-backend/` and `../kanakku-typescript-frontend/` are independent git repos. Compose builds them from relative paths.
+The two app repos `../elixirbooks-typescript-backend/` and `../elixirbooks-typescript-frontend/` are independent git repos. Compose builds them from relative paths.

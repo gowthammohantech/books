@@ -73,8 +73,8 @@ ps:
 	$(COMPOSE) ps
 
 # Build CodeCanyon buyer-ready release zips.
-# Produces: release/kanakku-web-v$(VERSION).zip
-#           release/kanakku-mobile-addon-v$(VERSION).zip
+# Produces: release/elixirbooks-web-v$(VERSION).zip
+#           release/elixirbooks-mobile-addon-v$(VERSION).zip
 # Example:  make package VERSION=2.1.0
 package:
 	bash scripts/package-release.sh $(VERSION)

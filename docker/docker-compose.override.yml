@@ -11,15 +11,15 @@
 
 services:
   api:
-    image: kanakku-api:dev
+    image: elixirbooks-api:dev
     build:
-      context: ../kanakku-typescript-backend
+      context: ../elixirbooks-typescript-backend
       dockerfile: Dockerfile
       target: deps
     command: ["npx", "nodemon", "server.js"]
     volumes:
-      - ../kanakku-typescript-backend:/app
+      - ../elixirbooks-typescript-backend:/app
       - /app/node_modules
-      - kanakku-uploads:/app/uploads
+      - elixirbooks-uploads:/app/uploads
     environment:
       NODE_ENV: development

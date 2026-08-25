@@ -1,6 +1,6 @@
-# Kanakku — Documentation Index
+# Elixir Books — Documentation Index
 
-Kanakku is a self-hosted invoicing and accounting application distributed as a
+Elixir Books is a self-hosted invoicing and accounting application distributed as a
 Docker Compose stack (Node.js API + React SPA + PostgreSQL). You own your data
 and deploy it on any Linux server or VPS.
 
@@ -84,7 +84,7 @@ described in [configuration.md](configuration.md).
 
 ## Support and License
 
-- **Support**: Raise a ticket via the CodeCanyon item page. Include your Kanakku
+- **Support**: Raise a ticket via the CodeCanyon item page. Include your Elixir Books
   version (`/api/healthz` reports it), OS, Docker Engine version, and the
   relevant section of `make logs` output.
 - **License**: See [../LICENSE.md](../LICENSE.md).

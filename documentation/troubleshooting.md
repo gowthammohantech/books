@@ -200,7 +200,7 @@ docker compose --env-file docker/.env -f docker/docker-compose.yml up -d web
 
 ## Demo Credentials Don't Work
 
-**Symptom:** Logging in with `admin@demo.kanakku.local` / `Demo123$` fails
+**Symptom:** Logging in with `admin@demo.elixirbooks.local` / `Demo123$` fails
 with "Invalid credentials".
 
 **Cause A — Demo seed was never run:**
@@ -218,8 +218,8 @@ an existing database from before commit `88196c0`, update the email directly:
 
 ```bash
 docker compose --env-file docker/.env -f docker/docker-compose.yml \
-  exec postgres psql -U kanakku kanakku \
-  -c "UPDATE \"User\" SET email = 'admin@demo.kanakku.local' WHERE email = 'admin@example.com';"
+  exec postgres psql -U elixirbooks elixirbooks \
+  -c "UPDATE \"User\" SET email = 'admin@demo.elixirbooks.local' WHERE email = 'admin@example.com';"
 ```
 
 Then re-run the demo seed to reset the password:
@@ -240,7 +240,7 @@ is enabled.
 ## Where Are the Uploaded Files?
 
 Uploaded files (logos, receipt attachments) are stored in the
-`kanakku_kanakku-uploads` Docker volume, mounted into the API container
+`elixirbooks_elixirbooks-uploads` Docker volume, mounted into the API container
 at `/app/uploads`. The API serves them at `/uploads/<filename>` (proxied
 through nginx at the same path).
 
@@ -248,7 +248,7 @@ To list the contents of the volume:
 
 ```bash
 docker run --rm \
-  -v kanakku_kanakku-uploads:/data \
+  -v elixirbooks_elixirbooks-uploads:/data \
   alpine ls -lRh /data
 ```
 
@@ -256,7 +256,7 @@ To copy a file out of the volume:
 
 ```bash
 docker run --rm \
-  -v kanakku_kanakku-uploads:/data \
+  -v elixirbooks_elixirbooks-uploads:/data \
   -v "$PWD":/out \
   alpine cp /data/company/logo.png /out/logo.png
 ```
@@ -280,7 +280,7 @@ bcrypt.hash('NewPassword123!', 10).then(h => console.log(h));
 
 # Copy the hash from the output, then update it in the database:
 docker compose --env-file docker/.env -f docker/docker-compose.yml \
-  exec postgres psql -U kanakku kanakku \
+  exec postgres psql -U elixirbooks elixirbooks \
   -c "UPDATE \"User\" SET password = '\$HASH_HERE' WHERE user_type = 1;"
 ```
 
@@ -292,7 +292,7 @@ Replace `\$HASH_HERE` with the bcrypt hash from the first command.
 
 ```bash
 docker compose --env-file docker/.env -f docker/docker-compose.yml \
-  exec postgres psql -U kanakku kanakku
+  exec postgres psql -U elixirbooks elixirbooks
 ```
 
 ---
@@ -316,7 +316,7 @@ make ps
 # Shows all containers with their health status
 
 # Detailed inspect of a specific container:
-docker inspect kanakku-api-1 | grep -A5 '"Health"'
+docker inspect elixirbooks-api-1 | grep -A5 '"Health"'
 ```
 
 ---
