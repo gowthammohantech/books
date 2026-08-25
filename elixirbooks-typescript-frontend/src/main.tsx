@@ -9,7 +9,6 @@ import { initializeAuth, logout } from './store/auth/authSlice';
 import { isTokenExpired } from './utils/auth';
 import { store } from './store';
 import { Provider } from 'react-redux';
-import { HelmetProvider } from 'react-helmet-async';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 store.dispatch(initializeAuth());
@@ -63,11 +62,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <Provider store={store}>
       <BrowserRouter>
         <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <HelmetProvider>
-            <QueryClientProvider client={queryClient}>
-              <App />
-            </QueryClientProvider>
-          </HelmetProvider>
+          <QueryClientProvider client={queryClient}>
+            <App />
+          </QueryClientProvider>
         </LocalizationProvider>
       </BrowserRouter>
     </Provider>

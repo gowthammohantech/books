@@ -1,5 +1,4 @@
 import type { RootState } from "@store/index";
-import { Helmet } from "react-helmet-async";
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
 
@@ -41,8 +40,10 @@ const Seo: React.FC<SeoProps> = ({ title, description, keywords }) => {
         link.href = favicon;
     }, [favicon]);
 
+    // React 19 hoists <title>/<meta>/<link> into <head> natively, so these
+    // render inline with no Helmet provider needed.
     return (
-        <Helmet>
+        <>
             {/* Title */}
             <title>{finalTitle}</title>
 
@@ -54,7 +55,7 @@ const Seo: React.FC<SeoProps> = ({ title, description, keywords }) => {
 
             {/* Dynamic Favicon */}
             {favicon && <link rel="icon" type="image/png" href={favicon} />}
-        </Helmet>
+        </>
     );
 };
 
