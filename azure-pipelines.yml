@@ -1,0 +1,68 @@
+name: $(Date:yyyyMMdd).$(Rev:r)
+
+trigger:
+  branches:
+    include:
+      - dev
+  paths:
+    include:
+      - kanakku-typescript-backend/**
+
+pr:
+  branches:
+    include:
+      - dev
+  paths:
+    include:
+      - kanakku-typescript-backend/**
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  ACR_NAME: ebselixiracr
+  ACR_LOGIN_SERVER: ebselixiracr.azurecr.io
+  ACR_REPOSITORY: elixirbooks-pro
+  invoicingImageTag: stage-pro-api-$(Build.BuildNumber)
+  imageName: $(ACR_LOGIN_SERVER)/$(ACR_REPOSITORY):$(invoicingImageTag)
+  apiWebAppName: elixirbooks-kanaku-api
+
+stages:
+  - stage: BuildAndPush
+    displayName: Build and push API image
+    jobs:
+      - job: BuildAndPush
+        displayName: Build and push API image
+        steps:
+          - checkout: self
+
+          - task: AzureCLI@2
+            displayName: Build and push image to ACR
+            inputs:
+              azureSubscription: EBS - Global
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                az acr login --name "$(ACR_NAME)"
+                docker build \
+                  --file "$(Build.SourcesDirectory)/kanakku-typescript-backend/Dockerfile" \
+                  --tag "$(imageName)" \
+                  "$(Build.SourcesDirectory)/kanakku-typescript-backend"
+                docker push "$(imageName)"
+
+  - stage: Deploy
+    displayName: Deploy API Web App
+    dependsOn: BuildAndPush
+    condition: succeeded()
+    jobs:
+      - job: Deploy
+        displayName: Deploy API image
+        steps:
+          - task: AzureWebAppContainer@1
+            displayName: Deploy API container
+            inputs:
+              azureSubscription: 'stg-books-smart-service-connection'
+              appName: 'elixirbooks-kanaku-api'
+              containers: '$(imageName)'
+              appSettings: '-WEBSITES_PORT 3001'
