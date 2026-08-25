@@ -7,6 +7,7 @@ trigger:
   paths:
     include:
       - kanakku-typescript-backend/**
+      - azure-pipelines.yml
 
 pr:
   branches:
