@@ -28,36 +28,71 @@ variables:
   apiWebAppName: elixirbooks-kanaku-api
 
 stages:
+
+  # ============================================================
+  # BUILD AND PUSH IMAGE TO ACR
+  # ============================================================
   - stage: BuildAndPush
     displayName: Build and push API image
+
     jobs:
       - job: BuildAndPush
         displayName: Build and push API image
+
         steps:
           - checkout: self
 
           - task: AzureCLI@2
             displayName: Build and push image to ACR
             inputs:
-              azureSubscription: EBS - Global
+              azureSubscription: 'stg-books-smart-service-connection'
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
                 set -euo pipefail
+
+                echo "=========================================="
+                echo "Logging in to Azure Container Registry"
+                echo "=========================================="
+
                 az acr login --name "$(ACR_NAME)"
+
+                echo "=========================================="
+                echo "Building Docker image"
+                echo "=========================================="
+
                 docker build \
                   --file "$(Build.SourcesDirectory)/kanakku-typescript-backend/Dockerfile" \
                   --tag "$(imageName)" \
                   "$(Build.SourcesDirectory)/kanakku-typescript-backend"
+
+                echo "=========================================="
+                echo "Pushing Docker image to ACR"
+                echo "=========================================="
+
                 docker push "$(imageName)"
 
+                echo "=========================================="
+                echo "Image pushed successfully"
+                echo "Image: $(imageName)"
+                echo "=========================================="
+
+
+  # ============================================================
+  # DEPLOY TO AZURE WEB APP
+  # ============================================================
   - stage: Deploy
     displayName: Deploy API Web App
-    dependsOn: BuildAndPush
+
+    dependsOn:
+      - BuildAndPush
+
     condition: succeeded()
+
     jobs:
       - job: Deploy
         displayName: Deploy API image
+
         steps:
           - task: AzureWebAppContainer@1
             displayName: Deploy API container
