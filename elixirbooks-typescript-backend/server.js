@@ -33,7 +33,28 @@ require('./quotationReminderCron');
 require('./recurringInvoicesCron');
 require('./recurringExpensesCron');
 
-app.use(cors());
+const configuredCorsOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+const allowedCorsOrigins = new Set([
+  'http://localhost:5173',
+  'http://localhost:8080',
+  'http://localhost:3000',
+  'https://stg-elixirbooks-kan-app-ui-g5ane6h7fgfmatam.southeastasia-01.azurewebsites.net',
+  'https://lite.elixir-books.com',
+  ...configuredCorsOrigins,
+]);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedCorsOrigins.has(origin.replace(/\/$/, ''))) {
+      return callback(null, true);
+    }
+    return callback(new Error('Origin is not allowed by CORS'));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(auditContextMiddleware); // audit: carry actor context into Prisma writes
 app.use('/uploads', express.static('uploads'));
