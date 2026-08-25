@@ -1,0 +1,100 @@
+name: $(Date:yyyyMMdd).$(Rev:r)
+
+trigger:
+  branches:
+    include:
+      - dev
+  paths:
+    include:
+      - kanakku-typescript-frontend/**
+      - Dockerfile
+      - nginx.conf
+      - package.json
+      - package-lock.json
+      - azure-pipelines-web-ui.yml
+
+pr:
+  branches:
+    include:
+      - dev
+  paths:
+    include:
+      - kanakku-typescript-frontend/**
+      - Dockerfile
+      - nginx.conf
+      - package.json
+      - package-lock.json
+      - azure-pipelines-web-ui.yml
+
+variables:
+  # Azure App Service service connection
+  azureServiceConnection: 'stg-books-smart-service-connection'
+
+  # Azure Container Registry service connection
+  acrServiceConnection: 'stg-books-acr-service-connection'
+
+  ACR_LOGIN_SERVER: 'ebselixiracr.azurecr.io'
+  ACR_REPOSITORY: 'elixirbooks-kanakku-ui'
+
+  webAppName: 'stg-elixirbooks-kan-app-ui'
+
+  imageTag: 'stage-kanakku-ui-$(Build.BuildNumber)'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+stages:
+
+# ============================================================
+# BUILD AND PUSH UI IMAGE TO ACR
+# ============================================================
+- stage: BuildAndPush
+  displayName: Build and Push Web UI Docker Image
+
+  jobs:
+  - job: BuildPushImage
+    displayName: Build and Push Kanakku Web UI Image
+
+    steps:
+    - checkout: self
+
+    - task: Docker@2
+      displayName: 'Build and push Kanakku Web UI image'
+      inputs:
+        command: buildAndPush
+        containerRegistry: '$(acrServiceConnection)'
+        repository: '$(ACR_REPOSITORY)'
+        dockerfile: 'Dockerfile'
+        buildContext: '.'
+        tags: |
+          $(imageTag)
+
+
+# ============================================================
+# DEPLOY TO STAGING WEB APP
+# ============================================================
+- stage: DeployToStaging
+  displayName: Deploy Web UI to Staging
+
+  dependsOn: BuildAndPush
+
+  condition: succeeded()
+
+  jobs:
+  - deployment: Deploy_kanakku_ui_staging
+    displayName: Deploy Kanakku Web UI to Staging
+
+    environment: 'kanakku-ui-staging'
+
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+
+          - task: AzureWebAppContainer@1
+            displayName: 'Deploy Kanakku Web UI container to App Service'
+            inputs:
+              azureSubscription: '$(azureServiceConnection)'
+              appName: '$(webAppName)'
+              containers: '$(ACR_LOGIN_SERVER)/$(ACR_REPOSITORY):$(imageTag)'
+              appSettings: '-WEBSITES_PORT 80'
