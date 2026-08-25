@@ -7,11 +7,6 @@ trigger:
   paths:
     include:
       - kanakku-typescript-frontend/**
-      - Dockerfile
-      - nginx.conf
-      - package.json
-      - package-lock.json
-      - azure-pipelines-web-ui.yml
 
 pr:
   branches:
@@ -20,11 +15,6 @@ pr:
   paths:
     include:
       - kanakku-typescript-frontend/**
-      - Dockerfile
-      - nginx.conf
-      - package.json
-      - package-lock.json
-      - azure-pipelines-web-ui.yml
 
 variables:
   # Azure App Service service connection
@@ -46,7 +36,7 @@ pool:
 stages:
 
 # ============================================================
-# BUILD AND PUSH UI IMAGE TO ACR
+# BUILD AND PUSH IMAGE TO ACR
 # ============================================================
 - stage: BuildAndPush
   displayName: Build and Push Web UI Docker Image
@@ -64,14 +54,14 @@ stages:
         command: buildAndPush
         containerRegistry: '$(acrServiceConnection)'
         repository: '$(ACR_REPOSITORY)'
-        dockerfile: 'Dockerfile'
-        buildContext: '.'
+        dockerfile: 'kanakku-typescript-frontend/Dockerfile'
+        buildContext: 'kanakku-typescript-frontend'
         tags: |
           $(imageTag)
 
 
 # ============================================================
-# DEPLOY TO STAGING WEB APP
+# DEPLOY TO STAGING
 # ============================================================
 - stage: DeployToStaging
   displayName: Deploy Web UI to Staging
