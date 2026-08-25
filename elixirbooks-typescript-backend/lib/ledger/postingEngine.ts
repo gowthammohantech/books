@@ -7,6 +7,7 @@ interface PersistedLine {
   accountId: string; debit: string; credit: string;
   baseDebit: string; baseCredit: string; currencyCode: string | null;
   exchangeRate: string; taxRoleKey: string | null; description: string | null;
+  costCenterId: string | null; projectId: string | null;
 }
 interface JournalEntryWithLines {
   id: string; userId: string; entryDate: Date;
@@ -55,11 +56,15 @@ export async function post(tx: LedgerTx, input: PostingInput): Promise<{ id: str
   const lines = buildLines(input, resolve);
 
   // 4. Persist entry + lines; handle DB-level unique-violation race gracefully
-  // P3.3: stamp costCenterId/projectId from the PostingInput onto every line
+  // P3.3: the PostingInput's costCenterId/projectId are the DOCUMENT-level
+  // dimension. Spreading them FIRST makes them a default that a per-line value
+  // overrides — which is what lets one invoice split its revenue across several
+  // departments while AR and tax stay on the document's own centre. When
+  // neither level supplies a dimension, no key is emitted at all.
   const dimPatch: Record<string, string | null> = {};
   if (input.costCenterId !== undefined) dimPatch.costCenterId = input.costCenterId ?? null;
   if (input.projectId !== undefined) dimPatch.projectId = input.projectId ?? null;
-  const linesWithDims = lines.map((l) => ({ ...l, ...dimPatch }));
+  const linesWithDims = lines.map((l) => ({ ...dimPatch, ...l }));
 
   try {
     return await tx.journalEntry.create({
@@ -116,6 +121,11 @@ export async function reverse(tx: LedgerTx, entryId: string): Promise<{ id: stri
     baseDebit: l.baseCredit, baseCredit: l.baseDebit,
     currencyCode: l.currencyCode, exchangeRate: l.exchangeRate,
     taxRoleKey: l.taxRoleKey, description: l.description,
+    // The reversal MUST carry the original's dimensions. Without them a voided
+    // or deleted document leaves its revenue/cost on the department forever:
+    // the trial balance nets to zero, but every by-dimension report filters on
+    // costCenterId and so never sees the untagged reversing leg.
+    costCenterId: l.costCenterId, projectId: l.projectId,
   }));
 
   return tx.journalEntry.create({

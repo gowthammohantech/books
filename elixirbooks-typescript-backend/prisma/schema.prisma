@@ -1084,6 +1084,8 @@ model CreditNote {
   appliedDate         DateTime?
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
+  costCenterId String?
+  costCenter   CostCenter? @relation("CostCenterCreditNotes", fields: [costCenterId], references: [id], onDelete: SetNull)
 }
 
 model DebitNote {
@@ -1135,6 +1137,8 @@ model DebitNote {
   billToContact     Contact?         @relation("DebitNoteBillToContact", fields: [billToContactId], references: [id])
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
+  costCenterId String?
+  costCenter   CostCenter? @relation("CostCenterDebitNotes", fields: [costCenterId], references: [id], onDelete: SetNull)
 }
 
 model DeliveryChallan {
@@ -1179,6 +1183,8 @@ model DeliveryChallan {
   receivedDate      DateTime?
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
+  costCenterId String?
+  costCenter   CostCenter? @relation("CostCenterDeliveryChallans", fields: [costCenterId], references: [id], onDelete: SetNull)
 }
 
 model EmailTemplate {
@@ -1469,6 +1475,8 @@ model Quotation {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  costCenterId String?
+  costCenter   CostCenter? @relation("CostCenterQuotations", fields: [costCenterId], references: [id], onDelete: SetNull)
 }
 
 model Reminder {
@@ -1747,6 +1755,8 @@ model PurchaseOrder {
   updatedAt         DateTime                  @updatedAt
 
   purchases Purchase[] @relation("PurchaseFromOrder")
+  costCenterId String?
+  costCenter   CostCenter? @relation("CostCenterPurchaseOrders", fields: [costCenterId], references: [id], onDelete: SetNull)
 }
 
 // =============================================================================
@@ -2717,21 +2727,54 @@ model ExchangeRate {
 // =============================================================================
 
 model CostCenter {
-  id        String   @id @default(uuid())
-  userId    String
-  code      String
-  name      String
-  isActive  Boolean  @default(true)
+  id          String         @id @default(uuid())
+  userId      String
+  code        String
+  name        String
+  description String?
+  /// PROFIT centres earn revenue, COST centres only absorb cost, BOTH does
+  /// either. Defaults to BOTH so pre-existing centres keep their full reach.
+  type        CostCenterType @default(BOTH)
+  isActive    Boolean        @default(true)
+  isDeleted   Boolean        @default(false)
+
+  /// Roll-up hierarchy, e.g. Division > Department.
+  parentId String?
+  parent   CostCenter?  @relation("CostCenterHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children CostCenter[] @relation("CostCenterHierarchy")
+
+  /// Per-centre document numbering. A centre with a `numberPrefix` issues its
+  /// own series (SAL-000001, ACAD-000001, ...) counted by `nextNumber`; a centre
+  /// without one falls back to the install-wide sequence in GeneralSetting.
+  numberPrefix String?
+  nextNumber   Int     @default(1)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  journalLines JournalLine[] @relation("CostCenterJournalLines")
-  invoices     Invoice[]     @relation("CostCenterInvoices")
-  expenses     Expense[]     @relation("CostCenterExpenses")
-  purchases    Purchase[]    @relation("CostCenterPurchases")
+  journalLines     JournalLine[]     @relation("CostCenterJournalLines")
+  invoices         Invoice[]         @relation("CostCenterInvoices")
+  expenses         Expense[]         @relation("CostCenterExpenses")
+  purchases        Purchase[]        @relation("CostCenterPurchases")
+  quotations       Quotation[]       @relation("CostCenterQuotations")
+  creditNotes      CreditNote[]      @relation("CostCenterCreditNotes")
+  debitNotes       DebitNote[]       @relation("CostCenterDebitNotes")
+  purchaseOrders   PurchaseOrder[]   @relation("CostCenterPurchaseOrders")
+  deliveryChallans DeliveryChallan[] @relation("CostCenterDeliveryChallans")
 
   @@unique([userId, code])
+  /// Postgres treats NULLs as distinct here, so unprefixed centres coexist
+  /// freely while two centres can never share a live document series.
+  @@unique([userId, numberPrefix])
   @@index([userId])
+  @@index([parentId])
+  @@index([userId, isDeleted])
+}
+
+enum CostCenterType {
+  PROFIT
+  COST
+  BOTH
 }
 
 model Project {

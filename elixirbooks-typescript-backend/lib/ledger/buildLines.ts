@@ -77,6 +77,12 @@ export function buildLines(input: PostingInput, resolve: AccountResolver): Built
         baseCredit: fmt(isDebit ? ZERO : baseAmt),
         taxRoleKey: ins.taxRoleKey ?? null,
         description: ins.description ?? null,
+        // Conditional spread, NOT `costCenterId: ins.costCenterId` — the key
+        // must be genuinely absent when the instruction carries no dimension,
+        // so postingEngine's document-level default can fill it in and an
+        // undimensioned posting still emits no dimension keys at all.
+        ...(ins.costCenterId !== undefined ? { costCenterId: ins.costCenterId } : {}),
+        ...(ins.projectId !== undefined ? { projectId: ins.projectId } : {}),
       },
     };
   });

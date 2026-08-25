@@ -152,6 +152,64 @@ describe('postingEngine.post', () => {
       expect(line.projectId).toBeNull();
     }
   });
+
+  // Per-line dimensions: the document value is a DEFAULT, not an override.
+  it('lets a per-line costCenterId beat the document-level one', async () => {
+    const tx = fakeTx();
+    await post(tx as never, {
+      ...input,
+      costCenterId: 'cc-header',
+      instructions: [
+        { roleKey: 'AR', side: 'debit', amount: '118' },
+        { roleKey: 'SALES_REVENUE', side: 'credit', amount: '60', costCenterId: 'cc-a' },
+        { roleKey: 'SALES_REVENUE', side: 'credit', amount: '40', costCenterId: 'cc-b' },
+        { roleKey: 'OUTPUT_TAX', side: 'credit', amount: '18', taxRoleKey: 'OUTPUT_TAX' },
+      ],
+    });
+    const data = (tx.journalEntry.create as ReturnType<typeof vi.fn>).mock.calls[0][0].data;
+    const lines = data.lines.create as Array<Record<string, unknown>>;
+    expect(lines).toHaveLength(4);
+    // Revenue legs carry their own centres...
+    expect(lines.filter((l) => l.costCenterId === 'cc-a')).toHaveLength(1);
+    expect(lines.filter((l) => l.costCenterId === 'cc-b')).toHaveLength(1);
+    // ...while AR and tax fall back to the document's centre.
+    expect(lines.filter((l) => l.costCenterId === 'cc-header')).toHaveLength(2);
+  });
+
+  it('lets a per-line explicit null beat a document-level centre', async () => {
+    const tx = fakeTx();
+    await post(tx as never, {
+      ...input,
+      costCenterId: 'cc-header',
+      instructions: [
+        { roleKey: 'AR', side: 'debit', amount: '118' },
+        { roleKey: 'SALES_REVENUE', side: 'credit', amount: '100', costCenterId: null },
+        { roleKey: 'OUTPUT_TAX', side: 'credit', amount: '18', taxRoleKey: 'OUTPUT_TAX' },
+      ],
+    });
+    const data = (tx.journalEntry.create as ReturnType<typeof vi.fn>).mock.calls[0][0].data;
+    const lines = data.lines.create as Array<Record<string, unknown>>;
+    const revLine = lines.find((l) => l.accountId === 'acc-rev');
+    expect(revLine?.costCenterId).toBeNull();
+    expect(lines.find((l) => l.accountId === 'acc-ar')?.costCenterId).toBe('cc-header');
+  });
+
+  it('applies the document centre to lines that carry none', async () => {
+    const tx = fakeTx();
+    await post(tx as never, {
+      ...input,
+      costCenterId: 'cc-header',
+      instructions: [
+        { roleKey: 'AR', side: 'debit', amount: '118' },
+        { roleKey: 'SALES_REVENUE', side: 'credit', amount: '60', costCenterId: 'cc-a' },
+        { roleKey: 'SALES_REVENUE', side: 'credit', amount: '40' },
+        { roleKey: 'OUTPUT_TAX', side: 'credit', amount: '18', taxRoleKey: 'OUTPUT_TAX' },
+      ],
+    });
+    const data = (tx.journalEntry.create as ReturnType<typeof vi.fn>).mock.calls[0][0].data;
+    const lines = data.lines.create as Array<Record<string, unknown>>;
+    expect(lines.filter((l) => l.costCenterId === 'cc-header')).toHaveLength(3);
+  });
 });
 
 function fakeTxForReverse(
@@ -205,6 +263,30 @@ describe('postingEngine.reverse', () => {
     const tx = fakeTxForReverse({ ...original, reversedById: null, reversals: [{ id: 'je-prev' }] });
     await expect(reverse(tx as never, 'je-1')).rejects.toThrow(LedgerError);
     expect(tx.journalEntry.create).not.toHaveBeenCalled();
+  });
+
+  it('carries each line\'s dimensions onto the reversal', async () => {
+    // Regression: the reversal used to drop costCenterId/projectId. The trial
+    // balance still netted to zero, but every by-dimension report filters on
+    // costCenterId — so a voided invoice's revenue stayed on the department
+    // permanently, with only the untagged reversing leg to offset it.
+    const dimensioned = {
+      ...original,
+      lines: original.lines.map((l, i) => ({
+        ...l,
+        costCenterId: i === 1 ? 'cc-b' : 'cc-a',
+        projectId: 'proj-1',
+      })),
+    };
+    const tx = fakeTxForReverse(dimensioned);
+    await reverse(tx as never, 'je-1');
+    const data = (tx.journalEntry.create as ReturnType<typeof vi.fn>).mock.calls[0][0].data;
+    const lines = data.lines.create as Array<Record<string, unknown>>;
+    expect(lines).toHaveLength(3);
+    expect(lines.find((l) => l.accountId === 'acc-ar')?.costCenterId).toBe('cc-a');
+    // The split revenue leg must reverse against the SAME department it hit.
+    expect(lines.find((l) => l.accountId === 'acc-rev')?.costCenterId).toBe('cc-b');
+    expect(lines.every((l) => l.projectId === 'proj-1')).toBe(true);
   });
 
   it('throws if the entry is itself a reversal (has reversedById)', async () => {

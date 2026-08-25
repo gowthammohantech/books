@@ -28,21 +28,137 @@ function parseDate(value: unknown): Date | undefined {
 
 // =============================================================================
 // CostCenter CRUD
+//
+// Surfaced in the UI as "Profit Center". The model, columns and routes keep the
+// CostCenter name so existing P3.3 data, already-tagged documents and the
+// shipped P&L-by-dimension report keep working untouched.
 // =============================================================================
 
-/** GET /cost-centers */
+const COST_CENTER_TYPES = ['PROFIT', 'COST', 'BOTH'] as const;
+type CostCenterTypeValue = (typeof COST_CENTER_TYPES)[number];
+
+/** Prefix must start alphanumeric and end in a NON-digit. `SAL-` + `000001`
+ *  round-trips; `SAL1` + `000001` would parse back as 1000001 through the
+ *  trailing-digits regex every numbering helper here uses. */
+const NUMBER_PREFIX_RE = /^[A-Z0-9][A-Z0-9._/-]*[^0-9]$/;
+
+interface CostCenterBody {
+  code?: string;
+  name?: string;
+  description?: string | null;
+  type?: string;
+  isActive?: boolean;
+  parentId?: string | null;
+  numberPrefix?: string | null;
+  nextNumber?: number | string;
+}
+
+/** '' -> null, so clearing a form field releases the unique (userId, numberPrefix)
+ *  slot instead of colliding with every other blank one. */
+function normaliseOptionalText(value: unknown): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  const trimmed = String(value).trim();
+  return trimmed === '' ? null : trimmed;
+}
+
+/** undefined = not supplied, null = supplied but invalid. */
+function parseType(value: unknown): CostCenterTypeValue | undefined | null {
+  if (value === undefined || value === null || value === '') return undefined;
+  const upper = String(value).trim().toUpperCase();
+  return (COST_CENTER_TYPES as readonly string[]).includes(upper)
+    ? (upper as CostCenterTypeValue)
+    : null;
+}
+
+/** Reject a parent that is missing, another tenant's, deleted, the centre
+ *  itself, or one of its own descendants — any of which makes the roll-up
+ *  hierarchy cyclic and would hang the report that walks it. */
+async function validateParent(
+  userId: string,
+  parentId: string,
+  selfId?: string,
+): Promise<string | null> {
+  if (selfId && parentId === selfId) return 'A profit center cannot be its own parent';
+
+  const parent = await prisma.costCenter.findFirst({
+    where: { id: parentId, userId, isDeleted: false },
+    select: { id: true },
+  });
+  if (!parent) return 'Parent profit center not found';
+
+  if (selfId) {
+    // Walk up from the proposed parent; reaching selfId means this would cycle.
+    const seen = new Set<string>([parentId]);
+    let cursor: string | null = parentId;
+    while (cursor) {
+      const row: { parentId: string | null } | null = await prisma.costCenter.findFirst({
+        where: { id: cursor, userId },
+        select: { parentId: true },
+      });
+      cursor = row?.parentId ?? null;
+      if (!cursor) break;
+      if (cursor === selfId) return 'That parent would create a circular hierarchy';
+      if (seen.has(cursor)) break; // pre-existing cycle in data — stop rather than spin
+      seen.add(cursor);
+    }
+  }
+  return null;
+}
+
+function costCenterConflictMessage(err: Prisma.PrismaClientKnownRequestError): string {
+  const raw = err.meta?.target;
+  const target = Array.isArray(raw) ? (raw as string[]).join(',') : String(raw ?? '');
+  return target.includes('numberPrefix')
+    ? 'Another profit center already uses that document prefix'
+    : 'A profit center with that code already exists';
+}
+
+/** Shared field validation for create + update. Returns an error message or null. */
+function validateNumbering(
+  numberPrefix: string | null | undefined,
+  nextNumber: number | undefined,
+): string | null {
+  if (numberPrefix && !NUMBER_PREFIX_RE.test(numberPrefix)) {
+    return 'Document prefix may use A-Z, 0-9, dot, dash, slash or underscore, and must not end in a digit (e.g. SAL-)';
+  }
+  if (nextNumber !== undefined && (!Number.isInteger(nextNumber) || nextNumber < 1)) {
+    return 'nextNumber must be a whole number of 1 or more';
+  }
+  return null;
+}
+
+/** GET /cost-centers — ?includeInactive=true, ?type=PROFIT|COST|BOTH */
 export async function listCostCenters(req: Request, res: Response): Promise<void> {
   try {
     const userId = requireUserId(req);
+
+    const includeInactive = String(req.query.includeInactive ?? '') === 'true';
+    const typeFilter = parseType(req.query.type);
+    if (typeFilter === null) {
+      res.status(400).json({
+        success: false,
+        message: `type must be one of ${COST_CENTER_TYPES.join(', ')}`,
+      });
+      return;
+    }
+
     const items = await prisma.costCenter.findMany({
-      where: { userId },
+      where: {
+        userId,
+        isDeleted: false,
+        ...(includeInactive ? {} : { isActive: true }),
+        // A PROFIT or COST filter must still return BOTH centres — they play either role.
+        ...(typeFilter ? { type: { in: [typeFilter, 'BOTH'] } } : {}),
+      },
+      include: { parent: { select: { id: true, code: true, name: true } } },
       orderBy: { code: 'asc' },
     });
     res.json({ success: true, data: items });
   } catch (err) {
     if (handleUnauthorized(res, err)) return;
     console.error('listCostCenters error:', err);
-    res.status(500).json({ success: false, message: 'Failed to list cost centers' });
+    res.status(500).json({ success: false, message: 'Failed to list profit centers' });
   }
 }
 
@@ -50,28 +166,63 @@ export async function listCostCenters(req: Request, res: Response): Promise<void
 export async function createCostCenter(req: Request, res: Response): Promise<void> {
   try {
     const userId = requireUserId(req);
-    const { code, name, isActive } = req.body as { code?: string; name?: string; isActive?: boolean };
+    const body = req.body as CostCenterBody;
 
+    const code = normaliseOptionalText(body.code);
+    const name = normaliseOptionalText(body.name);
     if (!code || !name) {
       res.status(400).json({ success: false, message: 'code and name are required' });
       return;
     }
 
+    const type = parseType(body.type);
+    if (type === null) {
+      res.status(400).json({
+        success: false,
+        message: `type must be one of ${COST_CENTER_TYPES.join(', ')}`,
+      });
+      return;
+    }
+
+    const parentId = normaliseOptionalText(body.parentId);
+    if (parentId) {
+      const parentError = await validateParent(userId, parentId);
+      if (parentError) {
+        res.status(400).json({ success: false, message: parentError });
+        return;
+      }
+    }
+
+    const numberPrefix = normaliseOptionalText(body.numberPrefix);
+    const nextNumber = body.nextNumber === undefined ? undefined : Number(body.nextNumber);
+    const numberingError = validateNumbering(numberPrefix, nextNumber);
+    if (numberingError) {
+      res.status(400).json({ success: false, message: numberingError });
+      return;
+    }
+
     const item = await prisma.costCenter.create({
-      data: { userId, code, name, isActive: isActive ?? true },
+      data: {
+        userId,
+        code,
+        name,
+        description: normaliseOptionalText(body.description) ?? null,
+        type: type ?? 'BOTH',
+        isActive: body.isActive ?? true,
+        parentId: parentId ?? null,
+        numberPrefix: numberPrefix ?? null,
+        ...(nextNumber !== undefined ? { nextNumber } : {}),
+      },
     });
     res.status(201).json({ success: true, data: item });
   } catch (err) {
     if (handleUnauthorized(res, err)) return;
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === 'P2002'
-    ) {
-      res.status(409).json({ success: false, message: 'A cost center with that code already exists' });
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      res.status(409).json({ success: false, message: costCenterConflictMessage(err) });
       return;
     }
     console.error('createCostCenter error:', err);
-    res.status(500).json({ success: false, message: 'Failed to create cost center' });
+    res.status(500).json({ success: false, message: 'Failed to create profit center' });
   }
 }
 
@@ -81,55 +232,135 @@ export async function updateCostCenter(req: Request, res: Response): Promise<voi
     const userId = requireUserId(req);
     const id = String(req.params.id);
 
-    const existing = await prisma.costCenter.findFirst({ where: { id, userId } });
+    const existing = await prisma.costCenter.findFirst({ where: { id, userId, isDeleted: false } });
     if (!existing) {
-      res.status(404).json({ success: false, message: 'Cost center not found' });
+      res.status(404).json({ success: false, message: 'Profit center not found' });
       return;
     }
 
-    const { code, name, isActive } = req.body as { code?: string; name?: string; isActive?: boolean };
+    const body = req.body as CostCenterBody;
 
-    const item = await prisma.costCenter.update({
-      where: { id },
-      data: {
-        ...(code != null && { code }),
-        ...(name != null && { name }),
-        ...(isActive != null && { isActive }),
-      },
-    });
+    const code = normaliseOptionalText(body.code);
+    const name = normaliseOptionalText(body.name);
+    if (body.code !== undefined && !code) {
+      res.status(400).json({ success: false, message: 'code cannot be blank' });
+      return;
+    }
+    if (body.name !== undefined && !name) {
+      res.status(400).json({ success: false, message: 'name cannot be blank' });
+      return;
+    }
+
+    const type = parseType(body.type);
+    if (type === null) {
+      res.status(400).json({
+        success: false,
+        message: `type must be one of ${COST_CENTER_TYPES.join(', ')}`,
+      });
+      return;
+    }
+
+    const parentId = normaliseOptionalText(body.parentId);
+    if (parentId) {
+      const parentError = await validateParent(userId, parentId, id);
+      if (parentError) {
+        res.status(400).json({ success: false, message: parentError });
+        return;
+      }
+    }
+
+    const numberPrefix = normaliseOptionalText(body.numberPrefix);
+    const nextNumber = body.nextNumber === undefined ? undefined : Number(body.nextNumber);
+    const numberingError = validateNumbering(numberPrefix, nextNumber);
+    if (numberingError) {
+      res.status(400).json({ success: false, message: numberingError });
+      return;
+    }
+    // Rewinding the counter would re-issue numbers that are already on issued
+    // documents, and every document-number column is globally unique.
+    if (nextNumber !== undefined && nextNumber < existing.nextNumber) {
+      res.status(400).json({
+        success: false,
+        message: `nextNumber cannot go backwards (current value is ${existing.nextNumber})`,
+      });
+      return;
+    }
+
+    // Unchecked variant: parentId is written as a scalar FK, not a nested relation.
+    const data: Prisma.CostCenterUncheckedUpdateInput = {
+      ...(code != null && { code }),
+      ...(name != null && { name }),
+      ...(body.description !== undefined && {
+        description: normaliseOptionalText(body.description) ?? null,
+      }),
+      ...(type !== undefined && { type }),
+      ...(body.isActive != null && { isActive: body.isActive }),
+      ...(body.parentId !== undefined && { parentId: parentId ?? null }),
+      ...(body.numberPrefix !== undefined && { numberPrefix: numberPrefix ?? null }),
+      ...(nextNumber !== undefined && { nextNumber }),
+    };
+
+    const item = await prisma.costCenter.update({ where: { id }, data });
     res.json({ success: true, data: item });
   } catch (err) {
     if (handleUnauthorized(res, err)) return;
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      err.code === 'P2002'
-    ) {
-      res.status(409).json({ success: false, message: 'A cost center with that code already exists' });
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      res.status(409).json({ success: false, message: costCenterConflictMessage(err) });
       return;
     }
     console.error('updateCostCenter error:', err);
-    res.status(500).json({ success: false, message: 'Failed to update cost center' });
+    res.status(500).json({ success: false, message: 'Failed to update profit center' });
   }
 }
 
-/** DELETE /cost-centers/:id */
+/**
+ * DELETE /cost-centers/:id — SOFT delete.
+ *
+ * A hard delete relies on `onDelete: SetNull`, which silently un-tags every
+ * historical invoice, expense and journal line and destroys a department's
+ * reporting history with no audit trail. Soft-deleting keeps those documents
+ * reporting under the centre they were actually booked to.
+ */
 export async function deleteCostCenter(req: Request, res: Response): Promise<void> {
   try {
     const userId = requireUserId(req);
     const id = String(req.params.id);
 
-    const existing = await prisma.costCenter.findFirst({ where: { id, userId } });
+    const existing = await prisma.costCenter.findFirst({ where: { id, userId, isDeleted: false } });
     if (!existing) {
-      res.status(404).json({ success: false, message: 'Cost center not found' });
+      res.status(404).json({ success: false, message: 'Profit center not found' });
       return;
     }
 
-    await prisma.costCenter.delete({ where: { id } });
-    res.json({ success: true, message: 'Cost center deleted' });
+    const childCount = await prisma.costCenter.count({
+      where: { parentId: id, userId, isDeleted: false },
+    });
+    if (childCount > 0) {
+      res.status(409).json({
+        success: false,
+        message: 'Reassign or remove the child profit centers before deleting this one',
+      });
+      return;
+    }
+
+    // Release the unique (userId, code) and (userId, numberPrefix) slots so the
+    // same code or document prefix can be reused after deletion. Prisma cannot
+    // express a partial unique index, so freeing the slot beats making the
+    // constraint conditional and living with permanent migrate-diff drift.
+    await prisma.costCenter.update({
+      where: { id },
+      data: {
+        isDeleted: true,
+        isActive: false,
+        code: `${existing.code}__deleted_${Date.now()}`,
+        numberPrefix: null,
+      },
+    });
+    res.json({ success: true, message: 'Profit center deleted' });
   } catch (err) {
     if (handleUnauthorized(res, err)) return;
     console.error('deleteCostCenter error:', err);
-    res.status(500).json({ success: false, message: 'Failed to delete cost center' });
+    res.status(500).json({ success: false, message: 'Failed to delete profit center' });
   }
 }
 
@@ -359,7 +590,7 @@ export async function pnlByCostCenter(req: Request, res: Response): Promise<void
 
     // All cost centers summary
     const costCenters = await prisma.costCenter.findMany({
-      where: { userId },
+      where: { userId, isDeleted: false },
       orderBy: { code: 'asc' },
     });
 

@@ -18,6 +18,11 @@ export interface LineInstruction {
   baseAmount?: string;
   taxRoleKey?: string;
   description?: string;
+  /** Per-leg dimension override. ABSENT (not undefined) → inherit the
+   *  document-level value from PostingInput. An explicit null means
+   *  "deliberately untagged" and wins over the document value. */
+  costCenterId?: string | null;
+  projectId?: string | null;
 }
 
 export interface PostingInput {
@@ -47,4 +52,8 @@ export interface BuiltLine {
   baseCredit: string;
   taxRoleKey: string | null;
   description: string | null;
+  /** Only present when the instruction carried one. Absence lets the engine
+   *  fall back to the document-level dimension without emitting a stray key. */
+  costCenterId?: string | null;
+  projectId?: string | null;
 }

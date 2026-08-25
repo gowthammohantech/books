@@ -4,6 +4,7 @@ import { shouldPost } from './postingGate';
 import { LedgerError, PeriodLockedError } from './buildLines';
 import { toDecimal, sumDecimals } from './money';
 import type { LineInstruction, PostingSide } from './types';
+import type { CentreNet } from './dimensionSplit';
 import type { DecimalInput } from './money';
 
 /** The slice of Prisma the posting layer needs (superset of LedgerTx). */
@@ -76,13 +77,27 @@ export async function gatedPost(
 
 export async function postInvoiceIssued(
   tx: PostingTx,
-  p: { userId: string; invoiceId: string; date: Date; total: string; tax: string; currencyCode?: string; exchangeRate?: DecimalInput; costCenterId?: string | null; projectId?: string | null },
+  p: { userId: string; invoiceId: string; date: Date; total: string; tax: string; currencyCode?: string; exchangeRate?: DecimalInput; costCenterId?: string | null; projectId?: string | null; revenueByCentre?: CentreNet[] },
 ): Promise<void> {
   const net = sub(p.total, p.tax);
-  const lines: LineInstruction[] = [
-    { roleKey: 'AR', side: 'debit', amount: p.total },
-    { roleKey: 'SALES_REVENUE', side: 'credit', amount: net },
-  ];
+  const lines: LineInstruction[] = [{ roleKey: 'AR', side: 'debit', amount: p.total }];
+
+  if (p.revenueByCentre?.length) {
+    // One revenue leg per department. Reconciliation is asserted here rather
+    // than left to buildLines, so a bad split reports itself as a split problem
+    // instead of an opaque "unbalanced entry".
+    assertSplit('invoice.issued revenue', net, p.revenueByCentre.map((g) => g.net));
+    for (const g of p.revenueByCentre) {
+      lines.push({ roleKey: 'SALES_REVENUE', side: 'credit', amount: g.net, costCenterId: g.costCenterId });
+    }
+  } else {
+    lines.push({ roleKey: 'SALES_REVENUE', side: 'credit', amount: net });
+  }
+
+  // AR and OUTPUT_TAX deliberately stay on the document's own centre (they
+  // inherit it via the engine's document-level default). A receivable and an
+  // output-tax liability are balance-sheet items belonging to the entity, not
+  // to a department; splitting them would need an allocation rule.
   if (isPos(p.tax)) lines.push({ roleKey: 'OUTPUT_TAX', side: 'credit', amount: p.tax, taxRoleKey: 'OUTPUT_TAX' });
   await gatedPost(tx, p.userId, p.date, 'Invoice', p.invoiceId, 'issued', lines, undefined, p.currencyCode ?? 'BASE', p.exchangeRate, p.costCenterId, p.projectId);
 }
@@ -267,13 +282,27 @@ export async function postDebitNoteIssued(
 
 /** Recognize COGS on a sale: Dr COGS / Cr INVENTORY at cost. event 'cogs'. No-op if cost <= 0. */
 export async function postSaleCogs(
-  tx: PostingTx, p: { userId: string; invoiceId: string; date: Date; cost: string },
+  tx: PostingTx,
+  p: { userId: string; invoiceId: string; date: Date; cost: string; costCenterId?: string | null; projectId?: string | null; cogsByCentre?: CentreNet[] },
 ): Promise<void> {
   if (!isPos(p.cost)) return;
-  await gatedPost(tx, p.userId, p.date, 'Invoice', p.invoiceId, 'cogs', [
-    { roleKey: 'COGS', side: 'debit', amount: p.cost },
-    { roleKey: 'INVENTORY', side: 'credit', amount: p.cost },
-  ]);
+
+  // COGS must carry the same dimension as the revenue it offsets. Without it
+  // departmental revenue posts but departmental cost does not, so every tagged
+  // department reports an inflated gross margin and the unallocated column
+  // absorbs the whole COGS balance.
+  const lines: LineInstruction[] = [];
+  if (p.cogsByCentre?.length) {
+    assertSplit('invoice.cogs', p.cost, p.cogsByCentre.map((g) => g.net));
+    for (const g of p.cogsByCentre) {
+      lines.push({ roleKey: 'COGS', side: 'debit', amount: g.net, costCenterId: g.costCenterId });
+    }
+  } else {
+    lines.push({ roleKey: 'COGS', side: 'debit', amount: p.cost });
+  }
+  lines.push({ roleKey: 'INVENTORY', side: 'credit', amount: p.cost });
+
+  await gatedPost(tx, p.userId, p.date, 'Invoice', p.invoiceId, 'cogs', lines, undefined, 'BASE', undefined, p.costCenterId, p.projectId);
 }
 
 /** Reverse a sales return's COGS (restock): Dr INVENTORY / Cr COGS. event 'cogs' on the CreditNote. */

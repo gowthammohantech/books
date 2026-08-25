@@ -24,6 +24,14 @@ import {
   type TotalsItem,
 } from '../../../lib/documentTotals';
 import { sanitizeLineCustomFields } from '../../../lib/lineCustomFields';
+import {
+  resolveLineCostCenterId,
+  collectCostCentreIds,
+  assertCostCentresExist,
+  UnknownCostCentreError,
+} from '../../../lib/lineDimensions';
+import { splitNetByCentre } from '../../../lib/ledger/dimensionSplit';
+import { nextCentreDocumentNumber, peekCentreDocumentNumber } from '../../../lib/costCenterNumbering';
 
 // utils/mailer is still JS; static require is fine here.
 // eslint-disable-next-line @typescript-eslint/no-require-imports, import/order
@@ -202,11 +210,29 @@ interface IncomingItem {
   taxes?: IncomingItemTax[];
   totalTax?: number;
   customFields?: unknown;
+  /** Profit centre for this line. Resolved against the document header at
+   *  write time (see normaliseItems), so persisted items are always fully
+   *  resolved and every later reader — posting, reports, exports, PDF
+   *  templates — can trust the line value without re-deriving it. */
+  costCenterId?: string | null;
 }
 
-function normaliseItems(raw: unknown): IncomingItem[] {
+/**
+ * Sanitize incoming line items.
+ *
+ * `headerCostCenterId` implements profit-centre inheritance: a line that names
+ * no centre adopts the document's. `LINE_CENTRE_NONE` ('__none__') is the
+ * explicit "leave this line untagged" escape hatch, needed because a plain
+ * empty value has to keep meaning "inherit" for the multipart form encoding.
+ *
+ * Items persisted before this feature simply have no `costCenterId` key; they
+ * read back as the header's centre, so historical documents report exactly as
+ * they did before.
+ */
+function normaliseItems(raw: unknown, headerCostCenterId?: string | null): IncomingItem[] {
   if (!Array.isArray(raw)) return [];
   return (raw as IncomingItem[]).map((item) => ({
+    costCenterId: resolveLineCostCenterId(item.costCenterId, headerCostCenterId ?? null),
     id: item.id ?? item.productId,
     productId: item.productId ?? item.id,
     name: item.name ?? '',
@@ -231,7 +257,22 @@ function normaliseItems(raw: unknown): IncomingItem[] {
 async function generateNextInvoiceNumber(
   tx: Tx,
   invoiceType: 'INVOICE' | 'PROFORMA' = 'INVOICE',
+  opts?: { userId?: string; costCenterId?: string | null },
 ): Promise<string> {
+  // Per-profit-centre series first: a centre with its own `numberPrefix` issues
+  // SAL-000001 / ACAD-000001 from its own counter. Returns null when the
+  // document has no centre, or its centre has no prefix — then we fall through
+  // to the install-wide sequence below, unchanged.
+  if (opts?.userId && opts.costCenterId) {
+    const centreNumber = await nextCentreDocumentNumber(tx as never, {
+      userId: opts.userId,
+      costCenterId: opts.costCenterId,
+      model: tx.invoice as never,
+      field: 'invoiceNumber',
+    });
+    if (centreNumber) return centreNumber;
+  }
+
   const settingKey = invoiceType === 'PROFORMA' ? 'proformaPrefix' : 'invoicePrefix';
   const fallbackPrefix = invoiceType === 'PROFORMA' ? 'PRO-' : 'INV-';
   const prefixSetting = await tx.generalSetting.findUnique({ where: { key: settingKey } });
@@ -431,15 +472,41 @@ async function postInvoiceLedger(
   if (invoice.invoiceType === 'PROFORMA') return;
 
   const invoiceDate = invoice.invoiceDate ?? new Date();
+  const headerCostCentre = invoice.costCenterId ?? null;
+
+  // Resolve line centres from the PERSISTED items, passing the header so the
+  // approve path resolves identically to the create path. If these two diverged,
+  // creating and approving the same invoice would produce different journals.
+  const resolvedItems = normaliseItems(invoice.items, headerCostCentre);
+
+  // Split revenue by department. `perLine[].taxable` (gross − discount) is the
+  // line's net, from the same authoritative computation used for the document
+  // totals. splitNetByCentre returns [] when every line sits on the header
+  // centre, so a single-department invoice posts exactly as it always has.
+  const lineTotals = computeDocumentTotals(resolvedItems as TotalsItem[]);
+  const documentNet = new Prisma.Decimal(String(invoice.TotalAmount))
+    .minus(new Prisma.Decimal(String(invoice.vat ?? 0)));
+  const revenueByCentre = splitNetByCentre(
+    resolvedItems.map((item, i) => ({
+      costCenterId: item.costCenterId,
+      net: String(lineTotals.perLine[i]?.taxable ?? 0),
+    })),
+    headerCostCentre,
+    documentNet.toString(),
+  );
 
   // If cogs not precomputed (approve path), recompute from persisted items + current avgCost.
+  // The per-centre breakdown is only needed when revenue actually spans several
+  // departments — otherwise the extra product/inventory reads would be wasted.
+  const needsCogsSplit = revenueByCentre.length > 0;
+  const cogsByCentreRaw = new Map<string | null, Prisma.Decimal>();
   let totalCogs: Prisma.Decimal;
-  if (precomputedCogs !== undefined) {
+
+  if (precomputedCogs !== undefined && !needsCogsSplit) {
     totalCogs = precomputedCogs;
   } else {
-    totalCogs = ZERO;
-    const items = normaliseItems(invoice.items);
-    for (const item of items) {
+    let walked = ZERO;
+    for (const item of resolvedItems) {
       const productId = item.productId ?? item.id;
       if (!productId || !item.qty) continue;
       const product = await tx.product.findUnique({
@@ -452,9 +519,27 @@ async function postInvoiceLedger(
       });
       if (!inv) continue;
       // Re-read avgCost from current inventory state (same approach as updateInvoice)
-      totalCogs = totalCogs.plus(inv.avgCost.times(new Prisma.Decimal(item.qty)));
+      const lineCost = inv.avgCost.times(new Prisma.Decimal(item.qty));
+      walked = walked.plus(lineCost);
+      const key = item.costCenterId ?? null;
+      cogsByCentreRaw.set(key, (cogsByCentreRaw.get(key) ?? ZERO).plus(lineCost));
     }
+    // The create path's precomputed total stays authoritative; the walk above is
+    // only there to apportion it. splitNetByCentre folds any drift between the
+    // two into the header centre.
+    totalCogs = precomputedCogs !== undefined ? precomputedCogs : walked;
   }
+
+  const cogsByCentre = needsCogsSplit
+    ? splitNetByCentre(
+        [...cogsByCentreRaw.entries()].map(([costCenterId, cost]) => ({
+          costCenterId,
+          net: cost.toString(),
+        })),
+        headerCostCentre,
+        totalCogs.toString(),
+      )
+    : [];
 
   // G: pass document currency/rate when present; omitting both falls back to functional path.
   // P3.3: pass dims if present on the document (null/undefined → no-op)
@@ -468,13 +553,19 @@ async function postInvoiceLedger(
     ...(invoice.exchangeRate != null ? { exchangeRate: invoice.exchangeRate } : {}),
     ...(invoice.costCenterId !== undefined ? { costCenterId: invoice.costCenterId } : {}),
     ...(invoice.projectId !== undefined ? { projectId: invoice.projectId } : {}),
+    ...(revenueByCentre.length ? { revenueByCentre } : {}),
   });
   // B.4: post COGS (Dr COGS / Cr INVENTORY) — COGS is always functional currency (no FX).
+  // COGS carries the same dimensions as the revenue it offsets, or a tagged
+  // department would report revenue with no cost against it.
   await postSaleCogs(tx as unknown as PostingTx, {
     userId,
     invoiceId: invoice.id,
     date: invoiceDate,
     cost: totalCogs.toString(),
+    ...(invoice.costCenterId !== undefined ? { costCenterId: invoice.costCenterId } : {}),
+    ...(invoice.projectId !== undefined ? { projectId: invoice.projectId } : {}),
+    ...(cogsByCentre.length ? { cogsByCentre } : {}),
   });
 }
 
@@ -492,7 +583,9 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
   try {
     const userId = requireUserId(req);
     const body = req.body as Record<string, unknown>;
-    const items = normaliseItems(body.items);
+    // Resolved BEFORE the items so each line can inherit the document's centre.
+    const docCostCenterId = typeof body.costCenterId === 'string' && body.costCenterId ? body.costCenterId : null;
+    const items = normaliseItems(body.items, docCostCenterId);
     const status = (body.status as string)?.toUpperCase() as InvoiceStatus | undefined;
     const rawIncomingNumber = body.invoiceNumber as string | undefined;
     const invoiceType: 'INVOICE' | 'PROFORMA' = (body.invoiceType === 'PROFORMA') ? 'PROFORMA' : 'INVOICE';
@@ -655,8 +748,8 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
     // Recompute grandTotal when tax was suppressed (taxable + suppressed_tax - discount).
     const enforcedTotal = docTreatment === 'STANDARD' ? finalTotal : finalTaxable + enforcedVat - finalDiscount;
 
-    // P3.3: optional dimension tagging (null/undefined → omitted from create data → no-op)
-    const docCostCenterId = typeof body.costCenterId === 'string' && body.costCenterId ? body.costCenterId : null;
+    // P3.3: optional dimension tagging (null/undefined → omitted from create data → no-op).
+    // docCostCenterId is resolved earlier, above normaliseItems, so lines inherit it.
     const docProjectId = typeof body.projectId === 'string' && body.projectId ? body.projectId : null;
 
     // Signature handling
@@ -727,9 +820,16 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
         }
       }
 
+      // The items JSON has no foreign key, so nothing stops a typo'd or
+      // cross-tenant centre id reaching a line and silently poisoning the
+      // departmental P&L. One query covers the header and every line.
+      await assertCostCentresExist(tx, userId, collectCostCentreIds(docCostCenterId, items));
+
       const created = await tx.invoice.create({
         data: {
-          invoiceNumber: incomingNumber ?? (await generateNextInvoiceNumber(tx, invoiceType)),
+          invoiceNumber:
+            incomingNumber ??
+            (await generateNextInvoiceNumber(tx, invoiceType, { userId, costCenterId: docCostCenterId })),
           invoiceType,
           // Contact-aware party: write contactId (new path) or customerId (legacy).
           // When contactId is set, customerId/billTo are null (both nullable post-migration).
@@ -947,6 +1047,10 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
     });
   } catch (err) {
     if (handleUnauthorized(res, err)) return;
+    if (err instanceof UnknownCostCentreError) {
+      res.status(400).json({ message: err.message, errors: { costCenterId: err.message } });
+      return;
+    }
     if (handleLedgerError(res, err)) return;
     console.error('Create invoice error:', err);
     res.status(500).json({
@@ -1120,7 +1224,6 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
     const userId = requireUserId(req);
     const { id: invoiceId } = req.params as { id: string };
     const body = req.body as Record<string, unknown>;
-    const items = normaliseItems(body.items);
 
     const existing = await prisma.invoice.findFirst({ where: { id: invoiceId, userId } });
     if (!existing) {
@@ -1135,6 +1238,15 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
       });
       return;
     }
+
+    // Profit centre: an omitted field keeps whatever the document already has;
+    // an explicitly blank one clears it. Resolved before normaliseItems so the
+    // lines inherit the centre this update is actually persisting.
+    const docCostCenterId =
+      body.costCenterId === undefined
+        ? existing.costCenterId
+        : (typeof body.costCenterId === 'string' && body.costCenterId ? body.costCenterId : null);
+    const items = normaliseItems(body.items, docCostCenterId);
 
     // Only draft invoices can be edited. Once an invoice is sent/paid, status
     // changes (mark-sent, record-payment, write-off) go through their own
@@ -1351,6 +1463,8 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
         }
       }
 
+      await assertCostCentresExist(tx, userId, collectCostCentreIds(docCostCenterId, items));
+
       const updatedInvoice = await tx.invoice.update({
         where: { id: invoiceId },
         data: {
@@ -1391,6 +1505,12 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
           ...(incomingCurrencyCode !== undefined ? { currencyCode: incomingCurrencyCode } : {}),
           ...(body.paymentOptions !== undefined
             ? { paymentOptions: (sanitizePaymentOptions(body.paymentOptions) ?? []) as object }
+            : {}),
+          // Previously the update path never persisted the dimension at all, so
+          // a draft's department could be set on create but never corrected.
+          costCenterId: docCostCenterId,
+          ...(body.projectId !== undefined
+            ? { projectId: (typeof body.projectId === 'string' && body.projectId ? body.projectId : null) }
             : {}),
         },
       });
@@ -1519,6 +1639,10 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
     res.status(200).json({ message: 'Invoice updated successfully', data: updated });
   } catch (err) {
     if (handleUnauthorized(res, err)) return;
+    if (err instanceof UnknownCostCentreError) {
+      res.status(400).json({ message: err.message, errors: { costCenterId: err.message } });
+      return;
+    }
     if (handleLedgerError(res, err)) return;
     console.error('Update invoice error:', err);
     res.status(500).json({
@@ -1708,6 +1832,9 @@ interface ListQuery {
   // Aging drill-down: filter by dueDate window instead of invoiceDate.
   dueStartDate?: string;
   dueEndDate?: string;
+  // Department filter. Accepts a CSV of ids, or the literal "none" for
+  // documents that carry no profit centre at all.
+  costCenterId?: string;
 }
 
 async function buildInvoiceList(
@@ -1716,7 +1843,7 @@ async function buildInvoiceList(
   parentClause: Prisma.InvoiceWhereInput,
 ): Promise<void> {
   const scope = tenantScope(req);
-  const { page = '1', limit = '10', status, search = '', customerId, startDate, endDate, payment_method, dueStartDate, dueEndDate } =
+  const { page = '1', limit = '10', status, search = '', customerId, startDate, endDate, payment_method, dueStartDate, dueEndDate, costCenterId } =
     req.query as ListQuery;
   const pageN = Number(page);
   const limitN = Number(limit);
@@ -1737,6 +1864,14 @@ async function buildInvoiceList(
     else if (statuses.length > 1) where.status = { in: statuses };
   }
   if (customerId) where.customerId = customerId;
+  if (costCenterId) {
+    // "none" selects the untagged documents that land in the report's
+    // Common / Unallocated column, so the list and the report agree.
+    const ids = String(costCenterId).split(",").map((s) => s.trim()).filter(Boolean);
+    if (ids.length === 1 && ids[0] === "none") where.costCenterId = null;
+    else if (ids.length === 1) where.costCenterId = ids[0];
+    else if (ids.length > 1) where.costCenterId = { in: ids };
+  }
   if (payment_method) where.payment_method = payment_method;
   const invoiceTypeFilter = req.query.invoiceType as string | undefined;
   if (invoiceTypeFilter === 'INVOICE' || invoiceTypeFilter === 'PROFORMA') {
@@ -1780,6 +1915,7 @@ async function buildInvoiceList(
         billFromUser: { select: { id: true, firstName: true, lastName: true, email: true, phone: true, address: true, profileImage: true } },
         billToCustomer: { select: { id: true, name: true, email: true, phone: true, billingAddress: true, image: true } },
         bank: { select: { id: true, accountHoldername: true, bankName: true, branchName: true, accountNumber: true, IFSCCode: true } },
+        costCenter: { select: { id: true, code: true, name: true } },
       },
       orderBy: { createdAt: 'desc' },
       skip,
@@ -1916,6 +2052,10 @@ async function buildInvoiceList(
       billToContactId: invoice.billToContactId ?? null,
       billTo: billToContactForDisplay ?? formatCustomer(invoice.billToCustomer, baseUrl, true),
       bank: formatBank(invoice.bank),
+      costCenterId: invoice.costCenterId ?? null,
+      costCenter: invoice.costCenter
+        ? { id: invoice.costCenter.id, code: invoice.costCenter.code, name: invoice.costCenter.name }
+        : null,
       notes: invoice.notes,
       termsAndCondition: invoice.termsAndCondition,
       isRecurring: invoice.isRecurring,
@@ -1999,6 +2139,29 @@ export async function getNextInvoiceNumber(_req: Request, res: Response): Promis
         : 'INV-';
     const invoiceNumberType =
       typeSetting?.value && typeof typeSetting.value === 'string' ? typeSetting.value : 'auto';
+
+    // When the form has a profit centre selected, preview THAT centre's series
+    // rather than the install-wide one — otherwise the number shown while
+    // filling the form disagrees with the number issued on save, which users
+    // report as a bug. peek does not reserve, so an abandoned form leaves no gap.
+    const previewCostCenterId =
+      typeof _req.query?.costCenterId === 'string' && _req.query.costCenterId
+        ? _req.query.costCenterId
+        : null;
+    if (previewCostCenterId) {
+      const userId = requireUserId(_req);
+      const centreNumber = await peekCentreDocumentNumber(prisma as never, {
+        userId,
+        costCenterId: previewCostCenterId,
+      });
+      if (centreNumber) {
+        res.json({
+          success: true,
+          data: { invoicePrefix, invoiceNumberType, nextInvoiceNumber: centreNumber },
+        });
+        return;
+      }
+    }
 
     const lastInvoice = await prisma.invoice.findFirst({
       where: { invoiceNumber: { not: null }, invoiceType: 'INVOICE' },
@@ -2427,7 +2590,7 @@ export async function convertQuotationToInvoice(req: Request, res: Response): Pr
       if (!quotation) throw new Error('Quotation not found');
       if (quotation.invoiceId) throw new Error('Quotation already converted to invoice');
 
-      const invoiceNumber = await generateNextInvoiceNumber(tx, 'INVOICE');
+      const invoiceNumber = await generateNextInvoiceNumber(tx, 'INVOICE', { userId, costCenterId: quotation.costCenterId });
 
       // Ledger: DRAFT invoices are not posted to the GL until issued (see createInvoice gate).
       const created = await tx.invoice.create({
@@ -2438,6 +2601,10 @@ export async function convertQuotationToInvoice(req: Request, res: Response): Pr
           dueDate: quotation.expiryDate,
           referenceNo: quotation.referenceNo ?? '',
           items: quotation.items ?? Prisma.JsonNull,
+          // Carry the quotation's department onto the invoice, or converting
+          // would silently drop the tag the quote was raised under. The line
+          // items keep their own centres — they travel inside `items`.
+          costCenterId: quotation.costCenterId,
           status: 'DRAFT',
           taxableAmount: quotation.taxableAmount,
           TotalAmount: quotation.TotalAmount,
@@ -2792,7 +2959,7 @@ export async function convertProformaToInvoice(req: Request, res: Response): Pro
       }
 
       // Clone the source into a new INVOICE row
-      const newNumber = await generateNextInvoiceNumber(tx, 'INVOICE');
+      const newNumber = await generateNextInvoiceNumber(tx, 'INVOICE', { userId, costCenterId: source.costCenterId });
 
       // Strip fields that should NOT be cloned (id/timestamps/number)
       const {
