@@ -13,6 +13,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ActiveFilterBanner, { type ActiveFilter } from "@components/admin/ActiveFilterBanner";
+import { useCostCenters } from "@hooks/useCostCenters";
 import { toast } from "sonner";
 import { hasPermission } from "@utils/hasPermission";
 import useDateFormatter from "@hooks/useDateFormatter";
@@ -28,6 +29,8 @@ import { Button, Badge, FormField, Select } from "@components/ui";
 interface Invoice {
     id: string;
     invoiceNumber: string;
+    costCenterId?: string | null;
+    costCenter?: { id: string; code: string; name: string } | null;
     invoiceDate: string;
     dueDate: string | null;
     referenceNo: string;
@@ -118,6 +121,8 @@ const InvoiceList: React.FC = () => {
     const customerId = searchParams.get('customerId') || '';
     const dueStartDate = searchParams.get('dueStartDate') || '';
     const dueEndDate = searchParams.get('dueEndDate') || '';
+    const costCenterId = searchParams.get('costCenterId') || '';
+    const { options: costCenterOptions } = useCostCenters('sales');
     const drillParams: Record<string, string> = {
         ...(startDate ? { startDate } : {}),
         ...(endDate ? { endDate } : {}),
@@ -125,6 +130,7 @@ const InvoiceList: React.FC = () => {
         ...(customerId ? { customerId } : {}),
         ...(dueStartDate ? { dueStartDate } : {}),
         ...(dueEndDate ? { dueEndDate } : {}),
+        ...(costCenterId ? { costCenterId } : {}),
     };
     const activeFilters: ActiveFilter[] = [
         ...(startDate ? [{ label: 'From', value: startDate }] : []),
@@ -133,6 +139,7 @@ const InvoiceList: React.FC = () => {
         ...(customerId ? [{ label: 'Customer', value: 'selected' }] : []),
         ...(dueStartDate ? [{ label: 'Due from', value: dueStartDate }] : []),
         ...(dueEndDate ? [{ label: 'Due to', value: dueEndDate }] : []),
+        ...(costCenterId ? [{ label: 'Profit Center', value: costCenterId === 'none' ? 'Unassigned' : 'selected' }] : []),
     ];
     const clearDrillFilters = () => setSearchParams({});
 
@@ -173,7 +180,7 @@ const InvoiceList: React.FC = () => {
     }, [customFieldsResponse]);
 
     // Construct Dynamic Table Headers
-    const baseHeaders = ["#", "Invoice ID", "Type", "Customer", "Amount", "Paid", "Status", "Created On"];
+    const baseHeaders = ["#", "Invoice ID", "Type", "Customer", "Amount", "Paid", "Status", "Profit Center", "Created On"];
     const dynamicHeaders = tableCustomFields.map((f: any) => f.labelName);
     const tableHeaders = [...baseHeaders, ...dynamicHeaders, "Actions"];
 
@@ -208,6 +215,20 @@ const InvoiceList: React.FC = () => {
             ...drillParams
         });
     }
+
+    const handleCostCenterFilterChange = (value: string) => {
+        const next: Record<string, string> = {
+            search: search || '',
+            limit: String(limit),
+            page: '1',
+            ...drillParams,
+            ...(invoiceTypeFilter !== 'all' ? { invoiceType: invoiceTypeFilter } : {}),
+        };
+        // drillParams already carries the OLD value, so drop it before re-adding.
+        delete next.costCenterId;
+        if (value) next.costCenterId = value;
+        setSearchParams(next);
+    };
 
     const handleInvoiceTypeFilterChange = (opt: 'all' | 'INVOICE' | 'PROFORMA') => {
         const next: Record<string, string> = {
@@ -257,7 +278,7 @@ const InvoiceList: React.FC = () => {
 
     useEffect(() => {
         fetchInvoices();
-    }, [search, limit, page, token, invoiceTypeFilter, startDate, endDate, statusFilter, customerId, dueStartDate, dueEndDate]);
+    }, [search, limit, page, token, invoiceTypeFilter, startDate, endDate, statusFilter, customerId, dueStartDate, dueEndDate, costCenterId]);
 
     const handlePageChange = (page: number) => {
         setSearchParams({
@@ -371,8 +392,8 @@ const InvoiceList: React.FC = () => {
                 ))}
             </div>
 
-            {/* Search Input & PageLength */}
-            <div className="flex justify-between items-center mb-4">
+            {/* Search Input, Profit Center filter & PageLength */}
+            <div className="flex justify-between items-center mb-4 gap-3">
                 <FormField
                     type="text"
                     placeholder="Search..."
@@ -380,11 +401,26 @@ const InvoiceList: React.FC = () => {
                     onChange={(e) => handleSearch(e.target.value)}
                     containerClassName="w-full md:w-64"
                 />
-                <Select
-                    value={limit}
-                    onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                    options={[10, 25, 50].map((num) => ({ value: num, label: `${num} / page` }))}
-                />
+                <div className="flex items-center gap-3">
+                    <Select
+                        value={costCenterId}
+                        onChange={(e) => handleCostCenterFilterChange(e.target.value)}
+                        aria-label="Filter by profit center"
+                    >
+                        <option value="">All profit centers</option>
+                        {/* Matches the report's Common / Unallocated column, so the
+                            list and the departmental P&L agree on what "untagged" means. */}
+                        <option value="none">Unassigned</option>
+                        {costCenterOptions.map((c) => (
+                            <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
+                        ))}
+                    </Select>
+                    <Select
+                        value={limit}
+                        onChange={(e) => handlePageLengthChange(Number(e.target.value))}
+                        options={[10, 25, 50].map((num) => ({ value: num, label: `${num} / page` }))}
+                    />
+                </div>
             </div>
 
             {/* Invoice Table */}
@@ -407,6 +443,9 @@ const InvoiceList: React.FC = () => {
                             <span className="font-semibold text-gray-600 ">{formatMoney(invoice.TotalAmount, invoice.currencyCode)}</span>,
                             <span className="font-semibold text-gray-600 ">{formatMoney(invoice.totalPaid as number ?? 0, invoice.currencyCode)}</span>,
                             <InvoiceStatusBadge status={invoice.status} dueDate={invoice.dueDate} totalAmount={invoice.TotalAmount} totalPaid={invoice.totalPaid} />,
+                            invoice.costCenter
+                                ? <span className="text-gray-600 font-medium" title={invoice.costCenter.name}>{invoice.costCenter.code}</span>
+                                : <span className="text-gray-400">—</span>,
                             <span className="font-medium text-gray-600 ">{formatDate(invoice.createdAt as string, systemSettings?.dateFormat.format || 'd-m-Y')}</span>,
 
                             // Map over configured custom fields using fieldSlug

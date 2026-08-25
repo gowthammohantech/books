@@ -366,7 +366,7 @@ const navItems: NavItemType[] = [
             {
                 type: "link",
                 to: "/admin/accounting/cost-centers",
-                title: "Cost Centers",
+                title: "Profit Centers",
                 slug: "accounting",
             },
             {

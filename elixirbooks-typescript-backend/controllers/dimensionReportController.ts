@@ -128,12 +128,22 @@ function validateNumbering(
   return null;
 }
 
-/** GET /cost-centers — ?includeInactive=true, ?type=PROFIT|COST|BOTH */
+/**
+ * GET /cost-centers
+ *
+ * Query: `search`, `page`, `limit`, `includeInactive=true`,
+ *        `type=PROFIT|COST|BOTH`, `all=1`.
+ *
+ * `all=1` returns every match unpaginated — the pickers on the document forms
+ * need the full list to resolve a saved id to a label, and silently paginating
+ * that would make older centres look deleted.
+ */
 export async function listCostCenters(req: Request, res: Response): Promise<void> {
   try {
     const userId = requireUserId(req);
 
     const includeInactive = String(req.query.includeInactive ?? '') === 'true';
+    const returnAll = String(req.query.all ?? '') === '1' || String(req.query.all ?? '') === 'true';
     const typeFilter = parseType(req.query.type);
     if (typeFilter === null) {
       res.status(400).json({
@@ -143,18 +153,53 @@ export async function listCostCenters(req: Request, res: Response): Promise<void
       return;
     }
 
-    const items = await prisma.costCenter.findMany({
-      where: {
-        userId,
-        isDeleted: false,
-        ...(includeInactive ? {} : { isActive: true }),
-        // A PROFIT or COST filter must still return BOTH centres — they play either role.
-        ...(typeFilter ? { type: { in: [typeFilter, 'BOTH'] } } : {}),
-      },
-      include: { parent: { select: { id: true, code: true, name: true } } },
-      orderBy: { code: 'asc' },
+    const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+
+    const where: Prisma.CostCenterWhereInput = {
+      userId,
+      isDeleted: false,
+      ...(includeInactive ? {} : { isActive: true }),
+      // A PROFIT or COST filter must still return BOTH centres — they play either role.
+      ...(typeFilter ? { type: { in: [typeFilter, 'BOTH'] } } : {}),
+      ...(search
+        ? {
+            OR: [
+              { code: { contains: search, mode: 'insensitive' } },
+              { name: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+
+    const include = { parent: { select: { id: true, code: true, name: true } } };
+
+    if (returnAll) {
+      const items = await prisma.costCenter.findMany({ where, include, orderBy: { code: 'asc' } });
+      res.json({ success: true, data: items });
+      return;
+    }
+
+    const page = Math.max(1, Number(req.query.page ?? 1) || 1);
+    const limit = Math.min(200, Math.max(1, Number(req.query.limit ?? 10) || 10));
+
+    const [total, items] = await Promise.all([
+      prisma.costCenter.count({ where }),
+      prisma.costCenter.findMany({
+        where,
+        include,
+        orderBy: { code: 'asc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+
+    // `pagination` sits at the top level because that is where the existing
+    // Profit Centers page already looks for it.
+    res.json({
+      success: true,
+      data: items,
+      pagination: { total, page, limit, totalPages: Math.max(1, Math.ceil(total / limit)) },
     });
-    res.json({ success: true, data: items });
   } catch (err) {
     if (handleUnauthorized(res, err)) return;
     console.error('listCostCenters error:', err);

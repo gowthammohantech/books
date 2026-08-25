@@ -425,7 +425,7 @@ const AdminRoute = () => {
 
                     {/* Budgets, Cost Centers, Projects, Fixed Assets */}
                     <Route path="/accounting/budgets" element={<><Seo title="Budgets" /><Budgets /></>} />
-                    <Route path="/accounting/cost-centers" element={<><Seo title="Cost Centers" /><CostCenters /></>} />
+                    <Route path="/accounting/cost-centers" element={<><Seo title="Profit Centers" /><CostCenters /></>} />
                     <Route path="/accounting/projects" element={<><Seo title="Projects" /><Projects /></>} />
                     <Route path="/accounting/fixed-assets" element={<><Seo title="Fixed Assets" /><FixedAssets /></>} />
                     <Route path="/accounting/approvals" element={<><Seo title="Approvals Queue" /><ApprovalsQueue /></>} />

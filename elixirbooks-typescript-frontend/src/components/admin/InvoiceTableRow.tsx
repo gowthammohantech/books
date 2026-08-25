@@ -11,6 +11,8 @@ import { Badge, Button } from "@components/ui";
 import { assetUrl } from "@utils/assetUrl";
 import { clampDiscountValue } from "@lib/lineTax";
 import { mergeLineFieldAutofill, type LineCustomField } from "@lib/lineCustomFields";
+import CostCenterSelect from "@components/admin/CostCenterSelect";
+import type { CostCenterUsage } from "@hooks/useCostCenters";
 
 interface ProductItem {
     id: string;
@@ -29,6 +31,8 @@ interface ProductItem {
     enable_inventory?: boolean;
     stock?: { quantity: number; alert_quantity: number };
     customFields?: Record<string, string | number | boolean | string[]>;
+    /** Per-line profit centre. '' = inherit the document, '__none__' = untagged. */
+    costCenterId?: string;
 }
 interface Product {
     id: string;
@@ -72,6 +76,12 @@ interface InvoiceTableRowProps {
      *  one extra cell per field renders between Item and Unit; the matching
      *  <th> columns are the consuming page's responsibility. */
     lineFields?: LineCustomField[];
+    /** Renders a per-line Profit Center cell. Like `lineFields`, the matching
+     *  <th> is the consuming page's responsibility, so pages that haven't added
+     *  the column simply leave this off. */
+    showCostCenter?: boolean;
+    /** Restricts the per-line centre list by type. Sales documents pass 'sales'. */
+    costCenterUsage?: CostCenterUsage;
 }
 
 const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
@@ -86,6 +96,8 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
     blockOutOfStock = false,
     onRequestNewRow,
     lineFields,
+    showCostCenter = false,
+    costCenterUsage = "any",
 }) => {
     const { token } = useSelector((state: RootState) => state.auth);
     const company = useSelector((state: RootState) => state.systemSettings.data?.company);
@@ -443,6 +455,18 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
                     {renderLineFieldInput(field)}
                 </td>
             ))}
+
+            {/* Per-line profit centre override */}
+            {showCostCenter && (
+                <td className="p-3">
+                    <CostCenterSelect
+                        mode="line"
+                        usage={costCenterUsage}
+                        value={item.costCenterId ?? ""}
+                        onChange={(value) => handleManualChange("costCenterId", value)}
+                    />
+                </td>
+            )}
 
             {/* Unit */}
             <td className="p-3">

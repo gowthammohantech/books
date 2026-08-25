@@ -37,6 +37,22 @@ import { round2 } from '@utils/round2';
 import DynamicCustomFields from '@components/admin/DynamicCustomFields';
 import { QRCodeSVG } from 'qrcode.react';
 import CurrencySelect from '@components/admin/CurrencySelect';
+import CostCenterSelect, { LINE_CENTRE_NONE } from '@components/admin/CostCenterSelect';
+
+/**
+ * Map a persisted line's resolved profit centre back to the form's three-state
+ * value: '' = inherit the header, '__none__' = deliberately untagged, or an id.
+ */
+function resolveHydratedLineCentre(
+    lineCentre: string | null,
+    headerCentre: string | null,
+): string {
+    if (lineCentre === headerCentre) return '';
+    // Untagged while the header HAS a centre is a real per-line choice; untagged
+    // when the header is also untagged is indistinguishable from inheriting.
+    if (lineCentre === null) return headerCentre ? LINE_CENTRE_NONE : '';
+    return String(lineCentre);
+}
 import { useCurrencies } from '@hooks/useCurrencies';
 import useDateFormatter from '@hooks/useDateFormatter';
 import { useDirtyGuard, confirmIfDirty } from '@hooks/useDirtyGuard';
@@ -51,6 +67,8 @@ type ProductItem = BaseProductItem & {
     totalTax?: number;
     appliedTaxRateIds?: string[];
     customFields?: Record<string, string | number | boolean | string[]>;
+    /** Per-line profit centre. '' = inherit the document, '__none__' = untagged. */
+    costCenterId?: string;
 };
 
 
@@ -79,6 +97,8 @@ interface InvoiceFormData {
     currencyCode: string;
     paymentOptions: { name: string; url: string }[];
     taxTreatment: 'STANDARD' | 'ZERO_RATED' | 'EXEMPT' | 'REVERSE_CHARGE' | 'OUT_OF_SCOPE';
+    /** Document-level profit centre. Lines inherit it unless they override. */
+    costCenterId: string;
 }
 
 interface taxGroup {
@@ -143,6 +163,7 @@ const EditInvoice: React.FC = () => {
         currencyCode: '',
         paymentOptions: [],
         taxTreatment: 'STANDARD',
+        costCenterId: '',
     });
 
     // Enabled link-based payment methods (Wise, Revolut, ...) from settings.
@@ -222,6 +243,13 @@ const EditInvoice: React.FC = () => {
     const signaturesErrorShownRef = useRef(false);
     const [customersLoading, setCustomersLoading] = useState(false);
     const customersErrorShownRef = useRef(false);
+
+    /** Lines that deliberately sit on a different centre than the document.
+     *  Surfaced next to the header picker so changing it doesn't look broken
+     *  when those lines stay put. */
+    const overriddenLineCount = invoiceFormData.items.filter(
+        (item) => item.costCenterId && item.costCenterId !== invoiceFormData.costCenterId,
+    ).length;
 
     // --- FORM HANDLERS (Defined first so fetchers can use them) ---
     const handleFormChange = (field: keyof InvoiceFormData, value: any) => {
@@ -584,6 +612,15 @@ const EditInvoice: React.FC = () => {
                             taxes: taxesArr,
                             totalTax: Number(it.totalTax ?? taxesArr.reduce((s, t) => s + (t.amount || 0), 0)),
                             appliedTaxRateIds: taxesArr.map((t) => t.taxRateId).filter(Boolean),
+                            // Persisted lines always carry a RESOLVED centre (the
+                            // server applies inheritance at write time). Collapse a
+                            // line that merely matches the header back to "inherit",
+                            // or every line would look manually overridden on edit
+                            // and would stop following a header change.
+                            costCenterId: resolveHydratedLineCentre(
+                                it.costCenterId ?? null,
+                                invoiceData.costCenterId ?? null,
+                            ),
                         } as ProductItem;
                     }),
                     notes: invoiceData.notes || '',
@@ -607,6 +644,7 @@ const EditInvoice: React.FC = () => {
                               .map((o: any) => ({ name: String(o.name), url: String(o.url ?? '') }))
                         : [],
                     taxTreatment: (invoiceData.taxTreatment as InvoiceFormData['taxTreatment']) ?? 'STANDARD',
+                    costCenterId: invoiceData.costCenterId ?? '',
                 }));
 
                 if (invoiceData.billFrom) {
@@ -1629,6 +1667,21 @@ const EditInvoice: React.FC = () => {
                                     <p className="text-xs text-warning mt-1">Currency is locked on a paid invoice.</p>
                                 )}
                             </div>
+                            <div className="w-full">
+                                <CostCenterSelect
+                                    usage="sales"
+                                    value={invoiceFormData.costCenterId}
+                                    onChange={(value) => handleFormChange('costCenterId', value)}
+                                />
+                                {overriddenLineCount > 0 && (
+                                    <p className="text-xs text-amber-700 mt-1">
+                                        {overriddenLineCount} line{overriddenLineCount === 1 ? '' : 's'} keep their own profit center.
+                                    </p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-1">
+                                    The invoice number stays as issued; changing the profit center does not renumber it.
+                                </p>
+                            </div>
                         </div>
                     </div>
 
@@ -1779,6 +1832,7 @@ const EditInvoice: React.FC = () => {
                                         {lineFields.map((f) => (
                                             <th key={f.fieldSlug} className="p-3 text-left text-sm font-semibold">{f.labelName}</th>
                                         ))}
+                                        <th className="p-3 text-left text-sm font-semibold">Profit Center</th>
                                         <th className="p-3 text-left text-sm font-semibold">Unit</th>
                                         <th className="p-3 text-left text-sm font-semibold">Quantity</th>
                                         <th className="p-3 text-left text-sm font-semibold">Rate</th>
@@ -1807,9 +1861,11 @@ const EditInvoice: React.FC = () => {
                                                 addNewProduct={handleNewProductClick}
                                                 blockOutOfStock
                                                 lineFields={lineFields}
+                                                showCostCenter
+                                                costCenterUsage="sales"
                                             />
                                             <tr className="bg-gray-50">
-                                                <td colSpan={8 + lineFields.length} className="px-3 py-2 border-b border-gray-200">
+                                                <td colSpan={9 + lineFields.length} className="px-3 py-2 border-b border-gray-200">
                                                     <div className="flex flex-wrap items-center gap-2 text-xs">
                                                         <span className="text-gray-600 font-medium">Taxes:</span>
                                                         {((item as ProductItem).taxes ?? []).length === 0 && (
@@ -1844,7 +1900,7 @@ const EditInvoice: React.FC = () => {
                                     ))}
                                     {invoiceFormData.items.length === 0 && (
                                         <tr className="bg-white text-gray-950 ">
-                                            <td className="p-3 font-medium text-center" colSpan={8 + lineFields.length}>
+                                            <td className="p-3 font-medium text-center" colSpan={9 + lineFields.length}>
                                                 No Items Selected
                                             </td>
                                         </tr>

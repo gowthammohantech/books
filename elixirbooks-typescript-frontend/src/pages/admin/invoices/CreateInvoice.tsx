@@ -22,6 +22,7 @@ import CreateBankAccountModal from './CreateBankAccountModal';
 import InvoiceNumberConfigModal from './InvoiceNumberConfigModal';
 import DynamicCustomFields from '@components/admin/DynamicCustomFields';
 import CurrencySelect from '@components/admin/CurrencySelect';
+import CostCenterSelect from '@components/admin/CostCenterSelect';
 import { useCurrencies } from '@hooks/useCurrencies';
 import { useDocumentDefaults } from '@hooks/useDocumentDefaults';
 import { useDirtyGuard, confirmIfDirty } from '@hooks/useDirtyGuard';
@@ -68,6 +69,8 @@ interface InvoiceFormData {
     contactId?: string;
     billToContactId?: string;
     taxTreatment: 'STANDARD' | 'ZERO_RATED' | 'EXEMPT' | 'REVERSE_CHARGE' | 'OUT_OF_SCOPE';
+    /** Document-level profit centre. Lines inherit it unless they override. */
+    costCenterId: string;
 }
 
 interface taxGroup {
@@ -98,6 +101,8 @@ interface ProductItem {
     totalTax?: number;
     appliedTaxRateIds?: string[];
     customFields?: Record<string, string | number | boolean | string[]>;
+    /** Per-line profit centre. '' = inherit the document, '__none__' = untagged. */
+    costCenterId?: string;
 }
 
 
@@ -153,6 +158,7 @@ const CreateInvoice: React.FC = () => {
         contactId: '',
         billToContactId: '',
         taxTreatment: 'STANDARD',
+        costCenterId: '',
     });
 
     // Apply document defaults once loaded — seed blank new form, never overwrite user edits
@@ -257,6 +263,26 @@ const CreateInvoice: React.FC = () => {
         }
     };
 
+    /**
+     * Changing the document's profit centre.
+     *
+     * Lines left on "Same as document" follow automatically (they post ''), so
+     * nothing needs rewriting there. Lines with an explicit override are left
+     * alone deliberately — silently re-pointing them would discard a choice the
+     * user made per line. `overriddenLineCount` surfaces that, otherwise the
+     * header change looks like it half-worked.
+     */
+    const handleCostCenterChange = (costCenterId: string) => {
+        handleFormChange('costCenterId', costCenterId);
+        // Re-preview the number: a centre with its own prefix issues from its
+        // own series, and the form should show what save will actually assign.
+        fetchNextInvoiceNumber(costCenterId || undefined);
+    };
+
+    const overriddenLineCount = invoiceFormData.items.filter(
+        (item) => item.costCenterId && item.costCenterId !== invoiceFormData.costCenterId,
+    ).length;
+
     const handleCustomFieldChange = (fieldSlugOrId: string, value: any) => {
         isDirtyRef.current = true;
         setInvoiceFormData(prev => ({
@@ -279,11 +305,15 @@ const CreateInvoice: React.FC = () => {
         fetchNextInvoiceNumber();
     }, []);
 
-    const fetchNextInvoiceNumber = async () => {
+    const fetchNextInvoiceNumber = async (costCenterId?: string) => {
         try {
             setIsLoading(true);
             const response = await axios.get(Constants.FETCH_NEXT_INVOICE_NO_URL, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${token}` },
+                // A centre with its own prefix numbers from its own series, so the
+                // preview has to be asked for that centre or it will disagree with
+                // the number actually issued on save.
+                params: costCenterId ? { costCenterId } : undefined,
             });
             let data = response.data.data;
             if (data) {
@@ -1149,6 +1179,18 @@ const CreateInvoice: React.FC = () => {
                                     onChange={(code) => handleFormChange('currencyCode', code)}
                                 />
                             </div>
+                            <div className="w-full">
+                                <CostCenterSelect
+                                    usage="sales"
+                                    value={invoiceFormData.costCenterId}
+                                    onChange={handleCostCenterChange}
+                                />
+                                {overriddenLineCount > 0 && (
+                                    <p className="text-xs text-amber-700 mt-1">
+                                        {overriddenLineCount} line{overriddenLineCount === 1 ? '' : 's'} keep their own profit center.
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -1242,6 +1284,7 @@ const CreateInvoice: React.FC = () => {
                                         {lineFields.map((f) => (
                                             <th key={f.fieldSlug} className="p-3 text-left text-sm font-semibold">{f.labelName}</th>
                                         ))}
+                                        <th className="p-3 text-left text-sm font-semibold">Profit Center</th>
                                         <th className="p-3 text-left text-sm font-semibold">Unit</th>
                                         <th className="p-3 text-left text-sm font-semibold">Quantity</th>
                                         <th className="p-3 text-left text-sm font-semibold">Rate</th>
@@ -1271,9 +1314,11 @@ const CreateInvoice: React.FC = () => {
                                                 blockOutOfStock
                                                 onRequestNewRow={index === invoiceFormData.items.length - 1 ? handleNewRow : undefined}
                                                 lineFields={lineFields}
+                                                showCostCenter
+                                                costCenterUsage="sales"
                                             />
                                             <tr className="bg-gray-50">
-                                                <td colSpan={8 + lineFields.length} className="px-3 py-2 border-b border-gray-200">
+                                                <td colSpan={9 + lineFields.length} className="px-3 py-2 border-b border-gray-200">
                                                     <div className="flex flex-wrap items-center gap-2 text-xs">
                                                         <span className="text-gray-600 font-medium">Taxes:</span>
                                                         {(item.taxes ?? []).length === 0 && (
@@ -1308,7 +1353,7 @@ const CreateInvoice: React.FC = () => {
                                     ))}
                                     {invoiceFormData.items.length === 0 && (
                                         <tr className="bg-white text-gray-950">
-                                            <td className="p-3 font-medium text-center" colSpan={8 + lineFields.length}>
+                                            <td className="p-3 font-medium text-center" colSpan={9 + lineFields.length}>
                                                 No Items Selected
                                             </td>
                                         </tr>
