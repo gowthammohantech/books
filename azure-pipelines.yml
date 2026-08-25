@@ -15,6 +15,7 @@ pr:
   paths:
     include:
       - kanakku-typescript-backend/**
+      - azure-pipelines.yml
 
 variables:
   azureServiceConnection: 'stg-books-smart-service-connection'
