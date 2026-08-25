@@ -28,6 +28,8 @@ import type { SignatureOptions } from '@models/signature';
 import CreateBankAccountModal from '../invoices/CreateBankAccountModal';
 import type { BankAccountCreatedResponse } from '@models/bank-account';
 import CurrencySelect from '@components/admin/CurrencySelect';
+import CostCenterSelect from '@components/admin/CostCenterSelect';
+import { hydrateLineCentres } from '@lib/costCentre';
 import { useCurrencies } from '@hooks/useCurrencies';
 import { PageHeader } from "@/context/PageHeaderContext";
 import { round2 } from '@utils/round2';
@@ -70,6 +72,8 @@ interface Customer extends User {
     };
 }
 interface InvoiceFormData {
+    /** Document-level profit centre. Lines inherit it unless they override. */
+    costCenterId: string;
     invoiceId: string;
     challanDate: Date | null;
     status: string;
@@ -168,6 +172,7 @@ const EditDeliveryChallan: React.FC = () => {
     const [companyDetails, setCompanyDetails] = useState<SelectedAdmin | null>(null);
     const [customerDetails, setCustomerDetails] = useState<Customer | null>(null);
     const [invoiceFormData, setInvoiceFormData] = useState<InvoiceFormData>({
+        costCenterId: '',
         invoiceId: '',
         challanDate: null,
         status: 'PENDING',
@@ -262,9 +267,10 @@ const EditDeliveryChallan: React.FC = () => {
                         challanDate: deliveryChallanDetail.challanDate ? new Date(deliveryChallanDetail.challanDate) : null,
                         billFrom: deliveryChallanDetail.billFrom.id,
                         billTo: deliveryChallanDetail.billTo?.id ?? '',
-                        items: deliveryChallanDetail.items,
+                        items: hydrateLineCentres(deliveryChallanDetail.items, deliveryChallanDetail.costCenterId),
                         notes: deliveryChallanDetail.notes,
                         termsAndCondition: deliveryChallanDetail.termsAndCondition,
+                        costCenterId: deliveryChallanDetail.costCenterId ?? '',
                         bank: deliveryChallanDetail.bank?.id,
                         sign_type: deliveryChallanDetail.sign_type ?? 'none',
                         signatureId: deliveryChallanDetail.signature?.id,
@@ -316,9 +322,10 @@ const EditDeliveryChallan: React.FC = () => {
                     ...prev,
                     billFrom: invoice_data.billFrom.id,
                     billTo: invoice_data.billTo?.id ?? '',
-                    items: invoice_data.items,
+                    items: hydrateLineCentres(invoice_data.items, invoice_data.costCenterId),
                     notes: invoice_data.notes,
                     termsAndCondition: invoice_data.termsAndCondition,
+                    costCenterId: invoice_data.costCenterId ?? '',
                     bank: invoice_data.bank?.id,
                     sign_type: invoice_data.sign_type ?? 'none',
                     signatureId: invoice_data.signature?.id,
@@ -909,6 +916,13 @@ const EditDeliveryChallan: React.FC = () => {
                                     onChange={(code) => handleFormChange('currencyCode', code)}
                                 />
                             </div>
+                            <div className="w-full">
+                                <CostCenterSelect
+                                    usage="sales"
+                                    value={invoiceFormData.costCenterId}
+                                    onChange={(value) => handleFormChange('costCenterId', value)}
+                                />
+                            </div>
                         </div>
                     </div>
                     {/* Billing Section */}
@@ -1012,6 +1026,7 @@ const EditDeliveryChallan: React.FC = () => {
                                     {lineFields.map((f) => (
                                         <th key={f.fieldSlug} className="p-3 text-left text-sm font-semibold">{f.labelName}</th>
                                     ))}
+                                        <th className="p-3 text-left text-sm font-semibold">Profit Center</th>
                                     <th className="p-3 text-left text-sm font-semibold">Unit</th>
                                     <th className="p-3 text-left text-sm font-semibold">Quantity</th>
                                     <th className="p-3 text-left text-sm font-semibold">Rate</th>
@@ -1034,11 +1049,13 @@ const EditDeliveryChallan: React.FC = () => {
                                         availableItems={invoiceFormData.items}
                                         addNewProduct={handleNewProductClick}
                                         lineFields={lineFields}
+                                        showCostCenter
+                                        costCenterUsage="sales"
                                     />
                                 ))}
                                 {invoiceFormData.items.length === 0 && (
                                     <tr className="bg-white  text-gray-950 ">
-                                        <td className="p-3 font-medium text-center" colSpan={8 + lineFields.length}>
+                                        <td className="p-3 font-medium text-center" colSpan={9 + lineFields.length}>
                                             No Items Selected
                                         </td>
                                     </tr>

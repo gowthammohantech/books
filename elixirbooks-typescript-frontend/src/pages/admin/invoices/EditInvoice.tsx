@@ -37,22 +37,8 @@ import { round2 } from '@utils/round2';
 import DynamicCustomFields from '@components/admin/DynamicCustomFields';
 import { QRCodeSVG } from 'qrcode.react';
 import CurrencySelect from '@components/admin/CurrencySelect';
-import CostCenterSelect, { LINE_CENTRE_NONE } from '@components/admin/CostCenterSelect';
-
-/**
- * Map a persisted line's resolved profit centre back to the form's three-state
- * value: '' = inherit the header, '__none__' = deliberately untagged, or an id.
- */
-function resolveHydratedLineCentre(
-    lineCentre: string | null,
-    headerCentre: string | null,
-): string {
-    if (lineCentre === headerCentre) return '';
-    // Untagged while the header HAS a centre is a real per-line choice; untagged
-    // when the header is also untagged is indistinguishable from inheriting.
-    if (lineCentre === null) return headerCentre ? LINE_CENTRE_NONE : '';
-    return String(lineCentre);
-}
+import CostCenterSelect from '@components/admin/CostCenterSelect';
+import { resolveHydratedLineCentre } from '@lib/costCentre';
 import { useCurrencies } from '@hooks/useCurrencies';
 import useDateFormatter from '@hooks/useDateFormatter';
 import { useDirtyGuard, confirmIfDirty } from '@hooks/useDirtyGuard';

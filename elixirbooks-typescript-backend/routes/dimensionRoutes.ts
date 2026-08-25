@@ -16,6 +16,7 @@ import {
   deleteProject,
   pnlByCostCenter,
   pnlByProject,
+  pnlByDepartment,
 } from '../controllers/dimensionReportController';
 
 const router = Router();
@@ -39,6 +40,7 @@ router.delete('/projects/:id', requirePermission('accounting', 'delete'), delete
 // ---- P&L reports ----
 router.get('/reports/pnl-by-cost-center', requirePermission('accounting-reports', 'view'), pnlByCostCenter);
 router.get('/reports/pnl-by-project', requirePermission('accounting-reports', 'view'), pnlByProject);
+router.get('/reports/pnl-by-department', requirePermission('accounting-reports', 'view'), pnlByDepartment);
 
 export default router;
 // CommonJS export so `require('./routes/dimensionRoutes')` under ts-node returns

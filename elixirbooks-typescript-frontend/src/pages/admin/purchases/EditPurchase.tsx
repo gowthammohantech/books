@@ -28,6 +28,8 @@ import CreateBankAccountModal from '../invoices/CreateBankAccountModal';
 import type { BankAccountCreatedResponse } from '@models/bank-account';
 import DynamicCustomFields from '@components/admin/DynamicCustomFields'; // <-- Imported Reusable Component
 import CurrencySelect from '@components/admin/CurrencySelect';
+import CostCenterSelect from '@components/admin/CostCenterSelect';
+import { resolveHydratedLineCentre } from '@lib/costCentre';
 import { useCurrencies } from '@hooks/useCurrencies';
 import { useLineItemCustomFields } from '@hooks/useLineItemCustomFields';
 import { validateLineCustomFields } from '@lib/lineCustomFields';
@@ -58,6 +60,8 @@ interface PurchaseLineItem {
 }
 
 interface PurchaseFormData {
+    /** Document-level profit centre. Lines inherit it unless they override. */
+    costCenterId: string;
     id: string;
     purchaseId: string;
     purchaseOrderId: string;
@@ -118,6 +122,7 @@ const EditPurchase: React.FC = () => {
     const [activeCustomFields, setActiveCustomFields] = useState<any[]>([]);
 
     const [purchaseFormData, setPurchaseFormData] = useState<PurchaseFormData>({
+        costCenterId: '',
         id: '',
         userId: user?.id || '',
         purchaseId: '',
@@ -330,9 +335,11 @@ const EditPurchase: React.FC = () => {
                         tax_rate_id: String(it.tax_rate_id ?? ''),
                         taxes: it.taxes ?? [],
                         appliedTaxRateIds: it.appliedTaxRateIds ?? (it.taxes ?? []).map((t: any) => t.taxRateId),
+                        costCenterId: resolveHydratedLineCentre(it.costCenterId, data.costCenterId ?? null),
                     })),
                     notes: data.notes || '',
                     termsAndCondition: data.termsAndCondition || '',
+                    costCenterId: data.costCenterId ?? '',
                     bank: data.bank?.id || null,
                     sign_type: data.sign_type ?? 'none',
                     signatureId: data.signature?.id || null,
@@ -1034,6 +1041,13 @@ const EditPurchase: React.FC = () => {
                                     onChange={(code) => handleFormChange('currencyCode', code)}
                                 />
                             </div>
+                            <div className="w-full">
+                                <CostCenterSelect
+                                    usage="purchase"
+                                    value={purchaseFormData.costCenterId}
+                                    onChange={(value) => handleFormChange('costCenterId', value)}
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -1124,6 +1138,7 @@ const EditPurchase: React.FC = () => {
                                         {lineFields.map((f) => (
                                             <th key={f.fieldSlug} className="p-3 text-left text-sm font-semibold">{f.labelName}</th>
                                         ))}
+                                        <th className="p-3 text-left text-sm font-semibold">Profit Center</th>
                                         <th className="p-3 text-left text-sm font-semibold">Unit</th>
                                         <th className="p-3 text-left text-sm font-semibold">Quantity</th>
                                         <th className="p-3 text-left text-sm font-semibold">Rate</th>
@@ -1153,9 +1168,11 @@ const EditPurchase: React.FC = () => {
                                                 availableItems={purchaseFormData.items}
                                                 addNewProduct={handleNewProductClick}
                                                 lineFields={lineFields}
+                                                showCostCenter
+                                                costCenterUsage="purchase"
                                             />
                                             <tr>
-                                                <td colSpan={8 + lineFields.length} className="px-3 pb-2">
+                                                <td colSpan={9 + lineFields.length} className="px-3 pb-2">
                                                     <span className="text-xs text-gray-500 mr-2">Tax rates:</span>
                                                     {purchaseFormData.taxTreatment === 'STANDARD' ? (
                                                         <LineTaxSelect
@@ -1180,7 +1197,7 @@ const EditPurchase: React.FC = () => {
                                     ))}
                                     {purchaseFormData.items.length === 0 && (
                                         <tr className="bg-white  text-gray-950 ">
-                                            <td className="p-3 font-medium text-center" colSpan={8 + lineFields.length}>
+                                            <td className="p-3 font-medium text-center" colSpan={9 + lineFields.length}>
                                                 No Items Selected
                                             </td>
                                         </tr>

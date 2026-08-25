@@ -7,6 +7,11 @@ import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
 import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import {
+  pivotPnlByDimension,
+  rollUpToParents,
+  type DimGroupRow,
+} from '../lib/reports/pnlByDimension';
 
 // =============================================================================
 // Shared helpers
@@ -701,5 +706,81 @@ export async function pnlByProject(req: Request, res: Response): Promise<void> {
     if (handleUnauthorized(res, err)) return;
     console.error('pnlByProject error:', err);
     res.status(500).json({ success: false, message: 'Failed to compute P&L by project' });
+  }
+}
+
+// =============================================================================
+// Columnar P&L by department
+// =============================================================================
+
+/**
+ * GET /reports/pnl-by-department?from=&to=&rollup=parent
+ *
+ * Departments across the columns, accounts down the rows, plus a
+ * Common / Unallocated column for untagged lines.
+ *
+ * Deliberately a SEPARATE endpoint from /reports/pnl-by-cost-center: that one
+ * is already consumed by the shipped P&L-by-dimension page and returns a
+ * per-centre summary. This one replaces its per-centre Promise.all loop (an
+ * N+1 over centres) with a single grouped query.
+ */
+export async function pnlByDepartment(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = requireUserId(req);
+
+    const toDateRaw = parseDate(req.query.to);
+    const toDate = toDateRaw ?? new Date();
+    toDate.setHours(23, 59, 59, 999);
+    const fromDateRaw = parseDate(req.query.from);
+    const fromDate = fromDateRaw ?? new Date(toDate.getFullYear(), 0, 1);
+    fromDate.setHours(0, 0, 0, 0);
+
+    // Three queries total, regardless of how many departments exist.
+    const [grouped, accounts, centres] = await Promise.all([
+      prisma.journalLine.groupBy({
+        by: ['accountId', 'costCenterId'],
+        where: {
+          account: { userId, isDeleted: false, accountType: { in: ['INCOME', 'EXPENSE'] } },
+          journalEntry: { userId, isDeleted: false, entryDate: { gte: fromDate, lte: toDate } },
+        },
+        _sum: { baseDebit: true, baseCredit: true },
+      }),
+      prisma.account.findMany({
+        where: { userId, isDeleted: false, accountType: { in: ['INCOME', 'EXPENSE'] } },
+        select: { id: true, code: true, name: true, accountType: true },
+        orderBy: { code: 'asc' },
+      }),
+      prisma.costCenter.findMany({
+        where: { userId, isDeleted: false },
+        select: { id: true, code: true, name: true, parentId: true },
+        orderBy: { code: 'asc' },
+      }),
+    ]);
+
+    const rows: DimGroupRow[] = grouped.map((g) => ({
+      accountId: g.accountId,
+      costCenterId: g.costCenterId ?? null,
+      debit: String(g._sum.baseDebit ?? 0),
+      credit: String(g._sum.baseCredit ?? 0),
+    }));
+
+    let result = pivotPnlByDimension(rows, accounts, centres);
+
+    if (String(req.query.rollup ?? '') === 'parent') {
+      result = rollUpToParents(
+        result,
+        new Map(centres.map((c) => [c.id, c.parentId ?? null])),
+        new Map(centres.map((c) => [c.id, { code: c.code, name: c.name }])),
+      );
+    }
+
+    res.json({
+      success: true,
+      data: { period: { from: fromDate, to: toDate }, ...result },
+    });
+  } catch (err) {
+    if (handleUnauthorized(res, err)) return;
+    console.error('pnlByDepartment error:', err);
+    res.status(500).json({ success: false, message: 'Failed to compute P&L by department' });
   }
 }

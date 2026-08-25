@@ -43,4 +43,6 @@ export interface ProductItem {
     tax_rate_id?: string;
     discount_type?: 'Fixed' | 'Percentage';
     discount_value?: number;
+    /** Per-line profit centre. '' = inherit the document, '__none__' = untagged. */
+    costCenterId?: string;
 }

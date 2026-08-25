@@ -32,6 +32,8 @@ import CreateBankAccountModal from '../invoices/CreateBankAccountModal';
 import type { BankAccountCreatedResponse } from '@models/bank-account';
 import DynamicCustomFields from '@components/admin/DynamicCustomFields'; // <-- Imported Reusable Component
 import CurrencySelect from '@components/admin/CurrencySelect';
+import CostCenterSelect from '@components/admin/CostCenterSelect';
+import { hydrateLineCentres } from '@lib/costCentre';
 import { useCurrencies } from '@hooks/useCurrencies';
 import { round2 } from '@utils/round2';
 import { Button, FormField, Select, fieldControlClasses } from '@components/ui';
@@ -43,6 +45,8 @@ type ProductItem = BaseProductItem & {
 };
 
 interface PurchaseFormData {
+    /** Document-level profit centre. Lines inherit it unless they override. */
+    costCenterId: string;
     id: string;
     purchaseOrderId: string;
     userId: string;
@@ -97,6 +101,7 @@ const EditPurchaseOrder: React.FC = () => {
     const [activeCustomFields, setActiveCustomFields] = useState<any[]>([]);
 
     const [purchaseFormData, setPurchaseFormData] = useState<PurchaseFormData>({
+        costCenterId: '',
         id: '',
         userId: user?.id || '',
         purchaseOrderId: '',
@@ -293,9 +298,10 @@ const EditPurchaseOrder: React.FC = () => {
                     billTo: '',
                     orderDate: data.purchaseOrderDate ? new Date(data.purchaseOrderDate) : null,
                     status: data.status || '',
-                    items: data.items || [],
+                    items: hydrateLineCentres(data.items || [], data.costCenterId),
                     notes: data.notes || '',
                     termsAndCondition: data.termsAndCondition || '',
+                    costCenterId: data.costCenterId ?? '',
                     bank: data.bank?.id || null,
                     sign_type: data.sign_type ?? 'none',
                     signatureId: data.signature?.id || null,
@@ -817,6 +823,13 @@ const EditPurchaseOrder: React.FC = () => {
                                     onChange={(code) => handleFormChange('currencyCode', code)}
                                 />
                             </div>
+                            <div className="w-full">
+                                <CostCenterSelect
+                                    usage="purchase"
+                                    value={purchaseFormData.costCenterId}
+                                    onChange={(value) => handleFormChange('costCenterId', value)}
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -907,6 +920,7 @@ const EditPurchaseOrder: React.FC = () => {
                                         {lineFields.map((f) => (
                                             <th key={f.fieldSlug} className="p-3 text-left text-sm font-semibold">{f.labelName}</th>
                                         ))}
+                                        <th className="p-3 text-left text-sm font-semibold">Profit Center</th>
                                         <th className="p-3 text-left text-sm font-semibold">Unit</th>
                                         <th className="p-3 text-left text-sm font-semibold">Quantity</th>
                                         <th className="p-3 text-left text-sm font-semibold">Rate</th>
@@ -929,11 +943,13 @@ const EditPurchaseOrder: React.FC = () => {
                                             availableItems={purchaseFormData.items}
                                             addNewProduct={handleNewProductClick}
                                             lineFields={lineFields}
+                                            showCostCenter
+                                            costCenterUsage="purchase"
                                         />
                                     ))}
                                     {purchaseFormData.items.length === 0 && (
                                         <tr className="bg-white  text-gray-950 ">
-                                            <td className="p-3 font-medium text-center" colSpan={8 + lineFields.length}>
+                                            <td className="p-3 font-medium text-center" colSpan={9 + lineFields.length}>
                                                 No Items Selected
                                             </td>
                                         </tr>

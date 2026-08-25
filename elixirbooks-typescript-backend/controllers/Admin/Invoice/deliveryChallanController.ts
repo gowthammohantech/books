@@ -8,6 +8,12 @@ import { requireUserId, UnauthorizedError } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 import { applyDocumentTreatment } from '../../../lib/tax/applyTreatment';
 import { sanitizeLineCustomFields } from '../../../lib/lineCustomFields';
+import {
+  resolveLineCostCenterId,
+  collectCostCentreIds,
+  assertCostCentresExist,
+  UnknownCostCentreError,
+} from '../../../lib/lineDimensions';
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
 
@@ -60,6 +66,7 @@ function formatDateShort(d: Date | null | undefined): string | null {
 }
 
 interface IncomingItem {
+  costCenterId?: string | null;
   id?: string;
   name?: string;
   unit?: string;
@@ -74,9 +81,12 @@ interface IncomingItem {
   customFields?: unknown;
 }
 
-function normaliseItems(raw: unknown): IncomingItem[] {
+function normaliseItems(raw: unknown, headerCostCenterId?: string | null): IncomingItem[] {
   if (!Array.isArray(raw)) return [];
   return (raw as IncomingItem[]).map((item) => ({
+    // Profit centre inheritance resolved once, at write time, so persisted
+    // items are always fully resolved for every later reader.
+    costCenterId: resolveLineCostCenterId(item.costCenterId, headerCostCenterId ?? null),
     id: item.id,
     name: item.name ?? '',
     unit: item.unit ?? '',
@@ -120,7 +130,22 @@ export async function createDeliveryChallan(req: Request, res: Response): Promis
   try {
     const userId = requireUserId(req);
     const body = req.body as Record<string, unknown>;
-    const items = normaliseItems(body.items);
+    // Resolved before the items so each line can inherit the document centre.
+    const docCostCenterId = typeof body.costCenterId === 'string' && body.costCenterId ? body.costCenterId : null;
+    const items = normaliseItems(body.items, docCostCenterId);
+
+    // The items JSON carries no foreign key, so a typo'd or cross-tenant centre
+    // id on a line would reach the ledger unnoticed. One query covers the
+    // header and every line.
+    try {
+      await assertCostCentresExist(prisma, userId, collectCostCentreIds(docCostCenterId, items));
+    } catch (centreErr) {
+      if (centreErr instanceof UnknownCostCentreError) {
+        res.status(400).json({ success: false, message: centreErr.message, errors: { costCenterId: centreErr.message } });
+        return;
+      }
+      throw centreErr;
+    }
 
     const billFromId = body.billFrom as string;
 
@@ -223,6 +248,7 @@ export async function createDeliveryChallan(req: Request, res: Response): Promis
           challanDate: safeDate(body.challanDate) ?? new Date(),
           referenceNo: (body.referenceNo as string) ?? '',
           items: enforcedItems as unknown as Prisma.InputJsonValue,
+          costCenterId: docCostCenterId,
           status,
           bankId: (body.bank as string) || null,
           taxableAmount: toDecimal(finalTaxable),

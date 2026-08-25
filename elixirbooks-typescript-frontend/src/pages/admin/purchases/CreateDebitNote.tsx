@@ -33,6 +33,7 @@ import CreateSignatureModal from '../invoices/CreateSignatureModal';
 import CreateBankAccountModal from '../invoices/CreateBankAccountModal';
 import type { BankAccountCreatedResponse } from '@models/bank-account';
 import CurrencySelect from '@components/admin/CurrencySelect';
+import CostCenterSelect from '@components/admin/CostCenterSelect';
 import { useCurrencies } from '@hooks/useCurrencies';
 import { useDocumentDefaults } from '@hooks/useDocumentDefaults';
 import { Button, FormField, Select, fieldControlClasses } from '@components/ui';
@@ -45,6 +46,8 @@ type ProductItem = BaseProductItem & {
 };
 
 interface DebitNoteFormData {
+    /** Document-level profit centre. Lines inherit it unless they override. */
+    costCenterId: string;
     purchaseId?: string;
     userId: string;
     billFrom: string;
@@ -111,6 +114,7 @@ const CreateDebitNote: React.FC = () => {
     const [purchases, setPurchases] = useState<OptionType[]>([]);
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
     const [debitNoteFormData, setDebitNoteFormData] = useState<DebitNoteFormData>({
+        costCenterId: '',
         purchaseId: '',
         userId: user?.id || '',
         billFrom: '',
@@ -860,6 +864,13 @@ const CreateDebitNote: React.FC = () => {
                                     onChange={(code) => handleFormChange('currencyCode', code)}
                                 />
                             </div>
+                            <div className="w-full">
+                                <CostCenterSelect
+                                    usage="purchase"
+                                    value={debitNoteFormData.costCenterId}
+                                    onChange={(value) => handleFormChange('costCenterId', value)}
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -942,6 +953,7 @@ const CreateDebitNote: React.FC = () => {
                                         {lineFields.map((f) => (
                                             <th key={f.fieldSlug} className="p-3 text-left text-sm font-semibold">{f.labelName}</th>
                                         ))}
+                                        <th className="p-3 text-left text-sm font-semibold">Profit Center</th>
                                         <th className="p-3 text-left text-sm font-semibold">Unit</th>
                                         <th className="p-3 text-left text-sm font-semibold">Quantity</th>
                                         <th className="p-3 text-left text-sm font-semibold">Rate</th>
@@ -964,11 +976,13 @@ const CreateDebitNote: React.FC = () => {
                                             availableItems={debitNoteFormData.items}
                                             addNewProduct={handleNewProductClick}
                                             lineFields={lineFields}
+                                            showCostCenter
+                                            costCenterUsage="purchase"
                                         />
                                     ))}
                                     {debitNoteFormData.items.length === 0 && (
                                         <tr className="bg-white  text-gray-950 ">
-                                            <td className="p-3 font-medium text-center" colSpan={8 + lineFields.length}>
+                                            <td className="p-3 font-medium text-center" colSpan={9 + lineFields.length}>
                                                 No Items Selected
                                             </td>
                                         </tr>

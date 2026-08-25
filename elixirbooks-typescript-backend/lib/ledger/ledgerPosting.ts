@@ -154,12 +154,31 @@ export async function postInvoicePayment(
 
 export async function postPurchaseReceived(
   tx: PostingTx,
-  p: { userId: string; purchaseId: string; date: Date; total: string; tax: string; inventoryNet: string; expenseNet: string; currencyCode?: string; exchangeRate?: DecimalInput; costCenterId?: string | null; projectId?: string | null },
+  p: { userId: string; purchaseId: string; date: Date; total: string; tax: string; inventoryNet: string; expenseNet: string; currencyCode?: string; exchangeRate?: DecimalInput; costCenterId?: string | null; projectId?: string | null; inventoryByCentre?: CentreNet[]; expenseByCentre?: CentreNet[] },
 ): Promise<void> {
   assertSplit('purchase.received', p.total, [p.inventoryNet, p.expenseNet, p.tax]);
   const lines: LineInstruction[] = [];
-  if (isPos(p.inventoryNet)) lines.push({ roleKey: 'INVENTORY', side: 'debit', amount: p.inventoryNet });
-  if (isPos(p.expenseNet)) lines.push({ roleKey: 'PURCHASES', side: 'debit', amount: p.expenseNet });
+
+  // Split each debit bucket across departments when the lines disagree with the
+  // header. AP and INPUT_TAX stay on the document's own centre for the same
+  // reason AR does on a sale — they are entity-level balance-sheet items.
+  const pushSplit = (
+    roleKey: 'INVENTORY' | 'PURCHASES',
+    bucketTotal: string,
+    groups: CentreNet[] | undefined,
+  ): void => {
+    if (groups?.length) {
+      assertSplit(`purchase.received.${roleKey.toLowerCase()}`, bucketTotal, groups.map((g) => g.net));
+      for (const g of groups) {
+        if (isPos(g.net)) lines.push({ roleKey, side: 'debit', amount: g.net, costCenterId: g.costCenterId });
+      }
+      return;
+    }
+    if (isPos(bucketTotal)) lines.push({ roleKey, side: 'debit', amount: bucketTotal });
+  };
+
+  pushSplit('INVENTORY', p.inventoryNet, p.inventoryByCentre);
+  pushSplit('PURCHASES', p.expenseNet, p.expenseByCentre);
   if (isPos(p.tax)) lines.push({ roleKey: 'INPUT_TAX', side: 'debit', amount: p.tax, taxRoleKey: 'INPUT_TAX' });
   lines.push({ roleKey: 'AP', side: 'credit', amount: p.total });
   await gatedPost(tx, p.userId, p.date, 'Purchase', p.purchaseId, 'received', lines, undefined, p.currencyCode ?? 'BASE', p.exchangeRate, p.costCenterId, p.projectId);

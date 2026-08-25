@@ -15,6 +15,13 @@ import {
   type TotalsItem,
 } from '../../../lib/documentTotals';
 import { sanitizeLineCustomFields } from '../../../lib/lineCustomFields';
+import {
+  resolveLineCostCenterId,
+  collectCostCentreIds,
+  assertCostCentresExist,
+  UnknownCostCentreError,
+} from '../../../lib/lineDimensions';
+import { splitNetByCentre } from '../../../lib/ledger/dimensionSplit';
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
 
@@ -143,6 +150,7 @@ interface IncomingItemTax {
 }
 
 interface IncomingItem {
+  costCenterId?: string | null;
   id?: string;
   productId?: string;
   name?: string;
@@ -160,9 +168,10 @@ interface IncomingItem {
   customFields?: unknown;
 }
 
-function normaliseItems(raw: unknown): IncomingItem[] {
+function normaliseItems(raw: unknown, headerCostCenterId?: string | null): IncomingItem[] {
   if (!Array.isArray(raw)) return [];
   return (raw as IncomingItem[]).map((item) => ({
+    costCenterId: resolveLineCostCenterId(item.costCenterId, headerCostCenterId ?? null),
     id: item.id ?? item.productId,
     productId: item.productId ?? item.id,
     name: item.name ?? '',
@@ -393,10 +402,17 @@ async function postPurchaseLedger(
   purchase: { id: string; purchaseDate: Date | null; totalAmount: Prisma.Decimal; totalTax: Prisma.Decimal | null; items: Prisma.JsonValue | null; userId: string; currencyCode?: string | null; exchangeRate?: Prisma.Decimal | null; costCenterId?: string | null; projectId?: string | null },
   userId: string,
 ): Promise<void> {
-  const items = normaliseItems(purchase.items);
+  const headerCostCentre = purchase.costCenterId ?? null;
+  // Pass the header so the classification below resolves line centres exactly as
+  // the create path did when it persisted them.
+  const items = normaliseItems(purchase.items, headerCostCentre);
   const total = String(purchase.totalAmount);
   const tax = String(purchase.totalTax ?? 0);
   let inventoryNet = new Prisma.Decimal(0);
+  // Accumulate each bucket per department alongside the totals, so the same
+  // single walk feeds both the clamped totals and the departmental split.
+  const invByCentre = new Map<string | null, Prisma.Decimal>();
+  const expByCentre = new Map<string | null, Prisma.Decimal>();
   for (const item of items) {
     const productId = item.productId ?? item.id;
     if (!productId) continue;
@@ -404,8 +420,13 @@ async function postPurchaseLedger(
       where: { id: productId },
       select: { item_type: true },
     });
+    const lineAmount = new Prisma.Decimal(asNumber(item.amount, 0));
+    const centre = item.costCenterId ?? null;
     if (product && product.item_type !== 'Service') {
-      inventoryNet = inventoryNet.plus(new Prisma.Decimal(asNumber(item.amount, 0)));
+      inventoryNet = inventoryNet.plus(lineAmount);
+      invByCentre.set(centre, (invByCentre.get(centre) ?? new Prisma.Decimal(0)).plus(lineAmount));
+    } else {
+      expByCentre.set(centre, (expByCentre.get(centre) ?? new Prisma.Decimal(0)).plus(lineAmount));
     }
   }
   const totalDec = new Prisma.Decimal(String(purchase.totalAmount ?? 0));
@@ -413,6 +434,24 @@ async function postPurchaseLedger(
   const maxNet = totalDec.minus(taxDec);
   const clampedInv = inventoryNet.greaterThan(maxNet) ? maxNet : inventoryNet;
   const expenseNet = maxNet.minus(clampedInv);
+
+  // Only split when the lines actually disagree with the header — otherwise the
+  // posting must stay byte-identical to what it produced before.
+  const multiCentre =
+    new Set([...invByCentre.keys(), ...expByCentre.keys()]).size > 1 ||
+    [...invByCentre.keys(), ...expByCentre.keys()].some((k) => k !== headerCostCentre);
+
+  const toGroups = (m: Map<string | null, Prisma.Decimal>, bucketTotal: Prisma.Decimal) =>
+    splitNetByCentre(
+      [...m.entries()].map(([costCenterId, amount]) => ({ costCenterId, net: amount.toString() })),
+      headerCostCentre,
+      bucketTotal.toString(),
+    );
+
+  // splitNetByCentre reconciles each bucket to its CLAMPED total, so the
+  // inventory/expense/tax split still sums to the document total exactly.
+  const inventoryByCentre = multiCentre ? toGroups(invByCentre, clampedInv) : [];
+  const expenseByCentre = multiCentre ? toGroups(expByCentre, expenseNet) : [];
   // G: pass document currency/rate when present; omitting falls back to functional path.
   // P3.3: pass dims if present on the document (null/undefined → no-op)
   await postPurchaseReceived(tx as unknown as PostingTx, {
@@ -427,6 +466,8 @@ async function postPurchaseLedger(
     ...(purchase.exchangeRate != null ? { exchangeRate: purchase.exchangeRate } : {}),
     ...(purchase.costCenterId !== undefined ? { costCenterId: purchase.costCenterId } : {}),
     ...(purchase.projectId !== undefined ? { projectId: purchase.projectId } : {}),
+    ...(inventoryByCentre.length ? { inventoryByCentre } : {}),
+    ...(expenseByCentre.length ? { expenseByCentre } : {}),
   });
 }
 
@@ -523,7 +564,19 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
     const legacySupplierId = ((body.supplierId ?? body.billTo) as string | undefined) ?? null;
     const referenceNo = (body.referenceNo as string) ?? '';
     const purchaseDate = safeDate(body.purchaseDate) ?? new Date();
-    const items = normaliseItems(body.items);
+    // Resolved before the items so each line can inherit the document centre.
+    const docCostCenterId = typeof body.costCenterId === 'string' && body.costCenterId ? body.costCenterId : null;
+    const items = normaliseItems(body.items, docCostCenterId);
+
+    try {
+      await assertCostCentresExist(prisma, userId, collectCostCentreIds(docCostCenterId, items));
+    } catch (centreErr) {
+      if (centreErr instanceof UnknownCostCentreError) {
+        res.status(400).json({ success: false, message: centreErr.message, errors: { costCenterId: centreErr.message } });
+        return;
+      }
+      throw centreErr;
+    }
     const notes = (body.notes as string) ?? '';
     const termsAndCondition = (body.termsAndCondition as string) ?? '';
     const paymentMode = body.paymentMode as string | undefined;
@@ -611,7 +664,6 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
     const docExchangeRate = body.exchangeRate != null ? toDecimal(body.exchangeRate) : undefined;
 
     // P3.3: optional dimension tagging
-    const docCostCenterId = typeof body.costCenterId === 'string' && body.costCenterId ? body.costCenterId : null;
     const docProjectId = typeof body.projectId === 'string' && body.projectId ? body.projectId : null;
 
     // P3.5: optional landed cost (freight/duties) to fold into inventory unit cost.
@@ -1038,7 +1090,11 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
       typeof rawLegacySupplier === 'string' && rawLegacySupplier ? rawLegacySupplier : null;
     const referenceNo = body.referenceNo as string | undefined;
     const purchaseDate = safeDate(body.purchaseDate) ?? existingPurchase.purchaseDate;
-    const items = normaliseItems(body.items);
+    const docCostCenterId =
+      body.costCenterId === undefined
+        ? existingPurchase.costCenterId
+        : (typeof body.costCenterId === 'string' && body.costCenterId ? body.costCenterId : null);
+    const items = normaliseItems(body.items, docCostCenterId);
     const notes = body.notes as string | undefined;
     const termsAndCondition = body.termsAndCondition as string | undefined;
     const paymentMode = body.paymentMode as string | undefined;
@@ -1244,6 +1300,9 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
           supplierId: resolvedSupplierId,
           contactId: resolvedContactId,
           purchaseDate,
+          // Previously the update path never persisted the dimension, so a
+          // purchase's department could be set on create but never corrected.
+          costCenterId: docCostCenterId,
           referenceNo: referenceNo ?? existingPurchase.referenceNo,
           items: enforcedItems as unknown as Prisma.InputJsonValue,
           paymentModeId: paymentMode ?? existingPurchase.paymentModeId,

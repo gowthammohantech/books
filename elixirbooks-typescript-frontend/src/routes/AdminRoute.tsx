@@ -131,6 +131,7 @@ import CollectionsReport from "@pages/admin/accounting/reports/CollectionsReport
 import BudgetVarianceReport from "@pages/admin/accounting/reports/BudgetVarianceReport";
 import CashFlowForecastReport from "@pages/admin/accounting/reports/CashFlowForecastReport";
 import PnlByDimensionReport from "@pages/admin/accounting/reports/PnlByDimensionReport";
+import PnlByDepartmentReport from "@pages/admin/accounting/reports/PnlByDepartmentReport";
 import TallyCheckReport from "@pages/admin/accounting/reports/TallyCheckReport";
 import AccountingPeriods from "@pages/admin/accounting/AccountingPeriods";
 import EInvoiceList from "@pages/admin/accounting/EInvoiceList";
@@ -418,6 +419,7 @@ const AdminRoute = () => {
                     <Route path="/accounting/reports/budget-variance" element={<><Seo title="Budget Variance" /><BudgetVarianceReport /></>} />
                     <Route path="/accounting/reports/cash-flow-forecast" element={<><Seo title="Cash Flow Forecast" /><CashFlowForecastReport /></>} />
                     <Route path="/accounting/reports/pnl-by-dimension" element={<><Seo title="P&L by Dimension" /><PnlByDimensionReport /></>} />
+                    <Route path="/accounting/reports/pnl-by-department" element={<><Seo title="P&L by Department" /><PnlByDepartmentReport /></>} />
                     <Route path="/accounting/reports/tally-check" element={<><Seo title="Tally Check" /><TallyCheckReport /></>} />
 
                     {/* E-Invoices (slice G.1) */}

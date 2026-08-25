@@ -463,6 +463,12 @@ const navItems: NavItemType[] = [
                         title: "P&L by Dimension",
                         slug: "accounting",
                     },
+                    {
+                        type: "link",
+                        to: "/admin/accounting/reports/pnl-by-department",
+                        title: "P&L by Department",
+                        slug: "accounting",
+                    },
                 ],
             },
             {

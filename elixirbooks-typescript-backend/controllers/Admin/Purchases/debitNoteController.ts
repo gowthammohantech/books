@@ -22,6 +22,12 @@ import {
   type TaxGroupLookupDb,
 } from '../../../lib/documentTotals';
 import { sanitizeLineCustomFields } from '../../../lib/lineCustomFields';
+import {
+  resolveLineCostCenterId,
+  collectCostCentreIds,
+  assertCostCentresExist,
+  UnknownCostCentreError,
+} from '../../../lib/lineDimensions';
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
 
@@ -91,6 +97,7 @@ function formatDateShort(d: Date | null | undefined): string | null {
 }
 
 interface IncomingItem {
+  costCenterId?: string | null;
   id?: string;
   productId?: string;
   name?: string;
@@ -109,6 +116,7 @@ interface IncomingItem {
 }
 
 interface StoredItem {
+  costCenterId?: string | null;
   productId?: string;
   name: string;
   unit: string;
@@ -124,7 +132,7 @@ interface StoredItem {
   customFields?: Record<string, string | number | boolean | string[]>;
 }
 
-function normaliseItems(raw: unknown): StoredItem[] {
+function normaliseItems(raw: unknown, headerCostCenterId?: string | null): StoredItem[] {
   if (!Array.isArray(raw)) return [];
   return (raw as IncomingItem[]).map((item) => {
     const quantity = asNumber(item.qty ?? item.quantity, 0);
@@ -143,6 +151,8 @@ function normaliseItems(raw: unknown): StoredItem[] {
       amount: asNumber(item.amount, rate * quantity),
       reason: item.reason,
       customFields: sanitizeLineCustomFields(item.customFields),
+      // Profit centre inheritance resolved once, at write time.
+      costCenterId: resolveLineCostCenterId(item.costCenterId, headerCostCenterId ?? null),
     };
   });
 }
@@ -339,7 +349,22 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
     }
 
     // Items + amounts
-    const items = normaliseItems(body.items);
+    // Resolved before the items so each line can inherit the document centre.
+    const docCostCenterId = typeof body.costCenterId === 'string' && body.costCenterId ? body.costCenterId : null;
+    const items = normaliseItems(body.items, docCostCenterId);
+
+    // The items JSON carries no foreign key, so a typo'd or cross-tenant centre
+    // id on a line would reach the ledger unnoticed. One query covers the
+    // header and every line.
+    try {
+      await assertCostCentresExist(prisma, userId, collectCostCentreIds(docCostCenterId, items));
+    } catch (centreErr) {
+      if (centreErr instanceof UnknownCostCentreError) {
+        res.status(400).json({ success: false, message: centreErr.message, errors: { costCenterId: centreErr.message } });
+        return;
+      }
+      throw centreErr;
+    }
 
     // Bug 2b: reject any return line whose quantity exceeds the purchased quantity
     // for that product on the source purchase. Prevents over-returning stock/GL.
@@ -397,6 +422,9 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
           dueDate: debitNoteDate,
           referenceNo: (body.referenceNo as string) ?? '',
           items: enforcedItems as unknown as Prisma.InputJsonValue,
+          // This create uses the relation (checked) variant, so the centre is
+          // attached by connect rather than as a scalar FK.
+          ...(docCostCenterId ? { costCenter: { connect: { id: docCostCenterId } } } : {}),
           status,
           paymentMode: body.paymentMode
             ? { connect: { id: body.paymentMode as string } }

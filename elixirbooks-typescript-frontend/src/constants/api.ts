@@ -361,6 +361,7 @@ const Constants = {
   FETCH_CASH_FLOW_FORECAST_URL: `${API_BASE_URL}/admin/reports/cash-flow-forecast`,
   FETCH_PNL_BY_COST_CENTER_URL: `${API_BASE_URL}/admin/reports/pnl-by-cost-center`,
   FETCH_PNL_BY_PROJECT_URL: `${API_BASE_URL}/admin/reports/pnl-by-project`,
+  FETCH_PNL_BY_DEPARTMENT_URL: `${API_BASE_URL}/admin/reports/pnl-by-department`,
   FETCH_COST_CENTERS_URL: `${API_BASE_URL}/admin/cost-centers`,
   CREATE_COST_CENTER_URL: `${API_BASE_URL}/admin/cost-centers`,
   UPDATE_COST_CENTER_URL: `${API_BASE_URL}/admin/cost-centers`,

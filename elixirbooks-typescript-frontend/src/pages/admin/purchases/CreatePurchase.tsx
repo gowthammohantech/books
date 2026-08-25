@@ -27,6 +27,7 @@ import CreateBankAccountModal from '../invoices/CreateBankAccountModal';
 import type { BankAccountCreatedResponse } from '@models/bank-account';
 import DynamicCustomFields from '@components/admin/DynamicCustomFields'; // <-- Reusable Custom Fields Component
 import CurrencySelect from '@components/admin/CurrencySelect';
+import CostCenterSelect from '@components/admin/CostCenterSelect';
 import { useCurrencies } from '@hooks/useCurrencies';
 import { useDocumentDefaults } from '@hooks/useDocumentDefaults';
 import { useDirtyGuard, confirmIfDirty } from '@hooks/useDirtyGuard';
@@ -61,6 +62,8 @@ interface PurchaseLineItem {
 }
 
 interface PurchaseFormData {
+    /** Document-level profit centre. Lines inherit it unless they override. */
+    costCenterId: string;
     purchaseOrderId?: string;
     userId: string;
     billFrom: string;
@@ -138,6 +141,7 @@ const CreatePurchase: React.FC = () => {
     const [activeCustomFields, setActiveCustomFields] = useState<any[]>([]);
 
     const [purchaseFormData, setPurchaseFormData] = useState<PurchaseFormData>({
+        costCenterId: '',
         purchaseOrderId: '',
         userId: user?.id || '',
         billFrom: '',
@@ -1152,6 +1156,13 @@ const CreatePurchase: React.FC = () => {
                                     onChange={(code) => handleFormChange('currencyCode', code)}
                                 />
                             </div>
+                            <div className="w-full">
+                                <CostCenterSelect
+                                    usage="purchase"
+                                    value={purchaseFormData.costCenterId}
+                                    onChange={(value) => handleFormChange('costCenterId', value)}
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -1242,6 +1253,7 @@ const CreatePurchase: React.FC = () => {
                                         {lineFields.map((f) => (
                                             <th key={f.fieldSlug} className="p-3 text-left text-sm font-semibold">{f.labelName}</th>
                                         ))}
+                                        <th className="p-3 text-left text-sm font-semibold">Profit Center</th>
                                         <th className="p-3 text-left text-sm font-semibold">Unit</th>
                                         <th className="p-3 text-left text-sm font-semibold">Quantity</th>
                                         <th className="p-3 text-left text-sm font-semibold">Rate</th>
@@ -1271,9 +1283,11 @@ const CreatePurchase: React.FC = () => {
                                                 availableItems={purchaseFormData.items}
                                                 addNewProduct={handleNewProductClick}
                                                 lineFields={lineFields}
+                                                showCostCenter
+                                                costCenterUsage="purchase"
                                             />
                                             <tr>
-                                                <td colSpan={8 + lineFields.length} className="px-3 pb-2">
+                                                <td colSpan={9 + lineFields.length} className="px-3 pb-2">
                                                     <span className="text-xs text-gray-500 mr-2">Tax rates:</span>
                                                     {purchaseFormData.taxTreatment === 'STANDARD' ? (
                                                         <LineTaxSelect
@@ -1298,7 +1312,7 @@ const CreatePurchase: React.FC = () => {
                                     ))}
                                     {purchaseFormData.items.length === 0 && (
                                         <tr className="bg-white  text-gray-950 ">
-                                            <td className="p-3 font-medium text-center" colSpan={8 + lineFields.length}>
+                                            <td className="p-3 font-medium text-center" colSpan={9 + lineFields.length}>
                                                 No Items Selected
                                             </td>
                                         </tr>

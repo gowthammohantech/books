@@ -69,12 +69,32 @@ function defaultDateRange(req: Request): { fromDate: Date; toDate: Date } {
   return { fromDate, toDate };
 }
 
-async function loadAccountBalances(userId: string, opts: { from?: Date; to: Date }): Promise<AccountBalance[]> {
+/**
+ * Read `?costCenterId=` for the statement endpoints.
+ *
+ * Returns `undefined` when no filter was asked for, `null` for the literal
+ * `none` (the untagged rows that make up the departmental report's
+ * Common / Unallocated column), or the centre id.
+ */
+function dimensionFilter(req: Request): string | null | undefined {
+  const raw = req.query.costCenterId;
+  if (typeof raw !== 'string' || raw === '') return undefined;
+  return raw === 'none' ? null : raw;
+}
+
+async function loadAccountBalances(
+  userId: string,
+  opts: { from?: Date; to: Date; costCenterId?: string | null },
+): Promise<AccountBalance[]> {
   const accounts = await prisma.account.findMany({
     where: { userId, isDeleted: false },
     include: {
       journalLines: {
-        where: { journalEntry: { userId, isDeleted: false, entryDate: opts.from ? { gte: opts.from, lte: opts.to } : { lte: opts.to } } },
+        where: {
+          // `undefined` leaves the key out entirely, so an unfiltered statement
+          // produces exactly the query it always did.
+          ...(opts.costCenterId !== undefined ? { costCenterId: opts.costCenterId } : {}),
+          journalEntry: { userId, isDeleted: false, entryDate: opts.from ? { gte: opts.from, lte: opts.to } : { lte: opts.to } } },
         // Statements are in the tenant's functional currency, so aggregate the
         // BASE amounts (debit/credit are transaction-currency; equal to base at
         // rate 1, but differ for foreign-currency entries — Spec G).
@@ -103,9 +123,20 @@ export async function profitLoss(req: Request, res: Response): Promise<void> {
   try {
     const userId = requireUserId(req);
     const { fromDate, toDate } = defaultDateRange(req);
+    const costCenterId = dimensionFilter(req);
 
     // Cash-basis mode: recognize revenue/expense when cash moves (§B.8)
     if ((req.query.basis as string) === 'cash') {
+      // Cash basis never reads journal lines, so a department filter cannot be
+      // honoured here. Refusing beats silently ignoring it and handing back a
+      // company-wide total under a departmental heading.
+      if (costCenterId !== undefined) {
+        res.status(400).json({
+          success: false,
+          message: 'The profit center filter requires the accrual (GL) basis.',
+        });
+        return;
+      }
       const { receipts, cashOut } = await gatherCashMovements(userId, fromDate, toDate);
       const pl = cashBasisProfitLoss(receipts, cashOut);
       res.json({ success: true, data: { period: { from: fromDate, to: toDate }, ...pl } });
@@ -114,15 +145,26 @@ export async function profitLoss(req: Request, res: Response): Promise<void> {
 
     // GL-derived mode: when ledger is initialized, aggregate from journal lines
     if (await ledgerLive(userId)) {
-      const balances = await loadAccountBalances(userId, { from: fromDate, to: toDate });
+      const balances = await loadAccountBalances(userId, { from: fromDate, to: toDate, costCenterId });
       const pl = profitLossFrom(balances);
       res.json({
         success: true,
         data: {
           period: { from: fromDate, to: toDate },
           ...pl,
+          ...(costCenterId !== undefined ? { dimensionFiltered: true, costCenterId } : {}),
           manualEntries: { income: 0, expense: 0, incomeByAccount: [], expenseByAccount: [] },
         },
+      });
+      return;
+    }
+
+    // The legacy fallback reconstructs the P&L from Invoice/Purchase rows rather
+    // than journal lines, so it cannot honour a department filter either.
+    if (costCenterId !== undefined) {
+      res.status(400).json({
+        success: false,
+        message: 'The profit center filter requires the general ledger. Initialize the ledger to use it.',
       });
       return;
     }
@@ -268,10 +310,11 @@ export async function balanceSheet(req: Request, res: Response): Promise<void> {
     const asOfStr = req.query.asOf as string | undefined;
     const asOf = asOfStr ? new Date(asOfStr) : new Date();
     asOf.setHours(23, 59, 59, 999);
+    const costCenterId = dimensionFilter(req);
 
     // GL-derived mode: when ledger is initialized, aggregate from journal lines
     if (await ledgerLive(userId)) {
-      const balances = await loadAccountBalances(userId, { to: asOf });
+      const balances = await loadAccountBalances(userId, { to: asOf, costCenterId });
       const bs = balanceSheetFrom(balances);
       const banks = await prisma.bankDetail.findMany({ where: { userId, isDeleted: false }, select: { id: true, bankName: true, currentBalance: true } });
       res.json({
@@ -279,6 +322,11 @@ export async function balanceSheet(req: Request, res: Response): Promise<void> {
         data: {
           asOf,
           ...bs,
+          // A department-filtered balance sheet does NOT balance: revenue sits on
+          // the department while the AR/cash leg stays on the document centre.
+          // Flagged so the UI can suppress its "Balanced" badge rather than
+          // show a false imbalance.
+          ...(costCenterId !== undefined ? { dimensionFiltered: true, costCenterId } : {}),
           bankBreakdown: banks.map((b) => ({ id: b.id, name: b.bankName, balance: Number(b.currentBalance ?? 0) })),
         },
       });
@@ -411,10 +459,11 @@ export async function trialBalance(req: Request, res: Response): Promise<void> {
     const asOfStr = req.query.asOf as string | undefined;
     const asOf = asOfStr ? new Date(asOfStr) : new Date();
     asOf.setHours(23, 59, 59, 999);
+    const costCenterId = dimensionFilter(req);
 
     // Decimal-safe aggregation shared with P&L/BS (loadAccountBalances sums via
     // Prisma.Decimal); trialBalanceFrom is the same logic the golden tests cover.
-    const balances = await loadAccountBalances(userId, { to: asOf });
+    const balances = await loadAccountBalances(userId, { to: asOf, costCenterId });
     const tb = trialBalanceFrom(balances);
 
     res.json({
@@ -424,6 +473,7 @@ export async function trialBalance(req: Request, res: Response): Promise<void> {
         accounts: tb.accounts,
         totals: tb.totals,
         balanced: tb.balanced,
+        ...(costCenterId !== undefined ? { dimensionFiltered: true, costCenterId } : {}),
       },
     });
   } catch (err) {

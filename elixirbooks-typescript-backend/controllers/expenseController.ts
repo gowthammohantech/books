@@ -14,6 +14,11 @@ import { validationResult } from 'express-validator';
 
 import { prisma } from '../lib/prisma';
 import {
+  collectCostCentreIds,
+  assertCostCentresExist,
+  UnknownCostCentreError,
+} from '../lib/lineDimensions';
+import {
   tenantScope,
   requireUserId,
   UnauthorizedError,
@@ -194,6 +199,23 @@ export async function createExpense(
     }
 
     const userId = requireUserId(req);
+
+    // Expenses carry no line items, so only the header centre needs checking —
+    // but it still needs checking: the column is nullable with onDelete SetNull,
+    // so a bad id is not rejected by the FK.
+    {
+      const raw = (req.body as Record<string, unknown>).costCenterId;
+      const headerCentre = typeof raw === 'string' && raw ? raw : null;
+      try {
+        await assertCostCentresExist(prisma, userId, collectCostCentreIds(headerCentre, []));
+      } catch (centreErr) {
+        if (centreErr instanceof UnknownCostCentreError) {
+          res.status(400).json({ success: false, message: centreErr.message, errors: { costCenterId: centreErr.message } });
+          return;
+        }
+        throw centreErr;
+      }
+    }
 
     const {
       referenceNo,

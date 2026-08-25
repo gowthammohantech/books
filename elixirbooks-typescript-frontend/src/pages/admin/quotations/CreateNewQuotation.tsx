@@ -29,6 +29,7 @@ import SmartDropdown from '@components/admin/SmartDropdown';
 import InvoiceTableRow from '@components/admin/InvoiceTableRow';
 import type { QuotationPreference } from '@models/modulesettings/quotation';
 import CurrencySelect from '@components/admin/CurrencySelect';
+import CostCenterSelect from '@components/admin/CostCenterSelect';
 import { useCurrencies } from '@hooks/useCurrencies';
 import { useDocumentDefaults } from '@hooks/useDocumentDefaults';
 import { useDirtyGuard, confirmIfDirty } from '@hooks/useDirtyGuard';
@@ -41,6 +42,8 @@ import { validateLineCustomFields } from '@lib/lineCustomFields';
 type ProductItem = BaseProductItem & { customFields?: Record<string, string | number | boolean | string[]> };
 
 interface QuotationFormData {
+    /** Document-level profit centre. Lines inherit it unless they override. */
+    costCenterId: string;
     userId: string;
     salesPerson: string | null;
     billFrom: string;
@@ -89,6 +92,7 @@ const CreateNewQuotation: React.FC = () => {
     const [companyDetails, setCompanyDetails] = useState<SelectedAdmin | null>(null);
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
     const [quotationFormData, setQuotationFormData] = useState<QuotationFormData>({
+        costCenterId: '',
         userId: user?.id || '',
         salesPerson: '',
         billFrom: '',
@@ -834,6 +838,13 @@ const CreateNewQuotation: React.FC = () => {
                                     onChange={(code) => handleFormChange('currencyCode', code)}
                                 />
                             </div>
+                            <div className="w-full">
+                                <CostCenterSelect
+                                    usage="sales"
+                                    value={quotationFormData.costCenterId}
+                                    onChange={(value) => handleFormChange('costCenterId', value)}
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -916,6 +927,7 @@ const CreateNewQuotation: React.FC = () => {
                                         {lineFields.map((f) => (
                                             <th key={f.fieldSlug} className="p-3 text-left text-sm font-semibold">{f.labelName}</th>
                                         ))}
+                                        <th className="p-3 text-left text-sm font-semibold">Profit Center</th>
                                         <th className="p-3 text-left text-sm font-semibold">Unit</th>
                                         <th className="p-3 text-left text-sm font-semibold">Quantity</th>
                                         <th className="p-3 text-left text-sm font-semibold">Rate</th>
@@ -938,11 +950,13 @@ const CreateNewQuotation: React.FC = () => {
                                             availableItems={quotationFormData.items}
                                             addNewProduct={handleNewProductClick}
                                             lineFields={lineFields}
+                                            showCostCenter
+                                            costCenterUsage="sales"
                                         />
                                     ))}
                                     {quotationFormData.items.length === 0 && (
                                         <tr className="bg-white  text-gray-950 ">
-                                            <td className="p-3 font-medium text-center" colSpan={8 + lineFields.length}>
+                                            <td className="p-3 font-medium text-center" colSpan={9 + lineFields.length}>
                                                 No Items Selected
                                             </td>
                                         </tr>

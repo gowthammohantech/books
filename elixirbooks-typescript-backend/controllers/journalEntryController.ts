@@ -3,12 +3,22 @@ import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
 import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import {
+  collectCostCentreIds,
+  assertCostCentresExist,
+  UnknownCostCentreError,
+} from '../lib/lineDimensions';
 
 export interface ManualJeLineInput {
   accountId: string;
   debit?: number;
   credit?: number;
   description?: string;
+  /** Profit centre for this leg. Without it there is no way to book a
+   *  period-end adjustment to a department, which leaves the departmental P&L
+   *  uncorrectable. */
+  costCenterId?: string | null;
+  projectId?: string | null;
 }
 
 export interface ManualJeBaseLine extends ManualJeLineInput {
@@ -150,7 +160,14 @@ export async function create(req: Request, res: Response): Promise<void> {
       reference?: string;
       currencyCode?: string;
       exchangeRate?: number | string;
-      lines?: Array<{ accountId: string; debit?: number; credit?: number; description?: string }>;
+      lines?: Array<{
+        accountId: string;
+        debit?: number;
+        credit?: number;
+        description?: string;
+        costCenterId?: string | null;
+        projectId?: string | null;
+      }>;
     };
 
     // Functional-currency conversion. Manual JEs are entered in transaction
@@ -208,6 +225,23 @@ export async function create(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    // Verify every referenced profit centre belongs to this tenant and is live.
+    // JournalLine.costCenterId is `onDelete: SetNull`, so a bad id would not be
+    // rejected by the FK — it would just land in the ledger unnoticed.
+    try {
+      await assertCostCentresExist(
+        prisma,
+        userId,
+        collectCostCentreIds(null, body.lines.map((l) => ({ costCenterId: l.costCenterId }))),
+      );
+    } catch (centreErr) {
+      if (centreErr instanceof UnknownCostCentreError) {
+        res.status(400).json({ success: false, message: centreErr.message });
+        return;
+      }
+      throw centreErr;
+    }
+
     const entryNumber = await generateEntryNumber();
     const created = await prisma.journalEntry.create({
       data: {
@@ -228,6 +262,8 @@ export async function create(req: Request, res: Response): Promise<void> {
             currencyCode,
             exchangeRate: rate,
             description: l.description ?? null,
+            costCenterId: l.costCenterId ?? null,
+            projectId: l.projectId ?? null,
           })),
         },
       },

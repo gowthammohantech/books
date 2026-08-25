@@ -30,6 +30,7 @@ import type { BankAccountCreatedResponse } from '@models/bank-account';
 import SmartDropdown from '@components/admin/SmartDropdown';
 import InvoiceTableRow from '@components/admin/InvoiceTableRow';
 import CurrencySelect from '@components/admin/CurrencySelect';
+import CostCenterSelect from '@components/admin/CostCenterSelect';
 import { useCurrencies } from '@hooks/useCurrencies';
 import { useDocumentDefaults } from '@hooks/useDocumentDefaults';
 import { round2 } from '@utils/round2';
@@ -41,6 +42,8 @@ import { validateLineCustomFields } from '@lib/lineCustomFields';
 type ProductItem = BaseProductItem & { customFields?: Record<string, string | number | boolean | string[]> };
 
 interface InvoiceFormData {
+    /** Document-level profit centre. Lines inherit it unless they override. */
+    costCenterId: string;
     invoiceId: string;
     challanDate: Date | null;
     status: string;
@@ -89,6 +92,7 @@ const NewDeliveryChallan: React.FC = () => {
     const [companyDetails, setCompanyDetails] = useState<SelectedAdmin | null>(null);
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
     const [invoiceFormData, setInvoiceFormData] = useState<InvoiceFormData>({
+        costCenterId: '',
         invoiceId: '',
         challanDate: new Date(),
         status: 'PENDING',
@@ -791,6 +795,13 @@ const NewDeliveryChallan: React.FC = () => {
                                     onChange={(code) => handleFormChange('currencyCode', code)}
                                 />
                             </div>
+                            <div className="w-full">
+                                <CostCenterSelect
+                                    usage="sales"
+                                    value={invoiceFormData.costCenterId}
+                                    onChange={(value) => handleFormChange('costCenterId', value)}
+                                />
+                            </div>
                         </div>
                     </div>
                     {/* Billing Section */}
@@ -871,6 +882,7 @@ const NewDeliveryChallan: React.FC = () => {
                                     {lineFields.map((f) => (
                                         <th key={f.fieldSlug} className="p-3 text-left text-sm font-semibold">{f.labelName}</th>
                                     ))}
+                                        <th className="p-3 text-left text-sm font-semibold">Profit Center</th>
                                     <th className="p-3 text-left text-sm font-semibold">Unit</th>
                                     <th className="p-3 text-left text-sm font-semibold">Quantity</th>
                                     <th className="p-3 text-left text-sm font-semibold">Rate</th>
@@ -893,11 +905,13 @@ const NewDeliveryChallan: React.FC = () => {
                                         availableItems={invoiceFormData.items}
                                         addNewProduct={handleNewProductClick}
                                         lineFields={lineFields}
+                                        showCostCenter
+                                        costCenterUsage="sales"
                                     />
                                 ))}
                                 {invoiceFormData.items.length === 0 && (
                                     <tr className="bg-white  text-gray-950 ">
-                                        <td className="p-3 font-medium text-center" colSpan={8 + lineFields.length}>
+                                        <td className="p-3 font-medium text-center" colSpan={9 + lineFields.length}>
                                             No Items Selected
                                         </td>
                                     </tr>
