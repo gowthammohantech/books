@@ -16,88 +16,69 @@ pr:
     include:
       - kanakku-typescript-backend/**
 
-pool:
-  vmImage: ubuntu-latest
-
 variables:
-  ACR_NAME: ebselixiracr
-  ACR_LOGIN_SERVER: ebselixiracr.azurecr.io
-  ACR_REPOSITORY: elixirbooks-pro
-  invoicingImageTag: stage-pro-api-$(Build.BuildNumber)
-  imageName: $(ACR_LOGIN_SERVER)/$(ACR_REPOSITORY):$(invoicingImageTag)
-  apiWebAppName: elixirbooks-kanaku-api
+  azureServiceConnection: 'stg-books-smart-service-connection'
+  acrServiceConnection: 'stg-books-acr-service-connection'
+  ACR_LOGIN_SERVER: 'ebselixiracr.azurecr.io'
+  ACR_REPOSITORY: 'elixirbooks-pro'
+  apiWebAppName: 'elixirbooks-kanaku-api'
+  invoicingImageTag: 'stage-pro-api-$(Build.BuildNumber)'
+
+pool:
+  vmImage: 'ubuntu-latest'
 
 stages:
 
-  # ============================================================
-  # BUILD AND PUSH IMAGE TO ACR
-  # ============================================================
-  - stage: BuildAndPush
-    displayName: Build and push API image
+# ============================================================
+# BUILD AND PUSH IMAGE TO ACR
+# ============================================================
+- stage: BuildAndPush
+  displayName: Build and Push Docker Image
 
-    jobs:
-      - job: BuildAndPush
-        displayName: Build and push API image
+  jobs:
+  - job: BuildPushImage
+    displayName: Build and Push Kanakku API Image
 
-        steps:
-          - checkout: self
+    steps:
+    - checkout: self
 
-          - task: AzureCLI@2
-            displayName: Build and push image to ACR
-            inputs:
-              azureSubscription: 'stg-books-smart-service-connection'
-              scriptType: bash
-              scriptLocation: inlineScript
-              inlineScript: |
-                set -euo pipefail
-
-                echo "=========================================="
-                echo "Logging in to Azure Container Registry"
-                echo "=========================================="
-
-                az acr login --name "$(ACR_NAME)"
-
-                echo "=========================================="
-                echo "Building Docker image"
-                echo "=========================================="
-
-                docker build \
-                  --file "$(Build.SourcesDirectory)/kanakku-typescript-backend/Dockerfile" \
-                  --tag "$(imageName)" \
-                  "$(Build.SourcesDirectory)/kanakku-typescript-backend"
-
-                echo "=========================================="
-                echo "Pushing Docker image to ACR"
-                echo "=========================================="
-
-                docker push "$(imageName)"
-
-                echo "=========================================="
-                echo "Image pushed successfully"
-                echo "Image: $(imageName)"
-                echo "=========================================="
+    - task: Docker@2
+      displayName: 'Build and push Kanakku API image'
+      inputs:
+        command: buildAndPush
+        containerRegistry: '$(acrServiceConnection)'
+        repository: '$(ACR_REPOSITORY)'
+        dockerfile: 'kanakku-typescript-backend/Dockerfile'
+        buildContext: 'kanakku-typescript-backend'
+        tags: |
+          $(invoicingImageTag)
 
 
-  # ============================================================
-  # DEPLOY TO AZURE WEB APP
-  # ============================================================
-  - stage: Deploy
-    displayName: Deploy API Web App
+# ============================================================
+# DEPLOY TO STAGING
+# ============================================================
+- stage: DeployToStaging
+  displayName: Deploy to Staging
 
-    dependsOn:
-      - BuildAndPush
+  dependsOn: BuildAndPush
 
-    condition: succeeded()
+  condition: succeeded()
 
-    jobs:
-      - job: Deploy
-        displayName: Deploy API image
+  jobs:
+  - deployment: Deploy_kanakku_api_staging
+    displayName: Deploy Kanakku API to Staging
 
-        steps:
+    environment: 'kanakku-api-staging'
+
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+
           - task: AzureWebAppContainer@1
-            displayName: Deploy API container
+            displayName: 'Deploy Kanakku API container to App Service'
             inputs:
-              azureSubscription: 'stg-books-smart-service-connection'
-              appName: 'elixirbooks-kanaku-api'
-              containers: '$(imageName)'
+              azureSubscription: '$(azureServiceConnection)'
+              appName: '$(apiWebAppName)'
+              containers: '$(ACR_LOGIN_SERVER)/$(ACR_REPOSITORY):$(invoicingImageTag)'
               appSettings: '-WEBSITES_PORT 3001'
