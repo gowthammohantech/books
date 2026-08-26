@@ -860,7 +860,7 @@ const EditDeliveryChallan: React.FC = () => {
         setIsProductModalOpen(true);
     }
     return (
-        <div className="md:p-4 bg-white-50   min-h-screen border border-gray-200  rounded">
+        <div className="md:p-4 min-h-screen border border-gray-200  rounded">
             <form onSubmit={saveDeliveryChallan}>
                 <div className="max-w-7xl mx-auto space-y-4">
 

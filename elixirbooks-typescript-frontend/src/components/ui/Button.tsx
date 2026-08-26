@@ -41,10 +41,10 @@ const SIZES: Record<ButtonSize, string> = {
 
 const VARIANTS: Record<ButtonVariant, string> = {
   primary: "bg-purple-600 text-white hover:bg-purple-700",
-  secondary: "bg-secondary text-white hover:opacity-90",
+  secondary: "bg-secondary text-secondary-foreground hover:opacity-90",
   outline:
     "border border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white",
-  soft: "bg-[#F8F5FF] text-purple-600 hover:bg-purple-600 hover:text-white",
+  soft: "bg-accent text-purple-600 hover:bg-purple-600 hover:text-white",
   white: "bg-white border border-border text-heading hover:bg-surface",
   danger: "bg-danger text-white hover:opacity-90",
   // Softer red for routine inline actions (e.g. a "Delete" button in a table

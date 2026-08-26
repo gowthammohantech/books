@@ -986,7 +986,7 @@ const EditPurchase: React.FC = () => {
     // 7. RENDER
     // ==========================================
     return (
-        <div className="md:p-4 bg-white-50 min-h-screen border border-gray-200 rounded">
+        <div className="md:p-4 min-h-screen border border-gray-200 rounded">
             <form onSubmit={savePurchaseOrder}>
                 <div className="max-w-7xl mx-auto space-y-4">
 

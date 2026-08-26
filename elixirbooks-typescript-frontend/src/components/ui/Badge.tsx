@@ -52,12 +52,12 @@ const STYLES: Record<BadgeColor, Record<BadgeVariant, string>> = {
     outline: "border border-info text-info",
   },
   secondary: {
-    soft: "bg-surface text-secondary",
-    solid: "bg-secondary text-white",
-    outline: "border border-secondary text-secondary",
+    soft: "bg-muted text-secondary-foreground",
+    solid: "bg-secondary text-secondary-foreground",
+    outline: "border border-border text-secondary-foreground",
   },
   indigo: {
-    soft: "bg-[#EEF0FB] text-indigo",
+    soft: "bg-accent text-indigo",
     solid: "bg-indigo text-white",
     outline: "border border-indigo text-indigo",
   },

@@ -46,7 +46,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           <div className="print:hidden">
             <Header toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
           </div>
-          <main ref={mainRef} className="flex-1 overflow-x-hidden overflow-y-auto bg-white-50 p-4 print:overflow-visible">
+          <main ref={mainRef} className="flex-1 overflow-x-hidden overflow-y-auto p-4 print:overflow-visible">
             {isSettingsPage && <DemoBanner />}
             {children || <Outlet />}
           </main>
