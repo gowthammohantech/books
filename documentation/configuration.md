@@ -22,7 +22,7 @@ is read.
 
 ## Rebuild vs Restart
 
-This is the most important operational rule in Kanakku:
+This is the most important operational rule in Elixir Books:
 
 | Variable type | Examples | How to apply a change |
 |---|---|---|
@@ -40,7 +40,7 @@ This is the most important operational rule in Kanakku:
 | `NODE_ENV` | Yes | — | Node environment. Set to `production`. | `production` |
 | `PORT` | No | `3001` | Port the API listens on inside the container. Do not change unless you have a conflict inside the container network. | `3001` |
 | `JWT_SECRET` | Yes | — | Signs authentication tokens. Generate with `openssl rand -hex 32`. Rotating this value invalidates all active sessions. | `a1b2c3...` |
-| `DATABASE_URL` | Yes | — | PostgreSQL connection string. The hostname must be `postgres` (the compose service name). The password must match `POSTGRES_PASSWORD`. | `postgresql://kanakku:yourpass@postgres:5432/kanakku?schema=public` |
+| `DATABASE_URL` | Yes | — | PostgreSQL connection string. The hostname must be `postgres` (the compose service name). The password must match `POSTGRES_PASSWORD`. | `postgresql://elixirbooks:yourpass@postgres:5432/elixirbooks?schema=public` |
 | `SEED_ON_BOOT` | No | `true` | When `true`, runs the idempotent baseline seed on every container start. Safe to leave `true`. Set to `false` after the first successful boot for marginally faster restarts. | `false` |
 
 ### API — AI / BYOK Variables (Runtime)
@@ -65,7 +65,7 @@ for details.
 | `SMTP_PORT` | No | `465` | SMTP port | `587` |
 | `SMTP_USER` | No | — | SMTP username / login | `user@example.com` |
 | `SMTP_PASS` | No | — | SMTP password | `app-password` |
-| `SMTP_FROM` | No | — | Sender address shown on outgoing mail | `Kanakku <billing@example.com>` |
+| `SMTP_FROM` | No | — | Sender address shown on outgoing mail | `Elixir Books <billing@example.com>` |
 
 ### API — Integration Variables (Runtime)
 
@@ -78,9 +78,9 @@ for details.
 
 | Variable | Required | Default | Purpose | Example |
 |---|---|---|---|---|
-| `POSTGRES_USER` | Yes | `kanakku` | Database username. Must match the user in `DATABASE_URL`. | `kanakku` |
+| `POSTGRES_USER` | Yes | `elixirbooks` | Database username. Must match the user in `DATABASE_URL`. | `elixirbooks` |
 | `POSTGRES_PASSWORD` | Yes | — | Database password. **Change this.** Must match the password in `DATABASE_URL`. | `str0ng-unique-pass` |
-| `POSTGRES_DB` | Yes | `kanakku` | Database name. Must match the database in `DATABASE_URL`. | `kanakku` |
+| `POSTGRES_DB` | Yes | `elixirbooks` | Database name. Must match the database in `DATABASE_URL`. | `elixirbooks` |
 
 ### Web / Frontend Variables
 
@@ -142,8 +142,8 @@ The stack defines these services in `docker/docker-compose.yml`:
 
 | Service | Always starts | Profile | Notes |
 |---|---|---|---|
-| `postgres` | Yes | — | PostgreSQL 16. Data persisted in `kanakku-pg-data` volume. |
-| `api` | Yes | — | Node.js 20 API. Uploads persisted in `kanakku-uploads` volume. |
+| `postgres` | Yes | — | PostgreSQL 16. Data persisted in `elixirbooks-pg-data` volume. |
+| `api` | Yes | — | Node.js 20 API. Uploads persisted in `elixirbooks-uploads` volume. |
 | `web` | Yes | — | nginx serving the React SPA + proxying `/api` and `/uploads` to `api`. |
 | `redis` | No | `redis` | Start with `make up-redis`. |
 | `worker` | No | `redis` | Async job worker (same image as `api`). Starts alongside Redis. |
@@ -153,7 +153,7 @@ Docker volumes created by the stack:
 
 | Volume | Contents |
 |---|---|
-| `kanakku_kanakku-pg-data` | All PostgreSQL data |
-| `kanakku_kanakku-uploads` | Invoice logos, expense receipt attachments, company logos |
-| `kanakku_kanakku-redis-data` | Redis persistence (redis profile only) |
-| `kanakku_kanakku-mongo-data` | MongoDB data (mongo profile only) |
+| `elixirbooks_elixirbooks-pg-data` | All PostgreSQL data |
+| `elixirbooks_elixirbooks-uploads` | Invoice logos, expense receipt attachments, company logos |
+| `elixirbooks_elixirbooks-redis-data` | Redis persistence (redis profile only) |
+| `elixirbooks_elixirbooks-mongo-data` | MongoDB data (mongo profile only) |

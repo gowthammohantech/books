@@ -1,6 +1,6 @@
-# Kanakku — Production Deployment Guide
+# Elixir Books — Production Deployment Guide
 
-This guide deploys the full Kanakku stack (API + web + PostgreSQL) with Docker
+This guide deploys the full Elixir Books stack (API + web + PostgreSQL) with Docker
 Compose. PostgreSQL is the only datastore; Mongo and Redis are optional and off
 by default.
 
@@ -15,10 +15,10 @@ by default.
 - The three project folders kept **side by side** (the compose build contexts are
   relative — do not rearrange):
   ```
-  kanakku/
+  elixirbooks/
   ├── docker/                       # compose files + .env  (this is where you run commands)
-  ├── kanakku-typescript-backend/
-  └── kanakku-typescript-frontend/
+  ├── elixirbooks-typescript-backend/
+  └── elixirbooks-typescript-frontend/
   ```
 
 ---
@@ -29,7 +29,7 @@ The **entire stack reads one file: `docker/.env`** (it is gitignored, so your
 secrets are never committed). `docker/.env.example` is the template.
 
 ```bash
-cd kanakku
+cd elixirbooks
 cp docker/.env.example docker/.env
 ```
 
@@ -41,7 +41,7 @@ Then edit `docker/.env` and set, at minimum:
 | `JWT_SECRET` | a long random string | `openssl rand -hex 32` |
 | `AI_ENCRYPTION_KEY` | a fresh 32-byte hex key | `openssl rand -hex 32` — **must be unique per install**; encrypts stored API keys |
 | `POSTGRES_PASSWORD` | a strong unique password | and put the **same** password inside `DATABASE_URL` |
-| `DATABASE_URL` | `postgresql://kanakku:<password>@postgres:5432/kanakku?schema=public` | host stays `postgres` (the compose service name) |
+| `DATABASE_URL` | `postgresql://elixirbooks:<password>@postgres:5432/elixirbooks?schema=public` | host stays `postgres` (the compose service name) |
 | `SMTP_*` | your real mail provider | needed for invoice emails / reminders |
 | `VITE_DEMO_MODE` | `false` | demo banners off |
 | `VITE_API_BASE_URL` | **leave empty** | see note below |
@@ -133,7 +133,7 @@ container on 8080. (nginx or Traefik work equally well if you prefer.)
 ## 6. Updating to a new version
 
 ```bash
-cd kanakku
+cd elixirbooks
 git pull            # in each of the three repos, as applicable
 make up             # rebuilds changed images; entrypoint auto-applies new migrations
 ```
@@ -147,15 +147,15 @@ No manual migration step. If only frontend env/config changed, rebuild web:
 
 Two things hold all state — back both up regularly:
 
-- **Postgres data** — volume `kanakku-pg-data`. Logical dump:
+- **Postgres data** — volume `elixirbooks-pg-data`. Logical dump:
   ```bash
   docker compose --env-file docker/.env -f docker/docker-compose.yml \
-    exec -T postgres pg_dump -U kanakku kanakku | gzip > kanakku-$(date +%F).sql.gz
+    exec -T postgres pg_dump -U elixirbooks elixirbooks | gzip > elixirbooks-$(date +%F).sql.gz
   ```
-  Restore: `gunzip -c backup.sql.gz | docker compose ... exec -T postgres psql -U kanakku kanakku`.
-- **Uploaded files** — volume `kanakku-uploads` (invoice logos, attachments, etc.):
+  Restore: `gunzip -c backup.sql.gz | docker compose ... exec -T postgres psql -U elixirbooks elixirbooks`.
+- **Uploaded files** — volume `elixirbooks-uploads` (invoice logos, attachments, etc.):
   ```bash
-  docker run --rm -v kanakku_kanakku-uploads:/data -v "$PWD":/backup alpine \
+  docker run --rm -v elixirbooks_elixirbooks-uploads:/data -v "$PWD":/backup alpine \
     tar czf /backup/uploads-$(date +%F).tar.gz -C /data .
   ```
 
@@ -173,7 +173,7 @@ Automate both with a daily cron and copy them off-box.
 | Logs (api + web) | `make logs` |
 | Re-run baseline seed | `make seed` |
 | Apply migrations manually | `docker compose --env-file docker/.env -f docker/docker-compose.yml exec api npx prisma migrate deploy` |
-| Open a DB shell | `docker compose --env-file docker/.env -f docker/docker-compose.yml exec postgres psql -U kanakku kanakku` |
+| Open a DB shell | `docker compose --env-file docker/.env -f docker/docker-compose.yml exec postgres psql -U elixirbooks elixirbooks` |
 | Enable async worker | `make up-redis` (Redis + worker) |
 
 ---
