@@ -13,7 +13,7 @@ export interface CheckboxProps
 /**
  * Labeled checkbox matching the app's token language. Uses a native
  * `<input type="checkbox">` (kept fully accessible/keyboardable) styled via
- * `accent-purple-600` for the brand-purple checked state, plus a token focus
+ * `accent-primary` for the brand checked state, plus a token focus
  * ring. Forwards all other input props (checked, onChange, disabled, ...).
  */
 const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
@@ -39,15 +39,15 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           type="checkbox"
           disabled={disabled}
           className={[
-            "h-4 w-4 rounded-[3px] border border-border text-purple-600",
-            "accent-purple-600 outline-none transition-colors",
-            "focus-visible:ring-1 focus-visible:ring-purple-600",
+            "h-4 w-4 rounded-[3px] border border-border text-primary",
+            "accent-primary outline-none transition-colors",
+            "focus-visible:ring-1 focus-visible:ring-ring",
             "disabled:cursor-not-allowed",
             className,
           ].join(" ")}
           {...rest}
         />
-        {label ? <span className="text-sm text-heading">{label}</span> : null}
+        {label ? <span className="text-sm text-foreground">{label}</span> : null}
       </label>
     );
   },

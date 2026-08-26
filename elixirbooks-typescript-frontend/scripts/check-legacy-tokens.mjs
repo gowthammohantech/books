@@ -17,13 +17,20 @@ const ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "
 const SRC = join(ROOT, "src");
 const SCANNED = /\.(tsx?|css)$/;
 
+/**
+ * The dev token gallery renders legacy classes on purpose, side by side with
+ * their replacements, so the compat bridge can be checked by eye. It is the
+ * one file allowed to keep them.
+ */
+const EXCLUDED = [/[\\/]pages[\\/]dev[\\/]TokenGallery\.tsx$/];
+
 /** Utility prefixes a color token can appear behind, e.g. `hover:text-heading`. */
 const PREFIXES =
   "text|bg|border|ring|divide|placeholder|from|via|to|fill|stroke|outline|decoration|accent|caret|shadow";
 
 /** Matches `<utility>-<token>` at a class-token boundary, variants included. */
 const color = (token) =>
-  new RegExp(`(?<![\w-])(?:${PREFIXES})-${token}(?![\w-])`, "g");
+  new RegExp(String.raw`(?<![\w-])(?:${PREFIXES})-${token}(?![\w-])`, "g");
 
 const RULES = [
   // ---- Enabled in Stage 0: things already fixed, now held fixed. ----
@@ -55,7 +62,13 @@ const RULES = [
     enabled: false,
     stage: "3a",
     hint: "purple-600 -> primary, purple-700 -> primary/90, purple-50/100/200 -> accent.",
-    pattern: /(?<![\w-])purple-\d{2,3}(?![\w-])/g,
+    // The utility prefix has to be part of the match: the character before
+    // "purple" is always the "-" of "bg-"/"text-"/"ring-", which a bare
+    // (?<![\w-]) lookbehind rejects — so the rule silently found nothing.
+    pattern: new RegExp(
+      String.raw`(?<![\w-])(?:${PREFIXES})-purple-\d{2,3}(?![\w-])`,
+      "g",
+    ),
   },
   {
     id: "text-heading",
@@ -70,7 +83,7 @@ const RULES = [
     stage: "3c",
     hint: "-body -> -muted-foreground, bg-surface -> bg-muted",
     pattern: new RegExp(
-      `(?<![\w-])(?:(?:${PREFIXES})-body|(?:${PREFIXES})-surface)(?![\w-])`,
+      String.raw`(?<![\w-])(?:(?:${PREFIXES})-body|(?:${PREFIXES})-surface)(?![\w-])`,
       "g",
     ),
   },
@@ -94,12 +107,16 @@ function* walk(dir) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, e.name);
     if (e.isDirectory()) yield* walk(p);
-    else if (SCANNED.test(e.name)) yield p;
+    else if (SCANNED.test(e.name) && !EXCLUDED.some((re) => re.test(p))) yield p;
   }
 }
 
 const files = [...walk(SRC)];
-const active = RULES.filter((r) => r.enabled);
+
+// --all previews every rule, enabled or not, to size the remaining migration
+// without changing which stages are being enforced.
+const SHOW_ALL = process.argv.includes("--all");
+const active = RULES.filter((r) => r.enabled || SHOW_ALL);
 const findings = new Map(active.map((r) => [r.id, []]));
 
 for (const file of files) {
@@ -142,4 +159,4 @@ if (pending.length) {
 }
 
 console.log(`\n  scanned ${files.length} files, ${active.length} rule(s) active, ${total} violation(s)\n`);
-process.exit(total > 0 ? 1 : 0);
+process.exit(!SHOW_ALL && total > 0 ? 1 : 0);

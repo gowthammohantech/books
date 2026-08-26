@@ -57,16 +57,33 @@ const queryClient = new QueryClient();
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <Provider store={store}>
-      <BrowserRouter>
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <QueryClientProvider client={queryClient}>
-            <App />
-          </QueryClientProvider>
-        </LocalizationProvider>
-      </BrowserRouter>
-    </Provider>
-  </React.StrictMode>
-);
+const root = ReactDOM.createRoot(document.getElementById('root')!);
+
+// Dev-only design-system reference. Mounted ahead of the store, router and
+// setup-status gates so it renders with no backend running — which is the
+// point: it is the only way to eyeball a token migration without a database
+// and a login. Never reachable in a production build.
+if (import.meta.env.DEV && window.location.pathname === '/_tokens') {
+  const TokenGallery = React.lazy(() => import('@pages/dev/TokenGallery'));
+  root.render(
+    <React.StrictMode>
+      <React.Suspense fallback={<></>}>
+        <TokenGallery />
+      </React.Suspense>
+    </React.StrictMode>
+  );
+} else {
+  root.render(
+    <React.StrictMode>
+      <Provider store={store}>
+        <BrowserRouter>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <QueryClientProvider client={queryClient}>
+              <App />
+            </QueryClientProvider>
+          </LocalizationProvider>
+        </BrowserRouter>
+      </Provider>
+    </React.StrictMode>
+  );
+}

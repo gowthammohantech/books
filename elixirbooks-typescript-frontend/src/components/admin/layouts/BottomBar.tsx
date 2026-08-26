@@ -19,7 +19,7 @@ const BottomBar: React.FC<BottomBarProps> = ({ isSidebarOpen }) => {
     const logoSrc = resolveCompanyLogo(company?.companyLogo || company?.favicon);
 
     return (
-        <div className="bg-gray-50 border-t border-gray-200 px-3 py-3">
+        <div className="bg-sidebar border-t border-sidebar-border px-3 py-3">
             <div
                 className={`flex items-center ${isSidebarOpen ? "" : "justify-center"
                     }`}
@@ -28,11 +28,11 @@ const BottomBar: React.FC<BottomBarProps> = ({ isSidebarOpen }) => {
                     src={logoSrc}
                     alt={companyName || "Company logo"}
                     title={!isSidebarOpen ? companyName : undefined}
-                    className="h-8 w-8 shrink-0 rounded-md border border-gray-200 bg-white object-contain p-0.5"
+                    className="h-8 w-8 shrink-0 rounded-md border border-sidebar-border bg-card object-contain p-0.5"
                 />
                 {companyName && (
                     <span
-                        className={`ml-2 break-words text-sm font-medium leading-tight text-gray-800 transition-opacity duration-300 ${isSidebarOpen ? "opacity-100" : "hidden opacity-0"
+                        className={`ml-2 break-words text-sm font-medium leading-tight text-sidebar-foreground transition-opacity duration-300 ${isSidebarOpen ? "opacity-100" : "hidden opacity-0"
                             }`}
                     >
                         {companyName}

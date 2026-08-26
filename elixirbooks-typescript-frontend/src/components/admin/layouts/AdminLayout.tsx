@@ -38,7 +38,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   return (
     <PageHeaderProvider>
-      <div className="flex h-screen bg-white font-sans print:block print:h-auto">
+      <div className="flex h-screen bg-background font-sans print:block print:h-auto">
         <div className="print:hidden">
           <Sidebar isOpen={isSidebarOpen} />
         </div>

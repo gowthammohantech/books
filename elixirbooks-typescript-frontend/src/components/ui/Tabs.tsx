@@ -29,7 +29,7 @@ export interface TabsProps {
 /**
  * Accessible tab bar (role="tablist"/"tab", aria-selected, roving tabIndex +
  * arrow-key navigation) matching the app's token language. Two visual
- * variants: `underline` (default, brand-purple underline/text) and
+ * variants: `underline` (default, brand underline/text) and
  * `segmented` (pill group on a surface background).
  */
 const Tabs = ({
@@ -71,7 +71,7 @@ const Tabs = ({
 
   const listClass =
     variant === "segmented"
-      ? "inline-flex items-center gap-1 rounded-control bg-surface p-1"
+      ? "inline-flex items-center gap-1 rounded-md bg-muted p-1"
       : "flex items-center gap-4 border-b border-border";
 
   return (
@@ -103,20 +103,20 @@ const Tabs = ({
             className={
               variant === "segmented"
                 ? [
-                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control",
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md",
                     "text-[13px] font-medium transition-colors",
                     "disabled:opacity-60 disabled:cursor-not-allowed",
                     selected
-                      ? "bg-white text-purple-600 shadow-card"
-                      : "text-body hover:text-heading",
+                      ? "bg-white text-primary shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
                   ].join(" ")
                 : [
                     "inline-flex items-center gap-1.5 px-0.5 pb-2.5 -mb-px",
                     "text-sm font-medium border-b-2 transition-colors",
                     "disabled:opacity-60 disabled:cursor-not-allowed",
                     selected
-                      ? "border-purple-600 text-purple-600"
-                      : "border-transparent text-body hover:text-heading",
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground",
                   ].join(" ")
             }
           >
