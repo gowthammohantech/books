@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { assetUrl } from "@utils/assetUrl";
+import BottomBar from "./layouts/BottomBar";
 import { resolveCompanyLogo } from "@utils/companyLogo";
 import type { RootState } from "@store/index";
 import type {
@@ -35,7 +36,6 @@ import type {
     NavLinkItem,
 } from "@models/sidebar";
 import type { PermissionSet } from "@models/permissions";
-import BottomBar from "./layouts/BottomBar";
 
 // --- Navigation Data Structure ---
 const navItems: NavItemType[] = [
@@ -1271,7 +1271,7 @@ const Sidebar = ({ isOpen }: { isOpen: boolean }) => {
                     />
                 </span>
             </div>
-            <nav className="flex-1 px-3 py-2 overflow-y-auto">
+            <nav className="flex-1 px-3 py-2 overflow-y-auto overflow-x-hidden">
                 {filterNavItems.map((item, index) => {
                     switch (item.type) {
                         case "header":
@@ -1314,24 +1314,8 @@ const Sidebar = ({ isOpen }: { isOpen: boolean }) => {
                             return null;
                     }
                 })}
-
-                {/* API Docs — slice G.4 (external link to Swagger UI) */}
-                <a
-                    href="/api/docs"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 mt-2"
-                >
-                    <BookOpen size={16} />
-                    <span
-                        className={`ml-2 transition-opacity font-medium duration-300 whitespace-nowrap ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-                            }`}
-                    >
-                        API Docs
-                    </span>
-                </a>
             </nav>
-            {isOpen && <BottomBar />}
+            <BottomBar isSidebarOpen={isOpen} />
         </aside>
     );
 };

@@ -1,30 +1,43 @@
-import { LogOut, Settings, UserCircle2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { logout } from "@store/auth/authSlice";
-import type { AppDispatch } from "@store/index";
-import { useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
+import { resolveCompanyLogo } from "@utils/companyLogo";
+import type { RootState } from "@store/index";
 
-const BottomBar: React.FC = () => {
-    const navigate = useNavigate();
-    const dispatch: AppDispatch = useDispatch();
+interface BottomBarProps {
+    isSidebarOpen: boolean;
+}
+
+/**
+ * Sidebar footer: shows which company the user is currently working in.
+ * Collapses to the logo alone when the sidebar is narrow.
+ */
+const BottomBar: React.FC<BottomBarProps> = ({ isSidebarOpen }) => {
+    const { data: systemSettings } = useSelector(
+        (state: RootState) => state.systemSettings
+    );
+    const company = systemSettings?.company;
+    const companyName = company?.companyName?.trim();
+    const logoSrc = resolveCompanyLogo(company?.companyLogo || company?.favicon);
+
     return (
-        <div className="bottom-0 px-6 py-2 bg-gray-50 border-t border-gray-200">
-            <div className="flex justify-between items-center">
-                <LogOut
-                    size={36}
-                    onClick={() => dispatch(logout())}
-                    className="text-purple-600 p-2 rounded-lg cursor-pointer bg-gray-200 hover:bg-gray-300 transition-all"
+        <div className="bg-gray-50 border-t border-gray-200 px-3 py-3">
+            <div
+                className={`flex items-center ${isSidebarOpen ? "" : "justify-center"
+                    }`}
+            >
+                <img
+                    src={logoSrc}
+                    alt={companyName || "Company logo"}
+                    title={!isSidebarOpen ? companyName : undefined}
+                    className="h-8 w-8 shrink-0 rounded-md border border-gray-200 bg-white object-contain p-0.5"
                 />
-                <Settings
-                    onClick={() => navigate("/admin/settings/company-settings")}
-                    size={36}
-                    className="text-purple-600 p-2 rounded-lg cursor-pointer bg-gray-200 hover:bg-gray-300 transition-all"
-                />
-                <UserCircle2
-                    onClick={() => navigate("/admin/settings/profile")}
-                    size={36}
-                    className="text-purple-600 p-2 rounded-lg cursor-pointer bg-gray-200 hover:bg-gray-300 transition-all"
-                />
+                {companyName && (
+                    <span
+                        className={`ml-2 break-words text-sm font-medium leading-tight text-gray-800 transition-opacity duration-300 ${isSidebarOpen ? "opacity-100" : "hidden opacity-0"
+                            }`}
+                    >
+                        {companyName}
+                    </span>
+                )}
             </div>
         </div>
     );
