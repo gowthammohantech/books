@@ -14,7 +14,7 @@ import { twMerge } from "tailwind-merge";
  *
  * Caveat during the token migration: tailwind-merge only knows conflicts
  * between utilities it recognises. Our transitional custom names
- * (`rounded-control`, `rounded-card`, `shadow-card`) are not in its group
+ * (`rounded-md`, `rounded-xl`, `shadow-sm`) are not in its group
  * table, so conflicts among those are not resolved. That resolves itself as
  * Stage 3d moves them onto the standard `rounded-*` / `shadow-*` scales.
  */

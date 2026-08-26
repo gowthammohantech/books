@@ -386,7 +386,7 @@ const MyTimesheet: React.FC = () => {
             idle: { text: 'All changes saved', cls: 'text-gray-400' },
             saving: { text: 'Saving…', cls: 'text-amber-600' },
             saved: { text: 'Saved', cls: 'text-green-600' },
-            error: { text: 'Save failed', cls: 'text-red-600' },
+            error: { text: 'Save failed', cls: 'text-destructive' },
         };
         const { text, cls } = map[saveState];
         return <span className={`text-xs ${cls}`}>{text}</span>;
@@ -427,7 +427,7 @@ const MyTimesheet: React.FC = () => {
                             if (!e.target.value) return;
                             setWeekStart(startOfWeekMonday(parseISODate(e.target.value)));
                         }}
-                        className="border border-gray-300 rounded-md px-3 py-1.5 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                        className="border border-gray-300 rounded-md px-3 py-1.5 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring"
                     />
                     <Button
                         variant="white"
@@ -441,7 +441,7 @@ const MyTimesheet: React.FC = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => setWeekStart(startOfWeekMonday(new Date()))}
-                        className="text-purple-600 text-xs underline"
+                        className="text-primary text-xs underline"
                     >
                         This week
                     </Button>
@@ -457,7 +457,7 @@ const MyTimesheet: React.FC = () => {
 
             {/* ── Rejection note ── */}
             {status === 'REJECTED' && week?.timesheet.rejectionNote && (
-                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+                <div className="bg-destructive-soft border border-destructive rounded-lg px-4 py-3 text-sm text-destructive">
                     <span className="font-semibold">Rejected:</span>{' '}
                     {week.timesheet.rejectionNote}
                 </div>
@@ -484,7 +484,7 @@ const MyTimesheet: React.FC = () => {
                             if (id) handleJoinProject(id);
                             e.target.value = '';
                         }}
-                        className="border border-gray-300 rounded-md px-3 py-1.5 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600 disabled:bg-gray-50 disabled:text-gray-400"
+                        className="border border-gray-300 rounded-md px-3 py-1.5 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring disabled:bg-gray-50 disabled:text-gray-400"
                     >
                         <option value="">
                             {availableProjects.length === 0
@@ -504,7 +504,7 @@ const MyTimesheet: React.FC = () => {
             </div>
 
             {/* ── Grid ── */}
-            <div className="bg-white border border-border rounded-control overflow-x-auto">
+            <div className="bg-white border border-border rounded-md overflow-x-auto">
                 {loading ? (
                     <div className="py-10">
                         <LoaderSpinner />
@@ -515,7 +515,7 @@ const MyTimesheet: React.FC = () => {
                     </div>
                 ) : (
                     <table className="min-w-full text-sm">
-                        <thead className="bg-gray-100 text-xs uppercase text-body">
+                        <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                             <tr>
                                 <th className="px-4 py-2 text-left sticky left-0 bg-gray-100 z-10" />
                                 <th
@@ -590,7 +590,7 @@ const MyTimesheet: React.FC = () => {
                                                     disabled={leavingProjectId === p.id}
                                                     title="Remove this project from your timesheet"
                                                     aria-label={`Remove ${p.name} from your timesheet`}
-                                                    className="mt-0.5 text-gray-300 hover:text-danger hover:bg-danger-soft disabled:opacity-50"
+                                                    className="mt-0.5 text-gray-300 hover:text-destructive hover:bg-destructive-soft disabled:opacity-50"
                                                 >
                                                     <Trash2 size={14} />
                                                 </Button>
@@ -619,7 +619,7 @@ const MyTimesheet: React.FC = () => {
                                                         onChange={(e) =>
                                                             updateCell(key, { hours: e.target.value })
                                                         }
-                                                        className="w-16 border border-gray-300 rounded px-2 py-1 text-center text-sm focus:outline-none focus:ring-1 focus:ring-purple-600 disabled:bg-gray-50 disabled:text-gray-500"
+                                                        className="w-16 border border-gray-300 rounded px-2 py-1 text-center text-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:bg-gray-50 disabled:text-gray-500"
                                                     />
                                                     <div className="flex items-center gap-1">
                                                         <label
@@ -635,7 +635,7 @@ const MyTimesheet: React.FC = () => {
                                                                         billable: e.target.checked,
                                                                     })
                                                                 }
-                                                                className="h-3 w-3 accent-purple-600"
+                                                                className="h-3 w-3 accent-primary"
                                                             />
                                                             Bill
                                                         </label>
@@ -649,7 +649,7 @@ const MyTimesheet: React.FC = () => {
                                                             title={cell.note || 'Add note'}
                                                             className={`p-0.5 rounded ${
                                                                 hasNote
-                                                                    ? 'text-purple-600'
+                                                                    ? 'text-primary'
                                                                     : 'text-gray-300 hover:text-gray-500'
                                                             }`}
                                                         >
@@ -670,7 +670,7 @@ const MyTimesheet: React.FC = () => {
                                                                     })
                                                                 }
                                                                 onBlur={() => setOpenNoteKey(null)}
-                                                                className="absolute z-20 -left-12 mt-1 w-40 border border-gray-300 rounded p-1 text-xs shadow-lg bg-white focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                                                className="absolute z-20 -left-12 mt-1 w-40 border border-gray-300 rounded p-1 text-xs shadow-lg bg-white focus:outline-none focus:ring-1 focus:ring-ring"
                                                             />
                                                         </div>
                                                     )}
@@ -697,7 +697,7 @@ const MyTimesheet: React.FC = () => {
                                         {fmtHours(colTotal(iso))}
                                     </td>
                                 ))}
-                                <td className="px-4 py-3 text-right font-mono text-purple-700">
+                                <td className="px-4 py-3 text-right font-mono text-primary">
                                     {fmtHoursWithUnit(grandTotal)}
                                 </td>
                             </tr>

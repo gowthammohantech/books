@@ -51,16 +51,16 @@ const ProviderCard: React.FC<ProviderCardProps> = ({
 }) => (
     <Card
         padded={false}
-        className={active ? 'border-purple-400 ring-1 ring-purple-200' : ''}
+        className={active ? 'border-primary ring-1 ring-accent' : ''}
         header={
             <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border">
                 <div className="flex items-center gap-3">
-                    <div className="bg-surface p-2 rounded-md flex items-center justify-center">{icon}</div>
-                    <h2 className="font-semibold text-base text-heading">{title}</h2>
+                    <div className="bg-muted p-2 rounded-md flex items-center justify-center">{icon}</div>
+                    <h2 className="font-semibold text-base text-foreground">{title}</h2>
                 </div>
                 {active ? (
                     <Badge color="primary">
-                        <span className="w-1.5 h-1.5 rounded-full bg-purple-600" /> Active
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary" /> Active
                     </Badge>
                 ) : configured ? (
                     <Badge color="success">
@@ -82,7 +82,7 @@ const ProviderCard: React.FC<ProviderCardProps> = ({
                     {configured ? 'Edit' : 'Configure'}
                 </Button>
                 <div className="flex items-center gap-2">
-                    <span className={`text-xs font-medium ${active ? 'text-purple-700' : 'text-body'}`}>
+                    <span className={`text-xs font-medium ${active ? 'text-primary' : 'text-muted-foreground'}`}>
                         {active ? 'Active' : 'Inactive'}
                     </span>
                     <Switch
@@ -96,10 +96,10 @@ const ProviderCard: React.FC<ProviderCardProps> = ({
         ) : undefined}
     >
         <div className="p-5">
-            <p className="text-sm text-body">{description}</p>
+            <p className="text-sm text-muted-foreground">{description}</p>
             {configured && summary && (
-                <p className="text-xs text-body mt-3 break-all" title={summary}>
-                    <span className="font-semibold text-heading">Sender:</span> {summary}
+                <p className="text-xs text-muted-foreground mt-3 break-all" title={summary}>
+                    <span className="font-semibold text-foreground">Sender:</span> {summary}
                 </p>
             )}
         </div>
@@ -406,10 +406,10 @@ const EmailSettings: React.FC = () => {
             {/* Send test email — validates the currently active provider */}
             {hasPermission(permissions, 'system-settings', 'edit') && (
                 <Card className="mb-6">
-                    <label className="block text-sm font-semibold text-heading mb-1" htmlFor="testEmail">
+                    <label className="block text-sm font-semibold text-foreground mb-1" htmlFor="testEmail">
                         Send a test email
                     </label>
-                    <p className="text-xs text-body mb-3">
+                    <p className="text-xs text-muted-foreground mb-3">
                         Sends a test message using your currently active provider. Save & activate a provider first.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
@@ -463,7 +463,7 @@ const EmailSettings: React.FC = () => {
                 />
 
                 <ProviderCard
-                    icon={<Send size={20} className="text-body" />}
+                    icon={<Send size={20} className="text-muted-foreground" />}
                     title="Resend"
                     description="Modern email API with high deliverability. Add your Resend API key and a verified sender domain."
                     configured={resendState.configured}
@@ -515,7 +515,7 @@ const EmailSettings: React.FC = () => {
                         {/* Reply-To Email (optional) */}
                         <div className="md:col-span-2">
                             <FormField
-                                label={<>Reply-To Email <span className="text-body font-normal">(optional)</span></>}
+                                label={<>Reply-To Email <span className="text-muted-foreground font-normal">(optional)</span></>}
                                 id="replyTo"
                                 type="email"
                                 name="replyTo"
@@ -524,7 +524,7 @@ const EmailSettings: React.FC = () => {
                                 placeholder="e.g., finance@example.com"
                                 error={formErrors.replyTo}
                             />
-                            <p className="text-xs text-body mt-1">
+                            <p className="text-xs text-muted-foreground mt-1">
                                 Replies go here. Use your real inbox while the From Email stays on the verified sending domain.
                             </p>
                         </div>
@@ -582,7 +582,7 @@ const EmailSettings: React.FC = () => {
                                 placeholder={modalHasSecret ? '•••••••• (saved — leave blank to keep)' : '••••••••'}
                                 error={formErrors.password}
                             />
-                            {modalHasSecret && <p className="text-xs text-body mt-1">A password is already saved. Leave blank to keep it, or enter a new one to replace it.</p>}
+                            {modalHasSecret && <p className="text-xs text-muted-foreground mt-1">A password is already saved. Leave blank to keep it, or enter a new one to replace it.</p>}
                         </div>
                         </>)}
 
@@ -600,7 +600,7 @@ const EmailSettings: React.FC = () => {
                                     placeholder={modalHasSecret ? '•••••••• (saved — leave blank to keep)' : 're_xxxxxxxxxxxxxxxx'}
                                     error={formErrors.apiKey}
                                 />
-                                <p className="text-xs text-body mt-1">
+                                <p className="text-xs text-muted-foreground mt-1">
                                     {modalHasSecret
                                         ? 'An API key is already saved. Leave blank to keep it, or enter a new one to replace it.'
                                         : 'Create a key at resend.com → API Keys. The From Email\'s domain must be verified in Resend.'}

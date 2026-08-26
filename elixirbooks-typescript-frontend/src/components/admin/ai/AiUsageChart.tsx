@@ -115,14 +115,14 @@ export default function AiUsageChart() {
           <button
             type="button"
             onClick={() => void load()}
-            className="text-xs text-purple-600 hover:underline"
+            className="text-xs text-primary hover:underline"
           >
             Refresh
           </button>
         </div>
 
         {error ? (
-          <div className="py-12 text-center text-sm text-red-600">{error}</div>
+          <div className="py-12 text-center text-sm text-destructive">{error}</div>
         ) : loading ? (
           <div className="py-12 text-center text-sm text-gray-400">Loading usage…</div>
         ) : !hasAnyCalls ? (

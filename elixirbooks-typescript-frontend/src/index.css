@@ -224,41 +224,6 @@
   --shadow-2xl: var(--shadow-2xl);
 
   --text-sm: 0.875rem;
-
-  /* -------------------------------------------------------------------------
-     COMPAT BRIDGE — delete in Stage 5.
-
-     Maps every token name from the previous design system onto its replacement
-     so the ~5,300 existing class usages keep resolving while components are
-     migrated family by family. Tailwind v4 does not error on an unknown
-     utility — it emits nothing — so deleting these before the class names are
-     migrated would silently unstyle the app rather than fail loudly.
-     `npm run lint:tokens` tracks what is left.
-  ------------------------------------------------------------------------- */
-  --color-heading: var(--foreground);
-  --color-body: var(--muted-foreground);
-  --color-surface: var(--muted);
-  --color-danger: var(--destructive);
-  --color-danger-soft: var(--destructive-soft);
-  --color-primary-hover: var(--primary);
-  --color-primary-soft: var(--accent);
-
-  --color-purple-50: var(--accent);
-  --color-purple-100: var(--accent);
-  --color-purple-200: var(--accent);
-  --color-purple-300: var(--chart-2);
-  --color-purple-400: var(--chart-3);
-  --color-purple-500: var(--chart-3);
-  --color-purple-600: var(--primary);
-  --color-purple-700: var(--chart-5);
-  --color-purple-800: var(--chart-5);
-  --color-purple-900: var(--chart-5);
-  --color-purple-950: var(--chart-5);
-
-  --radius-control: var(--radius-md);
-  --radius-card: var(--radius-xl);
-  --shadow-card: var(--shadow-sm);
-  --shadow-dropdown: var(--shadow-lg);
 }
 
 @keyframes fade-in-up {

@@ -284,7 +284,7 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Purchase ID */}
                     <div>
-                        <label className="block text-sm font-medium text-heading">Purchase ID <span className="text-danger">*</span></label>
+                        <label className="block text-sm font-medium text-foreground">Purchase ID <span className="text-destructive">*</span></label>
                         <SmartDropdown
                             items={purchaseOptions}
                             value={purchaseSearchKeyword}
@@ -293,7 +293,7 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
                             placeholder="Search or select purchase ID"
                             selectedItem={selectedPurchase}
                         />
-                        {errors.purchaseId && <p className="text-danger text-xs mt-1">{errors.purchaseId}</p>}
+                        {errors.purchaseId && <p className="text-destructive text-xs mt-1">{errors.purchaseId}</p>}
                     </div>
 
                     {/* Payment Date */}
@@ -304,7 +304,7 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
                             onChange={(newDate) => handleFormChange('paymentDate', newDate)}
                             isRequired
                         />
-                        {errors.paymentDate && <p className="text-danger text-xs mt-1">{errors.paymentDate}</p>}
+                        {errors.paymentDate && <p className="text-destructive text-xs mt-1">{errors.paymentDate}</p>}
                     </div>
 
                     {/* Reference Number */}
@@ -346,7 +346,7 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
                     />
                     {/* Payment Source */}
                     <div>
-                        <label htmlFor="sourceType" className="block text-sm font-medium text-heading">Payment Source <em className="text-danger">*</em></label>
+                        <label htmlFor="sourceType" className="block text-sm font-medium text-foreground">Payment Source <em className="text-destructive">*</em></label>
                         <SmartDropdown
                             items={paymentSourceSoptions}
                             value={sourceSearchKeyword}
@@ -356,11 +356,11 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
                             selectedItem={paymentSourceSoptions.find(source => source.id === formData.sourceType) || null}
                             serverside={false}
                         />
-                        {errors.sourceType && <p className="text-danger text-sm">{errors.sourceType}</p>}
+                        {errors.sourceType && <p className="text-destructive text-sm">{errors.sourceType}</p>}
                     </div>
                     {/* Bank account */}
                     <div className={`${formData.sourceType === 'BANK' ? '' : 'hidden'}`}>
-                        <label htmlFor="bankId" className="block text-sm font-medium text-heading">Debit From <em className="text-danger">*</em></label>
+                        <label htmlFor="bankId" className="block text-sm font-medium text-foreground">Debit From <em className="text-destructive">*</em></label>
                         <SmartDropdown
                             items={bankAccountOptions}
                             value={bankSearchKeyword}
@@ -369,11 +369,11 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
                             onSelect={(item) => handleBankAccountSelect(item as OptionType)}
                             selectedItem={bankAccountOptions.find(bank => bank.id === formData.bankId) || null}
                         />
-                        {errors.bankId && <p className="text-danger text-sm">{errors.bankId}</p>}
+                        {errors.bankId && <p className="text-destructive text-sm">{errors.bankId}</p>}
                     </div>
                     {/* Payment Mode */}
                     <div className={`${formData.sourceType === 'BANK' ? '' : 'hidden'}`}>
-                        <label className="block text-sm font-medium text-heading">Payment Mode <em className="text-danger">*</em></label>
+                        <label className="block text-sm font-medium text-foreground">Payment Mode <em className="text-destructive">*</em></label>
                         <SmartDropdown
                             items={paymentModeOptions}
                             value={paymentModeSearchKeyword}
@@ -383,7 +383,7 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
                             selectedItem={paymentModeOptions.find(paymentMode => paymentMode.id === formData.paymentMode) || null}
                             serverside={false}
                         />
-                        {errors.paymentMode && <p className="text-danger text-sm">{errors.paymentMode}</p>}
+                        {errors.paymentMode && <p className="text-destructive text-sm">{errors.paymentMode}</p>}
                     </div>
 
                     {/* Notes */}
@@ -403,20 +403,20 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
 
                     {/* Attachment */}
                     <div className="md:col-span-3">
-                        <label className="block text-sm font-medium text-heading">Attachment</label>
-                        <div className="mt-1 flex justify-center px-4 pt-5 pb-4 border-2 border-border border-dashed rounded-control">
+                        <label className="block text-sm font-medium text-foreground">Attachment</label>
+                        <div className="mt-1 flex justify-center px-4 pt-5 pb-4 border-2 border-border border-dashed rounded-md">
                             <div className="space-y-1 text-center">
-                                {/* <UploadCloud className="mx-auto h-12 w-12 text-body" /> */}
-                                <div className="flex text-sm text-body">
-                                    <label htmlFor="attachment" className="relative cursor-pointer bg-white rounded-control font-medium text-purple-600 hover:text-purple-600">
+                                {/* <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" /> */}
+                                <div className="flex text-sm text-muted-foreground">
+                                    <label htmlFor="attachment" className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary">
                                         <span>Browse files</span>
                                         <input id="attachment" name="attachment" type="file" className="sr-only" onChange={(e) => handleFormChange('attachment', e.target.files ? e.target.files[0] : null)} />
                                     </label>
                                 </div>
-                                <p className="text-xs text-body">Max size: 5MB</p>
+                                <p className="text-xs text-muted-foreground">Max size: 5MB</p>
                             </div>
                         </div>
-                        {formData.attachment && <p className="mt-2 text-sm text-body">Selected: {formData.attachment.name}</p>}
+                        {formData.attachment && <p className="mt-2 text-sm text-muted-foreground">Selected: {formData.attachment.name}</p>}
                     </div>
                 </div>
 

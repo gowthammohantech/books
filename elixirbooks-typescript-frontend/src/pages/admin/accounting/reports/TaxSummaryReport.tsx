@@ -99,13 +99,13 @@ export default function TaxSummaryReport() {
           onChange={(d) => setTo(d ? dateToYmdString(d) : '')}
           label="To"
         />
-        <button type="button" onClick={load} className="px-3 py-1 text-sm bg-purple-600 text-white rounded">
+        <button type="button" onClick={load} className="px-3 py-1 text-sm bg-primary text-white rounded">
           Reload
         </button>
       </div>
 
       {loading && <p className="text-gray-500">Loading…</p>}
-      {error && <p className="text-red-600">{error}</p>}
+      {error && <p className="text-destructive">{error}</p>}
 
       {data && (
         <div className="space-y-4 text-sm">
@@ -156,7 +156,7 @@ export default function TaxSummaryReport() {
             </div>
           </section>
 
-          <section className="border-2 border-purple-600 rounded p-4 bg-purple-100">
+          <section className="border-2 border-primary rounded p-4 bg-accent">
             <h2 className="font-medium mb-2">Net Tax Liability</h2>
             {renderRows(data.netTaxLiability)}
             <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2">

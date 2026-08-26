@@ -32,8 +32,8 @@ const statusConfig: Record<
   },
   cancelled: {
     label: 'Cancelled',
-    icon: <Ban size={14} className="ml-1 text-body" />,
-    className: 'bg-surface text-body',
+    icon: <Ban size={14} className="ml-1 text-muted-foreground" />,
+    className: 'bg-muted text-muted-foreground',
   },
   completed: {
     label: 'Completed',
@@ -52,8 +52,8 @@ const statusConfig: Record<
   },
   unpaid: {
     label: 'Unpaid',
-    icon: <Hourglass size={14} className="ml-1 text-danger" />,
-    className: 'bg-danger-soft text-danger',
+    icon: <Hourglass size={14} className="ml-1 text-destructive" />,
+    className: 'bg-destructive-soft text-destructive',
   },
   active: {
     label: 'Active',
@@ -62,8 +62,8 @@ const statusConfig: Record<
   },
   inactive: {
     label: 'Inactive',
-    icon: <Ban size={14} className="ml-1 text-danger" />,
-    className: 'bg-danger-soft text-danger',
+    icon: <Ban size={14} className="ml-1 text-destructive" />,
+    className: 'bg-destructive-soft text-destructive',
   },
   draft: {
     label: 'Draft',
@@ -77,8 +77,8 @@ const statusConfig: Record<
   },
   declined: {
     label: 'Declined',
-    icon: <Ban size={14} className="ml-1 text-danger" />,
-    className: 'bg-danger-soft text-danger',
+    icon: <Ban size={14} className="ml-1 text-destructive" />,
+    className: 'bg-destructive-soft text-destructive',
   },
   accepted: {
     label: 'Accepted',
@@ -90,13 +90,13 @@ const statusConfig: Record<
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   const config = statusConfig[status.toLowerCase()] || {
     label: status,
-    icon: <Clock size={14} className="ml-1 text-body" />,
-    className: 'bg-surface text-body',
+    icon: <Clock size={14} className="ml-1 text-muted-foreground" />,
+    className: 'bg-muted text-muted-foreground',
   };
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-control text-[13px] font-medium ${config.className}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[13px] font-medium ${config.className}`}
     >
       {config.label}
       {config.icon}

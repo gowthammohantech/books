@@ -17,12 +17,9 @@ const ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "
 const SRC = join(ROOT, "src");
 const SCANNED = /\.(tsx?|css)$/;
 
-/**
- * The dev token gallery renders legacy classes on purpose, side by side with
- * their replacements, so the compat bridge can be checked by eye. It is the
- * one file allowed to keep them.
- */
-const EXCLUDED = [/[\\/]pages[\\/]dev[\\/]TokenGallery\.tsx$/];
+// Nothing is exempt. The compat bridge has been deleted, so a legacy class
+// name no longer resolves to anything — every file must be clean.
+const EXCLUDED = [];
 
 /** Utility prefixes a color token can appear behind, e.g. `hover:text-heading`. */
 const PREFIXES =
@@ -59,7 +56,7 @@ const RULES = [
   // ---- Enabled by later stages, as each migration lands. ----
   {
     id: "purple-ramp",
-    enabled: false,
+    enabled: true,
     stage: "3a",
     hint: "purple-600 -> primary, purple-700 -> primary/90, purple-50/100/200 -> accent.",
     // The utility prefix has to be part of the match: the character before
@@ -72,14 +69,14 @@ const RULES = [
   },
   {
     id: "text-heading",
-    enabled: false,
+    enabled: true,
     stage: "3b",
     hint: "-heading -> -foreground",
     pattern: color("heading"),
   },
   {
     id: "text-body-bg-surface",
-    enabled: false,
+    enabled: true,
     stage: "3c",
     hint: "-body -> -muted-foreground, bg-surface -> bg-muted",
     pattern: new RegExp(
@@ -89,14 +86,21 @@ const RULES = [
   },
   {
     id: "legacy-radius-shadow",
-    enabled: false,
+    enabled: true,
     stage: "3d",
     hint: "rounded-control -> rounded-md, rounded-card -> rounded-xl, shadow-card -> shadow-sm, shadow-dropdown -> shadow-lg",
     pattern: /(?<![\w-])(?:rounded-(?:control|card)|shadow-(?:card|dropdown))(?![\w-])/g,
   },
   {
+    id: "legacy-brand-aliases",
+    enabled: true,
+    stage: "3f",
+    hint: "primary-soft -> accent, primary-hover -> primary/90 (compat-bridge aliases).",
+    pattern: color("primary-(?:soft|hover)"),
+  },
+  {
     id: "danger-token",
-    enabled: false,
+    enabled: true,
     stage: "3e",
     hint: "-danger / -danger-soft -> -destructive / -destructive/10",
     pattern: color("danger(?:-soft)?"),

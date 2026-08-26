@@ -118,13 +118,13 @@ const LeaveReport: React.FC = () => {
                     <DateInput label="From" value={from} onChange={setFrom} />
                     <DateInput label="To" value={to} onChange={setTo} />
                     <div>
-                        <label className="block text-sm font-medium text-heading pb-1">
+                        <label className="block text-sm font-medium text-foreground pb-1">
                             Employee
                         </label>
                         <select
                             value={employeeUserId}
                             onChange={(e) => setEmployeeUserId(e.target.value)}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring"
                         >
                             <option value="">All employees</option>
                             {staff.map((s) => (
@@ -135,13 +135,13 @@ const LeaveReport: React.FC = () => {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-heading pb-1">
+                        <label className="block text-sm font-medium text-foreground pb-1">
                             Leave Type
                         </label>
                         <select
                             value={leaveTypeId}
                             onChange={(e) => setLeaveTypeId(e.target.value)}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring"
                         >
                             <option value="">All leave types</option>
                             {leaveTypes.map((t) => (
@@ -170,7 +170,7 @@ const LeaveReport: React.FC = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div className="bg-white border border-gray-200 rounded-lg p-4">
                                 <div className="text-xs uppercase text-gray-500">Total Days</div>
-                                <div className="text-2xl font-semibold text-purple-700 mt-1">
+                                <div className="text-2xl font-semibold text-primary mt-1">
                                     {fmtDays(totals.days)}
                                 </div>
                             </div>
@@ -182,9 +182,9 @@ const LeaveReport: React.FC = () => {
                         <div className="px-4 py-3 border-b border-gray-200 text-sm font-semibold text-gray-700">
                             By Leave Type
                         </div>
-                        <div className="overflow-x-auto border border-border rounded-control">
+                        <div className="overflow-x-auto border border-border rounded-md">
                             <table className="w-full text-sm border-collapse">
-                                <thead className="bg-gray-100 text-xs uppercase text-body">
+                                <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                                     <tr>
                                         <th className="px-4 py-3 text-left border-b border-border">Leave Type</th>
                                         <th className="px-4 py-3 text-right border-b border-border">Days</th>
@@ -215,9 +215,9 @@ const LeaveReport: React.FC = () => {
                         <div className="px-4 py-3 border-b border-gray-200 text-sm font-semibold text-gray-700">
                             By Employee
                         </div>
-                        <div className="overflow-x-auto border border-border rounded-control">
+                        <div className="overflow-x-auto border border-border rounded-md">
                             <table className="w-full text-sm border-collapse">
-                                <thead className="bg-gray-100 text-xs uppercase text-body">
+                                <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                                     <tr>
                                         <th className="px-4 py-3 text-left border-b border-border">Employee</th>
                                         <th className="px-4 py-3 text-right border-b border-border">Days</th>

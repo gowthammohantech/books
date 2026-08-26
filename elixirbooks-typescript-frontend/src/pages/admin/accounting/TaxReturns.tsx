@@ -308,7 +308,7 @@ export default function TaxReturns() {
 
       <div className="flex flex-wrap items-end gap-4 mb-4 print:hidden">
         <div>
-          <label className="block text-sm font-medium text-heading pb-1">Return</label>
+          <label className="block text-sm font-medium text-foreground pb-1">Return</label>
           <select
             value={regime}
             onChange={(e) => setRegime(e.target.value as TaxRegime)}
@@ -348,14 +348,14 @@ export default function TaxReturns() {
         <>
           {regime === 'GST_INDIA' && (
             <Card title="India GST">
-              <p className="text-sm text-body">
+              <p className="text-sm text-muted-foreground">
                 India GST returns are filed on the dedicated GST filing pages.
               </p>
               <div className="mt-3 flex gap-3 text-sm">
-                <Link className="text-purple-600 hover:underline" to="/admin/accounting/reports/gstr-1">
+                <Link className="text-primary hover:underline" to="/admin/accounting/reports/gstr-1">
                   Go to GSTR-1
                 </Link>
-                <Link className="text-purple-600 hover:underline" to="/admin/accounting/reports/gstr-3b">
+                <Link className="text-primary hover:underline" to="/admin/accounting/reports/gstr-3b">
                   Go to GSTR-3B
                 </Link>
               </div>
@@ -364,7 +364,7 @@ export default function TaxReturns() {
 
           {!supported && regime !== 'GST_INDIA' && (
             <Card title={REGIME_LABELS[regime]}>
-              <p className="text-sm text-body">
+              <p className="text-sm text-muted-foreground">
                 No period tax return is available for the current tax regime. Configure a
                 supported regime (UK VAT, AU BAS, NZ GST or EU VAT) in Company Settings, or
                 pick one above.
@@ -399,9 +399,9 @@ export default function TaxReturns() {
                         No cross-border reverse-charge sales in period.
                       </p>
                     ) : (
-                      <div className="overflow-x-auto border border-border rounded-control">
+                      <div className="overflow-x-auto border border-border rounded-md">
                         <table className="w-full text-sm border-collapse">
-                          <thead className="bg-gray-100 text-xs uppercase text-body">
+                          <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                             <tr>
                               <th className="px-4 py-3 text-left border-b border-border">Country</th>
                               <th className="px-4 py-3 text-left border-b border-border">Customer VAT #</th>
@@ -436,10 +436,10 @@ export default function TaxReturns() {
 
                   {ossThreshold && (
                     <div
-                      className={`rounded-card border px-4 py-3 text-sm ${
+                      className={`rounded-xl border px-4 py-3 text-sm ${
                         ossThreshold.exceeded
                           ? 'border-warning bg-warning-soft text-warning'
-                          : 'border-border bg-surface text-body'
+                          : 'border-border bg-muted text-muted-foreground'
                       }`}
                     >
                       <span className="font-medium">
@@ -467,9 +467,9 @@ export default function TaxReturns() {
                         No B2C cross-border EU sales in period.
                       </p>
                     ) : (
-                      <div className="overflow-x-auto border border-border rounded-control">
+                      <div className="overflow-x-auto border border-border rounded-md">
                         <table className="w-full text-sm border-collapse">
-                          <thead className="bg-gray-100 text-xs uppercase text-body">
+                          <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                             <tr>
                               <th className="px-4 py-3 text-left border-b border-border">Country</th>
                               <th className="px-4 py-3 text-right border-b border-border">Rate</th>
@@ -529,9 +529,9 @@ function BoxTable({
 }) {
   return (
     <Card title={title}>
-      <div className="overflow-x-auto border border-border rounded-control">
+      <div className="overflow-x-auto border border-border rounded-md">
         <table className="w-full text-sm border-collapse">
-          <thead className="bg-gray-100 text-xs uppercase text-body">
+          <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
             <tr>
               <th className="px-4 py-3 text-left border-b border-border w-24">Box</th>
               <th className="px-4 py-3 text-left border-b border-border">Description</th>

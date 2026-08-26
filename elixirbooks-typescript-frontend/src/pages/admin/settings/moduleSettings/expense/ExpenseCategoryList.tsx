@@ -215,13 +215,13 @@ const ExpenseCategoryList: React.FC = () => {
 
                 {!isLoading && expenseCategories && expenseCategories.length === 0 && (
                     <tr>
-                        <td colSpan={8} className="text-center text-heading py-2 font-semibold">No Records Found</td>
+                        <td colSpan={8} className="text-center text-foreground py-2 font-semibold">No Records Found</td>
                     </tr>
                 )}
 
                 {isLoading && (
                     <tr key="table-loader">
-                        <td className="text-center py-2 text-heading font-semibold" colSpan={8}>
+                        <td className="text-center py-2 text-foreground font-semibold" colSpan={8}>
                             <LoaderSpinner />
                         </td>
                     </tr>

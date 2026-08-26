@@ -161,20 +161,20 @@ const PurchaseReport: React.FC = () => {
                     <input type="text" name="search" id="search" placeholder="Search..."
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
-                        className="border border-gray-300 rounded-md px-4 py-2  text-gray-950  focus:outline-none focus:ring-2 focus:ring-purple-600" />
+                        className="border border-gray-300 rounded-md px-4 py-2  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring" />
                 </div>
                 <div>
                     <DateRangePicker
                         value={dateRange}
                         onChange={handleRangeInputChange}
                     />
-                    {dateRangeError && <p className="text-red-500 text-sm">{dateRangeError}</p>}
+                    {dateRangeError && <p className="text-destructive text-sm">{dateRangeError}</p>}
                 </div>
                 {/* clear filters */}
                 <div>
                     <button
                         onClick={clearAllFilters}
-                        className="border border-gray-300 rounded-md px-4 py-2  text-gray-950  focus:outline-none focus:ring-2 focus:ring-purple-600 cursor-pointer"
+                        className="border border-gray-300 rounded-md px-4 py-2  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
                     >
                         Clear Filters
                     </button>
@@ -183,7 +183,7 @@ const PurchaseReport: React.FC = () => {
                     <select
                         value={limit}
                         onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                        className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                        className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     >
                         {[10, 25, 50].map((num) => (
                             <option className="text-gray-950 " key={num} value={num}>{num} / page</option>

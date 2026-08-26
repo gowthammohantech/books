@@ -25,8 +25,8 @@ const modeConfig: Record<
   },
   cheque: {
     label: 'Cheque',
-    icon: <CreditCard size={14} className="ml-1 text-purple-600" />,
-    className: 'bg-primary-soft text-purple-600',
+    icon: <CreditCard size={14} className="ml-1 text-primary" />,
+    className: 'bg-accent text-primary',
   },
   bank: {
     label: 'Bank',
@@ -59,13 +59,13 @@ const PaymentModeBadge: React.FC<PaymentModeBadgeProps> = ({ mode }) => {
   const normalized = mode.toLowerCase().trim();
   const config = modeConfig[normalized] || {
     label: mode,
-    icon: <HelpCircle size={14} className="ml-1 text-body" />,
-    className: 'bg-surface text-body',
+    icon: <HelpCircle size={14} className="ml-1 text-muted-foreground" />,
+    className: 'bg-muted text-muted-foreground',
   };
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-control text-[13px] font-medium ${config.className}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[13px] font-medium ${config.className}`}
     >
       {config.label}
       {config.icon}

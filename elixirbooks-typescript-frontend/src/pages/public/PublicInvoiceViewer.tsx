@@ -32,7 +32,7 @@ export default function PublicInvoiceViewer() {
   }, [token]);
 
   if (loading) return <div className="p-6 text-gray-600">Loading…</div>;
-  if (error) return <div className="p-6 text-red-600">{error}</div>;
+  if (error) return <div className="p-6 text-destructive">{error}</div>;
   if (!data) return <div className="p-6 text-gray-600">No data.</div>;
 
   const items = Array.isArray(data.items)
@@ -147,7 +147,7 @@ export default function PublicInvoiceViewer() {
                   href={o.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-purple-600 text-white text-sm font-medium hover:bg-purple-700"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90"
                 >
                   Pay with {o.name}
                 </a>

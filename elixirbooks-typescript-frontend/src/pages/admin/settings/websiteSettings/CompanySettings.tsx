@@ -365,7 +365,7 @@ const CompanySettings: React.FC = () => {
         }
     };
 
-    const sectionHeaderClass = "flex items-center gap-2 px-5 py-4 border-b border-border text-lg font-semibold text-heading";
+    const sectionHeaderClass = "flex items-center gap-2 px-5 py-4 border-b border-border text-lg font-semibold text-foreground";
 
     return (
         <div className="p-6 max-w-4xl mx-auto">
@@ -390,7 +390,7 @@ const CompanySettings: React.FC = () => {
                     padded={false}
                     header={
                         <div className={sectionHeaderClass}>
-                            <Info className="w-5 h-5 text-purple-600" />
+                            <Info className="w-5 h-5 text-primary" />
                             General Information
                         </div>
                     }
@@ -474,7 +474,7 @@ const CompanySettings: React.FC = () => {
                     padded={false}
                     header={
                         <div className={sectionHeaderClass}>
-                            <Info className="w-5 h-5 text-purple-600" />
+                            <Info className="w-5 h-5 text-primary" />
                             Tax Identifiers
                         </div>
                     }
@@ -538,10 +538,10 @@ const CompanySettings: React.FC = () => {
                         {/* EU options — relevant when the tax regime is EU VAT */}
                         <div className="col-span-1 md:col-span-2 flex items-start justify-between gap-4 border-t border-border pt-4 mt-2">
                             <div>
-                                <label htmlFor="ossRegistered" className="block text-sm font-medium text-heading">
+                                <label htmlFor="ossRegistered" className="block text-sm font-medium text-foreground">
                                     Registered for EU OSS
                                 </label>
-                                <p className="text-xs text-body mt-1">
+                                <p className="text-xs text-muted-foreground mt-1">
                                     Charge the destination member-state VAT rate on B2C cross-border sales and report via the OSS return.
                                 </p>
                             </div>
@@ -553,10 +553,10 @@ const CompanySettings: React.FC = () => {
                         </div>
                         <div className="col-span-1 md:col-span-2 flex items-start justify-between gap-4">
                             <div>
-                                <label htmlFor="viesValidationEnabled" className="block text-sm font-medium text-heading">
+                                <label htmlFor="viesValidationEnabled" className="block text-sm font-medium text-foreground">
                                     Validate EU VAT numbers online via VIES
                                 </label>
-                                <p className="text-xs text-body mt-1">
+                                <p className="text-xs text-muted-foreground mt-1">
                                     Off by default. When on, Elixir Books contacts the EU VIES service to verify VAT numbers; it fails open (never blocks a save) and stays fully offline when off.
                                 </p>
                             </div>
@@ -574,7 +574,7 @@ const CompanySettings: React.FC = () => {
                     padded={false}
                     header={
                         <div className={sectionHeaderClass}>
-                            <Landmark className="w-5 h-5 text-purple-600" />
+                            <Landmark className="w-5 h-5 text-primary" />
                             Banking
                         </div>
                     }
@@ -582,10 +582,10 @@ const CompanySettings: React.FC = () => {
                     <div className="p-5 grid grid-cols-1 gap-6">
                         <div className="flex items-start justify-between gap-4">
                             <div>
-                                <label htmlFor="bankAutoPostEnabled" className="block text-sm font-medium text-heading">
+                                <label htmlFor="bankAutoPostEnabled" className="block text-sm font-medium text-foreground">
                                     Auto-post high-confidence bank matches
                                 </label>
-                                <p className="text-xs text-body mt-1">
+                                <p className="text-xs text-muted-foreground mt-1">
                                     When on, near-certain matches (exact amount + known party, or a payee you've approved before) post straight to the ledger without appearing in the approval queue. You can undo any auto-posted entry. This bypasses the approval queue.
                                 </p>
                             </div>
@@ -603,21 +603,21 @@ const CompanySettings: React.FC = () => {
                     padded={false}
                     header={
                         <div className={sectionHeaderClass}>
-                            <ListChecks className="w-5 h-5 text-purple-600" />
+                            <ListChecks className="w-5 h-5 text-primary" />
                             Item Picker Display
                         </div>
                     }
                 >
                     <div className="p-5 grid grid-cols-1 gap-6">
-                        <p className="text-xs text-body -mt-2">
+                        <p className="text-xs text-muted-foreground -mt-2">
                             Choose which fields show in the product dropdown when adding items to an invoice.
                         </p>
                         <div className="flex items-start justify-between gap-4">
                             <div>
-                                <label htmlFor="itemPickerShowRate" className="block text-sm font-medium text-heading">
+                                <label htmlFor="itemPickerShowRate" className="block text-sm font-medium text-foreground">
                                     Show rate
                                 </label>
-                                <p className="text-xs text-body mt-1">
+                                <p className="text-xs text-muted-foreground mt-1">
                                     Display the selling price next to each product in the item picker.
                                 </p>
                             </div>
@@ -629,10 +629,10 @@ const CompanySettings: React.FC = () => {
                         </div>
                         <div className="flex items-start justify-between gap-4">
                             <div>
-                                <label htmlFor="itemPickerShowStock" className="block text-sm font-medium text-heading">
+                                <label htmlFor="itemPickerShowStock" className="block text-sm font-medium text-foreground">
                                     Show stock quantity
                                 </label>
-                                <p className="text-xs text-body mt-1">
+                                <p className="text-xs text-muted-foreground mt-1">
                                     Display available quantity / low-stock badges for inventory-tracked products. Out-of-stock blocking (if enabled) always applies regardless of this setting.
                                 </p>
                             </div>
@@ -644,10 +644,10 @@ const CompanySettings: React.FC = () => {
                         </div>
                         <div className="flex items-start justify-between gap-4">
                             <div>
-                                <label htmlFor="itemPickerShowImage" className="block text-sm font-medium text-heading">
+                                <label htmlFor="itemPickerShowImage" className="block text-sm font-medium text-foreground">
                                     Show image
                                 </label>
-                                <p className="text-xs text-body mt-1">
+                                <p className="text-xs text-muted-foreground mt-1">
                                     Display a small thumbnail next to each product name in the item picker.
                                 </p>
                             </div>
@@ -665,7 +665,7 @@ const CompanySettings: React.FC = () => {
                     padded={false}
                     header={
                         <div className={sectionHeaderClass}>
-                            <ImageIcon className="w-5 h-5 text-purple-600" />
+                            <ImageIcon className="w-5 h-5 text-primary" />
                             Company Images
                         </div>
                     }
@@ -673,9 +673,9 @@ const CompanySettings: React.FC = () => {
                     <div className="p-5 space-y-4">
                         <div className="flex flex-wrap items-center justify-between gap-4 py-4 border-b border-border">
                             <div>
-                                <h3 className="font-semibold text-heading">Logo</h3>
-                                <p className="text-sm text-body font-semibold">Upload logo of your company</p>
-                                {formErrors.siteLogo && <span className="text-danger text-xs">{formErrors.siteLogo}</span>}
+                                <h3 className="font-semibold text-foreground">Logo</h3>
+                                <p className="text-sm text-muted-foreground font-semibold">Upload logo of your company</p>
+                                {formErrors.siteLogo && <span className="text-destructive text-xs">{formErrors.siteLogo}</span>}
                             </div>
                             <ImageCropperUpload
                                 value={companyFormData.siteLogo_preview_url ?? undefined}
@@ -689,13 +689,13 @@ const CompanySettings: React.FC = () => {
                                     }));
                                 }}
                             />
-                            <p className="text-xs text-body mt-1 font-semibold">Recommended size is 250 px * 100 px</p>
+                            <p className="text-xs text-muted-foreground mt-1 font-semibold">Recommended size is 250 px * 100 px</p>
                         </div>
                         <div className="flex flex-wrap items-center justify-between gap-4 py-4 border-b border-border">
                             <div>
-                                <h3 className="font-semibold text-heading">Favicon</h3>
-                                <p className="text-sm text-body font-semibold">Upload favicon of your company</p>
-                                {formErrors.favicon && <span className="text-danger text-xs">{formErrors.favicon}</span>}
+                                <h3 className="font-semibold text-foreground">Favicon</h3>
+                                <p className="text-sm text-muted-foreground font-semibold">Upload favicon of your company</p>
+                                {formErrors.favicon && <span className="text-destructive text-xs">{formErrors.favicon}</span>}
                             </div>
                             <ImageCropperUpload
                                 value={companyFormData.favicon_preview_url ?? undefined}
@@ -709,13 +709,13 @@ const CompanySettings: React.FC = () => {
                                     }));
                                 }}
                             />
-                            <p className="text-xs text-body mt-1 font-semibold">Recommended size is 32 px * 32 px</p>
+                            <p className="text-xs text-muted-foreground mt-1 font-semibold">Recommended size is 32 px * 32 px</p>
                         </div>
                         <div className="flex flex-wrap items-center justify-between gap-4 py-4 border-b-0">
                             <div>
-                                <h3 className="font-semibold text-heading">Company Icon</h3>
-                                <p className="text-sm text-body font-semibold">Upload icon of your company</p>
-                                {formErrors.companyLogo && <span className="text-danger text-xs">{formErrors.companyLogo}</span>}
+                                <h3 className="font-semibold text-foreground">Company Icon</h3>
+                                <p className="text-sm text-muted-foreground font-semibold">Upload icon of your company</p>
+                                {formErrors.companyLogo && <span className="text-destructive text-xs">{formErrors.companyLogo}</span>}
                             </div>
                             <ImageCropperUpload
                                 value={companyFormData.companyLogo_preview_url ?? undefined}
@@ -729,7 +729,7 @@ const CompanySettings: React.FC = () => {
                                     }));
                                 }}
                             />
-                            <p className="text-xs text-body mt-1 font-semibold">Recommended size is 100 px * 100 px</p>
+                            <p className="text-xs text-muted-foreground mt-1 font-semibold">Recommended size is 100 px * 100 px</p>
                         </div>
                     </div>
                 </Card>
@@ -739,7 +739,7 @@ const CompanySettings: React.FC = () => {
                     padded={false}
                     header={
                         <div className={sectionHeaderClass}>
-                            <MapPin className="w-5 h-5 text-purple-600" />
+                            <MapPin className="w-5 h-5 text-primary" />
                             Address Information
                         </div>
                     }

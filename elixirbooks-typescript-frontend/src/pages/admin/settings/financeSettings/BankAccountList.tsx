@@ -327,14 +327,14 @@ const BankAccountList: FC = () => {
                 <button
                     type="button"
                     onClick={() => handleViewChange(false)}
-                    className={`px-4 py-1.5 text-sm font-medium rounded ${!showDeleted ? 'bg-purple-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                    className={`px-4 py-1.5 text-sm font-medium rounded ${!showDeleted ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'}`}
                 >
                     Active
                 </button>
                 <button
                     type="button"
                     onClick={() => handleViewChange(true)}
-                    className={`px-4 py-1.5 text-sm font-medium rounded ${showDeleted ? 'bg-purple-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                    className={`px-4 py-1.5 text-sm font-medium rounded ${showDeleted ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'}`}
                 >
                     Deleted
                 </button>
@@ -373,7 +373,7 @@ const BankAccountList: FC = () => {
                             formatMoney(acc.currentBalance ?? 0, acc.currencyCode),
                             acc.IFSCCode,
                             showDeleted
-                                ? <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700">Deleted</span>
+                                ? <span className="inline-flex items-center rounded-full bg-destructive-soft px-2.5 py-0.5 text-xs font-medium text-destructive">Deleted</span>
                                 : <span onClick={(e) => e.stopPropagation()}><Switch name={`status-${acc.id}`} checked={acc.status} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStatusChange(acc.id, e.target.checked)} disabled={!hasPermission(permissions, 'finance-settings', 'edit')} /></span>,
                         ]}
                         actions={tableActions}
@@ -382,13 +382,13 @@ const BankAccountList: FC = () => {
 
                 {!isLoading && bankAccounts && bankAccounts.length === 0 &&
                     <tr>
-                        <td colSpan={9} className="text-center py-4 text-body font-medium">{showDeleted ? 'No Deleted Bank Accounts Found' : 'No Bank Accounts Found'}</td>
+                        <td colSpan={9} className="text-center py-4 text-muted-foreground font-medium">{showDeleted ? 'No Deleted Bank Accounts Found' : 'No Bank Accounts Found'}</td>
                     </tr>
                 }
 
                 {isLoading && (
                     <tr key="table-loader">
-                        <td className="text-center py-2 text-heading font-semibold" colSpan={9}>
+                        <td className="text-center py-2 text-foreground font-semibold" colSpan={9}>
                             <LoaderSpinner />
                         </td>
                     </tr>
@@ -512,13 +512,13 @@ const BankAccountList: FC = () => {
                                 value={formData.currencyCode || defaultCurrencyCode}
                                 onChange={handleCurrencyChange}
                             />
-                            {formErrors.currencyCode && <p className="text-sm text-danger mt-1">{formErrors.currencyCode}</p>}
+                            {formErrors.currencyCode && <p className="text-sm text-destructive mt-1">{formErrors.currencyCode}</p>}
                         </div>
                     </div>
 
                     {/* Status Switch */}
                     <div className="flex items-center gap-3 pt-2">
-                        <label htmlFor="status" className="font-medium text-sm text-heading">Status</label>
+                        <label htmlFor="status" className="font-medium text-sm text-foreground">Status</label>
                         <Switch name="status" checked={formData.status ?? false} onChange={handleChange} />
                     </div>
 

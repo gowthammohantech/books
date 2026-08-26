@@ -205,12 +205,12 @@ const RolesList: React.FC = () => {
                     placeholder="Search..."
                     value={search}
                     onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 />
                 <select
                     value={limit}
                     onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                    className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 >
                     {[10, 25, 50].map((num) => (
                         <option className="text-gray-950 " key={num} value={num}>{num} / page</option>
@@ -294,14 +294,14 @@ const RolesList: React.FC = () => {
                 <form onSubmit={handleRoleFormSubmit}>
                     <div className="flex">
                         <div className="w-full mr-4">
-                            <label className="block text-gray-600 font-semibold mb-2">Role Name <em className="text-red-500 text-sm">*</em></label>
+                            <label className="block text-gray-600 font-semibold mb-2">Role Name <em className="text-destructive text-sm">*</em></label>
                             <input
                                 type="text"
                                 value={formData.roleName}
                                 onChange={(e) => setFormData({ ...formData, roleName: e.target.value })}
-                                className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                             />
-                            {formErrors.roleName && <span className="text-red-500 text-sm">{formErrors.roleName}</span>}
+                            {formErrors.roleName && <span className="text-destructive text-sm">{formErrors.roleName}</span>}
                         </div>
                     </div>
                     {/* submit */}

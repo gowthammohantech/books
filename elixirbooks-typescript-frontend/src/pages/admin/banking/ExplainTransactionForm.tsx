@@ -37,7 +37,7 @@ const TAX_OPTIONS: { value: TaxTreatment; label: string }[] = [
 const STATUS_PILL: Record<BankTransactionRow['explainStatus'], { label: string; cls: string }> = {
     EXPLAINED: { label: 'Explained — posted', cls: 'bg-success-soft text-success' },
     FOR_APPROVAL: { label: 'Awaiting approval', cls: 'bg-warning-soft text-warning' },
-    UNEXPLAINED: { label: 'Unexplained', cls: 'bg-surface text-body' },
+    UNEXPLAINED: { label: 'Unexplained', cls: 'bg-muted text-muted-foreground' },
 };
 
 const DEPRECIATION_OPTIONS = [
@@ -395,7 +395,7 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
         const headline = exp?.label ?? (relatedLabel ? `Linked: ${relatedLabel}` : 'Linked to source');
 
         return (
-            <div className="rounded-card border border-success bg-success-soft p-4 space-y-2">
+            <div className="rounded-xl border border-success bg-success-soft p-4 space-y-2">
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                         <div className="inline-flex items-center gap-2">
@@ -417,7 +417,7 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
                         <div className="mt-0.5 text-xs text-success">
                             {subParts.join(' • ')}
                         </div>
-                        <p className="mt-1 text-xs text-body">Created by a payment recorded at the source document — edit it there, or un-explain to convert this into a normal bank line.</p>
+                        <p className="mt-1 text-xs text-muted-foreground">Created by a payment recorded at the source document — edit it there, or un-explain to convert this into a normal bank line.</p>
                     </div>
                     <Button
                         type="button"
@@ -440,15 +440,15 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
     const fields = selectedDef?.fields ?? [];
 
     return (
-        <div className="space-y-4 rounded-card border border-border bg-white p-4">
+        <div className="space-y-4 rounded-xl border border-border bg-white p-4">
             <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-semibold text-heading">Explain Transaction</h3>
+                <h3 className="text-sm font-semibold text-foreground">Explain Transaction</h3>
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-semibold uppercase tracking-wide ${STATUS_PILL[txn.explainStatus].cls}`}>
                     {STATUS_PILL[txn.explainStatus].label}
                 </span>
             </div>
             {txn.explanation && (
-                <p className="text-xs text-body">
+                <p className="text-xs text-muted-foreground">
                     {[txn.explanation.label,
                       [txn.explanation.accountCode, txn.explanation.accountName].filter(Boolean).join(' ')]
                         .filter(Boolean).join(' → ')}
@@ -457,7 +457,7 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
 
             {/* Transaction Type */}
             {typesLoading ? (
-                <div className="text-sm text-body">Loading types…</div>
+                <div className="text-sm text-muted-foreground">Loading types…</div>
             ) : (
                 <Select
                     label="Transaction type"
@@ -476,8 +476,8 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
                     {fields.includes('category') && (
                         catsLoading ? (
                             <div>
-                                <label className="block text-sm font-medium text-heading mb-1">Category</label>
-                                <div className="text-sm text-body">Loading categories…</div>
+                                <label className="block text-sm font-medium text-foreground mb-1">Category</label>
+                                <div className="text-sm text-muted-foreground">Loading categories…</div>
                             </div>
                         ) : (
                             <Select
@@ -595,8 +595,8 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
 
                     {/* Asset fields */}
                     {fields.includes('assetFields') && (
-                        <div className="space-y-3 rounded-control bg-surface border border-border p-3">
-                            <p className="text-xs font-medium text-body uppercase tracking-wide">Asset details</p>
+                        <div className="space-y-3 rounded-md bg-muted border border-border p-3">
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Asset details</p>
 
                             <FormField
                                 label="Asset type"

@@ -262,7 +262,7 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ vehicleData = null }) => {
         : null;
 
     return (
-        <div className="p-6 bg-white rounded-card shadow-card border border-border overflow-x-auto">
+        <div className="p-6 bg-white rounded-xl shadow-sm border border-border overflow-x-auto">
             <PageHeader title={isEditMode ? 'Edit Vehicle' : 'Add Vehicle'}>
                 <Button
                     variant="white"
@@ -287,7 +287,7 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ vehicleData = null }) => {
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-6">
                         <div className="sm:col-span-3">
                             <label className="block text-sm font-medium text-gray-700">
-                                Customer <span className="text-red-500">*</span>
+                                Customer <span className="text-destructive">*</span>
                             </label>
                             <SmartDropdown
                                 items={customers}
@@ -307,7 +307,7 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ vehicleData = null }) => {
                                 loading={isLoadingCustomers}
                             />
                             {formErrors.customerId && (
-                                <p className="mt-1 text-sm text-red-500">{formErrors.customerId}</p>
+                                <p className="mt-1 text-sm text-destructive">{formErrors.customerId}</p>
                             )}
                         </div>
 
@@ -398,9 +398,9 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ vehicleData = null }) => {
                                 placeholder="Enter any notes about this vehicle"
                                 maxLength={500}
                                 rows={3}
-                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-600 focus:border-purple-600 sm:text-sm text-gray-950"
+                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-ring focus:border-primary sm:text-sm text-gray-950"
                             />
-                            {formErrors.notes && <p className="mt-1 text-sm text-red-500">{formErrors.notes}</p>}
+                            {formErrors.notes && <p className="mt-1 text-sm text-destructive">{formErrors.notes}</p>}
                         </div>
 
                         <div className="sm:col-span-2">

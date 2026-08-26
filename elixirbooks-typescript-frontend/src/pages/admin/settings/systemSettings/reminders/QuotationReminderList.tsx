@@ -54,7 +54,7 @@ const QuotationReminderList: React.FC<Props> = ({ reminders, onSuccess, isEditin
             <Card
                 padded={false}
                 header={
-                    <div className="px-5 py-4 border-b border-border text-lg font-semibold text-heading">
+                    <div className="px-5 py-4 border-b border-border text-lg font-semibold text-foreground">
                         Quotation Reminders
                     </div>
                 }

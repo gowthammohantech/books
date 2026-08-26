@@ -237,13 +237,13 @@ const CurrencyList: React.FC = () => {
                 ))}
                 {!isLoading && !currencies.length &&
                     <tr>
-                        <td colSpan={6} className="text-center text-body py-2  font-semibold">No currencies found</td>
+                        <td colSpan={6} className="text-center text-muted-foreground py-2  font-semibold">No currencies found</td>
                     </tr>
                 }
 
                 {isLoading && (
                     <tr key="table-loader">
-                        <td className="text-center py-2 text-heading  font-semibold" colSpan={7}>
+                        <td className="text-center py-2 text-foreground  font-semibold" colSpan={7}>
                             <LoaderSpinner />
                         </td>
                     </tr>

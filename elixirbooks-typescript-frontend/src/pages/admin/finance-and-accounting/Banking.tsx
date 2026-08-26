@@ -164,7 +164,7 @@ const Banking: React.FC = () => {
                             <div className="absolute bg-white border border-gray-200 rounded-md z-10">
                                 <button
                                     className={`w-full text-left px-4 py-2 text-sm rounded-t-md font-medium transition ${viewMode === "30days"
-                                        ? "bg-purple-600 text-white"
+                                        ? "bg-primary text-white"
                                         : "text-gray-700 hover:bg-gray-100"
                                         }`}
                                     onClick={() => {
@@ -176,7 +176,7 @@ const Banking: React.FC = () => {
                                 </button>
                                 <button
                                     className={`w-full text-left px-4 py-2 text-sm rounded-b-md font-medium transition ${viewMode === "12months"
-                                        ? "bg-purple-600 text-white"
+                                        ? "bg-primary text-white"
                                         : "text-gray-700 hover:bg-gray-100"
                                         }`}
                                     onClick={() => {
@@ -224,14 +224,14 @@ const Banking: React.FC = () => {
                     className="flex items-center cursor-pointer space-x-2 p-2 rounded"
                     onClick={() => setShowChart(!showChart)}
                 >
-                    <TrendingUp className="w-5 h-5 text-purple-600" />
-                    <span className="text-purple-600 font-medium">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    <span className="text-primary font-medium">
                         {showChart ? "Hide Chart" : "Show Chart"}
                     </span>
                     {showChart ? (
-                        <ChevronUp className="w-4 h-4 text-purple-600" />
+                        <ChevronUp className="w-4 h-4 text-primary" />
                     ) : (
-                        <ChevronDown className="w-4 h-4 text-purple-600" />
+                        <ChevronDown className="w-4 h-4 text-primary" />
                     )}
                 </div>
 

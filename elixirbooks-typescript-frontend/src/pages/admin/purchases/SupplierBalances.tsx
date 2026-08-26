@@ -101,9 +101,9 @@ export default function SupplierBalances() {
             <LoaderSpinner />
           </div>
         ) : (
-          <div className="overflow-x-auto border border-border rounded-control">
+          <div className="overflow-x-auto border border-border rounded-md">
             <table className="w-full text-sm border-collapse">
-              <thead className="bg-gray-100 text-xs uppercase text-body">
+              <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 text-left border-b border-border">Supplier</th>
                   <th className="px-4 py-3 text-right border-b border-border">Credit (Bills)</th>
@@ -122,10 +122,10 @@ export default function SupplierBalances() {
                         className="border-b border-border cursor-pointer hover:bg-gray-50"
                         onClick={() => navigate(`/admin/contacts/${row.contactId}`)}
                       >
-                        <td className="px-4 py-3 text-purple-600 hover:underline">
+                        <td className="px-4 py-3 text-primary hover:underline">
                           {row.name || '—'}
                         </td>
-                        <td className="px-4 py-3 text-right text-danger">{money(row.bills)}</td>
+                        <td className="px-4 py-3 text-right text-destructive">{money(row.bills)}</td>
                         <td className="px-4 py-3 text-right text-success">{money(row.paymentsAndReturns)}</td>
                         <td className="px-4 py-3 text-right">{money(row.balance)}</td>
                       </tr>
@@ -133,7 +133,7 @@ export default function SupplierBalances() {
                     {data && (
                       <tr className="font-semibold border-t-2 border-border">
                         <td className="px-4 py-3">TOTAL</td>
-                        <td className="px-4 py-3 text-right text-danger">{money(data.totals.bills)}</td>
+                        <td className="px-4 py-3 text-right text-destructive">{money(data.totals.bills)}</td>
                         <td className="px-4 py-3 text-right text-success">{money(data.totals.paymentsAndReturns)}</td>
                         <td className="px-4 py-3 text-right">{money(data.totals.balance)}</td>
                       </tr>

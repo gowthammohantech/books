@@ -157,10 +157,10 @@ const MyMoney: React.FC = () => {
   ];
 
   const tabBase = 'px-4 py-2 text-sm font-medium border-b-2 transition-colors duration-150 cursor-pointer';
-  const tabActive = 'border-purple-600 text-purple-600';
+  const tabActive = 'border-primary text-primary';
   const tabInactive = 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
 
-  const theadClass = 'bg-gray-100 text-xs uppercase text-body';
+  const theadClass = 'bg-gray-100 text-xs uppercase text-muted-foreground';
   const thClass = 'px-4 py-3 text-left border-b border-border';
   const thRClass = 'px-4 py-3 text-right border-b border-border';
   const tdClass = 'px-4 py-3 text-sm text-gray-700 whitespace-nowrap';
@@ -187,7 +187,7 @@ const MyMoney: React.FC = () => {
           <select
             value={selectedUserId}
             onChange={(e) => setSelectedUserId(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-600 bg-white min-w-[180px]"
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-ring bg-white min-w-[180px]"
           >
             {users.map((u) => (
               <option key={u.id} value={u.id}>{u.name || u.id}</option>
@@ -200,7 +200,7 @@ const MyMoney: React.FC = () => {
           <select
             value={selectedTaxYear}
             onChange={(e) => setSelectedTaxYear(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-600 bg-white"
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-ring bg-white"
           >
             {TAX_YEARS.map((ty) => (
               <option key={ty.value} value={ty.value}>{ty.label}</option>
@@ -212,12 +212,12 @@ const MyMoney: React.FC = () => {
       {/* Loading / error */}
       {loading && <div className="flex justify-center py-12"><LoaderSpinner /></div>}
       {!loading && error && (
-        <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-md bg-destructive-soft border border-destructive px-4 py-3 text-sm text-destructive">{error}</div>
       )}
 
       {/* Content */}
       {!loading && !error && data && (
-        <div className="bg-white rounded-card shadow-card border border-border">
+        <div className="bg-white rounded-xl shadow-sm border border-border">
           {/* Tab bar */}
           <div className="flex border-b border-gray-200 overflow-x-auto">
             {tabs.map((t) => (
@@ -248,7 +248,7 @@ const MyMoney: React.FC = () => {
 
                 {/* Payroll run entries */}
                 <h3 className="text-sm font-semibold text-gray-600 mt-2 mb-1">Payroll runs</h3>
-                <div className="overflow-x-auto border border-border rounded-control">
+                <div className="overflow-x-auto border border-border rounded-md">
                   <table className="w-full border-collapse">
                     <thead className={theadClass}>
                       <tr>
@@ -290,7 +290,7 @@ const MyMoney: React.FC = () => {
 
                 {/* Direct salary payments (legacy) */}
                 <h3 className="text-sm font-semibold text-gray-600 mt-6 mb-1">Direct salary payments</h3>
-                <div className="overflow-x-auto border border-border rounded-control">
+                <div className="overflow-x-auto border border-border rounded-md">
                   <table className="w-full border-collapse">
                     <thead className={theadClass}>
                       <tr>
@@ -330,7 +330,7 @@ const MyMoney: React.FC = () => {
                   title="Dividends"
                   summary={<>Total paid: <strong className="text-gray-700">{format(data.dividends.totalPaid)}</strong></>}
                 />
-                <div className="overflow-x-auto border border-border rounded-control">
+                <div className="overflow-x-auto border border-border rounded-md">
                   <table className="w-full border-collapse">
                     <thead className={theadClass}>
                       <tr>
@@ -371,11 +371,11 @@ const MyMoney: React.FC = () => {
                   summary={
                     <span className="flex gap-4">
                       <span>Brought forward: <strong className="text-gray-700">{format(data.directorLoan.broughtForward)}</strong></span>
-                      <span>Balance: <strong className={data.directorLoan.balance >= 0 ? 'text-success' : 'text-danger'}>{format(data.directorLoan.balance)}</strong></span>
+                      <span>Balance: <strong className={data.directorLoan.balance >= 0 ? 'text-success' : 'text-destructive'}>{format(data.directorLoan.balance)}</strong></span>
                     </span>
                   }
                 />
-                <div className="overflow-x-auto border border-border rounded-control">
+                <div className="overflow-x-auto border border-border rounded-md">
                   <table className="w-full border-collapse">
                     <thead className={theadClass}>
                       <tr>
@@ -401,7 +401,7 @@ const MyMoney: React.FC = () => {
                       <tfoot>
                         <tr className="bg-gray-50">
                           <td className={`${tdClass} font-semibold`} colSpan={2}>Closing balance</td>
-                          <td colSpan={2} className={`${tdRClass} font-semibold ${data.directorLoan.balance >= 0 ? 'text-success' : 'text-danger'}`}>
+                          <td colSpan={2} className={`${tdRClass} font-semibold ${data.directorLoan.balance >= 0 ? 'text-success' : 'text-destructive'}`}>
                             {format(data.directorLoan.balance)}
                           </td>
                         </tr>
@@ -419,7 +419,7 @@ const MyMoney: React.FC = () => {
                   title="Share Capital"
                   summary={<>Total introduced: <strong className="text-gray-700">{format(data.shareCapital.totalIn)}</strong></>}
                 />
-                <div className="overflow-x-auto border border-border rounded-control">
+                <div className="overflow-x-auto border border-border rounded-md">
                   <table className="w-full border-collapse">
                     <thead className={theadClass}>
                       <tr>
@@ -465,7 +465,7 @@ const MyMoney: React.FC = () => {
                     </span>
                   }
                 />
-                <div className="overflow-x-auto border border-border rounded-control">
+                <div className="overflow-x-auto border border-border rounded-md">
                   <table className="w-full border-collapse">
                     <thead className={theadClass}>
                       <tr>

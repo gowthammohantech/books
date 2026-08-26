@@ -60,7 +60,7 @@ const CreatePaymentModeModal: React.FC<CreatePaymentModeModalProps> = ({ isOpen,
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label className="block font-medium text-sm text-gray-700">
-                        Name <span className="text-red-500">*</span>
+                        Name <span className="text-destructive">*</span>
                     </label>
                     <input
                         type="text"
@@ -71,9 +71,9 @@ const CreatePaymentModeModal: React.FC<CreatePaymentModeModalProps> = ({ isOpen,
                             if (nameError) setNameError('');
                         }}
                         placeholder="Enter payment mode name"
-                        className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                        className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring"
                     />
-                    {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
+                    {nameError && <p className="text-destructive text-xs mt-1">{nameError}</p>}
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">

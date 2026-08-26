@@ -62,8 +62,8 @@ export const DISPLAY_STATUS_META: Record<
     SENT: { label: "Sent", classes: "bg-info-soft text-info" },
     PARTIALLY_PAID: { label: "Partially Paid", classes: "bg-info-soft text-info" },
     PAID: { label: "Fully Paid", classes: "bg-success-soft text-success" },
-    DELAYED: { label: "Delayed Payment", classes: "bg-danger-soft text-danger" },
-    CANCELLED: { label: "Cancelled", classes: "bg-surface text-body" },
+    DELAYED: { label: "Delayed Payment", classes: "bg-destructive-soft text-destructive" },
+    CANCELLED: { label: "Cancelled", classes: "bg-muted text-muted-foreground" },
 };
 
 /** Only draft invoices can be edited. */

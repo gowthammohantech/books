@@ -53,34 +53,6 @@ function Swatch({ name, className }: { name: string; className: string }) {
   );
 }
 
-/** Renders a legacy class next to its replacement. If the compat bridge in
- *  index.css is correct, the two halves of each pair look identical. */
-function BridgePair({
-  legacy,
-  replacement,
-  kind,
-}: {
-  legacy: string;
-  replacement: string;
-  kind: "bg" | "text" | "radius" | "shadow";
-}) {
-  const box = "flex h-12 flex-1 items-center justify-center text-[11px] font-mono";
-  const base =
-    kind === "radius"
-      ? "bg-primary text-primary-foreground"
-      : kind === "shadow"
-        ? "bg-card"
-        : kind === "text"
-          ? "bg-card"
-          : "";
-  return (
-    <div className="flex items-stretch gap-2">
-      <div className={`${box} ${base} ${legacy}`}>{legacy}</div>
-      <div className={`${box} ${base} ${replacement}`}>{replacement}</div>
-    </div>
-  );
-}
-
 const BUTTON_VARIANTS: ButtonVariant[] = [
   "primary",
   "secondary",
@@ -196,27 +168,6 @@ export default function TokenGallery() {
             eyeball each stage of the token migration.
           </p>
         </header>
-
-        <Section title="Bridge check">
-          <p className="text-sm text-muted-foreground">
-            Legacy class on the left, its replacement on the right. While the compat bridge is
-            in place each pair must look <strong>identical</strong>. After a family is migrated
-            and the bridge entry removed, its left half goes unstyled — that is the expected
-            end state, not a regression.
-          </p>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <BridgePair kind="bg" legacy="bg-purple-600" replacement="bg-primary" />
-            <BridgePair kind="bg" legacy="bg-purple-50" replacement="bg-accent" />
-            <BridgePair kind="bg" legacy="bg-surface" replacement="bg-muted" />
-            <BridgePair kind="bg" legacy="bg-danger" replacement="bg-destructive" />
-            <BridgePair kind="text" legacy="text-heading" replacement="text-foreground" />
-            <BridgePair kind="text" legacy="text-body" replacement="text-muted-foreground" />
-            <BridgePair kind="radius" legacy="rounded-control" replacement="rounded-md" />
-            <BridgePair kind="radius" legacy="rounded-card" replacement="rounded-xl" />
-            <BridgePair kind="shadow" legacy="shadow-card" replacement="shadow-sm" />
-            <BridgePair kind="shadow" legacy="shadow-dropdown" replacement="shadow-lg" />
-          </div>
-        </Section>
 
         <Section title="Palette">
           <h3 className={H3}>Semantic</h3>

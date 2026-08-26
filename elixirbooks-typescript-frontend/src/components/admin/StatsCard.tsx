@@ -30,12 +30,12 @@ interface StatsCardProps {
 
 // Static class map so Tailwind JIT can see every utility (no runtime interpolation).
 const ACCENT_CHIP: Record<Accent, string> = {
-    primary: "bg-primary-soft text-purple-600",
+    primary: "bg-accent text-primary",
     success: "bg-success-soft text-success",
     info: "bg-info-soft text-info",
     warning: "bg-warning-soft text-warning",
     teal: "bg-teal-soft text-teal",
-    danger: "bg-danger-soft text-danger",
+    danger: "bg-destructive-soft text-destructive",
 };
 
 const StatsCard: FC<StatsCardProps> = ({ title, value, difference, icon, accent, period }) => {
@@ -44,14 +44,14 @@ const StatsCard: FC<StatsCardProps> = ({ title, value, difference, icon, accent,
     const resolvedAccent: Accent = accent ?? "primary";
 
     return (
-        <div className="relative bg-white border border-border rounded-card shadow-card hover:shadow-md transition-all p-4">
+        <div className="relative bg-white border border-border rounded-xl shadow-sm hover:shadow-md transition-all p-4">
             {/* Top: title + icon */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h3 className="text-sm font-medium text-body">
+                    <h3 className="text-sm font-medium text-muted-foreground">
                         {title}
                     </h3>
-                    {period && <p className="text-xs text-body/70">{period}</p>}
+                    {period && <p className="text-xs text-muted-foreground/70">{period}</p>}
                 </div>
                 <div
                     className={`flex items-center justify-center w-10 h-10 rounded-full shrink-0 ${ACCENT_CHIP[resolvedAccent]}`}
@@ -61,7 +61,7 @@ const StatsCard: FC<StatsCardProps> = ({ title, value, difference, icon, accent,
             </div>
 
             {/* Value */}
-            <p className="text-2xl font-bold text-heading mt-3">
+            <p className="text-2xl font-bold text-foreground mt-3">
                 {value}
             </p>
 
@@ -69,7 +69,7 @@ const StatsCard: FC<StatsCardProps> = ({ title, value, difference, icon, accent,
             {hasDifference && (
                 <div className="flex items-center mt-1 text-xs">
                     <span
-                        className={`flex items-center font-medium ${isPositive ? "text-success" : "text-danger"
+                        className={`flex items-center font-medium ${isPositive ? "text-success" : "text-destructive"
                             }`}
                     >
                         {isPositive ? (
@@ -79,7 +79,7 @@ const StatsCard: FC<StatsCardProps> = ({ title, value, difference, icon, accent,
                         )}
                         {(difference as number).toFixed()}%
                     </span>
-                    <span className="ml-1 text-body">from last month</span>
+                    <span className="ml-1 text-muted-foreground">from last month</span>
                 </div>
             )}
         </div>

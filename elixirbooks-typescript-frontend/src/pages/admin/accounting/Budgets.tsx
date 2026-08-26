@@ -243,12 +243,12 @@ const Budgets: React.FC = () => {
                     placeholder="Search budgets..."
                     value={search}
                     onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
                 />
                 <select
                     value={limit}
                     onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                    className="border border-gray-300 px-3 py-2 rounded-md bg-white text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    className="border border-gray-300 px-3 py-2 rounded-md bg-white text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                     {[10, 25, 50].map((num) => (
                         <option key={num} value={num}>{num} / page</option>
@@ -305,7 +305,7 @@ const Budgets: React.FC = () => {
                         }}
                         placeholder="Select account"
                     />
-                    {formErrors.accountId && <p className="text-red-500 text-xs -mt-2">{formErrors.accountId}</p>}
+                    {formErrors.accountId && <p className="text-destructive text-xs -mt-2">{formErrors.accountId}</p>}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -316,7 +316,7 @@ const Budgets: React.FC = () => {
                                 onChange={(date) => setForm((prev) => ({ ...prev, periodStart: date ? date.toISOString().substring(0, 10) : "" }))}
                                 id="periodStart"
                             />
-                            {formErrors.periodStart && <p className="text-red-500 text-xs -mt-3">{formErrors.periodStart}</p>}
+                            {formErrors.periodStart && <p className="text-destructive text-xs -mt-3">{formErrors.periodStart}</p>}
                         </div>
                         <div>
                             <ReactDateInput
@@ -326,7 +326,7 @@ const Budgets: React.FC = () => {
                                 onChange={(date) => setForm((prev) => ({ ...prev, periodEnd: date ? date.toISOString().substring(0, 10) : "" }))}
                                 id="periodEnd"
                             />
-                            {formErrors.periodEnd && <p className="text-red-500 text-xs -mt-3">{formErrors.periodEnd}</p>}
+                            {formErrors.periodEnd && <p className="text-destructive text-xs -mt-3">{formErrors.periodEnd}</p>}
                         </div>
                     </div>
 

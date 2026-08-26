@@ -326,7 +326,7 @@ const RolePermissions: React.FC = () => {
                     {isSaving ? "Saving..." : "Save Changes"}
                 </Button>
             </PageHeader>
-            <div className="flex flex-1 items-center bg-white shadow-card rounded-card border border-border mb-6">
+            <div className="flex flex-1 items-center bg-white shadow-sm rounded-xl border border-border mb-6">
                 <p className="font-bold text-gray-950 p-4 flex-1">Role Name: {allRolePermissions && allRolePermissions.roleName || ""}</p>
                 <div className="w-64 pr-4">
                     <Select
@@ -341,7 +341,7 @@ const RolePermissions: React.FC = () => {
                 {modules && modules.length > 0 && (
                     modules.map((module, moduleIndex) => (
                         <div key={moduleIndex} className="permissions mb-6">
-                            <div className="bg-white shadow-card rounded-card border border-border">
+                            <div className="bg-white shadow-sm rounded-xl border border-border">
                                 {/* Header */}
                                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
                                     <h2 className="font-bold text-gray-950">{module.moduleName}</h2>
@@ -355,9 +355,9 @@ const RolePermissions: React.FC = () => {
                                 </div>
 
                                 {/* Table */}
-                                <div className="overflow-x-auto border border-border rounded-control">
+                                <div className="overflow-x-auto border border-border rounded-md">
                                     <table className="w-full border-collapse">
-                                        <thead className="bg-gray-100 text-xs uppercase text-body">
+                                        <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                                             <tr>
                                                 <th className="px-4 py-3 text-left border-b border-border">MODULE</th>
                                                 <th className="px-4 py-3 text-left border-b border-border">CREATE</th>

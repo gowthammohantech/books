@@ -85,7 +85,7 @@ const Dropdown: React.FC<{ label: string; icon: React.ReactNode; children: React
             </Button>
             {open && (
                 <div
-                    className="absolute z-30 mt-1 min-w-[210px] rounded-card border border-border bg-white py-1 shadow-dropdown"
+                    className="absolute z-30 mt-1 min-w-[210px] rounded-xl border border-border bg-white py-1 shadow-lg"
                     onClick={() => setOpen(false)}
                 >
                     {children}
@@ -473,27 +473,27 @@ const InvoiceActionToolbar: React.FC<InvoiceActionToolbarProps> = ({
                         const meta = DISPLAY_STATUS_META[ds];
                         return (
                             <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-control text-xs font-semibold ${
-                                    meta?.classes ?? 'bg-surface text-body'
+                                className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${
+                                    meta?.classes ?? 'bg-muted text-muted-foreground'
                                 }`}
                             >
                                 {meta?.label ?? status}
                             </span>
                         );
                     })()}
-                    <span className="text-body">
+                    <span className="text-muted-foreground">
                         Total:{' '}
-                        <span className="font-semibold text-heading">{fmt(Number(totalAmount ?? 0))}</span>
+                        <span className="font-semibold text-foreground">{fmt(Number(totalAmount ?? 0))}</span>
                     </span>
-                    <span className="text-body">
+                    <span className="text-muted-foreground">
                         Paid:{' '}
                         <span className="font-semibold text-success">{fmt(Number(totalPaid ?? 0))}</span>
                     </span>
-                    <span className="text-body">
+                    <span className="text-muted-foreground">
                         Remaining:{' '}
                         <span
                             className={`font-semibold ${
-                                balanceDue <= 0 ? 'text-success' : 'text-danger'
+                                balanceDue <= 0 ? 'text-success' : 'text-destructive'
                             }`}
                         >
                             {fmt(Math.max(0, balanceDue))}

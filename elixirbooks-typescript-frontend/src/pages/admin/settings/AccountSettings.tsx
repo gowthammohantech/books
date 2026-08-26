@@ -339,13 +339,13 @@ const AccountSettings: React.FC = () => {
         }
     };
 
-    const sectionHeaderClass = "flex items-center gap-2 px-5 py-4 border-b border-border text-lg font-semibold text-heading";
+    const sectionHeaderClass = "flex items-center gap-2 px-5 py-4 border-b border-border text-lg font-semibold text-foreground";
 
     if (loadingProfile) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
                 <LoaderSpinner size={32} />
-                <p className="ml-3 text-body text-base">Loading Profile...</p>
+                <p className="ml-3 text-muted-foreground text-base">Loading Profile...</p>
             </div>
         );
     }
@@ -365,7 +365,7 @@ const AccountSettings: React.FC = () => {
                     padded={false}
                     header={
                         <div className={sectionHeaderClass}>
-                            <User className="w-5 h-5 text-purple-600" />
+                            <User className="w-5 h-5 text-primary" />
                             General Information
                         </div>
                     }
@@ -398,7 +398,7 @@ const AccountSettings: React.FC = () => {
                                 >
                                     Upload New Photo
                                 </Button>
-                                <p className="text-xs text-body mt-2 text-center sm:text-left">
+                                <p className="text-xs text-muted-foreground mt-2 text-center sm:text-left">
                                     Recommended: 150×150px. JPG, PNG, or JPEG.
                                 </p>
                             </div>
@@ -466,7 +466,7 @@ const AccountSettings: React.FC = () => {
                                         setProfile((prev) => (prev ? { ...prev, dateOfBirth: dateToYmdString(date) } : null))
                                     }
                                 />
-                                {formErrors.dateOfBirth && <p className="mt-1 text-sm text-danger">{formErrors.dateOfBirth}</p>}
+                                {formErrors.dateOfBirth && <p className="mt-1 text-sm text-destructive">{formErrors.dateOfBirth}</p>}
                             </div>
                         </div>
                     </div>
@@ -476,7 +476,7 @@ const AccountSettings: React.FC = () => {
                     padded={false}
                     header={
                         <div className={sectionHeaderClass}>
-                            <MapPin className="w-5 h-5 text-purple-600" />
+                            <MapPin className="w-5 h-5 text-primary" />
                             Address Information
                         </div>
                     }
@@ -569,13 +569,13 @@ const AccountSettings: React.FC = () => {
                     padded={false}
                     header={
                         <div className={sectionHeaderClass}>
-                            <DatabaseIcon className="w-5 h-5 text-purple-600" />
+                            <DatabaseIcon className="w-5 h-5 text-primary" />
                             Data &amp; Backup
                         </div>
                     }
                 >
                     <div className="p-5">
-                        <p className="text-sm text-body mb-4">
+                        <p className="text-sm text-muted-foreground mb-4">
                             Download a complete backup of your company data (all records, exported as a ZIP archive).
                         </p>
                         <ExportButton

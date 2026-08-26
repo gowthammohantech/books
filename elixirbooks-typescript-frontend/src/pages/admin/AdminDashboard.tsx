@@ -162,7 +162,7 @@ const DashboardPage: React.FC = () => {
                 <DashboardSwitcher />
             </PageHeader>
 
-            <div className="mt-2 p-4 bg-purple-600 text-white rounded-xl shadow flex justify-between">
+            <div className="mt-2 p-4 bg-primary text-white rounded-xl shadow flex justify-between">
                 <div>
                     <h2 className="text-2xl font-bold">{getGreeting()}, {user?.firstName + ' ' + user?.lastName || 'Guest'}</h2> {/* Use optional chaining and fallback */}
                     <p className="mt-1">Welcome back! Stay on top of your invoices and customers today.</p>
@@ -178,21 +178,21 @@ const DashboardPage: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4 w-full">
                 <DashboardCard title="Overview" icon={<LayoutGrid className="w-6 h-6" />}>
-                    <CardItem icon={<FileText className="w-5 h-5 text-purple-600" />} label="Invoices" value={dashboardData.totalInvoiceCount || 0} color="purple" />
+                    <CardItem icon={<FileText className="w-5 h-5 text-primary" />} label="Invoices" value={dashboardData.totalInvoiceCount || 0} color="purple" />
                     <CardItem icon={<User className="w-5 h-5 text-green-600" />} label="Customers" value={dashboardData.totalCustomerCount || 0} color="green" />
                     <CardItem icon={<Package className="w-5 h-5 text-amber-600" />} label="Products" value={dashboardData.totalProductCount || 0} color="yellow" />
                     <CardItem icon={<Truck className="w-5 h-5 text-blue-600" />} label="Suppliers" value={dashboardData.totalSupplierCount || 0} color="blue" />
                 </DashboardCard>
 
                 <DashboardCard title="Sales Statistics" icon={<BarChart2 className="w-6 h-6" />}>
-                    <CardItem icon={<BadgeDollarSign className="w-5 h-5 text-purple-600" />} label="Total Sales" value={format(dashboardData.sales.totalSalesAmount || 0)} color="purple" />
+                    <CardItem icon={<BadgeDollarSign className="w-5 h-5 text-primary" />} label="Total Sales" value={format(dashboardData.sales.totalSalesAmount || 0)} color="purple" />
                     <CardItem icon={<CreditCard className="w-5 h-5 text-green-600" />} label="Paid Amount" value={format(dashboardData.sales.receivedAmount || 0)} color="green" />
                     <CardItem icon={<AlertCircle className="w-5 h-5 text-red-600" />} label="Amount Due" value={format(dashboardData.sales.totalDueAmount || 0)} color="red" />
                     <CardItem icon={<FileText className="w-5 h-5 text-blue-600" />} label="Quotations" value={dashboardData.sales.quotationCount} color="blue" />
                 </DashboardCard>
 
                 <DashboardCard title="Purchase Statistics" icon={<ShoppingCart className="w-6 h-6" />}>
-                    <CardItem icon={<FileText className="w-5 h-5 text-purple-600" />} label="Total Purchases" value={format(dashboardData.purchases.totalPurchasesAmount || 0)} color="purple" />
+                    <CardItem icon={<FileText className="w-5 h-5 text-primary" />} label="Total Purchases" value={format(dashboardData.purchases.totalPurchasesAmount || 0)} color="purple" />
                     <CardItem icon={<CreditCard className="w-5 h-5 text-green-600" />} label="Paid Amount" value={format(dashboardData.purchases.totalPaidPurchases || 0)} color="green" />
                     <CardItem icon={<AlertCircle className="w-5 h-5 text-red-600" />} label="Amount Due" value={format(dashboardData.purchases.totalDuePurchases || 0)} color="red" />
                     <CardItem icon={<FileText className="w-5 h-5 text-blue-600" />} label="Debit Notes" value={dashboardData.purchases.debitNoteCount} color="blue" />
@@ -298,14 +298,14 @@ const DashboardPage: React.FC = () => {
                     {/* Header */}
                     <div className="flex items-center justify-between mb-4">
                         <h4 className="text-lg font-semibold text-gray-600 flex items-center gap-3">
-                            <span className="p-2 rounded-full bg-purple-100 border border-purple-200 shadow-sm flex items-center justify-center transition-all duration-300 hover:shadow-md">
-                                <Users className="w-4 h-4 text-purple-600" />
+                            <span className="p-2 rounded-full bg-accent border border-accent shadow-sm flex items-center justify-center transition-all duration-300 hover:shadow-md">
+                                <Users className="w-4 h-4 text-primary" />
                             </span>
                             Recent Customers
                         </h4>
                         <button
                             onClick={() => navigate("/admin/customers")}
-                            className="text-sm text-purple-600 hover:text-white hover:bg-purple-600 px-3 py-1 rounded-md flex items-center gap-1 transition-all duration-300">
+                            className="text-sm text-primary hover:text-white hover:bg-primary px-3 py-1 rounded-md flex items-center gap-1 transition-all duration-300">
                             View all <ArrowRight className="w-4 h-4" />
                         </button>
                     </div>
@@ -446,8 +446,8 @@ const DashboardPage: React.FC = () => {
                     {/* Header */}
                     <div className="flex items-center justify-between mb-4">
                         <h4 className="text-lg font-semibold text-gray-600 flex items-center gap-3">
-                            <span className="p-2 rounded-full bg-purple-100 border border-purple-300 shadow-sm flex items-center justify-center transition-all duration-300 hover:shadow-md">
-                                <Receipt className="w-4 h-4 text-purple-600" />
+                            <span className="p-2 rounded-full bg-accent border border-accent shadow-sm flex items-center justify-center transition-all duration-300 hover:shadow-md">
+                                <Receipt className="w-4 h-4 text-primary" />
                             </span>
                             Recent Invoice Payments
                         </h4>

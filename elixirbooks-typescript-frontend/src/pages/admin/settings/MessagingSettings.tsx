@@ -103,7 +103,7 @@ export default function MessagingSettings() {
           {loading ? 'Saving…' : 'Save'}
         </Button>
       </PageHeader>
-      <p className="text-sm text-body mb-6">
+      <p className="text-sm text-muted-foreground mb-6">
         Configure WhatsApp delivery for invoices and reminders. If no provider is selected, sends fall back to a <code>wa.me</code> deep link
         which opens WhatsApp pre-filled. For automated provider delivery, choose Twilio or WhatsApp Cloud API.
       </p>
@@ -115,7 +115,7 @@ export default function MessagingSettings() {
             checked={form.whatsappEnabled}
             onChange={(e) => update('whatsappEnabled', e.target.checked)}
           />
-          <span className="text-sm font-medium text-heading">Enable WhatsApp messaging</span>
+          <span className="text-sm font-medium text-foreground">Enable WhatsApp messaging</span>
         </label>
 
         <Select
@@ -130,7 +130,7 @@ export default function MessagingSettings() {
         />
 
         {form.whatsappProvider === 'twilio' && (
-          <div className="space-y-3 border-l-2 border-purple-200 pl-3">
+          <div className="space-y-3 border-l-2 border-accent pl-3">
             <FormField
               label="Account SID"
               value={form.twilioAccountSid}
@@ -153,7 +153,7 @@ export default function MessagingSettings() {
         )}
 
         {form.whatsappProvider === 'whatsapp_cloud' && (
-          <div className="space-y-3 border-l-2 border-purple-200 pl-3">
+          <div className="space-y-3 border-l-2 border-accent pl-3">
             <FormField
               label="Phone Number ID"
               value={form.cloudPhoneNumberId}

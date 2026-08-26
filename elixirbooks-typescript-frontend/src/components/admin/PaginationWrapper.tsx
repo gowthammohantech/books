@@ -25,7 +25,7 @@ const PaginationWrapper: React.FC<PaginationWrapperProps> = ({
 }) => {
   return (
     <div className="flex justify-between items-center mt-4">
-      <p className="text-heading text-sm font-medium">
+      <p className="text-foreground text-sm font-medium">
         Showing {total > 0 ? from : 0} to {to} of {total} entries
       </p>
 

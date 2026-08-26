@@ -30,7 +30,7 @@ function App() {
     return (
       <></>
       // <div className="flex items-center justify-center h-screen">
-      //   <div className='text-center text-2xl font-bold'><Loader2Icon className='animate-spin text-purple-600 h-10 w-10' /></div>
+      //   <div className='text-center text-2xl font-bold'><Loader2Icon className='animate-spin text-primary h-10 w-10' /></div>
       // </div>
     );
   }

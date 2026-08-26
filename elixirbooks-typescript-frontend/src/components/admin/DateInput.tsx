@@ -17,8 +17,8 @@ const DateInput: FC<DateInputProps> = ({ label, value, onChange, minDate, maxDat
     const { dateFnsFormat } = useDateFormatter();
     return (
         <div>
-            <label className="block text-sm font-medium text-heading pb-1">
-                {label} {isRequired && <span className="text-red-500">*</span>}
+            <label className="block text-sm font-medium text-foreground pb-1">
+                {label} {isRequired && <span className="text-destructive">*</span>}
             </label>
             <DatePicker
                 value={value}

@@ -31,7 +31,7 @@ const TransactionOverviewModal: React.FC<Props> = ({
         icon,
         children,
     }) => (
-        <div className="bg-white/70 backdrop-blur-md border border-border rounded-card shadow-card p-5 hover:shadow-md transition-shadow">
+        <div className="bg-white/70 backdrop-blur-md border border-border rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-2 border-b pb-2 mb-3">
                 <span className="text-blue-600">{icon}</span>
                 <h3 className="font-semibold text-gray-800 text-base">{title}</h3>

@@ -208,12 +208,12 @@ const SupplierPayments: FC = () => {
                     />
                 ))}
                 {!isLoading && supplierPayments.length === 0 && (
-                    <tr><td colSpan={7} className="text-center py-4 text-heading font-semibold">No supplier payments found</td></tr>
+                    <tr><td colSpan={7} className="text-center py-4 text-foreground font-semibold">No supplier payments found</td></tr>
                 )}
 
                 {isLoading && (
                     <tr key="table-loader">
-                        <td className="text-center py-2 text-heading font-semibold" colSpan={7}>
+                        <td className="text-center py-2 text-foreground font-semibold" colSpan={7}>
                             <LoaderSpinner />
                         </td>
                     </tr>

@@ -309,13 +309,13 @@ const ProfileSettings: React.FC = () => {
 
     const selectedGenderValue = genderOptions.find(g => g.id === profile.gender) || null;
 
-    const sectionHeaderClass = "flex items-center gap-2 px-5 py-4 border-b border-border text-lg font-semibold text-heading";
+    const sectionHeaderClass = "flex items-center gap-2 px-5 py-4 border-b border-border text-lg font-semibold text-foreground";
 
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
                 <LoaderSpinner size={32} />
-                <p className="ml-3 text-body text-base">Loading Profile...</p>
+                <p className="ml-3 text-muted-foreground text-base">Loading Profile...</p>
             </div>
         );
     }
@@ -338,7 +338,7 @@ const ProfileSettings: React.FC = () => {
                     padded={false}
                     header={
                         <div className={sectionHeaderClass}>
-                            <User2Icon className="w-5 h-5 text-purple-600" />
+                            <User2Icon className="w-5 h-5 text-primary" />
                             General Information
                         </div>
                     }
@@ -418,7 +418,7 @@ const ProfileSettings: React.FC = () => {
                             </FormField>
                             <div>
                                 <DateInput label="Date of Birth" value={profile.dateOfBirth} onChange={(date) => handleFormChange('dateOfBirth', date)} isRequired maxDate={new Date()} />
-                                {formErrors.dateOfBirth && <p className="mt-1 text-sm text-danger">{formErrors.dateOfBirth}</p>}
+                                {formErrors.dateOfBirth && <p className="mt-1 text-sm text-destructive">{formErrors.dateOfBirth}</p>}
                             </div>
                         </div>
                     </div>
@@ -429,7 +429,7 @@ const ProfileSettings: React.FC = () => {
                     padded={false}
                     header={
                         <div className={sectionHeaderClass}>
-                            <MapPin className="w-5 h-5 text-purple-600" />
+                            <MapPin className="w-5 h-5 text-primary" />
                             Address Information
                         </div>
                     }

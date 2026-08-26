@@ -186,12 +186,12 @@ const InventoryList: React.FC = () => {
                     placeholder="Search..."
                     value={search}
                     onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 />
                 <select
                     value={limit}
                     onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                    className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 >
                     {[10, 25, 50].map((num) => (
                         <option className="text-gray-950 " key={num} value={num}>{num} / page</option>
@@ -219,7 +219,7 @@ const InventoryList: React.FC = () => {
                                 {/* History */}
                                 <span
                                     onClick={(e) => { e.stopPropagation(); handleView(inventory); }}
-                                    className="inline-flex items-center gap-1 rounded-md bg-purple-100 px-2 py-1 text-xs font-medium text-purple-600 cursor-pointer">
+                                    className="inline-flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-xs font-medium text-primary cursor-pointer">
                                     <HistoryIcon className="h-4 w-4" />
                                     History
                                 </span>
@@ -294,7 +294,7 @@ const InventoryList: React.FC = () => {
                             type="text"
                             value={itemToUpdate?.productDetails.name}
                             readOnly
-                            className="border border-gray-300 bg-gray-100 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="border border-gray-300 bg-gray-100 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                         />
                     </div>
                     <div className="flex gap-4">
@@ -304,17 +304,17 @@ const InventoryList: React.FC = () => {
                                 type="number"
                                 value={Number(formData.quantity) || 0}
                                 onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
-                                className="border border-gray-300 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                className="border border-gray-300 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                             />
-                            {formErrors.quantity && <p className="text-red-500 text-xs mt-1">{formErrors.quantity}</p>}
+                            {formErrors.quantity && <p className="text-destructive text-xs mt-1">{formErrors.quantity}</p>}
                         </div>
                         <div className="mb-4 w-1/2">
-                            <label className="block text-gray-700  font-semibold mb-2">Unit <em className="text-red-500">*</em></label>
+                            <label className="block text-gray-700  font-semibold mb-2">Unit <em className="text-destructive">*</em></label>
                             <input
                                 type="text"
                                 value={itemToUpdate?.productDetails.unit_name}
                                 readOnly
-                                className="border border-gray-300 bg-gray-100 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                className="border border-gray-300 bg-gray-100 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                             />
                         </div>
                     </div>
@@ -323,7 +323,7 @@ const InventoryList: React.FC = () => {
                         <textarea
                             value={formData.notes || ''}
                             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                            className="border border-gray-300 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="border border-gray-300 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                         />
                     </div>
                     <div className="flex justify-end gap-4">

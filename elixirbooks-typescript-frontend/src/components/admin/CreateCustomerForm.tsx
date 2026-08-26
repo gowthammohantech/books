@@ -107,8 +107,8 @@ const CreateCustomerForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => 
             <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-1 gap-6 pt-6">
                     <div>
-                        <label className="block font-medium text-sm text-red-500 mb-1">
-                            Name <span className="text-red-500">*</span>
+                        <label className="block font-medium text-sm text-destructive mb-1">
+                            Name <span className="text-destructive">*</span>
                         </label>
                         <input
                             name="name"
@@ -116,13 +116,13 @@ const CreateCustomerForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => 
                             onChange={handleInputChange}
                             type="text"
                             placeholder="Enter Name"
-                            className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600"
+                            className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary"
                         />
-                        {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
+                        {formErrors.name && <p className="text-destructive text-xs mt-1">{formErrors.name}</p>}
                     </div>
                     <div>
-                        <label className="block font-medium text-sm text-red-500 mb-1">
-                            Email <span className="text-red-500">*</span>
+                        <label className="block font-medium text-sm text-destructive mb-1">
+                            Email <span className="text-destructive">*</span>
                         </label>
                         <input
                             name="email"
@@ -130,13 +130,13 @@ const CreateCustomerForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => 
                             onChange={handleInputChange}
                             type="email"
                             placeholder="Enter Email"
-                            className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600"
+                            className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary"
                         />
-                        {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
+                        {formErrors.email && <p className="text-destructive text-xs mt-1">{formErrors.email}</p>}
                     </div>
                     <div>
-                        <label className="block font-medium text-sm text-red-500 mb-1">
-                            Phone <span className="text-red-500">*</span>
+                        <label className="block font-medium text-sm text-destructive mb-1">
+                            Phone <span className="text-destructive">*</span>
                         </label>
                         <input
                             name="phone"
@@ -150,9 +150,9 @@ const CreateCustomerForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => 
                             }}
                             type="tel"
                             placeholder="Enter Phone"
-                            className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600"
+                            className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary"
                         />
-                        {formErrors.phone && <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>}
+                        {formErrors.phone && <p className="text-destructive text-xs mt-1">{formErrors.phone}</p>}
                     </div>
 
                 </div>
@@ -169,7 +169,7 @@ const CreateCustomerForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => 
                                 onChange={handleBillingAddressChange}
                                 type="text"
                                 placeholder="Enter Address Line 1"
-                                className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600"
+                                className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary"
                             />
                         </div>
                         <div className="md:col-span-2">
@@ -180,7 +180,7 @@ const CreateCustomerForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => 
                                 onChange={handleBillingAddressChange}
                                 type="text"
                                 placeholder="Enter Address Line 2"
-                                className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600"
+                                className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary"
                             />
                         </div>
                         <div>
@@ -191,7 +191,7 @@ const CreateCustomerForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => 
                                 onChange={handleBillingAddressChange}
                                 type="text"
                                 placeholder="Enter City"
-                                className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600"
+                                className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary"
                             />
                         </div>
                         <div>
@@ -202,7 +202,7 @@ const CreateCustomerForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => 
                                 onChange={handleBillingAddressChange}
                                 type="text"
                                 placeholder="Enter State"
-                                className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600"
+                                className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary"
                             />
                         </div>
                         <div>
@@ -213,7 +213,7 @@ const CreateCustomerForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => 
                                 onChange={handleBillingAddressChange}
                                 type="text"
                                 placeholder="Enter Country"
-                                className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600"
+                                className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary"
                             />
                         </div>
                         <div>
@@ -224,7 +224,7 @@ const CreateCustomerForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => 
                                 onChange={handleBillingAddressChange}
                                 type="text"
                                 placeholder="Enter Pincode"
-                                className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600"
+                                className="border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary"
                             />
                         </div>
                     </div>

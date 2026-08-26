@@ -214,7 +214,7 @@ export default function AiSettings() {
       <PageHeader
         title={
           <span className="flex items-center gap-2">
-            <Sparkles className="text-purple-600" size={22} />
+            <Sparkles className="text-primary" size={22} />
             AI Settings
           </span>
         }
@@ -247,12 +247,12 @@ export default function AiSettings() {
           {loading ? 'Saving…' : 'Save'}
         </Button>
       </PageHeader>
-      <p className="text-sm text-body mb-5 leading-relaxed">{HELP_TEXT}</p>
+      <p className="text-sm text-muted-foreground mb-5 leading-relaxed">{HELP_TEXT}</p>
 
       <Card className="space-y-5">
         {/* Provider radio */}
         <div>
-          <label className="block text-sm font-medium text-heading mb-2">Provider</label>
+          <label className="block text-sm font-medium text-foreground mb-2">Provider</label>
           <div className="flex flex-col gap-2">
             <label className="flex items-start gap-2 cursor-pointer">
               <input
@@ -264,8 +264,8 @@ export default function AiSettings() {
                 className="mt-1"
               />
               <div>
-                <div className="text-sm font-medium text-heading">Anthropic Claude</div>
-                <div className="text-xs text-body">
+                <div className="text-sm font-medium text-foreground">Anthropic Claude</div>
+                <div className="text-xs text-muted-foreground">
                   Recommended. Bring your own key from console.anthropic.com.
                 </div>
               </div>
@@ -280,8 +280,8 @@ export default function AiSettings() {
                 className="mt-1"
               />
               <div>
-                <div className="text-sm font-medium text-heading">OpenAI</div>
-                <div className="text-xs text-body">
+                <div className="text-sm font-medium text-foreground">OpenAI</div>
+                <div className="text-xs text-muted-foreground">
                   GPT-4o family. Bring your own key from platform.openai.com.
                 </div>
               </div>
@@ -296,8 +296,8 @@ export default function AiSettings() {
                 className="mt-1"
               />
               <div>
-                <div className="text-sm font-medium text-heading">Mock (demo / disabled)</div>
-                <div className="text-xs text-body">
+                <div className="text-sm font-medium text-foreground">Mock (demo / disabled)</div>
+                <div className="text-xs text-muted-foreground">
                   No external calls. Returns canned data — useful for demos and to disable AI
                   entirely.
                 </div>
@@ -359,22 +359,22 @@ export default function AiSettings() {
             checked={form.enabled}
             onChange={(e) => update('enabled', e.target.checked)}
           />
-          <span className="text-sm font-medium text-heading">Enable AI features</span>
+          <span className="text-sm font-medium text-foreground">Enable AI features</span>
         </label>
 
         {/* Test result banner */}
         {testResult && (
           <div
-            className={`flex items-start gap-2 p-3 rounded-control text-sm ${
+            className={`flex items-start gap-2 p-3 rounded-md text-sm ${
               testResult.ok
                 ? 'bg-success-soft border border-success text-success'
-                : 'bg-danger-soft border border-danger text-danger'
+                : 'bg-destructive-soft border border-destructive text-destructive'
             }`}
           >
             {testResult.ok ? (
               <CheckCircle2 size={18} className="text-success mt-0.5" />
             ) : (
-              <XCircle size={18} className="text-danger mt-0.5" />
+              <XCircle size={18} className="text-destructive mt-0.5" />
             )}
             <div className="flex-1 min-w-0">
               {testResult.ok ? (

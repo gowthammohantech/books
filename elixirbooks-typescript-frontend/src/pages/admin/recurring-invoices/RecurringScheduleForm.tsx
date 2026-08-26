@@ -595,13 +595,13 @@ const RecurringScheduleForm: React.FC = () => {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-screen">
-                <Loader2Icon className="animate-spin text-purple-600 h-10 w-10" />
+                <Loader2Icon className="animate-spin text-primary h-10 w-10" />
             </div>
         );
     }
 
     const inputClass =
-        'border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600';
+        'border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring';
 
     return (
         <div className="md:p-4 min-h-screen border border-gray-200 rounded">
@@ -638,7 +638,7 @@ const RecurringScheduleForm: React.FC = () => {
                     {/* Customer */}
                     <div className="bg-white p-4 rounded-lg border border-gray-200">
                         <h3 className="font-bold text-gray-950 mb-4">
-                            Customer <span className="text-red-500">*</span>
+                            Customer <span className="text-destructive">*</span>
                         </h3>
                         <ContactPicker
                             view="all-active"
@@ -654,7 +654,7 @@ const RecurringScheduleForm: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Repeat Every <span className="text-red-500">*</span>
+                                    Repeat Every <span className="text-destructive">*</span>
                                 </label>
                                 <select
                                     value={formData.repeatEvery}
@@ -673,7 +673,7 @@ const RecurringScheduleForm: React.FC = () => {
                                 <>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Interval <span className="text-red-500">*</span>
+                                            Interval <span className="text-destructive">*</span>
                                         </label>
                                         <input
                                             type="number"
@@ -689,12 +689,12 @@ const RecurringScheduleForm: React.FC = () => {
                                             className={inputClass}
                                         />
                                         {formErrors?.customIntervalNumber && (
-                                            <span className="text-red-500 text-sm">{formErrors.customIntervalNumber}</span>
+                                            <span className="text-destructive text-sm">{formErrors.customIntervalNumber}</span>
                                         )}
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Interval Type <span className="text-red-500">*</span>
+                                            Interval Type <span className="text-destructive">*</span>
                                         </label>
                                         <select
                                             value={formData.customIntervalType ?? ''}
@@ -713,7 +713,7 @@ const RecurringScheduleForm: React.FC = () => {
                                             <option value="year">Year(s)</option>
                                         </select>
                                         {formErrors?.customIntervalType && (
-                                            <span className="text-red-500 text-sm">{formErrors.customIntervalType}</span>
+                                            <span className="text-destructive text-sm">{formErrors.customIntervalType}</span>
                                         )}
                                     </div>
                                 </>
@@ -727,7 +727,7 @@ const RecurringScheduleForm: React.FC = () => {
                                     isRequired
                                 />
                                 {formErrors?.startOn && (
-                                    <span className="text-red-500 text-sm">{formErrors.startOn}</span>
+                                    <span className="text-destructive text-sm">{formErrors.startOn}</span>
                                 )}
                             </div>
                         </div>
@@ -742,7 +742,7 @@ const RecurringScheduleForm: React.FC = () => {
                                         name="endCondition"
                                         checked={formData.endCondition === 'never'}
                                         onChange={() => handleFormChange('endCondition', 'never')}
-                                        className="h-4 w-4 text-purple-600"
+                                        className="h-4 w-4 text-primary"
                                     />
                                     Never
                                 </label>
@@ -754,7 +754,7 @@ const RecurringScheduleForm: React.FC = () => {
                                             name="endCondition"
                                             checked={formData.endCondition === 'onDate'}
                                             onChange={() => handleFormChange('endCondition', 'onDate')}
-                                            className="h-4 w-4 text-purple-600"
+                                            className="h-4 w-4 text-primary"
                                         />
                                         On date
                                     </label>
@@ -767,7 +767,7 @@ const RecurringScheduleForm: React.FC = () => {
                                                 minDate={formData.startOn || new Date()}
                                             />
                                             {formErrors?.endsOn && (
-                                                <span className="text-red-500 text-sm">{formErrors.endsOn}</span>
+                                                <span className="text-destructive text-sm">{formErrors.endsOn}</span>
                                             )}
                                         </div>
                                     )}
@@ -780,7 +780,7 @@ const RecurringScheduleForm: React.FC = () => {
                                             name="endCondition"
                                             checked={formData.endCondition === 'afterN'}
                                             onChange={() => handleFormChange('endCondition', 'afterN')}
-                                            className="h-4 w-4 text-purple-600"
+                                            className="h-4 w-4 text-primary"
                                         />
                                         After
                                     </label>
@@ -797,11 +797,11 @@ const RecurringScheduleForm: React.FC = () => {
                                                     )
                                                 }
                                                 placeholder="N"
-                                                className="border border-gray-300 rounded-md px-3 py-2 w-24 text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                                className="border border-gray-300 rounded-md px-3 py-2 w-24 text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring"
                                             />
                                             <span className="text-sm text-gray-600">occurrences</span>
                                             {formErrors?.maxOccurrences && (
-                                                <span className="text-red-500 text-sm">{formErrors.maxOccurrences}</span>
+                                                <span className="text-destructive text-sm">{formErrors.maxOccurrences}</span>
                                             )}
                                         </div>
                                     )}
@@ -818,7 +818,7 @@ const RecurringScheduleForm: React.FC = () => {
                                 <select
                                     value={formData.taxTreatment}
                                     onChange={(e) => handleFormChange('taxTreatment', e.target.value as TaxTreatment)}
-                                    className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                    className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-ring"
                                 >
                                     <option value="STANDARD">Standard</option>
                                     <option value="ZERO_RATED">Zero-rated</option>
@@ -838,7 +838,7 @@ const RecurringScheduleForm: React.FC = () => {
                     {/* Line items */}
                     <div className="bg-white rounded-lg border border-gray-200 mt-4">
                         <div className="p-4">
-                            {formErrors?.items && <span className="text-red-500 text-sm">{formErrors.items}</span>}
+                            {formErrors?.items && <span className="text-destructive text-sm">{formErrors.items}</span>}
                             <table className="w-full border-separate border-spacing-0 overflow-x-auto">
                                 <thead className="bg-gray-100 text-gray-900">
                                     <tr>
@@ -880,7 +880,7 @@ const RecurringScheduleForm: React.FC = () => {
                                                         {(item.taxes ?? []).map((t, idx) => (
                                                             <span
                                                                 key={`${t.taxRateId}-${idx}`}
-                                                                className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full"
+                                                                className="inline-flex items-center gap-1 bg-accent text-primary border border-accent px-2 py-0.5 rounded-full"
                                                             >
                                                                 {t.kind ? `${t.kind} ` : ''}{t.percent}% · {fmtMoney(t.amount)}
                                                             </span>
@@ -919,7 +919,7 @@ const RecurringScheduleForm: React.FC = () => {
                                     size="sm"
                                     onClick={handleNewRow}
                                     leftIcon={<PlusCircle className="h-4 w-4" />}
-                                    className="text-purple-600"
+                                    className="text-primary"
                                 >
                                     Add New Row
                                 </Button>

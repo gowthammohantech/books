@@ -17,11 +17,11 @@ const defaultData = [
 
 export function ChartCard({ title, value, color, data = defaultData }: ChartCardProps) {
     return (
-        <div className="bg-white rounded-card shadow-card border border-border p-4 flex justify-between items-center">
+        <div className="bg-white rounded-xl shadow-sm border border-border p-4 flex justify-between items-center">
             {/* Left Side - Title & Value */}
             <div>
-                <p className="text-heading font-semibold text-sm">{title}</p>
-                <p className="text-xl font-semibold text-heading">{value}</p>
+                <p className="text-foreground font-semibold text-sm">{title}</p>
+                <p className="text-xl font-semibold text-foreground">{value}</p>
             </div>
 
             {/* Right Side - Mini Chart */}

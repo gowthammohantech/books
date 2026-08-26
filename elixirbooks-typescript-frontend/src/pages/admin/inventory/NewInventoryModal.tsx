@@ -100,7 +100,7 @@ const NewInventoryModal: React.FC<InventoryModalProps> = ({ isOpen, onClose, onS
         <Modal isOpen={isOpen} onClose={onClose} title="Add Inventory">
             <form onSubmit={handleSubmit}>
                 <div className="mb-4">
-                    <label htmlFor="product" className="block text-gray-700  font-semibold mb-2">Product/Service <em className="text-red-500">*</em></label>
+                    <label htmlFor="product" className="block text-gray-700  font-semibold mb-2">Product/Service <em className="text-destructive">*</em></label>
                     <SearchableDropdown
                         options={products}
                         placeholder="Type to search..."
@@ -108,7 +108,7 @@ const NewInventoryModal: React.FC<InventoryModalProps> = ({ isOpen, onClose, onS
                         onChange={(_, value) => setSelectedProduct(value as Options)}
                         value={selectedProduct}
                     />
-                    {formErrors.product && <p className="text-red-500 text-sm mt-1">{formErrors.product}</p>}
+                    {formErrors.product && <p className="text-destructive text-sm mt-1">{formErrors.product}</p>}
                 </div>
                 <div className="flex gap-4">
                     <div className="mb-4 w-1/2">
@@ -117,7 +117,7 @@ const NewInventoryModal: React.FC<InventoryModalProps> = ({ isOpen, onClose, onS
                             type="text"
                             value={selectedProduct?.code || ''}
                             readOnly
-                            className="border border-gray-300 bg-gray-100 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="border border-gray-300 bg-gray-100 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                         />
                     </div>
                     <div className="mb-4 w-1/2">
@@ -126,7 +126,7 @@ const NewInventoryModal: React.FC<InventoryModalProps> = ({ isOpen, onClose, onS
                             type="text"
                             value={selectedProduct?.unit?.name || ''}
                             readOnly
-                            className="border border-gray-300 bg-gray-100 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="border border-gray-300 bg-gray-100 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                         />
                     </div>
                 </div>
@@ -137,7 +137,7 @@ const NewInventoryModal: React.FC<InventoryModalProps> = ({ isOpen, onClose, onS
                             type="text"
                             value={selectedProduct?.prices?.purchase || ''}
                             readOnly
-                            className="border border-gray-300 bg-gray-100 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="border border-gray-300 bg-gray-100 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                         />
                     </div>
                     <div className="mb-4 w-1/2">
@@ -146,31 +146,31 @@ const NewInventoryModal: React.FC<InventoryModalProps> = ({ isOpen, onClose, onS
                             type="text"
                             value={selectedProduct?.prices?.selling || ''}
                             readOnly
-                            className="border border-gray-300 bg-gray-100 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="border border-gray-300 bg-gray-100 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                         />
                     </div>
                 </div>
                 <div className="mb-4">
-                    <label htmlFor="type" className="block text-gray-700  font-semibold mb-2">Type <em className="text-red-500">*</em></label>
+                    <label htmlFor="type" className="block text-gray-700  font-semibold mb-2">Type <em className="text-destructive">*</em></label>
                     <input
                         type="text"
                         value={`Stock In`}
                         readOnly
-                        className="border border-gray-300 bg-gray-100 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                        className="border border-gray-300 bg-gray-100 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                     />
-                    {formErrors.type && <span className="text-red-500 text-sm">{formErrors.type}</span>}
+                    {formErrors.type && <span className="text-destructive text-sm">{formErrors.type}</span>}
                 </div>
                 <div className="mb-4">
-                    <label htmlFor="quantity" className="block text-gray-700  font-semibold mb-2">Quantity <em className="text-red-500">*</em></label>
+                    <label htmlFor="quantity" className="block text-gray-700  font-semibold mb-2">Quantity <em className="text-destructive">*</em></label>
                     <input
                         type="number"
                         id="quantity"
                         name="quantity"
                         value={formData.quantity}
                         onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) })}
-                        className="border border-gray-300 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                        className="border border-gray-300 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                     />
-                    {formErrors.quantity && <span className="text-red-500 text-sm">{formErrors.quantity}</span>}
+                    {formErrors.quantity && <span className="text-destructive text-sm">{formErrors.quantity}</span>}
                 </div>
                 <div className="flex justify-end gap-4">
                     <button

@@ -193,7 +193,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onConfirm,
                             onChange={(newDate) => setData(prevData => ({ ...prevData, sp_paymentDate: newDate || null }))}
                             isRequired
                         />
-                        {paymentFormErrors.sp_paymentDate && <p className="text-danger text-sm mt-1">{paymentFormErrors.sp_paymentDate}</p>}
+                        {paymentFormErrors.sp_paymentDate && <p className="text-destructive text-sm mt-1">{paymentFormErrors.sp_paymentDate}</p>}
                     </div>
 
                     {/* Payment Mode */}
@@ -212,7 +212,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onConfirm,
                             required
                         />
 
-                        {paymentFormErrors.sp_paymentMode && <p className="text-danger text-sm mt-1">{paymentFormErrors.sp_paymentMode}</p>}
+                        {paymentFormErrors.sp_paymentMode && <p className="text-destructive text-sm mt-1">{paymentFormErrors.sp_paymentMode}</p>}
                     </div>
 
                     {/* Amount */}
@@ -270,21 +270,21 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onConfirm,
 
                     {/* Attachment */}
                     <div className="md:col-span-3">
-                        <label className="block text-sm font-medium text-heading">Attachment</label>
-                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-border border-dashed rounded-control">
+                        <label className="block text-sm font-medium text-foreground">Attachment</label>
+                        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-border border-dashed rounded-md">
                             <div className="space-y-1 text-center">
-                                <UploadCloud className="mx-auto h-12 w-12 text-body" />
-                                <div className="flex text-sm text-body">
-                                    <label htmlFor="sp_attachment" className="relative cursor-pointer bg-white rounded-control font-medium text-purple-600 hover:text-purple-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-purple-600">
+                                <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
+                                <div className="flex text-sm text-muted-foreground">
+                                    <label htmlFor="sp_attachment" className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-ring">
                                         <span className="font-bold">Browse your files</span>
                                         <input id="sp_attachment" name="sp_attachment" type="file" className="sr-only" onChange={handleFileChange} />
                                     </label>
                                 </div>
-                                <p className="text-xs text-body">Maximum size : 5 MB</p>
+                                <p className="text-xs text-muted-foreground">Maximum size : 5 MB</p>
                             </div>
                         </div>
-                        {data.sp_attachment && <p className="mt-2 text-sm text-body">Selected file: {data.sp_attachment.name}</p>}
-                        {paymentFormErrors.sp_attachment && <p className="text-danger text-sm mt-1">{paymentFormErrors.sp_attachment}</p>}
+                        {data.sp_attachment && <p className="mt-2 text-sm text-muted-foreground">Selected file: {data.sp_attachment.name}</p>}
+                        {paymentFormErrors.sp_attachment && <p className="text-destructive text-sm mt-1">{paymentFormErrors.sp_attachment}</p>}
                     </div>
                 </div>
 

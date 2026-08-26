@@ -195,9 +195,9 @@ const TimesheetApprovals: React.FC = () => {
             <PageHeader title="Timesheet Approvals" />
 
             {/* ── Pending list ── */}
-            <div className="overflow-x-auto border border-border rounded-control">
+            <div className="overflow-x-auto border border-border rounded-md">
                 <table className="min-w-full text-sm">
-                    <thead className="bg-gray-100 text-xs uppercase text-body">
+                    <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                         <tr>
                             <th className="px-4 py-3 text-left border-b border-border">Employee</th>
                             <th className="px-4 py-3 text-left border-b border-border">Week starting</th>
@@ -222,7 +222,7 @@ const TimesheetApprovals: React.FC = () => {
                                 <tr
                                     key={ts.id}
                                     className={`border-b border-border hover:bg-gray-50 transition-colors ${
-                                        selected?.id === ts.id ? 'bg-purple-50' : ''
+                                        selected?.id === ts.id ? 'bg-accent' : ''
                                     }`}
                                 >
                                     <td className="px-4 py-3 font-medium text-gray-900">
@@ -244,7 +244,7 @@ const TimesheetApprovals: React.FC = () => {
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => openTimesheet(ts)}
-                                            className="text-purple-600 hover:text-purple-800 text-xs underline"
+                                            className="text-primary hover:text-primary text-xs underline"
                                         >
                                             Review
                                         </Button>
@@ -318,7 +318,7 @@ const TimesheetApprovals: React.FC = () => {
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-sm">
-                                <thead className="bg-gray-100 text-xs uppercase text-body">
+                                <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                                     <tr>
                                         <th className="px-4 py-3 text-left border-b border-border">Project</th>
                                         <th className="px-4 py-3 text-left border-b border-border">Date</th>
@@ -353,7 +353,7 @@ const TimesheetApprovals: React.FC = () => {
                                             <td className="px-4 py-3 text-gray-700" colSpan={2}>
                                                 Total hours
                                             </td>
-                                            <td className="px-4 py-3 text-right font-mono text-purple-700">
+                                            <td className="px-4 py-3 text-right font-mono text-primary">
                                                 {fmtHours(detailTotal)}
                                             </td>
                                             <td colSpan={2} />
@@ -382,7 +382,7 @@ const TimesheetApprovals: React.FC = () => {
                             value={rejectionNote}
                             onChange={(e) => setRejectionNote(e.target.value)}
                             placeholder="Reason for rejection…"
-                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-600 mb-4"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring mb-4"
                         />
                         <div className="flex justify-end gap-3">
                             <Button

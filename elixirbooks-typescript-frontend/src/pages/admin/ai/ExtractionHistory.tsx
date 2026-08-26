@@ -66,7 +66,7 @@ const STATUS_STYLES: Record<Job['status'], string> = {
   PENDING: 'bg-gray-100 text-gray-700',
   EXTRACTED: 'bg-blue-100 text-blue-700',
   CONFIRMED: 'bg-green-100 text-green-700',
-  FAILED: 'bg-red-100 text-red-700',
+  FAILED: 'bg-destructive-soft text-destructive',
   DISCARDED: 'bg-gray-100 text-gray-500 line-through',
 };
 
@@ -148,7 +148,7 @@ const ExtractionHistory: FC = () => {
             setStatusFilter(e.target.value);
             setPage(1);
           }}
-          className="border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
+          className="border border-gray-300 rounded-md px-3 py-2 bg-white text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <option value="">All statuses</option>
           <option value="EXTRACTED">Extracted (awaiting confirm)</option>
@@ -228,7 +228,7 @@ const ExtractionHistory: FC = () => {
                   ? [
                       {
                         label: 'discard',
-                        icon: <Trash2 className="text-red-500 hover:text-red-700" size={16} />,
+                        icon: <Trash2 className="text-destructive hover:text-destructive" size={16} />,
                         onClick: (j: Job) => handleDiscard(j),
                       },
                     ]
@@ -262,7 +262,7 @@ const ExtractionHistory: FC = () => {
               <Info label="Cost" value={viewJob.costUsd !== null ? `$${viewJob.costUsd.toFixed(4)}` : '—'} />
             </div>
             {viewJob.errorMessage && (
-              <div className="flex items-start gap-2 bg-red-50 text-red-700 border border-red-200 rounded-md px-3 py-2 text-sm">
+              <div className="flex items-start gap-2 bg-destructive-soft text-destructive border border-destructive rounded-md px-3 py-2 text-sm">
                 <XCircle size={16} className="flex-shrink-0 mt-0.5" />
                 <span>{viewJob.errorMessage}</span>
               </div>

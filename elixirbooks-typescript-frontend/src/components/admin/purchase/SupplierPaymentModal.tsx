@@ -259,25 +259,25 @@ const SupplierPaymentModal: React.FC<SupplierPaymentModalProps> = ({
                 {/* Purchase Amount & Balance Remaining */}
                 <div className="grid grid-cols-2 gap-4">
                     <div className="form-control">
-                        <label htmlFor="purchaseAmount" className="block text-sm font-medium text-heading">
+                        <label htmlFor="purchaseAmount" className="block text-sm font-medium text-foreground">
                             Purchase Amount
                         </label>
                         <input
                             type="text"
                             id="purchaseAmount"
-                            className="border border-border bg-surface cursor-not-allowed mt-1 rounded-control px-4 py-2 w-full text-heading focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="border border-border bg-muted cursor-not-allowed mt-1 rounded-md px-4 py-2 w-full text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                             value={fmt(totalAmount)}
                             readOnly
                         />
                     </div>
                     <div className="form-control">
-                        <label htmlFor="balanceRemaining" className="block text-sm font-medium text-heading">
+                        <label htmlFor="balanceRemaining" className="block text-sm font-medium text-foreground">
                             Balance Remaining
                         </label>
                         <input
                             type="text"
                             id="balanceRemaining"
-                            className="border border-border mt-1 bg-surface cursor-not-allowed rounded-control px-4 py-2 w-full text-heading focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="border border-border mt-1 bg-muted cursor-not-allowed rounded-md px-4 py-2 w-full text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                             value={fmt(remaining || 0)}
                             readOnly
                         />
@@ -293,7 +293,7 @@ const SupplierPaymentModal: React.FC<SupplierPaymentModalProps> = ({
                             value={formData.paymentDate || null}
                             isRequired
                         />
-                        {formErrors.paymentDate && <p className="text-danger text-xs mt-1">{formErrors.paymentDate}</p>}
+                        {formErrors.paymentDate && <p className="text-destructive text-xs mt-1">{formErrors.paymentDate}</p>}
                     </div>
                     <FormField
                         label="Payment Amount"
@@ -308,8 +308,8 @@ const SupplierPaymentModal: React.FC<SupplierPaymentModalProps> = ({
 
                 {/* Source of Funds */}
                 <div className="mt-4">
-                    <label className="block text-sm font-medium text-heading">
-                        Source of Funds <em className="text-danger">*</em>
+                    <label className="block text-sm font-medium text-foreground">
+                        Source of Funds <em className="text-destructive">*</em>
                     </label>
                     <div className="mt-1 flex gap-2">
                         {([
@@ -335,8 +335,8 @@ const SupplierPaymentModal: React.FC<SupplierPaymentModalProps> = ({
                 {/* Payment Method (Bank only) */}
                 {formData.sourceType === 'BANK' && (
                     <div className="mt-4">
-                        <label className="block text-sm font-medium text-heading">
-                            Payment Method <em className="text-danger">*</em>
+                        <label className="block text-sm font-medium text-foreground">
+                            Payment Method <em className="text-destructive">*</em>
                         </label>
                         <SmartDropdown
                             items={paymentModeOptions}
@@ -347,15 +347,15 @@ const SupplierPaymentModal: React.FC<SupplierPaymentModalProps> = ({
                             placeholder="Search or Select Payment Method"
                             serverside={false}
                         />
-                        {formErrors.paymentMode && <p className="text-danger text-xs mt-1">{formErrors.paymentMode}</p>}
+                        {formErrors.paymentMode && <p className="text-destructive text-xs mt-1">{formErrors.paymentMode}</p>}
                     </div>
                 )}
 
                 {/* Paid From (Bank account — Bank only) */}
                 {formData.sourceType === 'BANK' && (
                     <div className="mt-4">
-                        <label htmlFor="bankId" className="block text-sm font-medium text-heading">
-                            Paid From <em className="text-danger">*</em>
+                        <label htmlFor="bankId" className="block text-sm font-medium text-foreground">
+                            Paid From <em className="text-destructive">*</em>
                         </label>
                         <SmartDropdown
                             items={bankAccountOptions}
@@ -365,7 +365,7 @@ const SupplierPaymentModal: React.FC<SupplierPaymentModalProps> = ({
                             onSelect={(item) => handleBankAccountSelect(item as OptionType)}
                             selectedItem={bankAccountOptions.find((b) => b.id === formData.bankId) || null}
                         />
-                        {formErrors.bankId && <p className="text-danger text-sm">{formErrors.bankId}</p>}
+                        {formErrors.bankId && <p className="text-destructive text-sm">{formErrors.bankId}</p>}
                     </div>
                 )}
 

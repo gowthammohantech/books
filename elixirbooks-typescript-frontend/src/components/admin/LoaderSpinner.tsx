@@ -8,7 +8,7 @@ interface LoaderProps {
 
 const LoaderSpinner: React.FC<LoaderProps> = ({
   size = 36,
-  color = "text-purple-600",
+  color = "text-primary",
   className = "",
 }) => {
   return (

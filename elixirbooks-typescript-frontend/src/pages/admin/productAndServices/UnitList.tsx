@@ -302,12 +302,12 @@ const UnitList: FC = () => {
                     placeholder="Search by name or short name.."
                     value={search}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
-                    className="border border-gray-300 px-4 py-2 rounded-md w-full md:w-64 bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    className="border border-gray-300 px-4 py-2 rounded-md w-full md:w-64 bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 />
                 <select
                     value={limit}
                     onChange={(e: ChangeEvent<HTMLSelectElement>) => handlePageLengthChange(Number(e.target.value))}
-                    className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 >
                     {[10, 25, 50].map((num) => (
                         <option className="text-gray-950 " key={num} value={num}>{num} / page</option>
@@ -362,7 +362,7 @@ const UnitList: FC = () => {
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingUnit ? 'Edit Unit' : 'Add New Unit'}>
                 <form onSubmit={handleNewUnitSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 ">Unit Name <em className="text-red-600">*</em></label>
+                        <label className="block text-sm font-medium text-gray-700 ">Unit Name <em className="text-destructive">*</em></label>
                         <input
                             type="text"
                             name="unit_name"
@@ -371,12 +371,12 @@ const UnitList: FC = () => {
                             className="mt-1 block w-full border border-gray-300  rounded-md p-2 bg-white  text-gray-950 "
                         />
                         {formErrors.unit_name && (
-                            <p className="text-sm text-red-600 mt-1">{formErrors.unit_name}</p>
+                            <p className="text-sm text-destructive mt-1">{formErrors.unit_name}</p>
                         )}
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 ">Short Name <em className="text-red-600">*</em></label>
+                        <label className="block text-sm font-medium text-gray-700 ">Short Name <em className="text-destructive">*</em></label>
                         <input
                             type="text"
                             name="short_name"
@@ -385,7 +385,7 @@ const UnitList: FC = () => {
                             className="mt-1 block w-full border border-gray-300  rounded-md p-2 bg-white  text-gray-950 "
                         />
                         {formErrors.short_name && (
-                            <p className="text-sm text-red-600 mt-1">{formErrors.short_name}</p>
+                            <p className="text-sm text-destructive mt-1">{formErrors.short_name}</p>
                         )}
                     </div>
 

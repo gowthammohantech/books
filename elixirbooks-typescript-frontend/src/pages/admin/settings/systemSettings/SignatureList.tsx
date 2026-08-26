@@ -362,13 +362,13 @@ const SignatureList: FC = () => {
 
                 {!isLoading && signatures && signatures.length === 0 &&
                     <tr>
-                        <td colSpan={6} className="text-center py-4 text-body font-medium">No Signatures Found</td>
+                        <td colSpan={6} className="text-center py-4 text-muted-foreground font-medium">No Signatures Found</td>
                     </tr>
                 }
 
                 {isLoading && (
                     <tr key="table-loader">
-                        <td className="text-center py-2 text-heading font-semibold" colSpan={7}>
+                        <td className="text-center py-2 text-foreground font-semibold" colSpan={7}>
                             <LoaderSpinner />
                         </td>
                     </tr>
@@ -392,25 +392,25 @@ const SignatureList: FC = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Image Upload */}
                     <div className="flex items-start gap-4 mb-4">
-                        <div className="relative w-24 h-24 border border-border rounded-control flex items-center justify-center overflow-hidden bg-white">
+                        <div className="relative w-24 h-24 border border-border rounded-md flex items-center justify-center overflow-hidden bg-white">
                             {formData.signatureImage_preview_url ? (
                                 <img src={formData.signatureImage_preview_url} alt="Preview" className="w-full h-full object-contain" />
                             ) : (
-                                <span className="text-xl text-body"><Image /></span>
+                                <span className="text-xl text-muted-foreground"><Image /></span>
                             )}
                             {formData.signatureImage_preview_url && (
-                                <button type="button" onClick={handleImageDelete} title="Remove Image" className="absolute top-[-1px] right-[-1px] bg-white border border-danger rounded-full p-1 shadow-md hover:bg-danger group">
-                                    <Trash2Icon size={14} className="text-danger group-hover:text-white" />
+                                <button type="button" onClick={handleImageDelete} title="Remove Image" className="absolute top-[-1px] right-[-1px] bg-white border border-destructive rounded-full p-1 shadow-md hover:bg-destructive group">
+                                    <Trash2Icon size={14} className="text-destructive group-hover:text-white" />
                                 </button>
                             )}
                         </div>
                         <div>
-                            <label htmlFor="imageUpload" className="inline-flex items-center bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2 rounded-control transition duration-200 cursor-pointer">
+                            <label htmlFor="imageUpload" className="inline-flex items-center bg-primary hover:bg-primary/90 text-white text-sm px-4 py-2 rounded-md transition duration-200 cursor-pointer">
                                 <Image size={16} className="mr-2" /> Upload Image
                             </label>
                             <input type="file" accept="image/png, image/jpeg" onChange={handleFileChange} className="hidden" id="imageUpload" />
-                            <p className="text-xs text-body mt-1">PNG or JPG, max 5MB.</p>
-                            {formErrors.signatureImage && <p className="text-xs text-danger mt-1">{formErrors.signatureImage}</p>}
+                            <p className="text-xs text-muted-foreground mt-1">PNG or JPG, max 5MB.</p>
+                            {formErrors.signatureImage && <p className="text-xs text-destructive mt-1">{formErrors.signatureImage}</p>}
                         </div>
                     </div>
 
@@ -431,7 +431,7 @@ const SignatureList: FC = () => {
                     <div className="flex justify-between items-center gap-6 flex-wrap">
                         {/* Status Switch */}
                         <div className="flex items-center gap-3">
-                            <label htmlFor="status" className="font-medium text-sm text-heading">
+                            <label htmlFor="status" className="font-medium text-sm text-foreground">
                                 Status
                             </label>
                             <Switch
@@ -444,7 +444,7 @@ const SignatureList: FC = () => {
 
                         {/* Default Switch */}
                         <div className="flex items-center gap-3">
-                            <label htmlFor="markAsDefault" className="font-medium text-sm text-heading">
+                            <label htmlFor="markAsDefault" className="font-medium text-sm text-foreground">
                                 Set as Default
                             </label>
                             <Switch

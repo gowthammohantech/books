@@ -56,7 +56,7 @@ const QuotationTemplate: React.FC<InvoiceDetailsProps> = ({ quotationDeta, lineF
             {/* Billing Information Section */}
             <section className="flex justify-between mt-2">
                 <div className="w-2/5">
-                    <h2 className="font-bold text-purple-600 mb-2">Bill To :</h2>
+                    <h2 className="font-bold text-primary mb-2">Bill To :</h2>
                     <p className="font-semibold">{quotationDeta?.billTo?.name ?? '—'}</p>
                     <p className="text-sm text-gray-600">{quotationDeta?.billTo?.billingAddress?.addressLine1}</p>
                     <p className="text-sm text-gray-600">{quotationDeta?.billTo?.billingAddress?.city}, {quotationDeta?.billTo?.billingAddress?.state}, {quotationDeta?.billTo?.billingAddress?.country}</p>
@@ -66,14 +66,14 @@ const QuotationTemplate: React.FC<InvoiceDetailsProps> = ({ quotationDeta, lineF
                     {quotationDeta?.billTo?.gstin && <p className="text-sm text-gray-600">GSTIN: {quotationDeta.billTo.gstin}</p>}
                 </div>
                 <div className="w-2/5">
-                    <h2 className="font-bold text-purple-600 mb-2">Pay To :</h2>
+                    <h2 className="font-bold text-primary mb-2">Pay To :</h2>
                     <p className="font-semibold">{quotationDeta?.billFrom?.name ?? '—'}</p>
                     <p className="text-sm text-gray-600">{quotationDeta?.billFrom?.address}</p>
                     <p className="text-sm text-gray-600">{quotationDeta?.billFrom?.email}</p>
                     <p className="text-sm text-gray-600">{quotationDeta?.billFrom?.phone}</p>
                 </div>
                 <div className="text-right">
-                    <h2 className="font-bold text-purple-600 mb-2">{systemSettings?.company.companyName}</h2>
+                    <h2 className="font-bold text-primary mb-2">{systemSettings?.company.companyName}</h2>
                     <p className="text-sm text-gray-600">Address: {systemSettings?.company.address}</p>
                     <p className="text-sm text-gray-600">Mobile: {systemSettings?.company.phone}</p>
                 </div>

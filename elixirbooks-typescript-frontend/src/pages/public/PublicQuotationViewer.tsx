@@ -33,7 +33,7 @@ export default function PublicQuotationViewer() {
   }, [token]);
 
   if (loading) return <div className="p-6 text-gray-600">Loading…</div>;
-  if (error) return <div className="p-6 text-red-600">{error}</div>;
+  if (error) return <div className="p-6 text-destructive">{error}</div>;
   if (!data) return <div className="p-6 text-gray-600">No data.</div>;
 
   const items = Array.isArray(data.items)

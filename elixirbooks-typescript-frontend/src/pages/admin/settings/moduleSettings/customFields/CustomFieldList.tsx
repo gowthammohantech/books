@@ -153,7 +153,7 @@ const CustomFieldList: React.FC<CustomFieldListProps> = ({ moduleSlug }) => {
     // Fallback UI if module is invalid
     if (!isLoading && !currentModule) {
         return (
-            <div className="p-4 bg-danger-soft border border-danger rounded-control text-danger text-sm font-medium">
+            <div className="p-4 bg-destructive-soft border border-destructive rounded-md text-destructive text-sm font-medium">
                 Error: Module with slug "{moduleSlug}" could not be found in the system.
             </div>
         );
@@ -184,8 +184,8 @@ const CustomFieldList: React.FC<CustomFieldListProps> = ({ moduleSlug }) => {
                             // Calculate the correct row index based on the current page
                             index={from + index}
                             columns={[
-                                <span className="font-medium text-heading">{field.labelName}</span>,
-                                <span className="text-body font-mono text-sm">{field.fieldSlug}</span>,
+                                <span className="font-medium text-foreground">{field.labelName}</span>,
+                                <span className="text-muted-foreground font-mono text-sm">{field.fieldSlug}</span>,
                                 <Badge color="primary">{typeName}</Badge>,
                                 field.placement === 'lineItem' ? 'Line item' : 'Document',
                                 field.isMandatory ? "Yes" : "No",
@@ -198,7 +198,7 @@ const CustomFieldList: React.FC<CustomFieldListProps> = ({ moduleSlug }) => {
 
                 {!isLoading && customFields.length === 0 && (
                     <tr>
-                        <td colSpan={tableHeaders.length} className="text-center text-body py-6 font-medium">
+                        <td colSpan={tableHeaders.length} className="text-center text-muted-foreground py-6 font-medium">
                             No Custom Fields Created Yet
                         </td>
                     </tr>

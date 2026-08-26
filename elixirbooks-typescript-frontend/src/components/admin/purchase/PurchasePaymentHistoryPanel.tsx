@@ -122,10 +122,10 @@ const PurchasePaymentHistoryPanel: React.FC<PurchasePaymentHistoryPanelProps> = 
     };
 
     return (
-        <div className="font-sans max-w-5xl mx-auto mt-8 mb-4 bg-white rounded-card border border-border shadow-card">
+        <div className="font-sans max-w-5xl mx-auto mt-8 mb-4 bg-white rounded-xl border border-border shadow-sm">
             {/* Card header */}
             <div className="px-4 py-3 border-b border-border">
-                <h2 className="text-lg font-semibold text-heading">Payment History</h2>
+                <h2 className="text-lg font-semibold text-foreground">Payment History</h2>
             </div>
 
             {/* Table */}

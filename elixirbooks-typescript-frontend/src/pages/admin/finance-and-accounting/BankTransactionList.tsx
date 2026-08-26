@@ -236,7 +236,7 @@ const BankTransactionList: React.FC = () => {
                     <select
                         value={limit}
                         onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
-                        className="border border-gray-300 px-2 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-transparent"
+                        className="border border-gray-300 px-2 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring focus:border-transparent"
                     >
                         {[10, 25, 50].map((num) => (
                             <option className="text-gray-950 " key={num} value={num}>{num} / page</option>

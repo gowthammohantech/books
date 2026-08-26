@@ -320,7 +320,7 @@ const ContactForm: React.FC = () => {
 
     // ── Shared select class ───────────────────────────────────────────────────
 
-    const selectClass = 'mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-purple-600 focus:border-purple-600 sm:text-sm text-gray-950 disabled:bg-gray-50';
+    const selectClass = 'mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-ring focus:border-primary sm:text-sm text-gray-950 disabled:bg-gray-50';
 
     // ── Render ────────────────────────────────────────────────────────────────
 
@@ -342,7 +342,7 @@ const ContactForm: React.FC = () => {
                     {isEditMode ? 'Save Changes' : 'Create'}
                 </Button>
             </PageHeader>
-            <div className="p-6 bg-white rounded-card shadow-card border border-border">
+            <div className="p-6 bg-white rounded-xl shadow-sm border border-border">
                 <form id="contact-form" className="space-y-8" onSubmit={handleSubmit}>
 
                     {/* ── Identity ──────────────────────────────────────────── */}
@@ -351,7 +351,7 @@ const ContactForm: React.FC = () => {
                             Identity
                         </h3>
                         {formErrors.identity && (
-                            <p className="mb-4 text-sm text-red-500">{formErrors.identity}</p>
+                            <p className="mb-4 text-sm text-destructive">{formErrors.identity}</p>
                         )}
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-6">
                             <InputField
@@ -387,7 +387,7 @@ const ContactForm: React.FC = () => {
                                     type="checkbox"
                                     checked={formData.showNameOnInvoice}
                                     onChange={(e) => handleFormChange('showNameOnInvoice', e.target.checked)}
-                                    className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-600"
+                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-ring"
                                 />
                                 <label htmlFor="contactShowNameOnInvoice" className="text-sm text-gray-700">
                                     Show name on invoice
@@ -524,7 +524,7 @@ const ContactForm: React.FC = () => {
                                     ))}
                                 </select>
                                 {formErrors.countryId && (
-                                    <p className="mt-1 text-sm text-red-500">{formErrors.countryId}</p>
+                                    <p className="mt-1 text-sm text-destructive">{formErrors.countryId}</p>
                                 )}
                             </div>
                             <InputField
@@ -574,7 +574,7 @@ const ContactForm: React.FC = () => {
                                     <option value="OUT_OF_SCOPE">Out of scope</option>
                                 </select>
                                 {formErrors.defaultTaxTreatment && (
-                                    <p className="mt-1 text-sm text-red-500">{formErrors.defaultTaxTreatment}</p>
+                                    <p className="mt-1 text-sm text-destructive">{formErrors.defaultTaxTreatment}</p>
                                 )}
                             </div>
 
@@ -646,7 +646,7 @@ const ContactForm: React.FC = () => {
                                     type="checkbox"
                                     checked={formData.useContactEmailSettings}
                                     onChange={(e) => handleFormChange('useContactEmailSettings', e.target.checked)}
-                                    className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-600"
+                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-ring"
                                 />
                                 <label htmlFor="contactUseContactEmailSettings" className="text-sm text-gray-700">
                                     Use contact-level email settings

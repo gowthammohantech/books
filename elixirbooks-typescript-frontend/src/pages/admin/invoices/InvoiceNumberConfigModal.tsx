@@ -128,28 +128,28 @@ const InvoiceNumberConfigModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Invoice Number Configuration">
             <div>
-                <h4 className="text-lg font-semibold text-heading mb-2">Configure Invoice Number Preferences</h4>
+                <h4 className="text-lg font-semibold text-foreground mb-2">Configure Invoice Number Preferences</h4>
                 {formData.invoiceNumberType === 'auto' &&
-                    <p className="text-body text-sm mb-6">
+                    <p className="text-muted-foreground text-sm mb-6">
                         Your invoice numbers are set on auto-generate mode to save your time. Are you sure about changing this setting?
                     </p>
                 }
                 {formData.invoiceNumberType === 'manual' &&
-                    <p className="text-body text-sm mb-6">
+                    <p className="text-muted-foreground text-sm mb-6">
                         You have selected manual invoice numbering. Do you want us to auto-generate it for you?
                     </p>
                 }
 
 
                 {/* Auto-generate option */}
-                <div className="mb-4 p-4 border border-border rounded-card bg-surface">
+                <div className="mb-4 p-4 border border-border rounded-xl bg-muted">
                     <div className="flex items-center gap-3 mb-2">
                         <CustomCheckbox
                             checked={formData.invoiceNumberType === 'auto'}
                             onChange={handleAutoGenerateChange}
                         />
                         <div className="flex items-center gap-2 relative">
-                            <span className="text-sm font-medium text-heading">
+                            <span className="text-sm font-medium text-foreground">
                                 Continue auto-generating invoice numbers
                             </span>
                             <div
@@ -157,7 +157,7 @@ const InvoiceNumberConfigModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
                                 onMouseEnter={() => setShowTooltip(true)}
                                 onMouseLeave={() => setShowTooltip(false)}
                             >
-                                <Info size={16} className="text-body cursor-help" />
+                                <Info size={16} className="text-muted-foreground cursor-help" />
                                 {/* Tooltip */}
                                 {showTooltip && (
                                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50 w-48">
@@ -191,13 +191,13 @@ const InvoiceNumberConfigModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
                 </div>
 
                 {/* Manual option */}
-                <div className="mb-6 p-4 border border-border rounded-card bg-surface">
+                <div className="mb-6 p-4 border border-border rounded-xl bg-muted">
                     <div className="flex items-center gap-3 mb-2">
                         <CustomCheckbox
                             checked={formData.invoiceNumberType === 'manual'}
                             onChange={(checked) => handleAutoGenerateChange(!checked)}
                         />
-                        <span className="text-sm font-medium text-heading">Enter invoice numbers manually</span>
+                        <span className="text-sm font-medium text-foreground">Enter invoice numbers manually</span>
                     </div>
 
                     {formData.invoiceNumberType === 'manual' && (

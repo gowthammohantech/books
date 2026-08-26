@@ -240,7 +240,7 @@ const Holidays: React.FC = () => {
                             value={form.date}
                             onChange={(date) => setForm((prev) => ({ ...prev, date }))}
                         />
-                        {formErrors.date && <p className="mt-1 text-sm text-red-500">{formErrors.date}</p>}
+                        {formErrors.date && <p className="mt-1 text-sm text-destructive">{formErrors.date}</p>}
                     </div>
                     <div className="flex items-center gap-2">
                         <input
@@ -248,7 +248,7 @@ const Holidays: React.FC = () => {
                             id="recurringYearly"
                             checked={form.recurringYearly}
                             onChange={(e) => setForm((prev) => ({ ...prev, recurringYearly: e.target.checked }))}
-                            className="h-4 w-4 text-purple-600 border-gray-300 rounded"
+                            className="h-4 w-4 text-primary border-gray-300 rounded"
                         />
                         <label htmlFor="recurringYearly" className="text-sm font-medium text-gray-700">
                             Recurs every year

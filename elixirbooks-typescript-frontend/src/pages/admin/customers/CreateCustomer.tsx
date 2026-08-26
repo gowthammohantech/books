@@ -280,7 +280,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerData = null }) => {
     };
 
     return (
-        <div className="p-6 bg-white  rounded-card shadow-card border border-border ">
+        <div className="p-6 bg-white  rounded-xl shadow-sm border border-border ">
             <PageHeader title={isEditMode ? 'Edit Customer' : 'Add Customer'}>
                 <button
                     type="button"
@@ -293,7 +293,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerData = null }) => {
                     type="submit"
                     form="customer-form"
                     disabled={isSubmitting}
-                    className="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md shadow-sm hover:bg-purple-700 focus:outline-none flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary border border-transparent rounded-md shadow-sm hover:bg-primary/90 focus:outline-none flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                     <Save size={16} />
                     {isEditMode ? 'Save Changes' : 'Create'}
@@ -319,7 +319,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerData = null }) => {
                             <button
                                 type="button"
                                 onClick={handleRemoveImage}
-                                className="text-sm font-medium text-red-600 hover:text-red-500 flex items-center gap-1 cursor-pointer"
+                                className="text-sm font-medium text-destructive hover:text-destructive flex items-center gap-1 cursor-pointer"
                             >
                                 <Trash2Icon size={14} />
                                 Remove
@@ -363,7 +363,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerData = null }) => {
                         <div className="flex justify-between items-center border-b border-gray-200  pb-2">
                             <h3 className="text-lg font-semibold leading-6 text-gray-950 ">Shipping Address</h3>
                             {/* FIX: Added onClick handler */}
-                            <button type="button" onClick={handleCopyAddress} className="text-sm font-medium text-purple-600 hover:text-purple-600">
+                            <button type="button" onClick={handleCopyAddress} className="text-sm font-medium text-primary hover:text-primary">
                                 ⎘ Copy From Billing
                             </button>
                         </div>

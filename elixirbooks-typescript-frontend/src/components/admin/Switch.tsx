@@ -33,7 +33,7 @@ const Switch: React.FC<SwitchProps> = ({ name, checked, onChange, disabled = fal
                 disabled={disabled}
                 id={name}
             />
-            <div className="relative w-11 h-6 bg-gray-200 peer-checked:bg-purple-600 rounded-full peer-focus:ring-2 peer-focus:ring-purple-600 transition-all duration-300">
+            <div className="relative w-11 h-6 bg-gray-200 peer-checked:bg-primary rounded-full peer-focus:ring-2 peer-focus:ring-ring transition-all duration-300">
                 <div
                     className={`absolute top-0.5 left-1 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${checked ? 'translate-x-full' : ''
                         }`}

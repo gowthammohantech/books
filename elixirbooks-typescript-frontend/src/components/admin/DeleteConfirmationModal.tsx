@@ -54,8 +54,8 @@ const DeleteConfirmationModal = ({
 
                     <div className="text-center">
                         {/* Icon */}
-                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-                            <AlertTriangle className="h-6 w-6 text-red-600" aria-hidden="true" />
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive-soft">
+                            <AlertTriangle className="h-6 w-6 text-destructive" aria-hidden="true" />
                         </div>
 
                         {/* Title */}
@@ -86,7 +86,7 @@ const DeleteConfirmationModal = ({
                             type="button"
                             onClick={onConfirm}
                             disabled={isDeleting}
-                            className="flex w-full items-center justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-red-400 disabled:opacity-50 cursor-pointer"
+                            className="flex w-full items-center justify-center rounded-md border border-transparent bg-destructive px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-destructive/90 focus:outline-none focus:ring-2 focus:ring-destructive focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-destructive disabled:opacity-50 cursor-pointer"
                         >
                             {isDeleting ? (
                                 <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />

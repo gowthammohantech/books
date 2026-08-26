@@ -14,7 +14,7 @@ interface ProfileCardProps {
 // avatar color across the app (was hardcoded purple for every fallback,
 // which made long lists of avatars hard to visually distinguish/scan).
 const AVATAR_PALETTE = [
-    "bg-purple-600",
+    "bg-primary",
     "bg-blue-600",
     "bg-emerald-600",
     "bg-amber-600",

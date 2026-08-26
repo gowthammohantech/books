@@ -301,14 +301,14 @@ const PayrollProfiles: React.FC = () => {
                         {/* Employee — shown only on create */}
                         {!itemToEdit && (
                             <div className="grid grid-cols-1">
-                                <label htmlFor="employeeUserId" className="text-red-500">Employee *</label>
+                                <label htmlFor="employeeUserId" className="text-destructive">Employee *</label>
                                 <select
                                     id="employeeUserId"
                                     name="employeeUserId"
                                     value={formData.employeeUserId}
                                     onChange={(e) => setFormData((prev) => ({ ...prev, employeeUserId: e.target.value }))}
                                     disabled={staffLoading}
-                                    className="border border-gray-300 mt-1 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                    className="border border-gray-300 mt-1 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring"
                                 >
                                     <option value="">— Select employee —</option>
                                     {staffUsers.map((u) => (
@@ -318,7 +318,7 @@ const PayrollProfiles: React.FC = () => {
                                     ))}
                                 </select>
                                 {formErrors.employeeUserId && (
-                                    <span className="text-red-500 text-sm">{formErrors.employeeUserId}</span>
+                                    <span className="text-destructive text-sm">{formErrors.employeeUserId}</span>
                                 )}
                             </div>
                         )}
@@ -333,16 +333,16 @@ const PayrollProfiles: React.FC = () => {
                                 value={formData.defaultGross}
                                 onChange={(e) => setFormData((prev) => ({ ...prev, defaultGross: e.target.value }))}
                                 placeholder="e.g. 5000.00"
-                                className="border border-gray-300 mt-1 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                className="border border-gray-300 mt-1 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring"
                             />
                             {formErrors.defaultGross && (
-                                <span className="text-red-500 text-sm">{formErrors.defaultGross}</span>
+                                <span className="text-destructive text-sm">{formErrors.defaultGross}</span>
                             )}
                         </div>
 
                         {/* Active */}
                         <div className="flex flex-row mt-4 gap-6 items-center">
-                            <label htmlFor="isActive" className="text-red-500">Active *</label>
+                            <label htmlFor="isActive" className="text-destructive">Active *</label>
                             <Switch
                                 name="isActive"
                                 checked={formData.isActive}

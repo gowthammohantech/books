@@ -92,7 +92,7 @@ const InvoiceTemplateList: React.FC = () => {
                 {templates.map((template) => (
                     <div
                         key={template.id}
-                        className="bg-white rounded-card shadow-card hover:shadow-md transition overflow-hidden border border-border flex flex-col h-full"
+                        className="bg-white rounded-xl shadow-sm hover:shadow-md transition overflow-hidden border border-border flex flex-col h-full"
                     >
                         {/* Thumbnail */}
                         <div
@@ -105,7 +105,7 @@ const InvoiceTemplateList: React.FC = () => {
                                 className="w-full h-full object-cover object-top"
                             />
                             {/* Hover overlay */}
-                            <div className="absolute inset-0 bg-purple-600 bg-opacity-70 flex items-center justify-center opacity-0 group-hover:opacity-70 transition-opacity duration-200">
+                            <div className="absolute inset-0 bg-primary bg-opacity-70 flex items-center justify-center opacity-0 group-hover:opacity-70 transition-opacity duration-200">
                                 <button className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors cursor-pointer">
                                     <Eye className="w-6 h-6 text-white" />
                                 </button>
@@ -114,24 +114,24 @@ const InvoiceTemplateList: React.FC = () => {
 
                         {/* Footer */}
                         <div className="flex items-center justify-between p-3 mt-auto border-t border-border">
-                            <span className="text-heading font-medium text-sm truncate">
+                            <span className="text-foreground font-medium text-sm truncate">
                                 {template.name}
                             </span>
                             <button
                                 disabled={!hasPermission(permissions, "invoices", "edit")}
                                 onClick={() => makeDefault(template.id)}
-                                className="p-1.5 rounded-full hover:bg-purple-100 transition flex-shrink-0 cursor-pointer"
+                                className="p-1.5 rounded-full hover:bg-accent transition flex-shrink-0 cursor-pointer"
                             >
                                 <span
                                     className={`flex items-center justify-center rounded-full ${defaultInvoiceTemplate === template.id
-                                        ? "bg-purple-600"
+                                        ? "bg-primary"
                                         : "bg-white border border-border"
                                         }`}
                                 >
                                     <Star
                                         className={`w-5 h-5 p-1 rounded-full ${defaultInvoiceTemplate === template.id
                                             ? "text-white"
-                                            : "text-purple-600"
+                                            : "text-primary"
                                             }`}
                                     />
                                 </span>

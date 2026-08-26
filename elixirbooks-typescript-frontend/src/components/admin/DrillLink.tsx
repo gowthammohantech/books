@@ -43,7 +43,7 @@ const DrillLink: React.FC<Props> = ({ to, params, children, title, className }) 
         <Link
             to={{ pathname: to, search }}
             title={title ?? 'View source records'}
-            className={`text-purple-600 underline decoration-dotted underline-offset-2 hover:decoration-solid cursor-pointer ${className ?? ''}`}
+            className={`text-primary underline decoration-dotted underline-offset-2 hover:decoration-solid cursor-pointer ${className ?? ''}`}
         >
             {children}
         </Link>

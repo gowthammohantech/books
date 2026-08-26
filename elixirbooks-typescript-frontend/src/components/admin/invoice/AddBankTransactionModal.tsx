@@ -203,7 +203,7 @@ const AddBankTransactionModal: React.FC<AddBankTransactionModalProps> = ({
                     <Select
                         label={
                             <>
-                                Payment Mode <span className="text-body">(optional)</span>
+                                Payment Mode <span className="text-muted-foreground">(optional)</span>
                             </>
                         }
                         value={form.paymentModeId}
@@ -221,7 +221,7 @@ const AddBankTransactionModal: React.FC<AddBankTransactionModalProps> = ({
                 <FormField
                     label={
                         <>
-                            Reference No <span className="text-body">(optional)</span>
+                            Reference No <span className="text-muted-foreground">(optional)</span>
                         </>
                     }
                     type="text"

@@ -141,20 +141,20 @@ const CreateBrandModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Image Upload Section */}
                 <div>
-                    <label className="block text-sm font-medium text-red-500  mb-1">Brand Image *</label>
+                    <label className="block text-sm font-medium text-destructive  mb-1">Brand Image *</label>
                     <ImageCropperUpload
                         value={formData.brandImageUrl || undefined}
                         aspect={1}
                         label="Upload Image"
                         onCropped={handleCroppedBrandImage}
                     />
-                    {formErrors.brand_image && <p className="text-red-500 text-xs mt-1">{formErrors.brand_image}</p>}
+                    {formErrors.brand_image && <p className="text-destructive text-xs mt-1">{formErrors.brand_image}</p>}
                 </div>
                 {/* Name Input */}
                 <div>
-                    <label htmlFor="brand_name" className="block text-sm font-medium text-red-500  mb-1">Name *</label>
-                    <input id="brand_name" name="brand_name" type="text" maxLength={50} value={formData.brand_name || ""} onChange={handleChange} placeholder="Enter Brand Name" className="w-full bg-white  text-gray-950  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-purple-600 focus:border-purple-600" />
-                    {formErrors.brand_name && <p className="text-red-500 text-xs mt-1">{formErrors.brand_name}</p>}
+                    <label htmlFor="brand_name" className="block text-sm font-medium text-destructive  mb-1">Name *</label>
+                    <input id="brand_name" name="brand_name" type="text" maxLength={50} value={formData.brand_name || ""} onChange={handleChange} placeholder="Enter Brand Name" className="w-full bg-white  text-gray-950  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-ring focus:border-primary" />
+                    {formErrors.brand_name && <p className="text-destructive text-xs mt-1">{formErrors.brand_name}</p>}
                 </div>
                 {/* Custom Fields */}
                 <DynamicCustomFields

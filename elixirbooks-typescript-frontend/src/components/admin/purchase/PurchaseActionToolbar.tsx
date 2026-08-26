@@ -66,17 +66,17 @@ const PurchaseActionToolbar: React.FC<PurchaseActionToolbarProps> = ({
                 <Badge color={badgeColor} variant="soft">{status}</Badge>
                 {total > 0 && (
                     <>
-                        <span className="text-body">
+                        <span className="text-muted-foreground">
                             Total:{' '}
-                            <span className="font-semibold text-heading">{fmt(total)}</span>
+                            <span className="font-semibold text-foreground">{fmt(total)}</span>
                         </span>
-                        <span className="text-body">
+                        <span className="text-muted-foreground">
                             Paid:{' '}
                             <span className="font-semibold text-success">{fmt(paid)}</span>
                         </span>
-                        <span className="text-body">
+                        <span className="text-muted-foreground">
                             Remaining:{' '}
-                            <span className={`font-semibold ${remaining <= 0 ? 'text-success' : 'text-danger'}`}>
+                            <span className={`font-semibold ${remaining <= 0 ? 'text-success' : 'text-destructive'}`}>
                                 {fmt(remaining)}
                             </span>
                         </span>

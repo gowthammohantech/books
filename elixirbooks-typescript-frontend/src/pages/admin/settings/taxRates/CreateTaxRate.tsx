@@ -304,7 +304,7 @@ const TaxRateForm: React.FC<TaxRateFormProps> = ({ taxRateData = null }) => {
                 <Card
                     padded={false}
                     header={
-                        <div className="flex items-center gap-2 px-5 py-4 border-b border-border text-lg font-semibold text-heading">
+                        <div className="flex items-center gap-2 px-5 py-4 border-b border-border text-lg font-semibold text-foreground">
                             Tax Details
                         </div>
                     }
@@ -395,14 +395,14 @@ const TaxRateForm: React.FC<TaxRateFormProps> = ({ taxRateData = null }) => {
                         />
 
                         <div className="sm:col-span-2">
-                            <label className="block text-sm font-medium text-heading mb-2">Status</label>
+                            <label className="block text-sm font-medium text-foreground mb-2">Status</label>
                             <div className="flex items-center gap-3">
                                 <Switch
                                     name="taxRateIsActive"
                                     checked={formData.isActive}
                                     onChange={(e) => handleFormChange('isActive', e.target.checked)}
                                 />
-                                <span className="text-sm text-body">
+                                <span className="text-sm text-muted-foreground">
                                     {formData.isActive ? 'Active' : 'Inactive'}
                                 </span>
                             </div>

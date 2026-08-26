@@ -1112,7 +1112,7 @@ const CreatePurchase: React.FC = () => {
                     <div className="w-full">
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 w-full">
                             <div className="w-full">
-                                <label htmlFor="ref-no" className="block text-sm font-medium text-heading mb-1">
+                                <label htmlFor="ref-no" className="block text-sm font-medium text-foreground mb-1">
                                     Purchase Order
                                 </label>
                                 <SmartDropdown
@@ -1131,12 +1131,12 @@ const CreatePurchase: React.FC = () => {
                                     onChange={(newDate) => handleFormChange('purchaseDate', newDate)}
                                     isRequired
                                 />
-                                {formErrors?.purchaseDate && <span className="text-danger text-sm">{formErrors.purchaseDate}</span>}
+                                {formErrors?.purchaseDate && <span className="text-destructive text-sm">{formErrors.purchaseDate}</span>}
                             </div>
                             <div className="w-full mt-1">
                                 <Select
                                     name="status"
-                                    label={<>Status <em className='text-danger'>*</em></>}
+                                    label={<>Status <em className='text-destructive'>*</em></>}
                                     onChange={(e) => handleFormChange('status', e.target.value)}
                                     value={purchaseFormData.status}
                                     error={formErrors?.status}
@@ -1168,8 +1168,8 @@ const CreatePurchase: React.FC = () => {
 
                     {/* Billing Section */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div className="bg-white p-4 rounded-card border border-border shadow-card">
-                            <h3 className="font-bold text-gray-950 ">Bill From <span className='text-danger'>*</span></h3>
+                        <div className="bg-white p-4 rounded-xl border border-border shadow-sm">
+                            <h3 className="font-bold text-gray-950 ">Bill From <span className='text-destructive'>*</span></h3>
                             <div className="mt-4">
                                 <SmartDropdown
                                     items={adminUsers}
@@ -1180,7 +1180,7 @@ const CreatePurchase: React.FC = () => {
                                     placeholder="Type to search..."
                                     serverside={false}
                                 />
-                                {!selectedAdmin && formErrors?.billFrom && <span className="text-danger text-sm">{formErrors.billFrom}</span>}
+                                {!selectedAdmin && formErrors?.billFrom && <span className="text-destructive text-sm">{formErrors.billFrom}</span>}
                                 {!selectedAdmin && <p className="mt-2 text-xs text-gray-500  p-2 bg-gray-50  rounded-md font-semibold">
                                     Select admin to view company details.
                                 </p>}
@@ -1197,8 +1197,8 @@ const CreatePurchase: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white p-4 rounded-card border border-border shadow-card">
-                            <h3 className="font-bold text-gray-950  mb-4">Bill To <span className='text-danger'>*</span></h3>
+                        <div className="bg-white p-4 rounded-xl border border-border shadow-sm">
+                            <h3 className="font-bold text-gray-950  mb-4">Bill To <span className='text-destructive'>*</span></h3>
                             <ContactPicker
                                 view="all-active"
                                 value={selectedContactId}
@@ -1209,7 +1209,7 @@ const CreatePurchase: React.FC = () => {
                     </div>
 
                     {/* Tax Treatment */}
-                    <div className="bg-white p-4 rounded-card border border-border shadow-card">
+                    <div className="bg-white p-4 rounded-xl border border-border shadow-sm">
                         <div className="flex items-center gap-4 flex-wrap">
                             <Select
                                 label="Tax Treatment"
@@ -1243,9 +1243,9 @@ const CreatePurchase: React.FC = () => {
                     />
 
                     {/* Items & Details Section */}
-                    <div className="bg-white rounded-card border border-border shadow-card">
+                    <div className="bg-white rounded-xl border border-border shadow-sm">
                         <div className="p-4">
-                            {formErrors?.items && <span className="text-danger text-sm">{formErrors.items}</span>}
+                            {formErrors?.items && <span className="text-destructive text-sm">{formErrors.items}</span>}
                             <table className="w-full border-separate border-spacing-0 overflow-x-auto">
                                 <thead className="bg-gray-100 text-gray-900">
                                     <tr>
@@ -1321,7 +1321,7 @@ const CreatePurchase: React.FC = () => {
                             </table>
                             {/* Add New Row */}
                             <div className="p-4 flex">
-                                <Button variant="ghost" size="sm" onClick={() => handleNewRow()} leftIcon={<PlusCircle className="h-4 w-4" />} className="text-purple-600">
+                                <Button variant="ghost" size="sm" onClick={() => handleNewRow()} leftIcon={<PlusCircle className="h-4 w-4" />} className="text-primary">
                                     Add New Row
                                 </Button>
                             </div>
@@ -1372,7 +1372,7 @@ const CreatePurchase: React.FC = () => {
                             />
 
                             <div>
-                                <label htmlFor="edit-tax-select" className="block text-sm font-medium text-heading mb-1">Tax</label>
+                                <label htmlFor="edit-tax-select" className="block text-sm font-medium text-foreground mb-1">Tax</label>
                                 <LineTaxSelect
                                     id="edit-tax-select"
                                     className={fieldControlClasses()}
@@ -1488,7 +1488,7 @@ const CreatePurchase: React.FC = () => {
                     </div>
 
                     {/* Right Side: Totals & Signature */}
-                    <div className="bg-white p-4 rounded-card border border-border shadow-card space-y-3">
+                    <div className="bg-white p-4 rounded-xl border border-border shadow-sm space-y-3">
                         <div className="flex justify-between text-sm text-gray-600 "><span>Amount</span><span>{docCurrencySymbol}{subTotal?.toFixed(2) || '0.00'}</span></div>
                         <div className="flex justify-between text-sm text-gray-600 "><span>Tax</span><span>{docCurrencySymbol}{totalTax?.toFixed(2) || '0.00'}</span></div>
                         <div className="flex justify-between text-sm text-gray-600 "><span>Discount</span><span>- {docCurrencySymbol}{totalDiscount?.toFixed(2) || '0.00'}</span></div>
@@ -1497,14 +1497,14 @@ const CreatePurchase: React.FC = () => {
                         <p className="text-sm text-gray-500 capitalize">{totalInWords}</p>
 
                         <div className="flex items-center gap-4 pt-4">
-                            <div className="flex items-center"><input id="no-sig" type="radio" name="signature" checked={purchaseFormData.sign_type === 'none'} onChange={() => { handleFormChange('sign_type', 'none'); handleFormChange('esignDataUrl', null) }} className="h-4 w-4 text-purple-600 cursor-pointer" /><label htmlFor="no-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">No Signature</label></div>
-                            <div className="flex items-center"><input id="manual-sig" type="radio" name="signature" checked={purchaseFormData.sign_type === 'digitalSignature'} onChange={() => { handleFormChange('sign_type', 'digitalSignature'); handleFormChange('esignDataUrl', null) }} className="h-4 w-4 text-purple-600 cursor-pointer" /><label htmlFor="manual-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">Manual Signature</label></div>
-                            <div className="flex items-center"><input id="e-sig" type="radio" name="signature" checked={purchaseFormData.sign_type === 'eSignature'} onChange={() => { handleFormChange('sign_type', 'eSignature'); handleFormChange('esignDataUrl', null) }} className="h-4 w-4 text-purple-600 cursor-pointer" /><label htmlFor="e-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">eSignature</label></div>
+                            <div className="flex items-center"><input id="no-sig" type="radio" name="signature" checked={purchaseFormData.sign_type === 'none'} onChange={() => { handleFormChange('sign_type', 'none'); handleFormChange('esignDataUrl', null) }} className="h-4 w-4 text-primary cursor-pointer" /><label htmlFor="no-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">No Signature</label></div>
+                            <div className="flex items-center"><input id="manual-sig" type="radio" name="signature" checked={purchaseFormData.sign_type === 'digitalSignature'} onChange={() => { handleFormChange('sign_type', 'digitalSignature'); handleFormChange('esignDataUrl', null) }} className="h-4 w-4 text-primary cursor-pointer" /><label htmlFor="manual-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">Manual Signature</label></div>
+                            <div className="flex items-center"><input id="e-sig" type="radio" name="signature" checked={purchaseFormData.sign_type === 'eSignature'} onChange={() => { handleFormChange('sign_type', 'eSignature'); handleFormChange('esignDataUrl', null) }} className="h-4 w-4 text-primary cursor-pointer" /><label htmlFor="e-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">eSignature</label></div>
                         </div>
 
                         {purchaseFormData.sign_type !== 'none' && (purchaseFormData.sign_type === 'digitalSignature' ? (
                             <div>
-                                <label className="block text-sm font-medium text-heading mb-2">Select Signature Name <span className="text-danger">*</span></label>
+                                <label className="block text-sm font-medium text-foreground mb-2">Select Signature Name <span className="text-destructive">*</span></label>
                                 <SmartDropdown
                                     items={manualSignatures}
                                     value={signatureSearchInput}
@@ -1515,7 +1515,7 @@ const CreatePurchase: React.FC = () => {
                                     addNewLabel='New Signature'
                                     placeholder='Type to search signatures...'
                                 />
-                                {formErrors?.signatureId && <p className="text-danger text-xs mt-1">{formErrors.signatureId}</p>}
+                                {formErrors?.signatureId && <p className="text-destructive text-xs mt-1">{formErrors.signatureId}</p>}
                                 <p className="mt-2 text-sm font-medium text-gray-700 ">Signature Image</p>
                                 <div className="mt-2 h-20 w-48 bg-gray-100 rounded-md flex items-center justify-center">
                                     {selectedManualSignatureImage ? <img src={selectedManualSignatureImage} alt="Selected Signature" className="max-h-full max-w-full" /> : <span className="text-xs text-gray-400">No signature selected</span>}
@@ -1533,11 +1533,11 @@ const CreatePurchase: React.FC = () => {
                                     placeholder="Enter Signature Name"
                                     error={formErrors?.signatureName}
                                 />
-                                <p className="mt-2 text-sm font-medium text-heading">Draw your eSignature</p>
+                                <p className="mt-2 text-sm font-medium text-foreground">Draw your eSignature</p>
                                 <div className="mt-2 h-20 w-48 bg-gray-100 rounded-md flex items-center justify-center cursor-pointer border-2 border-dashed border-gray-400" onClick={() => setSignatureModalOpen(true)}>
                                     {purchaseFormData.esignDataUrl ? <img src={purchaseFormData.esignDataUrl} alt="Drawn Signature" className="max-h-full max-w-full" /> : <div className="text-center text-gray-500"><Edit3 size={20} className="mx-auto mb-1" /><span className="text-xs">Draw Signature</span></div>}
                                 </div>
-                                {formErrors?.esignDataUrl && <p className="text-danger text-xs mt-1">{formErrors.esignDataUrl}</p>}
+                                {formErrors?.esignDataUrl && <p className="text-destructive text-xs mt-1">{formErrors.esignDataUrl}</p>}
                             </div>
                         ))}
                     </div>

@@ -208,7 +208,7 @@ const EmailTemplateModal: React.FC<TemplateProps> = ({ isOpen, onClose, onSucces
                 </div>
                 <div className="flex mb-4">
                     <div className="w-full mr-4">
-                        <span className="block text-sm font-medium text-heading mb-2">Tags</span>
+                        <span className="block text-sm font-medium text-foreground mb-2">Tags</span>
                         {tags && tags.map((tag: NotificationTags) => (
                             <Button
                                 type="button"
@@ -225,9 +225,9 @@ const EmailTemplateModal: React.FC<TemplateProps> = ({ isOpen, onClose, onSucces
                 </div>
                 <div className="flex mb-4">
                     <div className="w-full mr-4">
-                        <span className="block text-sm font-medium text-heading mb-2">Description <span className="text-danger">*</span></span>
+                        <span className="block text-sm font-medium text-foreground mb-2">Description <span className="text-destructive">*</span></span>
                         <TiptapEditor value={formData.description} onChange={handleEditorChange} onEditorReady={setEditor} />
-                        {formErrors.description && <p className="mt-1 text-sm text-danger">{formErrors.description}</p>}
+                        {formErrors.description && <p className="mt-1 text-sm text-destructive">{formErrors.description}</p>}
                     </div>
                 </div>
                 {/* sms content */}

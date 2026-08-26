@@ -59,7 +59,7 @@ const InvoiceTemplateB: React.FC<InvoiceDetailsProps> = ({ invoiceData, lineFiel
             {/* Company Details */}
             <section className="mt-2 border-b border-gray-200 pb-2">
                 <div>
-                    <h2 className="font-bold text-purple-600 mb-2">{systemSettings?.company.companyName}</h2>
+                    <h2 className="font-bold text-primary mb-2">{systemSettings?.company.companyName}</h2>
                     <p className="text-sm text-gray-600">Address: {systemSettings?.company.address}</p>
                     <p className="text-sm text-gray-600">Mobile: {systemSettings?.company.phone}</p>
                     {taxId && <p className="text-sm text-gray-600">{taxId.label}: {taxId.value}</p>}
@@ -69,7 +69,7 @@ const InvoiceTemplateB: React.FC<InvoiceDetailsProps> = ({ invoiceData, lineFiel
             {/* Billing Information Section */}
             <section className="flex justify-between mt-2">
                 <div className="w-2/5">
-                    <h2 className="font-bold text-purple-600 mb-2">Invoice To :</h2>
+                    <h2 className="font-bold text-primary mb-2">Invoice To :</h2>
                     <p className="font-semibold capitalize">{invoiceData?.billTo?.name ?? '—'}</p>
                     <p className="text-sm text-gray-600">{invoiceData?.billTo?.billingAddress?.addressLine1}</p>
                     <p className="text-sm text-gray-600">{invoiceData?.billTo?.billingAddress?.city}, {invoiceData?.billTo?.billingAddress?.state}, {invoiceData?.billTo?.billingAddress?.country}</p>
@@ -79,7 +79,7 @@ const InvoiceTemplateB: React.FC<InvoiceDetailsProps> = ({ invoiceData, lineFiel
                     {invoiceData?.billTo?.gstin && <p className="text-sm text-gray-600">GSTIN: {invoiceData.billTo.gstin}</p>}
                 </div>
                 <div className="w-2/5">
-                    <h2 className="font-bold text-purple-600 mb-2">Pay To :</h2>
+                    <h2 className="font-bold text-primary mb-2">Pay To :</h2>
                     <p className="font-semibold">{invoiceData?.billFrom.name}</p>
                     <p className="text-sm text-gray-600">{invoiceData?.billFrom.address}</p>
                     <p className="text-sm text-gray-600">{invoiceData?.billFrom.email}</p>
@@ -179,7 +179,7 @@ const InvoiceTemplateB: React.FC<InvoiceDetailsProps> = ({ invoiceData, lineFiel
                                 </div>
                                 <div className="flex justify-between text-sm py-2 border-t border-gray-200">
                                     <span className='font-bold text-gray-800'>Balance Due</span>
-                                    <span className={`font-bold ${balanceDue <= 0 ? 'text-success' : 'text-danger'}`}>{fmt(balanceDue)}</span>
+                                    <span className={`font-bold ${balanceDue <= 0 ? 'text-success' : 'text-destructive'}`}>{fmt(balanceDue)}</span>
                                 </div>
                             </>
                         );

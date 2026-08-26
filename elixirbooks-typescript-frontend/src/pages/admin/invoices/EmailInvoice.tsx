@@ -291,40 +291,40 @@ const EmailInvoice: React.FC = () => {
             <div className="space-y-4">
                 <form id="email-invoice-form" onSubmit={handleSubmit}>
                     {/* card */}
-                    <div className="border border-border rounded-card bg-white shadow-card">
+                    <div className="border border-border rounded-xl bg-white shadow-sm">
                         {/* from */}
                         <div className="p-4 flex items-center gap-4">
-                            <label className="w-32 text-heading font-medium">From</label>
+                            <label className="w-32 text-foreground font-medium">From</label>
                             <input
                                 type="email"
                                 value={emailSettings.from}
                                 disabled
-                                className="flex-1 border border-border rounded-control p-2 bg-surface text-body"
+                                className="flex-1 border border-border rounded-md p-2 bg-muted text-muted-foreground"
                             />
                         </div>
 
                         {/* to */}
                         <div className="p-4 flex items-center gap-4">
-                            <label className="w-32 text-heading font-medium">To</label>
+                            <label className="w-32 text-foreground font-medium">To</label>
                             <input
                                 type="email"
                                 value={invoiceDetails?.billTo?.email || ""}
                                 placeholder="customer@email.com"
                                 disabled
-                                className="flex-1 border border-border rounded-control p-2 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600"
+                                className="flex-1 border border-border rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary"
                             />
                         </div>
 
                         {/* subject */}
                         <div className="p-4 flex items-center gap-4">
-                            <label className="w-32 text-heading font-medium">Subject</label>
+                            <label className="w-32 text-foreground font-medium">Subject</label>
                             <input
                                 type="text"
                                 value={formData.subject}
                                 onChange={(e) =>
                                     setFormData({ ...formData, subject: e.target.value })
                                 }
-                                className="flex-1 border border-border rounded-control p-2 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600"
+                                className="flex-1 border border-border rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary"
                             />
                         </div>
 

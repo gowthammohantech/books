@@ -31,7 +31,7 @@ const refTypeLabel = (ref?: string | null, notes?: string | null): string => {
 
 const getAdjustmentDisplay = (adj: number) => {
     if (adj > 0) return <span className="text-success font-semibold">+{adj}</span>;
-    if (adj < 0) return <span className="text-danger font-semibold">{adj}</span>;
+    if (adj < 0) return <span className="text-destructive font-semibold">{adj}</span>;
     return "-";
 };
 
@@ -177,9 +177,9 @@ const InventoryView: React.FC = () => {
 
             {/* Activity History */}
             <Card title="Activity History" padded={false}>
-                <div className="overflow-x-auto border border-border rounded-control">
+                <div className="overflow-x-auto border border-border rounded-md">
                     <table className="w-full text-sm border-collapse">
-                        <thead className="bg-gray-100 text-xs uppercase text-body">
+                        <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                             <tr>
                                 <th className="px-4 py-3 text-left border-b border-border">Date</th>
                                 <th className="px-4 py-3 text-left border-b border-border">Type</th>

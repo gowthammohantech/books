@@ -199,7 +199,7 @@ const RecurringExpenseList: React.FC = () => {
             <PageHeader title="Recurring Expenses">
                 <Link
                     to="/admin/expenses"
-                    className="text-sm text-purple-600 hover:underline"
+                    className="text-sm text-primary hover:underline"
                 >
                     Manage expenses
                 </Link>
@@ -275,15 +275,15 @@ const RecurringExpenseList: React.FC = () => {
                     onClick={() => setViewingChildrenOf(null)}
                 >
                     <div
-                        className="bg-white rounded-card shadow-dropdown p-4 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+                        className="bg-white rounded-xl shadow-lg p-4 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <h3 className="text-lg font-semibold text-heading mb-3">
+                        <h3 className="text-lg font-semibold text-foreground mb-3">
                             Children of {viewingChildrenOf.referenceNo ?? '—'}
                         </h3>
                         {childrenLoading && <LoaderSpinner />}
                         {!childrenLoading && children.length === 0 && (
-                            <p className="text-sm text-body">No children yet.</p>
+                            <p className="text-sm text-muted-foreground">No children yet.</p>
                         )}
                         {!childrenLoading && children.length > 0 && (
                             <table className="w-full text-sm">

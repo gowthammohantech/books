@@ -90,15 +90,15 @@ export default function TrialBalanceReport() {
           <LoaderSpinner />
         </div>
       )}
-      {error && <p className="text-danger">{error}</p>}
+      {error && <p className="text-destructive">{error}</p>}
 
       {data && (
         <>
           <div className="text-xs text-gray-400 mb-2">As of {formatDate(data.asOf)}</div>
 
-          <div className="overflow-x-auto border border-border rounded-control">
+          <div className="overflow-x-auto border border-border rounded-md">
             <table className="w-full text-sm border-collapse">
-              <thead className="bg-gray-100 text-xs uppercase text-body">
+              <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 text-left border-b border-border">Code</th>
                   <th className="px-4 py-3 text-left border-b border-border">Account</th>
@@ -116,7 +116,7 @@ export default function TrialBalanceReport() {
                     <tr key={a.id} className="border-b border-border">
                       <td className="px-4 py-3 font-mono">{a.code}</td>
                       <td className="px-4 py-3">{a.name}</td>
-                      <td className="px-4 py-3 text-xs text-body">{a.accountType}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{a.accountType}</td>
                       <td className="px-4 py-3 text-right">
                         {a.totalDebit > 0
                           ? <DrillLink to="/admin/accounting/journal-entries" params={{ accountId: a.id, to: data.asOf.slice(0, 10) }} title="View journal entries for this account">{a.totalDebit.toFixed(2)}</DrillLink>
@@ -144,7 +144,7 @@ export default function TrialBalanceReport() {
                       className={
                         data.balanced
                           ? 'text-success font-medium'
-                          : 'text-danger font-medium'
+                          : 'text-destructive font-medium'
                       }
                     >
                       {data.balanced ? 'Balanced' : 'OUT OF BALANCE'}

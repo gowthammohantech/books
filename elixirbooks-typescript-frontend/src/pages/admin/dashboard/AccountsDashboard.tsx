@@ -87,11 +87,11 @@ const AccountsDashboard: React.FC = () => {
         <div className="px-4 py-3 bg-gray-50 min-h-full font-sans border border-gray-200 rounded-md space-y-4">
             <PageHeader title="Accounts & P&L">
                 <DashboardSwitcher />
-                <button onClick={() => navigate('/admin/accounting/reports/profit-loss')} className="bg-white border border-purple-600 text-purple-600 hover:bg-purple-50 px-2 py-1 rounded-md shadow cursor-pointer flex items-center gap-2">Full P&L <ArrowRight size={14} /></button>
+                <button onClick={() => navigate('/admin/accounting/reports/profit-loss')} className="bg-white border border-primary text-primary hover:bg-accent px-2 py-1 rounded-md shadow cursor-pointer flex items-center gap-2">Full P&L <ArrowRight size={14} /></button>
             </PageHeader>
 
             {/* Monthly Sales vs Expenses */}
-            <div className="bg-white border border-border rounded-card shadow-card p-4">
+            <div className="bg-white border border-border rounded-xl shadow-sm p-4">
                 <h2 className="text-md font-semibold text-gray-600 mb-2">Monthly Sales vs Expenses</h2>
                 {areaData.length > 0
                     ? <MultiLineAreaChart data={areaData} categories={months} color={["#27AE60", "#EF1E1E"]} seriesNames={["Sales", "Expenses"]} />
@@ -101,7 +101,7 @@ const AccountsDashboard: React.FC = () => {
             {/* Next month planning */}
             <div>
                 <div className="flex items-center gap-2 mb-2">
-                    <CalendarClock className="w-5 h-5 text-purple-600" />
+                    <CalendarClock className="w-5 h-5 text-primary" />
                     <h2 className="text-md font-semibold text-gray-600">Next Month Planning — {nm?.label || ''}</h2>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -123,7 +123,7 @@ const AccountsDashboard: React.FC = () => {
 
             {/* Upcoming next-month items */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="bg-white border border-border rounded-card shadow-card p-4">
+                <div className="bg-white border border-border rounded-xl shadow-sm p-4">
                     <h2 className="text-md font-semibold text-gray-600 mb-3">Recurring Invoices (next month)</h2>
                     <Table headers={["#", "Invoice", "Amount", "Date"]}>
                         {plan?.upcomingRecurringInvoices?.length ? plan.upcomingRecurringInvoices.map((it, i) => (
@@ -131,7 +131,7 @@ const AccountsDashboard: React.FC = () => {
                         )) : <tr><td colSpan={4} className="text-center py-4 text-gray-400">None scheduled</td></tr>}
                     </Table>
                 </div>
-                <div className="bg-white border border-border rounded-card shadow-card p-4">
+                <div className="bg-white border border-border rounded-xl shadow-sm p-4">
                     <h2 className="text-md font-semibold text-gray-600 mb-3">Invoices Due (next month)</h2>
                     <Table headers={["#", "Invoice", "Amount", "Due"]}>
                         {plan?.upcomingDueInvoices?.length ? plan.upcomingDueInvoices.map((it, i) => (
@@ -139,7 +139,7 @@ const AccountsDashboard: React.FC = () => {
                         )) : <tr><td colSpan={4} className="text-center py-4 text-gray-400">None due</td></tr>}
                     </Table>
                 </div>
-                <div className="bg-white border border-border rounded-card shadow-card p-4">
+                <div className="bg-white border border-border rounded-xl shadow-sm p-4">
                     <h2 className="text-md font-semibold text-gray-600 mb-3">Recurring Expenses (next month)</h2>
                     <Table headers={["#", "Expense", "Amount", "Date"]}>
                         {plan?.upcomingRecurringExpenses?.length ? plan.upcomingRecurringExpenses.map((it, i) => (

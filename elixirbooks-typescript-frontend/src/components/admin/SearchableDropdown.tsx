@@ -61,7 +61,7 @@ function SearchableDropdownImpl<FreeSolo extends boolean | undefined = false>({
     return (
         <Box>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-                {label} {required && !noAsterisk && <span className="text-red-500">*</span>}
+                {label} {required && !noAsterisk && <span className="text-destructive">*</span>}
             </label>
             <Autocomplete
                 disablePortal

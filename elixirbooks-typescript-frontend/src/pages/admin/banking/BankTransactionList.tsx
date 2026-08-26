@@ -670,7 +670,7 @@ const BankTransactionList: React.FC = () => {
             {showLedgerBanner && (
                 <div
                     role="alert"
-                    className="flex items-start justify-between gap-3 rounded-control border border-warning bg-warning-soft px-4 py-3 text-sm text-warning"
+                    className="flex items-start justify-between gap-3 rounded-md border border-warning bg-warning-soft px-4 py-3 text-sm text-warning"
                 >
                     <span>
                         <strong>Setup required:</strong> Choose your country to enable transaction categories.{" "}
@@ -720,23 +720,23 @@ const BankTransactionList: React.FC = () => {
 
             {/* Bank-scoped summary header: name + balance + in-balance badge */}
             {bankId && (
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border bg-white px-4 py-3 shadow-card">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-white px-4 py-3 shadow-sm">
                     <div className="flex items-center gap-6">
                         <div>
-                            <p className="text-xs uppercase tracking-wide text-body">
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">
                                 Current balance
                             </p>
-                            <p className="text-lg font-semibold text-heading">
+                            <p className="text-lg font-semibold text-foreground">
                                 {tallyRow
                                     ? Number(tallyRow.currentBalance).toFixed(2)
                                     : "—"}
                             </p>
                         </div>
                         <div>
-                            <p className="text-xs uppercase tracking-wide text-body">
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">
                                 Explained
                             </p>
-                            <p className="text-lg font-semibold text-heading">
+                            <p className="text-lg font-semibold text-foreground">
                                 {tallyRow
                                     ? Number(tallyRow.sumExplained).toFixed(2)
                                     : "—"}
@@ -778,8 +778,8 @@ const BankTransactionList: React.FC = () => {
                             className={
                                 "flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 -mb-px cursor-pointer " +
                                 (isActive
-                                    ? "border-purple-600 text-purple-700"
-                                    : "border-transparent text-body hover:text-heading hover:border-border")
+                                    ? "border-primary text-primary"
+                                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border")
                             }
                         >
                             {tab.label}
@@ -787,8 +787,8 @@ const BankTransactionList: React.FC = () => {
                                 className={
                                     "inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-xs font-semibold " +
                                     (isActive
-                                        ? "bg-purple-600 text-white"
-                                        : "bg-surface text-body")
+                                        ? "bg-primary text-white"
+                                        : "bg-muted text-muted-foreground")
                                 }
                             >
                                 {count}
@@ -802,7 +802,7 @@ const BankTransactionList: React.FC = () => {
             <div className="relative">
                 <SearchIcon
                     size={16}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-body"
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                 />
                 <input
                     type="text"
@@ -816,7 +816,7 @@ const BankTransactionList: React.FC = () => {
                         type="button"
                         aria-label="Clear search"
                         onClick={() => setSearchInput("")}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-body hover:text-heading"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                         <X size={14} />
                     </button>
@@ -824,7 +824,7 @@ const BankTransactionList: React.FC = () => {
             </div>
 
             {/* Filters: 2-row grid, Apply + Reset aligned right on row 2 */}
-            <div className="rounded-control border border-border bg-surface px-3 py-3 space-y-3">
+            <div className="rounded-md border border-border bg-muted px-3 py-3 space-y-3">
                 {/* Row 1 of filter controls */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     {!bankId && (
@@ -943,7 +943,7 @@ const BankTransactionList: React.FC = () => {
                                         </span>
                                         {!bankId && tx.bankAccount && (
                                             <span
-                                                className="block truncate text-xs text-body"
+                                                className="block truncate text-xs text-muted-foreground"
                                                 title={`${tx.bankAccount.bankName} (${tx.bankAccount.accountNumber})`}
                                             >
                                                 {tx.bankAccount.bankName} ({tx.bankAccount.accountNumber})
@@ -957,7 +957,7 @@ const BankTransactionList: React.FC = () => {
                                             "block text-right font-medium " +
                                             (tx.direction === "money_in"
                                                 ? "text-success"
-                                                : "text-danger")
+                                                : "text-destructive")
                                         }
                                     >
                                         {formatAmount(tx.amount, tx.currencyCode)}
@@ -992,7 +992,7 @@ const BankTransactionList: React.FC = () => {
                                         {tx.explainStatus === "FOR_APPROVAL" && tx.proposal && (
                                             <div className="flex max-w-full flex-col gap-0.5">
                                                 <span
-                                                    className="truncate text-xs font-medium text-body"
+                                                    className="truncate text-xs font-medium text-muted-foreground"
                                                     title={tx.proposal.label}
                                                 >
                                                     {tx.proposal.label}
@@ -1119,20 +1119,20 @@ const BankTransactionList: React.FC = () => {
                             />
                             {expandedId === tx.id && (
                                 <tr key={`expand-${tx.id}`}>
-                                    <td colSpan={tableHeaders.length} className="px-4 py-3 bg-surface border-b border-border">
+                                    <td colSpan={tableHeaders.length} className="px-4 py-3 bg-muted border-b border-border">
                                         {/* Secondary detail — reference/category/balance moved out of
                                             the main columns to keep the row width fit for the screen. */}
-                                        <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-body">
+                                        <div className="mb-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
                                             <span>
-                                                <span className="font-semibold text-heading">Reference: </span>
+                                                <span className="font-semibold text-foreground">Reference: </span>
                                                 {tx.referenceNo || "—"}
                                             </span>
                                             <span>
-                                                <span className="font-semibold text-heading">Category: </span>
+                                                <span className="font-semibold text-foreground">Category: </span>
                                                 {tx.category?.name ?? "—"}
                                             </span>
                                             <span>
-                                                <span className="font-semibold text-heading">Balance after: </span>
+                                                <span className="font-semibold text-foreground">Balance after: </span>
                                                 {Number(tx.balanceAfter).toFixed(2)}
                                             </span>
                                         </div>
@@ -1360,9 +1360,9 @@ const BankTransactionList: React.FC = () => {
                             <Badge color="success" variant="soft">{validCount} valid</Badge>
                             <Badge color="danger" variant="soft">{invalidCount} invalid (skipped)</Badge>
                         </div>
-                        <div className="border border-border rounded-control overflow-x-auto">
+                        <div className="border border-border rounded-md overflow-x-auto">
                             <table className="min-w-full text-sm">
-                                <thead className="bg-surface text-body">
+                                <thead className="bg-muted text-muted-foreground">
                                     <tr>
                                         <th className="px-3 py-2 text-left">#</th>
                                         <th className="px-3 py-2 text-left">Date</th>
@@ -1377,21 +1377,21 @@ const BankTransactionList: React.FC = () => {
                                     {previewRows.map((r, i) => (
                                         <tr
                                             key={i}
-                                            className={r.error ? "bg-danger-soft" : "bg-success-soft"}
+                                            className={r.error ? "bg-destructive-soft" : "bg-success-soft"}
                                         >
-                                            <td className="px-3 py-2 text-body">{i + 1}</td>
-                                            <td className="px-3 py-2 text-body">{formatDate(r.date)}</td>
-                                            <td className="px-3 py-2 text-body">
+                                            <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
+                                            <td className="px-3 py-2 text-muted-foreground">{formatDate(r.date)}</td>
+                                            <td className="px-3 py-2 text-muted-foreground">
                                                 {r.description}
                                             </td>
-                                            <td className="px-3 py-2 text-right text-body">
+                                            <td className="px-3 py-2 text-right text-muted-foreground">
                                                 {Number(r.amount).toFixed(2)}
                                             </td>
-                                            <td className="px-3 py-2 text-body">{r.type}</td>
-                                            <td className="px-3 py-2 text-body">{r.reference || "—"}</td>
-                                            <td className="px-3 py-2 text-body">
+                                            <td className="px-3 py-2 text-muted-foreground">{r.type}</td>
+                                            <td className="px-3 py-2 text-muted-foreground">{r.reference || "—"}</td>
+                                            <td className="px-3 py-2 text-muted-foreground">
                                                 {r.error ? (
-                                                    <span className="text-danger">{r.error}</span>
+                                                    <span className="text-destructive">{r.error}</span>
                                                 ) : (
                                                     <span className="text-success">OK</span>
                                                 )}
@@ -1419,7 +1419,7 @@ const BankTransactionList: React.FC = () => {
                 )}
 
                 {importStep === "done" && (
-                    <div className="text-center py-6 text-body">
+                    <div className="text-center py-6 text-muted-foreground">
                         Import complete.
                     </div>
                 )}
@@ -1435,18 +1435,18 @@ const BankTransactionList: React.FC = () => {
                 size="3xl"
             >
                 {isLoadingMatches && (
-                    <div className="py-6 text-center text-body">
+                    <div className="py-6 text-center text-muted-foreground">
                         <LoaderSpinner />
                     </div>
                 )}
                 {!isLoadingMatches && suggestModalState && (
                     <>
                         {suggestModalState.matches.length === 0 ? (
-                            <p className="text-sm text-body py-4">No matches found.</p>
+                            <p className="text-sm text-muted-foreground py-4">No matches found.</p>
                         ) : (
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="text-left border-b border-border text-body">
+                                    <tr className="text-left border-b border-border text-muted-foreground">
                                         <th className="py-2">Score</th>
                                         <th>Kind</th>
                                         <th>Reference</th>
@@ -1459,22 +1459,22 @@ const BankTransactionList: React.FC = () => {
                                 <tbody>
                                     {suggestModalState.matches.map((m) => (
                                         <tr key={m.candidateId} className="border-b border-border">
-                                            <td className="py-2 font-medium text-heading">
+                                            <td className="py-2 font-medium text-foreground">
                                                 {m.score}
                                             </td>
-                                            <td className="text-body">
+                                            <td className="text-muted-foreground">
                                                 {m.kind === "INVOICE_PAYMENT"
                                                     ? "Invoice"
                                                     : "Supplier"}
                                             </td>
-                                            <td className="text-body">{m.parentLabel}</td>
-                                            <td className="text-body">
+                                            <td className="text-muted-foreground">{m.parentLabel}</td>
+                                            <td className="text-muted-foreground">
                                                 {Number(m.amount).toFixed(2)}
                                             </td>
-                                            <td className="text-body">
+                                            <td className="text-muted-foreground">
                                                 {formatDate(m.date)}
                                             </td>
-                                            <td className="text-xs text-body">
+                                            <td className="text-xs text-muted-foreground">
                                                 {m.reasons.join(", ")}
                                             </td>
                                             <td>

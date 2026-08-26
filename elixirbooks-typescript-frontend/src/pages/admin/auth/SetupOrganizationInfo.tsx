@@ -243,16 +243,16 @@ const SetupOrganizationInfo: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 flex flex-col justify-center items-center px-2 py-2">
+        <div className="min-h-screen bg-gradient-to-br from-accent to-indigo-100 flex flex-col justify-center items-center px-2 py-2">
             {/* Form Container */}
             <form
                 onSubmit={handleSubmit}
-                className="p-4 w-full mt-4 mb-4 max-w-4xl bg-white rounded-2xl shadow-sm border border-purple-100 overflow-hidden"
+                className="p-4 w-full mt-4 mb-4 max-w-4xl bg-white rounded-2xl shadow-sm border border-accent overflow-hidden"
             >
                 <div className="text-center">
                     <div className="flex items-center justify-center gap-2 mb-3">
-                        <div className="p-2 bg-purple-100 rounded-lg">
-                            <Building2 className="w-4 h-4 text-purple-600" />
+                        <div className="p-2 bg-accent rounded-lg">
+                            <Building2 className="w-4 h-4 text-primary" />
                         </div>
                         <h1 className="text-xl font-bold text-gray-900">Organization Setup</h1>
                     </div>
@@ -285,7 +285,7 @@ const SetupOrganizationInfo: React.FC = () => {
 
                             {/* Upload Button & Info */}
                             <div className="flex flex-col justify-center flex-1">
-                                <label className="cursor-pointer inline-flex items-center gap-2 text-sm text-purple-600 font-medium hover:text-purple-700 transition">
+                                <label className="cursor-pointer inline-flex items-center gap-2 text-sm text-primary font-medium hover:text-primary transition">
                                     <UploadCloud size={16} />
                                     {logoPreview ? 'Change Logo' : 'Upload Logo'}
                                     <input
@@ -307,8 +307,8 @@ const SetupOrganizationInfo: React.FC = () => {
                     {/* Company Name */}
                     <div className="col-span-full">
                         <label className="flex items-center text-sm font-semibold text-gray-800 mb-2">
-                            <Building2 className="w-4 h-4 mr-2 text-purple-600" />
-                            Company Name <em className="text-red-600 ml-1">*</em>
+                            <Building2 className="w-4 h-4 mr-2 text-primary" />
+                            Company Name <em className="text-destructive ml-1">*</em>
                         </label>
                         <input
                             type="text"
@@ -316,16 +316,16 @@ const SetupOrganizationInfo: React.FC = () => {
                             value={formData.companyName}
                             onChange={handleChange}
                             placeholder="Enter your company name"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-transparent transition-all duration-200"
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-1 focus:ring-ring focus:border-transparent transition-all duration-200"
                         />
-                        {formErrors.companyName && <p className="text-red-600 text-sm mt-1">{formErrors.companyName}</p>}
+                        {formErrors.companyName && <p className="text-destructive text-sm mt-1">{formErrors.companyName}</p>}
                     </div>
 
                     {/* Address */}
                     <div className="col-span-full">
                         <label className="flex items-center text-sm font-semibold text-gray-800 mb-2">
-                            <MapPin className="w-4 h-4 mr-2 text-purple-600" />
-                            Office Address <em className="text-red-600 ml-1">*</em>
+                            <MapPin className="w-4 h-4 mr-2 text-primary" />
+                            Office Address <em className="text-destructive ml-1">*</em>
                         </label>
                         <textarea
                             name="address"
@@ -333,20 +333,20 @@ const SetupOrganizationInfo: React.FC = () => {
                             value={formData.address}
                             onChange={handleChange}
                             placeholder="Enter your complete business address"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-transparent transition-all duration-200 resize-none"
+                            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-1 focus:ring-ring focus:border-transparent transition-all duration-200 resize-none"
                         />
-                        {formErrors.address && <p className="text-red-600 text-sm mt-1">{formErrors.address}</p>}
+                        {formErrors.address && <p className="text-destructive text-sm mt-1">{formErrors.address}</p>}
                     </div>
 
                     {/* Location Fields Grid */}
                     <div className="col-span-full">
                         <h3 className="flex items-center text-sm font-semibold text-gray-800 mb-4">
-                            <Globe className="w-4 h-4 mr-2 text-purple-600" />
+                            <Globe className="w-4 h-4 mr-2 text-primary" />
                             Location Details
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Country <em className="text-red-600">*</em></label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Country <em className="text-destructive">*</em></label>
                                 <SmartDropdown
                                     items={countryOptions}
                                     value={countrySearchKeyword}
@@ -355,7 +355,7 @@ const SetupOrganizationInfo: React.FC = () => {
                                     placeholder="Type to search for a country"
                                     selectedItem={countryOptions.find(item => item.id === formData.country)}
                                 />
-                                {formErrors.country && <p className="text-red-600 text-sm mt-1">{formErrors.country}</p>}
+                                {formErrors.country && <p className="text-destructive text-sm mt-1">{formErrors.country}</p>}
                             </div>
 
                             <div>
@@ -364,7 +364,7 @@ const SetupOrganizationInfo: React.FC = () => {
                                     name="taxRegime"
                                     value={formData.taxRegime ?? 'NONE'}
                                     onChange={(e) => setFormData((prev) => ({ ...prev, taxRegime: e.target.value }))}
-                                    className="mt-1 text-gray-700 p-2 block focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600 w-full border border-gray-200 rounded-md"
+                                    className="mt-1 text-gray-700 p-2 block focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary w-full border border-gray-200 rounded-md"
                                 >
                                     <option value="NONE">No tax</option>
                                     <option value="GST_INDIA">India GST</option>
@@ -374,7 +374,7 @@ const SetupOrganizationInfo: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">State/Province <em className="text-red-600">*</em></label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">State/Province <em className="text-destructive">*</em></label>
                                 <input
                                     type="text"
                                     name="state"
@@ -383,11 +383,11 @@ const SetupOrganizationInfo: React.FC = () => {
                                     placeholder="Enter state or province"
                                     className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
-                                {formErrors.state && <p className="text-red-600 text-sm mt-1">{formErrors.state}</p>}
+                                {formErrors.state && <p className="text-destructive text-sm mt-1">{formErrors.state}</p>}
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">City <em className="text-red-600">*</em></label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">City <em className="text-destructive">*</em></label>
                                 <input
                                     type="text"
                                     name="city"
@@ -396,20 +396,20 @@ const SetupOrganizationInfo: React.FC = () => {
                                     placeholder="Enter city"
                                     className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
-                                {formErrors.city && <p className="text-red-600 text-sm mt-1">{formErrors.city}</p>}
+                                {formErrors.city && <p className="text-destructive text-sm mt-1">{formErrors.city}</p>}
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Postal Code <em className="text-red-600">*</em></label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Postal Code <em className="text-destructive">*</em></label>
                                 <input
                                     type="text"
                                     name="pincode"
                                     value={formData.pincode}
                                     onChange={handleChange}
                                     placeholder="ZIP / Postal Code"
-                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-transparent transition-all duration-200"
+                                    className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-1 focus:ring-ring focus:border-transparent transition-all duration-200"
                                 />
-                                {formErrors.pincode && <p className="text-red-600 text-sm mt-1">{formErrors.pincode}</p>}
+                                {formErrors.pincode && <p className="text-destructive text-sm mt-1">{formErrors.pincode}</p>}
                             </div>
                         </div>
                     </div>
@@ -417,14 +417,14 @@ const SetupOrganizationInfo: React.FC = () => {
                     {/* System Settings */}
                     <div className="col-span-full">
                         <h3 className="flex items-center text-sm font-semibold text-gray-800 mb-4">
-                            <Calendar className="w-4 h-4 mr-2 text-purple-600" />
+                            <Calendar className="w-4 h-4 mr-2 text-primary" />
                             System Preferences
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <Currency className="w-4 h-4 mr-2 text-purple-600" />
-                                    Currency <em className="text-red-600 ml-1">*</em>
+                                    <Currency className="w-4 h-4 mr-2 text-primary" />
+                                    Currency <em className="text-destructive ml-1">*</em>
                                 </label>
                                 <SmartDropdown
                                     items={currencyOptions}
@@ -435,13 +435,13 @@ const SetupOrganizationInfo: React.FC = () => {
                                     selectedItem={currencyOptions.find((currency) => currency.id === formData.currencyId)}
                                     serverside={false}
                                 />
-                                {formErrors.currencyId && <p className="text-red-600 text-sm mt-1">{formErrors.currencyId}</p>}
+                                {formErrors.currencyId && <p className="text-destructive text-sm mt-1">{formErrors.currencyId}</p>}
                             </div>
 
                             <div>
                                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <Globe className="w-4 h-4 mr-2 text-purple-600" />
-                                    Timezone <em className="text-red-600 ml-1">*</em>
+                                    <Globe className="w-4 h-4 mr-2 text-primary" />
+                                    Timezone <em className="text-destructive ml-1">*</em>
                                 </label>
                                 <SmartDropdown
                                     items={timezoneOptions}
@@ -452,13 +452,13 @@ const SetupOrganizationInfo: React.FC = () => {
                                     selectedItem={timezoneOptions.find((timezone) => timezone.id === formData.timezoneId)}
                                     serverside={false}
                                 />
-                                {formErrors.timezoneId && <p className="text-red-600 text-sm mt-1">{formErrors.timezoneId}</p>}
+                                {formErrors.timezoneId && <p className="text-destructive text-sm mt-1">{formErrors.timezoneId}</p>}
                             </div>
 
                             <div>
                                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                                    <Calendar className="w-4 h-4 mr-2 text-purple-600" />
-                                    Date Format <em className="text-red-600 ml-1">*</em>
+                                    <Calendar className="w-4 h-4 mr-2 text-primary" />
+                                    Date Format <em className="text-destructive ml-1">*</em>
                                 </label>
                                 <SmartDropdown
                                     items={dateFormatOptions}
@@ -469,7 +469,7 @@ const SetupOrganizationInfo: React.FC = () => {
                                     selectedItem={dateFormatOptions.find((dateFormat) => dateFormat.id === formData.dateFormatId)}
                                     serverside={false}
                                 />
-                                {formErrors.dateFormatId && <p className="text-red-600 text-sm mt-1">{formErrors.dateFormatId}</p>}
+                                {formErrors.dateFormatId && <p className="text-destructive text-sm mt-1">{formErrors.dateFormatId}</p>}
                             </div>
                         </div>
                     </div>
@@ -483,7 +483,7 @@ const SetupOrganizationInfo: React.FC = () => {
                             <button
                                 type="submit"
                                 disabled={isSaving}
-                                className={`flex items-center justify-center gap-2 w-[320px] max-w-full px-6 bg-purple-600 hover:bg-purple-700 text-white font-medium text-sm py-3 rounded-lg transition-all duration-200 shadow-sm ${isSaving ? "opacity-60 cursor-not-allowed" : ""
+                                className={`flex items-center justify-center gap-2 w-[320px] max-w-full px-6 bg-primary hover:bg-primary/90 text-white font-medium text-sm py-3 rounded-lg transition-all duration-200 shadow-sm ${isSaving ? "opacity-60 cursor-not-allowed" : ""
                                     }`}
                             >
                                 {isSaving ? (

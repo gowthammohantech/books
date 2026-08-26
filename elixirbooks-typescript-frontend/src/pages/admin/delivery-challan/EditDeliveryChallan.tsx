@@ -882,7 +882,7 @@ const EditDeliveryChallan: React.FC = () => {
                                     onSelect={(option) => handleInvoiceSelect(option as OptionType)}
                                     selectedItem={invoiceOptions.find(option => option.id === invoiceFormData.invoiceId) || null}
                                 />
-                                {formErrors?.invoiceId && <span className="text-red-500 text-sm">{formErrors.invoiceId}</span>}
+                                {formErrors?.invoiceId && <span className="text-destructive text-sm">{formErrors.invoiceId}</span>}
                             </div>
                             <div className="w-full">
                                 <DateInput
@@ -891,11 +891,11 @@ const EditDeliveryChallan: React.FC = () => {
                                     onChange={(newDate) => handleFormChange('challanDate', newDate)}
                                     isRequired
                                 />
-                                {formErrors?.creditNoteDate && <span className="text-red-500 text-sm">{formErrors.creditNoteDate}</span>}
+                                {formErrors?.creditNoteDate && <span className="text-destructive text-sm">{formErrors.creditNoteDate}</span>}
                             </div>
                             <div className="w-full">
                                 <label className="block text-sm font-medium text-gray-700 ">
-                                    Status <em className='text-red-500'>*</em>
+                                    Status <em className='text-destructive'>*</em>
                                 </label>
                                 <SearchableDropdown
                                     placeholder="Select Status"
@@ -907,7 +907,7 @@ const EditDeliveryChallan: React.FC = () => {
                                     }
                                     onChange={(_, value) => { handleFormChange('status', value?.id || null) }}
                                 />
-                                {formErrors?.status && <span className="text-red-500 text-sm">{formErrors.status}</span>}
+                                {formErrors?.status && <span className="text-destructive text-sm">{formErrors.status}</span>}
                             </div>
                             <div className="w-full">
                                 <CurrencySelect
@@ -928,7 +928,7 @@ const EditDeliveryChallan: React.FC = () => {
                     {/* Billing Section */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <div className="bg-white  p-4 rounded-lg border border-gray-200 ">
-                            <h3 className="font-bold text-gray-950 ">Bill From <span className='text-red-500'>*</span></h3>
+                            <h3 className="font-bold text-gray-950 ">Bill From <span className='text-destructive'>*</span></h3>
                             <div className="mt-4">
                                 <SmartDropdown
                                     items={adminUsers}
@@ -939,7 +939,7 @@ const EditDeliveryChallan: React.FC = () => {
                                     placeholder="Type to search..."
                                     serverside={false}
                                 />
-                                {!selectedAdmin && formErrors?.billFrom && <span className="text-red-500 text-sm">{formErrors.billFrom}</span>}
+                                {!selectedAdmin && formErrors?.billFrom && <span className="text-destructive text-sm">{formErrors.billFrom}</span>}
                                 {!selectedAdmin && <p className="mt-2 text-xs text-gray-500  p-2 bg-gray-50  rounded-md font-semibold">
                                     Select admin to view company details.
                                 </p>}
@@ -959,7 +959,7 @@ const EditDeliveryChallan: React.FC = () => {
 
                         <div className="bg-white  p-4 rounded-lg border border-gray-200 ">
                             <div className="flex justify-between items-center">
-                                <h3 className="font-bold text-gray-950 ">Bill To <span className='text-red-500'>*</span></h3>
+                                <h3 className="font-bold text-gray-950 ">Bill To <span className='text-destructive'>*</span></h3>
                             </div>
                             <div className="mt-4">
                                 <SmartDropdown
@@ -972,7 +972,7 @@ const EditDeliveryChallan: React.FC = () => {
                                     addNewLabel='New Customer'
                                     placeholder='Type to search customer'
                                 />
-                                {!selectedCustomer && formErrors?.billTo && <span className="text-red-500 text-sm">{formErrors.billTo}</span>}
+                                {!selectedCustomer && formErrors?.billTo && <span className="text-destructive text-sm">{formErrors.billTo}</span>}
                                 {!selectedCustomer && <p className="mt-2 text-xs text-gray-500  p-2 bg-gray-50  rounded-md font-semibold">
                                     Select customer to view customer details
                                 </p>}
@@ -999,7 +999,7 @@ const EditDeliveryChallan: React.FC = () => {
                                 <select
                                     value={invoiceFormData.taxTreatment}
                                     onChange={(e) => handleFormChange('taxTreatment', e.target.value as InvoiceFormData['taxTreatment'])}
-                                    className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                    className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-ring"
                                 >
                                     <option value="STANDARD">Standard</option>
                                     <option value="ZERO_RATED">Zero-rated</option>
@@ -1018,7 +1018,7 @@ const EditDeliveryChallan: React.FC = () => {
                 {/* Invoice Items */}
                 <div className="bg-white  rounded-lg border border-gray-200 ">
                     <div className="p-4">
-                        {formErrors?.items && <span className="text-red-500 text-sm">{formErrors.items}</span>}
+                        {formErrors?.items && <span className="text-destructive text-sm">{formErrors.items}</span>}
                         <table className="w-full border-separate border-spacing-0 overflow-x-auto">
                             <thead className="bg-gray-100 text-gray-900">
                                 <tr>
@@ -1083,7 +1083,7 @@ const EditDeliveryChallan: React.FC = () => {
                                     step="1"
                                     value={editingItem.qty}
                                     onChange={(e) => handleEditingItemChange('qty', e.target.value)}
-                                    className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                    className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                                 />
                             </div>
 
@@ -1095,7 +1095,7 @@ const EditDeliveryChallan: React.FC = () => {
                                     min="0"
                                     value={editingItem.rate}
                                     onChange={(e) => handleEditingItemChange('rate', e.target.value)}
-                                    className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                    className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                                 />
                             </div>
                             {/* Discount Type */}
@@ -1103,7 +1103,7 @@ const EditDeliveryChallan: React.FC = () => {
                                 <label htmlFor="edit-discount-type" className="block text-sm font-medium text-gray-700 ">Discount Type</label>
                                 <select
                                     id="edit-discount-type"
-                                    className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                    className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                                     value={editingItem.discount_type}
                                     onChange={(e) => handleEditingItemChange('discount_type', e.target.value)}
                                 >
@@ -1119,7 +1119,7 @@ const EditDeliveryChallan: React.FC = () => {
                                     min="0"
                                     value={editingItem.discount_value || 0}
                                     onChange={(e) => handleEditingItemChange('discount_value', e.target.value)}
-                                    className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                    className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                                 />
                             </div>
 
@@ -1127,7 +1127,7 @@ const EditDeliveryChallan: React.FC = () => {
                                 <label htmlFor="edit-tax-select" className="block text-sm font-medium text-gray-700 ">Tax</label>
                                 <LineTaxSelect
                                     id="edit-tax-select"
-                                    className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                    className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                                     taxRates={taxRateLibrary}
                                     value={editingItem.tax_rate_id ?? ''}
                                     legacyLabel={!editingItem.tax_rate_id && editingItem.tax_group_id
@@ -1173,21 +1173,21 @@ const EditDeliveryChallan: React.FC = () => {
                     <div>
                         <h3 className="text-lg font-semibold text-gray-950  mb-3">Extra Information</h3>
                         <div className="flex items-center gap-2 mb-4">
-                            <button type='button' onClick={() => setActiveInfoTab('notes')} className={`px-4 py-2 text-sm cursor-pointer font-medium rounded-md ${activeInfoTab === 'notes' ? 'bg-purple-600 text-white' : 'bg-gray-200  text-gray-700 '}`}>Add Notes</button>
-                            <button type='button' onClick={() => setActiveInfoTab('termsAndCondition')} className={`px-4 py-2 text-sm cursor-pointer font-medium rounded-md ${activeInfoTab === 'termsAndCondition' ? 'bg-purple-600 text-white' : 'bg-gray-200  text-gray-700 '}`}>Add Terms & Conditions</button>
-                            <button type='button' onClick={() => setActiveInfoTab('bank')} className={`px-4 py-2 text-sm cursor-pointer font-medium rounded-md ${activeInfoTab === 'bank' ? 'bg-purple-600 text-white' : 'bg-gray-200  text-gray-700 '}`}>Bank Details</button>
+                            <button type='button' onClick={() => setActiveInfoTab('notes')} className={`px-4 py-2 text-sm cursor-pointer font-medium rounded-md ${activeInfoTab === 'notes' ? 'bg-primary text-white' : 'bg-gray-200  text-gray-700 '}`}>Add Notes</button>
+                            <button type='button' onClick={() => setActiveInfoTab('termsAndCondition')} className={`px-4 py-2 text-sm cursor-pointer font-medium rounded-md ${activeInfoTab === 'termsAndCondition' ? 'bg-primary text-white' : 'bg-gray-200  text-gray-700 '}`}>Add Terms & Conditions</button>
+                            <button type='button' onClick={() => setActiveInfoTab('bank')} className={`px-4 py-2 text-sm cursor-pointer font-medium rounded-md ${activeInfoTab === 'bank' ? 'bg-primary text-white' : 'bg-gray-200  text-gray-700 '}`}>Bank Details</button>
                         </div>
 
                         {activeInfoTab === 'notes' && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 ">Additional Notes</label>
-                                <textarea value={invoiceFormData.notes} onChange={(e) => handleFormChange('notes', e.target.value)} rows={4} placeholder="Enter Notes" className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"></textarea>
+                                <textarea value={invoiceFormData.notes} onChange={(e) => handleFormChange('notes', e.target.value)} rows={4} placeholder="Enter Notes" className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"></textarea>
                             </div>
                         )}
                         {activeInfoTab === 'termsAndCondition' && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 ">Terms & Conditions</label>
-                                <textarea value={invoiceFormData.termsAndCondition} onChange={(e) => handleFormChange('termsAndCondition', e.target.value)} rows={4} placeholder="Enter Terms & Conditions" className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"></textarea>
+                                <textarea value={invoiceFormData.termsAndCondition} onChange={(e) => handleFormChange('termsAndCondition', e.target.value)} rows={4} placeholder="Enter Terms & Conditions" className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"></textarea>
                             </div>
                         )}
                         {activeInfoTab === 'bank' && (
@@ -1217,14 +1217,14 @@ const EditDeliveryChallan: React.FC = () => {
                         <p className="text-sm text-gray-500  capitalize">{totalInWords}</p>
 
                         <div className="flex items-center gap-4 pt-4">
-                            <div className="flex items-center"><input id="no-sig" type="radio" name="signature" checked={invoiceFormData.sign_type === 'none'} onChange={() => handleFormChange('sign_type', 'none')} className="h-4 w-4 text-purple-600 cursor-pointer" /><label htmlFor="no-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">No Signature</label></div>
-                            <div className="flex items-center"><input id="manual-sig" type="radio" name="signature" checked={invoiceFormData.sign_type === 'digitalSignature'} onChange={() => handleFormChange('sign_type', 'digitalSignature')} className="h-4 w-4 text-purple-600 cursor-pointer" /><label htmlFor="manual-sig" className="ml-2 block text-sm text-gray-700  cursor-pointer">Manual Signature</label></div>
-                            <div className="flex items-center"><input id="e-sig" type="radio" name="signature" checked={invoiceFormData.sign_type === 'eSignature'} onChange={() => handleFormChange('sign_type', 'eSignature')} className="h-4 w-4 text-purple-600 cursor-pointer" /><label htmlFor="e-sig" className="ml-2 block text-sm text-gray-700  cursor-pointer">eSignature</label></div>
+                            <div className="flex items-center"><input id="no-sig" type="radio" name="signature" checked={invoiceFormData.sign_type === 'none'} onChange={() => handleFormChange('sign_type', 'none')} className="h-4 w-4 text-primary cursor-pointer" /><label htmlFor="no-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">No Signature</label></div>
+                            <div className="flex items-center"><input id="manual-sig" type="radio" name="signature" checked={invoiceFormData.sign_type === 'digitalSignature'} onChange={() => handleFormChange('sign_type', 'digitalSignature')} className="h-4 w-4 text-primary cursor-pointer" /><label htmlFor="manual-sig" className="ml-2 block text-sm text-gray-700  cursor-pointer">Manual Signature</label></div>
+                            <div className="flex items-center"><input id="e-sig" type="radio" name="signature" checked={invoiceFormData.sign_type === 'eSignature'} onChange={() => handleFormChange('sign_type', 'eSignature')} className="h-4 w-4 text-primary cursor-pointer" /><label htmlFor="e-sig" className="ml-2 block text-sm text-gray-700  cursor-pointer">eSignature</label></div>
                         </div>
 
                         {invoiceFormData.sign_type !== 'none' && (invoiceFormData.sign_type === 'digitalSignature' ? (
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 ">Select Signature Name <span className="text-red-500">*</span></label>
+                                <label className="block text-sm font-medium text-gray-700 ">Select Signature Name <span className="text-destructive">*</span></label>
                                 <SmartDropdown
                                     items={manualSignatures}
                                     value={signatureSearchInput}
@@ -1235,7 +1235,7 @@ const EditDeliveryChallan: React.FC = () => {
                                     addNewLabel='New Signature'
                                     placeholder='Type to search signatures...'
                                 />
-                                {formErrors?.signatureId && <p className="text-red-500 text-xs mt-1">{formErrors.signatureId}</p>}
+                                {formErrors?.signatureId && <p className="text-destructive text-xs mt-1">{formErrors.signatureId}</p>}
                                 <p className="mt-2 text-sm font-medium text-gray-700 ">Signature Image</p>
                                 <div className="mt-2 h-20 w-48 bg-gray-100  rounded-md flex items-center justify-center">
                                     {selectedManualSignatureImage ? <img src={selectedManualSignatureImage} alt="Selected Signature" className="max-h-full max-w-full" /> : <span className="text-xs text-gray-400">No signature selected</span>}
@@ -1243,14 +1243,14 @@ const EditDeliveryChallan: React.FC = () => {
                             </div>
                         ) : (
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 ">Signature Name <span className="text-red-500">*</span></label>
-                                <input name='signatureName' type="text" value={invoiceFormData.signatureName} onChange={e => handleFormChange('signatureName', e.target.value)} placeholder="Enter Signature Name" className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600" />
-                                {formErrors?.signatureName && <p className="text-red-500 text-xs mt-1">{formErrors.signatureName}</p>}
+                                <label className="block text-sm font-medium text-gray-700 ">Signature Name <span className="text-destructive">*</span></label>
+                                <input name='signatureName' type="text" value={invoiceFormData.signatureName} onChange={e => handleFormChange('signatureName', e.target.value)} placeholder="Enter Signature Name" className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring" />
+                                {formErrors?.signatureName && <p className="text-destructive text-xs mt-1">{formErrors.signatureName}</p>}
                                 <p className="mt-2 text-sm font-medium text-gray-700 ">Draw your eSignature</p>
                                 <div className="mt-2 h-20 w-48 bg-gray-100  rounded-md flex items-center justify-center cursor-pointer border-2 border-dashed border-gray-400" onClick={() => setSignatureModalOpen(true)}>
                                     {invoiceFormData.esignDataUrl ? <img src={invoiceFormData.esignDataUrl} alt="Drawn Signature" className="max-h-full max-w-full" /> : <div className="text-center text-gray-500"><Edit size={20} className="mx-auto mb-1" /><span className="text-xs">Draw Signature</span></div>}
                                 </div>
-                                {formErrors?.esignDataUrl && <p className="text-red-500 text-xs mt-1">{formErrors.esignDataUrl}</p>}
+                                {formErrors?.esignDataUrl && <p className="text-destructive text-xs mt-1">{formErrors.esignDataUrl}</p>}
                             </div>
                         ))}
                     </div>

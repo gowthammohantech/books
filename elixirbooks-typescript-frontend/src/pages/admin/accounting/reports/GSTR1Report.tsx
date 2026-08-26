@@ -146,7 +146,7 @@ export default function GSTR1Report() {
           <LoaderSpinner />
         </div>
       )}
-      {error && <p className="text-danger">{error}</p>}
+      {error && <p className="text-destructive">{error}</p>}
 
       {data && (
         <div className="space-y-4 text-sm">
@@ -155,7 +155,7 @@ export default function GSTR1Report() {
             {formatDate(data.period.to)}
           </div>
 
-          <section className="border rounded p-4 bg-purple-50">
+          <section className="border rounded p-4 bg-accent">
             <h2 className="font-medium mb-2">Summary</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <div>
@@ -245,11 +245,11 @@ export default function GSTR1Report() {
             </div>
           </section>
 
-          <section className="border border-border rounded-control p-4">
+          <section className="border border-border rounded-md p-4">
             <h2 className="font-medium mb-2">B2B (registered customers)</h2>
-            <div className="overflow-x-auto border border-border rounded-control">
+            <div className="overflow-x-auto border border-border rounded-md">
               <table className="w-full text-xs">
-                <thead className="bg-gray-100 uppercase text-body">
+                <thead className="bg-gray-100 uppercase text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2 text-left border-b border-border">GSTIN</th>
                     <th className="px-3 py-2 text-left border-b border-border">Customer</th>
@@ -301,11 +301,11 @@ export default function GSTR1Report() {
             </div>
           </section>
 
-          <section className="border border-border rounded-control p-4">
+          <section className="border border-border rounded-md p-4">
             <h2 className="font-medium mb-2">B2C (unregistered customers)</h2>
-            <div className="overflow-x-auto border border-border rounded-control">
+            <div className="overflow-x-auto border border-border rounded-md">
               <table className="w-full text-xs">
-                <thead className="bg-gray-100 uppercase text-body">
+                <thead className="bg-gray-100 uppercase text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2 text-left border-b border-border">Place of Supply</th>
                     <th className="px-3 py-2 text-right border-b border-border">Invoice Count</th>

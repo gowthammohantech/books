@@ -11,7 +11,7 @@ import { useDocumentDefaults } from '@hooks/useDocumentDefaults';
 import { PageHeader } from '@/context/PageHeaderContext';
 import { Card, FormField, Select, fieldControlClasses } from '@components/ui';
 
-const sectionHeaderClass = 'flex items-center gap-2 px-5 py-4 border-b border-border text-lg font-semibold text-heading';
+const sectionHeaderClass = 'flex items-center gap-2 px-5 py-4 border-b border-border text-lg font-semibold text-foreground';
 
 interface SignatureOption {
     id: string;
@@ -105,7 +105,7 @@ const DocumentDefaultsPage: React.FC = () => {
         return (
             <div className="space-y-4">
                 <PageHeader title="Document Defaults" />
-                <p className="text-body">Loading...</p>
+                <p className="text-muted-foreground">Loading...</p>
             </div>
         );
     }
@@ -118,7 +118,7 @@ const DocumentDefaultsPage: React.FC = () => {
                 </SubmitButton>
             </PageHeader>
 
-            <p className="text-sm text-body">
+            <p className="text-sm text-muted-foreground">
                 These defaults are pre-applied to every new document (invoice, quotation, etc.) and
                 can be changed per document.
             </p>
@@ -132,7 +132,7 @@ const DocumentDefaultsPage: React.FC = () => {
                             value={currencyCode}
                             onChange={setCurrencyCode}
                         />
-                        <p className="text-xs text-body">
+                        <p className="text-xs text-muted-foreground">
                             Leave blank to use the company's default currency.
                         </p>
                     </div>
@@ -159,9 +159,9 @@ const DocumentDefaultsPage: React.FC = () => {
                                         value={value}
                                         checked={signType === value}
                                         onChange={() => setSignType(value)}
-                                        className="accent-purple-600"
+                                        className="accent-primary"
                                     />
-                                    <span className="text-sm text-heading">{label}</span>
+                                    <span className="text-sm text-foreground">{label}</span>
                                 </label>
                             ))}
                         </div>

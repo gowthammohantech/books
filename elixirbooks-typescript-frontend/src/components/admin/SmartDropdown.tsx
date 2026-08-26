@@ -111,7 +111,7 @@ const SmartDropdown: React.FC<SmartDropdownProps> = ({
             <div className="relative">
                 <input
                     type="text"
-                    className={`p-2 h-10 mt-1 w-full pr-8 border text-gray-700 text-sm border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600 ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    className={`p-2 h-10 mt-1 w-full pr-8 border text-gray-700 text-sm border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     placeholder={placeholder}
                     value={makeUcFirst(displayInput)}
                     onChange={(e) => {
@@ -130,7 +130,7 @@ const SmartDropdown: React.FC<SmartDropdownProps> = ({
                         disabled={disabled}
                         type="button"
                         aria-label="Clear selection"
-                        className={`absolute inset-y-0 right-2 flex items-center text-gray-400 hover:text-red-500 cursor-pointer ${disabled ? 'cursor-not-allowed' : ''}`}
+                        className={`absolute inset-y-0 right-2 flex items-center text-gray-400 hover:text-destructive cursor-pointer ${disabled ? 'cursor-not-allowed' : ''}`}
                         onClick={() => {
                             onSelect(null);
                             setDisplayInput("");
@@ -151,7 +151,7 @@ const SmartDropdown: React.FC<SmartDropdownProps> = ({
                             filteredItems.map((item, index) => (
                                 <li
                                     key={item.id}
-                                    className={`p-2 cursor-pointer hover:bg-purple-50 ${index === activeIndex ? "bg-purple-50" : ""
+                                    className={`p-2 cursor-pointer hover:bg-accent ${index === activeIndex ? "bg-accent" : ""
                                         }`}
                                     onMouseDown={() => {
                                         onSelect(item);
@@ -189,14 +189,14 @@ const SmartDropdown: React.FC<SmartDropdownProps> = ({
                     {onAddNew && (
                         <div
                             className="p-2 border-t border-gray-200 cursor-pointer 
-                   hover:bg-purple-50 sticky bottom-0 bg-white"
+                   hover:bg-accent sticky bottom-0 bg-white"
                             onMouseDown={(e) => {
                                 e.preventDefault();
                                 onAddNew();
                                 setShowDropdown(false);
                             }}
                         >
-                            <div className="flex items-center text-sm text-purple-600 font-medium">
+                            <div className="flex items-center text-sm text-primary font-medium">
                                 <PlusCircle size={16} className="mr-2" />
                                 {addNewLabel}
                             </div>

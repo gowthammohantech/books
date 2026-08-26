@@ -309,7 +309,7 @@ const ReconciliationList: React.FC = () => {
 
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-4 p-4 bg-white">
-                        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-purple-500/5 to-purple-600/5 text-purple-600 shadow-inner border border-gray-300">
+                        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-chart-3/5 to-primary/5 text-primary shadow-inner border border-gray-300">
                             <LandmarkIcon className="w-6 h-6" />
                         </div>
                         <div className="flex flex-col items-start">
@@ -333,7 +333,7 @@ const ReconciliationList: React.FC = () => {
                         value={dateRange}
                         onChange={handleRangeInputChange}
                     />
-                    {dateRangeError && <p className="text-red-500 text-sm">{dateRangeError}</p>}
+                    {dateRangeError && <p className="text-destructive text-sm">{dateRangeError}</p>}
                 </div>
                 <div>
                     <SmartDropdown
@@ -372,7 +372,7 @@ const ReconciliationList: React.FC = () => {
                     <select
                         value={limit}
                         onChange={(e) => handleFilterChange('limit', e.target.value)}
-                        className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                        className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     >
                         {[10, 25, 50].map((num) => (
                             <option className="text-gray-950 " key={num} value={num}>{num} / page</option>

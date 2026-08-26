@@ -144,13 +144,13 @@ const StaffActivityReport: React.FC = () => {
                         value={dateRange}
                         onChange={handleRangeInputChange}
                     />
-                    {dateRangeError && <p className="text-red-500 text-sm">{dateRangeError}</p>}
+                    {dateRangeError && <p className="text-destructive text-sm">{dateRangeError}</p>}
                 </div>
                 {/* clear filters */}
                 <div>
                     <button
                         onClick={clearAllFilters}
-                        className="border border-gray-300 rounded-md px-4 py-2  text-gray-950  focus:outline-none focus:ring-2 focus:ring-purple-600 cursor-pointer"
+                        className="border border-gray-300 rounded-md px-4 py-2  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
                     >
                         Clear Filters
                     </button>

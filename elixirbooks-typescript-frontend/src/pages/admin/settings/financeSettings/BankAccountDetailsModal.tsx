@@ -26,15 +26,15 @@ const BankAccountDetailsModal: React.FC<Props> = ({ isOpen, onClose, bankAccount
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Bank Account Overview">
-            <div className="bg-surface border border-border rounded-card">
+            <div className="bg-muted border border-border rounded-xl">
                 {/* --- Header --- */}
                 <div className="px-6 py-4 border-b border-border">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h2 className="text-lg font-semibold text-heading">
+                            <h2 className="text-lg font-semibold text-foreground">
                                 {bankAccount.accountHoldername}
                             </h2>
-                            <p className="text-sm text-body mt-1 font-medium">
+                            <p className="text-sm text-muted-foreground mt-1 font-medium">
                                 {bankAccount.bankName}
                             </p>
                         </div>
@@ -46,26 +46,26 @@ const BankAccountDetailsModal: React.FC<Props> = ({ isOpen, onClose, bankAccount
 
                 {/* --- Balance Card --- */}
                 <div className="p-6">
-                    <div className="relative p-5 bg-surface border border-border rounded-card shadow-card">
+                    <div className="relative p-5 bg-muted border border-border rounded-xl shadow-sm">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-body">
+                                <p className="text-sm font-medium text-muted-foreground">
                                     Current Balance
                                 </p>
                                 <p className={`text-3xl font-bold tracking-tight mt-1 ${bankAccount.currentBalance >= 0
-                                    ? "text-heading"
-                                    : "text-danger"
+                                    ? "text-foreground"
+                                    : "text-destructive"
                                     }`}
                                 >
                                     {formatMoney(bankAccount.currentBalance || 0, accountCurrency)}
                                 </p>
                             </div>
-                            <div className="p-3 rounded-full bg-purple-600 text-white">
+                            <div className="p-3 rounded-full bg-primary text-white">
                                 <CreditCard size={24} />
                             </div>
                         </div>
                         {bankAccount.asOnDate && (
-                            <p className="text-xs text-body mt-3">
+                            <p className="text-xs text-muted-foreground mt-3">
                                 As on {formatDate(bankAccount.asOnDate, dateFormat)}
                             </p>
                         )}
@@ -74,36 +74,36 @@ const BankAccountDetailsModal: React.FC<Props> = ({ isOpen, onClose, bankAccount
 
                 {/* --- Account Info Section --- */}
                 <div className="px-6 pb-6">
-                    <h3 className="text-lg font-semibold text-heading mb-4">Account Details</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Account Details</h3>
                     <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
                         <div className="col-span-1">
-                            <dt className="text-xs uppercase tracking-wider font-medium text-body">Account No.</dt>
-                            <dd className="text-sm font-mono text-heading mt-1">{bankAccount.accountNumber}</dd>
+                            <dt className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Account No.</dt>
+                            <dd className="text-sm font-mono text-foreground mt-1">{bankAccount.accountNumber}</dd>
                         </div>
                         <div className="col-span-1">
-                            <dt className="text-xs uppercase tracking-wider font-medium text-body">{getBankCodeType(bankAccount.bankCodeType).label}</dt>
-                            <dd className="text-sm font-mono text-heading mt-1">{bankAccount.IFSCCode}</dd>
+                            <dt className="text-xs uppercase tracking-wider font-medium text-muted-foreground">{getBankCodeType(bankAccount.bankCodeType).label}</dt>
+                            <dd className="text-sm font-mono text-foreground mt-1">{bankAccount.IFSCCode}</dd>
                         </div>
                         <div className="col-span-1">
-                            <dt className="text-xs uppercase tracking-wider font-medium text-body">Account Type</dt>
-                            <dd className="text-sm capitalize text-heading mt-1">{bankAccount.accountType}</dd>
+                            <dt className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Account Type</dt>
+                            <dd className="text-sm capitalize text-foreground mt-1">{bankAccount.accountType}</dd>
                         </div>
                         <div className="col-span-1">
-                            <dt className="text-xs uppercase tracking-wider font-medium text-body">Branch</dt>
-                            <dd className="text-sm text-heading mt-1">{bankAccount.branchName}</dd>
+                            <dt className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Branch</dt>
+                            <dd className="text-sm text-foreground mt-1">{bankAccount.branchName}</dd>
                         </div>
                         <div className="col-span-2 border-t border-border my-2"></div>
                         <div className="col-span-1">
-                            <dt className="text-xs uppercase tracking-wider font-medium text-body">Currency</dt>
-                            <dd className="text-sm text-heading mt-1">{accountCurrency}</dd>
+                            <dt className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Currency</dt>
+                            <dd className="text-sm text-foreground mt-1">{accountCurrency}</dd>
                         </div>
                         <div className="col-span-1">
-                            <dt className="text-xs uppercase tracking-wider font-medium text-body">Opening Balance</dt>
-                            <dd className="text-sm text-heading mt-1">{formatMoney(bankAccount.openingBalance || 0, accountCurrency)}</dd>
+                            <dt className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Opening Balance</dt>
+                            <dd className="text-sm text-foreground mt-1">{formatMoney(bankAccount.openingBalance || 0, accountCurrency)}</dd>
                         </div>
                         <div className="col-span-1">
-                            <dt className="text-xs uppercase tracking-wider font-medium text-body">Created On</dt>
-                            <dd className="text-sm text-heading mt-1">{formatDate(bankAccount.createdAt, dateFormat)}</dd>
+                            <dt className="text-xs uppercase tracking-wider font-medium text-muted-foreground">Created On</dt>
+                            <dd className="text-sm text-foreground mt-1">{formatDate(bankAccount.createdAt, dateFormat)}</dd>
                         </div>
                     </dl>
                 </div>

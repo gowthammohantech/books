@@ -172,16 +172,16 @@ const PettyCashModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
         <Modal isOpen={isOpen} onClose={onClose} title="Add Petty Cash">
             <form onSubmit={handleSubmit}>
                 <div className="mb-4">
-                    <label htmlFor="amount" className="block text-sm font-medium text-red-500">Amount *</label>
+                    <label htmlFor="amount" className="block text-sm font-medium text-destructive">Amount *</label>
                     <input type="number" name="amount" id="amount"
                         value={formData.amount}
                         onChange={handleInputChange}
-                        className="border border-gray-300 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                        className="border border-gray-300 mt-1 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring"
                     />
-                    {formErrors.amount && <p className="text-red-500 text-xs mt-1">{formErrors.amount}</p>}
+                    {formErrors.amount && <p className="text-destructive text-xs mt-1">{formErrors.amount}</p>}
                 </div>
                 <div className="mb-4">
-                    <label htmlFor="payment_mode" className="block text-sm font-medium text-red-500">Payment Mode *</label>
+                    <label htmlFor="payment_mode" className="block text-sm font-medium text-destructive">Payment Mode *</label>
                     <SmartDropdown
                         items={paymentModeOptions}
                         value={paymentModeSearchValue}
@@ -193,10 +193,10 @@ const PettyCashModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
                         onAddNew={() => setIsPaymentModeModalOpen(true)}
                         addNewLabel="New Payment Mode"
                     />
-                    {formErrors.paymentModeId && <p className="text-red-500 text-xs mt-1">{formErrors.paymentModeId}</p>}
+                    {formErrors.paymentModeId && <p className="text-destructive text-xs mt-1">{formErrors.paymentModeId}</p>}
                 </div>
                 <div className="mb-4">
-                    <label htmlFor="bankAccountId" className="block text-sm font-medium text-red-500">{bankAccountLabel} *</label>
+                    <label htmlFor="bankAccountId" className="block text-sm font-medium text-destructive">{bankAccountLabel} *</label>
                     <SmartDropdown
                         items={bankAccountOptions}
                         value={bankAccountSearchValue}
@@ -205,7 +205,7 @@ const PettyCashModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
                         selectedItem={bankAccountOptions.find(item => item.id === formData.bankAccountId)}
                         placeholder="Type to search bank account"
                     />
-                    {formErrors.bankAccountId && <p className="text-red-500 text-xs mt-1">{formErrors.bankAccountId}</p>}
+                    {formErrors.bankAccountId && <p className="text-destructive text-xs mt-1">{formErrors.bankAccountId}</p>}
                 </div>
                 {/* Submit Buuton */}
                 <div className="mb-4 flex justify-end">

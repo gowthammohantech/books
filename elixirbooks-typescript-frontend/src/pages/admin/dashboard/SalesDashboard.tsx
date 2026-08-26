@@ -85,7 +85,7 @@ const SalesDashboard: React.FC = () => {
         <div className="px-4 py-3 bg-gray-50 min-h-full font-sans border border-gray-200 rounded-md space-y-4">
             <PageHeader title="Sales & Invoices">
                 <DashboardSwitcher />
-                <button onClick={() => navigate('/admin/invoices')} className="bg-white border border-purple-600 text-purple-600 hover:bg-purple-50 px-2 py-1 rounded-md shadow cursor-pointer flex items-center gap-2">All Invoices <ArrowRight size={14} /></button>
+                <button onClick={() => navigate('/admin/invoices')} className="bg-white border border-primary text-primary hover:bg-accent px-2 py-1 rounded-md shadow cursor-pointer flex items-center gap-2">All Invoices <ArrowRight size={14} /></button>
             </PageHeader>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -108,13 +108,13 @@ const SalesDashboard: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="bg-white border border-border rounded-card shadow-card p-4">
+                <div className="bg-white border border-border rounded-xl shadow-sm p-4">
                     <h2 className="text-md font-semibold text-gray-600 mb-2">Sales vs Purchases</h2>
                     {areaData.length > 0
                         ? <MultiLineAreaChart data={areaData} categories={months} color={["#7539FF", "#06AED4"]} seriesNames={["Sales", "Purchases"]} />
                         : <p className="text-sm text-gray-400 py-8 text-center">No data</p>}
                 </div>
-                <div className="bg-white border border-border rounded-card shadow-card p-4">
+                <div className="bg-white border border-border rounded-xl shadow-sm p-4">
                     <h2 className="text-md font-semibold text-gray-600 mb-2">Top Products by Sales</h2>
                     {pieChartData.length > 0
                         ? <ApexGradientPie data={pieChartData} colors={["#7539FF", "#06AED4", "#27AE60", "#E2B93B", "#3538CD"]} width={380} height={300} />
@@ -123,7 +123,7 @@ const SalesDashboard: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="bg-white border border-border rounded-card shadow-card p-4">
+                <div className="bg-white border border-border rounded-xl shadow-sm p-4">
                     <h2 className="text-md font-semibold text-gray-600 mb-3">Recent Invoices</h2>
                     <Table headers={["#", "Invoice", "Customer", "Amount", "Status", "Date"]}>
                         {data.lastFiveInvoices?.length > 0 ? data.lastFiveInvoices.map((inv, i) => (
@@ -137,7 +137,7 @@ const SalesDashboard: React.FC = () => {
                         )) : <tr><td colSpan={6} className="text-center py-4 text-gray-400">No invoices</td></tr>}
                     </Table>
                 </div>
-                <div className="bg-white border border-border rounded-card shadow-card p-4">
+                <div className="bg-white border border-border rounded-xl shadow-sm p-4">
                     <h2 className="text-md font-semibold text-gray-600 mb-3">Recent Payments</h2>
                     <Table headers={["#", "Invoice", "Amount", "Method"]}>
                         {data.lastFivePayments?.length > 0 ? data.lastFivePayments.map((p, i) => (
@@ -152,10 +152,10 @@ const SalesDashboard: React.FC = () => {
             </div>
 
             {data.topDebtors && data.topDebtors.length > 0 && (
-                <div className="bg-white border border-border rounded-card shadow-card p-4">
+                <div className="bg-white border border-border rounded-xl shadow-sm p-4">
                     <div className="flex items-center justify-between mb-3">
                         <h2 className="text-md font-semibold text-gray-600">Top Debtors</h2>
-                        <button onClick={() => navigate('/admin/accounting/reports/ar-aging')} className="text-sm text-purple-600 font-semibold flex items-center gap-1 cursor-pointer">AR Aging <ArrowRight size={14} /></button>
+                        <button onClick={() => navigate('/admin/accounting/reports/ar-aging')} className="text-sm text-primary font-semibold flex items-center gap-1 cursor-pointer">AR Aging <ArrowRight size={14} /></button>
                     </div>
                     <Table headers={["#", "Customer", "Outstanding", "Oldest (days)"]}>
                         {data.topDebtors.map((d, i) => (
@@ -170,7 +170,7 @@ const SalesDashboard: React.FC = () => {
             )}
 
             <div className="flex justify-end">
-                <button onClick={() => navigate('/admin/reports/income')} className="text-sm text-purple-600 font-semibold flex items-center gap-1 cursor-pointer"><Receipt size={14} /> Full Income Report <ArrowRight size={14} /></button>
+                <button onClick={() => navigate('/admin/reports/income')} className="text-sm text-primary font-semibold flex items-center gap-1 cursor-pointer"><Receipt size={14} /> Full Income Report <ArrowRight size={14} /></button>
             </div>
         </div>
     );

@@ -315,12 +315,12 @@ const BrandList: FC = () => {
                     placeholder="Search by brand name..."
                     value={search}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 />
                 <select
                     value={limit}
                     onChange={(e: ChangeEvent<HTMLSelectElement>) => handlePageLengthChange(Number(e.target.value))}
-                    className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 >
                     {[10, 25, 50].map((num) => (
                         <option className="text-gray-950 " key={num} value={num}>{num} / page</option>
@@ -347,7 +347,7 @@ const BrandList: FC = () => {
                                     checked={brandItem.status}
                                     onChange={() => updateStatus(brandItem)}
                                 />
-                                <div className="relative w-11 h-6 bg-gray-200 peer-checked:bg-purple-600 rounded-full peer-focus:ring-2 peer-focus:ring-purple-600 transition-all duration-300">
+                                <div className="relative w-11 h-6 bg-gray-200 peer-checked:bg-primary rounded-full peer-focus:ring-2 peer-focus:ring-ring transition-all duration-300">
                                     <div className={`absolute top-0.5 left-1 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${brandItem.status ? 'translate-x-full' : ''}`}></div>
                                 </div>
                             </label>
@@ -385,19 +385,19 @@ const BrandList: FC = () => {
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={isEditMode ? 'Edit Brand' : 'Add New Brand'}>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700  mb-1">Image <em className="text-red-600">*</em></label>
+                        <label className="block text-sm font-medium text-gray-700  mb-1">Image <em className="text-destructive">*</em></label>
                         <ImageCropperUpload
                             value={brand.brandImageUrl || undefined}
                             aspect={1}
                             label="Upload Image"
                             onCropped={handleCroppedBrandImage}
                         />
-                        {formErrors.brand_image && <p className="text-red-500 text-xs mt-1">{formErrors.brand_image}</p>}
+                        {formErrors.brand_image && <p className="text-destructive text-xs mt-1">{formErrors.brand_image}</p>}
                     </div>
 
                     <div>
                         <label htmlFor="brand_name" className="block text-sm font-medium text-gray-700  mb-1">
-                            Name <span className="text-red-500">*</span>
+                            Name <span className="text-destructive">*</span>
                         </label>
                         <input
                             id="brand_name"
@@ -405,9 +405,9 @@ const BrandList: FC = () => {
                             value={brand.brand_name || ''}
                             onChange={(e) => setBrand({ ...brand, brand_name: e.target.value })}
                             placeholder="Enter brand name"
-                            className="w-full text-gray-950  bg-white  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-purple-600 focus:border-purple-600"
+                            className="w-full text-gray-950  bg-white  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-ring focus:border-primary"
                         />
-                        {formErrors.brand_name && <p className="text-red-500 text-xs mt-1">{formErrors.brand_name}</p>}
+                        {formErrors.brand_name && <p className="text-destructive text-xs mt-1">{formErrors.brand_name}</p>}
                     </div>
 
                     <DynamicCustomFields

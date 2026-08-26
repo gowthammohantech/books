@@ -271,7 +271,7 @@ const EmailQuotation: React.FC = () => {
                 </p>
                 <button
                     onClick={() => navigate("/admin/settings/email-settings")}
-                    className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center gap-2"
+                    className="px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/90 flex items-center gap-2"
                 >
                     <Settings size={18} /> Configure Email Settings
                 </button>
@@ -294,7 +294,7 @@ const EmailQuotation: React.FC = () => {
                 <button
                     type="submit"
                     form="email-quotation-form"
-                    className="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md shadow-sm hover:bg-gray-800 focus:outline-none flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary border border-transparent rounded-md shadow-sm hover:bg-gray-800 focus:outline-none flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                     disabled={isSubmitting}
                 >
                     {isSubmitting ? (
@@ -310,7 +310,7 @@ const EmailQuotation: React.FC = () => {
             </PageHeader>
 
             <form id="email-quotation-form" onSubmit={handleSubmit} className="space-y-4">
-                <div className="border border-border rounded-card bg-white shadow-card">
+                <div className="border border-border rounded-xl bg-white shadow-sm">
                     {/* From */}
                     <div className="p-4 flex items-center gap-4">
                         <label className="w-32 text-gray-600 font-medium">From</label>
@@ -341,7 +341,7 @@ const EmailQuotation: React.FC = () => {
                             type="text"
                             value={formData.subject}
                             onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                            className="flex-1 border border-gray-200 rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600"
+                            className="flex-1 border border-gray-200 rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary"
                         />
                     </div>
 

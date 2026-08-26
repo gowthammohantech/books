@@ -162,7 +162,7 @@ function SummaryTab({
   }, [contactId, token, refreshKey]);
 
   if (loading) return <p className="text-gray-500 py-4">Loading summary…</p>;
-  if (error) return <p className="text-red-600 py-4">{error}</p>;
+  if (error) return <p className="text-destructive py-4">{error}</p>;
   if (!summary) return <p className="text-gray-400 py-4">No summary data.</p>;
 
   const contact = summary.contact;
@@ -306,7 +306,7 @@ function DocumentsTab({
   }, [contactId, token, filterType]);
 
   if (loading) return <p className="text-gray-500 py-4">Loading…</p>;
-  if (error) return <p className="text-red-600 py-4">{error}</p>;
+  if (error) return <p className="text-destructive py-4">{error}</p>;
 
   const label = DOC_TYPE_LABELS[filterType];
 
@@ -397,14 +397,14 @@ function StatementTab({ contactId, token }: { contactId: string; token: string }
         <button
           type="button"
           onClick={load}
-          className="px-3 py-1 text-sm bg-purple-600 text-white rounded"
+          className="px-3 py-1 text-sm bg-primary text-white rounded"
         >
           Reload
         </button>
       </div>
 
       {loading && <p className="text-gray-500">Loading…</p>}
-      {error && <p className="text-red-600">{error}</p>}
+      {error && <p className="text-destructive">{error}</p>}
 
       {data && data.byCurrency.length === 0 && (
         <p className="text-gray-400">No transactions in this period.</p>
@@ -499,7 +499,7 @@ function AccountHistoryTab({ contactId, token }: { contactId: string; token: str
   }, [contactId, token]);
 
   if (loading) return <p className="text-gray-500 py-4">Loading…</p>;
-  if (error) return <p className="text-red-600 py-4">{error}</p>;
+  if (error) return <p className="text-destructive py-4">{error}</p>;
   const safeItems = Array.isArray(items) ? items : [];
   if (safeItems.length === 0) return <p className="text-gray-400 py-4">No history found.</p>;
 
@@ -611,7 +611,7 @@ const ContactCard: React.FC = () => {
             onClick={() => setActiveTab(tab.id)}
             className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === tab.id
-                ? 'border-purple-600 text-purple-700'
+                ? 'border-primary text-primary'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >

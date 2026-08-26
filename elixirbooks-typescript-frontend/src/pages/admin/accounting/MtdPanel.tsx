@@ -216,7 +216,7 @@ export default function MtdPanel() {
       >
         {/* Mode banner */}
         {mockMode && (
-          <div className="rounded-card border border-warning bg-warning-soft text-warning px-4 py-3 text-sm mb-4">
+          <div className="rounded-xl border border-warning bg-warning-soft text-warning px-4 py-3 text-sm mb-4">
             <span className="font-medium">Demo / mock mode</span> — returns are not filed with
             HMRC. Enter your HMRC software-vendor credentials and enable to file for real
             (requires HMRC recognition).
@@ -239,10 +239,10 @@ export default function MtdPanel() {
         {/* Config form (Owner only) */}
         {isOwner ? (
           <div className="border-t border-border pt-4">
-            <h4 className="text-sm font-semibold text-heading mb-3">HMRC credentials (BYOK)</h4>
+            <h4 className="text-sm font-semibold text-foreground mb-3">HMRC credentials (BYOK)</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-heading pb-1">
+                <label className="block text-sm font-medium text-foreground pb-1">
                   VAT registration number (VRN)
                 </label>
                 <input
@@ -254,7 +254,7 @@ export default function MtdPanel() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-heading pb-1">Client ID</label>
+                <label className="block text-sm font-medium text-foreground pb-1">Client ID</label>
                 <input
                   type="text"
                   value={clientId}
@@ -264,7 +264,7 @@ export default function MtdPanel() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-heading pb-1">
+                <label className="block text-sm font-medium text-foreground pb-1">
                   Client Secret{' '}
                   {config?.hasClientSecret && (
                     <span className="text-gray-400">(saved — leave blank to keep)</span>
@@ -280,7 +280,7 @@ export default function MtdPanel() {
                 />
               </div>
               <div className="flex items-end gap-6">
-                <label className="inline-flex items-center gap-2 text-sm text-heading">
+                <label className="inline-flex items-center gap-2 text-sm text-foreground">
                   <input
                     type="checkbox"
                     checked={useSandbox}
@@ -289,7 +289,7 @@ export default function MtdPanel() {
                   />
                   Use sandbox
                 </label>
-                <label className="inline-flex items-center gap-2 text-sm text-heading">
+                <label className="inline-flex items-center gap-2 text-sm text-foreground">
                   <input
                     type="checkbox"
                     checked={enabled}
@@ -336,7 +336,7 @@ export default function MtdPanel() {
       >
         <div className="flex flex-wrap items-end gap-3 mb-4">
           <div>
-            <label className="block text-xs font-medium text-heading pb-1">From</label>
+            <label className="block text-xs font-medium text-foreground pb-1">From</label>
             <input
               type="date"
               value={from}
@@ -345,7 +345,7 @@ export default function MtdPanel() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-heading pb-1">To</label>
+            <label className="block text-xs font-medium text-foreground pb-1">To</label>
             <input
               type="date"
               value={to}
@@ -355,9 +355,9 @@ export default function MtdPanel() {
           </div>
         </div>
 
-        <div className="overflow-x-auto border border-border rounded-control">
+        <div className="overflow-x-auto border border-border rounded-md">
           <table className="w-full text-sm border-collapse">
-            <thead className="bg-gray-100 text-xs uppercase text-body">
+            <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-left border-b border-border">Period key</th>
                 <th className="px-4 py-3 text-left border-b border-border">Period</th>
