@@ -59,18 +59,19 @@ const SsoLanding = () => {
     }, [params, navigate, dispatch]);
 
     return (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: "1rem", fontFamily: "system-ui, sans-serif" }}>
+        <div className="flex h-screen flex-col items-center justify-center gap-4 bg-background">
             {error ? (
                 <>
-                    <h2 style={{ color: "#b91c1c" }}>SSO failed</h2>
-                    <p style={{ color: "#6b7280" }}>{error}</p>
-                    <a href="/admin/login" style={{ color: "#2563eb" }}>Sign in manually instead</a>
+                    <h2 className="text-xl font-semibold text-destructive">SSO failed</h2>
+                    <p className="text-sm text-muted-foreground">{error}</p>
+                    <a href="/admin/login" className="text-sm text-primary hover:underline">
+                        Sign in manually instead
+                    </a>
                 </>
             ) : (
                 <>
-                    <div style={{ width: 32, height: 32, border: "3px solid #e5e7eb", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                    <p style={{ color: "#6b7280" }}>Signing you in…</p>
-                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                    <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-border border-t-primary" />
+                    <p className="text-sm text-muted-foreground">Signing you in…</p>
                 </>
             )}
         </div>

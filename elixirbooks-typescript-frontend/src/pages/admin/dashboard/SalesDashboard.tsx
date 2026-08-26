@@ -19,6 +19,7 @@ import { useCurrencyFormatter } from '@hooks/useCurrencyFormatter';
 import type { PirchartShape, RecentInvoices, RecentPayments, SaleStats } from '@models/dashboard';
 import { PageHeader } from '@/context/PageHeaderContext';
 import DashboardSwitcher from '@components/admin/DashboardSwitcher';
+import { themeColor } from "@lib/designTokens";
 
 interface AgingBuckets { current: number; days30: number; days60: number; days90: number; beyond90: number; }
 interface TopDebtor { customerId: string; customerName: string; outstanding: number; oldestInvoiceDays: number; }
@@ -111,13 +112,13 @@ const SalesDashboard: React.FC = () => {
                 <div className="bg-white border border-border rounded-xl shadow-sm p-4">
                     <h2 className="text-md font-semibold text-gray-600 mb-2">Sales vs Purchases</h2>
                     {areaData.length > 0
-                        ? <MultiLineAreaChart data={areaData} categories={months} color={["#7539FF", "#06AED4"]} seriesNames={["Sales", "Purchases"]} />
+                        ? <MultiLineAreaChart data={areaData} categories={months} color={[themeColor("primary"), themeColor("info")]} seriesNames={["Sales", "Purchases"]} />
                         : <p className="text-sm text-gray-400 py-8 text-center">No data</p>}
                 </div>
                 <div className="bg-white border border-border rounded-xl shadow-sm p-4">
                     <h2 className="text-md font-semibold text-gray-600 mb-2">Top Products by Sales</h2>
                     {pieChartData.length > 0
-                        ? <ApexGradientPie data={pieChartData} colors={["#7539FF", "#06AED4", "#27AE60", "#E2B93B", "#3538CD"]} width={380} height={300} />
+                        ? <ApexGradientPie data={pieChartData} colors={[themeColor("primary"), themeColor("info"), themeColor("success"), themeColor("warning"), themeColor("indigo")]} width={380} height={300} />
                         : <p className="text-sm text-gray-400 py-8 text-center">No data</p>}
                 </div>
             </div>

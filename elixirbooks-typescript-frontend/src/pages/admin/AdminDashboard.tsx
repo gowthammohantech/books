@@ -21,6 +21,7 @@ import ApexGradientPie from '@components/admin/dashboard/ApexGradientPie';
 import MultiLineAreaChart from '@components/admin/MultiLineAreaChart';
 import { PageHeader } from '@/context/PageHeaderContext';
 import DashboardSwitcher from '@components/admin/DashboardSwitcher';
+import { themeColor } from "@lib/designTokens";
 interface AgingBuckets {
     current: number;
     days30: number;
@@ -273,7 +274,7 @@ const DashboardPage: React.FC = () => {
                         data={purchaseAndSaleChartData}
                         seriesNames={["Purchase", "Sales"]}
                         categories={dashboardData.graph2.map((item) => item.month)}
-                        color={["#7539FF", "#06AED4"]}
+                        color={[themeColor("primary"), themeColor("info")]}
                     />
 
                 </div>
@@ -286,7 +287,7 @@ const DashboardPage: React.FC = () => {
                             data={pieChartData.length ? pieChartData : [{ id: "No Data", label: "No Data", value: 1 }]}
                             height={300}
                             width={300}
-                            colors={pieChartData.length ? ["#7539FF", "#06AED4", "#27AE60", "#E2B93B", "#3538CD"] : ["#E5E7EB"]}
+                            colors={pieChartData.length ? [themeColor("primary"), themeColor("info"), themeColor("success"), themeColor("warning"), themeColor("indigo")] : [themeColor("border")]}
                         />
                     </div>
                 </div>

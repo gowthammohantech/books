@@ -313,9 +313,7 @@ main {
   }
 }
 
-/* Global Slim Scrollbar Start */
-
-/* For Chrome, Edge, Safari */
+/* --- Global slim scrollbar --- */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -323,65 +321,59 @@ main {
 
 ::-webkit-scrollbar-track {
   background: transparent;
-  /* track background */
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #d2d2d2;
-  /* gray thumb */
+  background-color: var(--color-gray-300);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #4b5563;
-  /* darker on hover */
+  background-color: var(--color-gray-600);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #e4e0ec transparent;
-  /* thumb + track */
+  scrollbar-color: var(--color-gray-300) transparent;
 }
 
-/* Global Slim Scrollbar End */
 button {
   cursor: pointer;
 }
 
-/* ApexCharts Toolbar Menu Styling  */
+/* --- ApexCharts chrome ---
+   ApexCharts renders its toolbar menu and tooltip with its own inline styles,
+   so these need !important to win. The literals they replaced duplicated token
+   values, and carried comments naming grays that did not match the colors
+   actually set (`background: #fff` annotated as gray-800). */
 .apexcharts-menu {
-  background-color: #ffffff !important;
-  border: 1px solid #e8e7e7 !important;
-  border-radius: 0.5rem !important;
+  background-color: var(--popover) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
   padding: 0 !important;
 }
 
 .apexcharts-menu-item {
-  color: #638192 !important;
+  color: var(--muted-foreground) !important;
   font-size: 14px !important;
   font-weight: 500;
   padding: 6px 12px !important;
 }
 
 .apexcharts-theme-light .apexcharts-menu-item:hover {
-  background-color: #f5f4f4 !important;
+  background-color: var(--muted) !important;
 }
 
-/* === Tooltip Styling === */
 .apexcharts-tooltip {
-  background: #fff !important;
-  /* gray-800 */
-  border: 1px solid #d8d7d7 !important;
-  /* gray-600 */
-  border-radius: 0.5rem !important;
-  color: #000 !important;
-  /* gray-50 */
+  background: var(--popover) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  color: var(--popover-foreground) !important;
   font-size: 13px !important;
 }
 
 .apexcharts-tooltip-title {
-  background: #f2f1f1 !important;
-  color: #000;
-  /* gray-900 */
-  border-bottom: 1px solid #e4e4e4 !important;
+  background: var(--muted) !important;
+  color: var(--popover-foreground);
+  border-bottom: 1px solid var(--border) !important;
 }

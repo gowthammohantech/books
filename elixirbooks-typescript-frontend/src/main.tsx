@@ -54,6 +54,8 @@ document.addEventListener('visibilitychange', () => {
 setInterval(checkTokenExpiry, 60_000);
 
 const queryClient = new QueryClient();
+import { ThemeProvider } from '@mui/material/styles';
+import { muiTheme } from '@lib/muiTheme';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
@@ -77,11 +79,13 @@ if (import.meta.env.DEV && window.location.pathname === '/_tokens') {
     <React.StrictMode>
       <Provider store={store}>
         <BrowserRouter>
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <QueryClientProvider client={queryClient}>
-              <App />
-            </QueryClientProvider>
-          </LocalizationProvider>
+          <ThemeProvider theme={muiTheme}>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <QueryClientProvider client={queryClient}>
+                <App />
+              </QueryClientProvider>
+            </LocalizationProvider>
+          </ThemeProvider>
         </BrowserRouter>
       </Provider>
     </React.StrictMode>

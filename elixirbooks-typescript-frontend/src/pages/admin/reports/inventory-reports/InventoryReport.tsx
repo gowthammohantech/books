@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
 import { PageHeader } from "@/context/PageHeaderContext";
+import { themeColor } from "@lib/designTokens";
 interface InventoryReportResponse {
     success: boolean;
     message: string;
@@ -125,9 +126,9 @@ const InventoryReport: React.FC = () => {
         <div className="space-y-4">
             <PageHeader title="Inventory Report" />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <ChartCard title="Total Inventory Value" value={format(chartData?.totalValues || 0)} color="#27AE60" />
-                <ChartCard title="Low Stock Items" value={chartData?.lowStockItems || 0} color="#E2B93B" />
-                <ChartCard title="Out of Stock Items" value={chartData?.outOfStockItems || 0} color="#EF1E1E" />
+                <ChartCard title="Total Inventory Value" value={format(chartData?.totalValues || 0)} color={themeColor("success")} />
+                <ChartCard title="Low Stock Items" value={chartData?.lowStockItems || 0} color={themeColor("warning")} />
+                <ChartCard title="Out of Stock Items" value={chartData?.outOfStockItems || 0} color={themeColor("destructive")} />
             </div>
             {/* Filters*/}
             <div className="flex items-center gap-2 w-full">

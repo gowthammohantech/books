@@ -99,26 +99,14 @@ function SearchableDropdownImpl<FreeSolo extends boolean | undefined = false>({
                                 'aria-describedby': ariaDescribedby,
                             },
                         }}
+                        // Colors (surface, text, border, focus, disabled) come
+                        // from the MUI theme's MuiOutlinedInput override. Only
+                        // the metrics this control needs are set here.
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: '8px',
-                                backgroundColor: '#fff',
-                                color: '#374151', // gray-700
                                 fontSize: '14px',
                                 height: '42px',
-                                '&.Mui-disabled': {
-                                    backgroundColor: '#f3f4f6', // gray-100
-                                },
-                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: '#7539FF', // purple-600
-                                    borderWidth: '1px',
-                                },
-                            },
-                            '& .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#d1d5db', // gray-300
-                            },
-                            '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#7539FF', // purple-600
                             },
                         }}
                     />

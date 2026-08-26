@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import type { BankAccount } from "@models/bank-account";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/context/PageHeaderContext";
+import { themeColor } from "@lib/designTokens";
 
 interface BalanceTrend {
     bankCurrentTotal: number;
@@ -108,7 +109,7 @@ const Banking: React.FC = () => {
             curve: "smooth",
             width: 2,
         },
-        colors: ["#7539FF", "#0E9384"],
+        colors: [themeColor("primary"), themeColor("teal")],
         markers: {
             size: 0,
             hover: { size: 2 },
@@ -120,7 +121,7 @@ const Banking: React.FC = () => {
             }),
             labels: {
                 style: {
-                    colors: "#5D6772",
+                    colors: themeColor("muted-foreground"),
                     fontSize: "10px",
                 },
             },

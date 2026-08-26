@@ -1,5 +1,6 @@
 import React from "react";
 import Chart from "react-apexcharts";
+import { themeColor } from "@lib/designTokens";
 
 interface Props {
     data: number[] | number[][]; // single or multiple series
@@ -11,7 +12,7 @@ interface Props {
 const MultiLineAreaChart: React.FC<Props> = ({
     data,
     categories,
-    color = "#7539FF",
+    color = themeColor("primary"),
     seriesNames = [],
 }) => {
     // Prepare series for ApexCharts
@@ -40,7 +41,7 @@ const MultiLineAreaChart: React.FC<Props> = ({
                     reset: true,
                 },
             },
-            foreColor: "#303133ff",
+            foreColor: themeColor("foreground"),
         },
         stroke: {
             curve: "smooth",

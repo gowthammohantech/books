@@ -35,22 +35,8 @@ const PaginationWrapper: React.FC<PaginationWrapperProps> = ({
         onChange={onChange}
         variant={paginationVariant || 'outlined'}
         shape={paginationShape || 'rounded'}
-        sx={{
-          '& .MuiPaginationItem-root': {
-            color: '#7539FF',
-            fontWeight: 'medium',
-          },
-          '& .MuiPaginationItem-page.Mui-selected': {
-            backgroundColor: '#7539FF',
-            color: 'white',
-            '&:hover': {
-              backgroundColor: '#7539FF',
-            },
-          },
-          '& .MuiPaginationItem-page:hover': {
-            backgroundColor: '#F8F5FF',
-          },
-        }}
+        // Colors come from the MUI theme's MuiPaginationItem override.
+        sx={{ '& .MuiPaginationItem-root': { fontWeight: 'medium' } }}
       />
     </div>
   );

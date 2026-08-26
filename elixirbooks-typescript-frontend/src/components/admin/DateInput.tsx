@@ -30,20 +30,11 @@ const DateInput: FC<DateInputProps> = ({ label, value, onChange, minDate, maxDat
                     textField: {
                         size: 'small',
                         fullWidth: true,
+                        // Surface + border colors come from the MUI theme's
+                        // MuiOutlinedInput override; only the padding is local.
                         sx: {
-                            backgroundColor: 'white',
-                            borderRadius: '6px',
                             '& .MuiOutlinedInput-root': {
                                 paddingRight: '8px',
-                            },
-                            '& .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#d1d5db', // Tailwind gray-300
-                            },
-                            '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#7539FF', // brand purple-600
-                            },
-                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#7539FF',
                             },
                         },
                     },

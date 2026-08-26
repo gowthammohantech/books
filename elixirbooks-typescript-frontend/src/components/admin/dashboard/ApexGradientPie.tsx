@@ -1,5 +1,6 @@
 import React from "react";
 import Chart from "react-apexcharts";
+import { themeColor } from "@lib/designTokens";
 
 interface PieChartData {
     id: string;
@@ -16,7 +17,7 @@ interface GradientPieChartProps {
 
 const ApexGradientPie: React.FC<GradientPieChartProps> = ({
     data,
-    colors = ["#7539FF", "#06AED4", "#27AE60", "#E2B93B", "#3538CD"],
+    colors = [themeColor("primary"), themeColor("info"), themeColor("success"), themeColor("warning"), themeColor("indigo")],
     width = 250,
     height = 250,
 }) => {
@@ -63,7 +64,7 @@ const ApexGradientPie: React.FC<GradientPieChartProps> = ({
         legend: {
             position: "bottom",
             labels: {
-                colors: "#5D6772", // muted body text for legend
+                colors: themeColor("muted-foreground"), // muted body text for legend
             },
         },
     };

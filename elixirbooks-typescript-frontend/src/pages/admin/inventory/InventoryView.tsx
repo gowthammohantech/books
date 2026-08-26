@@ -14,6 +14,7 @@ import LoaderSpinner from "@components/admin/LoaderSpinner";
 import NoRecords from "@components/admin/NoRecords";
 import useDateFormatter from "@hooks/useDateFormatter";
 import { useCurrencies } from "@hooks/useCurrencies";
+import { themeColor, hexToRgb } from "@lib/designTokens";
 
 // Friendly source label — distinguishes sales return (credit note) from
 // purchase return (debit note); falls back to the raw value for legacy rows.
@@ -86,6 +87,15 @@ const InventoryView: React.FC = () => {
                     h.notes || "-",
                 ];
             }),
+            // jsPDF draws to a canvas, so it never sees a CSS variable. Without
+            // these the table rendered in autoTable's stock blue-grey theme,
+            // which matched no brand this app has ever had.
+            headStyles: {
+                fillColor: hexToRgb(themeColor("primary")),
+                textColor: hexToRgb(themeColor("primary-foreground")),
+            },
+            alternateRowStyles: { fillColor: hexToRgb(themeColor("muted")) },
+            styles: { textColor: hexToRgb(themeColor("foreground")) },
         });
         doc.save(`Inventory_History_${data.productId?.code || ""}.pdf`);
     }, [data, formatDateTime]);

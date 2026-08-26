@@ -15,6 +15,7 @@ import MultiLineAreaChart from '@components/admin/MultiLineAreaChart';
 import { useCurrencyFormatter } from '@hooks/useCurrencyFormatter';
 import { PageHeader } from '@/context/PageHeaderContext';
 import DashboardSwitcher from '@components/admin/DashboardSwitcher';
+import { themeColor } from "@lib/designTokens";
 
 interface MonthPoint { key: string; label: string; sales: number; expenses: number; }
 interface PlanItem { id: string; label: string; amount: number; date: string | null; frequency?: string | null; }
@@ -94,7 +95,7 @@ const AccountsDashboard: React.FC = () => {
             <div className="bg-white border border-border rounded-xl shadow-sm p-4">
                 <h2 className="text-md font-semibold text-gray-600 mb-2">Monthly Sales vs Expenses</h2>
                 {areaData.length > 0
-                    ? <MultiLineAreaChart data={areaData} categories={months} color={["#27AE60", "#EF1E1E"]} seriesNames={["Sales", "Expenses"]} />
+                    ? <MultiLineAreaChart data={areaData} categories={months} color={[themeColor("success"), themeColor("destructive")]} seriesNames={["Sales", "Expenses"]} />
                     : <p className="text-sm text-gray-400 py-8 text-center">No data</p>}
             </div>
 

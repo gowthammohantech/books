@@ -14,6 +14,7 @@ import { PageHeader } from '@/context/PageHeaderContext';
 import DateInput from '@components/admin/DateInput';
 import { ymdStringToDate, dateToYmdString } from '@utils/converters';
 import GrantCreditModal from './GrantCreditModal';
+import { themeColor } from "@lib/designTokens";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -192,7 +193,7 @@ function SummaryTab({
           <MultiLineAreaChart
             data={[receivedData, paidData]}
             categories={chartLabels}
-            color={['#7539FF', '#E2B93B']}
+            color={[themeColor("primary"), themeColor("warning")]}
             seriesNames={['Received', 'Paid']}
           />
         ) : (

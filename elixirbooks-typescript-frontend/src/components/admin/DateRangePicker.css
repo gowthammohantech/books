@@ -1,20 +1,26 @@
-:root {
-  --brand-color-600: #4f46e5;
-  --brand-color-100: #e0e7ff;
-  --brand-color-50:  #eef2ff;
-  --gray-900: #111827;
-  --gray-700: #374151;
-  --gray-600: #4b5563;
-  --gray-400: #9ca3af;
-  --gray-200: #e5e7eb;
-  --gray-100: #f3f4f6;
-  --surface-background: #ffffff;
-  --radius: 8px;
-}
-
+/* This component used to declare its own `:root` block with a hardcoded indigo
+   (#4f46e5 — never the brand color) and its own `--radius`, which leaked out
+   and competed with the global token of the same name in index.css. The
+   aliases below are scoped to the component instead, and point at the real
+   tokens so the picker follows the design system. The popup is rendered inside
+   `.date-range-picker`, so this scope covers all of it. */
 .date-range-picker {
+  --brand-color-600: var(--primary);
+  --brand-color-100: var(--accent);
+  --brand-color-50: var(--accent);
+  --gray-900: var(--color-gray-900);
+  --gray-700: var(--color-gray-700);
+  --gray-600: var(--color-gray-600);
+  --gray-400: var(--color-gray-400);
+  --gray-200: var(--color-gray-200);
+  --gray-100: var(--color-gray-100);
+  --surface-background: var(--card);
+  --dp-radius: var(--radius);
+
   position: relative;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Was 'Inter', which is not loaded anywhere in the app and silently fell
+     back to a system font. */
+  font-family: var(--font-sans);
   width: 320px;
   user-select: none;
 }
@@ -22,7 +28,7 @@
 /* --- Input --- */
 .picker-input {
   display: flex; align-items: center; width: 100%; padding: 10px 14px;
-  border: 1px solid var(--gray-200); border-radius: var(--radius); cursor: pointer;
+  border: 1px solid var(--gray-200); border-radius: var(--dp-radius); cursor: pointer;
   background-color: var(--surface-background);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   font-size: 0.9rem; color: var(--gray-900);
@@ -39,7 +45,7 @@
 .picker-popup {
   position: absolute; top: calc(100% + 8px); left: 0; z-index: 1000;
   background: var(--surface-background); border: 1px solid var(--gray-200);
-  border-radius: var(--radius);
+  border-radius: var(--dp-radius);
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   display: flex;
 }
@@ -88,7 +94,7 @@
 .calendar-day.disabled { color: var(--gray-400); cursor: not-allowed; background-color: transparent; opacity: 0.5}
 .calendar-day.today { border-color: var(--brand-color-600); font-weight: 600; }
 .calendar-day.in-range { background-color: var(--brand-color-50); border-radius: 0; }
-.calendar-day.selected-start, .calendar-day.selected-end { background-color: var(--brand-color-600); color: white; }
+.calendar-day.selected-start, .calendar-day.selected-end { background-color: var(--brand-color-600); color: var(--primary-foreground); }
 .calendar-day.selected-start { border-top-left-radius: 50%; border-bottom-left-radius: 50%; }
 .calendar-day.selected-end { border-top-right-radius: 50%; border-bottom-right-radius: 50%; }
 
@@ -96,7 +102,7 @@
 .grid-cell { width: 100%; padding: 16px 0; text-align: center; border-radius: 6px; cursor: pointer;
   font-size: 0.9rem; font-weight: 500; transition: background-color 0.15s ease; }
 .grid-cell:hover { background-color: var(--gray-100); }
-.grid-cell.selected { background-color: var(--brand-color-600); color: white; }
+.grid-cell.selected { background-color: var(--brand-color-600); color: var(--primary-foreground); }
 
 /* --- Footer --- */
 .action-footer {
@@ -112,5 +118,6 @@
 }
 .cancel-btn { background-color: var(--gray-100); color: var(--gray-700); }
 .cancel-btn:hover { background-color: var(--gray-200); }
-.apply-btn { background-color: var(--brand-color-600); color: white; }
-.apply-btn:hover { background-color: #4338ca; } /* Darker Indigo */
+.apply-btn { background-color: var(--brand-color-600); color: var(--primary-foreground); }
+/* Matches the `hover:bg-primary/90` convention the migrated buttons use. */
+.apply-btn:hover { background-color: color-mix(in oklab, var(--primary) 90%, transparent); }
