@@ -438,7 +438,7 @@ export default function TaxReturns() {
                     <div
                       className={`rounded-xl border px-4 py-3 text-sm ${
                         ossThreshold.exceeded
-                          ? 'border-warning bg-warning-soft text-warning'
+                          ? 'border-warning bg-warning-soft text-warning-strong'
                           : 'border-border bg-muted text-muted-foreground'
                       }`}
                     >

@@ -875,7 +875,7 @@ const RecurringScheduleForm: React.FC = () => {
                                                     <div className="flex flex-wrap items-center gap-2 text-xs">
                                                         <span className="text-gray-600 font-medium">Taxes:</span>
                                                         {(item.taxes ?? []).length === 0 && (
-                                                            <span className="text-gray-400 italic">No taxes applied</span>
+                                                            <span className="text-muted-foreground italic">No taxes applied</span>
                                                         )}
                                                         {(item.taxes ?? []).map((t, idx) => (
                                                             <span

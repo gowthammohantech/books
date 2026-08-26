@@ -58,11 +58,11 @@ export const DISPLAY_STATUS_META: Record<
     DisplayStatus,
     { label: string; classes: string }
 > = {
-    DRAFT: { label: "Draft", classes: "bg-warning-soft text-warning" },
-    SENT: { label: "Sent", classes: "bg-info-soft text-info" },
-    PARTIALLY_PAID: { label: "Partially Paid", classes: "bg-info-soft text-info" },
-    PAID: { label: "Fully Paid", classes: "bg-success-soft text-success" },
-    DELAYED: { label: "Delayed Payment", classes: "bg-destructive-soft text-destructive" },
+    DRAFT: { label: "Draft", classes: "bg-warning-soft text-warning-strong" },
+    SENT: { label: "Sent", classes: "bg-info-soft text-info-strong" },
+    PARTIALLY_PAID: { label: "Partially Paid", classes: "bg-info-soft text-info-strong" },
+    PAID: { label: "Fully Paid", classes: "bg-success-soft text-success-strong" },
+    DELAYED: { label: "Delayed Payment", classes: "bg-destructive-soft text-destructive-strong" },
     CANCELLED: { label: "Cancelled", classes: "bg-muted text-muted-foreground" },
 };
 

@@ -264,7 +264,7 @@ const Budgets: React.FC = () => {
                             row={budget}
                             index={index + 1}
                             columns={[
-                                <span className="text-indigo-600">{budget.account?.name || budget.accountId}</span>,
+                                <span className="text-primary">{budget.account?.name || budget.accountId}</span>,
                                 formatDate(budget.periodStart, systemSettings?.dateFormat?.format || "d-m-Y"),
                                 formatDate(budget.periodEnd, systemSettings?.dateFormat?.format || "d-m-Y"),
                                 Number(budget.amount).toLocaleString(),

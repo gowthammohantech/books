@@ -212,7 +212,7 @@ const MyMoney: React.FC = () => {
       {/* Loading / error */}
       {loading && <div className="flex justify-center py-12"><LoaderSpinner /></div>}
       {!loading && error && (
-        <div className="rounded-md bg-destructive-soft border border-destructive px-4 py-3 text-sm text-destructive">{error}</div>
+        <div className="rounded-md bg-destructive-soft border border-destructive px-4 py-3 text-sm text-destructive-strong">{error}</div>
       )}
 
       {/* Content */}

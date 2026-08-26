@@ -99,7 +99,7 @@ const SectionTable = ({ type, docs, onApprove, onReject, actionLoadingId, format
                                 return (
                                     <tr key={doc.id} className="border-b border-border hover:bg-gray-50">
                                         <td className="px-4 py-3 text-gray-500">{idx + 1}</td>
-                                        <td className="px-4 py-3 text-indigo-600 font-medium">{getDocNumber(doc)}</td>
+                                        <td className="px-4 py-3 text-primary font-medium">{getDocNumber(doc)}</td>
                                         <td className="px-4 py-3 text-gray-700">{formatDate(doc.date)}</td>
                                         <td className="px-4 py-3 text-right text-gray-800">{getDocAmount(doc)}</td>
                                         <td className="px-4 py-3 text-center">

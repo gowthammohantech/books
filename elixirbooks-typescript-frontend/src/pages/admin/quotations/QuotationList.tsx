@@ -318,7 +318,7 @@ const QuotationList: React.FC = () => {
                         index={(page - 1) * limit + index + 1}
                         row={quotation}
                         columns={[
-                            <span className="text-indigo-600">{quotation.quotationId}</span>,
+                            <span className="text-primary">{quotation.quotationId}</span>,
                             <ProfileCard
                                 imageUrl={quotation.billTo?.image}
                                 name={quotation.billTo?.name}

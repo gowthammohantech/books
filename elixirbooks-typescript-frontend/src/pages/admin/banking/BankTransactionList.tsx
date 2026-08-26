@@ -670,7 +670,7 @@ const BankTransactionList: React.FC = () => {
             {showLedgerBanner && (
                 <div
                     role="alert"
-                    className="flex items-start justify-between gap-3 rounded-md border border-warning bg-warning-soft px-4 py-3 text-sm text-warning"
+                    className="flex items-start justify-between gap-3 rounded-md border border-warning bg-warning-soft px-4 py-3 text-sm text-warning-strong"
                 >
                     <span>
                         <strong>Setup required:</strong> Choose your country to enable transaction categories.{" "}

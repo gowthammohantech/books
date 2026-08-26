@@ -153,7 +153,7 @@ const CustomFieldList: React.FC<CustomFieldListProps> = ({ moduleSlug }) => {
     // Fallback UI if module is invalid
     if (!isLoading && !currentModule) {
         return (
-            <div className="p-4 bg-destructive-soft border border-destructive rounded-md text-destructive text-sm font-medium">
+            <div className="p-4 bg-destructive-soft border border-destructive rounded-md text-destructive-strong text-sm font-medium">
                 Error: Module with slug "{moduleSlug}" could not be found in the system.
             </div>
         );

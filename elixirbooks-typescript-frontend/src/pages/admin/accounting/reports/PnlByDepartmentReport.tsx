@@ -119,7 +119,7 @@ export default function PnlByDepartmentReport() {
       {rows.map((r) => (
         <tr key={r.accountId} className="border-b border-gray-100">
           <td className="p-3 whitespace-nowrap">
-            <span className="font-mono text-indigo-600">{r.code}</span> <span className="text-gray-700">{r.name}</span>
+            <span className="font-mono text-primary">{r.code}</span> <span className="text-gray-700">{r.name}</span>
           </td>
           {columns.map((c) => (
             <td key={c.key} className={`p-3 text-right ${amountClass(r.amounts[c.key])}`}>

@@ -202,7 +202,7 @@ const ExpenseCategoryList: React.FC = () => {
                         row={category}
                         index={index + 1}
                         columns={[
-                            <span className="text-indigo-600">{category.title}</span>,
+                            <span className="text-primary">{category.title}</span>,
                             category.description && category.description.length > 50 ? `${category.description.substring(0, 50)}...` : category.description,
                             <div>
                                 <Switch name={`status-${category.id}`} checked={category.status} onChange={() => handleStatusChange(category)} />

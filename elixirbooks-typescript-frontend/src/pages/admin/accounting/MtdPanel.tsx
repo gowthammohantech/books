@@ -216,7 +216,7 @@ export default function MtdPanel() {
       >
         {/* Mode banner */}
         {mockMode && (
-          <div className="rounded-xl border border-warning bg-warning-soft text-warning px-4 py-3 text-sm mb-4">
+          <div className="rounded-xl border border-warning bg-warning-soft text-warning-strong px-4 py-3 text-sm mb-4">
             <span className="font-medium">Demo / mock mode</span> — returns are not filed with
             HMRC. Enter your HMRC software-vendor credentials and enable to file for real
             (requires HMRC recognition).

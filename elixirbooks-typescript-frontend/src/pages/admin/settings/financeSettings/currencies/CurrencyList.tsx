@@ -226,7 +226,7 @@ const CurrencyList: React.FC = () => {
                         index={index + 1}
                         row={currency}
                         columns={[
-                            <span className="text-indigo-600 capitalize">{currency.name}</span>,
+                            <span className="text-primary capitalize">{currency.name}</span>,
                             currency.symbol,
                             currency.code,
                             <Switch name={`status-${currency.id}`} checked={currency.status} onChange={() => handleCurrencyStatusChange(currency.id)} disabled={currency.isDefault || !hasPermission(permissions, 'finance-settings', 'edit')} />,

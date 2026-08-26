@@ -20,8 +20,8 @@ const modeConfig: Record<
 > = {
   cash: {
     label: 'Cash',
-    icon: <DollarSign size={14} className="ml-1 text-success" />,
-    className: 'bg-success-soft text-success',
+    icon: <DollarSign size={14} className="ml-1 text-success-strong" />,
+    className: 'bg-success-soft text-success-strong',
   },
   cheque: {
     label: 'Cheque',
@@ -30,28 +30,28 @@ const modeConfig: Record<
   },
   bank: {
     label: 'Bank',
-    icon: <Banknote size={14} className="ml-1 text-info" />,
-    className: 'bg-info-soft text-info',
+    icon: <Banknote size={14} className="ml-1 text-info-strong" />,
+    className: 'bg-info-soft text-info-strong',
   },
   upi: {
     label: 'UPI',
     icon: <img src={UPI} alt="UPI" className="h-4 ml-1" />,
-    className: 'bg-info-soft text-info',
+    className: 'bg-info-soft text-info-strong',
   },
   'bank deposit': {
     label: 'Bank Deposit',
-    icon: <Banknote size={14} className="ml-1 text-info" />,
-    className: 'bg-info-soft text-info',
+    icon: <Banknote size={14} className="ml-1 text-info-strong" />,
+    className: 'bg-info-soft text-info-strong',
   },
   'bank transfer': {
     label: 'Bank Transfer',
-    icon: <Banknote size={14} className="ml-1 text-info" />,
-    className: 'bg-info-soft text-info',
+    icon: <Banknote size={14} className="ml-1 text-info-strong" />,
+    className: 'bg-info-soft text-info-strong',
   },
   'petty cash': {
     label: 'Petty Cash',
-    icon: <Banknote size={14} className="ml-1 text-info" />,
-    className: 'bg-info-soft text-info',
+    icon: <Banknote size={14} className="ml-1 text-info-strong" />,
+    className: 'bg-info-soft text-info-strong',
   },
 };
 

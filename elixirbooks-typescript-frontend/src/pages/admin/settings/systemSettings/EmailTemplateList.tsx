@@ -180,7 +180,7 @@ const EmailTemplateList: React.FC = () => {
                         index={index + 1}
                         row={template}
                         columns={[
-                            <span className="text-indigo-600">{template.title}</span>,
+                            <span className="text-primary">{template.title}</span>,
                             formatDate(template.createdAt, systemSettings?.dateFormat.format || 'd-m-Y'),
                             canToggleStatus ? (
                                 <div className="flex items-center gap-2">

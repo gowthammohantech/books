@@ -8,9 +8,11 @@ import { assetUrl } from '@utils/assetUrl';
 import { usePageHeader } from '../../../context/PageHeaderContext';
 interface HeaderProps {
     toggleSidebar: () => void;
+    /** Drives the toggle button's accessible name and aria-expanded state. */
+    isSidebarOpen?: boolean;
 }
 
-const AdminHeader = ({ toggleSidebar }: HeaderProps) => {
+const AdminHeader = ({ toggleSidebar, isSidebarOpen = true }: HeaderProps) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
     const { user } = useSelector((state: RootState) => state.auth);
     // Page-supplied title + action buttons (null when no page sets them).
@@ -22,7 +24,12 @@ const AdminHeader = ({ toggleSidebar }: HeaderProps) => {
     return (
         <header className="flex items-center justify-between px-4 py-1 bg-card shadow relative z-30">
             <div className="flex items-center min-w-0 gap-3">
-                <button onClick={toggleSidebar} className="text-gray-500 focus:outline-none cursor-pointer shrink-0">
+                <button
+                    onClick={toggleSidebar}
+                    aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+                    aria-expanded={isSidebarOpen}
+                    className="text-gray-500 focus:outline-none cursor-pointer shrink-0"
+                >
                     <Menu className="w-6 h-6" />
                 </button>
                 {pageTitle && (
@@ -42,6 +49,7 @@ const AdminHeader = ({ toggleSidebar }: HeaderProps) => {
                     <button
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                         className="flex items-center space-x-2 focus:outline-none  rounded-full p-1 cursor-pointer"
+                        aria-label="Account menu"
                         aria-expanded={isDropdownOpen}
                         aria-haspopup="true"
                     >

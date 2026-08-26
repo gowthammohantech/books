@@ -106,7 +106,7 @@ const CostLayers: React.FC = () => {
             {selectedProduct && (
                 <div className="space-y-2">
                     <h2 className="text-base font-semibold text-gray-700">
-                        Layers for <span className="text-indigo-600">{selectedProduct.name}</span>
+                        Layers for <span className="text-primary">{selectedProduct.name}</span>
                         {layers.length > 0 && (
                             <span className="ml-2 text-sm font-normal text-gray-500">
                                 — Total Qty: {layers.reduce((sum, l) => sum + l.qtyRemaining, 0).toLocaleString()}

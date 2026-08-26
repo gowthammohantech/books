@@ -351,7 +351,7 @@ const SignatureList: FC = () => {
                         index={from + index}
                         row={sig}
                         columns={[
-                            <span className="text-indigo-600">{sig.signatureName}</span>,
+                            <span className="text-primary">{sig.signatureName}</span>,
                             <img src={sig.signatureImage} alt={sig.signatureName} className="h-10 w-24 object-cover border rounded-md" />,
                             <Switch name={`status-${sig.id}`} checked={sig.status} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStatusChange(sig.id, e.target.checked)} disabled={sig.markAsDefault || !hasPermission(permissions, 'system-settings', 'edit')} />,
                             <Switch name={`status-${sig.id}`} checked={sig.markAsDefault} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDefaultChange(sig.id, e.target.checked)} disabled={sig.markAsDefault || !hasPermission(permissions, 'system-settings', 'edit')} />,

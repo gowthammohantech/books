@@ -198,7 +198,7 @@ const SupplierPayments: FC = () => {
                                 imageUrl={payment?.supplier?.profileImage}
                                 name={payment?.supplier?.name ?? ""}
                             />,
-                            <span className='text-indigo-600'>{payment.paymentId}</span>,
+                            <span className='text-primary'>{payment.paymentId}</span>,
                             payment.purchase?.purchaseId ?? '-',
                             formatDate(payment.paymentDate, systemSettings?.dateFormat.format || 'd-m-Y'),
                             formatPaymentAmount(payment.paidAmount, payment.currencyCode),

@@ -51,7 +51,7 @@ const VARIANTS: Record<ButtonVariant, string> = {
   // row) — the solid `danger` fill is reserved for the actual confirm step
   // (delete-confirmation modal), so a screen full of list rows isn't a wall
   // of alarming solid-red buttons.
-  dangerOutline: "border border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground",
+  dangerOutline: "border border-destructive text-destructive-strong hover:bg-destructive hover:text-destructive-foreground",
   success: "bg-success text-success-foreground hover:opacity-90",
   warning: "bg-warning text-warning-foreground hover:opacity-90",
   ghost: "text-muted-foreground hover:bg-muted",

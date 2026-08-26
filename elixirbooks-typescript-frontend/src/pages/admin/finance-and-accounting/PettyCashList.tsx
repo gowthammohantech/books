@@ -141,7 +141,7 @@ const PettyCashList: React.FC = () => {
                     <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl transform translate-x-8 -translate-y-6" />
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                            <div className="p-2 rounded-2xl border border-indigo-200 bg-indigo-100 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                            <div className="p-2 rounded-2xl border border-indigo-200 bg-indigo-100 text-primary group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                                 <PiggyBank size={18} />
                             </div>
                             <h2 className="text-sm font-semibold text-gray-700 group-hover:text-indigo-700 transition-colors">
@@ -225,7 +225,7 @@ const PettyCashList: React.FC = () => {
                     } else if (type === "spend") {
                         transactionType = <span className="text-red-600 font-semibold">{transaction.transactionType}</span>;
                     } else if (type === "return") {
-                        transactionType = <span className="text-indigo-600 font-semibold">{transaction.transactionType}</span>;
+                        transactionType = <span className="text-primary font-semibold">{transaction.transactionType}</span>;
                     }
 
                     // Determine what to show in the source column

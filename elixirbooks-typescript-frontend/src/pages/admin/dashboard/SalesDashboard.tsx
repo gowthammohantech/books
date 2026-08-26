@@ -129,7 +129,7 @@ const SalesDashboard: React.FC = () => {
                     <Table headers={["#", "Invoice", "Customer", "Amount", "Status", "Date"]}>
                         {data.lastFiveInvoices?.length > 0 ? data.lastFiveInvoices.map((inv, i) => (
                             <TableRow key={inv.id} index={i + 1} row={inv} columns={[
-                                <span className="text-indigo-600">{inv.invoiceNumber}</span>,
+                                <span className="text-primary">{inv.invoiceNumber}</span>,
                                 inv.customer?.name || '-',
                                 format(inv.totalAmount || 0),
                                 <InvoiceStatusBadge status={inv.status} />,
@@ -143,7 +143,7 @@ const SalesDashboard: React.FC = () => {
                     <Table headers={["#", "Invoice", "Amount", "Method"]}>
                         {data.lastFivePayments?.length > 0 ? data.lastFivePayments.map((p, i) => (
                             <TableRow key={p.id} index={i + 1} row={p} columns={[
-                                <span className="text-indigo-600">{p.invoice?.invoiceNumber || '-'}</span>,
+                                <span className="text-primary">{p.invoice?.invoiceNumber || '-'}</span>,
                                 format(p.amount || 0),
                                 <PaymentModeBadge mode={p.payment_method?.name || '-'} />,
                             ]} />

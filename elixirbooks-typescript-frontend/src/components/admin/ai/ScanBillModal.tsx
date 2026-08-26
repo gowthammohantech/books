@@ -301,7 +301,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 bg-destructive-soft text-destructive border border-destructive rounded-md px-3 py-2 text-sm">
+            <div className="flex items-center gap-2 bg-destructive-soft text-destructive-strong border border-destructive rounded-md px-3 py-2 text-sm">
               <AlertTriangle size={16} />
               <span>{error}</span>
             </div>
@@ -557,7 +557,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 bg-destructive-soft text-destructive border border-destructive rounded-md px-3 py-2 text-sm">
+            <div className="flex items-center gap-2 bg-destructive-soft text-destructive-strong border border-destructive rounded-md px-3 py-2 text-sm">
               <AlertTriangle size={16} />
               <span>{error}</span>
             </div>

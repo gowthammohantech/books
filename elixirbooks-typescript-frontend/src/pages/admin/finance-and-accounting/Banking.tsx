@@ -270,7 +270,7 @@ const Banking: React.FC = () => {
                                             <Banknote className="w-5 h-5 text-indigo-600" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-semibold text-indigo-600">Petty Cash</p>
+                                            <p className="text-sm font-semibold text-primary">Petty Cash</p>
                                             <p className="text-xs text-indigo-500">Cash Account</p>
                                         </div>
                                     </div>
@@ -295,7 +295,7 @@ const Banking: React.FC = () => {
                                                     <LandmarkIcon className="w-5 h-5 text-indigo-600" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-medium text-indigo-600">{bankAccount.bankName} - {bankAccount.accountHoldername}</p>
+                                                    <p className="text-sm font-medium text-primary">{bankAccount.bankName} - {bankAccount.accountHoldername}</p>
                                                     <p className="text-xs text-indigo-500">
                                                         {bankAccount.accountNumber ? `****${bankAccount.accountNumber.slice(-4)}` : 'Bank Account'}
                                                     </p>

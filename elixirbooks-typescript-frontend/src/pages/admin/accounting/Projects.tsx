@@ -212,7 +212,7 @@ const Projects: React.FC = () => {
                             row={item}
                             index={index + 1}
                             columns={[
-                                <span className="text-indigo-600 font-mono">{item.code}</span>,
+                                <span className="text-primary font-mono">{item.code}</span>,
                                 item.name,
                                 <Badge color={statusBadgeColor(item.status)} className="capitalize">{item.status}</Badge>,
                                 <PermissionGuard moduleSlug="time-tracking-others" action="edit" fallback={<span className="text-gray-300">—</span>}>

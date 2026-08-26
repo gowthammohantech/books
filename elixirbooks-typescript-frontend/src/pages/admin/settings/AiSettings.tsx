@@ -367,8 +367,8 @@ export default function AiSettings() {
           <div
             className={`flex items-start gap-2 p-3 rounded-md text-sm ${
               testResult.ok
-                ? 'bg-success-soft border border-success text-success'
-                : 'bg-destructive-soft border border-destructive text-destructive'
+                ? 'bg-success-soft border border-success text-success-strong'
+                : 'bg-destructive-soft border border-destructive text-destructive-strong'
             }`}
           >
             {testResult.ok ? (

@@ -264,7 +264,7 @@ const PayrollProfiles: React.FC = () => {
                         row={profile}
                         index={index + 1}
                         columns={[
-                            <span className="text-indigo-600">{getEmployeeName(profile)}</span>,
+                            <span className="text-primary">{getEmployeeName(profile)}</span>,
                             profile.defaultGross !== null
                                 ? profile.defaultGross.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                                 : <span className="text-gray-400">—</span>,

@@ -31,11 +31,11 @@ interface StatsCardProps {
 // Static class map so Tailwind JIT can see every utility (no runtime interpolation).
 const ACCENT_CHIP: Record<Accent, string> = {
     primary: "bg-accent text-primary",
-    success: "bg-success-soft text-success",
-    info: "bg-info-soft text-info",
-    warning: "bg-warning-soft text-warning",
+    success: "bg-success-soft text-success-strong",
+    info: "bg-info-soft text-info-strong",
+    warning: "bg-warning-soft text-warning-strong",
     teal: "bg-teal-soft text-teal",
-    danger: "bg-destructive-soft text-destructive",
+    danger: "bg-destructive-soft text-destructive-strong",
 };
 
 const StatsCard: FC<StatsCardProps> = ({ title, value, difference, icon, accent, period }) => {

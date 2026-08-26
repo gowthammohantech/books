@@ -259,7 +259,7 @@ const BankTransactionList: React.FC = () => {
                             row={transaction}
                             key={transaction.id}
                             columns={[
-                                <div className="font-bold text-indigo-600 cursor-pointer"
+                                <div className="font-bold text-primary cursor-pointer"
                                     onClick={(e) => { e.stopPropagation(); handleTransactionClick(transaction); }}
                                 >
                                     {formattedBankInfo}

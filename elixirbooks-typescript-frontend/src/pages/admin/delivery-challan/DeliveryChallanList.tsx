@@ -222,7 +222,7 @@ const DeliveryChallanList: React.FC = () => {
                         index={(page - 1) * limit + index + 1}
                         row={challan}
                         columns={[
-                            <span className="text-indigo-600">{challan.challanNumber}</span>,
+                            <span className="text-primary">{challan.challanNumber}</span>,
                             <ProfileCard
                                 imageUrl={challan.billTo?.image}
                                 name={challan.billTo?.name}

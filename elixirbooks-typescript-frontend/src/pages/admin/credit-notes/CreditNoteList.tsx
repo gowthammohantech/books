@@ -237,7 +237,7 @@ const CreditNoteList: React.FC = () => {
                         index={(page - 1) * limit + index + 1} // Correct index for pagination
                         row={invoice}
                         columns={[
-                            <span className="text-indigo-600">{invoice.creditNoteNumber}</span>,
+                            <span className="text-primary">{invoice.creditNoteNumber}</span>,
                             <ProfileCard
                                 imageUrl={invoice.billTo?.image}
                                 name={invoice.billTo?.name}

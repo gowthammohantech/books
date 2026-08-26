@@ -358,7 +358,7 @@ const FixedAssets: React.FC = () => {
                             row={item}
                             index={index + 1}
                             columns={[
-                                <span className="text-indigo-600 font-medium">{item.name}</span>,
+                                <span className="text-primary font-medium">{item.name}</span>,
                                 Number(item.cost).toLocaleString(),
                                 formatDate(item.acquisitionDate, dateFormat),
                                 item.accumulatedDepreciation !== undefined ? Number(item.accumulatedDepreciation).toLocaleString() : "—",

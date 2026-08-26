@@ -202,7 +202,7 @@ const ExpenseView: React.FC = () => {
                                 href={attachment}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block text-sm font-medium text-indigo-600 hover:underline"
+                                className="inline-block text-sm font-medium text-primary hover:underline"
                             >
                                 Open in new tab / Download
                             </a>
@@ -218,7 +218,7 @@ const ExpenseView: React.FC = () => {
                                 href={attachment}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block text-sm font-medium text-indigo-600 hover:underline"
+                                className="inline-block text-sm font-medium text-primary hover:underline"
                             >
                                 Download
                             </a>

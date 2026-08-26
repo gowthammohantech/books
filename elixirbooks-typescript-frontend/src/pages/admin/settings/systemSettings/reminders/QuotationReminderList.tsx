@@ -68,7 +68,7 @@ const QuotationReminderList: React.FC<Props> = ({ reminders, onSuccess, isEditin
                                 index={index + 1}
                                 row={reminder}
                                 columns={[
-                                    <span className="text-indigo-600">{reminder.name ?? ""}</span>,
+                                    <span className="text-primary">{reminder.name ?? ""}</span>,
                                     formattedSchedule,
                                     <Switch name={`status-${reminder.id}`} checked={reminder.isEnabled} onChange={(e) => handleStatusChange(reminder.id, e.target.checked)} />,
                                 ]}

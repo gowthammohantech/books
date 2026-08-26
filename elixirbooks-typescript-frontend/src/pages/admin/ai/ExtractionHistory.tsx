@@ -66,7 +66,7 @@ const STATUS_STYLES: Record<Job['status'], string> = {
   PENDING: 'bg-gray-100 text-gray-700',
   EXTRACTED: 'bg-blue-100 text-blue-700',
   CONFIRMED: 'bg-green-100 text-green-700',
-  FAILED: 'bg-destructive-soft text-destructive',
+  FAILED: 'bg-destructive-soft text-destructive-strong',
   DISCARDED: 'bg-gray-100 text-gray-500 line-through',
 };
 
@@ -262,7 +262,7 @@ const ExtractionHistory: FC = () => {
               <Info label="Cost" value={viewJob.costUsd !== null ? `$${viewJob.costUsd.toFixed(4)}` : '—'} />
             </div>
             {viewJob.errorMessage && (
-              <div className="flex items-start gap-2 bg-destructive-soft text-destructive border border-destructive rounded-md px-3 py-2 text-sm">
+              <div className="flex items-start gap-2 bg-destructive-soft text-destructive-strong border border-destructive rounded-md px-3 py-2 text-sm">
                 <XCircle size={16} className="flex-shrink-0 mt-0.5" />
                 <span>{viewJob.errorMessage}</span>
               </div>

@@ -316,7 +316,7 @@ const CostCenters: React.FC = () => {
                             row={item}
                             index={index + 1}
                             columns={[
-                                <span className="text-indigo-600 font-mono">{item.code}</span>,
+                                <span className="text-primary font-mono">{item.code}</span>,
                                 item.name,
                                 <Badge color={TYPE_BADGE[item.type ?? "BOTH"].color}>
                                     {TYPE_BADGE[item.type ?? "BOTH"].label}
@@ -445,7 +445,7 @@ const CostCenters: React.FC = () => {
                         </div>
                         {prefixPreview && (
                             <p className="text-xs text-gray-600">
-                                Next invoice for this centre: <span className="font-mono text-indigo-600">{prefixPreview}</span>
+                                Next invoice for this centre: <span className="font-mono text-primary">{prefixPreview}</span>
                             </p>
                         )}
                         {isEditMode && (

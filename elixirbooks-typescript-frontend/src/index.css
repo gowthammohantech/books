@@ -61,19 +61,36 @@
   --sidebar-border: #e4e4e4;
   --sidebar-ring: #3f5ec2;
 
-  /* Extension 1 — status colors. Carried over from the previous system: they
-     are near-neutral enough to sit with the blue primary, and retuning them
-     would change meaning-bearing UI (paid / overdue / draft) for no benefit. */
+  /* Extension 1 — status colors. Hues are carried over from the previous
+     system: they sit fine with the blue primary, and retuning them would
+     change meaning-bearing UI (paid / overdue / draft) for no benefit.
+
+     Each status has three roles, because one color cannot serve all of them
+     at readable contrast:
+       --x            the fill, and the recognisable hue
+       --x-foreground text ON that fill. Amber and cyan are light, so white
+                      text fails badly there (warning/white measured 1.87:1);
+                      near-black clears 6:1 on all three.
+       --x-strong     text on the pale --x-soft surface. The full-strength hue
+                      on its own soft background measures 1.8-2.7:1, so soft
+                      badges need a darkened variant. These are the shallowest
+                      darkening that reaches WCAG AA 4.5:1. */
   --success: #27ae60;
-  --success-foreground: #ffffff;
+  --success-foreground: #181818;
   --success-soft: #f4fbf7;
+  --success-strong: #1d8348;
   --warning: #e2b93b;
   --warning-foreground: #181818;
   --warning-soft: #fefbf5;
+  --warning-strong: #8a7124;
   --info: #06aed4;
-  --info-foreground: #ffffff;
+  --info-foreground: #181818;
   --info-soft: #f4f9fe;
+  --info-strong: #047c97;
+  /* White on --destructive is 4.78:1 and passes, so it keeps a light
+     foreground; only the soft-surface text needs darkening. */
   --destructive-soft: #fef4f4;
+  --destructive-strong: #c81e21;
 
   /* Secondary accents used by colorful cards, badges and charts. */
   --indigo: #3538cd;
@@ -179,6 +196,10 @@
   --color-info-foreground: var(--info-foreground);
   --color-info-soft: var(--info-soft);
   --color-destructive-soft: var(--destructive-soft);
+  --color-success-strong: var(--success-strong);
+  --color-warning-strong: var(--warning-strong);
+  --color-info-strong: var(--info-strong);
+  --color-destructive-strong: var(--destructive-strong);
 
   --color-indigo: var(--indigo);
   --color-orange: var(--orange);

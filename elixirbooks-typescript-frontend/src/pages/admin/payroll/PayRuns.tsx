@@ -457,7 +457,7 @@ const PayRuns: React.FC = () => {
                                     return (
                                         <React.Fragment key={`line-${idx}`}>
                                             <tr className="border-b border-border hover:bg-gray-50">
-                                                <td className="px-4 py-3 font-medium text-indigo-600">
+                                                <td className="px-4 py-3 font-medium text-primary">
                                                     {line.employeeName}
                                                 </td>
                                                 <td className="px-4 py-3 text-right">

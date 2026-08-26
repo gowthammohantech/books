@@ -355,7 +355,7 @@ const LedgerSetupWizard: React.FC = () => {
                     </p>
 
                     {/* warning callout */}
-                    <div className="mb-5 flex gap-2 rounded-md bg-warning-soft border border-warning px-4 py-3 text-sm text-warning">
+                    <div className="mb-5 flex gap-2 rounded-md bg-warning-soft border border-warning px-4 py-3 text-sm text-warning-strong">
                         <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                         <span>
                             Once you commit the cutover, the country and currency are locked and cannot be
@@ -529,7 +529,7 @@ const LedgerSetupWizard: React.FC = () => {
             {stage === "live" && liveStatus && (
                 <Card className="max-w-xl border-success">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-full bg-success-soft flex items-center justify-center text-success">
+                        <div className="w-10 h-10 rounded-full bg-success-soft flex items-center justify-center text-success-strong">
                             <CheckCircle2 className="w-6 h-6" />
                         </div>
                         <div>

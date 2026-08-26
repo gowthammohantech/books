@@ -1373,7 +1373,7 @@ const EditInvoice: React.FC = () => {
 
                     {/* Read-only notice for non-draft invoices */}
                     {invoiceData?.id && !isEditable && (
-                        <div className="rounded-md bg-warning-soft border border-warning text-warning p-3 mb-2 text-sm">
+                        <div className="rounded-md bg-warning-soft border border-warning text-warning-strong p-3 mb-2 text-sm">
                             This invoice is <strong>{(invoiceData.status || '').toLowerCase()}</strong> and can no longer be edited.
                             Only draft invoices are editable — use the actions above to record a payment, send it, or create a credit note to adjust it.
                         </div>
@@ -1381,14 +1381,14 @@ const EditInvoice: React.FC = () => {
 
                     {/* Converted banner — shown when this proforma has been converted to a final invoice */}
                     {invoiceData?.convertedAt && (
-                        <div className="rounded-md bg-success-soft border border-success text-success p-3 mb-4 text-sm">
+                        <div className="rounded-md bg-success-soft border border-success text-success-strong p-3 mb-4 text-sm">
                             Converted on {formatDate(invoiceData.convertedAt)}. This proforma is now locked.
                         </div>
                     )}
 
                     {/* Child-of-recurring-parent banner */}
                     {invoiceData?.parentInvoice && (
-                        <div className="rounded-md bg-info-soft border border-info text-info p-3 mb-4 text-sm">
+                        <div className="rounded-md bg-info-soft border border-info text-info-strong p-3 mb-4 text-sm">
                             Generated from recurring schedule.{' '}
                             <a href={`/admin/invoices/edit-invoice/${invoiceData.parentInvoice}`} className="underline">
                                 View parent
@@ -1855,7 +1855,7 @@ const EditInvoice: React.FC = () => {
                                                     <div className="flex flex-wrap items-center gap-2 text-xs">
                                                         <span className="text-gray-600 font-medium">Taxes:</span>
                                                         {((item as ProductItem).taxes ?? []).length === 0 && (
-                                                            <span className="text-gray-400 italic">No taxes applied</span>
+                                                            <span className="text-muted-foreground italic">No taxes applied</span>
                                                         )}
                                                         {((item as ProductItem).taxes ?? []).map((t, idx) => (
                                                             <span

@@ -1143,7 +1143,7 @@ const CreateInvoice: React.FC = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => setInvoiceNumberConfigModalOpen(true)}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground cursor-pointer hover:text-primary"
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground cursor-pointer hover:text-primary"
                                                 aria-label="Configure invoice number format"
                                             >
                                                 <Settings size={18} />
@@ -1322,7 +1322,7 @@ const CreateInvoice: React.FC = () => {
                                                     <div className="flex flex-wrap items-center gap-2 text-xs">
                                                         <span className="text-gray-600 font-medium">Taxes:</span>
                                                         {(item.taxes ?? []).length === 0 && (
-                                                            <span className="text-gray-400 italic">No taxes applied</span>
+                                                            <span className="text-muted-foreground italic">No taxes applied</span>
                                                         )}
                                                         {(item.taxes ?? []).map((t, idx) => (
                                                             <span

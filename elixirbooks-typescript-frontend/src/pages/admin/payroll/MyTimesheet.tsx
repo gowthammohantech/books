@@ -457,7 +457,7 @@ const MyTimesheet: React.FC = () => {
 
             {/* ── Rejection note ── */}
             {status === 'REJECTED' && week?.timesheet.rejectionNote && (
-                <div className="bg-destructive-soft border border-destructive rounded-lg px-4 py-3 text-sm text-destructive">
+                <div className="bg-destructive-soft border border-destructive rounded-lg px-4 py-3 text-sm text-destructive-strong">
                     <span className="font-semibold">Rejected:</span>{' '}
                     {week.timesheet.rejectionNote}
                 </div>

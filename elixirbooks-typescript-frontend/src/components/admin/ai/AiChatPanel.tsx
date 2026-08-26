@@ -398,7 +398,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
           )}
 
           {error && (
-            <p className="rounded-lg bg-destructive-soft px-3 py-2 text-xs text-destructive">{error}</p>
+            <p className="rounded-lg bg-destructive-soft px-3 py-2 text-xs text-destructive-strong">{error}</p>
           )}
         </div>
 

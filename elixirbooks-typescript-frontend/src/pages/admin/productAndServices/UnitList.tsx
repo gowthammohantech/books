@@ -323,7 +323,7 @@ const UnitList: FC = () => {
                             index={(page - 1) * limit + index + 1}
                             row={unit}
                             columns={[
-                                <p className="capitalize text-indigo-600">{unit.unit_name}</p>,
+                                <p className="capitalize text-primary">{unit.unit_name}</p>,
                                 unit.short_name,
                                 <Switch name={`status-${unit.id}`} checked={unit.status} onChange={() => toggleStatus(unit)} />
                             ]}

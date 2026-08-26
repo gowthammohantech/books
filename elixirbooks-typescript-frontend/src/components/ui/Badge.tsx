@@ -32,24 +32,24 @@ const STYLES: Record<BadgeColor, Record<BadgeVariant, string>> = {
     outline: "border border-primary text-primary",
   },
   success: {
-    soft: "bg-success-soft text-success",
+    soft: "bg-success-soft text-success-strong",
     solid: "bg-success text-success-foreground",
-    outline: "border border-success text-success",
+    outline: "border border-success text-success-strong",
   },
   danger: {
-    soft: "bg-destructive-soft text-destructive",
+    soft: "bg-destructive-soft text-destructive-strong",
     solid: "bg-destructive text-destructive-foreground",
-    outline: "border border-destructive text-destructive",
+    outline: "border border-destructive text-destructive-strong",
   },
   warning: {
-    soft: "bg-warning-soft text-warning",
+    soft: "bg-warning-soft text-warning-strong",
     solid: "bg-warning text-warning-foreground",
-    outline: "border border-warning text-warning",
+    outline: "border border-warning text-warning-strong",
   },
   info: {
-    soft: "bg-info-soft text-info",
+    soft: "bg-info-soft text-info-strong",
     solid: "bg-info text-info-foreground",
-    outline: "border border-info text-info",
+    outline: "border border-info text-info-strong",
   },
   secondary: {
     soft: "bg-muted text-secondary-foreground",

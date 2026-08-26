@@ -218,7 +218,7 @@ const DebitNoteList: FC = () => {
                         index={(page - 1) * limit + index + 1}
                         row={debitNote}
                         columns={[
-                            <span className="text-indigo-600">{debitNote.debitNoteId}</span>,
+                            <span className="text-primary">{debitNote.debitNoteId}</span>,
                             debitNote.purchase?.purchaseId || "",
                             formatDate(debitNote.debitNoteDate, systemSettings?.dateFormat.format || 'd-m-Y'),
                             <ProfileCard

@@ -366,14 +366,14 @@ const BankAccountList: FC = () => {
                         row={acc}
                         onRowClick={(item) => handleViewDetails(item)}
                         columns={[
-                            <span className="text-indigo-600 capitalize font-medium">{acc.bankName}</span>,
+                            <span className="text-primary capitalize font-medium">{acc.bankName}</span>,
                             acc.accountHoldername,
                             acc.accountNumber,
                             acc.currencyCode || defaultCurrencyCode,
                             formatMoney(acc.currentBalance ?? 0, acc.currencyCode),
                             acc.IFSCCode,
                             showDeleted
-                                ? <span className="inline-flex items-center rounded-full bg-destructive-soft px-2.5 py-0.5 text-xs font-medium text-destructive">Deleted</span>
+                                ? <span className="inline-flex items-center rounded-full bg-destructive-soft px-2.5 py-0.5 text-xs font-medium text-destructive-strong">Deleted</span>
                                 : <span onClick={(e) => e.stopPropagation()}><Switch name={`status-${acc.id}`} checked={acc.status} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStatusChange(acc.id, e.target.checked)} disabled={!hasPermission(permissions, 'finance-settings', 'edit')} /></span>,
                         ]}
                         actions={tableActions}

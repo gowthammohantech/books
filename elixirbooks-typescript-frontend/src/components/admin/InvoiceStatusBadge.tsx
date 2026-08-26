@@ -23,11 +23,11 @@ interface InvoiceStatusBadgeProps {
 }
 
 const ICONS: Record<DisplayStatus, React.ReactNode> = {
-  DRAFT: <FileText size={14} className="ml-1 text-warning" />,
-  SENT: <Send size={14} className="ml-1 text-info" />,
-  PARTIALLY_PAID: <RefreshCw size={14} className="ml-1 text-info" />,
-  PAID: <CheckCircle size={14} className="ml-1 text-success" />,
-  DELAYED: <AlertTriangle size={14} className="ml-1 text-destructive" />,
+  DRAFT: <FileText size={14} className="ml-1 text-warning-strong" />,
+  SENT: <Send size={14} className="ml-1 text-info-strong" />,
+  PARTIALLY_PAID: <RefreshCw size={14} className="ml-1 text-info-strong" />,
+  PAID: <CheckCircle size={14} className="ml-1 text-success-strong" />,
+  DELAYED: <AlertTriangle size={14} className="ml-1 text-destructive-strong" />,
   CANCELLED: <Ban size={14} className="ml-1 text-muted-foreground" />,
 };
 

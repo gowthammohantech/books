@@ -225,7 +225,7 @@ const RolesList: React.FC = () => {
                         index={index + 1}
                         row={role}
                         columns={[
-                            <span className="text-indigo-600">{role.roleName}</span>,
+                            <span className="text-primary">{role.roleName}</span>,
                             formatDate(role.createdAt, systemSettings?.dateFormat.format || "d-y-m"),
                             allowedActions.length > 0 ? (
                                 <div className="flex gap-3">

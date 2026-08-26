@@ -35,8 +35,8 @@ const TAX_OPTIONS: { value: TaxTreatment; label: string }[] = [
 // explainStatus so an EXPLAINED or FOR_APPROVAL row still reads clearly
 // once it's rendered as an editable form rather than a locked panel.
 const STATUS_PILL: Record<BankTransactionRow['explainStatus'], { label: string; cls: string }> = {
-    EXPLAINED: { label: 'Explained — posted', cls: 'bg-success-soft text-success' },
-    FOR_APPROVAL: { label: 'Awaiting approval', cls: 'bg-warning-soft text-warning' },
+    EXPLAINED: { label: 'Explained — posted', cls: 'bg-success-soft text-success-strong' },
+    FOR_APPROVAL: { label: 'Awaiting approval', cls: 'bg-warning-soft text-warning-strong' },
     UNEXPLAINED: { label: 'Unexplained', cls: 'bg-muted text-muted-foreground' },
 };
 
@@ -399,7 +399,7 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                         <div className="inline-flex items-center gap-2">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-semibold uppercase tracking-wide bg-success-soft text-success">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-semibold uppercase tracking-wide bg-success-soft text-success-strong">
                                 Linked to source
                             </span>
                         </div>

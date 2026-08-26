@@ -135,8 +135,8 @@ export default function TallyCheckReport() {
           <div
             className={`mb-6 p-4 rounded-lg border text-center font-bold text-lg ${
               data.overallTied
-                ? 'bg-success-soft border-success text-success'
-                : 'bg-destructive-soft border-destructive text-destructive'
+                ? 'bg-success-soft border-success text-success-strong'
+                : 'bg-destructive-soft border-destructive text-destructive-strong'
             }`}
           >
             {data.overallTied

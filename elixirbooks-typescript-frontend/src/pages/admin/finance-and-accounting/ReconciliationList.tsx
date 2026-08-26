@@ -390,7 +390,7 @@ const ReconciliationList: React.FC = () => {
                             row={transaction}
                             columns={[
                                 <div>
-                                    <span className="text-indigo-600">{formatDate(transaction.transactionDate)}</span>
+                                    <span className="text-primary">{formatDate(transaction.transactionDate)}</span>
                                 </div>,
                                 <TransactionTypeBadge type={transaction.type} />,
                                 format(transaction.amount),
