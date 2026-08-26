@@ -9,7 +9,7 @@ import Switch from "@components/admin/Switch";
 import Table from "@components/admin/Table";
 import TableRow from "@components/admin/TableRow";
 import TransactionTypeBadge from "@components/admin/TransactionTypeBadge";
-import { Button } from "@components/ui";
+import { Button, PageSizeSelect } from "@components/ui";
 import Constants from "@constants/api";
 import { useCurrencyFormatter } from "@hooks/useCurrencyFormatter";
 import useDateFormatter from "@hooks/useDateFormatter";
@@ -369,15 +369,7 @@ const ReconciliationList: React.FC = () => {
                     </Button>
                 </div>
                 <div className="ml-auto">
-                    <select
-                        value={limit}
-                        onChange={(e) => handleFilterChange('limit', e.target.value)}
-                        className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-                    >
-                        {[10, 25, 50].map((num) => (
-                            <option className="text-gray-950 " key={num} value={num}>{num} / page</option>
-                        ))}
-                    </select>
+                    <PageSizeSelect value={limit} onChange={(size) => handleFilterChange('limit', String(size))} />
                 </div>
             </div>
             {/* Table */}

@@ -16,7 +16,7 @@ import LoaderSpinner from "@components/admin/LoaderSpinner";
 import NoRecords from "@components/admin/NoRecords";
 import type { TaxRate, TaxRegime } from "@models/taxRate";
 import { STARTER_RATES } from "../../../../lib/taxRegimeDefaults";
-import { Button, Badge, FormField, Select } from "@components/ui";
+import { Badge, Button, FormField, PageSizeSelect } from "@components/ui";
 import type { BadgeColor } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 
@@ -273,12 +273,7 @@ const TaxRateList: React.FC = () => {
                     onChange={(e) => handleSearch(e.target.value)}
                     containerClassName="w-full md:w-80"
                 />
-                <Select
-                    value={limit}
-                    onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                    containerClassName="w-auto"
-                    options={[10, 25, 50].map((num) => ({ value: num, label: `${num} / page` }))}
-                />
+                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
             </div>
 
             {/* Regime filter pills */}

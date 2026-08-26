@@ -14,7 +14,7 @@ import NoRecords from "@components/admin/NoRecords";
 import useDateFormatter from "@hooks/useDateFormatter";
 import type { RecurringExpenseSummary, ChildExpenseSummary } from "@models/recurringExpense";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, Badge, FormField, Select } from "@components/ui";
+import { Badge, Button, FormField, PageSizeSelect } from "@components/ui";
 
 interface PaginationData {
     total: number;
@@ -214,11 +214,7 @@ const RecurringExpenseList: React.FC = () => {
                     onChange={(e) => handleSearch(e.target.value)}
                     containerClassName="w-full md:w-80"
                 />
-                <Select
-                    value={limit}
-                    onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                    options={[10, 25, 50].map((num) => ({ value: num, label: `${num} / page` }))}
-                />
+                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
             </div>
 
             {/* Table */}

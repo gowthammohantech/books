@@ -24,7 +24,7 @@ import NoRecords from "@components/admin/NoRecords";
 import { useQuery } from "@tanstack/react-query";
 import { fetchModuleHierarchy, fetchCustomFieldsByModule } from "@api/customFieldTypeApi";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, Badge, FormField, Select } from "@components/ui";
+import { Badge, Button, FormField, PageSizeSelect, Select } from "@components/ui";
 
 interface Invoice {
     id: string;
@@ -415,11 +415,7 @@ const InvoiceList: React.FC = () => {
                             <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
                         ))}
                     </Select>
-                    <Select
-                        value={limit}
-                        onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                        options={[10, 25, 50].map((num) => ({ value: num, label: `${num} / page` }))}
-                    />
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
                 </div>
             </div>
 

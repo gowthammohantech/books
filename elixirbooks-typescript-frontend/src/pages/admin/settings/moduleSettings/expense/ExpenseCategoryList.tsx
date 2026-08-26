@@ -18,7 +18,7 @@ import type { Pagination } from "@models/common";
 import Switch from "@components/admin/Switch";
 import ExpenseCategoryFormModal from "@pages/admin/finance-and-accounting/ExpenseCategoryFormModal";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, FormField, Select } from "@components/ui";
+import { Button, FormField, PageSizeSelect } from "@components/ui";
 
 interface ExpenseResponse {
     success: boolean;
@@ -187,12 +187,7 @@ const ExpenseCategoryList: React.FC = () => {
                     onChange={(e) => handleFilterChange('search', e.target.value)}
                     containerClassName="w-full md:w-64"
                 />
-                <Select
-                    value={limit}
-                    onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
-                    options={[10, 25, 50].map((num) => ({ value: num, label: `${num} / page` }))}
-                    containerClassName="w-auto"
-                />
+                <PageSizeSelect value={limit} onChange={(size) => handleFilterChange('limit', size)} />
             </div>
 
             <Table headers={tableHeaders}>

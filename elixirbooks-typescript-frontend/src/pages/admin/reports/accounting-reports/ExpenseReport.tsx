@@ -20,6 +20,7 @@ import { BiMoneyWithdraw } from "react-icons/bi";
 import { useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
 import { PageHeader } from "@/context/PageHeaderContext";
+import { PageSizeSelect } from "@components/ui";
 interface ExpenseReportResponse {
     success: boolean;
     message: string;
@@ -178,15 +179,7 @@ const ExpenseReport: React.FC = () => {
                     </button>
                 </div>
                 <div className="ml-auto">
-                    <select
-                        value={limit}
-                        onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                        className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-                    >
-                        {[10, 25, 50].map((num) => (
-                            <option className="text-gray-950 " key={num} value={num}>{num} / page</option>
-                        ))}
-                    </select>
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
                 </div>
             </div>
             {/* Table */}

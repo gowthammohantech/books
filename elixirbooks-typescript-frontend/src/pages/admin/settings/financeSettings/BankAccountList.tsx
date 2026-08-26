@@ -23,7 +23,7 @@ import { BANK_CODE_TYPES, getBankCodeType } from "@constants/bankCodeTypes";
 import type { BankAccount, BankAccountFormData } from "@models/bank-account";
 import BankAccountDetailsModal from "./BankAccountDetailsModal";
 import AdjustBalanceModal from "./AdjustBalanceModal";
-import { Button, FormField, Select } from "@components/ui";
+import { Button, FormField, PageSizeSelect, Select } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 
 const bankAccountTypes: OptionType[] = [
@@ -349,12 +349,7 @@ const BankAccountList: FC = () => {
                     onChange={(e) => handleSearch(e.target.value)}
                     containerClassName="w-full md:w-64"
                 />
-                <Select
-                    value={limit}
-                    onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                    containerClassName="w-auto"
-                    options={[10, 25, 50].map((num) => ({ value: num, label: `${num} / page` }))}
-                />
+                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
             </div>
 
             {/* Table */}

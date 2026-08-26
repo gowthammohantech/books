@@ -35,3 +35,6 @@ export type {
   SkeletonTextProps,
   SkeletonRowProps,
 } from "./Skeleton";
+
+export { default as PageSizeSelect } from "./PageSizeSelect";
+export type { PageSizeSelectProps } from "./PageSizeSelect";
