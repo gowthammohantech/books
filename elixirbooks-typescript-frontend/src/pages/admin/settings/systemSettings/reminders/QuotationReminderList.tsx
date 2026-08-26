@@ -54,7 +54,7 @@ const QuotationReminderList: React.FC<Props> = ({ reminders, onSuccess, isEditin
             <Card
                 padded={false}
                 header={
-                    <div className="px-5 py-4 border-b border-border text-lg font-semibold text-heading">
+                    <div className="px-5 py-4 border-b border-border text-lg font-semibold text-foreground">
                         Quotation Reminders
                     </div>
                 }
@@ -68,7 +68,7 @@ const QuotationReminderList: React.FC<Props> = ({ reminders, onSuccess, isEditin
                                 index={index + 1}
                                 row={reminder}
                                 columns={[
-                                    <span className="text-indigo-600">{reminder.name ?? ""}</span>,
+                                    <span className="text-primary">{reminder.name ?? ""}</span>,
                                     formattedSchedule,
                                     <Switch name={`status-${reminder.id}`} checked={reminder.isEnabled} onChange={(e) => handleStatusChange(reminder.id, e.target.checked)} />,
                                 ]}

@@ -75,7 +75,7 @@ export default function EditProduct() {
     }
 
     if (!product) {
-        return <div className="p-6 text-center text-red-500">Item not found.</div>;
+        return <div className="p-6 text-center text-destructive">Item not found.</div>;
     }
 
     return (

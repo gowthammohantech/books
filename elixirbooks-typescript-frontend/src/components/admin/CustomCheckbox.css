@@ -23,21 +23,21 @@
   left: 0;
   height: 18px;
   width: 18px;
-  background-color: #ffffff;
-  border: 1px solid #000000;
+  background-color: var(--card);
+  border: 1px solid var(--foreground);
   border-radius: 4px;
   transition: all 0.2s;
 }
 
 /* On mouse-over, add a grey background color */
 .custom-checkbox-container:hover input ~ .checkmark {
-  border-color: #409eff;
+  border-color: var(--primary); /* was #409eff, an Element-UI blue unrelated to this brand */
 }
 
 /* When the checkbox is checked, add a blue background */
 .custom-checkbox-container input:checked ~ .checkmark {
-  background-color: #ffffff;
-  border-color: #8d8c8e;
+  background-color: var(--card);
+  border-color: var(--color-gray-400);
 }
 
 /* Create the checkmark/indicator (hidden when not checked) */
@@ -58,14 +58,14 @@
   top: 2px;
   width: 5px;
   height: 10px;
-  border: solid rgb(81, 79, 79);
+  border: solid var(--foreground);
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
 
 /* Style for disabled state */
 .custom-checkbox-container input:disabled ~ .checkmark {
-    background-color: #f2f6fc;
-    border-color: #e4e7ed;
+    background-color: var(--muted);
+    border-color: var(--border);
     cursor: not-allowed;
 }

@@ -133,7 +133,7 @@ const LocalizationSettings: React.FC = () => {
             setIsSaving(false);
         }
     }
-    const sectionHeaderClass = "flex items-center gap-2 px-5 py-4 border-b border-border text-lg font-semibold text-heading";
+    const sectionHeaderClass = "flex items-center gap-2 px-5 py-4 border-b border-border text-lg font-semibold text-foreground";
 
     return (
         <div className="p-6 max-w-4xl mx-auto">
@@ -161,7 +161,7 @@ const LocalizationSettings: React.FC = () => {
                 padded={false}
                 header={
                     <div className={sectionHeaderClass}>
-                        <Settings2 className="w-5 h-5 text-purple-600" />
+                        <Settings2 className="w-5 h-5 text-primary" />
                         Basic Information
                     </div>
                 }
@@ -183,7 +183,7 @@ const LocalizationSettings: React.FC = () => {
                                     noAsterisk
                                 />
                                 {selectedTimeZone && (
-                                    <p className="mt-1 text-xs text-body">
+                                    <p className="mt-1 text-xs text-muted-foreground">
                                         Offset: {(timeZones.find(tz => tz.id === selectedTimeZone.id) as TimeZone)?.offset}
                                     </p>
                                 )}
@@ -224,7 +224,7 @@ const LocalizationSettings: React.FC = () => {
                                     noAsterisk
                                 />
                                 {selectedDateFormat && (
-                                    <p className="mt-1 text-xs text-body">
+                                    <p className="mt-1 text-xs text-muted-foreground">
                                         Format: {(selectedDateFormat as DateFormat).format} ({(selectedDateFormat as DateFormat).title})
                                     </p>
                                 )}
@@ -248,7 +248,7 @@ const LocalizationSettings: React.FC = () => {
                                     noAsterisk
                                 />
                                 {selectedTimeFormat && (
-                                    <p className="mt-1 text-xs text-body">
+                                    <p className="mt-1 text-xs text-muted-foreground">
                                         Format: {(timeFormats.find(tf => tf.id === selectedTimeFormat.id) as TimeFormat)?.format}
                                     </p>
                                 )}

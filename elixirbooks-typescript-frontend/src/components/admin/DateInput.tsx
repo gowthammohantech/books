@@ -17,8 +17,8 @@ const DateInput: FC<DateInputProps> = ({ label, value, onChange, minDate, maxDat
     const { dateFnsFormat } = useDateFormatter();
     return (
         <div>
-            <label className="block text-sm font-medium text-heading pb-1">
-                {label} {isRequired && <span className="text-red-500">*</span>}
+            <label className="block text-sm font-medium text-foreground pb-1">
+                {label} {isRequired && <span className="text-destructive">*</span>}
             </label>
             <DatePicker
                 value={value}
@@ -30,20 +30,11 @@ const DateInput: FC<DateInputProps> = ({ label, value, onChange, minDate, maxDat
                     textField: {
                         size: 'small',
                         fullWidth: true,
+                        // Surface + border colors come from the MUI theme's
+                        // MuiOutlinedInput override; only the padding is local.
                         sx: {
-                            backgroundColor: 'white',
-                            borderRadius: '6px',
                             '& .MuiOutlinedInput-root': {
                                 paddingRight: '8px',
-                            },
-                            '& .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#d1d5db', // Tailwind gray-300
-                            },
-                            '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#7539FF', // brand purple-600
-                            },
-                            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                borderColor: '#7539FF',
                             },
                         },
                     },

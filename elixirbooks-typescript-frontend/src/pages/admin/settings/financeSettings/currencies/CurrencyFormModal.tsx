@@ -125,7 +125,7 @@ const CurrencyFormModal: React.FC<CurrencyFormModalProps> = ({ isOpen, onClose, 
 
                 {/* isDefault  use Switch component*/}
                 <div className="mb-4 flex items-center gap-2">
-                    <label htmlFor="isDefault" className="block text-sm font-medium text-heading">
+                    <label htmlFor="isDefault" className="block text-sm font-medium text-foreground">
                         Is Default
                     </label>
                     <Switch name="isDefault" checked={currencyFormData.isDefault || false} onChange={(e) => setCurrencyFormData({ ...currencyFormData, isDefault: e.target.checked })} disabled={currencyFormData.isDefault} />

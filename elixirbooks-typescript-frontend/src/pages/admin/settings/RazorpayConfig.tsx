@@ -83,7 +83,7 @@ export default function RazorpayConfig() {
           {saving ? 'Saving' : 'Save'}
         </Button>
       </PageHeader>
-      <p className="text-sm text-body mb-6">
+      <p className="text-sm text-muted-foreground mb-6">
         Enter your Razorpay API credentials. Use test-mode keys for development, then flip the Live mode toggle when ready for production.
       </p>
       <form id="razorpay-config-form" onSubmit={handleSave}>
@@ -91,11 +91,11 @@ export default function RazorpayConfig() {
           <div className="flex items-center gap-4">
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={data.enabled} onChange={(e) => setData((p) => ({ ...p, enabled: e.target.checked }))} />
-              <span className="text-sm text-heading">Enabled</span>
+              <span className="text-sm text-foreground">Enabled</span>
             </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={data.livemode} onChange={(e) => setData((p) => ({ ...p, livemode: e.target.checked }))} />
-              <span className="text-sm text-heading">Live mode</span>
+              <span className="text-sm text-foreground">Live mode</span>
             </label>
           </div>
           <FormField
@@ -118,7 +118,7 @@ export default function RazorpayConfig() {
             helper={
               <>
                 Register this webhook URL in Razorpay dashboard:{' '}
-                <code className="bg-surface px-2 py-1 rounded-control">{webhookUrl}</code>
+                <code className="bg-muted px-2 py-1 rounded-md">{webhookUrl}</code>
               </>
             }
           />

@@ -431,7 +431,9 @@ const InvoiceList: React.FC = () => {
                         index={(page - 1) * limit + index + 1}
                         row={invoice}
                         columns={[
-                            <a href={`/admin/view-invoice/${invoice.id}`} onClick={(e) => e.stopPropagation()} className="text-indigo-600 font-medium cursor-pointer">{invoice.invoiceNumber}</a>,
+                            <a href={`/admin/view-invoice/${invoice.id}`} onClick={(e) => e.stopPropagation()} // inline-block + py-1 lifts the hit area to ~26px; as a bare inline link it
+                            // measured 18px tall, under the 24x24 minimum in WCAG 2.2 SC 2.5.8.
+                            className="inline-block py-1 text-primary font-medium cursor-pointer hover:underline">{invoice.invoiceNumber}</a>,
                             <Badge color={invoice.invoiceType === 'PROFORMA' ? 'info' : 'success'}>
                                 {invoice.invoiceType === 'PROFORMA' ? 'Proforma' : 'Invoice'}
                             </Badge>,

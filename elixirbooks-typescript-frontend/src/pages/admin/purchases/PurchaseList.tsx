@@ -326,7 +326,7 @@ const PurchaseList: FC = () => {
                         index={(page - 1) * limit + index + 1}
                         row={purchase}
                         columns={[
-                            <span className="text-indigo-600">{purchase.purchaseId}</span>,
+                            <span className="text-primary">{purchase.purchaseId}</span>,
                             formatDate(purchase.purchaseDate, systemSettings?.dateFormat.format || 'd-m-Y'),
                             <ProfileCard
                                 imageUrl={purchase.billTo?.profileImage}

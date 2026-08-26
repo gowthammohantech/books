@@ -27,10 +27,10 @@ const AdminCard: React.FC<AdminCardProps> = ({
 
     return (
         <div
-            className={`flex gap-3 p-4 bg-white border border-border rounded-card shadow-card ${className}`}
+            className={`flex gap-3 p-4 bg-white border border-border rounded-xl shadow-sm ${className}`}
         >
             {/* Logo */}
-            <div className="w-15 h-15 flex items-center justify-center rounded bg-surface border border-border">
+            <div className="w-15 h-15 flex items-center justify-center rounded bg-muted border border-border">
                 {displayLogo ? (
                     <img
                         src={displayLogo}
@@ -39,7 +39,7 @@ const AdminCard: React.FC<AdminCardProps> = ({
                         onError={() => setImgError(true)}
                     />
                 ) : (
-                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-purple-600 text-white font-bold text-xl">
+                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-primary text-white font-bold text-xl">
                         {firstLetter || "?"}
                     </div>
                 )}
@@ -47,16 +47,16 @@ const AdminCard: React.FC<AdminCardProps> = ({
 
             {/* Company details */}
             <div>
-                <h4 className="font-semibold text-heading uppercase">
+                <h4 className="font-semibold text-foreground uppercase">
                     {companyName}
                 </h4>
                 {(city || state) && (
-                    <p className="text-sm text-body">
+                    <p className="text-sm text-muted-foreground">
                         {[city, state].filter(Boolean).join(", ")}
                     </p>
                 )}
                 {address && (
-                    <p className="text-sm text-body">{address}</p>
+                    <p className="text-sm text-muted-foreground">{address}</p>
                 )}
             </div>
         </div>

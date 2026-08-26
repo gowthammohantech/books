@@ -118,9 +118,9 @@ export default function BudgetVarianceReport() {
       )}
 
       {!loading && data && (
-        <div className="overflow-x-auto border border-border rounded-control">
+        <div className="overflow-x-auto border border-border rounded-md">
           <table className="w-full text-sm border-collapse">
-            <thead className="bg-gray-100 text-xs uppercase text-body">
+            <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-left border-b border-border">Account</th>
                 <th className="px-4 py-3 text-left border-b border-border">Type</th>
@@ -139,12 +139,12 @@ export default function BudgetVarianceReport() {
                   {data.rows.map((row) => (
                     <tr key={row.accountId} className="border-b border-border hover:bg-gray-50">
                       <td className="px-4 py-3">{row.accountName}</td>
-                      <td className="px-4 py-3 text-xs text-body">{row.accountType}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{row.accountType}</td>
                       <td className="px-4 py-3 text-right font-mono">{fmt(row.budget)}</td>
                       <td className="px-4 py-3 text-right font-mono">
                         <DrillLink to="/admin/accounting/journal-entries" params={{ accountId: row.accountId, from, to }} title="View journal entries for this account">{fmt(row.actual)}</DrillLink>
                       </td>
-                      <td className={`px-4 py-3 text-right font-mono ${Number(row.variance) < 0 ? 'text-danger' : 'text-success'}`}>
+                      <td className={`px-4 py-3 text-right font-mono ${Number(row.variance) < 0 ? 'text-destructive' : 'text-success'}`}>
                         {fmt(row.variance)}
                       </td>
                       <td className="px-4 py-3 text-right">{fmtPct(row.variancePct)}</td>
@@ -156,7 +156,7 @@ export default function BudgetVarianceReport() {
                     <td className="px-4 py-3" colSpan={2}>Totals</td>
                     <td className="px-4 py-3 text-right font-mono">{fmt(data.totals.totalBudget)}</td>
                     <td className="px-4 py-3 text-right font-mono">{fmt(data.totals.totalActual)}</td>
-                    <td className={`px-4 py-3 text-right font-mono ${Number(data.totals.totalVariance) < 0 ? 'text-danger' : 'text-success'}`}>
+                    <td className={`px-4 py-3 text-right font-mono ${Number(data.totals.totalVariance) < 0 ? 'text-destructive' : 'text-success'}`}>
                       {fmt(data.totals.totalVariance)}
                     </td>
                     <td className="px-4 py-3" colSpan={2}></td>

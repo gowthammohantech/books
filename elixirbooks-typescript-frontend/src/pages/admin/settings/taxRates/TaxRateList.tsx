@@ -291,8 +291,8 @@ const TaxRateList: React.FC = () => {
                         className={
                             'px-3 py-1 text-sm rounded-full border cursor-pointer ' +
                             (regimeFilter === opt
-                                ? 'bg-purple-600 text-white border-purple-600'
-                                : 'bg-white text-body border-border hover:bg-surface')
+                                ? 'bg-primary text-white border-primary'
+                                : 'bg-white text-muted-foreground border-border hover:bg-muted')
                         }
                     >
                         {regimeLabel(opt)}
@@ -302,13 +302,13 @@ const TaxRateList: React.FC = () => {
 
             {/* Seed starter library banner */}
             {canShowSeed && (
-                <div className="flex items-center justify-between gap-4 p-4 bg-purple-50 border border-purple-200 rounded-card">
+                <div className="flex items-center justify-between gap-4 p-4 bg-accent border border-accent rounded-xl">
                     <div>
-                        <p className="text-sm font-medium text-heading">
+                        <p className="text-sm font-medium text-foreground">
                             No tax rates yet. Seed the starter library for{' '}
                             <span className="font-semibold">{regimeLabel(companyRegime as RegimeFilter)}</span>?
                         </p>
-                        <p className="text-xs text-body mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                             This will create {STARTER_RATES[companyRegime as TaxRegime].length} common rates you can edit later.
                         </p>
                     </div>
@@ -350,7 +350,7 @@ const TaxRateList: React.FC = () => {
                 }
                 {isLoading && (
                     <tr key="table-loader">
-                        <td className="text-center py-1 text-heading font-semibold" colSpan={7}>
+                        <td className="text-center py-1 text-foreground font-semibold" colSpan={7}>
                             <LoaderSpinner />
                         </td>
                     </tr>

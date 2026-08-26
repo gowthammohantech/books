@@ -182,7 +182,7 @@ const ImageCropperUpload: React.FC<ImageCropperUploadProps> = ({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled}
-          className="rounded-md bg-purple-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
         >
           {label}
         </button>
@@ -257,7 +257,7 @@ const ImageCropperUpload: React.FC<ImageCropperUploadProps> = ({
               type="button"
               onClick={() => void handleConfirm()}
               disabled={isProcessing || !croppedPixels}
-              className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
               {isProcessing ? 'Processing…' : 'Confirm'}
             </button>

@@ -135,9 +135,9 @@ export default function CollectionsReport() {
         <>
           <div className="text-xs text-gray-400 mb-4">Overdue receivables as of {formatDate(asOf)}, sorted by days overdue</div>
 
-          <div className="overflow-x-auto border border-border rounded-control">
+          <div className="overflow-x-auto border border-border rounded-md">
             <table className="w-full text-sm border-collapse">
-              <thead className="bg-gray-100 text-xs uppercase text-body">
+              <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 text-left border-b border-border">Customer</th>
                   <th className="px-4 py-3 text-left border-b border-border">Due Date</th>
@@ -156,7 +156,7 @@ export default function CollectionsReport() {
                       <td className="px-4 py-3">{row.label}</td>
                       <td className="px-4 py-3">{formatDate(row.dueDate)}</td>
                       <td className="px-4 py-3 text-right">{row.daysOverdue}</td>
-                      <td className="px-4 py-3 text-xs text-body">{row.bucket}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{row.bucket}</td>
                       <td className="px-4 py-3"><DunningBadge stage={row.dunningStage} /></td>
                       <td className="px-4 py-3 text-right font-mono">
                         <DrillLink to="/admin/invoices" params={{ status: AR_UNPAID_STATUSES, invoiceType: 'INVOICE', dueStartDate: row.dueDate.slice(0, 10), dueEndDate: row.dueDate.slice(0, 10) }} title="View invoices due on this date">{fmt(row.amount)}</DrillLink>

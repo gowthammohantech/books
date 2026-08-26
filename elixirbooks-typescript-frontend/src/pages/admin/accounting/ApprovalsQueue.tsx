@@ -79,9 +79,9 @@ const SectionTable = ({ type, docs, onApprove, onReject, actionLoadingId, format
                     <span className="ml-2 text-xs font-normal text-gray-400">({docs.length} pending)</span>
                 </h2>
             </div>
-            <div className="overflow-x-auto border border-border rounded-control">
+            <div className="overflow-x-auto border border-border rounded-md">
                 <table className="w-full text-sm border-collapse">
-                    <thead className="bg-gray-100 text-xs uppercase text-body">
+                    <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                         <tr>
                             <th className="px-4 py-3 text-left border-b border-border">#</th>
                             <th className="px-4 py-3 text-left border-b border-border">{label} No.</th>
@@ -99,7 +99,7 @@ const SectionTable = ({ type, docs, onApprove, onReject, actionLoadingId, format
                                 return (
                                     <tr key={doc.id} className="border-b border-border hover:bg-gray-50">
                                         <td className="px-4 py-3 text-gray-500">{idx + 1}</td>
-                                        <td className="px-4 py-3 text-indigo-600 font-medium">{getDocNumber(doc)}</td>
+                                        <td className="px-4 py-3 text-primary font-medium">{getDocNumber(doc)}</td>
                                         <td className="px-4 py-3 text-gray-700">{formatDate(doc.date)}</td>
                                         <td className="px-4 py-3 text-right text-gray-800">{getDocAmount(doc)}</td>
                                         <td className="px-4 py-3 text-center">
@@ -279,7 +279,7 @@ const ApprovalsQueue: React.FC = () => {
                             value={rejectReason}
                             onChange={(e) => setRejectReason(e.target.value)}
                             placeholder="Enter rejection reason (optional)"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-600 resize-none"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                         />
                     </div>
                     <div className="flex justify-end gap-3 pt-1">

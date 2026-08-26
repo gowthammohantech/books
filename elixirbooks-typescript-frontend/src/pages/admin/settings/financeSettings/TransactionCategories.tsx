@@ -296,7 +296,7 @@ const TransactionCategoriesPage: React.FC = () => {
                 title={
                     <div>
                         <span className="block">Transaction Categories</span>
-                        <p className="text-sm font-normal text-body">
+                        <p className="text-sm font-normal text-muted-foreground">
                             Manage categories used for Money In / Money Out transactions.
                         </p>
                     </div>
@@ -324,7 +324,7 @@ const TransactionCategoriesPage: React.FC = () => {
                         if (rows.length === 0) return null;
                         return (
                             <div key={group}>
-                                <h2 className="text-sm font-semibold uppercase tracking-wide text-body mb-2">
+                                <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">
                                     {groupLabel(group)}
                                 </h2>
                                 <Table headers={TABLE_HEADERS}>
@@ -334,16 +334,16 @@ const TransactionCategoriesPage: React.FC = () => {
                                             index={idx + 1}
                                             row={cat}
                                             columns={[
-                                                <span className="font-medium text-heading">{cat.name}</span>,
+                                                <span className="font-medium text-foreground">{cat.name}</span>,
                                                 <Badge color="info">
                                                     {appliesToLabel(cat.appliesTo)}
                                                 </Badge>,
                                                 cat.account
                                                     ? `${cat.account.code} — ${cat.account.name}`
-                                                    : <span className="text-body">—</span>,
+                                                    : <span className="text-muted-foreground">—</span>,
                                                 cat.defaultTaxRate
                                                     ? `${cat.defaultTaxRate.name} (${cat.defaultTaxRate.rate}%)`
-                                                    : <span className="text-body">—</span>,
+                                                    : <span className="text-muted-foreground">—</span>,
                                                 cat.taxApplicable ? (
                                                     <Badge color="success">Yes</Badge>
                                                 ) : (
@@ -470,9 +470,9 @@ const TransactionCategoriesPage: React.FC = () => {
                             onChange={(e) =>
                                 setForm((f) => ({ ...f, taxApplicable: e.target.checked }))
                             }
-                            className="h-4 w-4 rounded border-border text-purple-600 accent-purple-600"
+                            className="h-4 w-4 rounded border-border text-primary accent-primary"
                         />
-                        <label htmlFor="taxApplicable" className="text-sm text-heading">
+                        <label htmlFor="taxApplicable" className="text-sm text-foreground">
                             Tax Applicable
                         </label>
                     </div>

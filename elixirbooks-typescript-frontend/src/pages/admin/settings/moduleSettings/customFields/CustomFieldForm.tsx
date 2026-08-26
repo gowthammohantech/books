@@ -300,13 +300,13 @@ const CustomFieldForm: React.FC<CustomFieldFormProps> = ({
                 </div>
 
                 {needsOptions && (
-                    <div className={`border p-4 rounded-control bg-surface transition-colors ${errors.options ? 'border-danger' : 'border-border'}`}>
+                    <div className={`border p-4 rounded-md bg-muted transition-colors ${errors.options ? 'border-destructive' : 'border-border'}`}>
                         <div className="flex justify-between items-center mb-3">
                             <div>
-                                <label className="block text-sm font-medium text-heading">
-                                    Field Options <span className="text-purple-600">*</span>
+                                <label className="block text-sm font-medium text-foreground">
+                                    Field Options <span className="text-primary">*</span>
                                 </label>
-                                {errors.options && <p className="text-danger text-xs mt-0.5">{errors.options}</p>}
+                                {errors.options && <p className="text-destructive text-xs mt-0.5">{errors.options}</p>}
                             </div>
                             <Button type="button" variant="soft" size="sm" onClick={addOption} leftIcon={<Plus size={14} />}>
                                 Add Option
@@ -314,7 +314,7 @@ const CustomFieldForm: React.FC<CustomFieldFormProps> = ({
                         </div>
 
                         {formData.options?.length === 0 && (
-                            <p className="text-sm text-body italic text-center py-2">No options added yet. Click "Add Option" to begin.</p>
+                            <p className="text-sm text-muted-foreground italic text-center py-2">No options added yet. Click "Add Option" to begin.</p>
                         )}
 
                         <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
@@ -339,7 +339,7 @@ const CustomFieldForm: React.FC<CustomFieldFormProps> = ({
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => removeOption(idx)}
-                                        className="mt-1 text-body hover:text-danger"
+                                        className="mt-1 text-muted-foreground hover:text-destructive"
                                         aria-label="Remove option"
                                     >
                                         <Trash2 size={18} />
@@ -351,21 +351,21 @@ const CustomFieldForm: React.FC<CustomFieldFormProps> = ({
                 )}
 
                 <div className="flex gap-6 py-2">
-                    <label className="flex items-center gap-2 text-sm font-medium text-heading cursor-pointer">
+                    <label className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer">
                         <input
                             type="checkbox"
                             checked={formData.isMandatory}
                             onChange={(e) => handleInputChange('isMandatory', e.target.checked)}
-                            className="w-4 h-4 text-purple-600 rounded border-border focus:ring-purple-600"
+                            className="w-4 h-4 text-primary rounded border-border focus:ring-ring"
                         />
                         Is Mandatory?
                     </label>
-                    <label className="flex items-center gap-2 text-sm font-medium text-heading cursor-pointer">
+                    <label className="flex items-center gap-2 text-sm font-medium text-foreground cursor-pointer">
                         <input
                             type="checkbox"
                             checked={formData.showInTable}
                             onChange={(e) => handleInputChange('showInTable', e.target.checked)}
-                            className="w-4 h-4 text-purple-600 rounded border-border focus:ring-purple-600"
+                            className="w-4 h-4 text-primary rounded border-border focus:ring-ring"
                         />
                         Show In Table?
                     </label>

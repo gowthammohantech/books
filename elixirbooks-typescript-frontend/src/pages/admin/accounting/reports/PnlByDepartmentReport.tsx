@@ -23,7 +23,7 @@ function fmt(value: string | number | undefined): string {
 /** Negative figures read as losses; colour them so a loss-making department is
  *  visible at a glance rather than needing the minus sign to be spotted. */
 function amountClass(value: string | number | undefined): string {
-  return Number(value ?? 0) < 0 ? 'text-danger' : 'text-gray-700';
+  return Number(value ?? 0) < 0 ? 'text-destructive' : 'text-gray-700';
 }
 
 interface Column {
@@ -119,7 +119,7 @@ export default function PnlByDepartmentReport() {
       {rows.map((r) => (
         <tr key={r.accountId} className="border-b border-gray-100">
           <td className="p-3 whitespace-nowrap">
-            <span className="font-mono text-indigo-600">{r.code}</span> <span className="text-gray-700">{r.name}</span>
+            <span className="font-mono text-primary">{r.code}</span> <span className="text-gray-700">{r.name}</span>
           </td>
           {columns.map((c) => (
             <td key={c.key} className={`p-3 text-right ${amountClass(r.amounts[c.key])}`}>
@@ -145,7 +145,7 @@ export default function PnlByDepartmentReport() {
     <div className="space-y-4">
       <PageHeader title="P&L by Department" />
 
-      <div className="bg-white p-4 rounded-card border border-border shadow-card flex flex-wrap items-end gap-4">
+      <div className="bg-white p-4 rounded-xl border border-border shadow-sm flex flex-wrap items-end gap-4">
         <div className="w-44">
           <DateInput
             label="From"
@@ -177,7 +177,7 @@ export default function PnlByDepartmentReport() {
 
       {!loading && data && (
         <>
-          <div className="bg-white rounded-card border border-border shadow-card overflow-x-auto">
+          <div className="bg-white rounded-xl border border-border shadow-sm overflow-x-auto">
             <table className="w-full min-w-max">
               <thead className="bg-gray-100 text-gray-900">
                 <tr>
@@ -212,7 +212,7 @@ export default function PnlByDepartmentReport() {
           </p>
 
           {!reconciles && (
-            <p className="text-sm text-danger">
+            <p className="text-sm text-destructive">
               Department columns sum to {fmt(columnSum)} but the grand total is {fmt(data.totals.grandNet)}.
               These should match exactly — please report this.
             </p>

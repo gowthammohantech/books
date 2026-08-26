@@ -14,7 +14,7 @@ interface ProfileCardProps {
 // avatar color across the app (was hardcoded purple for every fallback,
 // which made long lists of avatars hard to visually distinguish/scan).
 const AVATAR_PALETTE = [
-    "bg-purple-600",
+    "bg-primary",
     "bg-blue-600",
     "bg-emerald-600",
     "bg-amber-600",
@@ -60,7 +60,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ imageUrl, name, email, classN
             )}
 
             <div>
-                <span className={`font-medium ${primary ? "text-indigo-600" : "text-gray-600"} capitalize`}>
+                <span className={`font-medium ${primary ? "text-primary" : "text-gray-600"} capitalize`}>
                     {name || "Deleted User"}
                 </span>
                 {email && (

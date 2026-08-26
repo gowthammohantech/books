@@ -8,10 +8,10 @@ interface DashboardCardProps {
 
 export function DashboardCard({ title, icon, children }: DashboardCardProps) {
     return (
-        <div className="bg-white border border-border rounded-card shadow-card p-4 space-y-2 transition-all duration-300 hover:shadow">
+        <div className="bg-white border border-border rounded-xl shadow-sm p-4 space-y-2 transition-all duration-300 hover:shadow">
             {/* Header */}
             <div className="flex items-center gap-2">
-                <span className="p-2 rounded-full bg-gradient-to-r from-indigo-300 to-purple-600 text-white flex items-center justify-center shadow">
+                <span className="p-2 rounded-full bg-gradient-to-r from-indigo-300 to-primary text-white flex items-center justify-center shadow">
                     {icon}
                 </span>
                 <h2 className="text-md font-semibold text-gray-600">{title}</h2>

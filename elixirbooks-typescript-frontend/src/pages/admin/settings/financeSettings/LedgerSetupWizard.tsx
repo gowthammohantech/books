@@ -58,17 +58,17 @@ const StepIndicator = ({ stage }: { stage: Stage }) => {
                         <div
                             className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold border-2 ${
                                 idx < current
-                                    ? "bg-purple-600 border-purple-600 text-white"
+                                    ? "bg-primary border-primary text-white"
                                     : idx === current
-                                    ? "bg-white border-purple-600 text-purple-600"
-                                    : "bg-white border-border text-body"
+                                    ? "bg-white border-primary text-primary"
+                                    : "bg-white border-border text-muted-foreground"
                             }`}
                         >
                             {idx < current ? "✓" : idx + 1}
                         </div>
                         <span
                             className={`mt-1 text-xs font-medium ${
-                                idx <= current ? "text-purple-600" : "text-body"
+                                idx <= current ? "text-primary" : "text-muted-foreground"
                             }`}
                         >
                             {step.label}
@@ -77,7 +77,7 @@ const StepIndicator = ({ stage }: { stage: Stage }) => {
                     {idx < STEPS.length - 1 && (
                         <div
                             className={`h-0.5 w-16 mx-1 mb-4 ${
-                                idx < current ? "bg-purple-600" : "bg-border"
+                                idx < current ? "bg-primary" : "bg-border"
                             }`}
                         />
                     )}
@@ -277,7 +277,7 @@ const LedgerSetupWizard: React.FC = () => {
         return (
             <div className="space-y-4">
                 <PageHeader title="Ledger Setup" />
-                <p className="text-body">Loading...</p>
+                <p className="text-muted-foreground">Loading...</p>
             </div>
         );
     }
@@ -348,14 +348,14 @@ const LedgerSetupWizard: React.FC = () => {
             {/* ---------------------------------------------------------------- configure */}
             {stage === "configure" && (
                 <Card className="max-w-2xl">
-                    <h2 className="text-lg font-semibold text-heading mb-1">Configure Your Ledger</h2>
-                    <p className="text-sm text-body mb-4">
+                    <h2 className="text-lg font-semibold text-foreground mb-1">Configure Your Ledger</h2>
+                    <p className="text-sm text-muted-foreground mb-4">
                         Select a country pack to seed your chart of accounts, then confirm the functional
                         currency, fiscal year start, and go-live date.
                     </p>
 
                     {/* warning callout */}
-                    <div className="mb-5 flex gap-2 rounded-control bg-warning-soft border border-warning px-4 py-3 text-sm text-warning">
+                    <div className="mb-5 flex gap-2 rounded-md bg-warning-soft border border-warning px-4 py-3 text-sm text-warning-strong">
                         <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                         <span>
                             Once you commit the cutover, the country and currency are locked and cannot be
@@ -408,7 +408,7 @@ const LedgerSetupWizard: React.FC = () => {
                                 onChange={(date) => setGoLiveDate(date)}
                                 placeholder="Select go-live date"
                             />
-                            <p className="text-xs text-body -mt-3">
+                            <p className="text-xs text-muted-foreground -mt-3">
                                 Opening balances are captured as of the day before this date; documents
                                 dated on/after it post to the ledger.
                             </p>
@@ -422,7 +422,7 @@ const LedgerSetupWizard: React.FC = () => {
                 <div className="space-y-4 max-w-3xl">
                     <Card>
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg font-semibold text-heading">Cutover Preview</h2>
+                            <h2 className="text-lg font-semibold text-foreground">Cutover Preview</h2>
                             {preview && (
                                 <Badge color={preview.balanced ? "success" : "danger"}>
                                     {preview.balanced ? "✓ Balanced" : "✗ Unbalanced"}
@@ -431,16 +431,16 @@ const LedgerSetupWizard: React.FC = () => {
                         </div>
 
                         {previewLoading && (
-                            <p className="text-sm text-body">Loading preview...</p>
+                            <p className="text-sm text-muted-foreground">Loading preview...</p>
                         )}
 
                         {!previewLoading && preview && (
                             <>
                                 {/* opening balances summary */}
                                 <div className="mb-5">
-                                    <h3 className="text-sm font-semibold text-heading mb-2">
+                                    <h3 className="text-sm font-semibold text-foreground mb-2">
                                         Opening Balances
-                                        <span className="ml-2 text-xs font-normal text-body">
+                                        <span className="ml-2 text-xs font-normal text-muted-foreground">
                                             as of {formatDate(preview.asOf)}
                                         </span>
                                     </h3>
@@ -458,10 +458,10 @@ const LedgerSetupWizard: React.FC = () => {
                                         ].map(({ label, val }) => (
                                             <div
                                                 key={label}
-                                                className="rounded-control border border-border bg-surface px-3 py-2"
+                                                className="rounded-md border border-border bg-muted px-3 py-2"
                                             >
-                                                <p className="text-xs text-body">{label}</p>
-                                                <p className="text-sm font-semibold text-heading">
+                                                <p className="text-xs text-muted-foreground">{label}</p>
+                                                <p className="text-sm font-semibold text-foreground">
                                                     {fmtAmt(String(val), currency)}
                                                 </p>
                                             </div>
@@ -471,13 +471,13 @@ const LedgerSetupWizard: React.FC = () => {
 
                                 {/* draft journal table */}
                                 <div>
-                                    <h3 className="text-sm font-semibold text-heading mb-2">
+                                    <h3 className="text-sm font-semibold text-foreground mb-2">
                                         Draft Opening Journal
                                     </h3>
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-sm border-collapse">
                                             <thead>
-                                                <tr className="bg-surface text-body text-left">
+                                                <tr className="bg-muted text-muted-foreground text-left">
                                                     <th className="px-3 py-2 font-medium">Account Role</th>
                                                     <th className="px-3 py-2 font-medium text-right">Debit</th>
                                                     <th className="px-3 py-2 font-medium text-right">Credit</th>
@@ -487,17 +487,17 @@ const LedgerSetupWizard: React.FC = () => {
                                                 {preview.lines.map((line, idx) => (
                                                     <tr
                                                         key={idx}
-                                                        className="border-t border-border hover:bg-surface"
+                                                        className="border-t border-border hover:bg-muted"
                                                     >
-                                                        <td className="px-3 py-2 text-heading">
+                                                        <td className="px-3 py-2 text-foreground">
                                                             {roleLabel(line.roleKey)}
                                                         </td>
-                                                        <td className="px-3 py-2 text-right text-heading">
+                                                        <td className="px-3 py-2 text-right text-foreground">
                                                             {line.side === "debit"
                                                                 ? fmtAmt(line.amount, currency)
                                                                 : "—"}
                                                         </td>
-                                                        <td className="px-3 py-2 text-right text-heading">
+                                                        <td className="px-3 py-2 text-right text-foreground">
                                                             {line.side === "credit"
                                                                 ? fmtAmt(line.amount, currency)
                                                                 : "—"}
@@ -506,12 +506,12 @@ const LedgerSetupWizard: React.FC = () => {
                                                 ))}
                                             </tbody>
                                             <tfoot>
-                                                <tr className="border-t-2 border-border bg-surface font-semibold">
-                                                    <td className="px-3 py-2 text-heading">Total</td>
-                                                    <td className="px-3 py-2 text-right text-heading">
+                                                <tr className="border-t-2 border-border bg-muted font-semibold">
+                                                    <td className="px-3 py-2 text-foreground">Total</td>
+                                                    <td className="px-3 py-2 text-right text-foreground">
                                                         {fmtAmt(totalDebit.toFixed(2), currency)}
                                                     </td>
-                                                    <td className="px-3 py-2 text-right text-heading">
+                                                    <td className="px-3 py-2 text-right text-foreground">
                                                         {fmtAmt(totalCredit.toFixed(2), currency)}
                                                     </td>
                                                 </tr>
@@ -529,38 +529,38 @@ const LedgerSetupWizard: React.FC = () => {
             {stage === "live" && liveStatus && (
                 <Card className="max-w-xl border-success">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-full bg-success-soft flex items-center justify-center text-success">
+                        <div className="w-10 h-10 rounded-full bg-success-soft flex items-center justify-center text-success-strong">
                             <CheckCircle2 className="w-6 h-6" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-heading">Your ledger is live.</h2>
-                            <p className="text-sm text-body">
+                            <h2 className="text-lg font-semibold text-foreground">Your ledger is live.</h2>
+                            <p className="text-sm text-muted-foreground">
                                 The accounting ledger is active and accepting transactions.
                             </p>
                         </div>
                     </div>
                     <dl className="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                            <dt className="text-body">Country</dt>
-                            <dd className="font-medium text-heading">{liveStatus.countryCode ?? "—"}</dd>
+                            <dt className="text-muted-foreground">Country</dt>
+                            <dd className="font-medium text-foreground">{liveStatus.countryCode ?? "—"}</dd>
                         </div>
                         <div>
-                            <dt className="text-body">Functional Currency</dt>
-                            <dd className="font-medium text-heading">
+                            <dt className="text-muted-foreground">Functional Currency</dt>
+                            <dd className="font-medium text-foreground">
                                 {liveStatus.functionalCurrency ?? "—"}
                             </dd>
                         </div>
                         <div>
-                            <dt className="text-body">Fiscal Year Start</dt>
-                            <dd className="font-medium text-heading">
+                            <dt className="text-muted-foreground">Fiscal Year Start</dt>
+                            <dd className="font-medium text-foreground">
                                 {liveStatus.fiscalYearStartMonth != null
                                     ? MONTH_NAMES[liveStatus.fiscalYearStartMonth - 1]
                                     : "—"}
                             </dd>
                         </div>
                         <div>
-                            <dt className="text-body">Go-Live Date</dt>
-                            <dd className="font-medium text-heading">
+                            <dt className="text-muted-foreground">Go-Live Date</dt>
+                            <dd className="font-medium text-foreground">
                                 {formatDate(liveStatus.goLiveDate)}
                             </dd>
                         </div>
@@ -576,11 +576,11 @@ const LedgerSetupWizard: React.FC = () => {
                 size="md"
             >
                 <div className="space-y-4">
-                    <p className="text-sm text-heading">
+                    <p className="text-sm text-foreground">
                         This posts the opening balances journal entry and makes the ledger live. Country
                         and functional currency will become locked and cannot be changed.
                     </p>
-                    <p className="text-sm font-medium text-heading">Continue?</p>
+                    <p className="text-sm font-medium text-foreground">Continue?</p>
                     <div className="flex justify-end gap-3 pt-2">
                         <Button
                             type="button"

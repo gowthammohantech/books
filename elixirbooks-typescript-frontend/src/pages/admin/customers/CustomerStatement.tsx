@@ -113,7 +113,7 @@ export default function CustomerStatement() {
           <LoaderSpinner />
         </div>
       )}
-      {error && <p className="text-red-600">{error}</p>}
+      {error && <p className="text-destructive">{error}</p>}
 
       {data && (
         <>
@@ -140,9 +140,9 @@ export default function CustomerStatement() {
                 <h2 className="text-base font-semibold mb-2">
                   Statement in {sym.code} ({sym.symbol})
                 </h2>
-                <div className="overflow-x-auto border border-border rounded-control">
+                <div className="overflow-x-auto border border-border rounded-md">
                   <table className="w-full text-sm border-collapse">
-                    <thead className="bg-gray-100 text-xs uppercase text-body">
+                    <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                       <tr>
                         <th className="px-4 py-3 text-left border-b border-border">Date</th>
                         <th className="px-4 py-3 text-left border-b border-border">Reference</th>
@@ -167,7 +167,7 @@ export default function CustomerStatement() {
                               <td className="px-4 py-3">{formatDate(line.date)}</td>
                               <td className="px-4 py-3">{line.reference}</td>
                               <td className="px-4 py-3">{line.description}</td>
-                              <td className="px-4 py-3 text-right">{line.debit > 0 ? <span className="text-danger">{money(line.debit)}</span> : '—'}</td>
+                              <td className="px-4 py-3 text-right">{line.debit > 0 ? <span className="text-destructive">{money(line.debit)}</span> : '—'}</td>
                               <td className="px-4 py-3 text-right">{line.credit > 0 ? <span className="text-success">{money(line.credit)}</span> : '—'}</td>
                               <td className="px-4 py-3 text-right">{money(running)}</td>
                             </tr>

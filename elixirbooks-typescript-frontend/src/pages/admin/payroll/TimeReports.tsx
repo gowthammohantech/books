@@ -133,13 +133,13 @@ const TimeReports: React.FC = () => {
                     <DateInput label="From" value={from} onChange={setFrom} />
                     <DateInput label="To" value={to} onChange={setTo} />
                     <div>
-                        <label className="block text-sm font-medium text-heading pb-1">
+                        <label className="block text-sm font-medium text-foreground pb-1">
                             Project
                         </label>
                         <select
                             value={projectId}
                             onChange={(e) => setProjectId(e.target.value)}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring"
                         >
                             <option value="">All projects</option>
                             {projects.map((p) => (
@@ -150,13 +150,13 @@ const TimeReports: React.FC = () => {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-heading pb-1">
+                        <label className="block text-sm font-medium text-foreground pb-1">
                             Employee
                         </label>
                         <select
                             value={employeeUserId}
                             onChange={(e) => setEmployeeUserId(e.target.value)}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring"
                         >
                             <option value="">All employees</option>
                             {staff.map((s) => (
@@ -167,13 +167,13 @@ const TimeReports: React.FC = () => {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-heading pb-1">
+                        <label className="block text-sm font-medium text-foreground pb-1">
                             Status
                         </label>
                         <select
                             value={status}
                             onChange={(e) => setStatus(e.target.value as TimesheetStatus)}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring"
                         >
                             {STATUS_OPTIONS.map((s) => (
                                 <option key={s} value={s}>
@@ -215,7 +215,7 @@ const TimeReports: React.FC = () => {
                             </div>
                             <div className="bg-white border border-gray-200 rounded-lg p-4">
                                 <div className="text-xs uppercase text-gray-500">Amount</div>
-                                <div className="text-2xl font-semibold text-purple-700 mt-1">
+                                <div className="text-2xl font-semibold text-primary mt-1">
                                     {formatMoney(totals.amount, defaultCurrencyCode)}
                                 </div>
                             </div>
@@ -227,9 +227,9 @@ const TimeReports: React.FC = () => {
                         <div className="px-4 py-3 border-b border-gray-200 text-sm font-semibold text-gray-700">
                             By Project
                         </div>
-                        <div className="overflow-x-auto border border-border rounded-control">
+                        <div className="overflow-x-auto border border-border rounded-md">
                             <table className="w-full text-sm border-collapse">
-                                <thead className="bg-gray-100 text-xs uppercase text-body">
+                                <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                                     <tr>
                                         <th className="px-4 py-3 text-left border-b border-border">Project</th>
                                         <th className="px-4 py-3 text-right border-b border-border">Hours</th>
@@ -266,9 +266,9 @@ const TimeReports: React.FC = () => {
                         <div className="px-4 py-3 border-b border-gray-200 text-sm font-semibold text-gray-700">
                             By Employee
                         </div>
-                        <div className="overflow-x-auto border border-border rounded-control">
+                        <div className="overflow-x-auto border border-border rounded-md">
                             <table className="w-full text-sm border-collapse">
-                                <thead className="bg-gray-100 text-xs uppercase text-body">
+                                <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                                     <tr>
                                         <th className="px-4 py-3 text-left border-b border-border">Employee</th>
                                         <th className="px-4 py-3 text-right border-b border-border">Hours</th>

@@ -103,7 +103,7 @@ const LoginPage: React.FC = () => {
 
         {/* Error */}
         {error && (
-          <div className="p-3 text-sm text-red-700 bg-red-100 border border-red-300 rounded-lg">
+          <div className="p-3 text-sm text-destructive bg-destructive-soft border border-destructive rounded-lg">
             {error}
           </div>
         )}
@@ -126,7 +126,7 @@ const LoginPage: React.FC = () => {
                 setEmail(e.target.value)
               }
               required
-              className="w-full px-3 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+              className="w-full px-3 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
             />
           </div>
 
@@ -147,7 +147,7 @@ const LoginPage: React.FC = () => {
                   setPassword(e.target.value)
                 }
                 required
-                className="w-full px-3 py-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                className="w-full px-3 py-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
               />
               <button
                 type="button"
@@ -170,14 +170,14 @@ const LoginPage: React.FC = () => {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setRememberMe(e.target.checked)
                 }
-                className="h-4 w-4 accent-purple-600 rounded focus:ring-purple-600"
+                className="h-4 w-4 accent-primary rounded focus:ring-ring"
               />
 
               Remember me
             </label>
             <a
               href="#"
-              className="text-sm hidden font-medium text-purple-600 hover:text-purple-600"
+              className="text-sm hidden font-medium text-primary hover:text-primary"
             >
               Forgot Password?
             </a>
@@ -187,7 +187,7 @@ const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2.5 text-white font-semibold bg-purple-600 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-600 disabled:bg-purple-400 disabled:cursor-not-allowed transition-all duration-300"
+            className="w-full py-2.5 text-white font-semibold bg-primary rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:bg-chart-3 disabled:cursor-not-allowed transition-all duration-300"
           >
             {isLoading ? "Logging in..." : "Login"}
           </button>
@@ -195,7 +195,7 @@ const LoginPage: React.FC = () => {
 
         {/* Demo credentials — only shown when VITE_DEMO_MODE=true */}
         {DEMO_MODE && (
-          <div className="p-3 bg-purple-50 border border-purple-200 rounded-md">
+          <div className="p-3 bg-accent border border-accent rounded-md">
             <div className="flex justify-between items-center text-sm text-gray-700">
               <div>
                 <p>
@@ -208,7 +208,7 @@ const LoginPage: React.FC = () => {
               </div>
               <button
                 onClick={handleCopy}
-                className="p-2 text-gray-500 hover:text-purple-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600"
+                className="p-2 text-gray-500 hover:text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 {isCopied ? (
                   <Check className="text-green-600" size={18} />

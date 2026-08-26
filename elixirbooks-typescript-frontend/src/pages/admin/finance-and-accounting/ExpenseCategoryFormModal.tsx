@@ -124,7 +124,7 @@ const ExpenseCategoryFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess,
                     </FormField>
                     {/* Status */}
                     <div className="flex flex-row mt-4 gap-6 items-center">
-                        <label htmlFor="status" className="text-sm font-medium text-heading">Status <span className="text-danger">*</span></label>
+                        <label htmlFor="status" className="text-sm font-medium text-foreground">Status <span className="text-destructive">*</span></label>
                         <Switch name="status" checked={formData.status} onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.checked }))} disabled={false} className="mt-4" />
                     </div>
                     <div className="flex justify-end mt-4">

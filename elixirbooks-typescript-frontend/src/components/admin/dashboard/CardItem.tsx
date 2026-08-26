@@ -10,11 +10,11 @@ interface CardItemProps {
 export function CardItem({ icon, label, value, color }: CardItemProps) {
 
     const colors: Record<string, string> = {
-        purple: "bg-purple-50 border border-purple-300 text-purple-600",
+        purple: "bg-accent border border-accent text-primary",
         green: "bg-green-50 border border-green-300 text-green-700",
         blue: "bg-blue-50 border border-blue-300 text-blue-700",
         yellow: "bg-amber-50 border border-amber-300 text-amber-700",
-        red: "bg-red-50 border border-red-300 text-red-700",
+        red: "bg-destructive-soft border border-destructive text-destructive-strong",
         gray: "bg-gray-50 border border-gray-300 text-gray-700",
         indigo: "bg-indigo-50 border border-indigo-300 text-indigo-700",
     };

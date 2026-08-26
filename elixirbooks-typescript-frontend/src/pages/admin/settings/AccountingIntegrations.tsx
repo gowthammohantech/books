@@ -88,7 +88,7 @@ export default function AccountingIntegrations() {
   return (
     <div className="p-6 max-w-4xl">
       <PageHeader title="Accounting Integrations" />
-      <p className="text-sm text-body mb-6">Connect Elixir Books to Xero or QuickBooks for two-way invoice sync. Provider implementations are stubbed — real OAuth requires registering an app with the provider.</p>
+      <p className="text-sm text-muted-foreground mb-6">Connect Elixir Books to Xero or QuickBooks for two-way invoice sync. Provider implementations are stubbed — real OAuth requires registering an app with the provider.</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {(['XERO', 'QUICKBOOKS'] as const).map((kind) => {
@@ -100,7 +100,7 @@ export default function AccountingIntegrations() {
               padded={false}
               header={
                 <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-                  <h2 className="text-lg font-semibold text-heading">{kind === 'XERO' ? 'Xero' : 'QuickBooks Online'}</h2>
+                  <h2 className="text-lg font-semibold text-foreground">{kind === 'XERO' ? 'Xero' : 'QuickBooks Online'}</h2>
                   <Badge color={enabled ? 'success' : 'gray'}>
                     {enabled ? 'Connected' : 'Disconnected'}
                   </Badge>
@@ -124,9 +124,9 @@ export default function AccountingIntegrations() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <p className="text-xs text-body">Last synced: {status?.lastSyncedAt ? formatDateTime(status.lastSyncedAt) : 'Never'}</p>
-                    <p className="text-xs text-body">Status: {status?.syncStatus ?? '—'}</p>
-                    {status?.errorMessage && <p className="text-xs text-danger">Error: {status.errorMessage}</p>}
+                    <p className="text-xs text-muted-foreground">Last synced: {status?.lastSyncedAt ? formatDateTime(status.lastSyncedAt) : 'Never'}</p>
+                    <p className="text-xs text-muted-foreground">Status: {status?.syncStatus ?? '—'}</p>
+                    {status?.errorMessage && <p className="text-xs text-destructive">Error: {status.errorMessage}</p>}
                     <div className="flex gap-2">
                       <Button variant="primary" onClick={() => handleSync(kind)}>Sync Now</Button>
                       <Button variant="white" onClick={() => handleDisconnect(kind)}>Disconnect</Button>

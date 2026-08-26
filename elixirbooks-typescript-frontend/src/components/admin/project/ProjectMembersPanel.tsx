@@ -262,7 +262,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                                 value={billingRate}
                                 onChange={(e) => setBillingRate(e.target.value)}
                                 placeholder="0.00"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
                             />
                         </div>
                         <div>
@@ -296,7 +296,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                             <select
                                 value={newEmployeeId}
                                 onChange={(e) => setNewEmployeeId(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
                             >
                                 <option value="">Select employee…</option>
                                 {staffOptions.map((s) => (
@@ -309,7 +309,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                             <select
                                 value={newRole}
                                 onChange={(e) => setNewRole(e.target.value as ProjectMemberRole)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
                             >
                                 {ROLE_OPTIONS.map((r) => (
                                     <option key={r} value={r}>{r}</option>
@@ -325,7 +325,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                                 value={newRate}
                                 onChange={(e) => setNewRate(e.target.value)}
                                 placeholder="Default"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
                             />
                         </div>
                         <div className="md:col-span-2">
@@ -372,7 +372,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                                                         value={m.role}
                                                         disabled={rowBusyId === m.id}
                                                         onChange={(e) => patchMember(m, { role: e.target.value as ProjectMemberRole })}
-                                                        className="px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+                                                        className="px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
                                                     >
                                                         {ROLE_OPTIONS.map((r) => (
                                                             <option key={r} value={r}>{r}</option>
@@ -397,7 +397,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                                                         }
                                                         if (next !== m.billingRate) patchMember(m, { billingRate: next });
                                                     }}
-                                                    className="w-24 px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                                                    className="w-24 px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
                                                 />
                                                 {m.billingRate != null && (
                                                     <div className="text-xs text-gray-400 mt-1">
@@ -411,7 +411,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                                                     checked={m.isActive}
                                                     disabled={rowBusyId === m.id}
                                                     onChange={(e) => patchMember(m, { isActive: e.target.checked })}
-                                                    className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-600"
+                                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-ring"
                                                 />
                                             </td>
                                             <td className="py-2 pl-3 text-right">

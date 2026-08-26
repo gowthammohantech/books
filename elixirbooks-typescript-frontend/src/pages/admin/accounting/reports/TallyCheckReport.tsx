@@ -127,7 +127,7 @@ export default function TallyCheckReport() {
           <LoaderSpinner />
         </div>
       )}
-      {error && <p className="text-danger">{error}</p>}
+      {error && <p className="text-destructive">{error}</p>}
 
       {data && (
         <>
@@ -135,8 +135,8 @@ export default function TallyCheckReport() {
           <div
             className={`mb-6 p-4 rounded-lg border text-center font-bold text-lg ${
               data.overallTied
-                ? 'bg-success-soft border-success text-success'
-                : 'bg-danger-soft border-danger text-danger'
+                ? 'bg-success-soft border-success text-success-strong'
+                : 'bg-destructive-soft border-destructive text-destructive-strong'
             }`}
           >
             {data.overallTied
@@ -147,9 +147,9 @@ export default function TallyCheckReport() {
           {/* Trial Balance */}
           <section className="mb-6">
             <h2 className="text-lg font-semibold mb-2">Trial Balance</h2>
-            <div className="overflow-x-auto border border-border rounded-control">
+            <div className="overflow-x-auto border border-border rounded-md">
               <table className="w-full text-sm border-collapse">
-                <thead className="bg-gray-100 text-xs uppercase text-body">
+                <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3 text-left border-b border-border">Metric</th>
                     <th className="px-4 py-3 text-right border-b border-border">Amount</th>
@@ -176,9 +176,9 @@ export default function TallyCheckReport() {
           {/* AR / AP Reconciliation */}
           <section className="mb-6">
             <h2 className="text-lg font-semibold mb-2">AR / AP Control vs Sub-Ledger</h2>
-            <div className="overflow-x-auto border border-border rounded-control">
+            <div className="overflow-x-auto border border-border rounded-md">
               <table className="w-full text-sm border-collapse">
-                <thead className="bg-gray-100 text-xs uppercase text-body">
+                <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3 text-left border-b border-border">Control Account</th>
                     <th className="px-4 py-3 text-right border-b border-border">GL Balance</th>
@@ -188,22 +188,22 @@ export default function TallyCheckReport() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className={`border-b border-border ${data.ar.tied ? '' : 'bg-danger-soft'}`}>
+                  <tr className={`border-b border-border ${data.ar.tied ? '' : 'bg-destructive-soft'}`}>
                     <td className="px-4 py-3 font-medium">Accounts Receivable (AR)</td>
                     <td className="px-4 py-3 text-right">{fmt(data.ar.glControl)}</td>
                     <td className="px-4 py-3 text-right">{fmt(data.ar.subledgerOpenInvoices)}</td>
-                    <td className={`px-4 py-3 text-right ${Math.abs(data.ar.diff) >= 0.01 ? 'text-danger font-semibold' : ''}`}>
+                    <td className={`px-4 py-3 text-right ${Math.abs(data.ar.diff) >= 0.01 ? 'text-destructive font-semibold' : ''}`}>
                       {fmt(data.ar.diff)}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <TiedBadge ok={data.ar.tied} />
                     </td>
                   </tr>
-                  <tr className={`border-b border-border ${data.ap.tied ? '' : 'bg-danger-soft'}`}>
+                  <tr className={`border-b border-border ${data.ap.tied ? '' : 'bg-destructive-soft'}`}>
                     <td className="px-4 py-3 font-medium">Accounts Payable (AP)</td>
                     <td className="px-4 py-3 text-right">{fmt(data.ap.glControl)}</td>
                     <td className="px-4 py-3 text-right">{fmt(data.ap.subledgerOpenBills)}</td>
-                    <td className={`px-4 py-3 text-right ${Math.abs(data.ap.diff) >= 0.01 ? 'text-danger font-semibold' : ''}`}>
+                    <td className={`px-4 py-3 text-right ${Math.abs(data.ap.diff) >= 0.01 ? 'text-destructive font-semibold' : ''}`}>
                       {fmt(data.ap.diff)}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -218,9 +218,9 @@ export default function TallyCheckReport() {
           {/* Bank Reconciliation */}
           <section className="mb-6">
             <h2 className="text-lg font-semibold mb-2">Bank Account Reconciliation</h2>
-            <div className="overflow-x-auto border border-border rounded-control">
+            <div className="overflow-x-auto border border-border rounded-md">
               <table className="w-full text-sm border-collapse">
-                <thead className="bg-gray-100 text-xs uppercase text-body">
+                <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3 text-left border-b border-border">Account</th>
                     <th className="px-4 py-3 text-right border-b border-border">GL Balance</th>
@@ -240,10 +240,10 @@ export default function TallyCheckReport() {
                       const rowDiverges = !b.currentVsExplainedTied ||
                         (b.glMatchAvailable && b.tied === false);
                       return (
-                        <tr key={b.bankAccountId} className={`border-b border-border ${rowDiverges ? 'bg-danger-soft' : ''}`}>
+                        <tr key={b.bankAccountId} className={`border-b border-border ${rowDiverges ? 'bg-destructive-soft' : ''}`}>
                           <td className="px-4 py-3 font-medium">{b.name}</td>
                           <td className="px-4 py-3 text-right">
-                            {b.glMatchAvailable ? fmt(b.glBalance) : <span className="text-body">—</span>}
+                            {b.glMatchAvailable ? fmt(b.glBalance) : <span className="text-muted-foreground">—</span>}
                           </td>
                           <td className="px-4 py-3 text-right">{fmt(b.currentBalance)}</td>
                           <td className="px-4 py-3 text-right">{fmt(b.sumExplained)}</td>
@@ -268,7 +268,7 @@ export default function TallyCheckReport() {
               </table>
             </div>
             {data.bank.length > 0 && !data.bankGlFullyMatched && (
-              <p className="mt-2 text-xs text-body">
+              <p className="mt-2 text-xs text-muted-foreground">
                 * Per-account GL matching is not available in v1 (no Account FK on BankDetail).
                 The combined GL BANK+CASH balance is shown on the first account only.
                 All other accounts show GL N/A — this does not mean they are reconciled.

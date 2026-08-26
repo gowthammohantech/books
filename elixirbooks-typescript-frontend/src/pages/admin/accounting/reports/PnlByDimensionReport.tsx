@@ -144,8 +144,8 @@ export default function PnlByDimensionReport() {
           onClick={() => handleDimensionChange('cost-center')}
           className={`px-4 py-1.5 text-sm rounded-full border transition-colors ${
             dimension === 'cost-center'
-              ? 'bg-purple-600 text-white border-purple-600'
-              : 'text-gray-600 border-gray-300 hover:border-purple-400'
+              ? 'bg-primary text-white border-primary'
+              : 'text-gray-600 border-gray-300 hover:border-primary'
           }`}
         >
           Cost Center
@@ -155,8 +155,8 @@ export default function PnlByDimensionReport() {
           onClick={() => handleDimensionChange('project')}
           className={`px-4 py-1.5 text-sm rounded-full border transition-colors ${
             dimension === 'project'
-              ? 'bg-purple-600 text-white border-purple-600'
-              : 'text-gray-600 border-gray-300 hover:border-purple-400'
+              ? 'bg-primary text-white border-primary'
+              : 'text-gray-600 border-gray-300 hover:border-primary'
           }`}
         >
           Project
@@ -190,7 +190,7 @@ export default function PnlByDimensionReport() {
           type="button"
           onClick={load}
           disabled={loading || !selected}
-          className="px-3 py-1 text-sm bg-purple-600 text-white rounded disabled:opacity-50"
+          className="px-3 py-1 text-sm bg-primary text-white rounded disabled:opacity-50"
         >
           Run Report
         </button>

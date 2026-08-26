@@ -26,8 +26,8 @@ const InputField: React.FC<InputFieldProps> = ({
 }) => {
   return (
     <div className={className}>
-      <label htmlFor={id} className="block text-sm font-medium text-heading">
-        {label} {required && <span className="text-danger">*</span>}
+      <label htmlFor={id} className="block text-sm font-medium text-foreground">
+        {label} {required && <span className="text-destructive">*</span>}
       </label>
       <input
         type={type}
@@ -35,11 +35,11 @@ const InputField: React.FC<InputFieldProps> = ({
         name={id}
         value={value}
         placeholder={placeholder}
-        className="mt-1 block w-full px-3 py-2 bg-surface border border-border rounded-control text-heading placeholder:text-body focus:outline-none focus:border-purple-600 sm:text-sm"
+        className="mt-1 block w-full px-3 py-2 bg-muted border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary sm:text-sm"
         onChange={onChange}
         maxLength={maxLength}
       />
-      {error && <p className="mt-1 text-sm text-danger">{error}</p>}
+      {error && <p className="mt-1 text-sm text-destructive">{error}</p>}
     </div>
   );
 };

@@ -81,8 +81,8 @@ function PaymentLinkMethodsSection() {
 
   return (
     <div className="mt-10">
-      <h2 className="text-lg font-semibold text-heading mb-1">Payment links &amp; buttons</h2>
-      <p className="text-sm text-body mb-4">
+      <h2 className="text-lg font-semibold text-foreground mb-1">Payment links &amp; buttons</h2>
+      <p className="text-sm text-muted-foreground mb-4">
         Add link-based payment methods (Wise, Revolut, PayPal, a Stripe Payment Link, …). These appear
         as checkboxes on each invoice; the per-invoice URL you enter there becomes a "Pay with" button
         on the invoice's public view link. No API keys needed.
@@ -91,10 +91,10 @@ function PaymentLinkMethodsSection() {
       {/* Existing methods */}
       <div className="space-y-2 mb-4">
         {methods.length === 0 && (
-          <p className="text-sm text-body">No link-based methods yet.</p>
+          <p className="text-sm text-muted-foreground">No link-based methods yet.</p>
         )}
         {methods.map((m) => (
-          <div key={m.id} className="flex flex-wrap items-center gap-2 border border-border rounded-control p-2">
+          <div key={m.id} className="flex flex-wrap items-center gap-2 border border-border rounded-md p-2">
             <FormField
               defaultValue={m.name}
               onBlur={(e) => e.target.value.trim() !== m.name && patch(m.id, { name: e.target.value.trim() })}
@@ -107,7 +107,7 @@ function PaymentLinkMethodsSection() {
               containerClassName="flex-1 min-w-[220px]"
               placeholder="Default URL (optional)"
             />
-            <label className="flex items-center gap-1 text-sm text-body">
+            <label className="flex items-center gap-1 text-sm text-muted-foreground">
               <input
                 type="checkbox"
                 defaultChecked={m.enabled}
@@ -119,7 +119,7 @@ function PaymentLinkMethodsSection() {
               type="button"
               variant="ghost"
               onClick={() => remove(m.id)}
-              className="text-danger hover:bg-danger-soft p-1.5"
+              className="text-destructive hover:bg-destructive-soft p-1.5"
               title="Delete"
             >
               <Trash2 size={16} />
@@ -177,7 +177,7 @@ export default function PaymentGateways() {
   return (
     <div className="p-6">
       <PageHeader title="Payment Gateways" />
-      <p className="text-sm text-body mb-6">
+      <p className="text-sm text-muted-foreground mb-6">
         Configure how you accept payments.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -190,7 +190,7 @@ export default function PaymentGateways() {
               padded={false}
               header={
                 <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-                  <h2 className="text-lg font-semibold text-heading">{g.name}</h2>
+                  <h2 className="text-lg font-semibold text-foreground">{g.name}</h2>
                   <Badge color={enabled ? 'success' : 'gray'}>
                     {enabled ? 'Enabled' : 'Disabled'}
                   </Badge>
@@ -198,14 +198,14 @@ export default function PaymentGateways() {
               }
             >
               <div className="p-5">
-                <p className="text-xs text-body mb-3">{g.note}</p>
+                <p className="text-xs text-muted-foreground mb-3">{g.note}</p>
                 {g.kind === 'RAZORPAY' && (
-                  <Link to="/admin/settings/payment-gateways/razorpay" className="text-sm text-purple-700 underline">
+                  <Link to="/admin/settings/payment-gateways/razorpay" className="text-sm text-primary underline">
                     Configure
                   </Link>
                 )}
                 {g.kind === 'STRIPE' && (
-                  <Link to="/admin/settings/payment-gateways/stripe" className="text-sm text-purple-700 underline">
+                  <Link to="/admin/settings/payment-gateways/stripe" className="text-sm text-primary underline">
                     Configure
                   </Link>
                 )}
@@ -214,7 +214,7 @@ export default function PaymentGateways() {
                     type="button"
                     variant="ghost"
                     disabled
-                    className="text-sm text-purple-700 underline disabled:opacity-50 p-0"
+                    className="text-sm text-primary underline disabled:opacity-50 p-0"
                   >
                     Always available
                   </Button>

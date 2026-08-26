@@ -133,14 +133,14 @@ const CreateUnitModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Unit Name Input */}
                 <div>
-                    <label htmlFor="unit_name" className="block text-sm font-medium text-red-500  mb-1">Unit Name *</label>
-                    <input id="unit_name" name="unit_name" type="text" maxLength={50} value={formData.unit_name || ""} onChange={handleChange} placeholder="Enter Brand Name" className="w-full bg-white  text-gray-950  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-purple-600 focus:border-purple-600" />
-                    {formErrors.unit_name && <p className="text-red-500 text-xs mt-1">{formErrors.unit_name}</p>}
+                    <label htmlFor="unit_name" className="block text-sm font-medium text-destructive  mb-1">Unit Name *</label>
+                    <input id="unit_name" name="unit_name" type="text" maxLength={50} value={formData.unit_name || ""} onChange={handleChange} placeholder="Enter Brand Name" className="w-full bg-white  text-gray-950  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-ring focus:border-primary" />
+                    {formErrors.unit_name && <p className="text-destructive text-xs mt-1">{formErrors.unit_name}</p>}
                 </div>
                 <div>
-                    <label htmlFor="short_name" className="block text-sm font-medium text-red-500  mb-1">Short Name *</label>
-                    <input id="short_name" name="short_name" type="text" maxLength={15} value={formData.short_name || ""} onChange={handleChange} placeholder="Enter Brand Name" className="w-full bg-white  text-gray-950  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-purple-600 focus:border-purple-600" />
-                    {formErrors.short_name && <p className="text-red-500 text-xs mt-1">{formErrors.short_name}</p>}
+                    <label htmlFor="short_name" className="block text-sm font-medium text-destructive  mb-1">Short Name *</label>
+                    <input id="short_name" name="short_name" type="text" maxLength={15} value={formData.short_name || ""} onChange={handleChange} placeholder="Enter Brand Name" className="w-full bg-white  text-gray-950  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-ring focus:border-primary" />
+                    {formErrors.short_name && <p className="text-destructive text-xs mt-1">{formErrors.short_name}</p>}
                 </div>
                 {/* Custom Fields */}
                 <DynamicCustomFields

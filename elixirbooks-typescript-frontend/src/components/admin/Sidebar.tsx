@@ -879,14 +879,14 @@ const navItems: NavItemType[] = [
 // --- Helper Functions for Link Styling ---
 const getLinkClasses = ({ isActive }: { isActive: boolean }) =>
     `flex items-center p-2 my-1 text-sm font-medium rounded-lg transition-colors duration-200 relative ${isActive
-        ? "bg-purple-100 text-purple-600 border-l-4 border-purple-600"
-        : "text-gray-600 hover:bg-gray-100 border-l-4 border-transparent"
+        ? "bg-sidebar-accent text-sidebar-primary border-l-4 border-sidebar-primary"
+        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground border-l-4 border-transparent"
     }`;
 
 const getSubLinkClasses = ({ isActive }: { isActive: boolean }) =>
     `block py-2 px-2 text-sm font-medium rounded-md transition-colors duration-200 relative ${isActive
-        ? "bg-purple-100 text-purple-600 border-l-4 border-purple-600"
-        : "text-gray-600 hover:bg-gray-100 border-l-4 border-transparent"
+        ? "bg-sidebar-accent text-sidebar-primary border-l-4 border-sidebar-primary"
+        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground border-l-4 border-transparent"
     }`;
 
 // --- Permission Check Helpers ---
@@ -952,7 +952,7 @@ const NavItem = ({
                 <Link
                     to={addPath}
                     aria-label={`Add new ${title}`}
-                    className="absolute right-0 top-0 h-full w-8 flex items-center justify-center bg-purple-600 text-white rounded-r-lg opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                    className="absolute right-0 top-0 h-full w-8 flex items-center justify-center bg-sidebar-primary text-sidebar-primary-foreground rounded-r-lg opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                 >
                     <Plus size={18} />
                 </Link>
@@ -982,7 +982,7 @@ const SubNavLinkItem = ({
                 <Link
                     to={addPath}
                     aria-label={`Add new ${title}`}
-                    className="absolute right-0 top-0 h-full w-8 flex items-center justify-center bg-purple-600 text-white rounded-r-lg opacity-0 group-hover/subitem:opacity-100 focus-visible:opacity-100 transition-opacity"
+                    className="absolute right-0 top-0 h-full w-8 flex items-center justify-center bg-sidebar-primary text-sidebar-primary-foreground rounded-r-lg opacity-0 group-hover/subitem:opacity-100 focus-visible:opacity-100 transition-opacity"
                 >
                     <Plus size={18} />
                 </Link>
@@ -1022,7 +1022,7 @@ const CollapsibleNavItem = ({
     const activeClass =
         isChildActive && isSidebarOpen
             ? "bg-gray-100 text-gray-800"
-            : "text-gray-600 hover:bg-gray-100";
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
 
     return (
         <div className="relative group">
@@ -1053,7 +1053,7 @@ const CollapsibleNavItem = ({
                 <Link
                     to={addPath}
                     aria-label={`Add new ${title}`}
-                    className="absolute right-0 top-0 h-full w-8 flex items-center justify-center bg-purple-600 text-white rounded-r-lg opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                    className="absolute right-0 top-0 h-full w-8 flex items-center justify-center bg-sidebar-primary text-sidebar-primary-foreground rounded-r-lg opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                 >
                     <Plus size={18} />
                 </Link>
@@ -1249,7 +1249,7 @@ const Sidebar = ({ isOpen }: { isOpen: boolean }) => {
 
     return (
         <aside
-            className={`bg-gray-50 text-gray-950 flex flex-col h-screen transition-all duration-300 ease-in-out z-0 border-r border-gray-200 ${isOpen ? "w-60" : "w-20"
+            className={`bg-sidebar text-sidebar-foreground flex flex-col h-screen transition-all duration-300 ease-in-out z-0 border-r border-sidebar-border ${isOpen ? "w-60" : "w-20"
                 }`}
         >
             <div className="p-4 flex items-center h-12">
@@ -1280,7 +1280,7 @@ const Sidebar = ({ isOpen }: { isOpen: boolean }) => {
                                 <p
                                     key={index}
                                     className={`${index > 0 ? "mt-4 pt-2" : ""
-                                        } mb-1 text-xs font-medium text-gray-400 uppercase ${index > 0 ? "border-t border-gray-200" : ""
+                                        } mb-1 text-xs font-medium text-gray-400 uppercase ${index > 0 ? "border-t border-sidebar-border" : ""
                                         } tracking-wider transition-opacity duration-300 ease-in-out ${isOpen ? "opacity-100" : "hidden"
                                         }`}
                                 >

@@ -15,7 +15,7 @@ export interface CardProps
   footer?: ReactNode;
 }
 
-const BASE = "bg-white border border-border rounded-card shadow-card";
+const BASE = "bg-card border border-border rounded-xl shadow-sm";
 
 const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
   {
@@ -40,7 +40,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
         (header ?? (
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">
             {title ? (
-              <div className="text-base font-semibold text-heading">
+              <div className="text-base font-semibold text-foreground">
                 {title}
               </div>
             ) : (

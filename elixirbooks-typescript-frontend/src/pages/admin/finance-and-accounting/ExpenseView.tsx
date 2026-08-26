@@ -44,8 +44,8 @@ const isPdf = (url: string) => /\.pdf(\?|$)/i.test(url);
 
 const DetailRow: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
     <div className="space-y-1">
-        <div className="text-xs font-semibold uppercase tracking-wide text-body">{label}</div>
-        <div className="text-sm text-heading">{children}</div>
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+        <div className="text-sm text-foreground">{children}</div>
     </div>
 );
 
@@ -108,7 +108,7 @@ const ExpenseView: React.FC = () => {
                     </Button>
                 </PageHeader>
                 <Card>
-                    <div className="text-center text-body py-10 font-medium">
+                    <div className="text-center text-muted-foreground py-10 font-medium">
                         Expense not found.
                     </div>
                 </Card>
@@ -136,10 +136,10 @@ const ExpenseView: React.FC = () => {
                 <Card title="Expense Details">
                     <div className="flex items-end justify-between flex-wrap gap-4 mb-6">
                         <div>
-                            <div className="text-xs font-semibold uppercase tracking-wide text-body">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                 Amount
                             </div>
-                            <div className="text-3xl font-bold text-heading">
+                            <div className="text-3xl font-bold text-foreground">
                                 {formatMoney(Number(expense.amount ?? 0), expense.currencyCode ?? undefined)}
                             </div>
                         </div>
@@ -160,7 +160,7 @@ const ExpenseView: React.FC = () => {
                                 <>
                                     {expense.paymentMode.name}
                                     {expense.bank && (
-                                        <div className="text-xs text-body mt-0.5">
+                                        <div className="text-xs text-muted-foreground mt-0.5">
                                             {dash(expense.bank.bankName)}
                                             {expense.bank.accountNumber
                                                 ? ` · ${expense.bank.accountNumber}`
@@ -178,10 +178,10 @@ const ExpenseView: React.FC = () => {
                     </div>
 
                     <div className="mt-6 space-y-1">
-                        <div className="text-xs font-semibold uppercase tracking-wide text-body">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Description
                         </div>
-                        <div className="text-sm text-heading whitespace-pre-wrap">
+                        <div className="text-sm text-foreground whitespace-pre-wrap">
                             {dash(expense.description)}
                         </div>
                     </div>
@@ -190,19 +190,19 @@ const ExpenseView: React.FC = () => {
                 {/* Attachment */}
                 <Card title="Attachment">
                     {!attachment ? (
-                        <div className="text-sm text-body">No attachment</div>
+                        <div className="text-sm text-muted-foreground">No attachment</div>
                     ) : isImage(attachment) ? (
                         <div className="space-y-3">
                             <img
                                 src={attachment}
                                 alt="Expense attachment"
-                                className="max-w-full sm:max-w-md rounded-control border border-border"
+                                className="max-w-full sm:max-w-md rounded-md border border-border"
                             />
                             <a
                                 href={attachment}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block text-sm font-medium text-indigo-600 hover:underline"
+                                className="inline-block text-sm font-medium text-primary hover:underline"
                             >
                                 Open in new tab / Download
                             </a>
@@ -212,13 +212,13 @@ const ExpenseView: React.FC = () => {
                             <iframe
                                 src={attachment}
                                 title="Expense attachment"
-                                className="w-full h-[600px] rounded-control border border-border"
+                                className="w-full h-[600px] rounded-md border border-border"
                             />
                             <a
                                 href={attachment}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block text-sm font-medium text-indigo-600 hover:underline"
+                                className="inline-block text-sm font-medium text-primary hover:underline"
                             >
                                 Download
                             </a>

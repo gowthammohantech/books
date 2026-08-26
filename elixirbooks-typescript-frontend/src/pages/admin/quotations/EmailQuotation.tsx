@@ -182,9 +182,9 @@ const EmailQuotation: React.FC = () => {
             const totalAmount = formatDocAmount(quotationDetails.TotalAmount ?? 0, quotationDetails.currencyCode);
             const companyName = systemSettings?.company.companyName ?? "";
             const linkButton = viewQuotationLink
-                ? `<p style="text-align:center;margin:0 0 12px 0"><a href="${viewQuotationLink}" style="display:inline-block;padding:10px 20px;background-color:#4191f2;color:#fff;text-decoration:none;border-radius:4px;">View Quotation</a></p>`
+                ? `<p style="text-align:center;margin:0 0 12px 0"><a href="${viewQuotationLink}" style="display:inline-block;padding:10px 20px;background-color:#3f5ec2;color:#fff;text-decoration:none;border-radius:4px;">View Quotation</a></p>`
                 : "";
-            const html = `<h2 style="font-family:Arial,sans-serif;background-color:#4191f2;font-size:24px;text-align:center;padding:8px;color:#fff;margin:0 0 12px 0">Quotation #${quotationNo}</h2><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;">Dear ${customerName},</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;">We appreciate your interest in our services. Please find below the details of your quotation for your review.</p><br><p style="font-family:Arial,sans-serif;font-size:14px;text-transform:uppercase;color:#555;text-align:center;margin:0 0 4px 0">Total Amount</p><p style="font-family:Arial,sans-serif;font-size:32px;font-weight:700;color:#d61915;text-align:center;margin:0 0 12px 0">${totalAmount}</p>${linkButton}<p style="font-family:Arial,sans-serif;font-size:16px;color:#333;"><strong>Quotation Date:</strong> ${quotationDate}</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;">Should you have any questions or require adjustments, please don’t hesitate to reach out. We look forward to working with you.</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;">Warm regards,<br/>The ${companyName} Team</p>`;
+            const html = `<h2 style="font-family:Arial,sans-serif;background-color:#3f5ec2;font-size:24px;text-align:center;padding:8px;color:#fff;margin:0 0 12px 0">Quotation #${quotationNo}</h2><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;">Dear ${customerName},</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;">We appreciate your interest in our services. Please find below the details of your quotation for your review.</p><br><p style="font-family:Arial,sans-serif;font-size:14px;text-transform:uppercase;color:#555;text-align:center;margin:0 0 4px 0">Total Amount</p><p style="font-family:Arial,sans-serif;font-size:32px;font-weight:700;color:#df2225;text-align:center;margin:0 0 12px 0">${totalAmount}</p>${linkButton}<p style="font-family:Arial,sans-serif;font-size:16px;color:#333;"><strong>Quotation Date:</strong> ${quotationDate}</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;">Should you have any questions or require adjustments, please don’t hesitate to reach out. We look forward to working with you.</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;">Warm regards,<br/>The ${companyName} Team</p>`;
             return { subject: `Quotation #${quotationNo} from ${companyName || "Company"}`, html };
         };
 
@@ -271,7 +271,7 @@ const EmailQuotation: React.FC = () => {
                 </p>
                 <button
                     onClick={() => navigate("/admin/settings/email-settings")}
-                    className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center gap-2"
+                    className="px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/90 flex items-center gap-2"
                 >
                     <Settings size={18} /> Configure Email Settings
                 </button>
@@ -294,7 +294,7 @@ const EmailQuotation: React.FC = () => {
                 <button
                     type="submit"
                     form="email-quotation-form"
-                    className="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md shadow-sm hover:bg-gray-800 focus:outline-none flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary border border-transparent rounded-md shadow-sm hover:bg-gray-800 focus:outline-none flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                     disabled={isSubmitting}
                 >
                     {isSubmitting ? (
@@ -310,7 +310,7 @@ const EmailQuotation: React.FC = () => {
             </PageHeader>
 
             <form id="email-quotation-form" onSubmit={handleSubmit} className="space-y-4">
-                <div className="border border-border rounded-card bg-white shadow-card">
+                <div className="border border-border rounded-xl bg-white shadow-sm">
                     {/* From */}
                     <div className="p-4 flex items-center gap-4">
                         <label className="w-32 text-gray-600 font-medium">From</label>
@@ -341,7 +341,7 @@ const EmailQuotation: React.FC = () => {
                             type="text"
                             value={formData.subject}
                             onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                            className="flex-1 border border-gray-200 rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600"
+                            className="flex-1 border border-gray-200 rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary"
                         />
                     </div>
 

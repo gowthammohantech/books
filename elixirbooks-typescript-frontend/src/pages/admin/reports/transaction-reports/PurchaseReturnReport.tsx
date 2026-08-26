@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
 import { PageHeader } from "@/context/PageHeaderContext";
+import { themeColor } from "@lib/designTokens";
 interface PurchaseReturnReportResponse {
     success: boolean;
     message: string;
@@ -139,9 +140,9 @@ const PurchaseReturnReport: React.FC = () => {
         <div className="space-y-4">
             <PageHeader title="Purchase Return Report" />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <ChartCard title="This Month Return" value={totalDisplay(chartData?.TotalDebit.currentMonthAmount || 0)} color="#7539FF" />
-                <ChartCard title="Last Month Return" value={totalDisplay(chartData?.TotalDebit.previousMonthAmount || 0)} color="#27AE60" />
-                <ChartCard title="Total Return" value={totalDisplay(chartData?.TotalDebit.allMonthAmount || 0)} color="#E2B93B" />
+                <ChartCard title="This Month Return" value={totalDisplay(chartData?.TotalDebit.currentMonthAmount || 0)} color={themeColor("primary")} />
+                <ChartCard title="Last Month Return" value={totalDisplay(chartData?.TotalDebit.previousMonthAmount || 0)} color={themeColor("success")} />
+                <ChartCard title="Total Return" value={totalDisplay(chartData?.TotalDebit.allMonthAmount || 0)} color={themeColor("warning")} />
             </div>
             {/* Filters*/}
             <div className="flex items-center gap-2 w-full">
@@ -149,20 +150,20 @@ const PurchaseReturnReport: React.FC = () => {
                     <input type="text" name="search" id="search" placeholder="Search..."
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
-                        className="border border-gray-300 rounded-md px-4 py-2  text-gray-950  focus:outline-none focus:ring-2 focus:ring-purple-600" />
+                        className="border border-gray-300 rounded-md px-4 py-2  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring" />
                 </div>
                 <div>
                     <DateRangePicker
                         value={dateRange}
                         onChange={handleRangeInputChange}
                     />
-                    {dateRangeError && <p className="text-red-500 text-sm">{dateRangeError}</p>}
+                    {dateRangeError && <p className="text-destructive text-sm">{dateRangeError}</p>}
                 </div>
                 {/* clear filters */}
                 <div>
                     <button
                         onClick={clearAllFilters}
-                        className="border border-gray-300 rounded-md px-4 py-2  text-gray-950  focus:outline-none focus:ring-2 focus:ring-purple-600 cursor-pointer"
+                        className="border border-gray-300 rounded-md px-4 py-2  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
                     >
                         Clear Filters
                     </button>
@@ -171,7 +172,7 @@ const PurchaseReturnReport: React.FC = () => {
                     <select
                         value={limit}
                         onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                        className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                        className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     >
                         {[10, 25, 50].map((num) => (
                             <option className="text-gray-950 " key={num} value={num}>{num} / page</option>

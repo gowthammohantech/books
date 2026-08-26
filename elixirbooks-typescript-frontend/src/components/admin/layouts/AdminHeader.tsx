@@ -8,9 +8,11 @@ import { assetUrl } from '@utils/assetUrl';
 import { usePageHeader } from '../../../context/PageHeaderContext';
 interface HeaderProps {
     toggleSidebar: () => void;
+    /** Drives the toggle button's accessible name and aria-expanded state. */
+    isSidebarOpen?: boolean;
 }
 
-const AdminHeader = ({ toggleSidebar }: HeaderProps) => {
+const AdminHeader = ({ toggleSidebar, isSidebarOpen = true }: HeaderProps) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
     const { user } = useSelector((state: RootState) => state.auth);
     // Page-supplied title + action buttons (null when no page sets them).
@@ -20,9 +22,14 @@ const AdminHeader = ({ toggleSidebar }: HeaderProps) => {
         dispatch(logout());
     }
     return (
-        <header className="flex items-center justify-between px-4 py-1 bg-white-500 shadow relative z-30">
+        <header className="flex items-center justify-between px-4 py-1 bg-card shadow relative z-30">
             <div className="flex items-center min-w-0 gap-3">
-                <button onClick={toggleSidebar} className="text-gray-500 focus:outline-none cursor-pointer shrink-0">
+                <button
+                    onClick={toggleSidebar}
+                    aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+                    aria-expanded={isSidebarOpen}
+                    className="text-gray-500 focus:outline-none cursor-pointer shrink-0"
+                >
                     <Menu className="w-6 h-6" />
                 </button>
                 {pageTitle && (
@@ -42,13 +49,14 @@ const AdminHeader = ({ toggleSidebar }: HeaderProps) => {
                     <button
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                         className="flex items-center space-x-2 focus:outline-none  rounded-full p-1 cursor-pointer"
+                        aria-label="Account menu"
                         aria-expanded={isDropdownOpen}
                         aria-haspopup="true"
                     >
                         <div className={
                             user?.profileImageUrl ?
-                                `w-10 h-10 border-2 border-purple-600 text-white rounded-full flex items-center justify-center text-lg font-semibold`
-                                : `w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-500 text-white rounded-full flex items-center justify-center text-lg font-semibold`
+                                `w-10 h-10 border-2 border-primary text-white rounded-full flex items-center justify-center text-lg font-semibold`
+                                : `w-10 h-10 bg-gradient-to-br from-primary to-chart-3 text-primary-foreground rounded-full flex items-center justify-center text-lg font-semibold`
                         }>
                             {user?.profileImageUrl ? (
                                 <img
@@ -65,7 +73,7 @@ const AdminHeader = ({ toggleSidebar }: HeaderProps) => {
 
                     {isDropdownOpen && (
                         <div
-                            className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 transform origin-top-right animate-fade-in-up z-[999]"
+                            className="absolute right-0 mt-2 w-56 bg-popover rounded-xl shadow-lg border border-border ring-1 ring-black/5 divide-y divide-border transform origin-top-right animate-fade-in-up z-[999]"
                             onMouseLeave={() => setIsDropdownOpen(false)}
                             role="menu"
                             aria-orientation="vertical"
@@ -82,7 +90,7 @@ const AdminHeader = ({ toggleSidebar }: HeaderProps) => {
                             <div className="py-1" role="none">
                                 <Link
                                     to="/admin/settings/profile"
-                                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md mx-2 transition-colors duration-200"
+                                    className="flex items-center px-4 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground rounded-md mx-2 transition-colors duration-200"
                                     role="menuitem"
                                 >
                                     <User className="w-4 h-4 mr-3 text-gray-400" />
@@ -90,7 +98,7 @@ const AdminHeader = ({ toggleSidebar }: HeaderProps) => {
                                 </Link>
                                 <a href='#'
                                     onClick={handleLogout}
-                                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md mx-2 transition-colors duration-200 cursor-pointer"
+                                    className="flex items-center px-4 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground rounded-md mx-2 transition-colors duration-200 cursor-pointer"
                                     role="menuitem"
                                 >
                                     <LogOut className="w-4 h-4 mr-3 text-gray-400" />

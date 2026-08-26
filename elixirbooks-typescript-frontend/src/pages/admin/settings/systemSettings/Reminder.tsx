@@ -936,10 +936,10 @@ const Reminder = () => {
         }
     };
 
-    const sectionHeaderClass = "flex items-center gap-2 px-5 py-4 border-b border-border text-lg font-semibold text-heading";
+    const sectionHeaderClass = "flex items-center gap-2 px-5 py-4 border-b border-border text-lg font-semibold text-foreground";
 
     return (
-        <div className="min-h-screen bg-surface">
+        <div className="min-h-screen bg-muted">
             <PageHeader title="Reminders" />
             {/* QuotationReminderList */}
             <QuotationReminderList
@@ -975,14 +975,14 @@ const Reminder = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
-                                <tr className="bg-surface border-b border-border">
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-body uppercase tracking-wider">
+                                <tr className="bg-muted border-b border-border">
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                         Name
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-body uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                         Description
                                     </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-body uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                         Actions
                                     </th>
                                 </tr>
@@ -991,7 +991,7 @@ const Reminder = () => {
                                 {manualReminders.map((reminder) => (
                                     <tr
                                         key={reminder.id}
-                                        className="hover:bg-surface transition-colors"
+                                        className="hover:bg-muted transition-colors"
                                     >
                                         <td className="px-6 py-4">
                                             <button
@@ -1001,7 +1001,7 @@ const Reminder = () => {
                                                 {reminder.name}
                                             </button>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-body">
+                                        <td className="px-6 py-4 text-sm text-muted-foreground">
                                             {reminder.description}
                                         </td>
                                         <td className="px-6 py-4 text-right">
@@ -1030,17 +1030,17 @@ const Reminder = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
-                                <tr className="bg-surface border-b border-border">
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-body uppercase tracking-wider">
+                                <tr className="bg-muted border-b border-border">
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                         Name
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-body uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                         Schedule
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-body uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                         Status
                                     </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-body uppercase tracking-wider">
+                                    <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                         Actions
                                     </th>
                                 </tr>
@@ -1050,7 +1050,7 @@ const Reminder = () => {
                                     <tr>
                                         <td
                                             colSpan={4}
-                                            className="px-6 py-8 text-center text-body"
+                                            className="px-6 py-8 text-center text-muted-foreground"
                                         >
                                             Loading reminders...
                                         </td>
@@ -1062,10 +1062,10 @@ const Reminder = () => {
                                             (r) => r.remindEvent === "expected_payment_date"
                                         ).length > 0 && (
                                                 <>
-                                                    <tr className="bg-surface">
+                                                    <tr className="bg-muted">
                                                         <td
                                                             colSpan={4}
-                                                            className="px-6 py-3 text-sm font-medium text-heading"
+                                                            className="px-6 py-3 text-sm font-medium text-foreground"
                                                         >
                                                             Reminders Based on Expected Payment Date
                                                         </td>
@@ -1077,7 +1077,7 @@ const Reminder = () => {
                                                         .map((reminder) => (
                                                             <tr
                                                                 key={reminder.id}
-                                                                className="hover:bg-surface transition-colors"
+                                                                className="hover:bg-muted transition-colors"
                                                             >
                                                                 <td className="px-6 py-4">
                                                                     <div className="flex items-center gap-2">
@@ -1091,14 +1091,14 @@ const Reminder = () => {
                                                                             {reminder.name}
                                                                         </a>
                                                                         <button
-                                                                            className="text-body hover:text-heading"
+                                                                            className="text-muted-foreground hover:text-foreground"
                                                                             title="Info"
                                                                         >
                                                                             <Info size={16} />
                                                                         </button>
                                                                     </div>
                                                                 </td>
-                                                                <td className="px-6 py-4 text-sm text-body">
+                                                                <td className="px-6 py-4 text-sm text-muted-foreground">
                                                                     {reminder.remindTiming === "duedate" || reminder.remindDays === 0
                                                                         ? "Due date"
                                                                         : `${reminder.remindDays} day(s) ${reminder.remindTiming.charAt(0).toUpperCase() +
@@ -1109,7 +1109,7 @@ const Reminder = () => {
                                                                     <button
                                                                         onClick={() => toggleStatus(reminder.id)}
                                                                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${reminder.isEnabled
-                                                                            ? "bg-purple-600"
+                                                                            ? "bg-primary"
                                                                             : "bg-border"
                                                                             }`}
                                                                     >
@@ -1136,12 +1136,12 @@ const Reminder = () => {
                                                                         </Button>
 
                                                                         {openActionDropdown === reminder.id && (
-                                                                            <div className="absolute right-0 mt-2 w-40 bg-white rounded-card shadow-dropdown border border-border py-1 z-10">
+                                                                            <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg border border-border py-1 z-10">
                                                                                 <button
                                                                                     onClick={() =>
                                                                                         handleEditReminder(reminder)
                                                                                     }
-                                                                                    className="w-full px-4 py-2.5 text-left text-sm text-heading hover:bg-primary-soft hover:text-primary flex items-center gap-3 transition-colors"
+                                                                                    className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-accent hover:text-primary flex items-center gap-3 transition-colors"
                                                                                 >
                                                                                     <Edit size={16} />
                                                                                     Edit
@@ -1150,7 +1150,7 @@ const Reminder = () => {
                                                                                     onClick={() =>
                                                                                         handleDeleteReminder(reminder.id)
                                                                                     }
-                                                                                    className="w-full px-4 py-2.5 text-left text-sm text-danger hover:bg-danger-soft flex items-center gap-3 transition-colors"
+                                                                                    className="w-full px-4 py-2.5 text-left text-sm text-destructive hover:bg-destructive-soft flex items-center gap-3 transition-colors"
                                                                                 >
                                                                                     <Trash2 size={16} />
                                                                                     Delete
@@ -1182,7 +1182,7 @@ const Reminder = () => {
                                                         .map((reminder) => (
                                                             <tr
                                                                 key={reminder.id}
-                                                                className="hover:bg-surface transition-colors"
+                                                                className="hover:bg-muted transition-colors"
                                                             >
                                                                 <td className="px-6 py-4">
                                                                     <a
@@ -1195,7 +1195,7 @@ const Reminder = () => {
                                                                         {reminder.name}
                                                                     </a>
                                                                 </td>
-                                                                <td className="px-6 py-4 text-sm text-body">
+                                                                <td className="px-6 py-4 text-sm text-muted-foreground">
                                                                     {reminder.remindTiming === "duedate" || reminder.remindDays === 0
                                                                         ? "Due date"
                                                                         : `${reminder.remindDays} day(s) ${reminder.remindTiming.charAt(0).toUpperCase() +
@@ -1206,7 +1206,7 @@ const Reminder = () => {
                                                                     <button
                                                                         onClick={() => toggleStatus(reminder.id)}
                                                                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${reminder.isEnabled
-                                                                            ? "bg-purple-600"
+                                                                            ? "bg-primary"
                                                                             : "bg-border"
                                                                             }`}
                                                                     >
@@ -1233,12 +1233,12 @@ const Reminder = () => {
                                                                         </Button>
 
                                                                         {openActionDropdown === reminder.id && (
-                                                                            <div className="absolute right-0 mt-2 w-40 bg-white rounded-card shadow-dropdown border border-border py-1 z-10">
+                                                                            <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg border border-border py-1 z-10">
                                                                                 <button
                                                                                     onClick={() =>
                                                                                         handleEditReminder(reminder)
                                                                                     }
-                                                                                    className="w-full px-4 py-2.5 text-left text-sm text-heading hover:bg-primary-soft hover:text-primary flex items-center gap-3 transition-colors"
+                                                                                    className="w-full px-4 py-2.5 text-left text-sm text-foreground hover:bg-accent hover:text-primary flex items-center gap-3 transition-colors"
                                                                                 >
                                                                                     <Edit size={16} />
                                                                                     Edit
@@ -1247,7 +1247,7 @@ const Reminder = () => {
                                                                                     onClick={() =>
                                                                                         handleDeleteReminder(reminder.id)
                                                                                     }
-                                                                                    className="w-full px-4 py-2.5 text-left text-sm text-danger hover:bg-danger-soft flex items-center gap-3 transition-colors"
+                                                                                    className="w-full px-4 py-2.5 text-left text-sm text-destructive hover:bg-destructive-soft flex items-center gap-3 transition-colors"
                                                                                 >
                                                                                     <Trash2 size={16} />
                                                                                     Delete
@@ -1265,7 +1265,7 @@ const Reminder = () => {
                                             <tr>
                                                 <td
                                                     colSpan={4}
-                                                    className="px-6 py-8 text-center text-body"
+                                                    className="px-6 py-8 text-center text-muted-foreground"
                                                 >
                                                     No automated reminders found. Click "New Reminder" to
                                                     create one.
@@ -1277,7 +1277,7 @@ const Reminder = () => {
 
                                 {/* New Reminder Button Row */}
                                 {canCreateReminder && (
-                                    <tr className="hover:bg-surface transition-colors">
+                                    <tr className="hover:bg-muted transition-colors">
                                         <td colSpan={4} className="px-6 py-4">
                                             <div className="flex items-center gap-4">
                                                 <Button
@@ -1306,7 +1306,7 @@ const Reminder = () => {
                                                     size="sm"
                                                     leftIcon={<Plus size={18} />}
                                                     onClick={() => { setEditingQuotationReminder(null); setIsQuotationModalOpen(true); }}
-                                                    className="text-purple-600 hover:text-purple-700"
+                                                    className="text-primary hover:text-primary"
                                                 >
                                                     Quotation Reminder
                                                 </Button>
@@ -1320,7 +1320,7 @@ const Reminder = () => {
                                     <tr>
                                         <td
                                             colSpan={4}
-                                            className="px-6 py-4 text-center text-body text-sm"
+                                            className="px-6 py-4 text-center text-muted-foreground text-sm"
                                         >
                                             Maximum reminder limit reached. You have created 5 before
                                             reminders, 5 after reminders, and 1 due date reminder.
@@ -1344,18 +1344,18 @@ const Reminder = () => {
                         ></div>
 
                         {/* Modal panel */}
-                        <div className="relative inline-block align-bottom bg-white rounded-card border border-border text-left overflow-hidden shadow-dropdown transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full z-50">
+                        <div className="relative inline-block align-bottom bg-white rounded-xl border border-border text-left overflow-hidden shadow-lg transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full z-50">
                             {/* Modal Header */}
                             <div className="px-6 py-4 border-b border-border">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-lg font-semibold text-heading">
+                                    <h3 className="text-lg font-semibold text-foreground">
                                         {editingReminderId
                                             ? "Edit Reminder"
                                             : "New Automated Reminder"}
                                     </h3>
                                     <button
                                         onClick={handleCloseModal}
-                                        className="text-body hover:text-heading transition-colors"
+                                        className="text-muted-foreground hover:text-foreground transition-colors"
                                     >
                                         <X size={24} />
                                     </button>
@@ -1377,10 +1377,10 @@ const Reminder = () => {
                                 {/* Remind Section */}
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
-                                        <label className="block text-sm font-medium text-heading">
+                                        <label className="block text-sm font-medium text-foreground">
                                             Remind
                                         </label>
-                                        <span className="text-xs text-body">
+                                        <span className="text-xs text-muted-foreground">
                                             Limits: After ({reminderCounts.after}/5) | Before (
                                             {reminderCounts.before}/5) | Due Date (
                                             {reminderCounts.duedate}/1)
@@ -1396,7 +1396,7 @@ const Reminder = () => {
                                             required
                                             containerClassName="w-24"
                                         />
-                                        <span className="text-sm text-body">day(s)</span>
+                                        <span className="text-sm text-muted-foreground">day(s)</span>
                                         <Select
                                             name="timing"
                                             value={formData.timing}
@@ -1426,9 +1426,9 @@ const Reminder = () => {
                                         name="enableReminder"
                                         checked={formData.enableReminder}
                                         onChange={handleInputChange}
-                                        className="h-4 w-4 text-purple-600 focus:ring-purple-600 border-border rounded"
+                                        className="h-4 w-4 text-primary focus:ring-ring border-border rounded"
                                     />
-                                    <label className="ml-2 block text-sm text-heading">
+                                    <label className="ml-2 block text-sm text-foreground">
                                         Enable this reminder
                                     </label>
                                 </div>
@@ -1461,7 +1461,7 @@ const Reminder = () => {
 
                                 {/* Cc Field */}
                                 <div>
-                                    <label className="block text-sm font-medium text-heading mb-2">
+                                    <label className="block text-sm font-medium text-foreground mb-2">
                                         Cc
                                     </label>
                                     <div className="flex gap-2">
@@ -1502,7 +1502,7 @@ const Reminder = () => {
 
                                 {/* Bcc Field */}
                                 <div>
-                                    <label className="block text-sm font-medium text-heading mb-2">
+                                    <label className="block text-sm font-medium text-foreground mb-2">
                                         Bcc
                                     </label>
                                     <div className="flex gap-2">
@@ -1544,7 +1544,7 @@ const Reminder = () => {
                                 {/* Subject Field */}
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
-                                        <label className="block text-sm font-medium text-heading">
+                                        <label className="block text-sm font-medium text-foreground">
                                             Subject
                                         </label>
                                         <div className="relative">
@@ -1555,7 +1555,7 @@ const Reminder = () => {
                                                         handlePlaceholderSelect(e.target.value, "subject");
                                                     }
                                                 }}
-                                                className="text-sm text-purple-600 border border-purple-600 rounded-control px-2 py-1 hover:bg-purple-600 hover:text-white cursor-pointer"
+                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-white cursor-pointer"
                                             >
                                                 <option value="">Insert Placeholder</option>
                                                 {Array.isArray(placeholders) && placeholders.map((placeholder, index) => (
@@ -1579,7 +1579,7 @@ const Reminder = () => {
                                 {/* Body Field */}
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
-                                        <label className="block text-sm font-medium text-heading">
+                                        <label className="block text-sm font-medium text-foreground">
                                             Body
                                         </label>
                                         <div className="relative">
@@ -1590,7 +1590,7 @@ const Reminder = () => {
                                                         handlePlaceholderSelect(e.target.value, "body");
                                                     }
                                                 }}
-                                                className="text-sm text-purple-600 border border-purple-600 rounded-control px-2 py-1 hover:bg-purple-600 hover:text-white cursor-pointer"
+                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-white cursor-pointer"
                                             >
                                                 <option value="">Insert Placeholder</option>
                                                 {Array.isArray(placeholders) && placeholders.map((placeholder, index) => (
@@ -1601,7 +1601,7 @@ const Reminder = () => {
                                             </select>
                                         </div>
                                     </div>
-                                    <div className="border border-border rounded-control overflow-hidden">
+                                    <div className="border border-border rounded-md overflow-hidden">
                                         <QuillEditor
                                             ref={quillEditorRef}
                                             value={formData.body}
@@ -1644,16 +1644,16 @@ const Reminder = () => {
                         ></div>
 
                         {/* Modal panel */}
-                        <div className="relative inline-block align-bottom bg-white rounded-card border border-border text-left overflow-hidden shadow-dropdown transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full z-50">
+                        <div className="relative inline-block align-bottom bg-white rounded-xl border border-border text-left overflow-hidden shadow-lg transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full z-50">
                             {/* Modal Header */}
                             <div className="px-6 py-4 border-b border-border">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-lg font-semibold text-heading">
+                                    <h3 className="text-lg font-semibold text-foreground">
                                         {selectedManualReminder.name}
                                     </h3>
                                     <button
                                         onClick={() => setIsManualModalOpen(false)}
-                                        className="text-body hover:text-heading transition-colors"
+                                        className="text-muted-foreground hover:text-foreground transition-colors"
                                     >
                                         <X size={24} />
                                     </button>
@@ -1675,7 +1675,7 @@ const Reminder = () => {
 
                                 {/* Cc Field */}
                                 <div>
-                                    <label className="block text-sm font-medium text-heading mb-2">
+                                    <label className="block text-sm font-medium text-foreground mb-2">
                                         Cc
                                     </label>
                                     <div className="flex gap-2">
@@ -1744,7 +1744,7 @@ const Reminder = () => {
 
                                 {/* Bcc Field */}
                                 <div>
-                                    <label className="block text-sm font-medium text-heading mb-2">
+                                    <label className="block text-sm font-medium text-foreground mb-2">
                                         Bcc
                                     </label>
                                     <div className="flex gap-2">
@@ -1814,7 +1814,7 @@ const Reminder = () => {
                                 {/* Subject Field */}
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
-                                        <label className="block text-sm font-medium text-heading">
+                                        <label className="block text-sm font-medium text-foreground">
                                             Subject
                                         </label>
                                         <div className="relative">
@@ -1825,7 +1825,7 @@ const Reminder = () => {
                                                         handleManualPlaceholderSelect(e.target.value, "subject");
                                                     }
                                                 }}
-                                                className="text-sm text-purple-600 border border-purple-600 rounded-control px-2 py-1 hover:bg-purple-600 hover:text-white cursor-pointer"
+                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-white cursor-pointer"
                                             >
                                                 <option value="">Insert Placeholder</option>
                                                 {Array.isArray(placeholders) && placeholders.map((placeholder, index) => (
@@ -1848,7 +1848,7 @@ const Reminder = () => {
                                 {/* Body Field */}
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
-                                        <label className="block text-sm font-medium text-heading">
+                                        <label className="block text-sm font-medium text-foreground">
                                             Normal Text
                                         </label>
                                         <div className="relative">
@@ -1859,7 +1859,7 @@ const Reminder = () => {
                                                         handleManualPlaceholderSelect(e.target.value, "body");
                                                     }
                                                 }}
-                                                className="text-sm text-purple-600 border border-purple-600 rounded-control px-2 py-1 hover:bg-purple-600 hover:text-white cursor-pointer"
+                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-white cursor-pointer"
                                             >
                                                 <option value="">Insert Placeholder</option>
                                                 {Array.isArray(placeholders) && placeholders.map((placeholder, index) => (
@@ -1870,7 +1870,7 @@ const Reminder = () => {
                                             </select>
                                         </div>
                                     </div>
-                                    <div className="border border-border rounded-control overflow-hidden">
+                                    <div className="border border-border rounded-md overflow-hidden">
                                         <QuillEditor
                                             ref={manualQuillEditorRef}
                                             value={manualFormData.body}
@@ -1918,10 +1918,10 @@ const Reminder = () => {
                             onClick={() => setIsPurchaseModalOpen(false)}
                         ></div>
 
-                        <div className="relative inline-block align-bottom bg-white rounded-card border border-border text-left overflow-hidden shadow-dropdown transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full z-50">
+                        <div className="relative inline-block align-bottom bg-white rounded-xl border border-border text-left overflow-hidden shadow-lg transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full z-50">
                             <div className="px-6 py-4 border-b border-border">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-lg font-semibold text-heading">
+                                    <h3 className="text-lg font-semibold text-foreground">
                                         {editingReminderId ? "Edit Purchase Reminder" : "New Purchase Reminder"}
                                     </h3>
                                     <button
@@ -1929,7 +1929,7 @@ const Reminder = () => {
                                             setIsPurchaseModalOpen(false);
                                             setEditingReminderId(null);
                                         }}
-                                        className="text-body hover:text-heading transition-colors"
+                                        className="text-muted-foreground hover:text-foreground transition-colors"
                                     >
                                         <X size={24} />
                                     </button>
@@ -1948,10 +1948,10 @@ const Reminder = () => {
 
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
-                                        <label className="block text-sm font-medium text-heading">
+                                        <label className="block text-sm font-medium text-foreground">
                                             Remind
                                         </label>
-                                        <span className="text-xs text-body">
+                                        <span className="text-xs text-muted-foreground">
                                             Limits: After ({purchaseReminderCounts.after}/5) | Before ({purchaseReminderCounts.before}/5) | Due Date ({purchaseReminderCounts.duedate}/1)
                                         </span>
                                     </div>
@@ -1965,7 +1965,7 @@ const Reminder = () => {
                                             required
                                             containerClassName="w-24"
                                         />
-                                        <span className="text-sm text-body">day(s)</span>
+                                        <span className="text-sm text-muted-foreground">day(s)</span>
                                         <Select
                                             name="timing"
                                             value={purchaseFormData.timing}
@@ -1994,9 +1994,9 @@ const Reminder = () => {
                                         name="enableReminder"
                                         checked={purchaseFormData.enableReminder}
                                         onChange={handlePurchaseInputChange}
-                                        className="h-4 w-4 text-purple-600 focus:ring-purple-600 border-border rounded"
+                                        className="h-4 w-4 text-primary focus:ring-ring border-border rounded"
                                     />
-                                    <label className="ml-2 block text-sm text-heading">
+                                    <label className="ml-2 block text-sm text-foreground">
                                         Enable this reminder
                                     </label>
                                 </div>
@@ -2029,7 +2029,7 @@ const Reminder = () => {
 
                                 {/* Cc Field */}
                                 <div>
-                                    <label className="block text-sm font-medium text-heading mb-2">
+                                    <label className="block text-sm font-medium text-foreground mb-2">
                                         Cc
                                     </label>
                                     <div className="flex gap-2">
@@ -2098,7 +2098,7 @@ const Reminder = () => {
 
                                 {/* Bcc Field */}
                                 <div>
-                                    <label className="block text-sm font-medium text-heading mb-2">
+                                    <label className="block text-sm font-medium text-foreground mb-2">
                                         Bcc
                                     </label>
                                     <div className="flex gap-2">
@@ -2168,7 +2168,7 @@ const Reminder = () => {
                                 {/* Subject Field */}
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
-                                        <label className="block text-sm font-medium text-heading">
+                                        <label className="block text-sm font-medium text-foreground">
                                             Subject
                                         </label>
                                         <div className="relative">
@@ -2184,7 +2184,7 @@ const Reminder = () => {
                                                         setSelectedPlaceholder("");
                                                     }
                                                 }}
-                                                className="text-sm text-purple-600 border border-purple-600 rounded-control px-2 py-1 hover:bg-purple-600 hover:text-white cursor-pointer"
+                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-white cursor-pointer"
                                             >
                                                 <option value="">Insert Placeholder</option>
                                                 {Array.isArray(placeholders) && placeholders.map((placeholder, index) => (
@@ -2208,7 +2208,7 @@ const Reminder = () => {
                                 {/* Body Field */}
                                 <div>
                                     <div className="flex items-center justify-between mb-2">
-                                        <label className="block text-sm font-medium text-heading">
+                                        <label className="block text-sm font-medium text-foreground">
                                             Body
                                         </label>
                                         <div className="relative">
@@ -2228,7 +2228,7 @@ const Reminder = () => {
                                                         setSelectedPlaceholder("");
                                                     }
                                                 }}
-                                                className="text-sm text-purple-600 border border-purple-600 rounded-control px-2 py-1 hover:bg-purple-600 hover:text-white cursor-pointer"
+                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-white cursor-pointer"
                                             >
                                                 <option value="">Insert Placeholder</option>
                                                 {Array.isArray(placeholders) && placeholders.map((placeholder, index) => (
@@ -2239,7 +2239,7 @@ const Reminder = () => {
                                             </select>
                                         </div>
                                     </div>
-                                    <div className="border border-border rounded-control overflow-hidden">
+                                    <div className="border border-border rounded-md overflow-hidden">
                                         <QuillEditor
                                             ref={purchaseQuillEditorRef}
                                             value={purchaseFormData.body}

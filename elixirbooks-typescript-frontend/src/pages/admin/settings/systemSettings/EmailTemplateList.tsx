@@ -180,7 +180,7 @@ const EmailTemplateList: React.FC = () => {
                         index={index + 1}
                         row={template}
                         columns={[
-                            <span className="text-indigo-600">{template.title}</span>,
+                            <span className="text-primary">{template.title}</span>,
                             formatDate(template.createdAt, systemSettings?.dateFormat.format || 'd-m-Y'),
                             canToggleStatus ? (
                                 <div className="flex items-center gap-2">
@@ -189,7 +189,7 @@ const EmailTemplateList: React.FC = () => {
                                         checked={template.status === 'active'}
                                         onChange={() => handleToggleStatus(template)}
                                     />
-                                    <span className="text-xs text-body">{template.status === 'active' ? 'In use' : 'Inactive'}</span>
+                                    <span className="text-xs text-muted-foreground">{template.status === 'active' ? 'In use' : 'Inactive'}</span>
                                 </div>
                             ) : (
                                 <StatusBadge status={template.status} />
@@ -200,8 +200,8 @@ const EmailTemplateList: React.FC = () => {
                 ))}
 
                 {!isLoading && emailTemplates.length === 0 &&
-                    <tr className="border-b border-border hover:bg-surface">
-                        <td className="px-4 py-2 text-sm text-heading text-center font-semibold" colSpan={5}>
+                    <tr className="border-b border-border hover:bg-muted">
+                        <td className="px-4 py-2 text-sm text-foreground text-center font-semibold" colSpan={5}>
                             No email templates found.
                         </td>
                     </tr>
@@ -209,7 +209,7 @@ const EmailTemplateList: React.FC = () => {
 
                 {isLoading && (
                     <tr key="table-loader">
-                        <td className="text-center py-2 text-heading font-semibold" colSpan={7}>
+                        <td className="text-center py-2 text-foreground font-semibold" colSpan={7}>
                             <LoaderSpinner />
                         </td>
                     </tr>

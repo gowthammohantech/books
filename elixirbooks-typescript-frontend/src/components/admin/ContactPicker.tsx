@@ -216,7 +216,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
                 <input
                     ref={inputRef}
                     type="text"
-                    className={`p-2 h-10 mt-1 w-full pr-8 border text-gray-700 text-sm border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600 ${error ? 'border-red-400' : ''}`}
+                    className={`p-2 h-10 mt-1 w-full pr-8 border text-gray-700 text-sm border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary ${error ? 'border-destructive' : ''}`}
                     placeholder={`Search ${view === 'clients' ? 'clients' : view === 'suppliers' ? 'suppliers' : 'contacts'}...`}
                     value={selectedContact ? (displayName ?? '') : inputValue}
                     onChange={(e) => {
@@ -243,7 +243,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
                 {selectedContact && (
                     <button
                         type="button"
-                        className="absolute inset-y-0 right-2 flex items-center text-gray-400 hover:text-red-500"
+                        className="absolute inset-y-0 right-2 flex items-center text-gray-400 hover:text-destructive"
                         onClick={handleClear}
                         aria-label="Clear selected contact"
                     >
@@ -273,7 +273,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
                         {!loading && contacts.map((c, idx) => (
                             <li
                                 key={c.id}
-                                className={`p-2 cursor-pointer hover:bg-purple-50 text-sm ${idx === activeIndex ? 'bg-purple-50' : ''}`}
+                                className={`p-2 cursor-pointer hover:bg-accent text-sm ${idx === activeIndex ? 'bg-accent' : ''}`}
                                 onMouseDown={(e) => {
                                     e.preventDefault();
                                     handleSelect(c);
@@ -292,14 +292,14 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
                     </ul>
                     {/* New contact option */}
                     <div
-                        className="p-2 border-t border-gray-200 cursor-pointer hover:bg-purple-50 sticky bottom-0 bg-white"
+                        className="p-2 border-t border-gray-200 cursor-pointer hover:bg-accent sticky bottom-0 bg-white"
                         onMouseDown={(e) => {
                             e.preventDefault();
                             setShowDropdown(false);
                             setShowNewModal(true);
                         }}
                     >
-                        <div className="flex items-center text-sm text-purple-600 font-medium">
+                        <div className="flex items-center text-sm text-primary font-medium">
                             <PlusCircle size={16} className="mr-2" />
                             New contact
                         </div>
@@ -309,11 +309,11 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
             )}
 
             {/* Error */}
-            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+            {error && <p className="text-destructive text-sm mt-1">{error}</p>}
 
             {/* Mini contact card */}
             {selectedContact && (
-                <div className="mt-2 p-2 bg-purple-50 rounded-md border border-purple-100 text-sm">
+                <div className="mt-2 p-2 bg-accent rounded-md border border-accent text-sm">
                     <p className="font-semibold text-gray-800">{personLabel(selectedContact)}</p>
                     {(companySubtitle(selectedContact) || selectedContact.email) && (
                         <p className="text-gray-500 text-xs">
@@ -336,7 +336,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
                         <label className="block text-sm font-medium text-gray-700 mb-1">Organisation Name</label>
                         <input
                             type="text"
-                            className="border border-gray-300 rounded-md px-3 py-2 w-full text-gray-900 focus:outline-none focus:ring-1 focus:ring-purple-600 mb-4"
+                            className="border border-gray-300 rounded-md px-3 py-2 w-full text-gray-900 focus:outline-none focus:ring-1 focus:ring-ring mb-4"
                             placeholder="Enter organisation name"
                             value={newOrgName}
                             onChange={(e) => setNewOrgName(e.target.value)}
@@ -355,7 +355,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
                                 type="button"
                                 onClick={handleCreateContact}
                                 disabled={creating || !newOrgName.trim()}
-                                className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700 disabled:opacity-60 flex items-center gap-2"
+                                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-60 flex items-center gap-2"
                             >
                                 {creating && <Loader2 size={14} className="animate-spin" />}
                                 Create

@@ -324,7 +324,7 @@ const ContactList: React.FC = () => {
                         onClick={() => handleViewChange(v)}
                         className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                             view === v
-                                ? 'bg-purple-600 text-white'
+                                ? 'bg-primary text-white'
                                 : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
                         }`}
                     >
@@ -340,7 +340,7 @@ const ContactList: React.FC = () => {
                     placeholder="Search contacts..."
                     value={q}
                     onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 text-gray-800 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 />
                 <div className="flex items-center gap-1 border border-gray-300 rounded-md overflow-hidden">
                     <button
@@ -348,7 +348,7 @@ const ContactList: React.FC = () => {
                         title="List view"
                         onClick={() => setParam({ display: 'list' })}
                         className={`px-2 py-1.5 transition-colors ${
-                            displayMode === 'list' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                            displayMode === 'list' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
                         }`}
                     >
                         <List size={16} />
@@ -358,7 +358,7 @@ const ContactList: React.FC = () => {
                         title="Grid view"
                         onClick={() => setParam({ display: 'grid' })}
                         className={`px-2 py-1.5 transition-colors ${
-                            displayMode === 'grid' ? 'bg-purple-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                            displayMode === 'grid' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
                         }`}
                     >
                         <LayoutGrid size={16} />
@@ -383,7 +383,7 @@ const ContactList: React.FC = () => {
                                 <div
                                     key={contact.id}
                                     onClick={() => handleRowClick(contact)}
-                                    className="bg-white border border-border rounded-card p-4 shadow-card hover:shadow-md cursor-pointer transition-shadow space-y-1"
+                                    className="bg-white border border-border rounded-xl p-4 shadow-sm hover:shadow-md cursor-pointer transition-shadow space-y-1"
                                 >
                                     <p className="font-semibold text-gray-800 truncate">
                                         {contact.displayName || contact.organisation || '—'}
@@ -536,7 +536,7 @@ const ContactList: React.FC = () => {
                                         type="button"
                                         disabled={isPreviewing || !importFile}
                                         onClick={submitImportUpload}
-                                        className="px-3 py-1 rounded-md bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+                                        className="px-3 py-1 rounded-md bg-primary text-white hover:bg-primary/90 disabled:opacity-50"
                                     >
                                         {isPreviewing ? 'Parsing...' : 'Preview'}
                                     </button>
@@ -579,7 +579,7 @@ const ContactList: React.FC = () => {
                                                     <td className="px-3 py-2 text-gray-700">{r.telephone}</td>
                                                     <td className="px-3 py-2 text-gray-700">
                                                         {r.error ? (
-                                                            <span className="text-red-700">{r.error}</span>
+                                                            <span className="text-destructive">{r.error}</span>
                                                         ) : (
                                                             <span className="text-green-700">OK</span>
                                                         )}
@@ -601,7 +601,7 @@ const ContactList: React.FC = () => {
                                         type="button"
                                         disabled={isConfirming || validImportCount === 0}
                                         onClick={submitImportConfirm}
-                                        className="px-3 py-1 rounded-md bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+                                        className="px-3 py-1 rounded-md bg-primary text-white hover:bg-primary/90 disabled:opacity-50"
                                     >
                                         {isConfirming ? 'Importing...' : `Confirm Import (${validImportCount})`}
                                     </button>
@@ -628,7 +628,7 @@ const ContactList: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={resetImportState}
-                                        className="px-3 py-1 rounded-md bg-purple-600 text-white hover:bg-purple-700"
+                                        className="px-3 py-1 rounded-md bg-primary text-white hover:bg-primary/90"
                                     >
                                         Close
                                     </button>

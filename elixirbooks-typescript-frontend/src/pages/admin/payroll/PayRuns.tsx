@@ -284,7 +284,7 @@ const PayRuns: React.FC = () => {
                         <select
                             value={newYear}
                             onChange={(e) => setNewYear(e.target.value)}
-                            className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring"
                         >
                             {TAX_YEARS.map((y) => (
                                 <option key={y.value} value={y.value}>{y.label}</option>
@@ -296,7 +296,7 @@ const PayRuns: React.FC = () => {
                         <select
                             value={newMonth}
                             onChange={(e) => setNewMonth(e.target.value)}
-                            className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring"
                         >
                             {MONTH_NAMES.map((name, i) => (
                                 <option key={i + 1} value={String(i + 1)}>{name}</option>
@@ -320,7 +320,7 @@ const PayRuns: React.FC = () => {
                     <select
                         value={filterYear}
                         onChange={(e) => setFilterYear(e.target.value)}
-                        className="border border-gray-300 rounded-md px-3 py-1.5 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                        className="border border-gray-300 rounded-md px-3 py-1.5 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring"
                     >
                         {TAX_YEARS.map((y) => (
                             <option key={y.value} value={y.value}>{y.label}</option>
@@ -333,9 +333,9 @@ const PayRuns: React.FC = () => {
                         <LoaderSpinner />
                     </div>
                 ) : (
-                    <div className="overflow-x-auto border border-border rounded-control">
+                    <div className="overflow-x-auto border border-border rounded-md">
                         <table className="w-full text-sm border-collapse">
-                            <thead className="bg-gray-100 text-xs uppercase text-body">
+                            <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                                 <tr>
                                     <th className="px-4 py-3 text-left border-b border-border">#</th>
                                     <th className="px-4 py-3 text-left border-b border-border">Tax Year</th>
@@ -353,7 +353,7 @@ const PayRuns: React.FC = () => {
                                     runs.map((run, idx) => (
                                         <tr
                                             key={run.id}
-                                            className={`border-b border-border hover:bg-gray-50 transition-colors ${selectedRun?.id === run.id ? 'bg-purple-50' : ''}`}
+                                            className={`border-b border-border hover:bg-gray-50 transition-colors ${selectedRun?.id === run.id ? 'bg-accent' : ''}`}
                                         >
                                             <td className="px-4 py-3 text-gray-500">{idx + 1}</td>
                                             <td className="px-4 py-3 font-medium text-gray-900">{run.taxYearLabel}</td>
@@ -436,9 +436,9 @@ const PayRuns: React.FC = () => {
                     </div>
 
                     {/* Lines table */}
-                    <div className="overflow-x-auto border border-border rounded-control">
+                    <div className="overflow-x-auto border border-border rounded-md">
                         <table className="w-full text-sm border-collapse">
-                            <thead className="bg-gray-100 text-xs uppercase text-body">
+                            <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                                 <tr>
                                     <th className="px-4 py-3 text-left border-b border-border">Employee</th>
                                     <th className="px-4 py-3 text-right border-b border-border">Gross</th>
@@ -457,7 +457,7 @@ const PayRuns: React.FC = () => {
                                     return (
                                         <React.Fragment key={`line-${idx}`}>
                                             <tr className="border-b border-border hover:bg-gray-50">
-                                                <td className="px-4 py-3 font-medium text-indigo-600">
+                                                <td className="px-4 py-3 font-medium text-primary">
                                                     {line.employeeName}
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
@@ -466,7 +466,7 @@ const PayRuns: React.FC = () => {
                                                             type="number"
                                                             value={line.gross}
                                                             onChange={(e) => updateLine(idx, { gross: e.target.value })}
-                                                            className="border border-gray-300 rounded px-2 py-1 text-right w-28 text-sm focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                                            className="border border-gray-300 rounded px-2 py-1 text-right w-28 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                                                             min="0"
                                                             step="0.01"
                                                         />
@@ -474,7 +474,7 @@ const PayRuns: React.FC = () => {
                                                         <span className="font-mono">{fmt(parseFloat(line.gross) || 0)}</span>
                                                     )}
                                                 </td>
-                                                <td className="px-4 py-3 text-right font-mono text-danger">
+                                                <td className="px-4 py-3 text-right font-mono text-destructive">
                                                     {fmt(deductionSum)}
                                                 </td>
                                                 <td className="px-4 py-3 text-right font-mono font-semibold text-success">
@@ -487,7 +487,7 @@ const PayRuns: React.FC = () => {
                                                             value={line.note}
                                                             onChange={(e) => updateLine(idx, { note: e.target.value })}
                                                             placeholder="Optional note"
-                                                            className="border border-gray-300 rounded px-2 py-1 text-sm w-40 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                                            className="border border-gray-300 rounded px-2 py-1 text-sm w-40 focus:outline-none focus:ring-1 focus:ring-ring"
                                                         />
                                                     ) : (
                                                         <span className="text-gray-500">{line.note || '—'}</span>
@@ -512,7 +512,7 @@ const PayRuns: React.FC = () => {
                                             {/* Expanded deduction sub-editor */}
                                             {isDraft && expanded && (
                                                 <tr key={`ded-${idx}`} className="border-b border-border">
-                                                    <td colSpan={6} className="px-8 py-3 bg-purple-50">
+                                                    <td colSpan={6} className="px-8 py-3 bg-accent">
                                                         <div className="space-y-2">
                                                             <div className="text-xs font-semibold text-gray-600 uppercase mb-2">
                                                                 Deduction lines for {line.employeeName}
@@ -524,14 +524,14 @@ const PayRuns: React.FC = () => {
                                                                         value={d.label}
                                                                         onChange={(e) => updateDeduction(idx, dIdx, { label: e.target.value })}
                                                                         placeholder="Label (e.g. PAYE)"
-                                                                        className="border border-gray-300 rounded px-2 py-1 text-sm flex-1 focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                                                        className="border border-gray-300 rounded px-2 py-1 text-sm flex-1 focus:outline-none focus:ring-1 focus:ring-ring"
                                                                     />
                                                                     <input
                                                                         type="number"
                                                                         value={d.amount}
                                                                         onChange={(e) => updateDeduction(idx, dIdx, { amount: parseFloat(e.target.value) || 0 })}
                                                                         placeholder="Amount"
-                                                                        className="border border-gray-300 rounded px-2 py-1 text-sm w-28 text-right focus:outline-none focus:ring-1 focus:ring-purple-600"
+                                                                        className="border border-gray-300 rounded px-2 py-1 text-sm w-28 text-right focus:outline-none focus:ring-1 focus:ring-ring"
                                                                         min="0"
                                                                         step="0.01"
                                                                     />
@@ -542,7 +542,7 @@ const PayRuns: React.FC = () => {
                                                                         onClick={() => removeDeduction(idx, dIdx)}
                                                                         aria-label="Remove deduction"
                                                                         title="Remove deduction"
-                                                                        className="text-danger hover:text-danger"
+                                                                        className="text-destructive hover:text-destructive"
                                                                     >
                                                                         <Trash2Icon size={14} />
                                                                     </Button>
@@ -577,7 +577,7 @@ const PayRuns: React.FC = () => {
                                         <td className="px-4 py-3 text-right font-mono">
                                             {fmt(editableLines.reduce((s, l) => s + (parseFloat(l.gross) || 0), 0))}
                                         </td>
-                                        <td className="px-4 py-3 text-right font-mono text-danger">
+                                        <td className="px-4 py-3 text-right font-mono text-destructive">
                                             {fmt(editableLines.reduce((s, l) => s + l.deductionLines.reduce((ds, d) => ds + (d.amount || 0), 0), 0))}
                                         </td>
                                         <td className="px-4 py-3 text-right font-mono text-success">

@@ -273,11 +273,11 @@ const QuotationReminderModal: React.FC<Props> = ({ isOpen, onClose, editingRemin
                                 }))
                             }
                         />
-                        <label htmlFor="enableReminder" className="text-sm text-body">
+                        <label htmlFor="enableReminder" className="text-sm text-muted-foreground">
                             Enable this reminder
                         </label>
                         {formErrors.enableReminder && (
-                            <p className="text-xs text-danger mt-1">
+                            <p className="text-xs text-destructive mt-1">
                                 {formErrors.enableReminder}
                             </p>
                         )}
@@ -300,8 +300,8 @@ const QuotationReminderModal: React.FC<Props> = ({ isOpen, onClose, editingRemin
                                     placeholder="0"
                                     className={`w-24 ${fieldControlClasses(Boolean(formErrors.days))}`}
                                 />
-                                <span className="text-sm text-body">day(s)</span>
-                                <p className="text-sm text-body">before expiry date</p>
+                                <span className="text-sm text-muted-foreground">day(s)</span>
+                                <p className="text-sm text-muted-foreground">before expiry date</p>
                             </div>
                         )}
                     </FormField>
@@ -407,7 +407,7 @@ const QuotationReminderModal: React.FC<Props> = ({ isOpen, onClose, editingRemin
                 {/* Subject + Placeholder */}
                 <div>
                     <div className="flex justify-between items-center mb-1">
-                        <label className="block text-sm font-medium text-heading">Subject</label>
+                        <label className="block text-sm font-medium text-foreground">Subject</label>
                         <Select
                             containerClassName="w-56"
                             className="text-sm"
@@ -443,7 +443,7 @@ const QuotationReminderModal: React.FC<Props> = ({ isOpen, onClose, editingRemin
                 {/* Body */}
                 <div>
                     <div className="flex justify-between items-center mb-1">
-                        <label className="block text-sm font-medium text-heading">Body</label>
+                        <label className="block text-sm font-medium text-foreground">Body</label>
                         <Select
                             containerClassName="w-56"
                             className="text-sm"
@@ -459,7 +459,7 @@ const QuotationReminderModal: React.FC<Props> = ({ isOpen, onClose, editingRemin
                             ]}
                         />
                     </div>
-                    <div className="border border-border rounded-control">
+                    <div className="border border-border rounded-md">
                         <QuillEditor
                             ref={purchaseQuillEditorRef}
                             value={quotationFormData.body}
@@ -467,7 +467,7 @@ const QuotationReminderModal: React.FC<Props> = ({ isOpen, onClose, editingRemin
                             height="300px"
                         />
                     </div>
-                    {formErrors.body && <p className="text-xs text-danger mt-1">{formErrors.body}</p>}
+                    {formErrors.body && <p className="text-xs text-destructive mt-1">{formErrors.body}</p>}
                 </div>
 
                 {/* Buttons */}

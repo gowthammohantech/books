@@ -221,7 +221,7 @@ const CreateBankAccountModal: React.FC<Props> = ({ isOpen, onClose, onSuccess })
                 </div>
                 {/* Status Switch */}
                 <div className="flex items-center gap-3 pt-2">
-                    <label htmlFor="status" className="font-medium text-sm text-heading ">Status</label>
+                    <label htmlFor="status" className="font-medium text-sm text-foreground ">Status</label>
                     <Switch name="status" checked={formData.status ?? false} onChange={handleChange} />
                 </div>
 

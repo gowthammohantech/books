@@ -36,7 +36,7 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
                             className="w-12 h-12 object-contain"
                         />
                     ) : (
-                        <div className="w-12 h-12 flex items-center justify-center rounded-full bg-purple-600 text-white font-bold text-xl">
+                        <div className="w-12 h-12 flex items-center justify-center rounded-full bg-primary text-white font-bold text-xl">
                             {firstLetter || "?"}
                         </div>
                     )

@@ -240,12 +240,12 @@ const ProductList: FC = () => {
                     placeholder="Search by name, code, brand, category..."
                     value={search}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-1/3    focus:outline-none focus:ring-2 focus:ring-purple-600 text-gray-950"
+                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-1/3    focus:outline-none focus:ring-2 focus:ring-ring text-gray-950"
                 />
                 <select
                     value={limit}
                     onChange={(e: ChangeEvent<HTMLSelectElement>) => handlePageLengthChange(Number(e.target.value))}
-                    className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950   focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950   focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                     {[10, 25, 50].map((num) => <option key={num} value={num}>{num} / page</option>)}
                 </select>
@@ -263,7 +263,7 @@ const ProductList: FC = () => {
                         className={
                             'px-3 py-1 text-sm rounded-full border cursor-pointer ' +
                             (inventoryFilter === opt.value
-                                ? 'bg-purple-600 text-white border-purple-600'
+                                ? 'bg-primary text-white border-primary'
                                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50')
                         }
                     >

@@ -118,7 +118,7 @@ const AdminRegister: React.FC = () => {
     return (
         <div className="min-h-screen flex items-center justify-center">
             <div className="w-full max-w-2xl bg-white rounded-2xl border border-gray-200 p-10">
-                <h2 className="text-2xl font-bold text-center text-purple-600 mb-8">
+                <h2 className="text-2xl font-bold text-center text-primary mb-8">
                     Admin Registration
                 </h2>
 
@@ -126,7 +126,7 @@ const AdminRegister: React.FC = () => {
                     {/* First Name */}
                     <div className="flex flex-col">
                         <label className="text-sm font-medium text-gray-700 mb-1">
-                            First Name <span className="text-red-500">*</span>
+                            First Name <span className="text-destructive">*</span>
                         </label>
                         <div className="relative">
                             <User className="absolute left-3 top-3 text-gray-400" size={18} />
@@ -137,16 +137,16 @@ const AdminRegister: React.FC = () => {
                                 value={formData.firstName}
                                 onChange={handleChange}
                                 maxLength={30}
-                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ring focus:outline-none"
                             />
-                            {formErrors.firstName && <p className="text-red-500 text-xs mt-1">{formErrors.firstName}</p>}
+                            {formErrors.firstName && <p className="text-destructive text-xs mt-1">{formErrors.firstName}</p>}
                         </div>
                     </div>
 
                     {/* Last Name */}
                     <div className="flex flex-col">
                         <label className="text-sm font-medium text-gray-700 mb-1">
-                            Last Name <span className="text-red-500">*</span>
+                            Last Name <span className="text-destructive">*</span>
                         </label>
                         <div className="relative">
                             <User className="absolute left-3 top-3 text-gray-400" size={18} />
@@ -157,16 +157,16 @@ const AdminRegister: React.FC = () => {
                                 value={formData.lastName}
                                 onChange={handleChange}
                                 maxLength={30}
-                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ring focus:outline-none"
                             />
-                            {formErrors.lastName && <p className="text-red-500 text-xs mt-1">{formErrors.lastName}</p>}
+                            {formErrors.lastName && <p className="text-destructive text-xs mt-1">{formErrors.lastName}</p>}
                         </div>
                     </div>
 
                     {/* Email */}
                     <div className="flex flex-col">
                         <label className="text-sm font-medium text-gray-700 mb-1">
-                            Email <span className="text-red-500">*</span>
+                            Email <span className="text-destructive">*</span>
                         </label>
                         <div className="relative">
                             <Mail className="absolute left-3 top-3 text-gray-400" size={18} />
@@ -177,16 +177,16 @@ const AdminRegister: React.FC = () => {
                                 value={formData.email}
                                 onChange={handleChange}
                                 maxLength={70}
-                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ring focus:outline-none"
                             />
-                            {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
+                            {formErrors.email && <p className="text-destructive text-xs mt-1">{formErrors.email}</p>}
                         </div>
                     </div>
 
                     {/* Phone */}
                     <div className="flex flex-col">
                         <label className="text-sm font-medium text-gray-700 mb-1">
-                            Phone <em className="text-red-500">*</em>
+                            Phone <em className="text-destructive">*</em>
                         </label>
                         <div className="relative">
                             <Phone className="absolute left-3 top-3 text-gray-400" size={18} />
@@ -197,16 +197,16 @@ const AdminRegister: React.FC = () => {
                                 value={formData.phone}
                                 onChange={handleChange}
                                 maxLength={20}
-                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ring focus:outline-none"
                             />
-                            {formErrors.phone && <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>}
+                            {formErrors.phone && <p className="text-destructive text-xs mt-1">{formErrors.phone}</p>}
                         </div>
                     </div>
 
                     {/* Password */}
                     <div className="flex flex-col">
                         <label className="text-sm font-medium text-gray-700 mb-1">
-                            Password <span className="text-red-500">*</span>
+                            Password <span className="text-destructive">*</span>
                         </label>
                         <div className="relative">
                             <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
@@ -217,13 +217,13 @@ const AdminRegister: React.FC = () => {
                                 value={formData.password}
                                 onChange={handleChange}
                                 maxLength={30}
-                                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ring focus:outline-none"
                             />
-                            {formErrors.password && <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>}
+                            {formErrors.password && <p className="text-destructive text-xs mt-1">{formErrors.password}</p>}
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-3 text-gray-500 hover:text-purple-600"
+                                className="absolute right-3 top-3 text-gray-500 hover:text-primary"
                             >
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
@@ -233,7 +233,7 @@ const AdminRegister: React.FC = () => {
                     {/* Confirm Password */}
                     <div className="flex flex-col">
                         <label className="text-sm font-medium text-gray-700 mb-1">
-                            Confirm Password <span className="text-red-500">*</span>
+                            Confirm Password <span className="text-destructive">*</span>
                         </label>
                         <div className="relative">
                             <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
@@ -244,13 +244,13 @@ const AdminRegister: React.FC = () => {
                                 value={formData.confirmPassword}
                                 onChange={handleChange}
                                 maxLength={30}
-                                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:outline-none"
+                                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ring focus:outline-none"
                             />
-                            {formErrors.confirmPassword && <p className="text-red-500 text-xs mt-1">{formErrors.confirmPassword}</p>}
+                            {formErrors.confirmPassword && <p className="text-destructive text-xs mt-1">{formErrors.confirmPassword}</p>}
                             <button
                                 type="button"
                                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                className="absolute right-3 top-3 text-gray-500 hover:text-purple-600"
+                                className="absolute right-3 top-3 text-gray-500 hover:text-primary"
                             >
                                 {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
@@ -262,7 +262,7 @@ const AdminRegister: React.FC = () => {
                         <button
                             type="submit"
                             disabled={isSaving}
-                            className={`flex items-center justify-center gap-2 w-[320px] max-w-full px-6 bg-purple-600 hover:bg-purple-700 text-white font-medium text-sm py-3 rounded-lg transition-all duration-200 shadow-sm ${isSaving ? "opacity-60 cursor-not-allowed" : ""
+                            className={`flex items-center justify-center gap-2 w-[320px] max-w-full px-6 bg-primary hover:bg-primary/90 text-white font-medium text-sm py-3 rounded-lg transition-all duration-200 shadow-sm ${isSaving ? "opacity-60 cursor-not-allowed" : ""
                                 }`}
                         >
                             {isSaving ? (

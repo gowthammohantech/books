@@ -20,38 +20,38 @@ const modeConfig: Record<
 > = {
   cash: {
     label: 'Cash',
-    icon: <DollarSign size={14} className="ml-1 text-success" />,
-    className: 'bg-success-soft text-success',
+    icon: <DollarSign size={14} className="ml-1 text-success-strong" />,
+    className: 'bg-success-soft text-success-strong',
   },
   cheque: {
     label: 'Cheque',
-    icon: <CreditCard size={14} className="ml-1 text-purple-600" />,
-    className: 'bg-primary-soft text-purple-600',
+    icon: <CreditCard size={14} className="ml-1 text-primary" />,
+    className: 'bg-accent text-primary',
   },
   bank: {
     label: 'Bank',
-    icon: <Banknote size={14} className="ml-1 text-info" />,
-    className: 'bg-info-soft text-info',
+    icon: <Banknote size={14} className="ml-1 text-info-strong" />,
+    className: 'bg-info-soft text-info-strong',
   },
   upi: {
     label: 'UPI',
     icon: <img src={UPI} alt="UPI" className="h-4 ml-1" />,
-    className: 'bg-info-soft text-info',
+    className: 'bg-info-soft text-info-strong',
   },
   'bank deposit': {
     label: 'Bank Deposit',
-    icon: <Banknote size={14} className="ml-1 text-info" />,
-    className: 'bg-info-soft text-info',
+    icon: <Banknote size={14} className="ml-1 text-info-strong" />,
+    className: 'bg-info-soft text-info-strong',
   },
   'bank transfer': {
     label: 'Bank Transfer',
-    icon: <Banknote size={14} className="ml-1 text-info" />,
-    className: 'bg-info-soft text-info',
+    icon: <Banknote size={14} className="ml-1 text-info-strong" />,
+    className: 'bg-info-soft text-info-strong',
   },
   'petty cash': {
     label: 'Petty Cash',
-    icon: <Banknote size={14} className="ml-1 text-info" />,
-    className: 'bg-info-soft text-info',
+    icon: <Banknote size={14} className="ml-1 text-info-strong" />,
+    className: 'bg-info-soft text-info-strong',
   },
 };
 
@@ -59,13 +59,13 @@ const PaymentModeBadge: React.FC<PaymentModeBadgeProps> = ({ mode }) => {
   const normalized = mode.toLowerCase().trim();
   const config = modeConfig[normalized] || {
     label: mode,
-    icon: <HelpCircle size={14} className="ml-1 text-body" />,
-    className: 'bg-surface text-body',
+    icon: <HelpCircle size={14} className="ml-1 text-muted-foreground" />,
+    className: 'bg-muted text-muted-foreground',
   };
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-control text-[13px] font-medium ${config.className}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[13px] font-medium ${config.className}`}
     >
       {config.label}
       {config.icon}

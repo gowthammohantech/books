@@ -1311,7 +1311,7 @@ const EditInvoice: React.FC = () => {
     if (loadError) {
         return (
             <div className="flex items-center justify-center min-h-screen p-4">
-                <div className="max-w-md w-full text-center bg-white border border-gray-200 rounded-control shadow-card p-8">
+                <div className="max-w-md w-full text-center bg-white border border-gray-200 rounded-md shadow-sm p-8">
                     <p className="text-lg font-semibold text-gray-950 mb-2">Couldn't load this invoice</p>
                     <p className="text-sm text-gray-600 mb-6">{loadError}</p>
                     <div className="flex items-center justify-center gap-3">
@@ -1326,7 +1326,7 @@ const EditInvoice: React.FC = () => {
                         >
                             Retry
                         </Button>
-                        <Link to="/admin/invoices" className="text-sm font-medium text-purple-600 hover:underline">
+                        <Link to="/admin/invoices" className="text-sm font-medium text-primary hover:underline">
                             Back to Invoices
                         </Link>
                     </div>
@@ -1337,7 +1337,7 @@ const EditInvoice: React.FC = () => {
     }
 
     return (
-        <div className="md:p-4 bg-white-50 min-h-screen border border-gray-200 rounded">
+        <div className="md:p-4 min-h-screen border border-gray-200 rounded">
             <form onSubmit={saveQuotation}>
                 <div className="max-w-7xl mx-auto space-y-4">
                     <PageHeader title="Edit Invoice" />
@@ -1373,7 +1373,7 @@ const EditInvoice: React.FC = () => {
 
                     {/* Read-only notice for non-draft invoices */}
                     {invoiceData?.id && !isEditable && (
-                        <div className="rounded-control bg-warning-soft border border-warning text-warning p-3 mb-2 text-sm">
+                        <div className="rounded-md bg-warning-soft border border-warning text-warning-strong p-3 mb-2 text-sm">
                             This invoice is <strong>{(invoiceData.status || '').toLowerCase()}</strong> and can no longer be edited.
                             Only draft invoices are editable — use the actions above to record a payment, send it, or create a credit note to adjust it.
                         </div>
@@ -1381,14 +1381,14 @@ const EditInvoice: React.FC = () => {
 
                     {/* Converted banner — shown when this proforma has been converted to a final invoice */}
                     {invoiceData?.convertedAt && (
-                        <div className="rounded-control bg-success-soft border border-success text-success p-3 mb-4 text-sm">
+                        <div className="rounded-md bg-success-soft border border-success text-success-strong p-3 mb-4 text-sm">
                             Converted on {formatDate(invoiceData.convertedAt)}. This proforma is now locked.
                         </div>
                     )}
 
                     {/* Child-of-recurring-parent banner */}
                     {invoiceData?.parentInvoice && (
-                        <div className="rounded-control bg-info-soft border border-info text-info p-3 mb-4 text-sm">
+                        <div className="rounded-md bg-info-soft border border-info text-info-strong p-3 mb-4 text-sm">
                             Generated from recurring schedule.{' '}
                             <a href={`/admin/invoices/edit-invoice/${invoiceData.parentInvoice}`} className="underline">
                                 View parent
@@ -1397,8 +1397,8 @@ const EditInvoice: React.FC = () => {
                     )}
 
                     {/* Sharing & advanced options — collapsed by default to keep the form focused */}
-                    <details className="border border-gray-200 rounded-control mb-4 group">
-                        <summary className="cursor-pointer select-none px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-control">
+                    <details className="border border-gray-200 rounded-md mb-4 group">
+                        <summary className="cursor-pointer select-none px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md">
                             Sharing &amp; advanced options
                             <span className="text-gray-400 font-normal"> — public link, QR, WhatsApp, e-invoice (IRN)</span>
                         </summary>
@@ -1406,7 +1406,7 @@ const EditInvoice: React.FC = () => {
 
                     {/* Public link panel */}
                     {invoiceData?.id && (
-                        <div className="border rounded-control p-4 mb-4">
+                        <div className="border rounded-md p-4 mb-4">
                             <div className="flex items-center justify-between">
                                 <label className="flex items-center gap-2">
                                     <input
@@ -1433,7 +1433,7 @@ const EditInvoice: React.FC = () => {
                                             size="sm"
                                             onClick={handleRotatePublicLink}
                                             disabled={publicLinkSaving}
-                                            className="text-purple-700 underline"
+                                            className="text-primary underline"
                                         >
                                             Rotate
                                         </Button>
@@ -1454,7 +1454,7 @@ const EditInvoice: React.FC = () => {
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={handleCopyPublicLink}
-                                                className="text-purple-700 underline whitespace-nowrap"
+                                                className="text-primary underline whitespace-nowrap"
                                             >
                                                 Copy
                                             </Button>
@@ -1467,7 +1467,7 @@ const EditInvoice: React.FC = () => {
 
                     {/* E-Invoice (IRN) panel — slice G.1, only for final invoices */}
                     {invoiceData?.id && invoiceData?.invoiceType === 'INVOICE' && (
-                        <div className="border rounded-control p-4 mb-4">
+                        <div className="border rounded-md p-4 mb-4">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-sm font-medium">E-Invoice (IRN)</span>
                                 {eInvoice?.status === 'GENERATED' && (
@@ -1536,7 +1536,7 @@ const EditInvoice: React.FC = () => {
                                         )}
                                     </div>
                                     {eInvoice.errorMessage && (
-                                        <p className="text-xs text-danger pt-1">{eInvoice.errorMessage}</p>
+                                        <p className="text-xs text-destructive pt-1">{eInvoice.errorMessage}</p>
                                     )}
                                 </div>
                             )}
@@ -1548,7 +1548,7 @@ const EditInvoice: React.FC = () => {
 
                     {/* Payment options — rendered as "Pay with" buttons on the public view link */}
                     {(paymentMethods.length > 0 || invoiceFormData.paymentOptions.length > 0) && (
-                        <div className="mb-4 border border-gray-200 rounded-control p-4">
+                        <div className="mb-4 border border-gray-200 rounded-md p-4">
                             <h3 className="text-sm font-semibold text-gray-700 mb-1">Payment options (shown on public link)</h3>
                             <p className="text-xs text-gray-500 mb-3">
                                 Tick the methods to offer on this invoice, and paste the payment URL for each
@@ -1630,7 +1630,7 @@ const EditInvoice: React.FC = () => {
                                     onChange={(newDate) => handleFormChange('invoiceDate', newDate)}
                                     isRequired
                                 />
-                                {formErrors?.invoiceDate && <span className="text-danger text-sm">{formErrors.invoiceDate}</span>}
+                                {formErrors?.invoiceDate && <span className="text-destructive text-sm">{formErrors.invoiceDate}</span>}
                             </div>
                             <div className="w-full">
                                 <DateInput
@@ -1640,7 +1640,7 @@ const EditInvoice: React.FC = () => {
                                     minDate={invoiceFormData.invoiceDate || new Date()}
                                     isRequired={false}
                                 />
-                                {formErrors?.dueDate && <span className="text-danger text-sm">{formErrors.dueDate}</span>}
+                                {formErrors?.dueDate && <span className="text-destructive text-sm">{formErrors.dueDate}</span>}
                             </div>
                             <div className="w-full">
                                 <CurrencySelect
@@ -1675,8 +1675,8 @@ const EditInvoice: React.FC = () => {
 
                     {/* Billing Section */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div className="bg-white p-4 rounded-control border border-gray-200 ">
-                            <h3 className="font-bold text-gray-950 ">Bill From <span className='text-danger'>*</span></h3>
+                        <div className="bg-white p-4 rounded-md border border-gray-200 ">
+                            <h3 className="font-bold text-gray-950 ">Bill From <span className='text-destructive'>*</span></h3>
                             <div className="mt-4">
                                 <SmartDropdown
                                     items={adminUsers}
@@ -1687,7 +1687,7 @@ const EditInvoice: React.FC = () => {
                                     placeholder="Type to search..."
                                     serverside={false}
                                 />
-                                {!selectedAdmin && formErrors?.billFrom && <span className="text-danger text-sm">{formErrors.billFrom}</span>}
+                                {!selectedAdmin && formErrors?.billFrom && <span className="text-destructive text-sm">{formErrors.billFrom}</span>}
                                 {!selectedAdmin && <p className="mt-2 text-xs text-gray-500 p-2 font-semibold">
                                     Select admin to view company details.
                                 </p>}
@@ -1704,16 +1704,16 @@ const EditInvoice: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white p-4 rounded-control border border-gray-200 ">
+                        <div className="bg-white p-4 rounded-md border border-gray-200 ">
                             <div className="flex justify-between items-center">
-                                <h3 className="font-bold text-gray-950 ">Bill To <span className='text-danger'>*</span></h3>
+                                <h3 className="font-bold text-gray-950 ">Bill To <span className='text-destructive'>*</span></h3>
                                 <Button
                                     type='button'
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setIsCustomerModalOpen(true)}
                                     leftIcon={<PlusCircle className="h-4 w-4" />}
-                                    className="text-purple-600"
+                                    className="text-primary"
                                 >
                                     Add Customer
                                 </Button>
@@ -1730,7 +1730,7 @@ const EditInvoice: React.FC = () => {
                                     placeholder='Type to search customer'
                                     loading={customersLoading}
                                 />
-                                {!selectedCustomer && formErrors?.billTo && <span className="text-danger text-sm">{formErrors.billTo}</span>}
+                                {!selectedCustomer && formErrors?.billTo && <span className="text-destructive text-sm">{formErrors.billTo}</span>}
                                 {!selectedCustomer && <p className="mt-2 text-xs text-gray-500 p-2 font-semibold">
                                     Select customer to view customer details
                                 </p>}
@@ -1745,7 +1745,7 @@ const EditInvoice: React.FC = () => {
                                 )}
                                 {selectedCustomer && (
                                     <div className="mt-3">
-                                        <label className="block text-sm font-medium text-heading mb-1">Vehicle (optional)</label>
+                                        <label className="block text-sm font-medium text-foreground mb-1">Vehicle (optional)</label>
                                         <div className="flex items-center gap-2">
                                             <Select
                                                 value={invoiceFormData.vehicleId ?? ''}
@@ -1774,7 +1774,7 @@ const EditInvoice: React.FC = () => {
                     </div>
 
                     {/* Tax Treatment */}
-                    <div className="bg-white p-4 rounded-control border border-gray-200">
+                    <div className="bg-white p-4 rounded-md border border-gray-200">
                         <div className="flex items-center gap-4 flex-wrap">
                             <div>
                                 <Select
@@ -1808,9 +1808,9 @@ const EditInvoice: React.FC = () => {
                     />
 
                     {/* Items & Details Section */}
-                    <div className="bg-white rounded-control border border-gray-200 ">
+                    <div className="bg-white rounded-md border border-gray-200 ">
                         <div className="p-4">
-                            {formErrors?.items && <span className="text-danger text-sm">{formErrors.items}</span>}
+                            {formErrors?.items && <span className="text-destructive text-sm">{formErrors.items}</span>}
                             <table className="w-full border-separate border-spacing-0 overflow-x-auto">
                                 <thead className="bg-gray-100 text-gray-900">
                                     <tr>
@@ -1855,12 +1855,12 @@ const EditInvoice: React.FC = () => {
                                                     <div className="flex flex-wrap items-center gap-2 text-xs">
                                                         <span className="text-gray-600 font-medium">Taxes:</span>
                                                         {((item as ProductItem).taxes ?? []).length === 0 && (
-                                                            <span className="text-gray-400 italic">No taxes applied</span>
+                                                            <span className="text-muted-foreground italic">No taxes applied</span>
                                                         )}
                                                         {((item as ProductItem).taxes ?? []).map((t, idx) => (
                                                             <span
                                                                 key={`${t.taxRateId}-${idx}`}
-                                                                className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full"
+                                                                className="inline-flex items-center gap-1 bg-accent text-primary border border-accent px-2 py-0.5 rounded-full"
                                                             >
                                                                 {t.kind ? `${t.kind} ` : ''}{t.percent}% · {fmtMoney(t.amount)}
                                                             </span>
@@ -1895,7 +1895,7 @@ const EditInvoice: React.FC = () => {
                             </table>
                             {/* Add New Product */}
                             <div className="p-4 flex">
-                                <Button type='button' variant="ghost" size="sm" onClick={() => handleNewRow()} leftIcon={<PlusCircle className="h-4 w-4" />} className="text-purple-600">
+                                <Button type='button' variant="ghost" size="sm" onClick={() => handleNewRow()} leftIcon={<PlusCircle className="h-4 w-4" />} className="text-primary">
                                     Add New Row
                                 </Button>
                             </div>
@@ -1946,7 +1946,7 @@ const EditInvoice: React.FC = () => {
                             />
 
                             <div>
-                                <label htmlFor="edit-tax-select" className="block text-sm font-medium text-heading mb-1">Tax</label>
+                                <label htmlFor="edit-tax-select" className="block text-sm font-medium text-foreground mb-1">Tax</label>
                                 <LineTaxSelect
                                     id="edit-tax-select"
                                     className={fieldControlClasses(false)}
@@ -2047,7 +2047,7 @@ const EditInvoice: React.FC = () => {
                     </div>
 
                     {/* Right Side: Totals & Signature */}
-                    <div className="bg-white p-4 rounded-control border border-gray-200 space-y-3">
+                    <div className="bg-white p-4 rounded-md border border-gray-200 space-y-3">
                         <div className="flex justify-between text-sm text-gray-600 "><span>Amount</span><span>{fmtMoney(subTotal || 0)}</span></div>
                         {(() => {
                             const breakdown: Record<string, number> = {};
@@ -2060,7 +2060,7 @@ const EditInvoice: React.FC = () => {
                             const entries = Object.entries(breakdown);
                             if (entries.length === 0) return null;
                             return (
-                                <div className="pl-2 border-l-2 border-purple-200 space-y-1">
+                                <div className="pl-2 border-l-2 border-accent space-y-1">
                                     {entries.map(([label, amount]) => (
                                         <div key={label} className="flex justify-between text-xs text-gray-600">
                                             <span>{label}</span>
@@ -2077,14 +2077,14 @@ const EditInvoice: React.FC = () => {
                         <p className="text-sm text-gray-500 capitalize">{totalInWords}</p>
 
                         <div className="flex items-center gap-4 pt-4">
-                            <div className="flex items-center"><input id="no-sig" type="radio" name="signature" checked={invoiceFormData.sign_type === 'none'} onChange={() => handleFormChange('sign_type', 'none')} className="h-4 w-4 text-purple-600 cursor-pointer" /><label htmlFor="no-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">No Signature</label></div>
-                            <div className="flex items-center"><input id="manual-sig" type="radio" name="signature" checked={invoiceFormData.sign_type === 'digitalSignature'} onChange={() => handleFormChange('sign_type', 'digitalSignature')} className="h-4 w-4 text-purple-600 cursor-pointer" /><label htmlFor="manual-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">Manual Signature</label></div>
-                            <div className="flex items-center"><input id="e-sig" type="radio" name="signature" checked={invoiceFormData.sign_type === 'eSignature'} onChange={() => handleFormChange('sign_type', 'eSignature')} className="h-4 w-4 text-purple-600 cursor-pointer" /><label htmlFor="e-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">eSignature</label></div>
+                            <div className="flex items-center"><input id="no-sig" type="radio" name="signature" checked={invoiceFormData.sign_type === 'none'} onChange={() => handleFormChange('sign_type', 'none')} className="h-4 w-4 text-primary cursor-pointer" /><label htmlFor="no-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">No Signature</label></div>
+                            <div className="flex items-center"><input id="manual-sig" type="radio" name="signature" checked={invoiceFormData.sign_type === 'digitalSignature'} onChange={() => handleFormChange('sign_type', 'digitalSignature')} className="h-4 w-4 text-primary cursor-pointer" /><label htmlFor="manual-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">Manual Signature</label></div>
+                            <div className="flex items-center"><input id="e-sig" type="radio" name="signature" checked={invoiceFormData.sign_type === 'eSignature'} onChange={() => handleFormChange('sign_type', 'eSignature')} className="h-4 w-4 text-primary cursor-pointer" /><label htmlFor="e-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">eSignature</label></div>
                         </div>
 
                         {invoiceFormData.sign_type !== 'none' && (invoiceFormData.sign_type === 'digitalSignature' ? (
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Select Signature Name <span className="text-danger">*</span></label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Select Signature Name <span className="text-destructive">*</span></label>
                                 <SmartDropdown
                                     items={manualSignatures}
                                     value={signatureSearchInput}
@@ -2096,9 +2096,9 @@ const EditInvoice: React.FC = () => {
                                     placeholder='Type to search signatures...'
                                     loading={signaturesLoading}
                                 />
-                                {formErrors?.signatureId && <p className="text-danger text-xs mt-1">{formErrors.signatureId}</p>}
+                                {formErrors?.signatureId && <p className="text-destructive text-xs mt-1">{formErrors.signatureId}</p>}
                                 <p className="mt-2 text-sm font-medium text-gray-700 ">Signature Image</p>
-                                <div className="mt-2 h-20 w-48 bg-gray-100 rounded-control flex items-center justify-center">
+                                <div className="mt-2 h-20 w-48 bg-gray-100 rounded-md flex items-center justify-center">
                                     {selectedManualSignatureImage ? <img src={selectedManualSignatureImage} alt="Selected Signature" className="max-h-full max-w-full" /> : <span className="text-xs text-gray-400">No signature selected</span>}
                                 </div>
                             </div>
@@ -2115,10 +2115,10 @@ const EditInvoice: React.FC = () => {
                                     error={formErrors?.signatureName}
                                 />
                                 <p className="mt-2 text-sm font-medium text-gray-700 ">Draw your eSignature</p>
-                                <div className="mt-2 h-20 w-48 bg-gray-100 rounded-control flex items-center justify-center cursor-pointer border-2 border-dashed border-gray-400" onClick={() => setSignatureModalOpen(true)}>
+                                <div className="mt-2 h-20 w-48 bg-gray-100 rounded-md flex items-center justify-center cursor-pointer border-2 border-dashed border-gray-400" onClick={() => setSignatureModalOpen(true)}>
                                     {invoiceFormData.esignDataUrl ? <img src={invoiceFormData.esignDataUrl} alt="Drawn Signature" className="max-h-full max-w-full" /> : <div className="text-center text-gray-500"><Edit size={20} className="mx-auto mb-1" /><span className="text-xs">Draw Signature</span></div>}
                                 </div>
-                                {formErrors?.esignDataUrl && <p className="text-danger text-xs mt-1">{formErrors.esignDataUrl}</p>}
+                                {formErrors?.esignDataUrl && <p className="text-destructive text-xs mt-1">{formErrors.esignDataUrl}</p>}
                             </div>
                         ))}
                     </div>
@@ -2194,7 +2194,7 @@ const EditInvoice: React.FC = () => {
 
             {whatsappModal && (
                 <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-control shadow-dropdown max-w-lg w-full p-5">
+                    <div className="bg-white rounded-md shadow-lg max-w-lg w-full p-5">
                         <div className="flex items-center justify-between mb-3">
                             <h2 className="text-lg font-semibold">Send via WhatsApp</h2>
                             <Button
@@ -2234,7 +2234,7 @@ const EditInvoice: React.FC = () => {
                                     href={whatsappModal.waMeUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="px-3 py-1 bg-success text-white text-sm rounded-control"
+                                    className="px-3 py-1 bg-success text-white text-sm rounded-md"
                                 >
                                     Open in WhatsApp
                                 </a>

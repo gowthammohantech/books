@@ -158,9 +158,9 @@ const EmailInvoice: React.FC = () => {
                 ? `<p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 12px 0">You can view, print, and download it as a PDF from the link below.</p>`
                 : "";
             const linkButton = viewInvoiceLink
-                ? `<p style="text-align:center;margin:0 0 12px 0"><a href="${viewInvoiceLink}" style="display:inline-block;padding:10px 20px;background-color:#4191f2;color:#fff;text-decoration:none;border-radius:4px;font-family:Arial,sans-serif;font-size:16px;">View Invoice</a></p>`
+                ? `<p style="text-align:center;margin:0 0 12px 0"><a href="${viewInvoiceLink}" style="display:inline-block;padding:10px 20px;background-color:#3f5ec2;color:#fff;text-decoration:none;border-radius:4px;font-family:Arial,sans-serif;font-size:16px;">View Invoice</a></p>`
                 : "";
-            const html = `<h2 style="font-family:Arial,sans-serif;background-color:#4191f2;font-size:24px;text-align:center;padding:8px;color:#fff;margin:0 0 12px 0">Invoice #${invoiceNo}</h2><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 8px 0">Dear ${customerName},</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 8px 0">Thank you for your business. Your invoice <strong>#${invoiceNo}</strong> is ready.</p>${linkSentence}<p style="font-family:Arial,sans-serif;font-size:14px;text-transform:uppercase;color:#555;text-align:center;margin:0 0 4px 0">Amount Due</p><p style="font-family:Arial,sans-serif;font-size:32px;font-weight:700;color:#d61915;text-align:center;margin:0 0 12px 0">${totalAmount}</p>${linkButton}<p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 4px 0"><strong>Invoice Date:</strong> ${invoiceDate}</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 12px 0"><strong>Due Date:</strong> ${dueDate}</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 8px 0">Regards,</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0">The ${companyName} Team</p>`;
+            const html = `<h2 style="font-family:Arial,sans-serif;background-color:#3f5ec2;font-size:24px;text-align:center;padding:8px;color:#fff;margin:0 0 12px 0">Invoice #${invoiceNo}</h2><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 8px 0">Dear ${customerName},</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 8px 0">Thank you for your business. Your invoice <strong>#${invoiceNo}</strong> is ready.</p>${linkSentence}<p style="font-family:Arial,sans-serif;font-size:14px;text-transform:uppercase;color:#555;text-align:center;margin:0 0 4px 0">Amount Due</p><p style="font-family:Arial,sans-serif;font-size:32px;font-weight:700;color:#df2225;text-align:center;margin:0 0 12px 0">${totalAmount}</p>${linkButton}<p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 4px 0"><strong>Invoice Date:</strong> ${invoiceDate}</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 12px 0"><strong>Due Date:</strong> ${dueDate}</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 8px 0">Regards,</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0">The ${companyName} Team</p>`;
             return { subject: `Invoice #${invoiceNo} from ${emailSettings.fromName || systemSettings?.company.companyName || "Company"}`, html };
         };
 
@@ -171,9 +171,9 @@ const EmailInvoice: React.FC = () => {
             const totalAmount = formatDocAmount(invoiceDetails.TotalAmount ?? 0, invoiceDetails.currencyCode);
             const companyName = systemSettings?.company.companyName ?? "";
             const linkButton = viewInvoiceLink
-                ? `<p style="text-align:center;margin:0 0 12px 0"><a href="${viewInvoiceLink}" style="display:inline-block;padding:10px 20px;background-color:#4191f2;color:#fff;text-decoration:none;border-radius:4px;font-family:Arial,sans-serif;font-size:16px;">View &amp; Pay Invoice</a></p>`
+                ? `<p style="text-align:center;margin:0 0 12px 0"><a href="${viewInvoiceLink}" style="display:inline-block;padding:10px 20px;background-color:#3f5ec2;color:#fff;text-decoration:none;border-radius:4px;font-family:Arial,sans-serif;font-size:16px;">View &amp; Pay Invoice</a></p>`
                 : "";
-            const html = `<h2 style="font-family:Arial,sans-serif;background-color:#d61915;font-size:22px;text-align:center;padding:8px;color:#fff;margin:0 0 12px 0">Payment Reminder — Invoice #${invoiceNo}</h2><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 8px 0">Dear ${customerName},</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 8px 0">This is a friendly reminder that invoice <strong>#${invoiceNo}</strong>${dueDate ? ` was due on <strong>${dueDate}</strong>` : ""} and remains outstanding.</p><p style="font-family:Arial,sans-serif;font-size:14px;text-transform:uppercase;color:#555;text-align:center;margin:0 0 4px 0">Amount Due</p><p style="font-family:Arial,sans-serif;font-size:32px;font-weight:700;color:#d61915;text-align:center;margin:0 0 12px 0">${totalAmount}</p>${linkButton}<p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 8px 0">If you have already made this payment, please disregard this message. Otherwise, we would appreciate prompt settlement.</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 8px 0">Regards,</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0">The ${companyName} Team</p>`;
+            const html = `<h2 style="font-family:Arial,sans-serif;background-color:#df2225;font-size:22px;text-align:center;padding:8px;color:#fff;margin:0 0 12px 0">Payment Reminder — Invoice #${invoiceNo}</h2><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 8px 0">Dear ${customerName},</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 8px 0">This is a friendly reminder that invoice <strong>#${invoiceNo}</strong>${dueDate ? ` was due on <strong>${dueDate}</strong>` : ""} and remains outstanding.</p><p style="font-family:Arial,sans-serif;font-size:14px;text-transform:uppercase;color:#555;text-align:center;margin:0 0 4px 0">Amount Due</p><p style="font-family:Arial,sans-serif;font-size:32px;font-weight:700;color:#df2225;text-align:center;margin:0 0 12px 0">${totalAmount}</p>${linkButton}<p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 8px 0">If you have already made this payment, please disregard this message. Otherwise, we would appreciate prompt settlement.</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0 0 8px 0">Regards,</p><p style="font-family:Arial,sans-serif;font-size:16px;color:#333;line-height:1.5;margin:0">The ${companyName} Team</p>`;
             return { subject: `Payment reminder: Invoice #${invoiceNo}`, html };
         };
 
@@ -291,40 +291,40 @@ const EmailInvoice: React.FC = () => {
             <div className="space-y-4">
                 <form id="email-invoice-form" onSubmit={handleSubmit}>
                     {/* card */}
-                    <div className="border border-border rounded-card bg-white shadow-card">
+                    <div className="border border-border rounded-xl bg-white shadow-sm">
                         {/* from */}
                         <div className="p-4 flex items-center gap-4">
-                            <label className="w-32 text-heading font-medium">From</label>
+                            <label className="w-32 text-foreground font-medium">From</label>
                             <input
                                 type="email"
                                 value={emailSettings.from}
                                 disabled
-                                className="flex-1 border border-border rounded-control p-2 bg-surface text-body"
+                                className="flex-1 border border-border rounded-md p-2 bg-muted text-muted-foreground"
                             />
                         </div>
 
                         {/* to */}
                         <div className="p-4 flex items-center gap-4">
-                            <label className="w-32 text-heading font-medium">To</label>
+                            <label className="w-32 text-foreground font-medium">To</label>
                             <input
                                 type="email"
                                 value={invoiceDetails?.billTo?.email || ""}
                                 placeholder="customer@email.com"
                                 disabled
-                                className="flex-1 border border-border rounded-control p-2 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600"
+                                className="flex-1 border border-border rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary"
                             />
                         </div>
 
                         {/* subject */}
                         <div className="p-4 flex items-center gap-4">
-                            <label className="w-32 text-heading font-medium">Subject</label>
+                            <label className="w-32 text-foreground font-medium">Subject</label>
                             <input
                                 type="text"
                                 value={formData.subject}
                                 onChange={(e) =>
                                     setFormData({ ...formData, subject: e.target.value })
                                 }
-                                className="flex-1 border border-border rounded-control p-2 focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-purple-600"
+                                className="flex-1 border border-border rounded-md p-2 focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary"
                             />
                         </div>
 

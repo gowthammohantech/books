@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import type { BankAccount } from "@models/bank-account";
 import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/context/PageHeaderContext";
+import { themeColor } from "@lib/designTokens";
 
 interface BalanceTrend {
     bankCurrentTotal: number;
@@ -108,7 +109,7 @@ const Banking: React.FC = () => {
             curve: "smooth",
             width: 2,
         },
-        colors: ["#7539FF", "#0E9384"],
+        colors: [themeColor("primary"), themeColor("teal")],
         markers: {
             size: 0,
             hover: { size: 2 },
@@ -120,7 +121,7 @@ const Banking: React.FC = () => {
             }),
             labels: {
                 style: {
-                    colors: "#5D6772",
+                    colors: themeColor("muted-foreground"),
                     fontSize: "10px",
                 },
             },
@@ -164,7 +165,7 @@ const Banking: React.FC = () => {
                             <div className="absolute bg-white border border-gray-200 rounded-md z-10">
                                 <button
                                     className={`w-full text-left px-4 py-2 text-sm rounded-t-md font-medium transition ${viewMode === "30days"
-                                        ? "bg-purple-600 text-white"
+                                        ? "bg-primary text-white"
                                         : "text-gray-700 hover:bg-gray-100"
                                         }`}
                                     onClick={() => {
@@ -176,7 +177,7 @@ const Banking: React.FC = () => {
                                 </button>
                                 <button
                                     className={`w-full text-left px-4 py-2 text-sm rounded-b-md font-medium transition ${viewMode === "12months"
-                                        ? "bg-purple-600 text-white"
+                                        ? "bg-primary text-white"
                                         : "text-gray-700 hover:bg-gray-100"
                                         }`}
                                     onClick={() => {
@@ -224,14 +225,14 @@ const Banking: React.FC = () => {
                     className="flex items-center cursor-pointer space-x-2 p-2 rounded"
                     onClick={() => setShowChart(!showChart)}
                 >
-                    <TrendingUp className="w-5 h-5 text-purple-600" />
-                    <span className="text-purple-600 font-medium">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    <span className="text-primary font-medium">
                         {showChart ? "Hide Chart" : "Show Chart"}
                     </span>
                     {showChart ? (
-                        <ChevronUp className="w-4 h-4 text-purple-600" />
+                        <ChevronUp className="w-4 h-4 text-primary" />
                     ) : (
-                        <ChevronDown className="w-4 h-4 text-purple-600" />
+                        <ChevronDown className="w-4 h-4 text-primary" />
                     )}
                 </div>
 
@@ -269,7 +270,7 @@ const Banking: React.FC = () => {
                                             <Banknote className="w-5 h-5 text-indigo-600" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-semibold text-indigo-600">Petty Cash</p>
+                                            <p className="text-sm font-semibold text-primary">Petty Cash</p>
                                             <p className="text-xs text-indigo-500">Cash Account</p>
                                         </div>
                                     </div>
@@ -294,7 +295,7 @@ const Banking: React.FC = () => {
                                                     <LandmarkIcon className="w-5 h-5 text-indigo-600" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-medium text-indigo-600">{bankAccount.bankName} - {bankAccount.accountHoldername}</p>
+                                                    <p className="text-sm font-medium text-primary">{bankAccount.bankName} - {bankAccount.accountHoldername}</p>
                                                     <p className="text-xs text-indigo-500">
                                                         {bankAccount.accountNumber ? `****${bankAccount.accountNumber.slice(-4)}` : 'Bank Account'}
                                                     </p>

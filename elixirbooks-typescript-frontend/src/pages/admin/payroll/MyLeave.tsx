@@ -247,13 +247,13 @@ const MyLeave: React.FC = () => {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-heading pb-1">
-                                    Leave Type <span className="text-red-500">*</span>
+                                <label className="block text-sm font-medium text-foreground pb-1">
+                                    Leave Type <span className="text-destructive">*</span>
                                 </label>
                                 <select
                                     value={leaveTypeId}
                                     onChange={(e) => setLeaveTypeId(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
                                 >
                                     <option value="">Select leave type…</option>
                                     {types.map((t) => (
@@ -283,15 +283,15 @@ const MyLeave: React.FC = () => {
                                 )}
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-heading pb-1">
-                                    Portion <span className="text-red-500">*</span>
+                                <label className="block text-sm font-medium text-foreground pb-1">
+                                    Portion <span className="text-destructive">*</span>
                                 </label>
                                 <select
                                     value={defaultPortion}
                                     onChange={(e) =>
                                         setDefaultPortion(e.target.value as LeavePortion)
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
                                 >
                                     {PORTION_OPTIONS.map((p) => (
                                         <option key={p.value} value={p.value}>
@@ -326,7 +326,7 @@ const MyLeave: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-heading pb-1">
+                            <label className="block text-sm font-medium text-foreground pb-1">
                                 Reason
                             </label>
                             <textarea
@@ -334,7 +334,7 @@ const MyLeave: React.FC = () => {
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
                                 placeholder="Optional — add a note for your approver."
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
                             />
                         </div>
                         <div className="flex justify-end pt-2">
@@ -357,7 +357,7 @@ const MyLeave: React.FC = () => {
                         <select
                             value={year}
                             onChange={(e) => setYear(Number(e.target.value))}
-                            className="px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+                            className="px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                             {YEARS.map((y) => (
                                 <option key={y} value={y}>
@@ -407,7 +407,7 @@ const MyLeave: React.FC = () => {
                                         </div>
                                         <div>
                                             <div className="text-gray-400">Remaining</div>
-                                            <div className="font-semibold text-purple-700">
+                                            <div className="font-semibold text-primary">
                                                 {fmtDays(b.remaining)}
                                             </div>
                                         </div>
@@ -421,9 +421,9 @@ const MyLeave: React.FC = () => {
 
             {/* ── My requests ───────────────────────────────────────────────── */}
             <Card title="My Requests">
-                <div className="overflow-x-auto border border-border rounded-control">
+                <div className="overflow-x-auto border border-border rounded-md">
                     <table className="w-full text-sm">
-                        <thead className="bg-gray-100 text-xs uppercase text-body">
+                        <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                             <tr>
                                 <th className="px-4 py-3 text-left border-b border-border">Leave Type</th>
                                 <th className="px-4 py-3 text-left border-b border-border">Dates</th>
@@ -468,7 +468,7 @@ const MyLeave: React.FC = () => {
                                                 {r.status}
                                             </Badge>
                                             {r.status === 'REJECTED' && r.rejectionNote && (
-                                                <div className="mt-1 text-xs text-danger max-w-[220px]">
+                                                <div className="mt-1 text-xs text-destructive max-w-[220px]">
                                                     {r.rejectionNote}
                                                 </div>
                                             )}

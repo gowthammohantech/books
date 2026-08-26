@@ -89,13 +89,13 @@ export default function ProfitLossReport() {
           onChange={(d) => setTo(d ? dateToYmdString(d) : '')}
           label="To"
         />
-        <button type="button" onClick={load} className="px-3 py-1 text-sm bg-purple-600 text-white rounded">
+        <button type="button" onClick={load} className="px-3 py-1 text-sm bg-primary text-white rounded">
           Reload
         </button>
       </div>
 
       {loading && <p className="text-gray-500">Loading…</p>}
-      {error && <p className="text-red-600">{error}</p>}
+      {error && <p className="text-destructive">{error}</p>}
 
       {data && (
         <div className="space-y-4 text-sm">
@@ -138,7 +138,7 @@ export default function ProfitLossReport() {
             </div>
           </section>
 
-          <section className="border rounded p-4 bg-purple-50">
+          <section className="border rounded p-4 bg-accent">
             <div className="flex justify-between font-medium">
               <span>Gross Profit</span>
               <span>{data.grossProfit.toFixed(2)}</span>
@@ -174,7 +174,7 @@ export default function ProfitLossReport() {
             </div>
           </section>
 
-          <section className="border rounded p-4 bg-purple-50">
+          <section className="border rounded p-4 bg-accent">
             <div className="flex justify-between font-medium">
               <span>Operating Income</span>
               <span>{data.operatingIncome.toFixed(2)}</span>
@@ -195,7 +195,7 @@ export default function ProfitLossReport() {
             </section>
           )}
 
-          <section className="border-2 border-purple-600 rounded p-4 bg-purple-100">
+          <section className="border-2 border-primary rounded p-4 bg-accent">
             <div className="flex justify-between text-lg font-bold">
               <span>Net Income</span>
               <span>{data.netIncome.toFixed(2)}</span>

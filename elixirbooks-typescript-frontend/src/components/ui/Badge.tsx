@@ -21,43 +21,43 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 const BASE =
-  "inline-flex items-center gap-1 text-[13px] font-medium px-2 py-0.5 rounded-control";
+  "inline-flex items-center gap-1 text-[13px] font-medium px-2 py-0.5 rounded-md";
 
 // Static, fully-spelled class strings so Tailwind v4 JIT can detect them.
 // (Never interpolate e.g. `bg-${color}-soft`.)
 const STYLES: Record<BadgeColor, Record<BadgeVariant, string>> = {
   primary: {
-    soft: "bg-primary-soft text-primary",
-    solid: "bg-primary text-white",
+    soft: "bg-accent text-primary",
+    solid: "bg-primary text-primary-foreground",
     outline: "border border-primary text-primary",
   },
   success: {
-    soft: "bg-success-soft text-success",
-    solid: "bg-success text-white",
-    outline: "border border-success text-success",
+    soft: "bg-success-soft text-success-strong",
+    solid: "bg-success text-success-foreground",
+    outline: "border border-success text-success-strong",
   },
   danger: {
-    soft: "bg-danger-soft text-danger",
-    solid: "bg-danger text-white",
-    outline: "border border-danger text-danger",
+    soft: "bg-destructive-soft text-destructive-strong",
+    solid: "bg-destructive text-destructive-foreground",
+    outline: "border border-destructive text-destructive-strong",
   },
   warning: {
-    soft: "bg-warning-soft text-warning",
-    solid: "bg-warning text-white",
-    outline: "border border-warning text-warning",
+    soft: "bg-warning-soft text-warning-strong",
+    solid: "bg-warning text-warning-foreground",
+    outline: "border border-warning text-warning-strong",
   },
   info: {
-    soft: "bg-info-soft text-info",
-    solid: "bg-info text-white",
-    outline: "border border-info text-info",
+    soft: "bg-info-soft text-info-strong",
+    solid: "bg-info text-info-foreground",
+    outline: "border border-info text-info-strong",
   },
   secondary: {
-    soft: "bg-surface text-secondary",
-    solid: "bg-secondary text-white",
-    outline: "border border-secondary text-secondary",
+    soft: "bg-muted text-secondary-foreground",
+    solid: "bg-secondary text-secondary-foreground",
+    outline: "border border-border text-secondary-foreground",
   },
   indigo: {
-    soft: "bg-[#EEF0FB] text-indigo",
+    soft: "bg-accent text-indigo",
     solid: "bg-indigo text-white",
     outline: "border border-indigo text-indigo",
   },
@@ -77,9 +77,9 @@ const STYLES: Record<BadgeColor, Record<BadgeVariant, string>> = {
     outline: "border border-teal text-teal",
   },
   gray: {
-    soft: "bg-surface text-body",
-    solid: "bg-gray-700 text-white",
-    outline: "border border-border text-body",
+    soft: "bg-muted text-muted-foreground",
+    solid: "bg-gray-700 text-gray-50",
+    outline: "border border-border text-muted-foreground",
   },
 };
 

@@ -337,12 +337,12 @@ const FixedAssets: React.FC = () => {
                     placeholder="Search assets..."
                     value={search}
                     onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
                 />
                 <select
                     value={limit}
                     onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                    className="border border-gray-300 px-3 py-2 rounded-md bg-white text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    className="border border-gray-300 px-3 py-2 rounded-md bg-white text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                     {[10, 25, 50].map((num) => (
                         <option key={num} value={num}>{num} / page</option>
@@ -358,7 +358,7 @@ const FixedAssets: React.FC = () => {
                             row={item}
                             index={index + 1}
                             columns={[
-                                <span className="text-indigo-600 font-medium">{item.name}</span>,
+                                <span className="text-primary font-medium">{item.name}</span>,
                                 Number(item.cost).toLocaleString(),
                                 formatDate(item.acquisitionDate, dateFormat),
                                 item.accumulatedDepreciation !== undefined ? Number(item.accumulatedDepreciation).toLocaleString() : "—",
@@ -441,13 +441,13 @@ const FixedAssets: React.FC = () => {
                         />
                         <div>
                             <label htmlFor="method" className="block text-sm font-medium text-gray-700 mb-1">
-                                Depreciation Method <span className="text-red-500">*</span>
+                                Depreciation Method <span className="text-destructive">*</span>
                             </label>
                             <select
                                 id="method"
                                 value={form.method}
                                 onChange={(e) => setForm((prev) => ({ ...prev, method: e.target.value as DepreciationMethod }))}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
                             >
                                 {DEPRECIATION_METHODS.map((m) => (
                                     <option key={m} value={m}>{m.replace(/_/g, " ")}</option>
@@ -463,7 +463,7 @@ const FixedAssets: React.FC = () => {
                             onChange={(date) => setForm((prev) => ({ ...prev, acquisitionDate: date ? date.toISOString().substring(0, 10) : "" }))}
                             id="acquisitionDate"
                         />
-                        {formErrors.acquisitionDate && <p className="text-red-500 text-xs -mt-3">{formErrors.acquisitionDate}</p>}
+                        {formErrors.acquisitionDate && <p className="text-destructive text-xs -mt-3">{formErrors.acquisitionDate}</p>}
                     </div>
                     <div className="flex items-center gap-2">
                         <input
@@ -471,7 +471,7 @@ const FixedAssets: React.FC = () => {
                             id="postAcquisition"
                             checked={form.postAcquisition}
                             onChange={(e) => setForm((prev) => ({ ...prev, postAcquisition: e.target.checked }))}
-                            className="h-4 w-4 text-purple-600 border-gray-300 rounded"
+                            className="h-4 w-4 text-primary border-gray-300 rounded"
                         />
                         <label htmlFor="postAcquisition" className="text-sm font-medium text-gray-700">Post acquisition journal entry</label>
                     </div>
@@ -564,7 +564,7 @@ const FixedAssets: React.FC = () => {
                             onChange={(date) => setDisposeForm((prev) => ({ ...prev, disposalDate: date ? date.toISOString().substring(0, 10) : "" }))}
                             id="disposeDate"
                         />
-                        {disposeFormErrors.disposalDate && <p className="text-red-500 text-xs -mt-3">{disposeFormErrors.disposalDate}</p>}
+                        {disposeFormErrors.disposalDate && <p className="text-destructive text-xs -mt-3">{disposeFormErrors.disposalDate}</p>}
                     </div>
                     <div className="flex justify-end pt-2 space-x-2">
                         <Button variant="white" onClick={() => setShowDisposeModal(false)}>Cancel</Button>

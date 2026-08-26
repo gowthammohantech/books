@@ -13,17 +13,17 @@ const DASHBOARDS = [
  * views doesn't require going back to the left sidebar menu.
  */
 const DashboardSwitcher = () => (
-    <div className="flex items-center gap-1 rounded-control border border-border bg-surface p-1">
+    <div className="flex items-center gap-1 rounded-md border border-border bg-muted p-1">
         {DASHBOARDS.map((d) => (
             <NavLink
                 key={d.to}
                 to={d.to}
                 end={'end' in d ? d.end : false}
                 className={({ isActive }) =>
-                    `px-3 py-1.5 text-xs font-medium rounded-control transition-colors whitespace-nowrap ${
+                    `px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
                         isActive
-                            ? 'bg-purple-600 text-white'
-                            : 'text-body hover:bg-white hover:text-heading'
+                            ? 'bg-primary text-white'
+                            : 'text-muted-foreground hover:bg-white hover:text-foreground'
                     }`
                 }
             >

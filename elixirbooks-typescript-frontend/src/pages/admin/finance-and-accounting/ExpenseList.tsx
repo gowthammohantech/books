@@ -321,7 +321,7 @@ const ExpenseList: React.FC = () => {
                         row={expense}
                         index={(page - 1) * limit + index + 1}
                         columns={[
-                            <span className="text-indigo-600 font-medium">{expense.expenseId}</span>,
+                            <span className="text-primary font-medium">{expense.expenseId}</span>,
                             <span className="font-semibold text-gray-700">{format(expense.amount)}</span>,
                             formatDate(expense.expenseDate, systemSettings?.dateFormat.format || 'd-m-Y'),
                             <span className="text-gray-700">{expense.supplier?.name ?? '—'}</span>,

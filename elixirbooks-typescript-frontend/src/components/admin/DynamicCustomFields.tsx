@@ -108,13 +108,13 @@ const DynamicCustomFields: React.FC<DynamicCustomFieldsProps> = ({
                         <div key={field.id} className="w-full">
                             {typeSlug !== 'datepicker' && (
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    {field.labelName} {field.isMandatory && <span className="text-red-500">*</span>}
+                                    {field.labelName} {field.isMandatory && <span className="text-destructive">*</span>}
                                 </label>
                             )}
 
                             {typeSlug === 'textarea' ? (
                                 <textarea
-                                    className={`border rounded-md px-4 py-2 w-full text-sm focus:outline-none focus:ring-1 focus:ring-purple-600 ${isError ? 'border-red-500' : 'border-gray-300'}`}
+                                    className={`border rounded-md px-4 py-2 w-full text-sm focus:outline-none focus:ring-1 focus:ring-ring ${isError ? 'border-destructive' : 'border-gray-300'}`}
                                     value={currentValue || ''}
                                     onChange={(e) => onChange(fieldKey, e.target.value)}
                                     placeholder={field.helpText || `Enter ${field.labelName}`}
@@ -122,7 +122,7 @@ const DynamicCustomFields: React.FC<DynamicCustomFieldsProps> = ({
                                 />
                             ) : (typeSlug === 'dropdown' || typeSlug === 'select') ? (
                                 <select
-                                    className={`border rounded-md px-4 py-2 h-10 w-full text-sm bg-white focus:outline-none focus:ring-1 focus:ring-purple-600 ${isError ? 'border-red-500' : 'border-gray-300'}`}
+                                    className={`border rounded-md px-4 py-2 h-10 w-full text-sm bg-white focus:outline-none focus:ring-1 focus:ring-ring ${isError ? 'border-destructive' : 'border-gray-300'}`}
                                     value={currentValue || ''}
                                     onChange={(e) => onChange(fieldKey, e.target.value)}
                                 >
@@ -152,13 +152,13 @@ const DynamicCustomFields: React.FC<DynamicCustomFieldsProps> = ({
                                 <div className="flex flex-col gap-2">
                                     {/* Show link if the backend already has a file URL stored */}
                                     {typeof currentValue === 'string' && currentValue.startsWith('http') && (
-                                        <a href={currentValue} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-purple-600 hover:underline flex items-center gap-1">
+                                        <a href={currentValue} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
                                             View Uploaded File
                                         </a>
                                     )}
                                     <input
                                         type="file"
-                                        className={`block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 ${isError ? 'border-red-500' : ''}`}
+                                        className={`block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-accent file:text-primary hover:file:bg-accent ${isError ? 'border-destructive' : ''}`}
                                         onChange={(e) => onChange(fieldKey, e.target.files?.[0] || null)}
                                     />
                                 </div>
@@ -168,7 +168,7 @@ const DynamicCustomFields: React.FC<DynamicCustomFieldsProps> = ({
                                         <label key={idx} className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
                                             <input
                                                 type="radio"
-                                                className="h-4 w-4 text-purple-600 focus:ring-purple-600 border-gray-300"
+                                                className="h-4 w-4 text-primary focus:ring-ring border-gray-300"
                                                 name={`custom_radio_${field.id}`}
                                                 value={opt.value}
                                                 checked={currentValue === opt.value}
@@ -195,7 +195,7 @@ const DynamicCustomFields: React.FC<DynamicCustomFieldsProps> = ({
                                             <label key={idx} className="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
                                                 <input
                                                     type="checkbox"
-                                                    className="h-4 w-4 text-purple-600 focus:ring-purple-600 rounded border-gray-300"
+                                                    className="h-4 w-4 text-primary focus:ring-ring rounded border-gray-300"
                                                     value={opt.value}
                                                     checked={isChecked}
                                                     onChange={(e) => {
@@ -225,7 +225,7 @@ const DynamicCustomFields: React.FC<DynamicCustomFieldsProps> = ({
                                         <input
                                             type={inputType}
                                             step={typeSlug === 'currency' ? '0.01' : undefined}
-                                            className={`border rounded-md px-4 py-2 h-10 w-full text-sm focus:outline-none focus:ring-1 focus:ring-purple-600 ${isError ? 'border-red-500' : 'border-gray-300'}`}
+                                            className={`border rounded-md px-4 py-2 h-10 w-full text-sm focus:outline-none focus:ring-1 focus:ring-ring ${isError ? 'border-destructive' : 'border-gray-300'}`}
                                             value={currentValue || ''}
                                             onChange={(e) => onChange(fieldKey, e.target.value)}
                                             placeholder={field.helpText || `Enter ${field.labelName}`}
@@ -234,7 +234,7 @@ const DynamicCustomFields: React.FC<DynamicCustomFieldsProps> = ({
                                 })()
                             )}
 
-                            {isError && <p className="text-red-500 text-xs mt-1">{errorMessage}</p>}
+                            {isError && <p className="text-destructive text-xs mt-1">{errorMessage}</p>}
                             {!isError && field.helpText && <p className="text-gray-500 text-xs mt-1 italic">{field.helpText}</p>}
                         </div>
                     )

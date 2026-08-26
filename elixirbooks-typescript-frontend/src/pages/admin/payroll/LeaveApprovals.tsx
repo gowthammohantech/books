@@ -141,9 +141,9 @@ const LeaveApprovals: React.FC = () => {
         <div className="space-y-6">
             <PageHeader title="Leave Approvals" />
 
-            <div className="overflow-x-auto border border-border rounded-control">
+            <div className="overflow-x-auto border border-border rounded-md">
                 <table className="w-full text-sm border-collapse">
-                    <thead className="bg-gray-100 text-xs uppercase text-body">
+                    <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                         <tr>
                             <th className="px-4 py-3 text-left border-b border-border">Employee</th>
                             <th className="px-4 py-3 text-left border-b border-border">Leave Type</th>
@@ -247,7 +247,7 @@ const LeaveApprovals: React.FC = () => {
                             value={rejectionNote}
                             onChange={(e) => setRejectionNote(e.target.value)}
                             placeholder="Reason for rejection…"
-                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-600 mb-4"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring mb-4"
                         />
                         <div className="flex justify-end gap-3">
                             <Button

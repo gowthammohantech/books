@@ -142,7 +142,7 @@ const AdjustBalanceModal: React.FC<AdjustBalanceModalProps> = ({ isOpen, onClose
                         />
                     </div>
                     <div className="flex flex-col justify-end">
-                        <span className="block text-sm font-medium text-heading mb-1">Resulting balance</span>
+                        <span className="block text-sm font-medium text-foreground mb-1">Resulting balance</span>
                         <span className={`text-lg font-semibold ${resulting < 0 ? "text-red-600" : "text-gray-800"}`}>
                             {formatMoney(resulting, currency)}
                         </span>

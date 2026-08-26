@@ -106,7 +106,7 @@ const ViewProduct: FC = () => {
                         Back
                     </Button>
                 </PageHeader>
-                <div className="p-6 text-center text-red-500">Item not found.</div>
+                <div className="p-6 text-center text-destructive">Item not found.</div>
             </>
         );
     }

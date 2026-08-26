@@ -12,7 +12,7 @@ export interface RadioProps
 
 /**
  * Labeled radio button — same shape/tokens as Checkbox. Uses a native
- * `<input type="radio">` styled via `accent-purple-600`. For a group of
+ * `<input type="radio">` styled via `accent-primary`. For a group of
  * options, prefer `RadioGroup` (below) which wires `name`/selection for you.
  */
 const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
@@ -37,15 +37,15 @@ const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
         type="radio"
         disabled={disabled}
         className={[
-          "h-4 w-4 border border-border text-purple-600",
-          "accent-purple-600 outline-none transition-colors",
-          "focus-visible:ring-1 focus-visible:ring-purple-600",
+          "h-4 w-4 border border-border text-primary",
+          "accent-primary outline-none transition-colors",
+          "focus-visible:ring-1 focus-visible:ring-ring",
           "disabled:cursor-not-allowed",
           className,
         ].join(" ")}
         {...rest}
       />
-      {label ? <span className="text-sm text-heading">{label}</span> : null}
+      {label ? <span className="text-sm text-foreground">{label}</span> : null}
     </label>
   );
 });

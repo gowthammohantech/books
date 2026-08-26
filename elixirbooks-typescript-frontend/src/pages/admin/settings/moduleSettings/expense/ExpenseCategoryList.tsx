@@ -202,7 +202,7 @@ const ExpenseCategoryList: React.FC = () => {
                         row={category}
                         index={index + 1}
                         columns={[
-                            <span className="text-indigo-600">{category.title}</span>,
+                            <span className="text-primary">{category.title}</span>,
                             category.description && category.description.length > 50 ? `${category.description.substring(0, 50)}...` : category.description,
                             <div>
                                 <Switch name={`status-${category.id}`} checked={category.status} onChange={() => handleStatusChange(category)} />
@@ -215,13 +215,13 @@ const ExpenseCategoryList: React.FC = () => {
 
                 {!isLoading && expenseCategories && expenseCategories.length === 0 && (
                     <tr>
-                        <td colSpan={8} className="text-center text-heading py-2 font-semibold">No Records Found</td>
+                        <td colSpan={8} className="text-center text-foreground py-2 font-semibold">No Records Found</td>
                     </tr>
                 )}
 
                 {isLoading && (
                     <tr key="table-loader">
-                        <td className="text-center py-2 text-heading font-semibold" colSpan={8}>
+                        <td className="text-center py-2 text-foreground font-semibold" colSpan={8}>
                             <LoaderSpinner />
                         </td>
                     </tr>

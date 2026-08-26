@@ -27,8 +27,19 @@ export const SetupStatusProvider = ({ children }: { children: ReactNode }) => {
                     setStatus(JSON.parse(stored));
                 } else {
                     const response = await axios.get(Constants.APP_VERSION_URL);
-                    setStatus(response.data.data);
-                    sessionStorage.setItem("setupStatus", JSON.stringify(response.data.data));
+                    const data = response.data?.data;
+                    // Only cache a real payload. If the request is answered by
+                    // something other than the API — a dev server on the same
+                    // port returning index.html, a proxy error page — `data` is
+                    // undefined and JSON.stringify(undefined) returns undefined,
+                    // which sessionStorage coerces to the string "undefined".
+                    // That poisons the cache for the whole session.
+                    if (data && typeof data === "object") {
+                        setStatus(data);
+                        sessionStorage.setItem("setupStatus", JSON.stringify(data));
+                    } else {
+                        console.error("Unexpected setup-status payload", response.data);
+                    }
                 }
             } catch (e) {
                 console.error("Failed to load setup status", e);

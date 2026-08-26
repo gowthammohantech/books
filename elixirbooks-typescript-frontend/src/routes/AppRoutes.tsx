@@ -9,15 +9,32 @@ import { useSetupStatus } from "@context/SetupStatusContext";
 import Seo from "@components/admin/Seo";
 import NotFound from "@pages/errors/NotFound";
 
+/** Reads the cached setup status, discarding anything unparseable. */
+const readStoredSetupStatus = () => {
+    const raw = sessionStorage.getItem("setupStatus");
+    if (!raw) return null;
+    try {
+        const parsed = JSON.parse(raw);
+        // `null` parses fine but destructures to undefined fields downstream.
+        return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+        sessionStorage.removeItem("setupStatus");
+        return null;
+    }
+};
+
 const AppRoutes = () => {
     const { status, isLoading } = useSetupStatus();
 
     if (isLoading) return <></>;
 
-    const storedStatus = sessionStorage.getItem("setupStatus");
-    const currentStatus = storedStatus
-        ? JSON.parse(storedStatus)
-        : status;
+    // Guarded because this parse is unrecoverable when it throws: the whole
+    // router fails to render, so the user gets a blank page with no way to
+    // clear the bad value short of devtools. A malformed entry is written
+    // whenever the setup-status request returns an unexpected shape —
+    // JSON.stringify(undefined) yields undefined, which sessionStorage stores
+    // as the literal string "undefined". Drop the bad value and fall back.
+    const currentStatus = readStoredSetupStatus() ?? status;
 
     const { new_register, company_settings } = currentStatus;
 

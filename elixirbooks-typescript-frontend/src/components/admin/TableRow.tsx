@@ -25,7 +25,7 @@ const TableRow = <T,>({ index, row, columns, actions, onRowClick }: TableRowProp
 
   return (
     <tr
-      className={`border-b border-gray-100 transition-colors hover:bg-purple-50/60${onRowClick ? ' cursor-pointer' : ''}`}
+      className={`border-b border-gray-100 transition-colors hover:bg-accent/60${onRowClick ? ' cursor-pointer' : ''}`}
       {...(onRowClick ? { onClick: () => onRowClick(row) } : {})}
     >
       <td className="px-3 py-1 text-sm text-gray-700">{index}</td>

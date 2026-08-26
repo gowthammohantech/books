@@ -202,7 +202,7 @@ const CreateJournalEntry: React.FC = () => {
                                             type="button"
                                             disabled={lines.length <= 2}
                                             onClick={() => removeLine(idx)}
-                                            className="text-red-600 hover:text-red-800 disabled:text-gray-300"
+                                            className="text-destructive hover:text-destructive disabled:text-gray-300"
                                             title={lines.length <= 2 ? "At least 2 lines required" : "Remove line"}
                                         >
                                             <Trash2 size={16} />

@@ -38,15 +38,18 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   return (
     <PageHeaderProvider>
-      <div className="flex h-screen bg-white font-sans print:block print:h-auto">
+      <div className="flex h-screen bg-background font-sans print:block print:h-auto">
         <div className="print:hidden">
           <Sidebar isOpen={isSidebarOpen} />
         </div>
         <div className="flex-1 flex flex-col overflow-hidden print:overflow-visible">
           <div className="print:hidden">
-            <Header toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+            <Header
+              toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+              isSidebarOpen={isSidebarOpen}
+            />
           </div>
-          <main ref={mainRef} className="flex-1 overflow-x-hidden overflow-y-auto bg-white-50 p-4 print:overflow-visible">
+          <main ref={mainRef} className="flex-1 overflow-x-hidden overflow-y-auto p-4 print:overflow-visible">
             {isSettingsPage && <DemoBanner />}
             {children || <Outlet />}
           </main>

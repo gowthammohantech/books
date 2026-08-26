@@ -126,16 +126,16 @@ export default function ArAgingReport() {
                 </div>
               </div>
             ))}
-            <div className="border-2 border-purple-600 rounded p-3 text-center">
+            <div className="border-2 border-primary rounded p-3 text-center">
               <div className="text-xs text-gray-500 mb-1">Total</div>
-              <div className="text-sm font-bold text-right text-purple-700">{fmt(data.total)}</div>
+              <div className="text-sm font-bold text-right text-primary">{fmt(data.total)}</div>
             </div>
           </div>
 
           {/* Rows table */}
-          <div className="overflow-x-auto border border-border rounded-control">
+          <div className="overflow-x-auto border border-border rounded-md">
             <table className="w-full text-sm border-collapse">
-              <thead className="bg-gray-100 text-xs uppercase text-body">
+              <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 text-left border-b border-border">Customer</th>
                   <th className="px-4 py-3 text-left border-b border-border">Due Date</th>
@@ -156,7 +156,7 @@ export default function ArAgingReport() {
                       <td className="px-4 py-3 text-right font-mono">
                         <DrillLink to="/admin/invoices" params={{ status: AR_UNPAID_STATUSES, invoiceType: 'INVOICE', dueStartDate: row.dueDate.slice(0, 10), dueEndDate: row.dueDate.slice(0, 10) }} title="View invoices due on this date">{fmt(row.amount)}</DrillLink>
                       </td>
-                      <td className="px-4 py-3 text-xs text-body">{row.bucket}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{row.bucket}</td>
                     </tr>
                   ))
                 )}

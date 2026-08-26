@@ -17,7 +17,7 @@ export interface SwitchProps
  * Toggle switch built on a real `<button role="switch" aria-checked>` (not a
  * checked-checkbox-in-disguise), so it behaves like a native switch for
  * screen readers and keyboard users (Space/Enter toggle via button
- * semantics). Brand-purple "on" state, smooth transition that's disabled
+ * semantics). Brand-colored "on" state, smooth transition that's disabled
  * under `prefers-reduced-motion`.
  */
 const Switch = ({
@@ -45,9 +45,9 @@ const Switch = ({
         className={[
           "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full",
           "transition-colors motion-reduce:transition-none",
-          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-purple-600 focus-visible:ring-offset-1",
+          "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1",
           "disabled:opacity-60 disabled:cursor-not-allowed",
-          checked ? "bg-purple-600" : "bg-gray-100",
+          checked ? "bg-primary" : "bg-gray-100",
           className,
         ].join(" ")}
         {...rest}
@@ -55,14 +55,14 @@ const Switch = ({
         <span
           aria-hidden="true"
           className={[
-            "inline-block h-5 w-5 transform rounded-full bg-white shadow-card",
+            "inline-block h-5 w-5 transform rounded-full bg-white shadow-sm",
             "transition-transform motion-reduce:transition-none",
             checked ? "translate-x-5" : "translate-x-0.5",
           ].join(" ")}
         />
       </button>
       {label ? (
-        <label htmlFor={switchId} className="text-sm text-heading cursor-pointer">
+        <label htmlFor={switchId} className="text-sm text-foreground cursor-pointer">
           {label}
         </label>
       ) : null}

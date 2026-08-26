@@ -21,7 +21,7 @@ const BrandSettings: React.FC = () => {
                     return (
                         <button
                             key={index + 1}
-                            className={`font-medium text-sm ${activeTab?.slug === tab.slug ? 'border-b-2 text-purple-600' : ''} hover:text-purple-600`}
+                            className={`font-medium text-sm ${activeTab?.slug === tab.slug ? 'border-b-2 text-primary' : ''} hover:text-primary`}
                             onClick={() => setActiveTab(tab)}
                         >{tab.label}
                         </button>

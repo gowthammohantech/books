@@ -139,9 +139,9 @@ const CreateProductForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                         {/* Name */}
                         <div>
-                            <label htmlFor="name" className="block text-sm font-medium text-red-500">Name *</label>
+                            <label htmlFor="name" className="block text-sm font-medium text-destructive">Name *</label>
                             <input type="text" name="name" id="name" maxLength={255} value={formData.name} onChange={handleInputChange} className="mt-1 block text-gray-700 p-2 w-full border border-gray-300 rounded-md " />
-                            {formErrors.name && <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>}
+                            {formErrors.name && <p className="text-destructive text-xs mt-1">{formErrors.name}</p>}
                         </div>
 
                         {/* Unit */}
@@ -167,7 +167,7 @@ const CreateProductForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
                         <div>
                             <label htmlFor="selling_price" className="block text-sm font-medium text-gray-700">Unit Price</label>
                             <input type="number" name="selling_price" id="selling_price" min="0" value={formData.selling_price} onChange={handleInputChange} className="mt-1 text-gray-700 p-2 block w-full border border-gray-300 rounded-md " />
-                            {formErrors.selling_price && <p className="text-red-500 text-xs mt-1">{formErrors.selling_price}</p>}
+                            {formErrors.selling_price && <p className="text-destructive text-xs mt-1">{formErrors.selling_price}</p>}
                         </div>
 
                         {/* Tax */}
@@ -181,7 +181,7 @@ const CreateProductForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
                                 placeholder="No Tax"
                                 selectedItem={taxes.find(tax => tax.id === formData.taxRateId) || null}
                             />
-                            {formErrors.taxRateId && <p className="text-red-500 text-xs mt-1">{formErrors.taxRateId}</p>}
+                            {formErrors.taxRateId && <p className="text-destructive text-xs mt-1">{formErrors.taxRateId}</p>}
                         </div>
                     </div>
                     <div className="flex justify-end space-x-4 pt-6">

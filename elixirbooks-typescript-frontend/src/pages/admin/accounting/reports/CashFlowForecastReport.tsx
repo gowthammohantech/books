@@ -99,9 +99,9 @@ export default function CashFlowForecastReport() {
             </div>
           )}
 
-          <div className="overflow-x-auto border border-border rounded-control">
+          <div className="overflow-x-auto border border-border rounded-md">
             <table className="w-full text-sm border-collapse">
-              <thead className="bg-gray-100 text-xs uppercase text-body">
+              <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 text-left border-b border-border">Month</th>
                   <th className="px-4 py-3 text-right border-b border-border">Inflow</th>
@@ -126,7 +126,7 @@ export default function CashFlowForecastReport() {
                           {fmt(bucket.inflow)}
                         </DrillLink>
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-danger">
+                      <td className="px-4 py-3 text-right font-mono text-destructive">
                         <DrillLink
                           to="/admin/purchases"
                           params={{ status: 'pending' }}
@@ -135,10 +135,10 @@ export default function CashFlowForecastReport() {
                           {fmt(bucket.outflow)}
                         </DrillLink>
                       </td>
-                      <td className={`px-4 py-3 text-right font-mono ${bucket.net < 0 ? 'text-danger' : 'text-success'}`}>
+                      <td className={`px-4 py-3 text-right font-mono ${bucket.net < 0 ? 'text-destructive' : 'text-success'}`}>
                         {fmt(bucket.net)}
                       </td>
-                      <td className={`px-4 py-3 text-right font-mono font-medium ${bucket.runningCash < 0 ? 'text-danger' : ''}`}>
+                      <td className={`px-4 py-3 text-right font-mono font-medium ${bucket.runningCash < 0 ? 'text-destructive' : ''}`}>
                         {fmt(bucket.runningCash)}
                       </td>
                     </tr>

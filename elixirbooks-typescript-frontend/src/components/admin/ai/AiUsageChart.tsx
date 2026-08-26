@@ -22,6 +22,7 @@ import {
 
 import Constants from '@constants/api';
 import type { RootState } from '@store/index';
+import { themeColor } from "@lib/designTokens";
 
 interface UsageDay {
   date: string;
@@ -36,8 +37,8 @@ interface UsageSummary {
   totalCostThisMonth: number;
 }
 
-const EXTRACTION_COLOR = '#7539FF'; // brand
-const CHAT_COLOR = '#06AED4'; // info/cyan
+const EXTRACTION_COLOR = themeColor("primary"); // brand
+const CHAT_COLOR = themeColor("info"); // info/cyan
 
 function formatTick(date: string): string {
   // YYYY-MM-DD -> "DD/MM"
@@ -115,14 +116,14 @@ export default function AiUsageChart() {
           <button
             type="button"
             onClick={() => void load()}
-            className="text-xs text-purple-600 hover:underline"
+            className="text-xs text-primary hover:underline"
           >
             Refresh
           </button>
         </div>
 
         {error ? (
-          <div className="py-12 text-center text-sm text-red-600">{error}</div>
+          <div className="py-12 text-center text-sm text-destructive">{error}</div>
         ) : loading ? (
           <div className="py-12 text-center text-sm text-gray-400">Loading usage…</div>
         ) : !hasAnyCalls ? (
@@ -133,15 +134,15 @@ export default function AiUsageChart() {
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={usage} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E4E6" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={themeColor("border")} />
                 <XAxis
                   dataKey="date"
                   tickFormatter={formatTick}
-                  tick={{ fontSize: 11, fill: '#5D6772' }}
+                  tick={{ fontSize: 11, fill: themeColor("muted-foreground") }}
                   interval="preserveStartEnd"
                   minTickGap={16}
                 />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#5D6772' }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: themeColor("muted-foreground") }} />
                 <Tooltip
                   labelFormatter={(label) => `Date: ${label}`}
                   formatter={(value: number, name: string) => [value, name]}

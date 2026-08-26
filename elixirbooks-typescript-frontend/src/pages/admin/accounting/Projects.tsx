@@ -191,12 +191,12 @@ const Projects: React.FC = () => {
                     placeholder="Search projects..."
                     value={search}
                     onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
                 />
                 <select
                     value={limit}
                     onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                    className="border border-gray-300 px-3 py-2 rounded-md bg-white text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    className="border border-gray-300 px-3 py-2 rounded-md bg-white text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                     {[10, 25, 50].map((num) => (
                         <option key={num} value={num}>{num} / page</option>
@@ -212,7 +212,7 @@ const Projects: React.FC = () => {
                             row={item}
                             index={index + 1}
                             columns={[
-                                <span className="text-indigo-600 font-mono">{item.code}</span>,
+                                <span className="text-primary font-mono">{item.code}</span>,
                                 item.name,
                                 <Badge color={statusBadgeColor(item.status)} className="capitalize">{item.status}</Badge>,
                                 <PermissionGuard moduleSlug="time-tracking-others" action="edit" fallback={<span className="text-gray-300">—</span>}>
@@ -280,24 +280,24 @@ const Projects: React.FC = () => {
                             placeholder="Optional description of the project"
                             value={form.description}
                             onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                     </div>
                     <div>
                         <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                            Status <span className="text-red-500">*</span>
+                            Status <span className="text-destructive">*</span>
                         </label>
                         <select
                             id="status"
                             value={form.status}
                             onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value as ProjectStatus }))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                             {PROJECT_STATUSES.map((s) => (
                                 <option key={s} value={s} className="capitalize">{s.charAt(0).toUpperCase() + s.slice(1)}</option>
                             ))}
                         </select>
-                        {formErrors.status && <p className="text-red-500 text-xs mt-1">{formErrors.status}</p>}
+                        {formErrors.status && <p className="text-destructive text-xs mt-1">{formErrors.status}</p>}
                     </div>
                     <div className="flex justify-end pt-2 space-x-2">
                         <Button variant="white" onClick={() => setShowModal(false)}>Cancel</Button>

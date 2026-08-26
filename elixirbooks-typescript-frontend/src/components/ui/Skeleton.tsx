@@ -12,7 +12,7 @@ export type SkeletonProps = HTMLAttributes<HTMLDivElement>;
 const Skeleton = ({ className = "", ...rest }: SkeletonProps) => (
   <div
     aria-hidden="true"
-    className={`animate-pulse motion-reduce:animate-none rounded-control bg-gray-100 ${className}`}
+    className={`animate-pulse motion-reduce:animate-none rounded-md bg-gray-100 ${className}`}
     {...rest}
   />
 );

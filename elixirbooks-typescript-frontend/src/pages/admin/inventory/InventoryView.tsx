@@ -14,6 +14,7 @@ import LoaderSpinner from "@components/admin/LoaderSpinner";
 import NoRecords from "@components/admin/NoRecords";
 import useDateFormatter from "@hooks/useDateFormatter";
 import { useCurrencies } from "@hooks/useCurrencies";
+import { themeColor, hexToRgb } from "@lib/designTokens";
 
 // Friendly source label — distinguishes sales return (credit note) from
 // purchase return (debit note); falls back to the raw value for legacy rows.
@@ -31,7 +32,7 @@ const refTypeLabel = (ref?: string | null, notes?: string | null): string => {
 
 const getAdjustmentDisplay = (adj: number) => {
     if (adj > 0) return <span className="text-success font-semibold">+{adj}</span>;
-    if (adj < 0) return <span className="text-danger font-semibold">{adj}</span>;
+    if (adj < 0) return <span className="text-destructive font-semibold">{adj}</span>;
     return "-";
 };
 
@@ -86,6 +87,15 @@ const InventoryView: React.FC = () => {
                     h.notes || "-",
                 ];
             }),
+            // jsPDF draws to a canvas, so it never sees a CSS variable. Without
+            // these the table rendered in autoTable's stock blue-grey theme,
+            // which matched no brand this app has ever had.
+            headStyles: {
+                fillColor: hexToRgb(themeColor("primary")),
+                textColor: hexToRgb(themeColor("primary-foreground")),
+            },
+            alternateRowStyles: { fillColor: hexToRgb(themeColor("muted")) },
+            styles: { textColor: hexToRgb(themeColor("foreground")) },
         });
         doc.save(`Inventory_History_${data.productId?.code || ""}.pdf`);
     }, [data, formatDateTime]);
@@ -177,9 +187,9 @@ const InventoryView: React.FC = () => {
 
             {/* Activity History */}
             <Card title="Activity History" padded={false}>
-                <div className="overflow-x-auto border border-border rounded-control">
+                <div className="overflow-x-auto border border-border rounded-md">
                     <table className="w-full text-sm border-collapse">
-                        <thead className="bg-gray-100 text-xs uppercase text-body">
+                        <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                             <tr>
                                 <th className="px-4 py-3 text-left border-b border-border">Date</th>
                                 <th className="px-4 py-3 text-left border-b border-border">Type</th>

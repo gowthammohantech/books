@@ -258,7 +258,7 @@ const RecurringInvoiceList: React.FC = () => {
                 <button
                     type="button"
                     onClick={() => navigate('/admin/recurring-schedules/new')}
-                    className="bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium px-4 py-2 rounded-md"
+                    className="bg-primary hover:bg-primary/90 text-white text-sm font-medium px-4 py-2 rounded-md"
                 >
                     New Recurring Invoice
                 </button>
@@ -271,12 +271,12 @@ const RecurringInvoiceList: React.FC = () => {
                     placeholder="Search by name..."
                     value={search}
                     onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-80 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-80 text-gray-800 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 />
                 <select
                     value={limit}
                     onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                    className="border border-gray-300 px-3 py-2 rounded-md bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    className="border border-gray-300 px-3 py-2 rounded-md bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 >
                     {[10, 25, 50].map((num) => (
                         <option className="text-gray-800 " key={num} value={num}>{num} / page</option>
@@ -298,7 +298,7 @@ const RecurringInvoiceList: React.FC = () => {
                                 ? (
                                     <Link
                                         to={`/admin/contacts/${row.customer.id}`}
-                                        className="text-purple-600 hover:underline"
+                                        className="text-primary hover:underline"
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         {row.customer.name}
@@ -375,7 +375,7 @@ const RecurringInvoiceList: React.FC = () => {
                                             <td className="py-2">{idx + 1}</td>
                                             <td>
                                                 <Link
-                                                    className="text-purple-700 underline"
+                                                    className="text-primary underline"
                                                     to={`/admin/view-invoice/${o.id}`}
                                                 >
                                                     {o.invoiceNumber ?? '—'}

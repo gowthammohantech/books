@@ -256,11 +256,11 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                         {formData.profile_image_preview_url && (
                             <button
                                 type="button"
-                                className="absolute top-[0px] right-[-1px] bg-white border border-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-500 hover:border-white transition duration-200"
+                                className="absolute top-[0px] right-[-1px] bg-white border border-destructive text-white rounded-full p-1 shadow-md hover:bg-destructive hover:border-white transition duration-200"
                                 onClick={handleImageDelete}
                                 title="Remove Image"
                             >
-                                <Trash2Icon size={14} className="text-red-500 hover:text-white cursor-pointer" />
+                                <Trash2Icon size={14} className="text-destructive hover:text-white cursor-pointer" />
                             </button>
                         )}
                     </div>
@@ -275,7 +275,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                                 className="hidden"
                                 id="imageUpload"
                             />
-                            <span className="inline-flex items-center bg-purple-600 hover:bg-purple-700 text-white text-sm px-4 py-2 rounded-md transition duration-200 cursor-pointer">
+                            <span className="inline-flex items-center bg-primary hover:bg-primary/90 text-white text-sm px-4 py-2 rounded-md transition duration-200 cursor-pointer">
                                 <Image size={16} className="mr-2" />
                                 Upload Image
                             </span>
@@ -290,7 +290,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                 <div className="flex gap-4">
                     <div className="flex-1">
                         <label className="block font-medium text-sm text-gray-700 ">
-                            First Name <span className="text-red-500">*</span>
+                            First Name <span className="text-destructive">*</span>
                         </label>
                         <input
                             name="firstName"
@@ -298,13 +298,13 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                             onChange={handleChange}
                             type="text"
                             placeholder="Enter First Name"
-                            className="border border-gray-300 rounded-md px-4 py-2 w-full   text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-none"
+                            className="border border-gray-300 rounded-md px-4 py-2 w-full   text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring focus:border-none"
                         />
-                        {formErrors.firstName && <p className="text-red-500 text-xs mt-1">{formErrors.firstName}</p>}
+                        {formErrors.firstName && <p className="text-destructive text-xs mt-1">{formErrors.firstName}</p>}
                     </div>
                     <div className="flex-1">
                         <label className="block font-medium text-sm text-gray-700 ">
-                            Last Name <span className="text-red-500">*</span>
+                            Last Name <span className="text-destructive">*</span>
                         </label>
                         <input
                             name="lastName"
@@ -312,9 +312,9 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                             onChange={handleChange}
                             type="text"
                             placeholder="Enter Last Name"
-                            className="border border-gray-300 rounded-md px-4 py-2 w-full   text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-none"
+                            className="border border-gray-300 rounded-md px-4 py-2 w-full   text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring focus:border-none"
                         />
-                        {formErrors.lastName && <p className="text-red-500 text-xs mt-1">{formErrors.lastName}</p>}
+                        {formErrors.lastName && <p className="text-destructive text-xs mt-1">{formErrors.lastName}</p>}
                     </div>
                 </div>
 
@@ -322,7 +322,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                 <div className="flex gap-4">
                     <div className="flex-1">
                         <label className="block font-medium text-sm text-gray-700 ">
-                            Email <span className="text-red-500">*</span>
+                            Email <span className="text-destructive">*</span>
                         </label>
                         <input
                             name="email"
@@ -330,13 +330,13 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                             onChange={handleChange}
                             type="email"
                             placeholder="Enter Email Address"
-                            className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-none"
+                            className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring focus:border-none"
                         />
-                        {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
+                        {formErrors.email && <p className="text-destructive text-xs mt-1">{formErrors.email}</p>}
                     </div>
                     <div className="flex-1">
                         <label className="block font-medium text-sm text-gray-700 ">
-                            Phone Number <span className="text-red-500">*</span>
+                            Phone Number <span className="text-destructive">*</span>
                         </label>
                         <input
                             name="phone"
@@ -344,16 +344,16 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                             onChange={handleChange}
                             type="tel"
                             placeholder="Enter Phone Number"
-                            className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-none"
+                            className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring focus:border-none"
                         />
-                        {formErrors.phone && <p className="text-red-500 text-xs mt-1">{formErrors.phone}</p>}
+                        {formErrors.phone && <p className="text-destructive text-xs mt-1">{formErrors.phone}</p>}
                     </div>
                 </div>
                 {/* Password & Confirm Password with eye icon */}
                 <div className="flex gap-4">
                     <div className="flex-1">
                         <label className="block font-medium text-sm text-gray-700 ">
-                            Password {editItem ? '' : <span className="text-red-500">*</span>}
+                            Password {editItem ? '' : <span className="text-destructive">*</span>}
                         </label>
                         <div className="relative">
                             <input
@@ -362,7 +362,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                                 onChange={handleChange}
                                 type={showPassword ? "text" : "password"}
                                 placeholder="Enter Password"
-                                className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-none"
+                                className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring focus:border-none"
                             />
                             <span
                                 className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer"
@@ -375,11 +375,11 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                                 )}
                             </span>
                         </div>
-                        {formErrors.password && <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>}
+                        {formErrors.password && <p className="text-destructive text-xs mt-1">{formErrors.password}</p>}
                     </div>
                     <div className="flex-1">
                         <label className="block font-medium text-sm text-gray-700 ">
-                            Confirm Password {editItem ? '' : <span className="text-red-500">*</span>}
+                            Confirm Password {editItem ? '' : <span className="text-destructive">*</span>}
                         </label>
                         <div className="relative">
                             <input
@@ -388,7 +388,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                                 onChange={handleChange}
                                 type={showConfirmPassword ? "text" : "password"}
                                 placeholder="Confirm Password"
-                                className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-none"
+                                className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring focus:border-none"
                             />
                             <span
                                 className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer"
@@ -401,7 +401,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                                 )}
                             </span>
                         </div>
-                        {formErrors.confirmPassword && <p className="text-red-500 text-xs mt-1">{formErrors.confirmPassword}</p>}
+                        {formErrors.confirmPassword && <p className="text-destructive text-xs mt-1">{formErrors.confirmPassword}</p>}
                     </div>
                 </div>
                 {/* address textarea/single row / full width */}
@@ -414,14 +414,14 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                         value={formData.address}
                         onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                         placeholder="Enter Address"
-                        className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-purple-600 focus:border-none"
+                        className="border border-gray-300 rounded-md px-4 py-2 w-full  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring focus:border-none"
                     />
-                    {formErrors.address && <p className="text-red-500 text-xs mt-1">{formErrors.address}</p>}
+                    {formErrors.address && <p className="text-destructive text-xs mt-1">{formErrors.address}</p>}
                 </div>
                 {/* Role */}
                 <div className="mb-4">
                     <label className="block font-medium text-sm text-gray-700 ">
-                        Role <span className="text-red-500">*</span>
+                        Role <span className="text-destructive">*</span>
                     </label>
                     <SearchableDropdown
                         placeholder="Select Role"
@@ -429,7 +429,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                         value={selectedRole}
                         onChange={(_, value) => setSelectedRole(value)}
                     />
-                    {formErrors.roleid && <p className="text-red-500 text-xs mt-1">{formErrors.roleid}</p>}
+                    {formErrors.roleid && <p className="text-destructive text-xs mt-1">{formErrors.roleid}</p>}
                 </div>
                 {/* Buttons */}
                 <div className="flex justify-end pt-4 gap-3">

@@ -69,21 +69,21 @@ const GetHelp = () => {
     const resources = [
         {
             key: "guide",
-            icon: <BookOpen size={20} className="text-purple-600" />,
+            icon: <BookOpen size={20} className="text-primary" />,
             title: "User guide",
             note: "Step-by-step walkthroughs for invoicing, purchases, banking and reports.",
             href: "/documentation",
         },
         {
             key: "mobile",
-            icon: <Smartphone size={20} className="text-purple-600" />,
+            icon: <Smartphone size={20} className="text-primary" />,
             title: "Mobile guide",
             note: "Using Elixir Books from a phone or tablet.",
             href: "/documentation/mobile",
         },
         {
             key: "api",
-            icon: <Code2 size={20} className="text-purple-600" />,
+            icon: <Code2 size={20} className="text-primary" />,
             title: "API reference",
             note: "Interactive Swagger docs for every endpoint, for integrations and scripts.",
             href: apiDocsUrl,
@@ -93,7 +93,7 @@ const GetHelp = () => {
     return (
         <div className="p-6">
             <PageHeader title="Get Help" />
-            <p className="text-sm text-body mb-6 max-w-3xl">
+            <p className="text-sm text-muted-foreground mb-6 max-w-3xl">
                 Documentation, the API reference, and how to reach the people who run
                 this Elixir Books installation.
             </p>
@@ -109,7 +109,7 @@ const GetHelp = () => {
                         >
                             <div className="flex items-center gap-2 mb-2">
                                 {r.icon}
-                                <h2 className="text-base font-semibold text-heading group-hover:text-purple-700">
+                                <h2 className="text-base font-semibold text-foreground group-hover:text-primary">
                                     {r.title}
                                 </h2>
                                 <ExternalLink
@@ -118,7 +118,7 @@ const GetHelp = () => {
                                     aria-hidden="true"
                                 />
                             </div>
-                            <p className="text-sm text-body leading-relaxed">{r.note}</p>
+                            <p className="text-sm text-muted-foreground leading-relaxed">{r.note}</p>
                         </a>
                     </Card>
                 ))}
@@ -128,17 +128,17 @@ const GetHelp = () => {
                 <Card title="Contact support">
                     {supportEmail || supportPhone ? (
                         <>
-                            <p className="text-sm text-body mb-4">
+                            <p className="text-sm text-muted-foreground mb-4">
                                 Questions about your data or account go to the administrator
                                 for {companyName || "your organisation"}.
                             </p>
                             <ul className="space-y-3">
                                 {supportEmail && (
                                     <li className="flex items-center gap-2 text-sm">
-                                        <Mail size={16} className="text-body shrink-0" />
+                                        <Mail size={16} className="text-muted-foreground shrink-0" />
                                         <a
                                             href={`mailto:${supportEmail}`}
-                                            className="text-purple-700 underline break-all"
+                                            className="text-primary underline break-all"
                                         >
                                             {supportEmail}
                                         </a>
@@ -146,10 +146,10 @@ const GetHelp = () => {
                                 )}
                                 {supportPhone && (
                                     <li className="flex items-center gap-2 text-sm">
-                                        <Phone size={16} className="text-body shrink-0" />
+                                        <Phone size={16} className="text-muted-foreground shrink-0" />
                                         <a
                                             href={`tel:${supportPhone.replace(/\s+/g, "")}`}
-                                            className="text-purple-700 underline"
+                                            className="text-primary underline"
                                         >
                                             {supportPhone}
                                         </a>
@@ -160,12 +160,12 @@ const GetHelp = () => {
                                 <>
                                     <a
                                         href={mailtoHref}
-                                        className="inline-flex items-center gap-2 mt-5 px-4 py-2 rounded-control bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 transition-colors"
+                                        className="inline-flex items-center gap-2 mt-5 px-4 py-2 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
                                     >
                                         <LifeBuoy size={16} />
                                         Report a problem
                                     </a>
-                                    <p className="text-xs text-body mt-3">
+                                    <p className="text-xs text-muted-foreground mt-3">
                                         Opens your mail client with the account and browser
                                         details support usually has to ask for already filled
                                         in.
@@ -174,12 +174,12 @@ const GetHelp = () => {
                             )}
                         </>
                     ) : (
-                        <p className="text-sm text-body">
+                        <p className="text-sm text-muted-foreground">
                             No support contact has been set yet. Add an email address and
                             phone number under{" "}
                             <Link
                                 to="/admin/settings/company-settings"
-                                className="text-purple-700 underline"
+                                className="text-primary underline"
                             >
                                 Company Settings
                             </Link>{" "}
@@ -194,7 +194,7 @@ const GetHelp = () => {
                             <li key={t.to}>
                                 <Link
                                     to={t.to}
-                                    className="text-sm text-purple-700 hover:underline"
+                                    className="text-sm text-primary hover:underline"
                                 >
                                     {t.label}
                                 </Link>

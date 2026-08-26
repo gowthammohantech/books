@@ -268,21 +268,21 @@ const InvoicePaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, inv
                 {/* Invoice Number & Amount */}
                 <div className="grid grid-cols-2 gap-4">
                     <div className="form-control">
-                        <label htmlFor="invoiceNumber" className="block text-sm font-medium text-heading ">
+                        <label htmlFor="invoiceNumber" className="block text-sm font-medium text-foreground ">
                             Invoice Number
                         </label>
                         <input type="text"
                             id="invoiceNumber"
-                            className="border border-border bg-surface cursor-not-allowed mt-1 rounded-control px-4 py-2 w-full  text-heading  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="border border-border bg-muted cursor-not-allowed mt-1 rounded-md px-4 py-2 w-full  text-foreground  focus:outline-none focus:ring-1 focus:ring-ring"
                             value={invoiceItem.invoiceNumber} readOnly />
                     </div>
                     <div className="form-control">
-                        <label htmlFor="invoiceAmount" className="block text-sm font-medium text-heading ">
+                        <label htmlFor="invoiceAmount" className="block text-sm font-medium text-foreground ">
                             Invoice Amount
                         </label>
                         <input type="text"
                             id="invoiceAmount"
-                            className="border border-border mt-1 bg-surface cursor-not-allowed rounded-control px-4 py-2 w-full  text-heading  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="border border-border mt-1 bg-muted cursor-not-allowed rounded-md px-4 py-2 w-full  text-foreground  focus:outline-none focus:ring-1 focus:ring-ring"
                             value={invoiceItem.totalAmount} readOnly />
                     </div>
                 </div>
@@ -292,12 +292,12 @@ const InvoicePaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, inv
                     <div className="form-control">
                         <label
                             htmlFor="balanceAmount"
-                            className="block text-sm font-medium text-heading ">
+                            className="block text-sm font-medium text-foreground ">
                             Balance Amount
                         </label>
                         <input type="text"
                             id="balanceAmount"
-                            className="border border-border mt-1 bg-surface cursor-not-allowed rounded-control px-4 py-2 w-full  text-heading  focus:outline-none focus:ring-1 focus:ring-purple-600"
+                            className="border border-border mt-1 bg-muted cursor-not-allowed rounded-md px-4 py-2 w-full  text-foreground  focus:outline-none focus:ring-1 focus:ring-ring"
                             value={invoiceItem.payment.remaining || 0} readOnly />
                     </div>
                     <div className="form-control">
@@ -308,7 +308,7 @@ const InvoicePaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, inv
                             minDate={invoiceItem.invoiceDate ? new Date(invoiceItem.invoiceDate) : undefined}
                             isRequired
                         />
-                        {formErrors.received_on && <p className="text-danger text-xs mt-1">{formErrors.received_on}</p>}
+                        {formErrors.received_on && <p className="text-destructive text-xs mt-1">{formErrors.received_on}</p>}
                     </div>
                     {/* Payment Amount */}
                     <FormField
@@ -329,8 +329,8 @@ const InvoicePaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, inv
                         }
                     />
                     <div>
-                        <label className="block text-sm font-medium text-heading ">
-                            Payment Method <em className="text-danger">*</em>
+                        <label className="block text-sm font-medium text-foreground ">
+                            Payment Method <em className="text-destructive">*</em>
                         </label>
                         <SmartDropdown
                             items={paymentMethodOptions}
@@ -342,14 +342,14 @@ const InvoicePaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, inv
                             serverside={false}
                         />
 
-                        {formErrors.payment_method && <p className="text-danger text-xs mt-1">{formErrors.payment_method}</p>}
+                        {formErrors.payment_method && <p className="text-destructive text-xs mt-1">{formErrors.payment_method}</p>}
                     </div>
                 </div>
                 {/* Payment Method Dropdown */}
 
                 {!isCashSelected && !isAccountCreditSelected && (
                     <div className='mt-4'>
-                        <label htmlFor="bankId" className="block text-sm font-medium text-heading">Deposit To <em className="text-danger">*</em></label>
+                        <label htmlFor="bankId" className="block text-sm font-medium text-foreground">Deposit To <em className="text-destructive">*</em></label>
                         <SmartDropdown
                             items={bankAccountOptions}
                             value={bankSearchKeyword}
@@ -358,7 +358,7 @@ const InvoicePaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, inv
                             onSelect={(item) => handleBankAccountSelect(item as OptionType)}
                             selectedItem={bankAccountOptions.find(bank => bank.id === paymentFormData.bankId) || null}
                         />
-                        {formErrors.bankId && <p className="text-danger text-sm">{formErrors.bankId}</p>}
+                        {formErrors.bankId && <p className="text-destructive text-sm">{formErrors.bankId}</p>}
                     </div>
                 )}
 

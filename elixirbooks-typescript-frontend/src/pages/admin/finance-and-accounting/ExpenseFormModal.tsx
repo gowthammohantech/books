@@ -460,7 +460,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                                 onChange={(date) => handleFormChange('expenseDate', date)}
                                 isRequired
                             />
-                            {formErrors.expenseDate && <p className="text-danger text-sm">{formErrors.expenseDate}</p>}
+                            {formErrors.expenseDate && <p className="text-destructive text-sm">{formErrors.expenseDate}</p>}
                         </div>
                         {/* Amount */}
                         <FormField
@@ -474,12 +474,12 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                         {/* Category */}
                         <div>
                             <div className="flex items-center justify-between">
-                                <label htmlFor="expenseCategoryId" className="block text-sm font-medium text-heading">Category <em className="text-danger">*</em></label>
+                                <label htmlFor="expenseCategoryId" className="block text-sm font-medium text-foreground">Category <em className="text-destructive">*</em></label>
                                 <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setIsCategoryModalOpen(true)}
-                                    className="text-xs text-purple-600 hover:text-purple-700"
+                                    className="text-xs text-primary hover:text-primary"
                                 >
                                     + Add New
                                 </Button>
@@ -492,11 +492,11 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                                 onSelect={(item) => handleCategorySelect(item as OptionType)}
                                 selectedItem={categoryOptions.find(category => category.id === formData.expenseCategoryId) || null}
                             />
-                            {formErrors.expenseCategoryId && <p className="text-danger text-sm">{formErrors.expenseCategoryId}</p>}
+                            {formErrors.expenseCategoryId && <p className="text-destructive text-sm">{formErrors.expenseCategoryId}</p>}
                         </div>
                         {/* Vendor (optional) */}
                         <div>
-                            <label htmlFor="supplierId" className="block text-sm font-medium text-heading">Vendor</label>
+                            <label htmlFor="supplierId" className="block text-sm font-medium text-foreground">Vendor</label>
                             <SmartDropdown
                                 items={supplierOptions}
                                 value={supplierSearchKeyword}
@@ -505,7 +505,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                                 onSelect={(item) => handleSupplierSelect(item as OptionType)}
                                 selectedItem={supplierOptions.find(supplier => supplier.id === formData.supplierId) || null}
                             />
-                            {formErrors.supplierId && <p className="text-danger text-sm">{formErrors.supplierId}</p>}
+                            {formErrors.supplierId && <p className="text-destructive text-sm">{formErrors.supplierId}</p>}
                         </div>
                         {/* Reimbursable toggle */}
                         <div className="md:col-span-3">
@@ -520,7 +520,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                                         )
                                     }
                                 />
-                                <span className="text-sm font-medium text-heading">Paid by employee (reimbursable)</span>
+                                <span className="text-sm font-medium text-foreground">Paid by employee (reimbursable)</span>
                             </label>
                         </div>
                         {formData.sourceType === 'EMPLOYEE_PAID' ? (
@@ -543,7 +543,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                             <>
                                 {/* Payment Source */}
                                 <div>
-                                    <label htmlFor="sourceType" className="block text-sm font-medium text-heading">Payment Source <em className="text-danger">*</em></label>
+                                    <label htmlFor="sourceType" className="block text-sm font-medium text-foreground">Payment Source <em className="text-destructive">*</em></label>
                                     <SmartDropdown
                                         items={paymentSourceSoptions}
                                         value={sourceSearchKeyword}
@@ -553,11 +553,11 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                                         selectedItem={paymentSourceSoptions.find(source => source.id === formData.sourceType) || null}
                                         serverside={false}
                                     />
-                                    {formErrors.sourceType && <p className="text-danger text-sm">{formErrors.sourceType}</p>}
+                                    {formErrors.sourceType && <p className="text-destructive text-sm">{formErrors.sourceType}</p>}
                                 </div>
                                 {/* Bank account */}
                                 <div className={`${formData.sourceType === 'BANK' ? '' : 'hidden'}`}>
-                                    <label htmlFor="bankId" className="block text-sm font-medium text-heading">Debit From <em className="text-danger">*</em></label>
+                                    <label htmlFor="bankId" className="block text-sm font-medium text-foreground">Debit From <em className="text-destructive">*</em></label>
                                     <SmartDropdown
                                         items={bankAccountOptions}
                                         value={bankSearchKeyword}
@@ -566,11 +566,11 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                                         onSelect={(item) => handleBankAccountSelect(item as OptionType)}
                                         selectedItem={bankAccountOptions.find(bank => bank.id === formData.bankId) || null}
                                     />
-                                    {formErrors.bankId && <p className="text-danger text-sm">{formErrors.bankId}</p>}
+                                    {formErrors.bankId && <p className="text-destructive text-sm">{formErrors.bankId}</p>}
                                 </div>
                                 {/* Payment Mode */}
                                 <div className={`${formData.sourceType === 'BANK' ? '' : 'hidden'}`}>
-                                    <label className="block text-sm font-medium text-heading ">Payment Mode <em className="text-danger">*</em></label>
+                                    <label className="block text-sm font-medium text-foreground ">Payment Mode <em className="text-destructive">*</em></label>
                                     <SmartDropdown
                                         items={paymentModeOptions}
                                         value={paymentModeSearchKeyword}
@@ -580,13 +580,13 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                                         selectedItem={paymentModeOptions.find(paymentMode => paymentMode.id === formData.paymentMode) || null}
                                         serverside={false}
                                     />
-                                    {formErrors.paymentMode && <p className="text-danger text-sm">{formErrors.paymentMode}</p>}
+                                    {formErrors.paymentMode && <p className="text-destructive text-sm">{formErrors.paymentMode}</p>}
                                 </div>
                             </>
                         )}
                         {/* Payment Status */}
                         <div>
-                            <label className="block text-sm font-medium text-heading ">Payment Status <em className="text-danger">*</em></label>
+                            <label className="block text-sm font-medium text-foreground ">Payment Status <em className="text-destructive">*</em></label>
                             <SmartDropdown
                                 placeholder="Search or Select Payment Status"
                                 items={paymentStatusOptions}
@@ -596,7 +596,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                                 selectedItem={paymentStatusOptions.find(status => status.id === formData.paymentStatus) || null}
                                 serverside={false}
                             />
-                            {formErrors.paymentStatus && <p className="text-danger text-sm">{formErrors.paymentStatus}</p>}
+                            {formErrors.paymentStatus && <p className="text-destructive text-sm">{formErrors.paymentStatus}</p>}
                         </div>
                     </div>
 
@@ -619,7 +619,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                         label="Attachment"
                         type="file"
                         containerClassName="mt-4"
-                        className="file:bg-purple-50 file:text-purple-700 file:border-0 file:rounded file:px-2 file:font-semibold"
+                        className="file:bg-accent file:text-primary file:border-0 file:rounded file:px-2 file:font-semibold"
                         onChange={(e) => handleFormChange('attachment', e.target.files?.[0] || null)}
                         helper={editItem && editItem.attachment ? `leave empty if you don't want to change the attachment` : undefined}
                     />
@@ -634,20 +634,20 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                     />
 
                     {/* RECURRING EXPENSE */}
-                    <div className="border border-border rounded-card p-3 md:col-span-3 mt-3">
+                    <div className="border border-border rounded-xl p-3 md:col-span-3 mt-3">
                         <label className="flex items-center gap-2">
                             <input
                                 type="checkbox"
                                 checked={formData.isRecurring}
                                 onChange={(e) => setFormData((p) => ({ ...p, isRecurring: e.target.checked }))}
                             />
-                            <span className="text-sm font-medium text-heading">Make this expense recurring</span>
+                            <span className="text-sm font-medium text-foreground">Make this expense recurring</span>
                         </label>
 
                         {formData.isRecurring && (
                             <div className="mt-3 space-y-3">
                                 <div className="flex flex-wrap items-center gap-3">
-                                    <span className="text-sm text-body w-24">Frequency</span>
+                                    <span className="text-sm text-muted-foreground w-24">Frequency</span>
                                     {(['day', 'week', 'month', 'year', 'custom'] as const).map((f) => (
                                         <label key={f} className="flex items-center gap-1 text-sm">
                                             <input
@@ -664,7 +664,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
 
                                 {formData.repeatEvery === 'custom' && (
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-body w-24">Every</span>
+                                        <span className="text-sm text-muted-foreground w-24">Every</span>
                                         <FormField
                                             type="number"
                                             min={1}
@@ -687,7 +687,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                                 )}
 
                                 <div className="flex items-center gap-2">
-                                    <span className="text-sm text-body w-24">Start on</span>
+                                    <span className="text-sm text-muted-foreground w-24">Start on</span>
                                     <div className="flex-1">
                                         <DateInput
                                             label=""
@@ -698,7 +698,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                                 </div>
 
                                 <div className="flex items-center gap-3 flex-wrap">
-                                    <span className="text-sm text-body w-24">Ends on</span>
+                                    <span className="text-sm text-muted-foreground w-24">Ends on</span>
                                     <label className="flex items-center gap-1 text-sm">
                                         <input
                                             type="radio"

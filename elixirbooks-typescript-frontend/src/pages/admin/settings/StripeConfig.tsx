@@ -95,7 +95,7 @@ export default function StripeConfig() {
           {saving ? 'Saving' : 'Save'}
         </Button>
       </PageHeader>
-      <p className="text-sm text-body mb-6">
+      <p className="text-sm text-muted-foreground mb-6">
         Enter your Stripe API credentials. Use test-mode keys for development, then flip the Live mode toggle when ready for production.
       </p>
       <form id="stripe-config-form" onSubmit={handleSave}>
@@ -103,11 +103,11 @@ export default function StripeConfig() {
           <div className="flex items-center gap-4">
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={data.enabled} onChange={(e) => setData((p) => ({ ...p, enabled: e.target.checked }))} />
-              <span className="text-sm text-heading">Enabled</span>
+              <span className="text-sm text-foreground">Enabled</span>
             </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={data.livemode} onChange={(e) => setData((p) => ({ ...p, livemode: e.target.checked }))} />
-              <span className="text-sm text-heading">Live mode</span>
+              <span className="text-sm text-foreground">Live mode</span>
             </label>
           </div>
           <FormField
@@ -132,19 +132,19 @@ export default function StripeConfig() {
             helper={
               <>
                 Register this webhook URL in Stripe dashboard:{' '}
-                <code className="bg-surface px-2 py-1 rounded-control">{webhookUrl}</code>
+                <code className="bg-muted px-2 py-1 rounded-md">{webhookUrl}</code>
               </>
             }
           />
           <FormField
-            label={<>Success URL <span className="text-body">(optional)</span></>}
+            label={<>Success URL <span className="text-muted-foreground">(optional)</span></>}
             type="url"
             value={data.successUrl}
             onChange={(e) => setData((p) => ({ ...p, successUrl: e.target.value }))}
             placeholder="Defaults to /admin/invoices"
           />
           <FormField
-            label={<>Cancel URL <span className="text-body">(optional)</span></>}
+            label={<>Cancel URL <span className="text-muted-foreground">(optional)</span></>}
             type="url"
             value={data.cancelUrl}
             onChange={(e) => setData((p) => ({ ...p, cancelUrl: e.target.value }))}

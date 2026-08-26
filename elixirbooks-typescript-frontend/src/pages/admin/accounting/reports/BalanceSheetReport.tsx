@@ -83,13 +83,13 @@ export default function BalanceSheetReport() {
           onChange={(d) => setAsOf(d ? dateToYmdString(d) : '')}
           label="As Of"
         />
-        <button type="button" onClick={load} className="px-3 py-1 text-sm bg-purple-600 text-white rounded">
+        <button type="button" onClick={load} className="px-3 py-1 text-sm bg-primary text-white rounded">
           Reload
         </button>
       </div>
 
       {loading && <p className="text-gray-500">Loading…</p>}
-      {error && <p className="text-red-600">{error}</p>}
+      {error && <p className="text-destructive">{error}</p>}
 
       {data && (
         <div className="space-y-4 text-sm">
@@ -207,7 +207,7 @@ export default function BalanceSheetReport() {
             </div>
           </section>
 
-          <section className="border-2 border-purple-600 rounded p-4 bg-purple-100">
+          <section className="border-2 border-primary rounded p-4 bg-accent">
             <div className="flex justify-between text-lg font-bold">
               <span>Total Liabilities + Equity</span>
               <span>{data.totalLiabilitiesAndEquity.toFixed(2)}</span>

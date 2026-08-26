@@ -226,7 +226,7 @@ const CurrencyList: React.FC = () => {
                         index={index + 1}
                         row={currency}
                         columns={[
-                            <span className="text-indigo-600 capitalize">{currency.name}</span>,
+                            <span className="text-primary capitalize">{currency.name}</span>,
                             currency.symbol,
                             currency.code,
                             <Switch name={`status-${currency.id}`} checked={currency.status} onChange={() => handleCurrencyStatusChange(currency.id)} disabled={currency.isDefault || !hasPermission(permissions, 'finance-settings', 'edit')} />,
@@ -237,13 +237,13 @@ const CurrencyList: React.FC = () => {
                 ))}
                 {!isLoading && !currencies.length &&
                     <tr>
-                        <td colSpan={6} className="text-center text-body py-2  font-semibold">No currencies found</td>
+                        <td colSpan={6} className="text-center text-muted-foreground py-2  font-semibold">No currencies found</td>
                     </tr>
                 }
 
                 {isLoading && (
                     <tr key="table-loader">
-                        <td className="text-center py-2 text-heading  font-semibold" colSpan={7}>
+                        <td className="text-center py-2 text-foreground  font-semibold" colSpan={7}>
                             <LoaderSpinner />
                         </td>
                     </tr>

@@ -363,7 +363,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
                     <input
                         type="text"
                         id={`row-name-${item.id}`}
-                        className="p-2 w-full border text-gray-700 text-sm border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-purple-200"
+                        className="p-2 w-full border text-gray-700 text-sm border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-accent"
                         placeholder="Search or type product..."
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)} // only local state
@@ -375,7 +375,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
                     {showDropdown && (
                         <ul
                             ref={dropdownRef}
-                            className="absolute top-full left-0 w-full bg-white border border-gray-200 z-10 max-h-48 overflow-auto rounded-md shadow-dropdown"
+                            className="absolute top-full left-0 w-full bg-white border border-gray-200 z-10 max-h-48 overflow-auto rounded-md shadow-lg"
                         >
                             {isLoadingProducts ? (
                                 <li className="p-3 text-center text-sm text-gray-500">Loading...</li>
@@ -387,7 +387,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
                                     return (
                                         <li
                                             key={p.id}
-                                            className={`p-3 hover:bg-purple-50 ${index === activeIndex ? "bg-purple-50" : ""
+                                            className={`p-3 hover:bg-accent ${index === activeIndex ? "bg-accent" : ""
                                                 } ${isDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                                             onMouseDown={(e) => {
                                                 if (isDisabled) {
@@ -435,7 +435,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
                             )}
 
                             <li
-                                className="p-3 border-t border-gray-200 cursor-pointer hover:bg-purple-50 text-purple-600 font-semibold flex items-center"
+                                className="p-3 border-t border-gray-200 cursor-pointer hover:bg-accent text-primary font-semibold flex items-center"
                                 onMouseDown={(e) => {
                                     e.preventDefault();
                                     addNewProduct();
@@ -538,7 +538,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
                     aria-label="Edit item"
                     className="!px-1.5 !py-1.5"
                 >
-                    <Edit size={16} className="text-body hover:text-purple-600" />
+                    <Edit size={16} className="text-muted-foreground hover:text-primary" />
                 </Button>
                 <Button
                     type="button"
@@ -548,7 +548,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
                     aria-label="Remove item"
                     className="!px-1.5 !py-1.5"
                 >
-                    <Trash2 size={16} className="text-danger" />
+                    <Trash2 size={16} className="text-destructive" />
                 </Button>
             </td>
         </tr>

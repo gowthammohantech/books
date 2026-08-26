@@ -148,8 +148,8 @@ const Preferences: React.FC = () => {
                 <Card>
                     {/* Sales Person Preferences */}
                     <div className="mb-4">
-                        <p className="text-base font-semibold text-heading">Sales Person Preferences</p>
-                        <small className="text-body text-xs">Choose roles that can be assigned to staff members. These roles will appear as "Sales Person" in the quotation module.</small>
+                        <p className="text-base font-semibold text-foreground">Sales Person Preferences</p>
+                        <small className="text-muted-foreground text-xs">Choose roles that can be assigned to staff members. These roles will appear as "Sales Person" in the quotation module.</small>
                     </div>
                     <FormField label="" containerClassName="md:w-1/4 lg:w-1/4" error={formErrors.quoteSalesPersonRole}>
                         <SmartDropdown
@@ -164,14 +164,14 @@ const Preferences: React.FC = () => {
                     <hr className="border-border my-4" />
                     {/* Default Terms & Notes moved to Settings → Document Defaults (single
                         source of truth shared by invoices and quotations). */}
-                    <div className="rounded-control border border-border bg-surface px-4 py-3">
-                        <p className="text-sm text-body">
+                    <div className="rounded-md border border-border bg-muted px-4 py-3">
+                        <p className="text-sm text-muted-foreground">
                             Default <span className="font-semibold">Terms &amp; Conditions</span> and{" "}
                             <span className="font-semibold">Customer Notes</span> are now managed under{" "}
                             <button
                                 type="button"
                                 onClick={() => navigate('/admin/settings/document-defaults')}
-                                className="font-semibold text-purple-600 underline cursor-pointer"
+                                className="font-semibold text-primary underline cursor-pointer"
                             >
                                 Settings → Document Defaults
                             </button>

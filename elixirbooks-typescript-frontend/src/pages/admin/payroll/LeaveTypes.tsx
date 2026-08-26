@@ -359,7 +359,7 @@ const LeaveTypes: React.FC = () => {
                         <select
                             value={employeeId}
                             onChange={(e) => setEmployeeId(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                             <option value="">Select employee…</option>
                             {staffOptions.map((s) => (
@@ -372,7 +372,7 @@ const LeaveTypes: React.FC = () => {
                         <select
                             value={year}
                             onChange={(e) => setYear(Number(e.target.value))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                             {YEARS.map((y) => (
                                 <option key={y} value={y}>{y}</option>
@@ -392,9 +392,9 @@ const LeaveTypes: React.FC = () => {
                         No active leave types to allocate.
                     </p>
                 ) : (
-                    <div className="overflow-x-auto border border-border rounded-control">
+                    <div className="overflow-x-auto border border-border rounded-md">
                         <table className="w-full text-sm">
-                            <thead className="bg-gray-100 text-xs uppercase text-body">
+                            <thead className="bg-gray-100 text-xs uppercase text-muted-foreground">
                                 <tr>
                                     <th className="px-4 py-3 text-left border-b border-border">Leave Type</th>
                                     <th className="px-4 py-3 text-left border-b border-border">Allocated</th>
@@ -414,7 +414,7 @@ const LeaveTypes: React.FC = () => {
                                                 value={row.allocated}
                                                 disabled={!canManageAllocations || savingAllocId === row.leaveTypeId}
                                                 onChange={(e) => updateRow(row.leaveTypeId, { allocated: e.target.value })}
-                                                className="w-28 px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                                                className="w-28 px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
                                             />
                                         </td>
                                         <td className="px-4 py-3">
@@ -425,7 +425,7 @@ const LeaveTypes: React.FC = () => {
                                                 value={row.carriedOver}
                                                 disabled={!canManageAllocations || savingAllocId === row.leaveTypeId}
                                                 onChange={(e) => updateRow(row.leaveTypeId, { carriedOver: e.target.value })}
-                                                className="w-28 px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-950 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                                                className="w-28 px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
                                             />
                                         </td>
                                         {canManageAllocations && (
@@ -481,7 +481,7 @@ const LeaveTypes: React.FC = () => {
                             id="paid"
                             checked={form.paid}
                             onChange={(e) => setForm((prev) => ({ ...prev, paid: e.target.checked }))}
-                            className="h-4 w-4 text-purple-600 border-gray-300 rounded"
+                            className="h-4 w-4 text-primary border-gray-300 rounded"
                         />
                         <label htmlFor="paid" className="text-sm font-medium text-gray-700">
                             Paid leave (deducts from balance)
@@ -493,7 +493,7 @@ const LeaveTypes: React.FC = () => {
                             id="isActive"
                             checked={form.isActive}
                             onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))}
-                            className="h-4 w-4 text-purple-600 border-gray-300 rounded"
+                            className="h-4 w-4 text-primary border-gray-300 rounded"
                         />
                         <label htmlFor="isActive" className="text-sm font-medium text-gray-700">Active</label>
                     </div>

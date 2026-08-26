@@ -56,7 +56,7 @@ const ChallanTemplateA: React.FC<InvoiceDetailsProps> = ({ challanData, lineFiel
             {/* Billing Information Section */}
             <section className="flex justify-between mt-8">
                 <div className="w-2/5">
-                    <h2 className="font-bold text-purple-600 mb-2">Bill To :</h2>
+                    <h2 className="font-bold text-primary mb-2">Bill To :</h2>
                     <p className="font-semibold">{challanData?.billTo?.name ?? '—'}</p>
                     <p className="text-sm text-gray-600">{challanData?.billTo?.billingAddress?.addressLine1}</p>
                     <p className="text-sm text-gray-600">{challanData?.billTo?.billingAddress?.city}, {challanData?.billTo?.billingAddress?.state}, {challanData?.billTo?.billingAddress?.country}</p>
@@ -64,14 +64,14 @@ const ChallanTemplateA: React.FC<InvoiceDetailsProps> = ({ challanData, lineFiel
                     <p className="text-sm text-gray-600">{challanData?.billTo?.phone ?? ''}</p>
                 </div>
                 <div className="w-2/5">
-                    <h2 className="font-bold text-purple-600 mb-2">Pay To :</h2>
+                    <h2 className="font-bold text-primary mb-2">Pay To :</h2>
                     <p className="font-semibold">{challanData?.billFrom.name}</p>
                     <p className="text-sm text-gray-600">{challanData?.billFrom.address}</p>
                     <p className="text-sm text-gray-600">{challanData?.billFrom.email}</p>
                     <p className="text-sm text-gray-600">{challanData?.billFrom.phone}</p>
                 </div>
                 <div className="text-right">
-                    <h2 className="font-bold text-purple-600 mb-2">{systemSettings?.company?.companyName}</h2>
+                    <h2 className="font-bold text-primary mb-2">{systemSettings?.company?.companyName}</h2>
                     <p className="text-sm text-gray-600">Address: {systemSettings?.company?.address}</p>
                     <p className="text-sm text-gray-600">Mobile: {systemSettings?.company?.phone}</p>
                 </div>

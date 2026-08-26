@@ -280,16 +280,16 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
             onDrop={handleDrop}
             className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg py-12 px-6 transition-colors ${
               dragging
-                ? 'border-purple-500 bg-purple-50'
+                ? 'border-primary bg-accent'
                 : 'border-gray-300 bg-gray-50'
             }`}
           >
-            <Upload size={36} className="text-purple-500" />
+            <Upload size={36} className="text-primary" />
             <p className="text-gray-700 font-medium">
               {file ? file.name : 'Drop a bill here or click to upload'}
             </p>
             <p className="text-xs text-gray-500">PDF, JPG, PNG, or WEBP — up to 10MB</p>
-            <label className="mt-3 cursor-pointer bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded-md text-sm">
+            <label className="mt-3 cursor-pointer bg-primary hover:bg-primary/90 text-white px-4 py-1.5 rounded-md text-sm">
               Choose file
               <input
                 type="file"
@@ -301,7 +301,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 bg-red-50 text-red-700 border border-red-200 rounded-md px-3 py-2 text-sm">
+            <div className="flex items-center gap-2 bg-destructive-soft text-destructive-strong border border-destructive rounded-md px-3 py-2 text-sm">
               <AlertTriangle size={16} />
               <span>{error}</span>
             </div>
@@ -319,7 +319,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
               type="button"
               onClick={startExtraction}
               disabled={!file}
-              className="px-4 py-1.5 rounded-md bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-sm flex items-center gap-1.5"
+              className="px-4 py-1.5 rounded-md bg-primary hover:bg-primary/90 disabled:opacity-50 text-white text-sm flex items-center gap-1.5"
             >
               <FileText size={14} /> Extract bill
             </button>
@@ -329,7 +329,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
 
       {step === 'extracting' && (
         <div className="flex flex-col items-center gap-3 py-12">
-          <Loader2 size={36} className="animate-spin text-purple-600" />
+          <Loader2 size={36} className="animate-spin text-primary" />
           <p className="text-gray-700 font-medium">Reading your bill…</p>
           <p className="text-xs text-gray-500">Usually takes 2–10 seconds.</p>
         </div>
@@ -358,7 +358,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
                 <button
                   type="button"
                   onClick={() => setCreateSupplier(true)}
-                  className="text-xs text-purple-600 hover:text-purple-800"
+                  className="text-xs text-primary hover:text-primary"
                 >
                   Use a new supplier instead
                 </button>
@@ -366,7 +366,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
             ) : (
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <UserPlus size={18} className="text-purple-600" />
+                  <UserPlus size={18} className="text-primary" />
                   <p className="text-sm text-gray-800">
                     {match?.supplierId
                       ? 'Create a new supplier'
@@ -376,7 +376,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
                     <button
                       type="button"
                       onClick={() => setCreateSupplier(false)}
-                      className="ml-auto text-xs text-purple-600 hover:text-purple-800"
+                      className="ml-auto text-xs text-primary hover:text-primary"
                     >
                       Use matched ({match.supplierName})
                     </button>
@@ -423,7 +423,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
           <div>
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-sm font-semibold text-gray-700">Line items</h3>
-              <button type="button" onClick={addLine} className="text-xs text-purple-600 hover:text-purple-800 flex items-center gap-1">
+              <button type="button" onClick={addLine} className="text-xs text-primary hover:text-primary flex items-center gap-1">
                 <Plus size={12} /> Add row
               </button>
             </div>
@@ -445,7 +445,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
                         type="text"
                         value={li.description}
                         onChange={(e) => updateLine(i, { description: e.target.value })}
-                        className="w-full border border-transparent hover:border-gray-300 focus:border-purple-500 focus:outline-none rounded px-1"
+                        className="w-full border border-transparent hover:border-gray-300 focus:border-primary focus:outline-none rounded px-1"
                       />
                     </td>
                     <td className="px-2 py-1">
@@ -453,7 +453,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
                         type="number"
                         value={li.quantity}
                         onChange={(e) => updateLine(i, { quantity: Number(e.target.value) })}
-                        className="w-full text-right border border-transparent hover:border-gray-300 focus:border-purple-500 focus:outline-none rounded px-1"
+                        className="w-full text-right border border-transparent hover:border-gray-300 focus:border-primary focus:outline-none rounded px-1"
                       />
                     </td>
                     <td className="px-2 py-1">
@@ -461,7 +461,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
                         type="number"
                         value={li.unitPrice}
                         onChange={(e) => updateLine(i, { unitPrice: Number(e.target.value) })}
-                        className="w-full text-right border border-transparent hover:border-gray-300 focus:border-purple-500 focus:outline-none rounded px-1"
+                        className="w-full text-right border border-transparent hover:border-gray-300 focus:border-primary focus:outline-none rounded px-1"
                       />
                     </td>
                     <td className="px-2 py-1 text-right">
@@ -469,11 +469,11 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
                         type="number"
                         value={li.amount}
                         onChange={(e) => updateLine(i, { amount: Number(e.target.value) })}
-                        className="w-full text-right border border-transparent hover:border-gray-300 focus:border-purple-500 focus:outline-none rounded px-1"
+                        className="w-full text-right border border-transparent hover:border-gray-300 focus:border-primary focus:outline-none rounded px-1"
                       />
                     </td>
                     <td className="px-2 py-1 text-center">
-                      <button type="button" onClick={() => removeLine(i)} className="text-gray-400 hover:text-red-500">
+                      <button type="button" onClick={() => removeLine(i)} className="text-gray-400 hover:text-destructive">
                         <Trash2 size={14} />
                       </button>
                     </td>
@@ -487,7 +487,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
           <div>
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-sm font-semibold text-gray-700">Tax breakdown</h3>
-              <button type="button" onClick={addTax} className="text-xs text-purple-600 hover:text-purple-800 flex items-center gap-1">
+              <button type="button" onClick={addTax} className="text-xs text-primary hover:text-primary flex items-center gap-1">
                 <Plus size={12} /> Add tax
               </button>
             </div>
@@ -508,7 +508,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
                         type="text"
                         value={t.label}
                         onChange={(e) => updateTax(i, { label: e.target.value })}
-                        className="w-full border border-transparent hover:border-gray-300 focus:border-purple-500 focus:outline-none rounded px-1"
+                        className="w-full border border-transparent hover:border-gray-300 focus:border-primary focus:outline-none rounded px-1"
                       />
                     </td>
                     <td className="px-2 py-1">
@@ -516,7 +516,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
                         type="number"
                         value={t.rate}
                         onChange={(e) => updateTax(i, { rate: Number(e.target.value) })}
-                        className="w-full text-right border border-transparent hover:border-gray-300 focus:border-purple-500 focus:outline-none rounded px-1"
+                        className="w-full text-right border border-transparent hover:border-gray-300 focus:border-primary focus:outline-none rounded px-1"
                       />
                     </td>
                     <td className="px-2 py-1 text-right">
@@ -524,11 +524,11 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
                         type="number"
                         value={t.amount}
                         onChange={(e) => updateTax(i, { amount: Number(e.target.value) })}
-                        className="w-full text-right border border-transparent hover:border-gray-300 focus:border-purple-500 focus:outline-none rounded px-1"
+                        className="w-full text-right border border-transparent hover:border-gray-300 focus:border-primary focus:outline-none rounded px-1"
                       />
                     </td>
                     <td className="px-2 py-1 text-center">
-                      <button type="button" onClick={() => removeTax(i)} className="text-gray-400 hover:text-red-500">
+                      <button type="button" onClick={() => removeTax(i)} className="text-gray-400 hover:text-destructive">
                         <Trash2 size={14} />
                       </button>
                     </td>
@@ -557,7 +557,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 bg-red-50 text-red-700 border border-red-200 rounded-md px-3 py-2 text-sm">
+            <div className="flex items-center gap-2 bg-destructive-soft text-destructive-strong border border-destructive rounded-md px-3 py-2 text-sm">
               <AlertTriangle size={16} />
               <span>{error}</span>
             </div>
@@ -575,7 +575,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
               type="button"
               onClick={handleConfirm}
               disabled={submitting || (!match?.supplierId && (!createSupplier || !supplierName.trim()))}
-              className="px-4 py-1.5 rounded-md bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-sm flex items-center gap-1.5"
+              className="px-4 py-1.5 rounded-md bg-primary hover:bg-primary/90 disabled:opacity-50 text-white text-sm flex items-center gap-1.5"
             >
               {submitting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
               Save as Purchase
@@ -614,7 +614,7 @@ const Field: FC<FieldProps> = ({ label, value, onChange, type = 'text' }) => {
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+        className="border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
       />
     </label>
   );
