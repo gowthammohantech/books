@@ -6,7 +6,7 @@ trigger:
       - dev
   paths:
     include:
-      - kanakku-typescript-frontend/**
+      - elixirbooks-typescript-frontend/**
       - azure-pipelines-web-ui.yml
 
 pr:
@@ -15,7 +15,7 @@ pr:
       - dev
   paths:
     include:
-      - kanakku-typescript-frontend/**
+      - elixirbooks-typescript-frontend/**
       - azure-pipelines-web-ui.yml
 
 variables:
@@ -56,8 +56,8 @@ stages:
         command: buildAndPush
         containerRegistry: '$(acrServiceConnection)'
         repository: '$(ACR_REPOSITORY)'
-        dockerfile: 'kanakku-typescript-frontend/Dockerfile'
-        buildContext: 'kanakku-typescript-frontend'
+        dockerfile: 'elixirbooks-typescript-frontend/Dockerfile'
+        buildContext: 'elixirbooks-typescript-frontend'
         tags: |
           $(imageTag)
 
