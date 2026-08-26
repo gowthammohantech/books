@@ -18,7 +18,7 @@ import type { Pagination } from "@models/common";
 import PaginationWrapper from "@components/admin/PaginationWrapper";
 import PaymentModeBadge from "@components/admin/PaymentModeBadge";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button } from "@components/ui";
+import { Button, PageSizeSelect } from "@components/ui";
 
 interface ExpenseResponse {
     success: boolean;
@@ -204,15 +204,7 @@ const PettyCashList: React.FC = () => {
                     onChange={(e) => handleFilterChange('search', e.target.value)}
                     className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                 />
-                <select
-                    value={limit}
-                    onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
-                    className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-                >
-                    {[10, 25, 50].map((num) => (
-                        <option className="text-gray-950 " key={num} value={num}>{num} / page</option>
-                    ))}
-                </select>
+                <PageSizeSelect value={limit} onChange={(size) => handleFilterChange('limit', size)} />
             </div>
             <Table headers={tableHeaders}>
                 {!isLoading && transactions && transactions.length > 0 && transactions.map((transaction, index) => {

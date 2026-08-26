@@ -20,7 +20,7 @@ import type { RootState } from "@store/index";
 import Switch from "@components/admin/Switch";
 import ProfileCard from "@components/admin/ProfileImage";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, Badge } from "@components/ui";
+import { Badge, Button, PageSizeSelect } from "@components/ui";
 
 // Define interfaces for nested and main objects
 interface Brand {
@@ -242,13 +242,7 @@ const ProductList: FC = () => {
                     onChange={(e: ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
                     className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-1/3    focus:outline-none focus:ring-2 focus:ring-ring text-gray-950"
                 />
-                <select
-                    value={limit}
-                    onChange={(e: ChangeEvent<HTMLSelectElement>) => handlePageLengthChange(Number(e.target.value))}
-                    className="border border-gray-300 px-3 py-2 rounded-md bg-white  text-gray-950   focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                    {[10, 25, 50].map((num) => <option key={num} value={num}>{num} / page</option>)}
-                </select>
+                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
             </div>
             <div className="flex items-center gap-2">
                 {([

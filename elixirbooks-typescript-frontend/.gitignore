@@ -19,3 +19,7 @@ node_modules
 *.njsproj
 *.sln
 *.sw?
+
+# Build output
+dist
+dist-ssr

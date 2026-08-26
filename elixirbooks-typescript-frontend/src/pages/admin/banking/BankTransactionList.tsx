@@ -41,7 +41,7 @@ import type {
 import { BANK_TXN_RELATED_TYPE_LABEL, canOfferExplain, isBankTxnPaymentBorn } from "@/types/bankTransaction";
 import ExplainTransactionForm from "./ExplainTransactionForm";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, FormField, Select, Badge, fieldControlClasses } from "@components/ui";
+import { Badge, Button, fieldControlClasses, FormField, PageSizeSelect, Select } from "@components/ui";
 
 interface PaginationData {
     total: number;
@@ -881,14 +881,12 @@ const BankTransactionList: React.FC = () => {
 
                 {/* Row 2: page-size + (optional) Analyse-all, then Apply / Reset */}
                 <div className="flex flex-wrap items-center gap-3">
-                    <Select
+                    <PageSizeSelect
                         value={limit}
-                        onChange={(e) => {
-                            setLimit(Number(e.target.value));
+                        onChange={(size) => {
+                            setLimit(size);
                             setPage(1);
                         }}
-                        options={[10, 25, 50].map((n) => ({ value: n, label: `${n} / page` }))}
-                        containerClassName="w-32"
                     />
                     {explainStatusFilter === "UNEXPLAINED" && (
                         <Button

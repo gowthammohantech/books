@@ -19,7 +19,7 @@ import LoaderSpinner from "@components/admin/LoaderSpinner";
 import useDateFormatter from "@hooks/useDateFormatter";
 import ProfileCard from "@components/admin/ProfileImage";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, FormField, Select } from "@components/ui";
+import { Button, FormField, PageSizeSelect } from "@components/ui";
 
 interface DebitNoteList {
     id: string;
@@ -204,11 +204,7 @@ const DebitNoteList: FC = () => {
                     onChange={(e) => handleSearch(e.target.value)}
                     containerClassName="w-full md:w-64"
                 />
-                <Select
-                    value={limit}
-                    onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                    options={[10, 25, 50].map((num) => ({ value: num, label: `${num} / page` }))}
-                />
+                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
             </div>
 
             <Table headers={tableHeaders}>

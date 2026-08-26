@@ -22,7 +22,7 @@ import InvoiceStatusBadge from "@components/admin/InvoiceStatusBadge";
 import { useQuery } from "@tanstack/react-query";
 import { fetchModuleHierarchy, fetchCustomFieldsByModule } from "@api/customFieldTypeApi";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, FormField, Select } from "@components/ui";
+import { Button, FormField, PageSizeSelect, Select } from "@components/ui";
 
 interface Pagination {
     total: number;
@@ -307,10 +307,9 @@ const ExpenseList: React.FC = () => {
                         ]}
                     />
                 </div>
-                <Select
+                <PageSizeSelect
                     value={limit}
-                    onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
-                    options={[10, 25, 50].map((num) => ({ value: num, label: `${num} / page` }))}
+                    onChange={(size) => handleFilterChange('limit', size)}
                 />
             </div>
 

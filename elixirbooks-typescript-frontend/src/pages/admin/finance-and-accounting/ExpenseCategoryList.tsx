@@ -21,7 +21,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchExpenseCategories } from "@api/expenseCategoryApi";
 import { useDebounce } from "@hooks/useDebounce";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, FormField, Select } from "@components/ui";
+import { Button, FormField, PageSizeSelect } from "@components/ui";
 
 export interface ExpenseCategoryResponse {
     success: boolean;
@@ -170,11 +170,7 @@ const ExpenseCategoryList: React.FC = () => {
                     onChange={(e) => handleFilterChange('search', e.target.value)}
                     containerClassName="w-full md:w-64"
                 />
-                <Select
-                    value={limit}
-                    onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
-                    options={[10, 25, 50].map((num) => ({ value: num, label: `${num} / page` }))}
-                />
+                <PageSizeSelect value={limit} onChange={(size) => handleFilterChange('limit', size)} />
             </div>
 
             <Table headers={tableHeaders}>

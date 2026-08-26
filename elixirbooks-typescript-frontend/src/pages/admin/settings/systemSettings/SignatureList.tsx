@@ -16,7 +16,7 @@ import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import { hasPermission } from "@utils/hasPermission";
 import type { PermissionAction } from "@models/permissions";
 import SubmitButton from "@components/admin/SubmitButton";
-import { Button, FormField, Select } from "@components/ui";
+import { Button, FormField, PageSizeSelect } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 // Interface for the form data
 interface SignatureFormData {
@@ -335,12 +335,7 @@ const SignatureList: FC = () => {
                     value={search}
                     onChange={(e) => handleSearch(e.target.value)}
                 />
-                <Select
-                    containerClassName="w-auto"
-                    value={limit}
-                    onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                    options={[10, 25, 50].map((num) => ({ value: num, label: `${num} / page` }))}
-                />
+                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
             </div>
 
             {/* Table */}

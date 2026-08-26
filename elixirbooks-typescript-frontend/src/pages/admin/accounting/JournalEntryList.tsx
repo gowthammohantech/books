@@ -16,7 +16,7 @@ import LoaderSpinner from "@components/admin/LoaderSpinner";
 import NoRecords from "@components/admin/NoRecords";
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import ExportButton from "@components/admin/ExportButton";
-import { Button } from "@components/ui";
+import { Button, PageSizeSelect } from "@components/ui";
 import useDateFormatter from "@hooks/useDateFormatter";
 import { PageHeader } from "@/context/PageHeaderContext";
 import type { JournalEntryRow } from "@models/accounting";
@@ -149,15 +149,7 @@ const JournalEntryList: React.FC = () => {
             <ActiveFilterBanner filters={activeFilters} onClear={clearDrillFilters} />
 
             <div className="flex justify-end items-center">
-                <select
-                    value={limit}
-                    onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                    className="border border-gray-300 px-3 py-2 rounded-md bg-white text-gray-800 text-sm"
-                >
-                    {[10, 25, 50].map((num) => (
-                        <option key={num} value={num}>{num} / page</option>
-                    ))}
-                </select>
+                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
             </div>
 
             <Table headers={headers}>

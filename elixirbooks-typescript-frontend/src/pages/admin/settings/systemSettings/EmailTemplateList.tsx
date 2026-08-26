@@ -18,7 +18,7 @@ import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import { hasPermission } from "@utils/hasPermission";
 import type { PermissionAction } from "@models/permissions";
-import { Button, FormField, Select } from "@components/ui";
+import { Button, FormField, PageSizeSelect } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 
 const EmailTemplateList: React.FC = () => {
@@ -166,12 +166,7 @@ const EmailTemplateList: React.FC = () => {
                     onChange={(e) => handleSearch(e.target.value)}
                     containerClassName="w-full md:w-64"
                 />
-                <Select
-                    value={limit}
-                    onChange={(e) => handlePageLengthChange(Number(e.target.value))}
-                    options={[10, 25, 50].map((num) => ({ value: num, label: `${num} / page` }))}
-                    className="cursor-pointer"
-                />
+                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
             </div>
             <Table headers={tableHeaders}>
                 {!isLoading && emailTemplates && emailTemplates.map((template, index) => (

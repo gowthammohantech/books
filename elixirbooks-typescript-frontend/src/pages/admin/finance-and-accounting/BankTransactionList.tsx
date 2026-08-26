@@ -19,6 +19,7 @@ import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import TransactionOverviewModal from "./TransactionOverviewModal";
 import FullPageLoader from "@components/admin/FullPageLoader";
+import { PageSizeSelect } from "@components/ui";
 interface FilterParams {
     search?: string;
     limit?: number;
@@ -233,15 +234,7 @@ const BankTransactionList: React.FC = () => {
                     />
                 </div>
                 <div>
-                    <select
-                        value={limit}
-                        onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
-                        className="border border-gray-300 px-2 py-2 rounded-md bg-white  text-gray-950  focus:outline-none focus:ring-1 focus:ring-ring focus:border-transparent"
-                    >
-                        {[10, 25, 50].map((num) => (
-                            <option className="text-gray-950 " key={num} value={num}>{num} / page</option>
-                        ))}
-                    </select>
+                    <PageSizeSelect value={limit} onChange={(size) => handleFilterChange('limit', size)} />
                 </div>
             </div>
 
