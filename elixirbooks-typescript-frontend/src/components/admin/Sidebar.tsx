@@ -18,6 +18,7 @@ import {
     LandmarkIcon,
     CreditCard,
     BookOpen,
+    LifeBuoy,
     Percent,
     Receipt,
     Link2,
@@ -1315,6 +1316,23 @@ const Sidebar = ({ isOpen }: { isOpen: boolean }) => {
                     }
                 })}
             </nav>
+            {/* Pinned above the company footer so it stays reachable from any
+                scroll position in the nav. */}
+            <div className="px-3 pb-1 overflow-x-hidden">
+                <NavLink
+                    to="/admin/help"
+                    className={getLinkClasses}
+                    title={!isOpen ? "Get Help" : undefined}
+                >
+                    <LifeBuoy size={16} />
+                    <span
+                        className={`ml-2 transition-opacity font-medium duration-300 whitespace-nowrap ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+                            }`}
+                    >
+                        Get Help
+                    </span>
+                </NavLink>
+            </div>
             <BottomBar isSidebarOpen={isOpen} />
         </aside>
     );

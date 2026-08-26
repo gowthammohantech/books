@@ -101,6 +101,7 @@ import ViewQuotation from "@pages/admin/quotations/ViewQuotation";
 import ExpenseSettings from "@pages/admin/settings/moduleSettings/expense/ExpenseSettings";
 import InvoiceSettings from "@pages/admin/settings/moduleSettings/invoice/InvoiceSettings";
 import NotFound from "@pages/errors/NotFound";
+import GetHelp from "@pages/admin/help/GetHelp";
 import PurchaseSettings from "@pages/admin/settings/moduleSettings/purchase/PurchaseSettings";
 import PurchaseOrderSettings from "@pages/admin/settings/moduleSettings/purchaseOrder/PurchaseOrderSettings";
 import ProductSettings from "@pages/admin/settings/moduleSettings/product/ProductSettings";
@@ -484,6 +485,11 @@ const AdminRoute = () => {
                     <Route path="/reports/inventory" element={<><Seo title="Inventory Report" /><InventoryReport /></>} />
                     <Route path="/reports/low-stock" element={<><Seo title="Low Stock Report" /><LowStockReport /></>} />
                     <Route path="/reports/out-of-stock" element={<><Seo title="Out Of Stock Report" /><OutOfStockReport /></>} />
+                </Route>
+
+                {/* Help — available to every signed-in user, no module permission */}
+                <Route element={<ProtectedRoute />}>
+                    <Route path="/help" element={<><Seo title="Get Help" /><GetHelp /></>} />
                 </Route>
 
                 {/* Logout */}
