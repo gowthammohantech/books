@@ -38,10 +38,15 @@ interface PaletteSection {
     items: PaletteItem[];
 }
 
-/** Keeps the list a fixed, scannable length once the user starts typing. */
-const MAX_COMMAND_MATCHES = 8;
-/** The idle list is scrollable, but rendering all ~200 destinations is waste. */
-const MAX_IDLE_ITEMS = 40;
+/**
+ * How many command matches sit above the matching records.
+ *
+ * Not a cap: everything past this still renders, under "More pages". The split
+ * exists because broad words match a lot of menu entries ("account" matches 33
+ * of them), and an unbroken run of those would push the matching invoices and
+ * contacts below the fold.
+ */
+const COMMANDS_BEFORE_RECORDS = 8;
 
 const ENTITY_ICONS: Record<EntityType, typeof FileText> = {
     invoice: FileText,
@@ -101,6 +106,16 @@ const CommandPalette = ({ isOpen, onClose }: CommandPaletteProps) => {
         const ranked = rankCommands(commands, query, recentIds);
         const trimmed = query.trim();
 
+        const toItems = (list: Command[]): PaletteItem[] =>
+            list.map((command) => ({
+                key: command.id,
+                type: "command" as const,
+                command,
+            }));
+
+        // Idle: every destination the user can reach, recents pulled to the top.
+        // The list scrolls, so there is no reason to truncate it — a palette
+        // that hides half the app is the thing people complain about.
         if (!trimmed) {
             const recentSet = new Set(recentIds);
             const recent = ranked
@@ -108,15 +123,7 @@ const CommandPalette = ({ isOpen, onClose }: CommandPaletteProps) => {
                 .map((r) => r.command);
             const rest = ranked
                 .filter((r) => !recentSet.has(r.command.id))
-                .slice(0, MAX_IDLE_ITEMS)
                 .map((r) => r.command);
-
-            const toItems = (list: Command[]): PaletteItem[] =>
-                list.map((command) => ({
-                    key: command.id,
-                    type: "command" as const,
-                    command,
-                }));
 
             return [
                 ...(recent.length ? [{ label: "Recent", items: toItems(recent) }] : []),
@@ -125,15 +132,12 @@ const CommandPalette = ({ isOpen, onClose }: CommandPaletteProps) => {
         }
 
         const matched: PaletteSection[] = [];
-        const commandItems = ranked
-            .slice(0, MAX_COMMAND_MATCHES)
-            .map<PaletteItem>((r) => ({
-                key: r.command.id,
-                type: "command",
-                command: r.command,
-            }));
-        if (commandItems.length) {
-            matched.push({ label: "Pages & actions", items: commandItems });
+        const rankedCommands = ranked.map((r) => r.command);
+        const leading = rankedCommands.slice(0, COMMANDS_BEFORE_RECORDS);
+        const trailing = rankedCommands.slice(COMMANDS_BEFORE_RECORDS);
+
+        if (leading.length) {
+            matched.push({ label: "Pages & actions", items: toItems(leading) });
         }
 
         // Group the live records by type so an invoice number and a customer
@@ -150,6 +154,10 @@ const CommandPalette = ({ isOpen, onClose }: CommandPaletteProps) => {
                 })),
             });
         });
+
+        if (trailing.length) {
+            matched.push({ label: "More pages", items: toItems(trailing) });
+        }
 
         return matched;
     }, [commands, query, recentIds, entityResults]);

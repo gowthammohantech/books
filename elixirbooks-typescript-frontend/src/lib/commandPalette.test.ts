@@ -51,7 +51,9 @@ describe('buildCommands', () => {
 
     it('hides a whole subtree when the parent menu is not viewable', () => {
         const noSales = allPerms.map((p) => (p.moduleSlug === 'sales' ? perm('sales', { view: false }) : p));
-        expect(titles(noSales)).toEqual(['Dashboard', 'Budgets', 'Profile Settings', 'Get Help', 'Documentation', 'Log Out']);
+        expect(titles(noSales)).not.toContain('Invoices');
+        expect(titles(noSales)).not.toContain('Credit Notes');
+        expect(titles(noSales)).toContain('Dashboard');
     });
 
     it('keeps the page but drops the create action without create permission', () => {
@@ -62,6 +64,48 @@ describe('buildCommands', () => {
 
     it('always appends the account destinations that have no sidebar entry', () => {
         expect(titles()).toContain('Log Out');
+    });
+
+    it('includes routable pages the sidebar omits', () => {
+        // These have no menu entry at all, so the palette is the only way to
+        // reach them by keyboard — regressing this is how modules go missing.
+        const all = titles();
+        expect(all).toContain('Sales Dashboard');
+        expect(all).toContain('Accounts Dashboard');
+        expect(all).toContain('Expenses Dashboard');
+        expect(all).toContain('Expense Categories');
+        expect(all).toContain('Account Settings');
+    });
+
+    it('gates the sidebar-less pages on the slug their route guard uses', () => {
+        const noDashboard = allPerms
+            .filter((p) => p.moduleSlug !== 'dashboard')
+            .concat(perm('dashboard', { view: false }));
+        expect(titles(noDashboard)).not.toContain('Sales Dashboard');
+        // ...while the ungated account destinations survive.
+        expect(titles(noDashboard)).toContain('Log Out');
+    });
+});
+
+describe('coverage of the real sidebar tree', () => {
+    // Guards against the palette silently drifting behind the menu: every
+    // top-level module a super admin can see must be reachable.
+    const superAdminCommands = buildCommands([], { user_type: 1 });
+
+    it.each([
+        'Dashboard', 'Contacts', 'Invoices', 'Quotations', 'Purchases',
+        'Purchase Orders', 'Debit Notes', 'Credit Notes', 'Items', 'Inventory',
+        'Banking', 'Expenses', 'Petty Cash', 'Chart of Accounts',
+        'Journal Entries', 'Budgets', 'Fixed Assets', 'Payroll Profiles',
+        'Pay Runs', 'Time Tracking', 'Holidays', 'Users', 'Roles & Permissions',
+        'Activity Log', 'Company Settings', 'Email Settings', 'Bank Accounts',
+        'Currencies', 'Vehicles', 'Delivery Challans',
+    ])('reaches %s', (title) => {
+        expect(superAdminCommands.map((c) => c.title)).toContain(title);
+    });
+
+    it('covers the whole tree, not a truncated slice of it', () => {
+        expect(superAdminCommands.length).toBeGreaterThan(100);
     });
 });
 

@@ -58,14 +58,121 @@ const SYNONYMS: Record<string, string[]> = {
     "/admin/settings/tax-rates": ["gst", "vat", "taxes"],
 };
 
-/** Destinations with no sidebar entry that are still worth reaching by keyboard. */
-const EXTRA_COMMANDS: ReadonlyArray<Omit<Command, "icon">> = [
+/**
+ * Routable destinations the sidebar does not list.
+ *
+ * Some are deliberate omissions from the menu (the alternate dashboards are
+ * reached from the DashboardSwitcher; Profile from the avatar menu), others
+ * simply never got a menu entry. A palette that cannot reach them is a palette
+ * with holes in it, so they are declared here — with the same permission slug
+ * their route guard in AdminRoute uses, so gating still matches the app.
+ *
+ * `slug: null` means the destination is ungated for any signed-in user.
+ */
+type ExtraCommand = Omit<Command, "icon"> & { slug: string | null };
+
+const EXTRA_COMMANDS: ReadonlyArray<ExtraCommand> = [
+    // Alternate dashboard views — sidebar shows only the single "Dashboard"
+    // entry and expects you to use the on-page switcher to reach these.
+    {
+        id: "nav:/admin/dashboard/sales",
+        kind: "navigate",
+        title: "Sales Dashboard",
+        group: "Dashboard",
+        path: "/admin/dashboard/sales",
+        slug: "dashboard",
+        keywords: ["sales & invoices", "overview"],
+    },
+    {
+        id: "nav:/admin/dashboard/accounts",
+        kind: "navigate",
+        title: "Accounts Dashboard",
+        group: "Dashboard",
+        path: "/admin/dashboard/accounts",
+        slug: "dashboard",
+        keywords: ["accounts & p&l", "pnl", "overview"],
+    },
+    {
+        id: "nav:/admin/dashboard/expenses",
+        kind: "navigate",
+        title: "Expenses Dashboard",
+        group: "Dashboard",
+        path: "/admin/dashboard/expenses",
+        slug: "dashboard",
+        keywords: ["spending", "overview"],
+    },
+    {
+        id: "nav:/admin/expense-categories",
+        kind: "navigate",
+        title: "Expense Categories",
+        group: "Banking & Finance",
+        path: "/admin/expense-categories",
+        slug: "expenses",
+        keywords: ["expense types", "categories"],
+    },
+    {
+        id: "create:/admin/recurring-schedules/new",
+        kind: "create",
+        title: "New Recurring Schedule",
+        group: "Sales",
+        path: "/admin/recurring-schedules/new",
+        slug: "recurring-invoices",
+        keywords: ["create", "add", "new", "recurring invoice", "template"],
+    },
+    {
+        id: "nav:/admin/transactions",
+        kind: "navigate",
+        title: "Transactions",
+        group: "Banking & Finance",
+        path: "/admin/transactions",
+        slug: "expenses",
+        keywords: ["bank transactions", "ledger"],
+    },
+    {
+        id: "create:/admin/settings/tax-rates/new",
+        kind: "create",
+        title: "New Tax",
+        group: "Settings › Finance Settings",
+        path: "/admin/settings/tax-rates/new",
+        slug: "finance-settings",
+        keywords: ["create", "add", "new", "tax rate", "gst", "vat"],
+    },
+    {
+        id: "nav:/admin/settings/account",
+        kind: "navigate",
+        title: "Account Settings",
+        group: "Settings",
+        path: "/admin/settings/account",
+        slug: "general-settings",
+        keywords: ["subscription", "plan"],
+    },
+    // Gateway configuration screens, reached today only by clicking through the
+    // Payment Gateways page. Their routes carry no guard of their own.
+    {
+        id: "nav:/admin/settings/payment-gateways/razorpay",
+        kind: "navigate",
+        title: "Razorpay Configuration",
+        group: "Settings › Payment Gateways",
+        path: "/admin/settings/payment-gateways/razorpay",
+        slug: null,
+        keywords: ["payment gateway", "upi"],
+    },
+    {
+        id: "nav:/admin/settings/payment-gateways/stripe",
+        kind: "navigate",
+        title: "Stripe Configuration",
+        group: "Settings › Payment Gateways",
+        path: "/admin/settings/payment-gateways/stripe",
+        slug: null,
+        keywords: ["payment gateway", "card"],
+    },
     {
         id: "nav:/admin/settings/profile",
         kind: "navigate",
         title: "Profile Settings",
         group: "Account",
         path: "/admin/settings/profile",
+        slug: "general-settings",
         keywords: ["my account", "password", "avatar"],
     },
     {
@@ -74,6 +181,7 @@ const EXTRA_COMMANDS: ReadonlyArray<Omit<Command, "icon">> = [
         title: "Get Help",
         group: "Account",
         path: "/admin/help",
+        slug: null,
         keywords: ["support", "contact us"],
     },
     {
@@ -82,6 +190,7 @@ const EXTRA_COMMANDS: ReadonlyArray<Omit<Command, "icon">> = [
         title: "Documentation",
         group: "Account",
         path: "/documentation",
+        slug: null,
         keywords: ["docs", "manual", "guide"],
     },
     {
@@ -90,6 +199,7 @@ const EXTRA_COMMANDS: ReadonlyArray<Omit<Command, "icon">> = [
         title: "Log Out",
         group: "Account",
         path: "/admin/logout",
+        slug: null,
         keywords: ["sign out", "exit"],
     },
 ];
@@ -163,7 +273,19 @@ export const buildCommands = (
     };
 
     walk(items, [], undefined);
-    EXTRA_COMMANDS.forEach((command) => push({ ...command }));
+
+    for (const { slug, ...command } of EXTRA_COMMANDS) {
+        if (slug === null) {
+            push(command);
+            continue;
+        }
+        const allowed =
+            command.kind === "create"
+                ? canCreate(slug, permissions, user)
+                : canView(slug, permissions, user);
+        if (allowed) push(command);
+    }
+
     return out;
 };
 
