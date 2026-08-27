@@ -6,6 +6,7 @@ import Sidebar from '../Sidebar';
 import AiChatFab from '../ai/AiChatFab';
 import DemoBanner from '../DemoBanner';
 import { PageHeaderProvider } from '../../../context/PageHeaderContext';
+import { CommandPaletteProvider } from '../../../context/CommandPaletteContext';
 
 interface AdminLayoutProps {
   children?: ReactNode;
@@ -38,27 +39,31 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   return (
     <PageHeaderProvider>
-      <div className="flex h-screen bg-background font-sans print:block print:h-auto">
-        <div className="print:hidden">
-          <Sidebar isOpen={isSidebarOpen} />
-        </div>
-        <div className="flex-1 flex flex-col overflow-hidden print:overflow-visible">
+      {/* Owns the Ctrl/Cmd+K palette and renders it, so the header trigger and
+          any page can open it via useCommandPalette(). */}
+      <CommandPaletteProvider>
+        <div className="flex h-screen bg-background font-sans print:block print:h-auto">
           <div className="print:hidden">
-            <Header
-              toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-              isSidebarOpen={isSidebarOpen}
-            />
+            <Sidebar isOpen={isSidebarOpen} />
           </div>
-          <main ref={mainRef} className="flex-1 overflow-x-hidden overflow-y-auto p-4 print:overflow-visible">
-            {isSettingsPage && <DemoBanner />}
-            {children || <Outlet />}
-          </main>
+          <div className="flex-1 flex flex-col overflow-hidden print:overflow-visible">
+            <div className="print:hidden">
+              <Header
+                toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+                isSidebarOpen={isSidebarOpen}
+              />
+            </div>
+            <main ref={mainRef} className="flex-1 overflow-x-hidden overflow-y-auto p-4 print:overflow-visible">
+              {isSettingsPage && <DemoBanner />}
+              {children || <Outlet />}
+            </main>
+          </div>
+          {/* Cluster H — slice H.3: floating co-pilot, only visible when AI is enabled */}
+          <div className="print:hidden">
+            <AiChatFab />
+          </div>
         </div>
-        {/* Cluster H — slice H.3: floating co-pilot, only visible when AI is enabled */}
-        <div className="print:hidden">
-          <AiChatFab />
-        </div>
-      </div>
+      </CommandPaletteProvider>
     </PageHeaderProvider>
   );
 };
