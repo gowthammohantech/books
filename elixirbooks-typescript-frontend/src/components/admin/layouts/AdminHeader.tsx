@@ -1,11 +1,12 @@
-import { LogOut, User, Menu, UserCircle } from 'lucide-react';
-import { useState } from 'react';
+import { LogOut, User, Menu, UserCircle, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import type { RootState } from '../../../store';
 import { logout } from '../../../store/auth/authSlice';
 import { assetUrl } from '@utils/assetUrl';
 import { usePageHeader } from '../../../context/PageHeaderContext';
+import { useCommandPalette } from '../../../context/CommandPaletteContext';
 interface HeaderProps {
     toggleSidebar: () => void;
     /** Drives the toggle button's accessible name and aria-expanded state. */
@@ -17,7 +18,18 @@ const AdminHeader = ({ toggleSidebar, isSidebarOpen = true }: HeaderProps) => {
     const { user } = useSelector((state: RootState) => state.auth);
     // Page-supplied title + action buttons (null when no page sets them).
     const { title: pageTitle, actions: pageActions } = usePageHeader();
+    const { open: openCommandPalette } = useCommandPalette();
+    // The shortcut hint has to name the key the visitor's own keyboard uses, or
+    // it reads as wrong on whichever platform it does not match.
+    const [shortcutHint, setShortcutHint] = useState('Ctrl K');
     const dispatch = useDispatch();
+
+    useEffect(() => {
+        if (/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) {
+            setShortcutHint('⌘ K');
+        }
+    }, []);
+
     const handleLogout = () => {
         dispatch(logout());
     }
@@ -40,6 +52,22 @@ const AdminHeader = ({ toggleSidebar, isSidebarOpen = true }: HeaderProps) => {
             </div>
 
             <div className="flex items-center space-x-2">
+                {/* Command palette trigger. A search-box shape rather than an icon
+                    button: the shortcut is only discoverable if something on screen
+                    advertises it, and this is where people look for search. */}
+                <button
+                    onClick={openCommandPalette}
+                    aria-label="Search pages, invoices, contacts and items"
+                    aria-keyshortcuts="Control+K Meta+K"
+                    className="flex items-center gap-2 rounded-lg border border-border bg-muted/60 px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+                >
+                    <Search className="w-4 h-4" />
+                    <span className="hidden lg:inline">Search…</span>
+                    <kbd className="hidden lg:inline rounded border border-border bg-card px-1.5 py-0.5 text-[11px] font-medium">
+                        {shortcutHint}
+                    </kbd>
+                </button>
+
                 {/* Page-supplied action buttons, before the global quick-add. */}
                 {pageActions && (
                     <div className="flex items-center gap-2">{pageActions}</div>
