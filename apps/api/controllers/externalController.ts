@@ -23,20 +23,33 @@
 //
 // Neither falls back to "the first tenant". A wrong answer here writes one
 // company's data into another's books, so an unresolvable request fails.
-const crypto = require('crypto');
-const jwt = require('jsonwebtoken');
-const { prisma } = require('../lib/prisma');
-const { generateToken } = require('../utils/generateToken');
-const { hashPassword } = require('../utils/password');
-const { ensureRole, DEFAULT_ROLE_BY_USER_TYPE } = require('../lib/defaultRoles');
-const { resolveExternalTenant } = require('../lib/tenantApiKey');
+import crypto from 'crypto';
 
-const base64UrlDecode = (input) => {
+import { CustomerStatus } from '@prisma/client';
+import type { Request, Response } from 'express';
+
+import { DEFAULT_ROLE_BY_USER_TYPE, ensureRole } from '../lib/defaultRoles';
+import { prisma } from '../lib/prisma';
+import { resolveExternalTenant } from '../lib/tenantApiKey';
+import { generateToken } from '../utils/generateToken';
+import { hashPassword } from '../utils/password';
+
+/** The claims this integration relies on from a whatsappcrm-issued token. */
+interface WhatsappcrmClaims {
+  email?: string;
+  name?: string;
+  tenant?: string | null;
+  user_type?: number | string;
+  exp?: number;
+  [key: string]: unknown;
+}
+
+const base64UrlDecode = (input: string): Buffer => {
   const pad = input.length % 4 === 0 ? '' : '='.repeat(4 - (input.length % 4));
   return Buffer.from(input.replace(/-/g, '+').replace(/_/g, '/') + pad, 'base64');
 };
 
-const verifyWhatsappcrmJwt = (token, secret) => {
+const verifyWhatsappcrmJwt = (token: string, secret: string): WhatsappcrmClaims => {
   const parts = token.split('.');
   if (parts.length !== 3) {
     throw new Error('Malformed token');
@@ -50,11 +63,11 @@ const verifyWhatsappcrmJwt = (token, secret) => {
     throw new Error('Invalid signature');
   }
 
-  const header = JSON.parse(base64UrlDecode(h).toString('utf8'));
+  const header = JSON.parse(base64UrlDecode(h).toString('utf8')) as { alg?: string };
   if (header.alg !== 'HS256') {
     throw new Error('Unexpected signing algorithm');
   }
-  const payload = JSON.parse(base64UrlDecode(p).toString('utf8'));
+  const payload = JSON.parse(base64UrlDecode(p).toString('utf8')) as WhatsappcrmClaims;
   const now = Math.floor(Date.now() / 1000);
   if (typeof payload.exp !== 'number' || payload.exp < now) {
     throw new Error('Token expired');
@@ -62,36 +75,41 @@ const verifyWhatsappcrmJwt = (token, secret) => {
   return payload;
 };
 
-exports.ssoExchange = async (req, res) => {
+export const ssoExchange = async (req: Request, res: Response): Promise<void> => {
   const secret = process.env.WHATSAPPCRM_SSO_SECRET;
   if (!secret) {
-    return res.status(503).json({
+    res.status(503).json({
       success: false,
       message: 'SSO not configured on this Elixir Books instance.',
     });
+    return;
   }
 
-  const token = (req.body && req.body.token) || req.query.token;
+  const token = (req.body && (req.body as { token?: string }).token) || (req.query.token as string | undefined);
   if (!token) {
-    return res.status(400).json({ success: false, message: 'Missing token.' });
+    res.status(400).json({ success: false, message: 'Missing token.' });
+    return;
   }
 
-  let claims;
+  let claims: WhatsappcrmClaims;
   try {
     claims = verifyWhatsappcrmJwt(token, secret);
   } catch (err) {
-    return res.status(401).json({ success: false, message: err.message });
+    res.status(401).json({ success: false, message: (err as Error).message });
+    return;
   }
 
   if (!claims.email) {
-    return res.status(400).json({ success: false, message: 'Token missing email claim.' });
+    res.status(400).json({ success: false, message: 'Token missing email claim.' });
+    return;
   }
 
   // Resolve the workspace BEFORE touching any data: a user provisioned into
   // the wrong company is far harder to undo than a rejected request.
   const resolved = await resolveExternalTenant(claims.tenant || null);
   if (!resolved.ok) {
-    return res.status(resolved.status).json({ success: false, message: resolved.message });
+    res.status(resolved.status).json({ success: false, message: resolved.message });
+    return;
   }
   const tenantId = resolved.tenantId;
 
@@ -118,7 +136,7 @@ exports.ssoExchange = async (req, res) => {
     // permissions until prisma/seedRoles.ts heals it on the next boot, which
     // beats refusing the SSO exchange outright. The MEMBERSHIP below is the
     // part that is fatal - without one the user cannot authenticate at all.
-    let ssoRoleId = null;
+    let ssoRoleId: string | null = null;
     try {
       const roleName = DEFAULT_ROLE_BY_USER_TYPE[userType];
       if (roleName) ssoRoleId = await ensureRole(roleName, tenantId);
@@ -173,7 +191,7 @@ exports.ssoExchange = async (req, res) => {
       select: { id: true },
     });
 
-    return res.json({
+    res.json({
       success: true,
       message: 'SSO accepted',
       token: generateToken(user.id, tenantId, membership.id),
@@ -188,45 +206,61 @@ exports.ssoExchange = async (req, res) => {
         user_type: user.user_type,
       },
     });
+    return;
   } catch (err) {
     console.error('SSO exchange error:', err);
-    return res.status(500).json({ success: false, message: 'SSO exchange failed' });
+    res.status(500).json({ success: false, message: 'SSO exchange failed' });
+    return;
   }
 };
 
-exports.upsertCustomer = async (req, res) => {
-  const { external_id, name, email, phone, whatsapp, company_id } = req.body || {};
+interface UpsertCustomerBody {
+  external_id?: string | number;
+  name?: string;
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+  company_id?: string;
+}
+
+export const upsertCustomer = async (req: Request, res: Response): Promise<void> => {
+  const { external_id, name, email, phone, whatsapp } = (req.body || {}) as UpsertCustomerBody;
   if (!external_id) {
-    return res.status(400).json({ success: false, message: 'external_id is required.' });
+    res.status(400).json({ success: false, message: 'external_id is required.' });
+    return;
   }
   if (!name) {
-    return res.status(400).json({ success: false, message: 'name is required.' });
+    res.status(400).json({ success: false, message: 'name is required.' });
+    return;
   }
 
-  // Set by middleware/apiKeyAuth.js from the presented credential. The old
+  // Set by middleware/apiKeyAuth.ts from the presented credential. The old
   // "find the sole admin" lookup this replaces was the single largest
   // cross-tenant hazard in the integration.
   const tenantId = req.tenantId;
   if (!tenantId) {
-    return res.status(503).json({
+    res.status(503).json({
       success: false,
       message: 'Could not determine the target workspace for this request.',
     });
+    return;
   }
 
   // Elixir Books Customer requires a unique email per user. whatsappcrm contacts
   // can be phone-only, so we synthesize a placeholder when missing. A real
   // email added upstream later overwrites this on the next sync (matched by
   // externalRef, not email).
-  const safeEmail = (email && String(email).trim())
-    || `external-${external_id}@whatsappcrm.local`;
+  const safeEmail =
+    (email && String(email).trim()) || `external-${external_id}@whatsappcrm.local`;
 
   const customerData = {
     name: String(name).trim() || `Contact ${external_id}`,
     email: safeEmail.toLowerCase(),
     phone: phone ? String(phone).trim() : '',
     whatsapp: whatsapp ? String(whatsapp).trim() : '',
-    status: 'Active',
+    // The enum value, not the bare string: an object literal widens 'Active'
+    // to string, which Prisma's generated input types reject.
+    status: CustomerStatus.Active,
   };
 
   try {
@@ -249,7 +283,7 @@ exports.upsertCustomer = async (req, res) => {
       },
     });
 
-    return res.json({
+    res.json({
       success: true,
       message: 'Customer upserted',
       data: {
@@ -263,26 +297,35 @@ exports.upsertCustomer = async (req, res) => {
         externalRef: customer.externalRef,
       },
     });
+    return;
   } catch (err) {
     // Prisma unique constraint violation (P2002) maps to the Mongoose 11000
     // duplicate-key path: an Elixir Books-native customer already owns this email.
     // Bail with a 409 so whatsappcrm logs it without retrying forever.
-    if (err && err.code === 'P2002') {
-      return res.status(409).json({
+    const e = err as { code?: string; meta?: unknown; message?: string };
+    if (e && e.code === 'P2002') {
+      res.status(409).json({
         success: false,
         message: 'An Elixir Books customer with this email already exists outside the integration.',
         // `meta` is the Prisma field name. `keyValue` is the legacy alias that
         // whatsappcrm consumers already read from the old Mongoose 11000 path —
         // both are returned so neither consumer breaks during the migration window.
-        meta: err.meta || null,
-        keyValue: err.meta || null,
+        meta: e.meta || null,
+        keyValue: e.meta || null,
       });
+      return;
     }
     console.error('External upsertCustomer error:', err);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: 'Failed to upsert customer',
-      error: err.message,
+      error: e.message,
     });
+    return;
   }
 };
+
+// CommonJS interop: routes/externalRoutes.js require()s this module.
+module.exports = { ssoExchange, upsertCustomer };
+module.exports.ssoExchange = ssoExchange;
+module.exports.upsertCustomer = upsertCustomer;

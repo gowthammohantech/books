@@ -83,7 +83,7 @@ const CROSS_TENANT = /@cross-tenant/;
 describe('routed controllers are tenant-scoped', () => {
   for (const rel of [...files, 'routes/authRoutes.ts', 'routes/exportRoutes.ts',
                      'routes/timeTrackingRoutes.ts', 'routes/mtdRoutes.ts',
-                     'routes/taxReturnRoutes.ts', 'routes/reminderRoutes.js']) {
+                     'routes/taxReturnRoutes.ts', 'routes/reminderRoutes.ts']) {
     it(`every controller behind ${rel} scopes by tenant or declares why not`, () => {
       const controllers = routedControllerFiles(rel);
       // A route file that resolves no controllers means the regex has drifted,

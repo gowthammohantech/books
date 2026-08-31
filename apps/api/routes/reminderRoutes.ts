@@ -1,0 +1,92 @@
+import { Router } from 'express';
+
+import {
+  getReminders,
+  getReminderStats,
+  getInvoicePlaceholders,
+  getQuotationPlaceholders,
+  triggerReminderCron,
+  getRemindersByType,
+  getReminderById,
+  createReminder,
+  createReminderQuotation,
+  updateReminder,
+  updateReminderQuotation,
+  toggleReminderStatus,
+  sendManualReminder,
+  deleteReminder,
+} from '../controllers/reminderController';
+import protect from '../middleware/authMiddleware';
+import {
+  createReminderValidator,
+  updateReminderValidator,
+  toggleReminderStatusValidator,
+  sendManualReminderValidator,
+  getRemindersByTypeValidator,
+  getReminderByIdValidator,
+  deleteReminderValidator,
+} from '../validators/reminderValidator';
+
+const router = Router();
+
+// @route   GET /api/reminders
+// @desc    Get all reminders with pagination and search
+router.get('/get-reminders', protect, getReminders);
+
+// @route   GET /api/reminders/get-reminder-stats
+// @desc    Get reminder statistics
+router.get('/get-reminder-stats', protect, getReminderStats);
+
+// @route   GET /api/reminders/invoice-placeholders
+// @desc    Get invoice placeholders for email templates
+router.get('/invoice-placeholders', protect, getInvoicePlaceholders);
+
+// @route   GET /api/reminders/quotation-placeholders
+// @desc    Get invoice placeholders for email templates
+router.get('/quotation-placeholders', protect, getQuotationPlaceholders);
+
+// @route   POST /api/reminders/trigger-cron
+// @desc    Manually trigger invoice reminder cron job (for testing)
+router.post('/trigger-cron', protect, triggerReminderCron);
+
+// @route   GET /api/reminders/type/:type
+// @desc    Get reminders by type (automatic or manual)
+router.get('/type/:type', protect, getRemindersByTypeValidator, getRemindersByType);
+
+// @route   GET /api/reminders/:id
+// @desc    Get a single reminder by ID
+router.get('/:id', protect, getReminderByIdValidator, getReminderById);
+
+// @route   POST /api/reminders/create-reminder
+// @desc    Create new reminder
+router.post('/create-reminder', protect, createReminderValidator, createReminder);
+
+// @route   POST /api/reminders/create-reminder-quotation
+// @desc    Create new reminder
+router.post('/create-reminder-quotation', protect,  createReminderQuotation);
+
+// @route   PUT /api/reminders/update-reminder/:id
+// @desc    Update reminder
+router.put('/update-reminder/:id', protect, updateReminderValidator, updateReminder);
+
+// @route   PUT /api/reminders/update-reminder/:id
+// @desc    Update reminder
+router.put('/update-reminder-quotation/:id', protect, updateReminderQuotation);
+
+// @route   PATCH /api/reminders/:id/toggle
+// @desc    Toggle reminder status (enable/disable)
+router.patch('/:id/toggle', protect, toggleReminderStatusValidator, toggleReminderStatus);
+
+// @route   POST /api/reminders/:id/send
+// @desc    Send manual reminder immediately
+router.post('/:id/send', protect, sendManualReminderValidator, sendManualReminder);
+
+// @route   DELETE /api/reminders/:id
+// @desc    Delete reminder (soft delete)
+router.delete('/delete-reminder/:id', protect, deleteReminderValidator, deleteReminder);
+
+export default router;
+
+// CommonJS interop: server.js still require()s this router.
+module.exports = router;
+module.exports.default = router;
