@@ -36,6 +36,57 @@ import { prisma } from '../../lib/prisma';
 /** A context/DB record flowing through the matchers; deliberately loose. */
 type MatchRecord = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
+/**
+ * A candidate the fuzzy matcher found for a name the model extracted.
+ * Populated from whichever entity list was searched, so the fields vary.
+ */
+export interface AmbiguityMatch {
+  id?: string;
+  name?: string;
+  email?: string;
+  price?: number | string;
+  accountNumber?: string;
+}
+
+/** One extracted name that matched more than one record, or none. */
+export interface AmbiguityField {
+  /** null on the "nothing was extracted, here is everything" branches. */
+  searchTerm?: string | null;
+  matches: AmbiguityMatch[];
+  /** Vendor is optional on some document types; the caller ignores it then. */
+  optional?: boolean;
+  /**
+   * The full candidate list, set only on the no-match branches so a caller
+   * could offer "did you mean one of these". aiController does not read it
+   * today, but it is part of the value this function returns.
+   */
+  allAvailable?: AmbiguityMatch[];
+}
+
+/**
+ * Everything resolveEntities could not decide on its own. The caller turns
+ * these into clarifying questions rather than guessing.
+ */
+export interface AmbiguitySet {
+  customer?: AmbiguityField;
+  vendor?: AmbiguityField;
+  products?: AmbiguityField[];
+  expenseCategory?: AmbiguityField;
+  bank?: AmbiguityField;
+  paymentMode?: AmbiguityField;
+}
+
+export interface ResolveEntitiesResult {
+  /**
+   * The model's extraction merged with the database ids it resolved to. Stays
+   * loosely typed: the keys present depend on the document type, and callers
+   * pick out the fields they need (see responseFormatter.AiResolvedData).
+   */
+  resolved: MatchRecord;
+  matchDetails: MatchRecord;
+  ambiguities: AmbiguitySet;
+}
+
 export interface ResolverContext {
   customers: MatchRecord[];
   suppliers: MatchRecord[];
@@ -160,7 +211,7 @@ function resolveEntities(
   extractedData: MatchRecord,
   documentType: string,
   context: ResolverContext,
-) {
+): ResolveEntitiesResult {
   const resolved: MatchRecord = { ...extractedData };
   const matchDetails: MatchRecord = {
     customerMatch: null,
@@ -172,7 +223,7 @@ function resolveEntities(
     paymentModeMatch: null,
   };
 
-  const ambiguities: MatchRecord = {}; // NEW
+  const ambiguities: AmbiguitySet = {}; // NEW
 
   if (resolved.paymentSource) {
     resolved.paymentSource = resolved.paymentSource.toString().toUpperCase().trim();
@@ -293,7 +344,10 @@ function resolveEntities(
 
   // Resolve products in items
   if (extractedData.items && context.products.length > 0 && documentType !== 'expense') {
-    ambiguities.products = [];
+    // Collected into a local first: TypeScript cannot narrow
+    // `ambiguities.products` across the map() closure below.
+    const productAmbiguities: AmbiguityField[] = [];
+    ambiguities.products = productAmbiguities;
     resolved.items = extractedData.items.map((item: MatchRecord) => {
       const matches = fuzzyMatchAll(item.name, context.products, "name");
       if (matches.length === 1) {
@@ -302,13 +356,13 @@ function resolveEntities(
         matchDetails.productMatches.push({ original: item.name, matched: m.name, id: m._id, confidence: m._matchScore });
         return { ...item, productId: m._id, name: m.name, code: m.code, rate, amount: (item.quantity || 1) * rate };
       } else if (matches.length > 1) {
-        ambiguities.products.push({
+        productAmbiguities.push({
           searchTerm: item.name,
           matches: matches.map(m => ({ id: m._id, name: m.name, price: m.selling_price, code: m.code })),
         });
         return null;
       } else {
-        ambiguities.products.push({
+        productAmbiguities.push({
           searchTerm: item.name,
           matches: [],
           allAvailable: context.products.map(p => ({ id: p._id, name: p.name, price: p.selling_price })),

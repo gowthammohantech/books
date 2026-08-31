@@ -1,4 +1,45 @@
-const Anthropic = require("@anthropic-ai/sdk").default;
+import Anthropic from '@anthropic-ai/sdk';
+
+/**
+ * Multi-turn conversational document building, via Claude.
+ *
+ * The model is asked to answer in JSON; when it does not, the raw text is
+ * returned as the message and the structured fields are left empty (see the
+ * fallback in processChatMessage). That is why every field on
+ * ChatMessageResult below is optional — it describes what the model is asked
+ * for, not a guarantee.
+ */
+export interface ChatHistoryMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ChatContextEntity {
+  _id?: string;
+  [key: string]: unknown;
+}
+
+export interface ChatContext {
+  customers?: Array<ChatContextEntity & { name?: string }>;
+  suppliers?: Array<ChatContextEntity & { supplier_name?: string }>;
+  products?: Array<ChatContextEntity & { name?: string; selling_price?: number | string }>;
+  expenseCategories?: Array<ChatContextEntity & { title?: string }>;
+  banks?: Array<ChatContextEntity & { bankName?: string; accountNumber?: string }>;
+  paymentModes?: Array<ChatContextEntity & { name?: string }>;
+}
+
+export interface ChatMessageResult {
+  message: string;
+  documentType?: string | null;
+  extractedData?: Record<string, unknown> | null;
+  isComplete?: boolean;
+  missingFields?: string[];
+  confidence?: number;
+  summary?: string | null;
+  tokensUsed: { inputTokens: number; outputTokens: number };
+  processingTimeMs: number;
+  [key: string]: unknown;
+}
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -118,37 +159,57 @@ HARD RULES (apply to all three):
 - NEVER offer "proceed anyway" or "add as new" options. Only names from the lists are accepted.
 - NEVER partially validate — every customer, vendor, and product in the document must be confirmed from the list before isComplete = true.
 - NEVER dump the full list on NOT FOUND — only show matches when there are multiple matches.`;
+
+const MODEL = 'claude-sonnet-4-20250514';
+
 /**
- * Process a chat message in a conversational session
- * @param {Array} messageHistory - Previous messages [{role, content}]
- * @param {string} userMessage - New user message
- * @param {object} context - DB context (customers, products, etc.)
- * @returns {object} AI response with extracted data
+ * Pull the text out of a Claude response. `content[0]` is a union of block
+ * types and only a text block carries `.text`; the JS original read it
+ * unconditionally.
  */
-async function processChatMessage(messageHistory, userMessage, context) {
+function extractText(message: Anthropic.Message): string {
+  const block = message.content[0];
+  if (!block || block.type !== 'text') {
+    throw new Error('AI returned no text content');
+  }
+  return block.text.trim();
+}
+
+/** Process a chat message in a conversational session. */
+export async function processChatMessage(
+  messageHistory: ChatHistoryMessage[],
+  userMessage: string,
+  context: ChatContext,
+): Promise<ChatMessageResult> {
   const startTime = Date.now();
 
   // Build context string
-  let contextStr = "";
-  if (context.customers?.length > 0) {
-    contextStr += `\nAVAILABLE CUSTOMERS: ${context.customers.map((c) => c.name).join(", ")}`;
+  let contextStr = '';
+  if (context.customers?.length) {
+    contextStr += `\nAVAILABLE CUSTOMERS: ${context.customers.map((c) => c.name).join(', ')}`;
   }
-  if (context.suppliers?.length > 0) {
-    contextStr += `\nAVAILABLE VENDORS: ${context.suppliers.map((s) => s.supplier_name).join(", ")}`;
+  if (context.suppliers?.length) {
+    contextStr += `\nAVAILABLE VENDORS: ${context.suppliers.map((s) => s.supplier_name).join(', ')}`;
   }
-  if (context.products?.length > 0) {
-    contextStr += `\nAVAILABLE PRODUCTS: ${context.products.map((p) => `${p.name} (₹${p.selling_price})`).join(", ")}`;
-  }
-
-  if (context.expenseCategories?.length > 0) {
-    contextStr += `\nAVAILABLE EXPENSE CATEGORIES: ${context.expenseCategories.map(c => c.title).join(", ")}`;
-  }
-  if (context.banks?.length > 0) {
-    contextStr += `\nAVAILABLE BANKS: ${context.banks.map(b => `${b.bankName} (Account: ...${b.accountNumber?.slice(-4)})`).join(", ")}`;
+  if (context.products?.length) {
+    contextStr += `\nAVAILABLE PRODUCTS: ${context.products
+      .map((p) => `${p.name} (₹${p.selling_price})`)
+      .join(', ')}`;
   }
 
-  if (context.paymentModes?.length > 0) {
-    contextStr += `\nAVAILABLE PAYMENT MODES: ${context.paymentModes.map(m => m.name).join(", ")}`;
+  if (context.expenseCategories?.length) {
+    contextStr += `\nAVAILABLE EXPENSE CATEGORIES: ${context.expenseCategories
+      .map((c) => c.title)
+      .join(', ')}`;
+  }
+  if (context.banks?.length) {
+    contextStr += `\nAVAILABLE BANKS: ${context.banks
+      .map((b) => `${b.bankName} (Account: ...${b.accountNumber?.slice(-4)})`)
+      .join(', ')}`;
+  }
+
+  if (context.paymentModes?.length) {
+    contextStr += `\nAVAILABLE PAYMENT MODES: ${context.paymentModes.map((m) => m.name).join(', ')}`;
   }
 
   const systemPrompt = contextStr
@@ -156,29 +217,29 @@ async function processChatMessage(messageHistory, userMessage, context) {
     : CHAT_SYSTEM_PROMPT;
 
   // Build messages for Claude
-  const messages = messageHistory.map((msg) => ({
+  const messages: Anthropic.MessageParam[] = messageHistory.map((msg) => ({
     role: msg.role,
     content: msg.content,
   }));
-  messages.push({ role: "user", content: userMessage });
+  messages.push({ role: 'user', content: userMessage });
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: MODEL,
     max_tokens: 1536,
     system: systemPrompt,
     messages,
   });
 
   const processingTimeMs = Date.now() - startTime;
-  const rawText = response.content[0].text.trim();
+  const rawText = extractText(response);
 
-  let parsed;
+  let parsed: Record<string, unknown>;
   try {
-    parsed = JSON.parse(rawText);
+    parsed = JSON.parse(rawText) as Record<string, unknown>;
   } catch {
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      parsed = JSON.parse(jsonMatch[0]);
+      parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
     } else {
       parsed = {
         message: rawText,
@@ -193,13 +254,16 @@ async function processChatMessage(messageHistory, userMessage, context) {
   }
 
   return {
+    message: '',
     ...parsed,
     tokensUsed: {
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
     },
     processingTimeMs,
-  };
+  } as ChatMessageResult;
 }
 
+// CommonJS interop for the require() call site in aiController.
 module.exports = { processChatMessage };
+module.exports.processChatMessage = processChatMessage;

@@ -1,4 +1,60 @@
-const Anthropic = require("@anthropic-ai/sdk").default;
+import Anthropic from '@anthropic-ai/sdk';
+
+/**
+ * Natural-language prompt -> structured financial document data, via Claude.
+ *
+ * The `context` shape below is what the caller assembles from the database and
+ * pastes into the prompt as plain text. Fields are optional because callers
+ * pass only what is relevant to the document type they are extracting.
+ */
+export interface PromptContextEntity {
+  _id?: string;
+  [key: string]: unknown;
+}
+
+export interface PromptContext {
+  customers?: Array<PromptContextEntity & { name?: string }>;
+  userSuppliers?: Array<PromptContextEntity & { firstName?: string; lastName?: string }>;
+  products?: Array<
+    PromptContextEntity & {
+      name?: string;
+      code?: string;
+      selling_price?: number | string;
+      purchase_price?: number | string;
+    }
+  >;
+  taxGroups?: Array<PromptContextEntity & { tax_name?: string }>;
+  expenseCategories?: Array<PromptContextEntity & { title?: string }>;
+  banks?: Array<
+    PromptContextEntity & {
+      bankName?: string;
+      accountHoldername?: string;
+      accountNumber?: string;
+    }
+  >;
+  paymentModes?: Array<PromptContextEntity & { name?: string }>;
+}
+
+/**
+ * The shape SYSTEM_PROMPT asks the model to return. Every field is optional
+ * and `documentType` is a plain string rather than the Prisma AIDocumentType:
+ * this is unvalidated model output, and the caller is responsible for checking
+ * it before using it as an enum (see aiController.toDocumentType).
+ */
+export interface ExtractionResult {
+  documentType?: string;
+  data?: Record<string, unknown>;
+  confidence?: number;
+  summary?: string;
+  [key: string]: unknown;
+}
+
+export interface ProcessPromptResult {
+  success: true;
+  result: ExtractionResult;
+  tokensUsed: { inputTokens: number; outputTokens: number };
+  processingTimeMs: number;
+}
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -143,39 +199,57 @@ RESPONSE FORMAT:
   "summary": "Brief one-line summary of what will be created"
 }`;
 
+const MODEL = 'claude-sonnet-4-20250514';
+
 /**
- * Process a natural language prompt using Claude AI
- * @param {string} prompt - The user's natural language prompt
- * @param {object} context - Additional context (customers, products, tax rates, etc.)
- * @returns {object} Structured extraction result
+ * Pull the text out of a Claude response.
+ *
+ * `content[0]` is a union of block types and only a text block carries `.text`;
+ * the JS original read `.text` unconditionally and would have thrown a
+ * TypeError on any other block kind.
  */
-async function processPrompt(prompt, context = {}) {
+function extractText(message: Anthropic.Message): string {
+  const block = message.content[0];
+  if (!block || block.type !== 'text') {
+    throw new Error('AI returned no text content');
+  }
+  return block.text.trim();
+}
+
+/** Parse model output as JSON, falling back to the first {...} span in it. */
+function parseJsonResponse(rawText: string): ExtractionResult {
+  try {
+    return JSON.parse(rawText) as ExtractionResult;
+  } catch {
+    // Try to extract JSON from the response if it has extra text
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]) as ExtractionResult;
+    }
+    throw new Error('AI returned invalid JSON response');
+  }
+}
+
+/** Process a natural language prompt using Claude AI. */
+export async function processPrompt(
+  prompt: string,
+  context: PromptContext = {},
+): Promise<ProcessPromptResult> {
   const startTime = Date.now();
 
-  const docType  = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+  const docType = await client.messages.create({
+    model: MODEL,
     max_tokens: 2048,
     system: SYSTEM_PROMPT,
     messages: [
       {
-        role: "user",
+        role: 'user',
         content: `What type of document  is this? \m ${prompt}`,
       },
     ],
   });
-  const typerawText = docType.content[0].text.trim();
-  let parsedtype;
-  try {
-    parsedtype = JSON.parse(typerawText);
-  } catch {
-    const jsonMatch = typerawText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      parsedtype = JSON.parse(jsonMatch[0]);
-    } else {
-      throw new Error("AI returned invalid JSON response");
-    }
-  }
-  const documentType = parsedtype.documentType;
+  const parsedtype = parseJsonResponse(extractText(docType));
+  const documentType = parsedtype.documentType ?? '';
   const contextMessages = buildContextMessage(context, documentType);
 
   const userMessage = contextMessages
@@ -183,12 +257,12 @@ async function processPrompt(prompt, context = {}) {
     : prompt;
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: MODEL,
     max_tokens: 2048,
     system: SYSTEM_PROMPT,
     messages: [
       {
-        role: "user",
+        role: 'user',
         content: userMessage,
       },
     ],
@@ -196,19 +270,7 @@ async function processPrompt(prompt, context = {}) {
 
   const processingTimeMs = Date.now() - startTime;
 
-  const rawText = response.content[0].text.trim();
-  let parsed;
-  try {
-    parsed = JSON.parse(rawText);
-  } catch {
-    // Try to extract JSON from the response if it has extra text
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      parsed = JSON.parse(jsonMatch[0]);
-    } else {
-      throw new Error("AI returned invalid JSON response");
-    }
-  }
+  const parsed = parseJsonResponse(extractText(response));
 
   return {
     success: true,
@@ -221,30 +283,21 @@ async function processPrompt(prompt, context = {}) {
   };
 }
 
-/**
- * Build context message from database records
- */
-function buildContextMessage(context, documentType = "") {
-  const parts = [];
-  if (documentType !== "expense") {
-
+/** Build context message from database records. */
+function buildContextMessage(context: PromptContext, documentType = ''): string {
+  const parts: string[] = [];
+  if (documentType !== 'expense') {
     if (context.customers && context.customers.length > 0) {
       const customerList = context.customers
         .map((c) => `- ${c.name} (ID: ${c._id})`)
-        .join("\n");
+        .join('\n');
       parts.push(`CUSTOMERS:\n${customerList}`);
     }
 
-    // if (context.suppliers && context.suppliers.length > 0) {
-    //   const supplierList = context.suppliers
-    //     .map((s) => `- ${s.supplier_name} (ID: ${s._id})`)
-    //     .join("\n");
-    //   parts.push(`SUPPLIERS/VENDORS:\n${supplierList}`);
-    // }
     if (context.userSuppliers && context.userSuppliers.length > 0) {
       const userSupplierList = context.userSuppliers
         .map((s) => `- ${s.firstName} ${s.lastName || ''}`.trim() + ` (ID: ${s._id})`)
-        .join("\n");
+        .join('\n');
       parts.push(`SUPPLIERS/VENDORS:\n${userSupplierList}`);
     }
 
@@ -252,45 +305,45 @@ function buildContextMessage(context, documentType = "") {
       const productList = context.products
         .map(
           (p) =>
-            `- ${p.name} (Code: ${p.code}, Selling Price: ${p.selling_price}, Purchase Price: ${p.purchase_price}, ID: ${p._id})`
+            `- ${p.name} (Code: ${p.code}, Selling Price: ${p.selling_price}, Purchase Price: ${p.purchase_price}, ID: ${p._id})`,
         )
-        .join("\n");
+        .join('\n');
       parts.push(`PRODUCTS/SERVICES:\n${productList}`);
     }
 
     if (context.taxGroups && context.taxGroups.length > 0) {
-      const taxList = context.taxGroups
-        .map((t) => `- ${t.tax_name} (ID: ${t._id})`)
-        .join("\n");
+      const taxList = context.taxGroups.map((t) => `- ${t.tax_name} (ID: ${t._id})`).join('\n');
       parts.push(`TAX GROUPS:\n${taxList}`);
     }
   }
 
-  if(documentType === "expense"){
+  if (documentType === 'expense') {
     if (context.expenseCategories && context.expenseCategories.length > 0) {
       const catList = context.expenseCategories
         .map((c) => `- ${c.title} (ID: ${c._id})`)
-        .join("\n");
+        .join('\n');
       parts.push(`EXPENSE CATEGORIES:\n${catList}`);
     }
 
     if (context.banks && context.banks.length > 0) {
       const bankList = context.banks
-        .map((b) => `- ${b.bankName} | Account: ${b.accountHoldername} | Last4: ${b.accountNumber?.slice(-4)} (ID: ${b._id})`)
-        .join("\n");
+        .map(
+          (b) =>
+            `- ${b.bankName} | Account: ${b.accountHoldername} | Last4: ${b.accountNumber?.slice(-4)} (ID: ${b._id})`,
+        )
+        .join('\n');
       parts.push(`AVAILABLE BANK ACCOUNTS:\n${bankList}`);
     }
 
     if (context.paymentModes && context.paymentModes.length > 0) {
-      const modeList = context.paymentModes
-        .map((m) => `- ${m.name} (ID: ${m._id})`)
-        .join("\n");
+      const modeList = context.paymentModes.map((m) => `- ${m.name} (ID: ${m._id})`).join('\n');
       parts.push(`AVAILABLE PAYMENT MODES:\n${modeList}`);
     }
   }
-  
 
-  return parts.join("\n\n");
+  return parts.join('\n\n');
 }
 
+// CommonJS interop for the require() call site in aiController.
 module.exports = { processPrompt };
+module.exports.processPrompt = processPrompt;

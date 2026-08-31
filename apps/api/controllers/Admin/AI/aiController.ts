@@ -11,91 +11,20 @@ import { prisma } from '../../../lib/prisma';
 import { requireTenantId, UnauthorizedError, requireActingUserId } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 
-// Legacy JS services — still JS, require via CommonJS shim.
-/* eslint-disable @typescript-eslint/no-require-imports */
-const { processPrompt } = require('../../../services/ai/promptProcessor') as {
-  processPrompt: (
-    prompt: string,
-    context: unknown,
-  ) => Promise<{
-    success: boolean;
-    result?: {
-      documentType: AIDocumentType;
-      data: Record<string, unknown>;
-      confidence?: number;
-      summary?: string;
-    };
-    processingTimeMs?: number;
-    tokensUsed?: { inputTokens?: number; outputTokens?: number };
-  }>;
-};
-const {
-  loadContext,
-  resolveEntities,
-} = require('../../../services/ai/entityResolver') as {
-  loadContext: (tenantId: string) => Promise<unknown>;
-  resolveEntities: (
-    data: Record<string, unknown>,
-    documentType: AIDocumentType,
-    context: unknown,
-  ) => {
-    resolved: Record<string, unknown> & { items?: unknown[] };
-    matchDetails: unknown;
-    ambiguities: AmbiguitySet;
-  };
-};
-const { formatForController } = require('../../../services/ai/responseFormatter') as {
-  formatForController: (
-    documentType: AIDocumentType,
-    resolved: Record<string, unknown>,
-    extras: { tenantId: string },
-  ) => Record<string, unknown>;
-};
-const { checkDuplicates: checkDuplicatesService } = require('../../../services/ai/duplicateDetector') as {
-  checkDuplicates: (
-    documentType: string,
-    payload: Record<string, unknown>,
-    tenantId: string,
-  ) => Promise<{ hasDuplicates: boolean; duplicates: unknown[] } & Record<string, unknown>>;
-};
-const { processChatMessage } = require('../../../services/ai/chatService') as {
-  processChatMessage: (
-    history: Array<{ role: string; content: string }>,
-    message: string,
-    context: unknown,
-  ) => Promise<{
-    message: string;
-    extractedData?: Record<string, unknown>;
-    documentType?: AIDocumentType;
-    isComplete?: boolean;
-    missingFields?: string[];
-    confidence?: number;
-    summary?: string;
-  }>;
-};
-const {
-  getFinancialData,
+import { processChatMessage } from '../../../services/ai/chatService';
+import { checkDuplicates as checkDuplicatesService } from '../../../services/ai/duplicateDetector';
+import { loadContext, resolveEntities } from '../../../services/ai/entityResolver';
+import {
   generateInsightNarrative,
-} = require('../../../services/ai/insightsService') as {
-  getFinancialData: (tenantId: string) => Promise<Record<string, unknown>>;
-  generateInsightNarrative: (data: Record<string, unknown>) => Promise<string | null>;
-};
-const {
-  getOverdueInvoices: getOverdueInvoicesService,
+  getFinancialData,
+} from '../../../services/ai/insightsService';
+import {
   generateFollowupEmail,
-} = require('../../../services/ai/paymentFollowup') as {
-  getOverdueInvoices: (tenantId: string) => Promise<unknown[]>;
-  generateFollowupEmail: (
-    invoiceData: Record<string, unknown>,
-    companyName: string,
-    tone: string,
-  ) => Promise<{ subject?: string; body?: string } & Record<string, unknown>>;
-};
-const mailerModule = require('../../../utils/mailer') as {
-  sendMail: (opts: Record<string, unknown>) => Promise<void>;
-};
-const sendMail = mailerModule.sendMail;
-/* eslint-enable @typescript-eslint/no-require-imports */
+  getOverdueInvoices as getOverdueInvoicesService,
+} from '../../../services/ai/paymentFollowup';
+import { processPrompt } from '../../../services/ai/promptProcessor';
+import { formatForController } from '../../../services/ai/responseFormatter';
+import { sendMail } from '../../../utils/mailer';
 
 type Tx = Prisma.TransactionClient;
 
@@ -136,6 +65,23 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
+}
+
+const AI_DOCUMENT_TYPES = ['invoice', 'purchase_order', 'quotation', 'expense'] as const;
+
+/**
+ * Narrow unvalidated model output to the Prisma AIDocumentType enum.
+ *
+ * processPrompt/processChatMessage return whatever JSON the model produced, so
+ * `documentType` is a plain string until it is checked here. Previously this
+ * was a bare `as AIDocumentType` assertion at the require() boundary, which
+ * meant an unexpected value flowed straight into a Prisma enum column and
+ * failed at the database instead of at the edge.
+ */
+function toDocumentType(value: unknown): AIDocumentType | null {
+  return typeof value === 'string' && (AI_DOCUMENT_TYPES as readonly string[]).includes(value)
+    ? (value as AIDocumentType)
+    : null;
 }
 
 function enabledModuleFor(
@@ -232,7 +178,16 @@ export async function processAIPrompt(req: Request, res: Response): Promise<void
       return;
     }
 
-    const { documentType, data, confidence, summary } = aiResult.result;
+    const { data, confidence, summary } = aiResult.result;
+    const documentType = toDocumentType(aiResult.result.documentType);
+
+    if (!documentType) {
+      res.status(422).json({
+        success: false,
+        message: 'Could not determine the document type. Please try rephrasing.',
+      });
+      return;
+    }
 
     // Check if module is enabled
     if (!enabledModuleFor(aiConfig, documentType)) {
@@ -244,7 +199,7 @@ export async function processAIPrompt(req: Request, res: Response): Promise<void
     }
 
     // Resolve entities against database
-    const { resolved, matchDetails, ambiguities } = resolveEntities(data, documentType, context);
+    const { resolved, matchDetails, ambiguities } = resolveEntities(data ?? {}, documentType, context);
 
     const hasAmbiguities =
       ambiguities.customer ||
@@ -1112,8 +1067,17 @@ export async function processBatch(req: Request, res: Response): Promise<void> {
         const aiResult = await processPrompt(promptText, context);
 
         if (aiResult.success && aiResult.result) {
-          const { documentType, data, confidence, summary } = aiResult.result;
-          const { resolved, matchDetails } = resolveEntities(data, documentType, context);
+          const { data, confidence, summary } = aiResult.result;
+          const documentType = toDocumentType(aiResult.result.documentType);
+          if (!documentType) {
+            results.push({
+              prompt: promptText,
+              success: false,
+              message: 'Could not determine the document type.',
+            });
+            continue;
+          }
+          const { resolved, matchDetails } = resolveEntities(data ?? {}, documentType, context);
           const formattedPayload = formatForController(documentType, resolved, { tenantId });
 
           const promptLog = await prisma.aIPromptLog.create({
@@ -1225,9 +1189,9 @@ export async function getInsights(req: Request, res: Response): Promise<void> {
 // ============================================================
 
 interface ChatMessage {
-  role: string;
+  role: 'user' | 'assistant';
   content: string;
-  extractedData?: Record<string, unknown>;
+  extractedData?: Record<string, unknown> | null;
   isComplete?: boolean;
   timestamp?: string;
 }
@@ -1309,7 +1273,8 @@ export async function sendChatMessage(req: Request, res: Response): Promise<void
     const updateData: Prisma.AIChatSessionUpdateInput = {
       messages: updatedMessages as unknown as Prisma.InputJsonValue,
     };
-    if (aiResponse.documentType) updateData.documentType = aiResponse.documentType;
+    const chatDocumentType = toDocumentType(aiResponse.documentType);
+    if (chatDocumentType) updateData.documentType = chatDocumentType;
     if (aiResponse.extractedData) {
       updateData.currentExtractedData = aiResponse.extractedData as Prisma.InputJsonValue;
     }
