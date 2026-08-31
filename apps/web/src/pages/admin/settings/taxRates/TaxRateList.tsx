@@ -29,7 +29,10 @@ interface PaginationData {
 
 type RegimeFilter = 'all' | TaxRegime;
 
-const REGIME_OPTIONS: RegimeFilter[] = ['all', 'GST_INDIA', 'VAT_GENERIC', 'US_SALES_TAX', 'NONE'];
+const REGIME_OPTIONS: RegimeFilter[] = [
+    'all', 'GST_INDIA', 'VAT_GENERIC', 'US_SALES_TAX', 'NONE',
+    'VAT_UK', 'VAT_EU', 'GST_AU', 'GST_NZ',
+];
 
 const regimeLabel = (r: RegimeFilter): string => {
     switch (r) {
@@ -38,6 +41,10 @@ const regimeLabel = (r: RegimeFilter): string => {
         case 'VAT_GENERIC': return 'VAT';
         case 'US_SALES_TAX': return 'US Sales Tax';
         case 'NONE': return 'None';
+        case 'VAT_UK': return 'VAT (UK)';
+        case 'VAT_EU': return 'VAT (EU)';
+        case 'GST_AU': return 'GST (Australia)';
+        case 'GST_NZ': return 'GST (New Zealand)';
     }
 };
 
@@ -47,6 +54,13 @@ const regimeBadgeColor = (r: TaxRegime): BadgeColor => {
         case 'VAT_GENERIC': return 'warning';
         case 'US_SALES_TAX': return 'info';
         case 'NONE': return 'gray';
+        // Previously these fell off the end of the switch and returned
+        // undefined, because the frontend union did not know the schema had
+        // them — a tax rate on any of these regimes rendered with no badge.
+        case 'VAT_UK': return 'warning';
+        case 'VAT_EU': return 'warning';
+        case 'GST_AU': return 'indigo';
+        case 'GST_NZ': return 'indigo';
     }
 };
 

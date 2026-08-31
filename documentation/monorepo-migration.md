@@ -264,3 +264,49 @@ extensions, and comments are kept in the build. Caught only because the boot log
 compiled, so `first-run.md`, `troubleshooting.md`, the seed's own console output and
 `apps/api/DEPLOYMENT.md` now use `node dist/prisma/<script>.js`. Prisma's `seed` command is
 repointed the same way, which is what `make seed` runs inside the container.
+
+## Phase 5 — shared packages
+
+### `@elixirbooks/validation`
+
+`utils/validation.ts` existed twice with the same eight-line header verbatim and identical
+regexes. The copies had drifted on wording, so form and API rejected the same input with
+different messages. Unified on the frontend's wording, since that is what users read.
+
+### `@elixirbooks/enums`
+
+Sixteen enums generated from `apps/api/prisma/schema.prisma` by
+`packages/enums/scripts/generate.mjs`. A test regenerates and diffs, so CI fails if the
+committed file falls behind the schema.
+
+Twelve of the thirteen hand-written frontend unions matched the schema exactly. **`TaxRegime`
+did not.** The schema has supported `VAT_UK`, `VAT_EU`, `GST_AU` and `GST_NZ` for some time;
+the frontend union listed only `GST_INDIA`, `VAT_GENERIC`, `US_SALES_TAX` and `NONE`. For a
+tenant on any of the four missing regimes that meant:
+
+- `regimeBadgeColor` fell off the end of its exhaustive switch and returned `undefined`, so
+  the tax rate rendered with no badge;
+- the regime was absent from the Create Tax Rate dropdown, so it could not be selected;
+- `STARTER_RATES` had no entry.
+
+Adopting the generated union turned all three into compile errors, which is the point. They
+are now filled in: labels and badge colours for all four, and **empty** starter-rate lists —
+matching the existing `US_SALES_TAX: []` precedent. The correct preset rates for UK VAT, EU
+VAT, Australian GST and NZ GST are a product decision and were deliberately not invented here.
+
+### Package build shape
+
+Both packages dual-build. apps/api runs as CommonJS and requires the CJS output; Rollup cannot
+resolve named imports out of CommonJS, so Vite needs a real ESM entry — the first attempt
+failed with "isValidPhone is not exported by …/dist/index.js" *despite typecheck passing*,
+because tsc reads the `.d.ts` while Rollup reads the module. An `exports` map routes each
+consumer, and `scripts/write-esm-package-marker.mjs` drops `{"type":"module"}` into the ESM
+output directory so those `.js` files are not read as CommonJS — without making the whole
+package ESM, which would break the CJS build.
+
+### Not done
+
+`packages/money` and `packages/api-client` from the plan are **not** included. Both are
+refactors rather than extractions: money needs the frontend to adopt `decimal.js` to match the
+backend's `Prisma.Decimal` rounding, and api-client touches 209 axios call sites. The
+duplication they address is documented above and unchanged.

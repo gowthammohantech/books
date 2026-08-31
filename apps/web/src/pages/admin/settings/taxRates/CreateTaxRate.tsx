@@ -54,6 +54,12 @@ const REGIME_OPTIONS: { value: TaxRegime; label: string }[] = [
     { value: 'VAT_GENERIC', label: 'VAT (Generic)' },
     { value: 'US_SALES_TAX', label: 'US Sales Tax' },
     { value: 'NONE', label: 'None' },
+    // Supported by the schema all along; the hand-written frontend union did
+    // not list them, so a UK/EU/AU/NZ tenant could not pick their own regime.
+    { value: 'VAT_UK', label: 'VAT (UK)' },
+    { value: 'VAT_EU', label: 'VAT (EU)' },
+    { value: 'GST_AU', label: 'GST (Australia)' },
+    { value: 'GST_NZ', label: 'GST (New Zealand)' },
 ];
 
 const TAX_KIND_OPTIONS: { value: TaxKind; label: string }[] = [

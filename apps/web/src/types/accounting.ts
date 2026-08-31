@@ -1,4 +1,8 @@
-export type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'INCOME' | 'EXPENSE';
+import type { AccountType } from '@elixirbooks/enums';
+
+// Generated from apps/api/prisma/schema.prisma. Re-exported so the existing
+// import sites for these names keep working.
+export type { AccountType };
 
 export interface Account {
   id: string;

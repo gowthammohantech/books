@@ -1,5 +1,8 @@
-export type RecurrenceFrequency = 'day' | 'week' | 'month' | 'year' | 'custom';
-export type RecurrenceCustomIntervalType = 'day' | 'week' | 'month' | 'year';
+import type { RecurrenceFrequency, RecurrenceCustomIntervalType } from '@elixirbooks/enums';
+
+// Generated from apps/api/prisma/schema.prisma. Re-exported so the existing
+// import sites for these names keep working.
+export type { RecurrenceFrequency, RecurrenceCustomIntervalType };
 
 export interface RecurringInvoiceSummary {
   id: string;

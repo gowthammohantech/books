@@ -94,7 +94,8 @@ export const systemSettings = {
     },
 };
 
-export type TaxTreatment = 'STANDARD' | 'ZERO_RATED' | 'EXEMPT' | 'REVERSE_CHARGE' | 'OUT_OF_SCOPE';
+import type { TaxTreatment } from '@elixirbooks/enums';
+export type { TaxTreatment } from '@elixirbooks/enums';
 
 const TAX_TREATMENT_LABELS: Record<TaxTreatment, string | null> = {
     STANDARD: null,

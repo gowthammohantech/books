@@ -1,5 +1,8 @@
-export type TaxRegime = 'GST_INDIA' | 'VAT_GENERIC' | 'US_SALES_TAX' | 'NONE';
-export type TaxKind = 'CGST' | 'SGST' | 'IGST' | 'UTGST' | 'CESS' | 'VAT' | 'SALES_TAX';
+import type { TaxRegime, TaxKind } from '@elixirbooks/enums';
+
+// Generated from apps/api/prisma/schema.prisma. Re-exported so the existing
+// import sites for these names keep working.
+export type { TaxRegime, TaxKind };
 
 export interface TaxRate {
   id: string;

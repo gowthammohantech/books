@@ -1,6 +1,8 @@
-export type TimesheetStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
+import type { TimesheetStatus, ProjectMemberRole } from '@elixirbooks/enums';
 
-export type ProjectMemberRole = 'MEMBER' | 'MANAGER';
+// Generated from apps/api/prisma/schema.prisma. Re-exported so the existing
+// import sites for these names keep working.
+export type { TimesheetStatus, ProjectMemberRole };
 
 export interface ProjectMember {
   id: string;

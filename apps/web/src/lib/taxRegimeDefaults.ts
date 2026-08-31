@@ -24,4 +24,12 @@ export const STARTER_RATES: Record<TaxRegime, StarterRate[]> = {
     ],
     US_SALES_TAX: [],
     NONE: [],
+    // The schema has supported these four for some time; the hand-written
+    // frontend union did not list them, so they were invisible here. No preset
+    // rates — same as US_SALES_TAX above, the user defines their own. Filling
+    // these in with real UK/EU/AU/NZ rates is a product decision.
+    VAT_UK: [],
+    VAT_EU: [],
+    GST_AU: [],
+    GST_NZ: [],
 };
