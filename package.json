@@ -1,4 +1,10 @@
 {
+  "name": "elixirbooks",
+  "private": true,
+  "engines": {
+    "node": ">=20",
+    "npm": ">=10"
+  },
   "devDependencies": {
     "baseline-browser-mapping": "^2.11.19"
   }

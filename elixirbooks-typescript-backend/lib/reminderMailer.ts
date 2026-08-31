@@ -35,10 +35,10 @@
  * emailTeamplateController.ts). This is the reminder feature's own documented
  * convention — see reminderController.ts#getInvoicePlaceholders /
  * getQuotationPlaceholders ("Use %PlaceholderName% in email templates") and
- * the frontend's manual-reminder default body. The key set mirrors the now-
- * dead Mongoose utils/placeholderHelper.js (%CustomerName%, %InvoiceNumber%,
- * %InvoiceUrl%, etc.) reimplemented against Prisma so it works without
- * MONGO_URI.
+ * the frontend's manual-reminder default body. The key set (%CustomerName%,
+ * %InvoiceNumber%, %InvoiceUrl%, etc.) originated in the Mongoose-era
+ * utils/placeholderHelper.js, since removed; it is implemented here against
+ * Prisma.
  */
 import { randomBytes } from 'crypto';
 import { prisma } from './prisma';

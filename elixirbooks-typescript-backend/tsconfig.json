@@ -36,7 +36,10 @@
     "node_modules",
     "dist",
     "coverage",
-    "uploads"
+    "uploads",
+    "tests",
+    "**/*.test.ts",
+    "**/*.spec.ts"
   ],
   "ts-node": {
     "transpileOnly": true,
