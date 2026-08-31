@@ -31,7 +31,7 @@ export function decryptSecret(stored: string | null | undefined): string {
   return stored;
 }
 
-// CommonJS interop for the JS mailer (utils/mailer.js).
+// CommonJS interop for the CJS require() call sites that still reach this module.
 module.exports = { isEncrypted, encryptSecret, decryptSecret };
 module.exports.isEncrypted = isEncrypted;
 module.exports.encryptSecret = encryptSecret;

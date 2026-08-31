@@ -1,4 +1,4 @@
-// utils/mailer.js
+// utils/mailer.ts
 //
 // Single send path for the whole app. The active email provider is configured
 // in the UI (Settings > Email Settings) and stored on the EmailSettings row;
@@ -12,38 +12,57 @@
 // When the active provider has a configured "from" address we override the
 // caller-supplied `from` so mail always goes out as the verified sender
 // (required by Resend, and what users expect from the UI config).
-const nodemailer = require("nodemailer");
+import nodemailer, { type Transporter } from 'nodemailer';
+import type { EmailSettings } from '@prisma/client';
+
+import { decryptSecret } from '../lib/emailSecret';
+import { prisma } from '../lib/prisma';
+
+/** Thrown when no provider is configured, so callers can answer 422 not 500. */
+export interface EmailNotConfiguredError extends Error {
+  code: 'EMAIL_NOT_CONFIGURED';
+}
+
+interface MailerCache {
+  at: number;
+  settings: EmailSettings | null;
+}
+
+interface BuiltTransport {
+  transport: Transporter;
+  from: string | null;
+  replyTo: string | null;
+}
 
 // Brief in-process cache so we don't hit the DB on every email.
-let cache = { at: 0, settings: null };
+let cache: MailerCache = { at: 0, settings: null };
 const CACHE_MS = 30000;
 
-async function loadActiveSettings() {
+async function loadActiveSettings(): Promise<EmailSettings | null> {
   const now = Date.now();
   if (cache.settings !== undefined && now - cache.at < CACHE_MS) return cache.settings;
   try {
-    const { prisma } = require("../lib/prisma");
     const settings = await prisma.emailSettings.findFirst({
       where: { OR: [{ resend_status: true }, { smtp_status: true }, { node_status: true }] },
-      orderBy: { updatedAt: "desc" },
+      orderBy: { updatedAt: 'desc' },
     });
     cache = { at: now, settings: settings || null };
     return cache.settings;
   } catch (err) {
-    console.warn("[mailer] could not load EmailSettings, using env fallback:", err && err.message);
+    console.warn(
+      '[mailer] could not load EmailSettings, using env fallback:',
+      err && (err as Error).message,
+    );
     return null;
   }
 }
 
-function fmtFrom(name, email) {
+function fmtFrom(name: string | null | undefined, email: string | null | undefined): string | null {
   if (!email) return null;
   return name ? `"${name}" <${email}>` : email;
 }
 
-// Secrets are stored encrypted (enc:: marker); decrypt at point of use.
-const { decryptSecret } = require("../lib/emailSecret");
-
-function buildTransport(s) {
+function buildTransport(s: EmailSettings | null): BuiltTransport {
   // 1. Demo no-op: swallow the send silently so demo buttons work without
   //    actually delivering any email. Check this before everything else.
   if (process.env.DEMO_MODE === 'true') {
@@ -57,10 +76,10 @@ function buildTransport(s) {
   if (s && s.resend_status && s.resendApiKey) {
     return {
       transport: nodemailer.createTransport({
-        host: "smtp.resend.com",
+        host: 'smtp.resend.com',
         port: 465,
         secure: true,
-        auth: { user: "resend", pass: decryptSecret(s.resendApiKey) },
+        auth: { user: 'resend', pass: decryptSecret(s.resendApiKey) },
       }),
       from: fmtFrom(s.resendFromName, s.resendFromEmail),
       replyTo: s.resendReplyTo || null,
@@ -73,7 +92,7 @@ function buildTransport(s) {
         host: s.smtpHost,
         port,
         secure: port === 465,
-        auth: { user: s.smtpUsername, pass: decryptSecret(s.smtpPassword) },
+        auth: { user: s.smtpUsername ?? undefined, pass: decryptSecret(s.smtpPassword) },
       }),
       from: fmtFrom(s.smtpFromName, s.smtpFromEmail),
       replyTo: s.smtpReplyTo || null,
@@ -86,7 +105,7 @@ function buildTransport(s) {
         host: s.nodeHost,
         port,
         secure: port === 465,
-        auth: { user: s.nodeUsername, pass: decryptSecret(s.nodePassword) },
+        auth: { user: s.nodeUsername ?? undefined, pass: decryptSecret(s.nodePassword) },
       }),
       from: fmtFrom(s.nodeFromName, s.nodeFromEmail),
       replyTo: s.nodeReplyTo || null,
@@ -116,13 +135,15 @@ function buildTransport(s) {
   // 3. Nothing usable is configured — throw a typed, actionable error so
   //    callers can return 422 instead of a cryptic 500.
   const err = new Error(
-    'Email is not configured. Set up an email provider in Settings → Email.'
-  );
+    'Email is not configured. Set up an email provider in Settings → Email.',
+  ) as EmailNotConfiguredError;
   err.code = 'EMAIL_NOT_CONFIGURED';
   throw err;
 }
 
-const sendMail = async (options) => {
+export type SendMailOptions = Parameters<Transporter['sendMail']>[0];
+
+export const sendMail = async (options: SendMailOptions): Promise<unknown> => {
   const settings = await loadActiveSettings();
   const { transport, from, replyTo } = buildTransport(settings);
   const opts = { ...options };
@@ -133,8 +154,18 @@ const sendMail = async (options) => {
   return await transport.sendMail(opts);
 };
 
-// Allow the controller to clear the cache right after a settings change so the
-// next email uses the new provider without waiting for the TTL.
-const clearMailerCache = () => { cache = { at: 0, settings: null }; };
+/**
+ * Lets the controller clear the cache right after a settings change so the
+ * next email uses the new provider without waiting for the TTL.
+ */
+export const clearMailerCache = (): void => {
+  cache = { at: 0, settings: null };
+};
 
+// CommonJS interop. Roughly thirty call sites still reach this module through
+// `require()` — including routes/adminRoutes.js and several controllers — and
+// a number of tests spy on the object this returns. Removed with the rest of
+// the interop tails once adminRoutes.js is TypeScript.
 module.exports = { sendMail, clearMailerCache };
+module.exports.sendMail = sendMail;
+module.exports.clearMailerCache = clearMailerCache;

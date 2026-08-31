@@ -6,16 +6,18 @@
  * and handed off to the configured `AiProvider`. The disk copy is kept so
  * the user can re-view the bill from the extraction history page.
  */
-const multer = require('multer');
-const path = require('path');
-const { destinationFor } = require('../lib/uploadPaths');
+import path from 'path';
+
+import multer from 'multer';
+
+import { destinationFor } from '../lib/uploadPaths';
 
 // Per-workspace: uploads/t/<tenantId>/ai-jobs/. These are the SOURCE DOCUMENTS
 // a company feeds to extraction - supplier invoices and bills - so they are the
 // last thing that should share a directory with another company's.
 const aiJobStorage = multer.diskStorage({
   destination: destinationFor('ai-jobs'),
-  filename: function (req, file, cb) {
+  filename: function (_req, file, cb) {
     const ext = path.extname(file.originalname) || '';
     const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9) + ext;
     cb(null, uniqueName);
@@ -30,7 +32,7 @@ const ALLOWED_MIME_TYPES = [
   'image/webp',
 ];
 
-const aiJobFileFilter = (req, file, cb) => {
+const aiJobFileFilter: multer.Options['fileFilter'] = (_req, file, cb) => {
   if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -46,5 +48,8 @@ const uploadAiJobs = multer({
   },
 });
 
+export default uploadAiJobs;
+
+// CommonJS interop: the JS routers require() this module directly.
 module.exports = uploadAiJobs;
 module.exports.default = uploadAiJobs;

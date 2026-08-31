@@ -42,15 +42,10 @@
  */
 import { randomBytes } from 'crypto';
 import { prisma } from './prisma';
-// utils/mailer.js has no type declarations (allowJs is off, so TS can't infer
-// from the .js source). An ESM `import` (not `require`) is intentional here —
-// it's what lets tests intercept the transport with `vi.mock('../utils/mailer',
-// ...)`; a top-level `require()` is NOT mockable in this project's vitest setup
-// (see tests/sendInvoiceEmail.guards.test.ts's mocking note).
-// The import MUST stay directly under the @ts-expect-error below; `eslint --fix`
-// will otherwise reorder it away from the directive and break the build.
-// eslint-disable-next-line import/order
-// @ts-expect-error TS7016 — untyped CJS module, see note above.
+// An ESM `import` (not `require`) is intentional here — it's what lets tests
+// intercept the transport with `vi.mock('../utils/mailer', ...)`; a top-level
+// `require()` is NOT mockable in this project's vitest setup (see
+// tests/sendInvoiceEmail.guards.test.ts's mocking note).
 import { sendMail } from '../utils/mailer';
 import { resolveDisplayName } from './contacts/contactIdentity';
 

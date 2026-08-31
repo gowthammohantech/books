@@ -33,6 +33,9 @@ declare global {
       // Resolved caller identity + role permissions. Set by protect() after
       // JWT verification. Use req.actor.perms for permission checks.
       actor?: Actor;
+      // The TenantApiKey row that authenticated a server-to-server request.
+      // Set by apiKeyAuth only; absent for human sessions.
+      apiKeyId?: string;
     }
   }
 }

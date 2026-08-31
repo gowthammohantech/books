@@ -23,18 +23,22 @@
 // On success the resolved workspace is on `req.tenantId`, exactly as
 // authMiddleware.protect sets it for human sessions, so downstream handlers
 // scope their queries the same way regardless of how the caller authenticated.
-const { prismaUnscoped } = require('../lib/prisma');
-const { hashApiKey, safeEqual, resolveExternalTenant } = require('../lib/tenantApiKey');
-const { setVerifiedTenantId } = require('../lib/tenantContext');
+import type { NextFunction, Request, Response } from 'express';
 
-const apiKeyAuth = async (req, res, next) => {
+import { prismaUnscoped } from '../lib/prisma';
+import { hashApiKey, resolveExternalTenant, safeEqual } from '../lib/tenantApiKey';
+import { setVerifiedTenantId } from '../lib/tenantContext';
+
+const apiKeyAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const auth = req.headers.authorization || '';
   if (!auth.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, message: 'Bearer token required.' });
+    res.status(401).json({ success: false, message: 'Bearer token required.' });
+    return;
   }
   const provided = auth.slice(7).trim();
   if (!provided) {
-    return res.status(401).json({ success: false, message: 'Bearer token required.' });
+    res.status(401).json({ success: false, message: 'Bearer token required.' });
+    return;
   }
 
   try {
@@ -59,7 +63,8 @@ const apiKeyAuth = async (req, res, next) => {
       prismaUnscoped.tenantApiKey
         .update({ where: { id: record.id }, data: { lastUsedAt: new Date() } })
         .catch(() => {});
-      return next();
+      next();
+      return;
     }
 
     // --- 2. Legacy install-wide key ---------------------------------------
@@ -67,24 +72,33 @@ const apiKeyAuth = async (req, res, next) => {
     if (!expected) {
       // No per-tenant key matched and no legacy key configured: the caller has
       // no valid credential of either kind.
-      return res.status(401).json({ success: false, message: 'Invalid API key.' });
+      res.status(401).json({ success: false, message: 'Invalid API key.' });
+      return;
     }
     if (!safeEqual(provided, expected)) {
-      return res.status(401).json({ success: false, message: 'Invalid API key.' });
+      res.status(401).json({ success: false, message: 'Invalid API key.' });
+      return;
     }
 
     const resolved = await resolveExternalTenant(null);
     if (!resolved.ok) {
-      return res.status(resolved.status).json({ success: false, message: resolved.message });
+      res.status(resolved.status).json({ success: false, message: resolved.message });
+      return;
     }
 
     req.tenantId = resolved.tenantId;
     setVerifiedTenantId(resolved.tenantId);
-    return next();
+    next();
+    return;
   } catch (err) {
     console.error('apiKeyAuth error:', err);
-    return res.status(503).json({ success: false, message: 'External API temporarily unavailable.' });
+    res.status(503).json({ success: false, message: 'External API temporarily unavailable.' });
+    return;
   }
 };
 
+export default apiKeyAuth;
+
+// CommonJS interop: routes/externalRoutes.js require()s this module directly.
 module.exports = apiKeyAuth;
+module.exports.default = apiKeyAuth;

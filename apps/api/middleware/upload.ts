@@ -1,16 +1,18 @@
-const multer = require('multer');
-const path = require('path');
-const { destinationFor } = require('../lib/uploadPaths');
+import path from 'path';
+
+import multer from 'multer';
+
+import { destinationFor } from '../lib/uploadPaths';
 
 // Configure storage
 const storage = multer.diskStorage({
   // Per-workspace: uploads/t/<tenantId>/. Resolved per request rather than
   // fixed at module load, because the answer depends on who is uploading.
   destination: destinationFor(),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     cb(null, uniqueSuffix + path.extname(file.originalname)); // unique name
-  }
+  },
 });
 
 // Allowed MIME types. Most fields on the shared uploader are images (profile
@@ -29,10 +31,10 @@ const DOCUMENT_MIME = new Set([...IMAGE_MIME, 'application/pdf']);
 const DOCUMENT_FIELDS = new Set(['attachment']);
 
 // Reject anything that is not an allowed type BEFORE it is written to disk, so a
-// wrong file type surfaces as a clean 400 (via middleware/uploadError.js) instead
+// wrong file type surfaces as a clean 400 (via middleware/uploadError.ts) instead
 // of a saved junk file that later 404s or renders broken. The "Invalid file type"
 // prefix is what the global upload-error handler matches to return 400.
-function fileFilter(req, file, cb) {
+const fileFilter: multer.Options['fileFilter'] = (_req, file, cb) => {
   const allowsDocuments = DOCUMENT_FIELDS.has(file.fieldname);
   const allowed = allowsDocuments ? DOCUMENT_MIME : IMAGE_MIME;
   if (allowed.has(file.mimetype)) {
@@ -43,7 +45,7 @@ function fileFilter(req, file, cb) {
     ? 'JPG, PNG, WEBP, GIF, or PDF'
     : 'JPG, PNG, WEBP, or GIF images';
   cb(new Error(`Invalid file type for "${file.fieldname}". Only ${label} are allowed.`));
-}
+};
 
 const upload = multer({
   storage,
@@ -51,4 +53,8 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB — surfaces as 400 "File too large."
 });
 
+export default upload;
+
+// CommonJS interop: the JS routers require() this module directly.
 module.exports = upload;
+module.exports.default = upload;
