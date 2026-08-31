@@ -9,7 +9,7 @@ import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@store/index";
 import { registerUser } from "@store/auth/authSlice";
 import { useSetupStatus } from "@context/SetupStatusContext";
-import { isValidPhone, PHONE_ERROR } from "@utils/validation";
+import { isValidPhone, PHONE_ERROR } from "@elixirbooks/validation";
 
 /**
  * Public, uncapped signup.

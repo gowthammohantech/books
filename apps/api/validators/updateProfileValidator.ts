@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { body, validationResult, ValidationChain } from 'express-validator';
 
 import { prisma } from '../lib/prisma';
-import { PHONE_REGEX, PHONE_ERROR, POSTAL_CODE_REGEX, POSTAL_CODE_ERROR } from '../utils/validation';
+import { PHONE_REGEX, PHONE_ERROR, POSTAL_CODE_REGEX, POSTAL_CODE_ERROR } from '@elixirbooks/validation';
 
 const handleValidationResult: RequestHandler = (
   req: Request,

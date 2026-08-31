@@ -1,0 +1,13 @@
+{
+  "//": "Base for the two emit configs below. Not built directly.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "lib": ["es2022"],
+    "declaration": true,
+    "sourceMap": true,
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+}

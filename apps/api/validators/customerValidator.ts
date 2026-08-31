@@ -3,7 +3,7 @@ import fs from 'fs';
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { body, validationResult, ValidationChain } from 'express-validator';
 
-import { PHONE_REGEX, PHONE_ERROR } from '../utils/validation';
+import { PHONE_REGEX, PHONE_ERROR } from '@elixirbooks/validation';
 
 function isPlainObject(value: unknown): boolean {
   if (value === null || value === undefined) return false;

@@ -14,7 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { updateUser } from "@store/auth/authSlice";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { isValidPhone, isValidPostalCode, PHONE_ERROR, POSTAL_CODE_ERROR } from "@utils/validation";
+import { isValidPhone, isValidPostalCode, PHONE_ERROR, POSTAL_CODE_ERROR } from "@elixirbooks/validation";
 import { Button, Card, FormField, fieldControlClasses } from '@components/ui';
 import { PageHeader } from "@/context/PageHeaderContext";
 

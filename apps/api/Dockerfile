@@ -14,7 +14,8 @@ RUN apk add --no-cache openssl libc6-compat
 COPY package.json package-lock.json .npmrc ./
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
-RUN npm ci --workspace=@elixirbooks/api --include-workspace-root --omit=dev \
+COPY packages/validation/package.json packages/validation/
+RUN npm ci --workspace=@elixirbooks/api --workspace=@elixirbooks/validation --include-workspace-root --omit=dev \
       --no-audit --no-fund --loglevel=warn
 
 # --- Dev dependencies ---------------------------------------------------------
@@ -23,14 +24,18 @@ RUN npm ci --workspace=@elixirbooks/api --include-workspace-root --omit=dev \
 # devDependencies — which is where typescript, ts-node and nodemon now live.
 FROM deps AS dev-deps
 WORKDIR /repo
-RUN npm ci --workspace=@elixirbooks/api --include-workspace-root \
+RUN npm ci --workspace=@elixirbooks/api --workspace=@elixirbooks/validation --include-workspace-root \
       --no-audit --no-fund --loglevel=warn
 
 # --- Compile ------------------------------------------------------------------
 FROM dev-deps AS build
 WORKDIR /repo
 COPY tsconfig.base.json ./
+COPY scripts scripts
+COPY packages packages
 COPY apps/api apps/api
+# Shared packages first — apps/api imports their built output, not their source.
+RUN npm run build --workspace=@elixirbooks/validation
 # The Prisma client has to exist before tsc: the generated types are what most
 # of the source is checked against.
 RUN npm run prisma:generate --workspace=@elixirbooks/api \
@@ -49,6 +54,10 @@ RUN addgroup -S app && adduser -S app -G app
 COPY --from=deps /repo/node_modules /repo/node_modules
 COPY --from=deps /repo/package.json /repo/package-lock.json /repo/.npmrc /repo/
 COPY --from=deps /repo/apps/api/package.json /repo/apps/api/package.json
+# Workspace packages are symlinked into node_modules, so their built output has
+# to be present at the path the symlink points to.
+COPY --from=build --chown=app:app /repo/packages/validation/package.json /repo/packages/validation/package.json
+COPY --from=build --chown=app:app /repo/packages/validation/dist /repo/packages/validation/dist
 
 # Compiled output, plus the two things it reads at runtime: the Prisma schema
 # and migrations (the entrypoint and boot bootstrap run `migrate deploy`), and

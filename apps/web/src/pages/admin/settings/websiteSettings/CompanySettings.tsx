@@ -12,7 +12,7 @@ import { fetchSystemSettings } from '@store/systemSettingsSlice';
 import { useNavigate } from 'react-router-dom';
 import SubmitButton from '@components/admin/SubmitButton';
 import { hasPermission } from '@utils/hasPermission';
-import { isValidPhone, PHONE_ERROR } from '@utils/validation';
+import { isValidPhone, PHONE_ERROR } from '@elixirbooks/validation';
 import { Button, Card, FormField, Select } from '@components/ui';
 import Switch from '@components/admin/Switch';
 import { PageHeader } from '@/context/PageHeaderContext';

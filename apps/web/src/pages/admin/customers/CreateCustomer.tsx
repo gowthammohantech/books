@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import CurrencySelect from '@components/admin/CurrencySelect';
 import { PageHeader } from '@/context/PageHeaderContext';
 import { useCurrencies } from '@hooks/useCurrencies';
-import { isValidPhone, isValidPostalCode, PHONE_ERROR, POSTAL_CODE_ERROR } from '@utils/validation';
+import { isValidPhone, isValidPostalCode, PHONE_ERROR, POSTAL_CODE_ERROR } from '@elixirbooks/validation';
 
 // Interface for props, allowing existing customer data to be passed for editing
 interface CustomerFormProps {

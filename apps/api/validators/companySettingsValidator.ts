@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { body, validationResult, ValidationChain } from 'express-validator';
 
-import { PHONE_REGEX, PHONE_ERROR } from '../utils/validation';
+import { PHONE_REGEX, PHONE_ERROR } from '@elixirbooks/validation';
 import { parseVatNumber } from '../lib/euVat';
 
 function formatValidationErrors(errorsArr: unknown[]): Record<string, string> {

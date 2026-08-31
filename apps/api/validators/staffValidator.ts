@@ -3,7 +3,7 @@ import fs from 'fs';
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { body, validationResult, ValidationChain } from 'express-validator';
 
-import { PHONE_REGEX, PHONE_ERROR } from '../utils/validation';
+import { PHONE_REGEX, PHONE_ERROR } from '@elixirbooks/validation';
 
 const validateAndCheckImage: RequestHandler = (
   req: Request,

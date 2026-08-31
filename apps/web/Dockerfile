@@ -12,13 +12,18 @@ WORKDIR /repo
 COPY package.json package-lock.json .npmrc ./
 COPY apps/web/package.json apps/web/
 COPY apps/api/package.json apps/api/
+COPY packages/validation/package.json packages/validation/
 # --legacy-peer-deps now comes from the root .npmrc (React 19 peer ranges),
 # and `npm ci` replaces `npm install` because there is one lockfile again.
-RUN npm ci --workspace=@elixirbooks/web --include-workspace-root \
+RUN npm ci --workspace=@elixirbooks/web --workspace=@elixirbooks/validation --include-workspace-root \
       --no-audit --no-fund --loglevel=warn
 
-COPY apps/web apps/web
 COPY tsconfig.base.json ./
+COPY scripts scripts
+COPY packages packages
+COPY apps/web apps/web
+# Shared packages first — the SPA imports their built ESM output.
+RUN npm run build --workspace=@elixirbooks/validation
 
 # Build args passed from docker-compose (or the shell env) override .env at
 # build time. Changing any ARG busts this layer, so rebuilds pick up config.

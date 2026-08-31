@@ -9,7 +9,7 @@ import { Eye, EyeClosed, Image, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
-import { isValidPhone, PHONE_ERROR } from "@utils/validation";
+import { isValidPhone, PHONE_ERROR } from "@elixirbooks/validation";
 
 interface StaffFormProps {
     isOpen: boolean;

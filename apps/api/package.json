@@ -48,6 +48,7 @@
   "description": "",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "@elixirbooks/validation": "*",
     "@prisma/client": "~5.22.0",
     "archiver": "^7.0.1",
     "bcryptjs": "^3.0.2",
