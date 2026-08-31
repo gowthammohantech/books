@@ -24,12 +24,11 @@ apps/api/uploads/*
 apps/api/ssl.key
 apps/api/ssl.crt
 
-# Dev-only. NOTE: apps/api/tsconfig.json IS still shipped — ts-node reads it at
-# runtime. Phase 4 compiles to dist/ and this can then be ignored too.
+# Dev-only. The tsconfigs ARE in the context: the build stage compiles inside
+# the image and needs them. nodemon.json is kept for the dev-deps stage.
 apps/api/tests
 apps/api/tsconfig.test.json
 apps/api/vitest.config.ts
-apps/api/nodemon.json
 apps/api/eslint.config.mjs
 apps/web/eslint.config.js
 apps/web/vitest.config.ts

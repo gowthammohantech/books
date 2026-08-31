@@ -219,3 +219,48 @@ With no JavaScript left to `require()` TypeScript, the scaffolding came out:
 
 Entry points run `node -r ts-node/register server.ts` for now; Phase 4 replaces that with a
 compiled `dist/`.
+
+## Phase 4 — production runs compiled output
+
+Production ran TypeScript through ts-node with `transpileOnly`, so there was no type
+checking at boot, `typescript` and `ts-node` were production dependencies, and `npm run build`
+produced a `dist/` that nothing used and that could not have run anyway (it was missing
+`server.js` and every other `.js` file). Now that the source is all TypeScript, the build
+produces a complete, runnable tree.
+
+`CMD` is `node dist/server.js`. Cold start drops from ~8.1s to ~2.0s.
+
+The Dockerfile gains a `build` stage between `dev-deps` and `runner`. The runner copies the
+production dependency tree from `deps` and the compiled output from `build`, plus the three
+things the app reads from disk at runtime: `prisma/schema.prisma` and `prisma/migrations`
+(the entrypoint and boot bootstrap run `migrate deploy`) and `prisma/data` (the geo import).
+`TS_NODE_TRANSPILE_ONLY` is gone.
+
+Verified by simulating the production install rather than trusting the manifest: `npm ci
+--omit=dev` into a clean tree, confirm typescript, ts-node, nodemon and vitest are all absent
+(282 packages), then run `node dist/server.js` against it. Health check ok, `/api/admin/units`
+gated at 401, 481 swagger operations. The dev path still works too — `npm run dev` runs
+nodemon → ts-node → `server.ts`.
+
+### Two problems this surfaced
+
+**86 spec files were being emitted into `dist/`.** `tsconfig.build.json` excluded `tests/` and
+`**/*.test.ts` but not `**/*.spec.ts`, and those live colocated in `lib/`, `controllers/` and
+`prisma/`. Now excluded.
+
+**The hand-written Swagger docs were silently lost.** Two things combined: `removeComments:
+true` stripped the `@swagger` JSDoc blocks out of the emitted files, and
+`lib/swaggerConfig.ts` globbed `./controllers/**/*.ts` and `./routes/**/*.ts` relative to the
+process cwd — paths that do not exist in an image shipping only `dist/`. The spec quietly
+degraded to auto-generated-only: 481 operations either way, but 13 hand-written ones replaced
+by generated stubs. The globs are now anchored to the module's own `__dirname` and cover both
+extensions, and comments are kept in the build. Caught only because the boot log's
+"auto-documented N routes" count moved from 468 to 481.
+
+### Operator-facing consequence
+
+`ts-node` is no longer installed in the container, so anything documented as
+`docker compose exec api npx ts-node prisma/<script>.ts` would have broken. Those scripts ship
+compiled, so `first-run.md`, `troubleshooting.md`, the seed's own console output and
+`apps/api/DEPLOYMENT.md` now use `node dist/prisma/<script>.js`. Prisma's `seed` command is
+repointed the same way, which is what `make seed` runs inside the container.

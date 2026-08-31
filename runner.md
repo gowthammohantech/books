@@ -5,7 +5,7 @@ The stack is three parts:
 | Part | Path | Tech |
 |---|---|---|
 | Datastore | (container) | PostgreSQL 16 + Prisma |
-| API | `apps/api/` | Express 5 + TypeScript (ts-node), port `3001` |
+| API | `apps/api/` | Express 5 + TypeScript (ts-node in dev, compiled `dist/` in prod), port `3001` |
 | SPA | `apps/web/` | React 19 + Vite, port `3000` |
 
 The app runs entirely on Postgres/Prisma — it is the sole datastore.

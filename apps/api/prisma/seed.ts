@@ -318,7 +318,7 @@ async function runBaselineSeedInner(): Promise<void> {
 
   console.log('Baseline seed complete: lookup data ready.');
   console.log('Fresh installs: visit / and use the onboarding flow (register → setup).');
-  console.log('For CodeCanyon demo, also run:  npx ts-node prisma/seed-demo.ts');
+  console.log('For CodeCanyon demo, also run:  node dist/prisma/seed-demo.js (in the container), or npx ts-node prisma/seed-demo.ts (dev)');
 }
 
 // ---------------------------------------------------------------------------

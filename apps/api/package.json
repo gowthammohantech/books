@@ -1,10 +1,10 @@
 {
   "name": "@elixirbooks/api",
   "version": "2.9.0",
-  "main": "server.ts",
+  "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon --exec \"node -r ts-node/register\" server.ts",
-    "start": "node -r ts-node/register server.ts",
+    "dev": "nodemon",
+    "start": "node dist/server.js",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run",
@@ -40,7 +40,7 @@
     }
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "node dist/prisma/seed.js"
   },
   "keywords": [],
   "author": "",
@@ -72,8 +72,6 @@
     "stripe": "^22.1.1",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1",
-    "ts-node": "~10.9.2",
-    "typescript": "~5.6.3",
     "ua-parser-js": "^2.0.4",
     "uuid": "^13.0.0"
   },
@@ -98,7 +96,9 @@
     "eslint-plugin-import": "~2.31.0",
     "nodemon": "^3.1.10",
     "supertest": "~7.0.0",
+    "ts-node": "~10.9.2",
     "ts-node-dev": "~2.0.0",
+    "typescript": "~5.6.3",
     "typescript-eslint": "~8.15.0",
     "vitest": "~2.1.9"
   }

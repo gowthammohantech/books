@@ -2,16 +2,19 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
-    "incremental": false,
-    "removeComments": true
+    "incremental": false
   },
-  "include": ["**/*.ts"],
+  "include": [
+    "**/*.ts"
+  ],
   "exclude": [
     "node_modules",
     "dist",
     "coverage",
     "uploads",
+    "tests",
     "**/*.test.ts",
-    "tests"
-  ]
+    "**/*.spec.ts"
+  ],
+  "//": "Emits the production build. Excludes the test suite: tests/ and *.test.ts were already excluded, but *.spec.ts (86 files colocated in lib/, controllers/ and prisma/) were being emitted into dist/. Comments are deliberately KEPT: lib/swaggerConfig.ts feeds the emitted files to swagger-jsdoc, which reads the hand-written @swagger JSDoc blocks out of them."
 }

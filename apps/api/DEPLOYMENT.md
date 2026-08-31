@@ -60,7 +60,7 @@ reachable and then hands control to the app process. The app applies
 migrations and seeds itself — no duplicate work in the entrypoint.
 
 ```bash
-docker compose up -d   # DB-ready wait → node server.ts → migrate → seed → backfill → geo import → listen
+docker compose up -d   # DB-ready wait → node dist/server.js → migrate → seed → backfill → geo import → listen
 ```
 
 ### PM2
@@ -68,9 +68,8 @@ docker compose up -d   # DB-ready wait → node server.ts → migrate → seed �
 No special configuration needed. PM2 just needs to launch the server:
 
 ```bash
-pm2 start npm --name elixirbooks -- start
-# or
-pm2 start npm --name elixirbooks -- start
+npm run build                                  # produces dist/
+pm2 start npm --name elixirbooks -- start      # runs node dist/server.js
 ```
 
 The boot bootstrap runs automatically on each start/restart.
@@ -78,10 +77,14 @@ The boot bootstrap runs automatically on each start/restart.
 ### Bare node
 
 ```bash
-npm start
+npm run build   # produces dist/
+npm start       # node dist/server.js
 ```
 
-Same auto-setup applies.
+Same auto-setup applies. `npm start` runs the compiled output — ts-node is a
+devDependency and is not installed by a production install. Operator scripts
+under `prisma/` ship compiled too, so inside the container use e.g.
+`node dist/prisma/seed-demo.js` rather than `npx ts-node prisma/seed-demo.ts`.
 
 ### Manual setup (CI / scripted deploys)
 

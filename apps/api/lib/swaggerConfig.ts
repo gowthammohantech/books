@@ -1,3 +1,5 @@
+import path from 'path';
+
 import swaggerJsdoc from 'swagger-jsdoc';
 
 const options: swaggerJsdoc.Options = {
@@ -82,11 +84,17 @@ const options: swaggerJsdoc.Options = {
       { name: 'Public', description: 'Unauthenticated public endpoints' },
     ],
   },
+  // Resolved from this module's own directory rather than the process cwd, and
+  // covering both extensions, so the hand-written @swagger blocks are found in
+  // development (running .ts from source) AND in production (running compiled
+  // .js out of dist/, where no .ts is shipped). Pointing these at cwd-relative
+  // source paths silently produced an auto-generated-only spec once the app
+  // started running from dist/.
   apis: [
-    './controllers/**/*.ts',
-    './controllers/**/*.js',
-    './routes/**/*.js',
-    './routes/**/*.ts',
+    path.join(__dirname, '..', 'controllers', '**', '*.ts'),
+    path.join(__dirname, '..', 'controllers', '**', '*.js'),
+    path.join(__dirname, '..', 'routes', '**', '*.ts'),
+    path.join(__dirname, '..', 'routes', '**', '*.js'),
   ],
 };
 
