@@ -47,6 +47,35 @@ export function isBypassed(): boolean {
   return getAuditContext()?.bypass === true;
 }
 
+/**
+ * Runs `fn` in a new context, making sure a lazily-started result begins INSIDE
+ * that context.
+ *
+ * This is load-bearing and non-obvious. A Prisma query object is LAZY — it does
+ * not run until something awaits it — so the natural spelling
+ *
+ *     await runAsTenant(id, () => prisma.invoice.findMany())
+ *
+ * would return the unstarted query, `await` it after `storage.run` had already
+ * exited, and execute it with NO tenant on the context. Under the tenant guard
+ * that is a thrown TenantContextMissingError at best and, in `warn` mode, an
+ * unscoped query at worst.
+ *
+ * Adopting the thenable with `Promise.resolve` schedules the `.then` call as a
+ * microtask created inside the scope, which AsyncLocalStorage propagates into.
+ * Verified empirically, not assumed: without this line the callback above sees
+ * no tenant, with it the tenant is there.
+ */
+function runIn<T>(ctx: AuditContext, fn: () => T): T {
+  return runWithAuditContext(ctx, () => {
+    const out = fn();
+    const isThenable =
+      !!out && (typeof out === 'object' || typeof out === 'function') &&
+      typeof (out as { then?: unknown }).then === 'function';
+    return (isThenable ? Promise.resolve(out) : out) as T;
+  });
+}
+
 function inherit(overrides: Partial<AuditContext>): AuditContext {
   const parent = getAuditContext();
   return {
@@ -64,7 +93,7 @@ function inherit(overrides: Partial<AuditContext>): AuditContext {
  * super-admin path. Never call this from a route handler on request data.
  */
 export function runAsSystem<T>(fn: () => T): T {
-  return runWithAuditContext(inherit({ tenantId: null, bypass: true }), fn);
+  return runIn(inherit({ tenantId: null, bypass: true }), fn);
 }
 
 /**
@@ -80,7 +109,7 @@ export function runAsTenant<T>(tenantId: string, fn: () => T): T {
   if (!tenantId || typeof tenantId !== 'string') {
     throw new TenantContextMissingError('runAsTenant called without a tenant id');
   }
-  return runWithAuditContext(inherit({ tenantId, bypass: false }), fn);
+  return runIn(inherit({ tenantId, bypass: false }), fn);
 }
 
 /**

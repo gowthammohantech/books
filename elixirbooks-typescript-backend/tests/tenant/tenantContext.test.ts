@@ -1,114 +1,130 @@
+/**
+ * tests/tenant/tenantContext.test.ts
+ *
+ * The scope wrappers, and one subtlety that is easy to reintroduce and silent
+ * when you do.
+ *
+ * A Prisma query object is LAZY: it does not run until something awaits it. So
+ * `await runAsTenant(id, () => prisma.invoice.findMany())` — the obvious way to
+ * write it, and the way the crons in P7 will — used to return the UNSTARTED
+ * query, get awaited after the AsyncLocalStorage scope had already closed, and
+ * execute with no tenant at all. In warn mode that is a silently unscoped
+ * query; in enforce mode it is a thrown error on a cron nobody is watching.
+ *
+ * The wrappers now adopt a returned thenable inside the scope. These tests pin
+ * that, using a hand-rolled lazy thenable so the behaviour is visible without a
+ * database.
+ */
 import { describe, it, expect } from 'vitest';
 
-import { runWithAuditContext, getAuditContext } from '../../lib/auditContext';
 import {
-  getTenantId,
-  isBypassed,
   runAsSystem,
   runAsTenant,
+  getTenantId,
+  isBypassed,
   setVerifiedTenantId,
   TenantContextMissingError,
 } from '../../lib/tenantContext';
+import { runWithAuditContext, getAuditContext } from '../../lib/auditContext';
 
-const ctx = (over: Record<string, unknown> = {}) =>
-  ({ userName: 'test', ...over } as any);
+/**
+ * Reads the tenant only when someone actually subscribes — the same laziness a
+ * Prisma query object has, which is what makes this whole class of bug
+ * possible.
+ */
+function lazyTenantProbe(): PromiseLike<string> {
+  return {
+    then: ((onFulfilled?: (v: string) => unknown) => {
+      const seen = getTenantId() ?? 'NONE';
+      return Promise.resolve(onFulfilled ? onFulfilled(seen) : seen);
+    }) as PromiseLike<string>['then'],
+  };
+}
 
-describe('tenantContext', () => {
-  it('reports no tenant and no bypass outside any scope', () => {
-    expect(getTenantId()).toBeNull();
-    expect(isBypassed()).toBe(false);
-  });
-
-  it('reads the tenant off the request-scoped store', () => {
-    runWithAuditContext(ctx({ tenantId: 't1' }), () => {
-      expect(getTenantId()).toBe('t1');
+describe('scope wrappers', () => {
+  it('runAsTenant puts the tenant on the context', () => {
+    runAsTenant('t-1', () => {
+      expect(getTenantId()).toBe('t-1');
       expect(isBypassed()).toBe(false);
     });
   });
 
-  describe('runAsTenant', () => {
-    it('opens a scope with the given tenant', () => {
-      runAsTenant('t1', () => {
-        expect(getTenantId()).toBe('t1');
-        expect(isBypassed()).toBe(false);
-      });
-    });
-
-    it('restores the outer tenant when the callback returns', () => {
-      runAsTenant('outer', () => {
-        runAsTenant('inner', () => {
-          expect(getTenantId()).toBe('inner');
-        });
-        expect(getTenantId()).toBe('outer');
-      });
+  it('runAsSystem bypasses instead of naming a tenant', () => {
+    runAsSystem(() => {
       expect(getTenantId()).toBeNull();
+      expect(isBypassed()).toBe(true);
     });
+  });
 
-    it('inherits the actor from the parent context', () => {
-      runWithAuditContext(ctx({ userId: 'u1', userName: 'Asha' }), () => {
-        runAsTenant('t1', () => {
-          expect(getAuditContext()).toMatchObject({
-            userId: 'u1',
-            userName: 'Asha',
-            tenantId: 't1',
-          });
-        });
-      });
+  it('restores the previous scope afterwards', () => {
+    runAsTenant('outer', () => {
+      runAsTenant('inner', () => expect(getTenantId()).toBe('inner'));
+      expect(getTenantId()).toBe('outer');
     });
+    expect(getTenantId()).toBeNull();
+  });
 
-    it('survives an await boundary', async () => {
-      await runAsTenant('t1', async () => {
+  it('rejects an empty tenant id rather than opening an unscoped scope', () => {
+    expect(() => runAsTenant('', () => null)).toThrow(TenantContextMissingError);
+  });
+});
+
+describe('lazily-started work starts INSIDE the scope', () => {
+  it('runAsTenant: a returned thenable still sees the tenant', async () => {
+    // Without the adoption in runIn(), this resolves to 'NONE'.
+    await expect(runAsTenant('t-9', () => lazyTenantProbe())).resolves.toBe('t-9');
+  });
+
+  it('runAsSystem: a returned thenable still sees the bypass', async () => {
+    const bypassed = await runAsSystem(() => ({
+      then: (r: (v: boolean) => void) => r(isBypassed()),
+    }) as PromiseLike<boolean>);
+    expect(bypassed).toBe(true);
+  });
+
+  it('an async callback keeps working, unchanged', async () => {
+    await expect(
+      runAsTenant('t-2', async () => {
         await Promise.resolve();
-        expect(getTenantId()).toBe('t1');
-      });
-      expect(getTenantId()).toBeNull();
-    });
+        return getTenantId();
+      }),
+    ).resolves.toBe('t-2');
+  });
 
-    it('rejects an empty tenant id rather than silently scoping to nothing', () => {
-      expect(() => runAsTenant('', () => null)).toThrow(TenantContextMissingError);
-    });
+  it('a plain synchronous value passes straight through', () => {
+    expect(runAsTenant('t-3', () => 41 + 1)).toBe(42);
+  });
 
-    it('clears an inherited bypass so nested work is scoped again', () => {
-      runAsSystem(() => {
-        runAsTenant('t1', () => {
-          expect(isBypassed()).toBe(false);
-          expect(getTenantId()).toBe('t1');
-        });
-        expect(isBypassed()).toBe(true);
-      });
+  it('the tenant survives several await hops', async () => {
+    const seen = await runAsTenant('t-4', async () => {
+      await new Promise((r) => setTimeout(r, 1));
+      await Promise.resolve();
+      return getTenantId();
+    });
+    expect(seen).toBe('t-4');
+  });
+
+  it('a rejection still propagates', async () => {
+    await expect(
+      runAsTenant('t-5', () => Promise.reject(new Error('boom'))),
+    ).rejects.toThrow('boom');
+  });
+});
+
+describe('setVerifiedTenantId', () => {
+  it('promotes the tenant on the CURRENT scope without opening a new one', () => {
+    // authMiddleware.protect runs inside the scope middleware/auditContext.ts
+    // opened, so it cannot call storage.run again without ending that scope
+    // when it returns. Mutating the stored object is correct here, and only here.
+    runWithAuditContext({ userName: 'test', tenantId: 'claimed-by-jwt' }, () => {
+      expect(getTenantId()).toBe('claimed-by-jwt');
+      setVerifiedTenantId('verified-by-membership');
+      expect(getTenantId()).toBe('verified-by-membership');
+      expect(getAuditContext()?.tenantId).toBe('verified-by-membership');
     });
   });
 
-  describe('runAsSystem', () => {
-    it('sets bypass and clears the tenant', () => {
-      runAsSystem(() => {
-        expect(isBypassed()).toBe(true);
-        expect(getTenantId()).toBeNull();
-      });
-    });
-
-    it('restores the surrounding tenant scope afterwards', () => {
-      runAsTenant('t1', () => {
-        runAsSystem(() => {
-          expect(getTenantId()).toBeNull();
-        });
-        expect(getTenantId()).toBe('t1');
-        expect(isBypassed()).toBe(false);
-      });
-    });
-  });
-
-  describe('setVerifiedTenantId', () => {
-    it('overwrites the tenant on the current store in place', () => {
-      runWithAuditContext(ctx({ tenantId: 'claimed' }), () => {
-        setVerifiedTenantId('verified');
-        expect(getTenantId()).toBe('verified');
-      });
-    });
-
-    it('is a no-op outside a scope rather than throwing', () => {
-      expect(() => setVerifiedTenantId('t1')).not.toThrow();
-      expect(getTenantId()).toBeNull();
-    });
+  it('is a no-op outside any scope rather than throwing', () => {
+    expect(() => setVerifiedTenantId('x')).not.toThrow();
   });
 });

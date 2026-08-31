@@ -3,6 +3,13 @@ import type { PrismaClient } from '@prisma/client';
 import { getAuditContext, type AuditContext } from './auditContext';
 import { computeDiff, redactChanges, type Change } from './auditDiff';
 import { resolveEntityLabel } from './auditLabels';
+import {
+  applyTenantGuard,
+  assertBeforeRowInTenant,
+  flattenCompoundKeys,
+  guardContextFromStore,
+  isGuarded,
+} from './tenantGuard';
 
 // Models we never audit: the log itself + high-volume / noisy tables.
 export const DENYLIST = new Set<string>([
@@ -52,6 +59,12 @@ export interface AuditRecord {
   userName: string;
   ipAddress: string | null;
   userAgent: string | null;
+  /**
+   * The workspace the change happened in. Nullable because system operations
+   * (seeds, backfills, boot reconciliation) legitimately have no tenant, and a
+   * required column would force those to invent one.
+   */
+  tenantId: string | null;
 }
 
 const isBulk = (op: string) => op.endsWith('Many');
@@ -71,6 +84,7 @@ export function buildAuditRecord({ model, operation, ctx, before, result }: Buil
     userName,
     ipAddress: ctx?.ipAddress ?? null,
     userAgent: ctx?.userAgent ?? null,
+    tenantId: ctx?.tenantId ?? null,
   };
 
   if (isBulk(operation)) {
@@ -109,6 +123,19 @@ export function buildAuditRecord({ model, operation, ctx, before, result }: Buil
  * Builds the Prisma client extension. `base` is the UN-extended client used for
  * the before-state read and the AuditLog insert, so those side queries never
  * re-enter this interceptor.
+ *
+ * This is the app's ONE query interceptor. It does two jobs, in this order:
+ *
+ *   1. TENANT ISOLATION (lib/tenantGuard.ts). Runs first, and before the
+ *      auditable-or-not short-circuit below, so READS are guarded too — the
+ *      audit log only cares about writes, but a leak is mostly a read.
+ *   2. AUDIT LOGGING, unchanged.
+ *
+ * They share the before-row read: the guard needs to know whether a
+ * single-record update/delete/upsert is aimed at a row belonging to another
+ * tenant, and the audit log needs the row's prior state. One query, both
+ * answers — which is why the guard lives here rather than in a second
+ * extension.
  */
 export function auditExtension(base: PrismaClient) {
   return Prisma.defineExtension({
@@ -116,24 +143,45 @@ export function auditExtension(base: PrismaClient) {
     query: {
       $allModels: {
         async $allOperations({ model, operation, args, query }) {
-          if (!isAuditable(model, operation)) {
-            return query(args);
-          }
+          const guardCtx = guardContextFromStore();
+          const decision = applyTenantGuard(model, operation, args, guardCtx);
+          // `decision.args === undefined` means "run what the caller wrote":
+          // either the model is unguarded, or we are in warn mode.
+          // `any` rather than `typeof args`: that type is the union of every
+          // model's every operation-args shape, which the compiler refuses to
+          // represent (TS2590). The surrounding file already casts for the
+          // same reason.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const effectiveArgs: any = decision.args === undefined ? args : decision.args;
 
-          // Capture before-state for single-record update/delete/upsert.
-          let before: Record<string, unknown> | null = null;
+          const auditable = isAuditable(model, operation);
           const needsBefore = ['update', 'delete', 'upsert'].includes(operation);
-          if (needsBefore && (args as any)?.where) {
+          const wantBefore = needsBefore && !!(args as any)?.where
+            && (auditable || !!decision.checkBeforeTenant);
+
+          let before: Record<string, unknown> | null = null;
+          if (wantBefore) {
             try {
+              // Compound unique inputs (`{ tenantId_key: { ... } }`) are not
+              // valid findFirst filters, so flatten them — otherwise this read
+              // silently fails and takes the guard's foreign-row check with it.
               before = await (base as any)[lowerFirst(model!)].findFirst({
-                where: (args as any).where,
+                where: flattenCompoundKeys(model!, (args as any).where),
               });
             } catch {
               before = null;
             }
           }
+          if (decision.checkBeforeTenant) {
+            assertBeforeRowInTenant(model!, before, guardCtx);
+          }
 
-          const result = await query(args);
+          if (!auditable) {
+            const out = await query(effectiveArgs);
+            return decision.checkResultTenant ? filterUniqueResult(model!, out, guardCtx, args) : out;
+          }
+
+          const result = await query(effectiveArgs);
 
           // Audit write is fully isolated: never throw to the caller.
           try {
@@ -152,6 +200,55 @@ export function auditExtension(base: PrismaClient) {
       },
     },
   });
+}
+
+/**
+ * findUnique returns a row by a unique key, which may belong to another tenant.
+ * The guard cannot add a filter to that key, so the row is checked on the way
+ * back out and dropped if it is not ours — the caller sees exactly what a
+ * filtered query would have shown them, a miss.
+ *
+ * In `warn` mode the row is reported and RETURNED, so switching the mode on is
+ * observable without changing a single response.
+ */
+function filterUniqueResult(
+  model: string,
+  result: unknown,
+  ctx: { tenantId: string | null; mode: string },
+  originalArgs: unknown,
+): unknown {
+  if (!result || typeof result !== 'object' || !ctx.tenantId) return result;
+  const row = result as Record<string, unknown>;
+  const rowTenant = row.tenantId;
+  if (typeof rowTenant !== 'string' || rowTenant === ctx.tenantId) {
+    return stripAddedTenantId(model, row, ctx, originalArgs);
+  }
+  if (ctx.mode !== 'enforce') {
+    console.warn(
+      `[tenant-guard] ${model}.findUnique returned a row owned by tenant "${rowTenant}" ` +
+      `while acting as "${ctx.tenantId}" — it would have been withheld in enforce mode`,
+    );
+    return result;
+  }
+  return null;
+}
+
+/**
+ * The guard adds `tenantId` to a `select` that omitted it, purely so the check
+ * above has something to read. Take it back off so the caller's response shape
+ * is byte-identical to what they asked for.
+ */
+function stripAddedTenantId(
+  _model: string,
+  row: Record<string, unknown>,
+  ctx: { mode: string },
+  originalArgs: unknown,
+): unknown {
+  if (ctx.mode !== 'enforce') return row;
+  const sel = (originalArgs as any)?.select as Record<string, unknown> | undefined;
+  if (!sel || 'tenantId' in sel) return row;
+  const { tenantId: _dropped, ...rest } = row;
+  return rest;
 }
 
 module.exports = { DENYLIST, isAuditable, buildAuditRecord, auditExtension };

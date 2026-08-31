@@ -14,6 +14,7 @@ const purchaseController = require('@controllers/Admin/Purchases/purchaseControl
 const supplierPaymentController = require('@controllers/Admin/Purchases/supplierPaymentController');
 const supplierPaymentReadController = require('@controllers/Admin/Purchases/supplierPaymentReadController');
 const SignatureController = require('../controllers/SignatureController');
+const apiKeyController = require('../controllers/apiKeyController');
 const currencyController = require('../controllers/currencyController');
 const BankDetailController = require('@controllers/bankDetailController');
 const CompanySettings = require('@controllers/CompanySettingsController');
@@ -249,6 +250,13 @@ router.put('/signatures/:signatureId', protect, requirePermission('general-setti
 router.delete('/signatures/:signatureId', protect, requirePermission('general-settings', 'delete'), SignatureController.deleteSignature);
 router.patch('/signatures/set-default/:signatureId', protect, requirePermission('general-settings', 'edit'), SignatureController.setAsDefaultSignature);
 router.patch('/signatures/status/:signatureId', protect, requirePermission('general-settings', 'edit'), SignatureController.updateSignatureStatus);
+// Per-workspace API keys for the server-to-server integration (P5). Gated on
+// general-settings because minting one grants write access to this workspace's
+// data — the same weight as changing company settings.
+router.get('/api-keys', protect, requirePermission('general-settings', 'view'), apiKeyController.listApiKeys);
+router.post('/api-keys', protect, requirePermission('general-settings', 'create'), apiKeyController.createApiKey);
+router.delete('/api-keys/:id', protect, requirePermission('general-settings', 'delete'), apiKeyController.revokeApiKey);
+
 router.post('/paymentmode', protect, requirePermission('banking', 'create'), SignatureController.createPaymentMode);
 router.get('/paymentmode', protect, requirePermission([...DOCUMENT_MODULES, 'banking', 'expenses'], 'view'), SignatureController.listPaymentModes);
 

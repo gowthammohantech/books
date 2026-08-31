@@ -17,6 +17,8 @@ const mockFindFirstUser = vi.fn();
 const mockCreateUser = vi.fn();
 const mockUpsertCustomer = vi.fn();
 const mockFindFirstAdmin = vi.fn();
+const mockUpsertMembership = vi.fn().mockResolvedValue({ id: 'sso-membership-1' });
+const mockResolveExternalTenant = vi.fn();
 const mockGenerateToken = vi.fn().mockReturnValue('mock-jwt-token');
 // hashPassword stub returns a realistic bcrypt-prefixed hash so tests can
 // assert the stored password is never a raw hex string.
@@ -24,9 +26,10 @@ const mockHashPassword = vi.fn().mockResolvedValue('$2b$10$mockedHashedPasswordV
 
 // ensureRole stub — controllable per-test
 const mockEnsureRole = vi.fn().mockResolvedValue('mock-role-id');
-// Roles are per-tenant now, so ssoExchange must resolve a tenant before it can
-// pick one. See the TODO in externalController.ssoExchange: P5 replaces this
-// sole-tenant fallback with a `tenant` claim / WHATSAPPCRM_TENANT_ID lookup.
+// P5: ssoExchange resolves the workspace up front (a `tenant` claim, else
+// WHATSAPPCRM_TENANT_ID, else the sole workspace) and refuses rather than
+// guessing. Everything downstream — the role, the membership, the token — is
+// scoped to whatever that returns.
 const SSO_TENANT_ID = 'sso-tenant-1';
 const mockFindFirstTenant = vi.fn().mockResolvedValue({ id: SSO_TENANT_ID });
 // Control flag: when true, ensureRole rejects to test resilience path
@@ -65,7 +68,13 @@ function makeStubs() {
         tenant: {
           findFirst: mockFindFirstTenant,
         },
+        tenantMembership: {
+          upsert: mockUpsertMembership,
+        },
       },
+    },
+    tenantApiKeyStub: {
+      resolveExternalTenant: mockResolveExternalTenant,
     },
     generateTokenStub: { generateToken: mockGenerateToken },
     defaultRolesStub: {
@@ -82,7 +91,7 @@ function makeStubs() {
 // require('../utils/generateToken'), require('../utils/password'), and
 // require('../lib/defaultRoles') in the JS controller get our mocks.
 function installStubs() {
-  const { prismaStub, generateTokenStub, defaultRolesStub } = makeStubs();
+  const { prismaStub, generateTokenStub, defaultRolesStub, tenantApiKeyStub } = makeStubs();
 
   // Use absolute paths WITH .ts extension — vitest's module runner registers
   // TS modules under their full path including extension.
@@ -90,6 +99,7 @@ function installStubs() {
   const tokenPath = path.join(ROOT, 'utils/generateToken.ts');
   const passwordPath = path.join(ROOT, 'utils/password.ts');
   const defaultRolesPath = path.join(ROOT, 'lib/defaultRoles.ts');
+  const tenantApiKeyPath = path.join(ROOT, 'lib/tenantApiKey.ts');
 
   // Inject a minimal Module-shaped object into the cache
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -107,6 +117,7 @@ function installStubs() {
   require.cache[tokenPath] = makeModuleStub(generateTokenStub, tokenPath) as any;
   require.cache[passwordPath] = makeModuleStub({ hashPassword: mockHashPassword }, passwordPath) as any;
   require.cache[defaultRolesPath] = makeModuleStub(defaultRolesStub, defaultRolesPath) as any;
+  require.cache[tenantApiKeyPath] = makeModuleStub(tenantApiKeyStub, tenantApiKeyPath) as any;
 }
 
 // ---------------------------------------------------------------------------
@@ -155,6 +166,8 @@ describe('externalController — ssoExchange', () => {
     mockEnsureRole.mockResolvedValue('mock-role-id');
     process.env.WHATSAPPCRM_SSO_SECRET = MOCK_SECRET;
     process.env.JWT_SECRET = 'test-jwt-secret';
+    mockResolveExternalTenant.mockResolvedValue({ ok: true, tenantId: SSO_TENANT_ID, via: 'sole-tenant' });
+    mockUpsertMembership.mockResolvedValue({ id: 'sso-membership-1' });
   });
 
   it('returns 503 when WHATSAPPCRM_SSO_SECRET is not configured', async () => {
@@ -205,10 +218,43 @@ describe('externalController — ssoExchange', () => {
     expect(whereArg.isDeleted).toEqual({ not: true });
     expect(whereArg.email).toBe('alice@example.com');
 
-    // generateToken called with Prisma string id (not _id), plus the tenant
-    // (company-owner) id for shared-workspace scoping. This user has no
-    // ownerId, so the tenant falls back to its own id.
-    expect(mockGenerateToken).toHaveBeenCalledWith('user-uuid-123', 'user-uuid-123');
+    // The token names the RESOLVED workspace and the membership that binds the
+    // user to it — not `ownerId ?? id`, which said nothing about which company
+    // an SSO user was joining.
+    expect(mockGenerateToken).toHaveBeenCalledWith('user-uuid-123', SSO_TENANT_ID, 'sso-membership-1');
+
+    // An existing user gets a membership in this workspace too: they may be
+    // arriving from a company they have never been in before.
+    expect(mockUpsertMembership).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId_tenantId: { userId: 'user-uuid-123', tenantId: SSO_TENANT_ID } },
+      }),
+    );
+  });
+
+  it('refuses rather than guessing when the workspace cannot be resolved', async () => {
+    // The whole point of P5 here: an ambiguous request must fail loudly. Writing
+    // one company's SSO user into another's books is not recoverable.
+    mockResolveExternalTenant.mockResolvedValue({
+      ok: false,
+      status: 503,
+      message: 'This instance hosts multiple workspaces, so the request must name one.',
+    });
+    const token = buildTestToken({ email: 'alice@example.com' });
+    const res = mockRes();
+    await ssoExchange({ body: { token }, query: {} } as any, res);
+
+    expect(res.status).toHaveBeenCalledWith(503);
+    expect(mockCreateUser).not.toHaveBeenCalled();
+    expect(mockUpsertMembership).not.toHaveBeenCalled();
+  });
+
+  it('passes the token\'s `tenant` claim through to the resolver', async () => {
+    mockFindFirstUser.mockResolvedValue({ id: 'u1', email: 'a@b.c', user_type: 2 });
+    const token = buildTestToken({ email: 'a@b.c', tenant: 'globex' });
+    await ssoExchange({ body: { token }, query: {} } as any, mockRes());
+
+    expect(mockResolveExternalTenant).toHaveBeenCalledWith('globex');
   });
 
   it('new user path — provisions user when not found', async () => {
@@ -244,18 +290,6 @@ describe('externalController — ssoExchange', () => {
     expect(body.user._id).toBe('new-user-uuid');
   });
 
-  it('admin-lookup path — resolveOwnerUserId uses user_type:1 + isDeleted:not:true', async () => {
-    // This is tested indirectly via upsertCustomer — see below. But we can
-    // verify the admin query WHERE clause here by triggering a path that calls
-    // resolveOwnerUserId.
-    mockFindFirstAdmin.mockResolvedValue(null); // No admin → 409
-    const req: any = { body: { external_id: 'x', name: 'y' } };
-    const res = mockRes();
-    await upsertCustomer(req, res);
-    const adminWhere = mockFindFirstAdmin.mock.calls[0][0].where;
-    expect(adminWhere.user_type).toBe(1);
-    expect(adminWhere.isDeleted).toEqual({ not: true });
-  });
 });
 
 describe('externalController — upsertCustomer', () => {
@@ -280,17 +314,18 @@ describe('externalController — upsertCustomer', () => {
     expect(res.json.mock.calls[0][0].message).toMatch(/name/);
   });
 
-  it('returns 409 when no admin user exists', async () => {
-    mockFindFirstAdmin.mockResolvedValue(null);
+  it('503s when the request carries no resolved workspace', async () => {
+    // req.tenantId is set by middleware/apiKeyAuth from the presented key. Its
+    // absence means the credential could not be tied to a workspace, which
+    // used to be papered over by looking up "the sole admin".
     const req: any = { body: { external_id: 'ext-1', name: 'Test Contact' } };
     const res = mockRes();
     await upsertCustomer(req, res);
-    expect(res.status).toHaveBeenCalledWith(409);
-    expect(res.json.mock.calls[0][0].message).toMatch(/admin/i);
+    expect(res.status).toHaveBeenCalledWith(503);
+    expect(mockUpsertCustomer).not.toHaveBeenCalled();
   });
 
   it('create path — upserts new customer with correct unique key and returns id + _id', async () => {
-    const adminUser = { id: 'admin-uuid', user_type: 1 };
     const createdCustomer = {
       id: 'cust-uuid-1',
       name: 'Test Contact',
@@ -298,10 +333,10 @@ describe('externalController — upsertCustomer', () => {
       externalSource: 'whatsappcrm',
       externalRef: 'ext-42',
     };
-    mockFindFirstAdmin.mockResolvedValue(adminUser);
     mockUpsertCustomer.mockResolvedValue(createdCustomer);
 
     const req: any = {
+      tenantId: 'tenant-from-api-key',
       body: { external_id: 'ext-42', name: 'Test Contact', email: 'test@example.com', phone: '123' },
     };
     const res = mockRes();
@@ -312,7 +347,7 @@ describe('externalController — upsertCustomer', () => {
     expect(upsertCall.where.customer_external_upsert_idx).toEqual({
       externalSource: 'whatsappcrm',
       externalRef: 'ext-42',
-      tenantId: 'admin-uuid',
+      tenantId: 'tenant-from-api-key',
     });
 
     const body = res.json.mock.calls[0][0];
@@ -325,7 +360,6 @@ describe('externalController — upsertCustomer', () => {
   });
 
   it('update path — upsert called with same where key; update payload carries new name', async () => {
-    const adminUser = { id: 'admin-uuid', user_type: 1 };
     const updatedCustomer = {
       id: 'cust-uuid-existing',
       name: 'Updated Name',
@@ -333,10 +367,10 @@ describe('externalController — upsertCustomer', () => {
       externalSource: 'whatsappcrm',
       externalRef: 'ext-99',
     };
-    mockFindFirstAdmin.mockResolvedValue(adminUser);
     mockUpsertCustomer.mockResolvedValue(updatedCustomer);
 
     const req: any = {
+      tenantId: 'tenant-from-api-key',
       body: { external_id: 'ext-99', name: 'Updated Name', email: 'existing@example.com' },
     };
     const res = mockRes();
@@ -352,15 +386,13 @@ describe('externalController — upsertCustomer', () => {
   });
 
   it('returns 409 on P2002 (duplicate email) instead of 500', async () => {
-    const adminUser = { id: 'admin-uuid', user_type: 1 };
-    mockFindFirstAdmin.mockResolvedValue(adminUser);
     const p2002Err = Object.assign(new Error('Unique constraint failed'), {
       code: 'P2002',
       meta: { target: ['email'] },
     });
     mockUpsertCustomer.mockRejectedValue(p2002Err);
 
-    const req: any = { body: { external_id: 'ext-1', name: 'Dup', email: 'dup@example.com' } };
+    const req: any = { tenantId: 'tenant-from-api-key', body: { external_id: 'ext-1', name: 'Dup', email: 'dup@example.com' } };
     const res = mockRes();
     await upsertCustomer(req, res);
 
@@ -376,7 +408,6 @@ describe('externalController — upsertCustomer', () => {
   });
 
   it('synthesizes placeholder email when email is missing', async () => {
-    const adminUser = { id: 'admin-uuid', user_type: 1 };
     const customer = {
       id: 'c1',
       name: 'Phone Only',
@@ -384,10 +415,9 @@ describe('externalController — upsertCustomer', () => {
       externalSource: 'whatsappcrm',
       externalRef: 'phone-only-55',
     };
-    mockFindFirstAdmin.mockResolvedValue(adminUser);
     mockUpsertCustomer.mockResolvedValue(customer);
 
-    const req: any = { body: { external_id: 'phone-only-55', name: 'Phone Only', phone: '+1234567890' } };
+    const req: any = { tenantId: 'tenant-from-api-key', body: { external_id: 'phone-only-55', name: 'Phone Only', phone: '+1234567890' } };
     const res = mockRes();
     await upsertCustomer(req, res);
 

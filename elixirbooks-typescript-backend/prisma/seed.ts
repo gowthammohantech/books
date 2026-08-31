@@ -35,7 +35,8 @@ import { seedFieldTypes } from './seedFieldTypes';
 import { seedNotifications } from './seedNotifications';
 import { seedAllTenantDefaults } from './seedTenant';
 import { seedRoles } from './seedRoles';
-import { seedUserOwner } from './seedUserOwner';
+import { runAsSystem } from '../lib/tenantContext';
+import { backfillTenantMemberships } from './backfillTenantMemberships';
 import { seedTransactionCategories } from './seedTransactionCategories';
 import { encryptLegacyEmailSecrets } from './encryptLegacyEmailSecrets';
 import { importGeoDataset } from './importGeoDataset';
@@ -48,6 +49,18 @@ import { importGeoDataset } from './importGeoDataset';
  * PrismaClient from lib/prisma.
  */
 export async function runBaselineSeed(): Promise<void> {
+  // EVERY sub-seeder and backfill below runs with the tenant guard bypassed.
+  // They are platform-level by definition — geo data, modules, notification
+  // types — and the per-tenant ones (seedAllTenantDefaults,
+  // seedTransactionCategories) name their tenant explicitly rather than
+  // inheriting one. Without this, boot fails on the first backfill that
+  // touches a tenant-scoped table through the shared client: with the guard
+  // enforcing, "no tenant in context" is an error, which is exactly what makes
+  // an unscoped query impossible to write by accident.
+  return runAsSystem(() => runBaselineSeedInner());
+}
+
+async function runBaselineSeedInner(): Promise<void> {
   // A fresh PrismaClient scoped to this call so we can cleanly disconnect
   // the direct writes here without affecting the application's shared instance.
   const prisma = new PrismaClient();
@@ -279,15 +292,16 @@ export async function runBaselineSeed(): Promise<void> {
     `Roles seeded (created ${roles.created} new, backfilled ${roles.backfilled} users, granted Admin role ${roles.adminPermsGranted} module permissions, assigned Owner to ${roles.ownerAssigned} owner(s)).`,
   );
 
-  // Shared-workspace tenancy backfill: link every staff/admin user to the sole
-  // company owner so all of them resolve to one dataset (ownerId ?? id) and see
-  // each other's invoices/expenses. Idempotent — safe on every boot.
-  const owners = await seedUserOwner();
-  console.log(
-    owners.ownerId
-      ? `User owner backfill (linked ${owners.backfilled} user(s) to owner ${owners.ownerId}).`
-      : 'User owner backfill skipped (no owner registered yet).',
-  );
+  // Membership backfill: authMiddleware.protect resolves the workspace from
+  // TenantMembership and 401s without one, so a user who somehow lacks a
+  // membership cannot sign in. This heals that. Idempotent — safe on every
+  // boot, and it never guesses when the workspace is ambiguous.
+  const memberships = await backfillTenantMemberships();
+  if (memberships.created > 0 || memberships.skipped > 0) {
+    console.log(
+      `Tenant membership backfill (created ${memberships.created}, skipped ${memberships.skipped}).`,
+    );
+  }
 
   // Money In/Out category catalog (per ledger-initialized company) + legacy
   // ExpenseCategory migration. Idempotent — owners without a ledger mapping are

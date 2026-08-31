@@ -9,23 +9,33 @@ import { hashPassword } from '../utils/password';
 import { requireTenantId } from '../lib/tenantScope';
 import { OWNER_ROLE_NAME } from '../lib/defaultRoles';
 
-/** True when the target user holds the Owner role AND is the only user that does.
- *  Pass `ownerRoleId` when the caller has already resolved it to avoid a second DB round-trip.
+/**
+ * True when the target user is an owner of THIS workspace and the only one.
+ *
+ * This used to count `User.roleId === <the Owner role>` across the whole
+ * install, which answered a different question in two ways: it looked at every
+ * company's users, and it keyed on a role name that a workspace is free to
+ * rename. The owner of a workspace is now recorded on the membership itself
+ * (`TenantMembership.isOwner`), so that is what gets counted, within one tenant.
  */
-async function isLastOwner(targetUserId: string, ownerRoleId?: string): Promise<boolean> {
-  let resolvedOwnerRoleId = ownerRoleId;
-  if (!resolvedOwnerRoleId) {
-    const ownerRole = await prisma.role.findFirst({
-      where: { roleName: { equals: OWNER_ROLE_NAME, mode: 'insensitive' }, deletedAt: null },
-      select: { id: true },
-    });
-    if (!ownerRole) return false;
-    resolvedOwnerRoleId = ownerRole.id;
-  }
-  const target = await prisma.user.findUnique({ where: { id: targetUserId }, select: { roleId: true } });
-  if (!target || target.roleId !== resolvedOwnerRoleId) return false;
-  const ownerCount = await prisma.user.count({ where: { roleId: resolvedOwnerRoleId, isDeleted: false } });
-  return ownerCount <= 1;
+async function isLastOwner(targetUserId: string, tenantId: string): Promise<boolean> {
+  const target = await prisma.tenantMembership.findUnique({
+    where: { userId_tenantId: { userId: targetUserId, tenantId } },
+    select: { isOwner: true },
+  });
+  if (!target?.isOwner) return false;
+  const owners = await prisma.tenantMembership.count({
+    where: { tenantId, isOwner: true, status: 'ACTIVE' },
+  });
+  return owners <= 1;
+}
+
+/** The membership row binding a user to this workspace, or null if they are not in it. */
+async function membershipIn(tenantId: string, userId: string) {
+  return prisma.tenantMembership.findUnique({
+    where: { userId_tenantId: { userId, tenantId } },
+    select: { id: true, roleId: true, isOwner: true, status: true },
+  });
 }
 
 function tryUnlink(filePath: string | undefined): void {
@@ -79,7 +89,10 @@ export async function createStaffUser(req: Request, res: Response): Promise<void
       return;
     }
 
-    const role = await prisma.role.findUnique({ where: { id: roleId } });
+    // Scoped: a role id from another workspace must not be attachable here.
+    const role = await prisma.role.findFirst({
+      where: { id: roleId, tenantId: requireTenantId(req), deletedAt: null },
+    });
     if (!role) {
       tryUnlink(req.file?.path);
       res.status(404).json({
@@ -90,31 +103,51 @@ export async function createStaffUser(req: Request, res: Response): Promise<void
     }
 
     const hashedPassword = await hashPassword(password);
+    const tenantId = requireTenantId(req);
 
-    // Stamp the new staff/admin with the creating user's tenant (company-owner)
-    // id so they join the same shared workspace and see all of its data. The
-    // creator's tenant resolves to the sole owner via req.tenantId.
-    const ownerId = requireTenantId(req);
+    // The MEMBERSHIP is what puts this person in the workspace — creating the
+    // User alone would produce someone who cannot sign in, because
+    // authMiddleware.protect resolves the tenant from the membership and 401s
+    // without one. Both rows go in together so that state cannot exist.
+    const newUser = await prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          firstName,
+          lastName,
+          email,
+          phone,
+          gender: gender as UserGender | undefined,
+          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+          password: hashedPassword,
+          address,
+          countryId: country,
+          stateId: state,
+          cityId: city,
+          postalCode,
+          user_type: 3,
+          // User.roleId and User.ownerId are mirrored for one release while
+          // other code still reads them; the membership is authoritative and
+          // P9 drops both columns.
+          roleId,
+          ownerId: tenantId,
+          lastTenantId: tenantId,
+          profileImage: req.file ? req.file.path : null,
+        },
+      });
 
-    const newUser = await prisma.user.create({
-      data: {
-        firstName,
-        lastName,
-        email,
-        phone,
-        gender: gender as UserGender | undefined,
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
-        password: hashedPassword,
-        address,
-        countryId: country,
-        stateId: state,
-        cityId: city,
-        postalCode,
-        user_type: 3,
-        roleId,
-        ownerId,
-        profileImage: req.file ? req.file.path : null,
-      },
+      await tx.tenantMembership.create({
+        data: {
+          userId: created.id,
+          tenantId,
+          roleId,
+          status: 'ACTIVE',
+          isOwner: false,
+          invitedBy: req.user ?? null,
+          joinedAt: new Date(),
+        },
+      });
+
+      return created;
     });
 
     res.status(201).json({
@@ -157,10 +190,12 @@ export async function listStaffUsers(req: Request, res: Response): Promise<void>
     const userTypeParsed = userTypeParam !== undefined ? parseInt(userTypeParam, 10) : undefined;
     const userTypeFilter = userTypeParsed !== undefined && !isNaN(userTypeParsed) ? userTypeParsed : undefined;
 
-    // Tenant scope: only this tenant's people (the owner themselves OR staff
-    // whose ownerId == tenant). This matches payrollController.assertTenantEmployee
-    // so the payroll Employee dropdown (which calls this endpoint with
-    // ?user_type=3) never offers a user the create guard will then reject (#36).
+    // Tenant scope: the people who hold a membership in THIS workspace. This
+    // used to be `id === tenantId OR ownerId === tenantId`, which only worked
+    // while a tenant id was a user id and nobody belonged to two workspaces.
+    // Membership is now the definition of "in this company", and it is the same
+    // predicate authMiddleware.protect enforces — so this list can never offer
+    // a user that protect would then refuse to authenticate.
     const tenantId = requireTenantId(req);
 
     // Exclude sys-bootstrap (type 999). Optionally narrow to a specific type.
@@ -168,7 +203,7 @@ export async function listStaffUsers(req: Request, res: Response): Promise<void>
     // (assigning where.OR for search would otherwise clobber the tenant filter).
     const where: Prisma.UserWhereInput = {
       NOT: { user_type: 999 },
-      AND: [{ OR: [{ id: tenantId }, { ownerId: tenantId }] }],
+      AND: [{ memberships: { some: { tenantId } } }],
       ...(userTypeFilter !== undefined ? { user_type: userTypeFilter } : {}),
     };
 
@@ -189,7 +224,14 @@ export async function listStaffUsers(req: Request, res: Response): Promise<void>
         skip: (page - 1) * limit,
         take: limit,
         include: {
-          role: { select: { id: true, roleName: true } },
+          // The role shown is the one held IN THIS WORKSPACE: the same person
+          // may be an Owner here and Staff elsewhere, so User.role cannot
+          // answer it.
+          memberships: {
+            where: { tenantId },
+            take: 1,
+            select: { role: { select: { id: true, roleName: true } } },
+          },
         },
       }),
     ]);
@@ -204,8 +246,8 @@ export async function listStaffUsers(req: Request, res: Response): Promise<void>
       dateOfBirth: user.dateOfBirth || null,
       address: user.address || '',
       user_type: user.user_type,
-      roleid: user.role ? user.role.id : '',
-      roleName: user.role ? user.role.roleName : 'N/A',
+      roleid: user.memberships[0]?.role?.id ?? '',
+      roleName: user.memberships[0]?.role?.roleName ?? 'N/A',
       profileImage: user.profileImage
         ? `${req.protocol}://${req.get('host')}/${user.profileImage.replace(/\\/g, '/')}`
         : null,
@@ -268,8 +310,13 @@ export async function updateStaffUser(req: Request, res: Response): Promise<void
       roleId?: string;
     };
 
-    const user = await prisma.user.findUnique({ where: { id } });
-    if (!user) {
+    const tenantId = requireTenantId(req);
+
+    // Scoped through the membership: a user id from another workspace must read
+    // as "not found" here, not as an editable record.
+    const membership = await membershipIn(tenantId, id);
+    const user = membership ? await prisma.user.findUnique({ where: { id } }) : null;
+    if (!user || !membership) {
       res.status(404).json({
         success: false,
         message: 'Staff user not found',
@@ -277,13 +324,17 @@ export async function updateStaffUser(req: Request, res: Response): Promise<void
       return;
     }
 
-    // Guard: cannot remove the Owner role from the last remaining Owner.
+    // Guard: cannot remove the Owner role from this workspace's last owner.
     const ownerRole = await prisma.role.findFirst({
-      where: { roleName: { equals: OWNER_ROLE_NAME, mode: 'insensitive' }, deletedAt: null },
+      where: {
+        tenantId,
+        roleName: { equals: OWNER_ROLE_NAME, mode: 'insensitive' },
+        deletedAt: null,
+      },
       select: { id: true },
     });
     const removingOwnerRole = !!ownerRole && roleId !== undefined && roleId !== ownerRole.id;
-    if (removingOwnerRole && (await isLastOwner(id, ownerRole.id))) {
+    if (removingOwnerRole && (await isLastOwner(id, tenantId))) {
       res.status(409).json({
         success: false,
         message: 'Cannot remove the Owner role from the last owner',
@@ -303,9 +354,11 @@ export async function updateStaffUser(req: Request, res: Response): Promise<void
       }
     }
 
-    // Check role validity
+    // Check role validity — within this workspace.
     if (roleId) {
-      const role = await prisma.role.findUnique({ where: { id: roleId } });
+      const role = await prisma.role.findFirst({
+        where: { id: roleId, tenantId, deletedAt: null },
+      });
       if (!role) {
         res.status(404).json({
           success: false,
@@ -352,9 +405,24 @@ export async function updateStaffUser(req: Request, res: Response): Promise<void
       data.profileImage = req.file.path;
     }
 
-    const updated = await prisma.user.update({
-      where: { id },
-      data,
+    const updated = await prisma.$transaction(async (tx) => {
+      const row = await tx.user.update({ where: { id }, data });
+      if (roleId) {
+        // The membership carries the authoritative per-workspace role; User.roleId
+        // above is the mirror kept for one release.
+        await tx.tenantMembership.update({
+          where: { id: membership.id },
+          data: {
+            roleId,
+            // Ownership follows the Owner role, so a workspace that promotes
+            // someone does not end up with a role that says Owner and a
+            // membership flag that says otherwise (which is what protect and
+            // isLastOwner both read).
+            ...(ownerRole ? { isOwner: roleId === ownerRole.id } : {}),
+          },
+        });
+      }
+      return row;
     });
 
     res.status(200).json({
@@ -375,9 +443,10 @@ export async function updateStaffUser(req: Request, res: Response): Promise<void
 export async function deleteStaffUser(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params as { id: string };
+    const tenantId = requireTenantId(req);
 
-    const user = await prisma.user.findUnique({ where: { id } });
-    if (!user) {
+    const membership = await membershipIn(tenantId, id);
+    if (!membership) {
       res.status(404).json({
         success: false,
         message: 'User not found',
@@ -385,8 +454,8 @@ export async function deleteStaffUser(req: Request, res: Response): Promise<void
       return;
     }
 
-    // Guard: cannot delete the last remaining Owner.
-    if (await isLastOwner(id)) {
+    // Guard: cannot delete this workspace's last remaining owner.
+    if (await isLastOwner(id, tenantId)) {
       res.status(409).json({
         success: false,
         message: 'Cannot delete the last owner',
@@ -394,11 +463,24 @@ export async function deleteStaffUser(req: Request, res: Response): Promise<void
       return;
     }
 
-    await prisma.user.delete({ where: { id } });
+    // A user can belong to several workspaces, so "remove from this company"
+    // and "delete this person" stopped being the same operation. Removing the
+    // membership is what this endpoint means; the User row only goes when the
+    // membership removed was their last one, which keeps the single-tenant
+    // behaviour identical while making the multi-tenant case correct.
+    const alsoDeletedUser = await prisma.$transaction(async (tx) => {
+      await tx.tenantMembership.delete({ where: { id: membership.id } });
+      const remaining = await tx.tenantMembership.count({ where: { userId: id } });
+      if (remaining > 0) return false;
+      await tx.user.delete({ where: { id } });
+      return true;
+    });
 
     res.status(200).json({
       success: true,
-      message: 'Staff user permanently deleted successfully',
+      message: alsoDeletedUser
+        ? 'Staff user permanently deleted successfully'
+        : 'Staff user removed from this workspace',
     });
   } catch (err) {
     console.error('Error deleting staff user:', err);

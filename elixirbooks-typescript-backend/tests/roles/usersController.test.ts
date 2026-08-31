@@ -21,10 +21,13 @@ type UserRow = {
   gender?: null; dateOfBirth?: null; address?: null; profileImage?: null;
   createdAt: Date; role?: { id: string; roleName: string } | null;
 };
-type RoleRow = { id: string; roleName: string; deletedAt: null };
+type RoleRow = { id: string; roleName: string; deletedAt: null; tenantId?: string };
 
 type TenantRow = { id: string; name: string; slug: string };
-type MembershipRow = { userId: string; tenantId: string; roleId: string | null; isOwner: boolean };
+type MembershipRow = {
+  id?: string; userId: string; tenantId: string; roleId: string | null;
+  isOwner: boolean; status?: string;
+};
 
 const db = {
   users: [] as UserRow[],
@@ -32,6 +35,20 @@ const db = {
   tenants: [] as TenantRow[],
   memberships: [] as MembershipRow[],
 };
+
+/** Mirrors the controller's tenant scope: membership decides who is "in" a workspace. */
+function scopedUsers(where: {
+  user_type?: number;
+  AND?: Array<{ memberships?: { some?: { tenantId?: string } } }>;
+}): UserRow[] {
+  let result = db.users.filter((u) => u.user_type !== 999);
+  const tenantId = where.AND?.[0]?.memberships?.some?.tenantId;
+  if (tenantId !== undefined) {
+    result = result.filter((u) => db.memberships.some((m) => m.userId === u.id && m.tenantId === tenantId));
+  }
+  if (where.user_type !== undefined) result = result.filter((u) => u.user_type === where.user_type);
+  return result;
+}
 
 // Control flag to simulate role provisioning failing mid-transaction
 let ensureRoleShouldThrow = false;
@@ -67,11 +84,63 @@ vi.mock('../../lib/prisma', () => {
         db.tenants.push(args.data);
         return args.data;
       }),
+      // register/createTenant consult this for the MAX_TENANTS ceiling.
+      count: vi.fn(async () => db.tenants.length),
+      findMany: vi.fn(async () => db.tenants),
     },
     tenantMembership: {
       create: vi.fn(async (args: { data: MembershipRow }) => {
-        db.memberships.push(args.data);
-        return args.data;
+        const row = { id: `mem-${db.memberships.length + 1}`, status: 'ACTIVE', ...args.data };
+        db.memberships.push(row);
+        return row;
+      }),
+      findUnique: vi.fn(async (args: { where: { userId_tenantId?: { userId: string; tenantId: string } } }) => {
+        const k = args.where.userId_tenantId;
+        if (!k) return null;
+        return db.memberships.find((m) => m.userId === k.userId && m.tenantId === k.tenantId) ?? null;
+      }),
+      findFirst: vi.fn(async (args: { where: { userId?: string; tenantId?: string } }) =>
+        db.memberships.find(
+          (m) =>
+            (args.where.userId === undefined || m.userId === args.where.userId) &&
+            (args.where.tenantId === undefined || m.tenantId === args.where.tenantId),
+        ) ?? null),
+      findMany: vi.fn(async (args: { where: { userId?: string; tenantId?: string } }) =>
+        db.memberships
+          .filter(
+            (m) =>
+              (args.where?.userId === undefined || m.userId === args.where.userId) &&
+              (args.where?.tenantId === undefined || m.tenantId === args.where.tenantId),
+          )
+          .map((m) => ({
+            ...m,
+            tenant: db.tenants.find((t) => t.id === m.tenantId) ?? { name: 'T', slug: 't' },
+            role: db.roles.find((r) => r.id === m.roleId) ?? null,
+          }))),
+      count: vi.fn(async (args: { where: { tenantId?: string; userId?: string; isOwner?: boolean } }) =>
+        db.memberships.filter(
+          (m) =>
+            (args.where.tenantId === undefined || m.tenantId === args.where.tenantId) &&
+            (args.where.userId === undefined || m.userId === args.where.userId) &&
+            (args.where.isOwner === undefined || m.isOwner === args.where.isOwner),
+        ).length),
+      update: vi.fn(async (args: { where: { id: string }; data: Record<string, unknown> }) => {
+        const row = db.memberships.find((m) => m.id === args.where.id);
+        if (row) Object.assign(row, args.data);
+        return row ?? {};
+      }),
+      delete: vi.fn(async (args: { where: { id: string } }) => {
+        const i = db.memberships.findIndex((m) => m.id === args.where.id);
+        if (i !== -1) db.memberships.splice(i, 1);
+        return {};
+      }),
+      upsert: vi.fn(async (args: { where: { userId_tenantId: { userId: string; tenantId: string } }; create: MembershipRow }) => {
+        const k = args.where.userId_tenantId;
+        const found = db.memberships.find((m) => m.userId === k.userId && m.tenantId === k.tenantId);
+        if (found) return found;
+        const row = { id: `mem-${db.memberships.length + 1}`, status: 'ACTIVE', ...args.create };
+        db.memberships.push(row);
+        return row;
       }),
     },
     user: {
@@ -85,18 +154,20 @@ vi.mock('../../lib/prisma', () => {
         if (args.where.email) return db.users.find((u) => u.email === args.where.email) ?? null;
         return null;
       }),
-      findMany: vi.fn(async (args: { where: { NOT?: { user_type: number }; user_type?: number }; skip?: number; take?: number }) => {
-        let result = db.users.filter((u) => u.user_type !== 999);
-        if (args.where.user_type !== undefined) result = result.filter((u) => u.user_type === args.where.user_type);
+      findMany: vi.fn(async (args: { where: { NOT?: { user_type: number }; user_type?: number; AND?: Array<{ memberships?: { some?: { tenantId?: string } } }> }; skip?: number; take?: number }) => {
+        const result = scopedUsers(args.where);
         const skip = args.skip ?? 0;
         const take = args.take ?? result.length;
-        return result.slice(skip, skip + take);
+        // The controller reads the role through the membership, not User.role.
+        return result.slice(skip, skip + take).map((u) => ({
+          ...u,
+          memberships: db.memberships
+            .filter((m) => m.userId === u.id)
+            .map((m) => ({ role: db.roles.find((r) => r.id === m.roleId) ?? null })),
+        }));
       }),
-      count: vi.fn(async (args: { where: { NOT?: { user_type: number }; user_type?: number } }) => {
-        let result = db.users.filter((u) => u.user_type !== 999);
-        if (args.where.user_type !== undefined) result = result.filter((u) => u.user_type === args.where.user_type);
-        return result.length;
-      }),
+      count: vi.fn(async (args: { where: { NOT?: { user_type: number }; user_type?: number; AND?: Array<{ memberships?: { some?: { tenantId?: string } } }> } }) =>
+        scopedUsers(args.where).length),
       create: vi.fn(async (args: { data: { id?: string; firstName: string; user_type: number; roleId?: string; email: string; password: string; lastName?: string | null } }) => {
         const user = { id: 'new-user-id', createdAt: new Date(), phone: null, gender: null, dateOfBirth: null, address: null, profileImage: null, role: null, ...args.data };
         db.users.push(user as UserRow);
@@ -115,7 +186,10 @@ vi.mock('../../lib/prisma', () => {
       }),
     },
     role: {
-      findFirst: vi.fn(async (args: { where: { roleName?: { equals?: string }; deletedAt?: null } }) => {
+      findFirst: vi.fn(async (args: { where: { id?: string; roleName?: { equals?: string }; deletedAt?: null } }) => {
+        if (args.where.id) {
+          return db.roles.find((r) => r.id === args.where.id && r.deletedAt === null) ?? null;
+        }
         const name = args.where.roleName?.equals?.toLowerCase();
         return db.roles.find((r) => r.roleName.toLowerCase() === name && r.deletedAt === null) ?? null;
       }),
@@ -125,7 +199,10 @@ vi.mock('../../lib/prisma', () => {
       }),
     },
   };
-  return { prisma: client };
+  // authController deliberately uses prismaUnscoped for the reads that cannot
+  // have a tenant yet (find a user by email, list every workspace they belong
+  // to). Pointing both names at the same fake keeps the store single-sourced.
+  return { prisma: client, prismaUnscoped: client };
 });
 
 // register provisions the new tenant's role set through seedRolesForTenant.
@@ -196,17 +273,37 @@ function makeReq(overrides: Partial<{ query: Record<string, string>; params: Rec
   } as unknown as Request;
 }
 
+/**
+ * Put a user in the test workspace. Seeding db.users alone is no longer enough:
+ * listStaffUsers scopes through TenantMembership, and update/delete resolve the
+ * target through it, so a user without one correctly reads as "not in this
+ * company".
+ */
+function join(userId: string, over: Partial<MembershipRow> = {}): void {
+  db.memberships.push({
+    id: `mem-${db.memberships.length + 1}`,
+    userId,
+    tenantId: 'test-tenant-id', // matches the requireTenantId mock
+    roleId: null,
+    isOwner: false,
+    status: 'ACTIVE',
+    ...over,
+  });
+}
+
 // ---------------------------------------------------------------------------
 // listStaffUsers
 // ---------------------------------------------------------------------------
 describe('listStaffUsers', () => {
-  beforeEach(() => { db.users = []; db.roles = []; });
+  beforeEach(() => { db.users = []; db.roles = []; db.memberships = []; });
 
   it('includes type-1 (admin) and type-3 (staff) users', async () => {
     db.users.push(
       { id: 'u-admin', firstName: 'Leo', email: 'leo@t.com', user_type: 1, roleId: 'r1', role: { id: 'r1', roleName: 'Admin' }, createdAt: new Date() },
       { id: 'u-staff', firstName: 'Bob', email: 'bob@t.com', user_type: 3, roleId: 'r2', role: { id: 'r2', roleName: 'Staff' }, createdAt: new Date() },
     );
+    join('u-admin', { roleId: 'r1' });
+    join('u-staff', { roleId: 'r2' });
     const res = makeRes();
     await listStaffUsers(makeReq(), res);
     const body = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
@@ -221,6 +318,8 @@ describe('listStaffUsers', () => {
       { id: 'sys', firstName: 'System', email: 'sys@t.com', user_type: 999, roleId: null, role: null, createdAt: new Date() },
       { id: 'u-admin', firstName: 'Leo', email: 'leo@t.com', user_type: 1, roleId: null, role: null, createdAt: new Date() },
     );
+    join('sys');
+    join('u-admin');
     const res = makeRes();
     await listStaffUsers(makeReq(), res);
     const body = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
@@ -230,7 +329,9 @@ describe('listStaffUsers', () => {
   });
 
   it('returns user_type but no userTypeLabel (roles-only UI)', async () => {
+    db.roles.push({ id: 'r1', roleName: 'Admin', deletedAt: null });
     db.users.push({ id: 'u-admin', firstName: 'Leo', email: 'leo@t.com', user_type: 1, roleId: 'r1', role: { id: 'r1', roleName: 'Admin' }, createdAt: new Date() });
+    join('u-admin', { roleId: 'r1' });
     const res = makeRes();
     await listStaffUsers(makeReq(), res);
     const body = (res.json as ReturnType<typeof vi.fn>).mock.calls[0][0];
@@ -260,6 +361,7 @@ describe('listStaffUsers', () => {
   it('returns pagination with totalPages', async () => {
     for (let i = 0; i < 25; i++) {
       db.users.push({ id: `u-${i}`, firstName: `User${i}`, email: `u${i}@t.com`, user_type: 3, roleId: null, role: null, createdAt: new Date() });
+      join(`u-${i}`);
     }
     const res = makeRes();
     await listStaffUsers(makeReq({ query: { page: '1', limit: '10' } }), res);
@@ -286,11 +388,12 @@ describe('listStaffUsers', () => {
 // deleteStaffUser – admin guard
 // ---------------------------------------------------------------------------
 describe('deleteStaffUser', () => {
-  beforeEach(() => { db.users = []; });
+  beforeEach(() => { db.users = []; db.memberships = []; });
 
   it('allows deleting user_type 1 when not holding the Owner role (user_type no longer guards)', async () => {
     // user_type 1 with no roleId → isLastOwner returns false → deletion proceeds
     db.users.push({ id: 'admin-id', firstName: 'Admin', email: 'a@t.com', user_type: 1, roleId: null, role: null, createdAt: new Date() });
+    join('admin-id'); // a member, but not flagged isOwner
     const res = makeRes();
     await deleteStaffUser(makeReq({ params: { id: 'admin-id' } }), res);
     expect(res.status).toHaveBeenCalledWith(200);
@@ -298,6 +401,7 @@ describe('deleteStaffUser', () => {
 
   it('allows deleting a non-admin user (type 3)', async () => {
     db.users.push({ id: 'staff-id', firstName: 'Staff', email: 's@t.com', user_type: 3, roleId: null, role: null, createdAt: new Date() });
+    join('staff-id');
     const res = makeRes();
     await deleteStaffUser(makeReq({ params: { id: 'staff-id' } }), res);
     expect(res.status).toHaveBeenCalledWith(200);
@@ -314,11 +418,12 @@ describe('deleteStaffUser', () => {
 // updateStaffUser – admin guard
 // ---------------------------------------------------------------------------
 describe('updateStaffUser', () => {
-  beforeEach(() => { db.users = []; db.roles = []; });
+  beforeEach(() => { db.users = []; db.roles = []; db.memberships = []; });
 
   it('allows editing user_type 1 when not the last Owner (user_type no longer guards)', async () => {
     // user_type 1 with no roleId → not an Owner → update proceeds
     db.users.push({ id: 'admin-id', firstName: 'Admin', email: 'a@t.com', user_type: 1, roleId: null, role: null, createdAt: new Date() });
+    join('admin-id');
     const res = makeRes();
     await updateStaffUser(makeReq({ params: { id: 'admin-id' }, body: { firstName: 'NewName' } }), res);
     expect(res.status).toHaveBeenCalledWith(200);
@@ -327,6 +432,7 @@ describe('updateStaffUser', () => {
   it('allows updating a non-admin user (type 3)', async () => {
     db.roles.push({ id: 'r-staff', roleName: 'Staff', deletedAt: null });
     db.users.push({ id: 'staff-id', firstName: 'Staff', email: 's@t.com', user_type: 3, roleId: 'r-staff', role: { id: 'r-staff', roleName: 'Staff' }, createdAt: new Date() });
+    join('staff-id', { roleId: 'r-staff' });
     const res = makeRes();
     await updateStaffUser(makeReq({ params: { id: 'staff-id' }, body: { firstName: 'Updated' } }), res);
     expect(res.status).toHaveBeenCalledWith(200);
@@ -419,12 +525,59 @@ describe('register', () => {
     expect(db.memberships).toHaveLength(0);
   });
 
-  it('returns 403 if admin already exists', async () => {
+  it('lets a SECOND company sign up — the single-admin cap is gone', async () => {
+    // This is the change the whole conversion exists for. The old guard
+    // ("Admin account already exists. Only one admin is allowed.") is what made
+    // an install permanently single-tenant.
     db.users.push({ id: 'existing-admin', firstName: 'Old', email: 'old@t.com', user_type: 1, roleId: null, role: null, createdAt: new Date() });
+    db.tenants.push({ id: 'existing-tenant', name: 'Acme', slug: 'acme' });
     const res = makeRes();
     await register(makeReq({
-      body: { firstName: 'Leo', lastName: 'P', email: 'leo@test.com', password: 'Password1!' },
+      body: { firstName: 'Leo', lastName: 'P', email: 'leo@test.com', password: 'Password1!', companyName: 'Globex' },
     }), res);
-    expect(res.status).toHaveBeenCalledWith(403);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(db.tenants).toHaveLength(2);
+    expect(db.tenants.map((t) => t.slug)).toEqual(['acme', 'globex']);
+  });
+
+  it('still refuses a duplicate email — one identity per person, platform-wide', async () => {
+    db.users.push({ id: 'existing', firstName: 'Old', email: 'taken@t.com', user_type: 1, roleId: null, role: null, createdAt: new Date() });
+    const res = makeRes();
+    await register(makeReq({
+      body: { firstName: 'Leo', lastName: 'P', email: 'taken@t.com', password: 'Password1!' },
+    }), res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('honours SIGNUPS_ENABLED=false', async () => {
+    process.env.SIGNUPS_ENABLED = 'false';
+    try {
+      const res = makeRes();
+      await register(makeReq({
+        body: { firstName: 'Leo', lastName: 'P', email: 'leo@test.com', password: 'Password1!' },
+      }), res);
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(db.tenants).toHaveLength(0);
+    } finally {
+      delete process.env.SIGNUPS_ENABLED;
+    }
+  });
+
+  it('honours MAX_TENANTS as a hard ceiling', async () => {
+    // The escape hatch for a self-hosted customer who wants the old
+    // one-company behaviour without disabling the very first signup.
+    db.tenants.push({ id: 't1', name: 'Acme', slug: 'acme' });
+    process.env.MAX_TENANTS = '1';
+    try {
+      const res = makeRes();
+      await register(makeReq({
+        body: { firstName: 'Leo', lastName: 'P', email: 'leo@test.com', password: 'Password1!' },
+      }), res);
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(db.tenants).toHaveLength(1);
+    } finally {
+      delete process.env.MAX_TENANTS;
+    }
   });
 });

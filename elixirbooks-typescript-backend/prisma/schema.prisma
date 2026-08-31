@@ -636,6 +636,8 @@ model Tenant {
   generalSettings      GeneralSetting[]      @relation("TenantGeneralSetting")
   currencies           Currency[]            @relation("TenantCurrency")
 
+  apiKeys TenantApiKey[] @relation("TenantApiKeys")
+
   @@index([status])
 }
 
@@ -663,6 +665,33 @@ model TenantMembership {
   @@unique([userId, tenantId])
   @@index([tenantId, status])
   @@index([userId, status])
+}
+
+/// A server-to-server credential scoped to ONE workspace.
+///
+/// The external API (controllers/externalController.js) used to authenticate
+/// against a single install-wide `WHATSAPPCRM_API_KEY` env var, which cannot
+/// say WHICH company an incoming contact belongs to. A presented key now names
+/// its tenant, so `upsertCustomer` writes into the right workspace by
+/// construction rather than by guessing at the sole admin.
+///
+/// Only the SHA-256 of the key is stored — the key itself is shown once, at
+/// creation, and is unrecoverable afterwards. `prefix` is the non-secret
+/// leading characters, kept so a human can tell two keys apart in a list.
+model TenantApiKey {
+  id         String    @id @default(uuid())
+  tenantId   String
+  tenant     Tenant    @relation("TenantApiKeys", fields: [tenantId], references: [id], onDelete: Cascade)
+  name       String
+  keyHash    String    @unique
+  prefix     String
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdBy  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([tenantId])
 }
 
 // =============================================================================
@@ -774,10 +803,12 @@ model User {
   user_type    Int              @default(1)
   roleId       String?
   role         Role?            @relation("UserRole", fields: [roleId], references: [id])
-  // Shared-workspace tenancy: links a staff/admin user to the sole company
-  // owner (the single user_type:1 account). `ownerId = null` means the row IS
-  // the owner, so the tenant id resolves to `ownerId ?? id` and every member
-  // of a company shares one dataset. See lib/tenantScope.ts + seedUserOwner.ts.
+  // DEPRECATED (P5), dropped in P9. This was the whole tenancy story: a staff
+  // user pointed at the sole company owner, and the tenant resolved to
+  // `ownerId ?? id`. TenantMembership replaced it — a person can belong to
+  // several workspaces, which one column can never express. Still written by
+  // createStaffUser for one release so nothing that reads it breaks mid-upgrade;
+  // NOTHING should start reading it.
   ownerId      String?
   owner        User?            @relation("UserOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   staff        User[]           @relation("UserOwner")

@@ -7,11 +7,22 @@
  * every boot. Run from prisma/seed.ts after the baseline seed.
  */
 import { prisma } from '../lib/prisma';
+import { runAsSystem } from '../lib/tenantContext';
 import { encryptSecret, isEncrypted } from '../lib/emailSecret';
 
 const SECRET_FIELDS = ['smtpPassword', 'nodePassword', 'resendApiKey'] as const;
 
+/**
+ * Cross-tenant by design: this re-encrypts EVERY workspace's stored secrets in
+ * one pass, so it declares that intent rather than inheriting a tenant. Called
+ * from prisma/seed.ts (already inside runAsSystem) and runnable standalone,
+ * which is why the wrapper is here rather than only at the call site.
+ */
 export async function encryptLegacyEmailSecrets(): Promise<{ encrypted: number }> {
+  return runAsSystem(() => encryptLegacyEmailSecretsInner());
+}
+
+async function encryptLegacyEmailSecretsInner(): Promise<{ encrypted: number }> {
   const rows = await prisma.emailSettings.findMany();
   let encrypted = 0;
 

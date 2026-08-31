@@ -10,12 +10,26 @@
 // Both endpoints assume whatsappcrm is the identity authority for users and
 // the source of truth for contacts. Elixir Books stays standalone for everything
 // else.
+//
+// WHICH WORKSPACE? (P5). Both endpoints used to answer this by finding "the
+// sole admin" — the one user_type:1 account the old registration guard
+// guaranteed. That guard is gone, so the answer has to come from the request:
+//
+//   upsertCustomer  the API key names its tenant (middleware/apiKeyAuth.js
+//                   puts it on req.tenantId).
+//   ssoExchange     a `tenant` claim in the signed token, else
+//                   WHATSAPPCRM_TENANT_ID, else the sole workspace if there is
+//                   exactly one. See lib/tenantApiKey.resolveExternalTenant.
+//
+// Neither falls back to "the first tenant". A wrong answer here writes one
+// company's data into another's books, so an unresolvable request fails.
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { prisma } = require('../lib/prisma');
 const { generateToken } = require('../utils/generateToken');
 const { hashPassword } = require('../utils/password');
 const { ensureRole, DEFAULT_ROLE_BY_USER_TYPE } = require('../lib/defaultRoles');
+const { resolveExternalTenant } = require('../lib/tenantApiKey');
 
 const base64UrlDecode = (input) => {
   const pad = input.length % 4 === 0 ? '' : '='.repeat(4 - (input.length % 4));
@@ -73,6 +87,14 @@ exports.ssoExchange = async (req, res) => {
     return res.status(400).json({ success: false, message: 'Token missing email claim.' });
   }
 
+  // Resolve the workspace BEFORE touching any data: a user provisioned into
+  // the wrong company is far harder to undo than a rejected request.
+  const resolved = await resolveExternalTenant(claims.tenant || null);
+  if (!resolved.ok) {
+    return res.status(resolved.status).json({ success: false, message: resolved.message });
+  }
+  const tenantId = resolved.tenantId;
+
   try {
     const email = String(claims.email).toLowerCase().trim();
     // isDeleted: { not: true } excludes rows where isDeleted IS true.
@@ -98,45 +120,18 @@ exports.ssoExchange = async (req, res) => {
       const [firstName, ...rest] = fullName.split(/\s+/).filter(Boolean);
       const userType = Number(claims.user_type) === 1 ? 1 : 2;
 
-      // Resilient role assignment: failure here must not block SSO — next-boot
-      // backfill (seedRoles) will heal the missing roleId automatically.
-      //
-      // TODO (P5): roles are per-tenant now, so this needs the tenant the SSO
-      // user is joining. Until ssoExchange resolves a tenant properly (from a
-      // `tenant` claim mapped to Tenant.slug, else WHATSAPPCRM_TENANT_ID, and
-      // hard-failing if neither resolves), fall back to the sole tenant. That
-      // fallback is only correct while the install has exactly one tenant,
-      // which is why P5 must land before SSO is used on a multi-tenant install.
+      // The role is created in the RESOLVED workspace rather than guessed at
+      // from "the sole tenant". Still best-effort: a transient failure here
+      // leaves the user with no permissions until prisma/seedRoles.ts heals it
+      // on the next boot, which is a far better outcome than refusing the SSO
+      // exchange outright. The MEMBERSHIP below is the part that is fatal —
+      // without one the user cannot authenticate at all.
       let ssoRoleId = null;
       try {
         const roleName = DEFAULT_ROLE_BY_USER_TYPE[userType];
-        const soleTenant = await prisma.tenant.findFirst({
-          where: { deletedAt: null },
-          orderBy: { createdAt: 'asc' },
-          select: { id: true },
-        });
-        if (roleName && soleTenant) {
-          ssoRoleId = await ensureRole(roleName, soleTenant.id);
-        }
+        if (roleName) ssoRoleId = await ensureRole(roleName, tenantId);
       } catch (roleErr) {
         console.warn('ssoExchange: ensureRole failed (non-fatal, roleId will be null)', roleErr);
-      }
-
-      // Shared-workspace tenancy: a non-owner SSO user (vendor) joins the sole
-      // company owner so they share its dataset. If no owner exists yet, leave
-      // ownerId null — the next-boot seedUserOwner backfill heals it.
-      let ssoOwnerId = null;
-      if (userType !== 1) {
-        try {
-          const owner = await prisma.user.findFirst({
-            where: { user_type: 1, isDeleted: false },
-            orderBy: { createdAt: 'asc' },
-            select: { id: true },
-          });
-          ssoOwnerId = owner?.id ?? null;
-        } catch (ownerErr) {
-          console.warn('ssoExchange: owner lookup failed (non-fatal, backfill will heal)', ownerErr);
-        }
       }
 
       user = await prisma.user.create({
@@ -147,15 +142,35 @@ exports.ssoExchange = async (req, res) => {
           password: hashedPassword,
           user_type: userType,
           ...(ssoRoleId ? { roleId: ssoRoleId } : {}),
-          ...(ssoOwnerId ? { ownerId: ssoOwnerId } : {}),
+          ownerId: tenantId,
+          lastTenantId: tenantId,
         },
       });
     }
 
+    // The MEMBERSHIP is what lets this user authenticate: authMiddleware.protect
+    // resolves the tenant from it and 401s without one. Idempotent, because an
+    // existing user returning through SSO already has theirs — and because a
+    // user who exists in ANOTHER workspace must gain a membership here rather
+    // than be rejected or silently moved.
+    const membership = await prisma.tenantMembership.upsert({
+      where: { userId_tenantId: { userId: user.id, tenantId } },
+      update: { status: 'ACTIVE' },
+      create: {
+        userId: user.id,
+        tenantId,
+        roleId: user.roleId || null,
+        status: 'ACTIVE',
+        isOwner: false,
+        joinedAt: new Date(),
+      },
+      select: { id: true },
+    });
+
     return res.json({
       success: true,
       message: 'SSO accepted',
-      token: generateToken(user.id, user.ownerId ?? user.id),
+      token: generateToken(user.id, tenantId, membership.id),
       user: {
         // Return both `id` (Prisma) and `_id` (legacy alias) so external
         // CRM consumers that read `_id` from this response continue to work.
@@ -173,18 +188,6 @@ exports.ssoExchange = async (req, res) => {
   }
 };
 
-const resolveOwnerUserId = async () => {
-  // V1 design: a single admin owns externally-synced customers. Elixir Books'
-  // own registration flow already enforces "only one admin", so this is
-  // deterministic. If the admin isn't set up yet, the caller should retry.
-  // isDeleted: { not: true } is safe here because isDeleted is non-nullable
-  // Boolean @default(false) — do NOT copy to nullable columns (see note above).
-  const admin = await prisma.user.findFirst({
-    where: { user_type: 1, isDeleted: { not: true } },
-  });
-  return admin ? admin.id : null;
-};
-
 exports.upsertCustomer = async (req, res) => {
   const { external_id, name, email, phone, whatsapp, company_id } = req.body || {};
   if (!external_id) {
@@ -194,11 +197,14 @@ exports.upsertCustomer = async (req, res) => {
     return res.status(400).json({ success: false, message: 'name is required.' });
   }
 
-  const ownerId = await resolveOwnerUserId();
-  if (!ownerId) {
-    return res.status(409).json({
+  // Set by middleware/apiKeyAuth.js from the presented credential. The old
+  // "find the sole admin" lookup this replaces was the single largest
+  // cross-tenant hazard in the integration.
+  const tenantId = req.tenantId;
+  if (!tenantId) {
+    return res.status(503).json({
       success: false,
-      message: 'No admin user configured on Elixir Books yet — register an admin first.',
+      message: 'Could not determine the target workspace for this request.',
     });
   }
 
@@ -225,13 +231,13 @@ exports.upsertCustomer = async (req, res) => {
         customer_external_upsert_idx: {
           externalSource: 'whatsappcrm',
           externalRef: String(external_id),
-          tenantId: ownerId,
+          tenantId,
         },
       },
       update: customerData,
       create: {
         ...customerData,
-        tenantId: ownerId,
+        tenantId,
         externalSource: 'whatsappcrm',
         externalRef: String(external_id),
       },

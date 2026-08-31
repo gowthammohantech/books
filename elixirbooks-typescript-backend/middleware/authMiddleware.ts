@@ -6,13 +6,40 @@ import { setVerifiedTenantId } from '../lib/tenantContext';
 
 interface DecodedToken {
   id: string;
-  // The company-owner id (`ownerId ?? id`). Absent on tokens issued before the
-  // shared-workspace feature — resolved from the DB below in that case.
+  /**
+   * The workspace this session is acting on. Present on every token this app
+   * has ever minted (it used to hold `ownerId ?? id`, which is the id P1 gave
+   * tenant #1), so the fallback below is for genuinely ancient tokens only.
+   */
   tenantId?: string;
+  /** TenantMembership id, v2 tokens only. Advisory — never trusted. */
+  mid?: string;
+  v?: number;
   iat?: number;
   exp?: number;
 }
 
+/**
+ * Authenticate the caller and resolve the workspace they are acting on.
+ *
+ * THE MEMBERSHIP IS THE AUTHORIZATION. Before P5 this trusted the token's
+ * tenant claim and looked up `User.ownerId ?? User.id` — which meant a token
+ * kept working after its holder was removed from the company, and (once more
+ * than one workspace exists) that a hand-edited claim would have been believed.
+ * Now every request re-checks that an ACTIVE TenantMembership binds this user
+ * to this tenant, and that the tenant itself is ACTIVE and not deleted. The
+ * claim is only ever a SELECTOR for which of the caller's workspaces to load;
+ * it can never grant access to one they are not a member of.
+ *
+ * 401, NOT 403, when the membership is absent. Deliberate: the frontend's axios
+ * interceptor already turns 401 into a clean logout-and-bounce, so membership
+ * revocation and tenant suspension get correct UX for free, with no new
+ * frontend code. 403 would leave the user staring at a broken page.
+ *
+ * ONE QUERY. The old implementation ran three (user, role, permissions). The
+ * membership include below collapses them, which pays for the extra
+ * verification this phase adds rather than piling on top of it.
+ */
 export async function protect(
   req: Request,
   res: Response,
@@ -38,83 +65,98 @@ export async function protect(
     return;
   }
 
-  // Reject tokens whose user no longer exists (e.g. account recreated with a
-  // new id after a reseed). Returning 401 lets the SPA cleanly force re-login
-  // instead of leaking confusing 404s into forms mid-flow. Fail open on DB
-  // errors so a transient hiccup doesn't log everyone out.
-  //
-  // We also resolve the tenant (company-owner) id here. Newer tokens carry it
-  // as a `tenantId` claim; for tokens issued before the shared-workspace
-  // feature we derive it from the freshly-loaded user (`ownerId ?? id`).
-  let tenantId = decoded.tenantId;
-  let userRoleId: string | null = null;
+  let membership;
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: { id: true, ownerId: true, roleId: true },
+    membership = await prisma.tenantMembership.findFirst({
+      where: {
+        userId: decoded.id,
+        status: 'ACTIVE',
+        // The claim narrows to one workspace. Without it (a pre-tenancy token)
+        // we fall back to the caller's oldest ACTIVE membership, which for
+        // every existing install is their only one.
+        ...(decoded.tenantId ? { tenantId: decoded.tenantId } : {}),
+        tenant: { status: 'ACTIVE', deletedAt: null },
+        user: { isDeleted: false },
+      },
+      orderBy: [{ createdAt: 'asc' }],
+      select: {
+        id: true,
+        tenantId: true,
+        isOwner: true,
+        roleId: true,
+        role: {
+          select: {
+            id: true,
+            roleName: true,
+            permissions: {
+              where: { deletedAt: null },
+              select: {
+                view: true,
+                create: true,
+                edit: true,
+                delete: true,
+                allowAll: true,
+                module: { select: { moduleSlug: true } },
+              },
+            },
+          },
+        },
+      },
     });
-    if (!user) {
-      res.status(401).json({ message: 'Session expired. Please sign in again.' });
-      return;
-    }
-    if (!tenantId) {
-      tenantId = user.ownerId ?? user.id;
-    }
-    userRoleId = user.roleId ?? null;
   } catch (err) {
-    console.error('protect: user existence check failed, allowing request:', err);
+    // A transient database problem must NOT look like a revoked session: 401
+    // would log every signed-in user out across the whole install. 503 leaves
+    // the session intact and lets the SPA retry.
+    console.error('protect: membership lookup failed:', err);
+    res.status(503).json({ message: 'Service temporarily unavailable' });
+    return;
+  }
+
+  if (!membership) {
+    // Covers all of: user deleted, membership revoked or suspended, tenant
+    // suspended or soft-deleted, and a token naming a tenant the caller is not
+    // a member of.
+    res.status(401).json({ message: 'Session expired. Please sign in again.' });
+    return;
   }
 
   req.user = decoded.id;
-  // Fail safe to per-user scoping if the tenant couldn't be resolved (DB hiccup
-  // on a pre-feature token) — never leak another tenant's data.
-  req.tenantId = tenantId ?? decoded.id;
+  req.tenantId = membership.tenantId;
 
-  // Promote the resolved tenant onto the request-scoped store, replacing the
+  // Promote the VERIFIED tenant onto the request-scoped store, replacing the
   // optimistic JWT claim middleware/auditContext.ts put there. From here on,
   // lib/tenantGuard.ts scopes Prisma queries by a tenant we have actually
   // checked against the database rather than one the caller asserted.
-  setVerifiedTenantId(req.tenantId);
+  setVerifiedTenantId(membership.tenantId);
 
-  // Build req.actor: resolve role + permissions for server-side RBAC.
-  // Permission-load failure is isolated — it clears perms (deny-by-default)
-  // but does NOT fail the request (user existence check already guards that).
-  let roleId: string | null = null;
-  let roleName: string | null = null;
   const perms = new Map<string, {
     view: boolean; create: boolean; edit: boolean; delete: boolean; allowAll: boolean;
   }>();
-  try {
-    roleId = userRoleId;
-    if (roleId) {
-      const role = await prisma.role.findUnique({ where: { id: roleId }, select: { roleName: true } });
-      roleName = role?.roleName ?? null;
-      const rows = await prisma.permission.findMany({
-        where: { roleId, deletedAt: null },
-        include: { module: { select: { moduleSlug: true } } },
-      });
-      for (const p of rows) {
-        const slug = (p.module as { moduleSlug?: string } | null)?.moduleSlug;
-        if (!slug) continue;
-        perms.set(slug, {
-          view: !!p.view,
-          create: !!p.create,
-          edit: !!p.edit,
-          delete: !!p.delete,
-          allowAll: !!p.allowAll,
-        });
-      }
-    }
-  } catch (err) {
-    console.error('protect: permission load failed, denying by default:', err);
-    perms.clear();
+  for (const p of membership.role?.permissions ?? []) {
+    const slug = p.module?.moduleSlug;
+    if (!slug) continue;
+    perms.set(slug, {
+      view: !!p.view,
+      create: !!p.create,
+      edit: !!p.edit,
+      delete: !!p.delete,
+      allowAll: !!p.allowAll,
+    });
   }
+
   req.actor = {
     userId: decoded.id,
-    tenantId: req.tenantId,
-    roleId,
-    roleName,
-    isOwner: roleName === 'Owner',
+    tenantId: membership.tenantId,
+    membershipId: membership.id,
+    // The role comes from the MEMBERSHIP, not from User.roleId: a user may be
+    // an Owner in one workspace and Staff in another, so a single column on
+    // User cannot answer the question. User.roleId is still written for one
+    // release and is dropped in P9.
+    roleId: membership.roleId ?? null,
+    roleName: membership.role?.roleName ?? null,
+    // From the membership flag rather than a `roleName === 'Owner'` string
+    // compare, which broke the moment a workspace renamed its Owner role.
+    isOwner: membership.isOwner,
     perms,
   };
 
