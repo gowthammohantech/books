@@ -91,7 +91,3 @@ export async function applyAutoMatch(
   // No AUTO best → leave UNEXPLAINED, write nothing.
   return { ...result, status: 'UNEXPLAINED', autoPostEligible: false };
 }
-
-// CommonJS interop for any legacy JS consumers.
-module.exports = { applyAutoMatch };
-module.exports.applyAutoMatch = applyAutoMatch;

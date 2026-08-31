@@ -71,8 +71,3 @@ export async function unexplainTxn(req: Request, res: Response): Promise<void> {
     sendPrismaError(res, err);
   }
 }
-
-module.exports = { getTransactionTypes, explain, unexplainTxn };
-module.exports.getTransactionTypes = getTransactionTypes;
-module.exports.explain = explain;
-module.exports.unexplainTxn = unexplainTxn;

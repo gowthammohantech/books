@@ -37,8 +37,3 @@ export const updateDeliveryStatusValidator: ValidationChain[] = [
     .notEmpty().withMessage('Received date is required for delivered status')
     .isISO8601().withMessage('Invalid date format'),
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = { createDeliveryChallanValidator, updateDeliveryStatusValidator };
-module.exports.createDeliveryChallanValidator = createDeliveryChallanValidator;
-module.exports.updateDeliveryStatusValidator = updateDeliveryStatusValidator;

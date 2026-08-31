@@ -103,15 +103,3 @@ export async function listTenantMemberIds(tenantId: string): Promise<string[]> {
   });
   return rows.map((r) => r.id);
 }
-
-// CommonJS interop: controllers/externalController.js is still plain CJS.
-module.exports = {
-  tenantMemberWhere,
-  activeTenantMemberWhere,
-  isTenantMember,
-  listTenantMemberIds,
-};
-module.exports.tenantMemberWhere = tenantMemberWhere;
-module.exports.activeTenantMemberWhere = activeTenantMemberWhere;
-module.exports.isTenantMember = isTenantMember;
-module.exports.listTenantMemberIds = listTenantMemberIds;

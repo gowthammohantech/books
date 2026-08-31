@@ -875,31 +875,3 @@ export async function listCostLayers(req: Request, res: Response): Promise<void>
     });
   }
 }
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  createProduct,
-  getAllProducts,
-  getProductById,
-  updateProduct,
-  deleteProduct,
-  getAllProductCategories,
-  getAllProductBrands,
-  getAllUnits,
-  getAllTaxGroups,
-  listCostLayers,
-  parseBoolFlag,
-  deriveItemType,
-};
-module.exports.createProduct = createProduct;
-module.exports.getAllProducts = getAllProducts;
-module.exports.getProductById = getProductById;
-module.exports.updateProduct = updateProduct;
-module.exports.deleteProduct = deleteProduct;
-module.exports.getAllProductCategories = getAllProductCategories;
-module.exports.getAllProductBrands = getAllProductBrands;
-module.exports.getAllUnits = getAllUnits;
-module.exports.getAllTaxGroups = getAllTaxGroups;
-module.exports.listCostLayers = listCostLayers;
-module.exports.parseBoolFlag = parseBoolFlag;
-module.exports.deriveItemType = deriveItemType;

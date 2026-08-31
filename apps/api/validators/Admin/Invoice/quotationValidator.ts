@@ -85,8 +85,3 @@ export const updateQuotationValidator: ValidationChain[] = [
   body('vat').optional().isNumeric(),
   body('TotalAmount').optional().isNumeric(),
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = { quotationValidator, updateQuotationValidator };
-module.exports.quotationValidator = quotationValidator;
-module.exports.updateQuotationValidator = updateQuotationValidator;

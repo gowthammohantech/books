@@ -67,11 +67,3 @@ export async function getFieldTypes(_req: Request, res: Response): Promise<void>
     });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createFieldType,
-  getFieldTypes,
-};
-module.exports.createFieldType = createFieldType;
-module.exports.getFieldTypes = getFieldTypes;

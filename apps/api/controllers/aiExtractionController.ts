@@ -467,5 +467,3 @@ export async function discardJob(req: Request, res: Response): Promise<void> {
 }
 
 const handlers = { extractBill, listJobs, getJob, confirmJob, discardJob };
-module.exports = handlers;
-module.exports.default = handlers;

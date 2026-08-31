@@ -206,17 +206,3 @@ export async function deleteTaxGroup(req: Request, res: Response): Promise<void>
     });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  getAllTaxGroups,
-  createTaxGroup,
-  getTaxGroupById,
-  updateTaxGroup,
-  deleteTaxGroup,
-};
-module.exports.getAllTaxGroups = getAllTaxGroups;
-module.exports.createTaxGroup = createTaxGroup;
-module.exports.getTaxGroupById = getTaxGroupById;
-module.exports.updateTaxGroup = updateTaxGroup;
-module.exports.deleteTaxGroup = deleteTaxGroup;

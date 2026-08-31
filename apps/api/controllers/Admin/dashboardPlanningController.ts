@@ -166,6 +166,3 @@ export async function accountsPlanning(req: Request, res: Response): Promise<voi
     res.status(500).json({ success: false, message: 'Failed to compute accounts planning' });
   }
 }
-
-module.exports = { accountsPlanning };
-module.exports.accountsPlanning = accountsPlanning;

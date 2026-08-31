@@ -61,6 +61,3 @@ export async function auditContextMiddleware(
   const ctx: AuditContext = { userId, userName, ipAddress, userAgent, tenantId };
   runWithAuditContext(ctx, () => next());
 }
-
-module.exports = { auditContextMiddleware };
-module.exports.auditContextMiddleware = auditContextMiddleware;

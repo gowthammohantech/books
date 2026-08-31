@@ -18,10 +18,3 @@ export const POSTAL_CODE_REGEX = /^[A-Za-z0-9\s-]{2,12}$/;
 
 export const PHONE_ERROR = 'Please provide a valid phone number';
 export const POSTAL_CODE_ERROR = 'Please provide a valid postal/zip code';
-
-// CommonJS interop for legacy .js files (Mongoose models, JS routes).
-module.exports = { PHONE_REGEX, POSTAL_CODE_REGEX, PHONE_ERROR, POSTAL_CODE_ERROR };
-module.exports.PHONE_REGEX = PHONE_REGEX;
-module.exports.POSTAL_CODE_REGEX = POSTAL_CODE_REGEX;
-module.exports.PHONE_ERROR = PHONE_ERROR;
-module.exports.POSTAL_CODE_ERROR = POSTAL_CODE_ERROR;

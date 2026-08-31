@@ -91,7 +91,3 @@ const options: swaggerJsdoc.Options = {
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
-
-// CommonJS interop — server.js consumes this via require()
-module.exports = { swaggerSpec };
-module.exports.default = { swaggerSpec };

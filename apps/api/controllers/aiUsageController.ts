@@ -148,5 +148,3 @@ export async function getUsageSummary(req: Request, res: Response): Promise<void
 }
 
 const handlers = { getUsage, getUsageSummary };
-module.exports = handlers;
-module.exports.default = handlers;

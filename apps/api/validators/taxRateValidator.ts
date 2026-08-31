@@ -164,11 +164,3 @@ export const updateTaxRateValidator: (ValidationChain | RequestHandler)[] = [
   ...updateChains,
   handleValidationErrors,
 ];
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createTaxRateValidator,
-  updateTaxRateValidator,
-};
-module.exports.createTaxRateValidator = createTaxRateValidator;
-module.exports.updateTaxRateValidator = updateTaxRateValidator;

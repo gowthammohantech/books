@@ -11,7 +11,3 @@ export const updateCustomFieldDataTypeValidator: ValidationChain[] = [
   body('description').optional().isString(),
   body('isActive').optional().isBoolean(),
 ];
-
-module.exports = { createCustomFieldDataTypeValidator, updateCustomFieldDataTypeValidator };
-module.exports.createCustomFieldDataTypeValidator = createCustomFieldDataTypeValidator;
-module.exports.updateCustomFieldDataTypeValidator = updateCustomFieldDataTypeValidator;

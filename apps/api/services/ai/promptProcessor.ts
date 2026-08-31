@@ -343,7 +343,3 @@ function buildContextMessage(context: PromptContext, documentType = ''): string 
 
   return parts.join('\n\n');
 }
-
-// CommonJS interop for the require() call site in aiController.
-module.exports = { processPrompt };
-module.exports.processPrompt = processPrompt;

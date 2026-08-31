@@ -60,5 +60,3 @@ export async function getById(req: Request, res: Response): Promise<void> {
 }
 
 const handlers = { list, getById };
-module.exports = handlers;
-module.exports.default = handlers;

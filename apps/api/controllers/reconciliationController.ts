@@ -528,5 +528,3 @@ export async function tallyCheck(req: Request, res: Response): Promise<void> {
 }
 
 const handlers = { tallyCheck };
-module.exports = handlers;
-module.exports.default = handlers;

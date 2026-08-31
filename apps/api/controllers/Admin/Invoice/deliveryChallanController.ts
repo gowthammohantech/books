@@ -851,19 +851,3 @@ export async function deleteDeliveryChallan(req: Request, res: Response): Promis
     });
   }
 }
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  createDeliveryChallan,
-  updateDeliveryStatus,
-  updateDeliveryChallan,
-  getDeliveryChallans,
-  getDeliveryChallanById,
-  deleteDeliveryChallan,
-};
-module.exports.createDeliveryChallan = createDeliveryChallan;
-module.exports.updateDeliveryStatus = updateDeliveryStatus;
-module.exports.updateDeliveryChallan = updateDeliveryChallan;
-module.exports.getDeliveryChallans = getDeliveryChallans;
-module.exports.getDeliveryChallanById = getDeliveryChallanById;
-module.exports.deleteDeliveryChallan = deleteDeliveryChallan;

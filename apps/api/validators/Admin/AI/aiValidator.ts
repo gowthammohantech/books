@@ -81,13 +81,3 @@ export const updateConfigValidator: Array<ValidationChain | RequestHandler> = [
 
   handleValidationResult,
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  processPromptValidator,
-  confirmDocumentValidator,
-  updateConfigValidator,
-};
-module.exports.processPromptValidator = processPromptValidator;
-module.exports.confirmDocumentValidator = confirmDocumentValidator;
-module.exports.updateConfigValidator = updateConfigValidator;

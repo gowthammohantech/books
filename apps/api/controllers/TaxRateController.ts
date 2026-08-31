@@ -507,16 +507,3 @@ export async function resolveLine(req: Request, res: Response): Promise<void> {
     res.status(500).json({ success: false, message: 'Failed to resolve line taxes' });
   }
 }
-
-// CommonJS interop for adminRoutes.js
-const handlers = {
-  getAllTaxRates,
-  getTaxRateById,
-  createTaxRate,
-  updateTaxRate,
-  deleteTaxRate,
-  suggestForLine,
-  resolveLine,
-};
-module.exports = handlers;
-module.exports.default = handlers;

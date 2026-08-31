@@ -45,7 +45,3 @@ export const debitNoteValidator: ValidationChain[] = [
     .optional({ checkFalsy: true })
     .isIn(['new', 'pending', 'completed', 'cancelled', 'partially_paid', 'paid']),
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = { debitNoteValidator };
-module.exports.debitNoteValidator = debitNoteValidator;

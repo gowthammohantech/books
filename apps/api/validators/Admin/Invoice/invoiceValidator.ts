@@ -38,8 +38,3 @@ export const updateInvoiceValidator: ValidationChain[] = [
 
   ...createInvoiceValidator,
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = { createInvoiceValidator, updateInvoiceValidator };
-module.exports.createInvoiceValidator = createInvoiceValidator;
-module.exports.updateInvoiceValidator = updateInvoiceValidator;

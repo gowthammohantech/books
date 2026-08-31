@@ -157,11 +157,3 @@ export const updateSignatureValidator: (ValidationChain | RequestHandler)[] = [
   ...updateChains,
   updateFinaliser,
 ];
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createSignatureValidator,
-  updateSignatureValidator,
-};
-module.exports.createSignatureValidator = createSignatureValidator;
-module.exports.updateSignatureValidator = updateSignatureValidator;

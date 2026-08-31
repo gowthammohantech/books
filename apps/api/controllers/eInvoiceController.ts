@@ -228,5 +228,3 @@ export async function cancel(req: Request, res: Response): Promise<void> {
 }
 
 const handlers = { list, getByInvoice, generate, cancel };
-module.exports = handlers;
-module.exports.default = handlers;

@@ -23,7 +23,3 @@ export const updateCustomFieldValidator: ValidationChain[] = [
   body('showInTable').optional().isBoolean(),
   body('placement').optional().isIn(['document', 'lineItem']).withMessage('Invalid placement'),
 ];
-
-module.exports = { createCustomFieldValidator, updateCustomFieldValidator };
-module.exports.createCustomFieldValidator = createCustomFieldValidator;
-module.exports.updateCustomFieldValidator = updateCustomFieldValidator;

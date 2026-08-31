@@ -129,7 +129,7 @@ const reason = (err: unknown): string =>
 // ---------------------------------------------------------------------------
 // Boot bootstrap — migrate + seed before accepting traffic.
 //
-// Runs regardless of deployment method (Docker, PM2, bare node server.js).
+// Runs regardless of deployment method (Docker, PM2, bare `npm start`).
 // Both steps are idempotent and non-fatal: a failure logs a warning but
 // never prevents the server from starting.
 //

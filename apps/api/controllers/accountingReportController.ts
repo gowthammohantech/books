@@ -815,13 +815,3 @@ export async function getPaymentSummaryReport(req: Request, res: Response): Prom
 
 // Silence unused-import warning for tenantScope (kept for parity)
 void tenantScope;
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  getIncomeStats,
-  getPurchaseReport,
-  getPaymentSummaryReport,
-};
-module.exports.getIncomeStats = getIncomeStats;
-module.exports.getPurchaseReport = getPurchaseReport;
-module.exports.getPaymentSummaryReport = getPaymentSummaryReport;

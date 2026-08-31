@@ -21,16 +21,7 @@
     "sourceMap": true,
     "declaration": false,
     "isolatedModules": true,
-    "verbatimModuleSyntax": false,
-    "paths": {
-      "@/*": ["./*"],
-      "@controllers/*": ["controllers/*"],
-      "@middleware/*": ["middleware/*"],
-      "@routes/*": ["routes/*"],
-      "@utils/*": ["utils/*"],
-      "@validators/*": ["validators/*"]
-    },
-    "baseUrl": "."
+    "verbatimModuleSyntax": false
   },
   "include": ["**/*.ts"],
   "exclude": [

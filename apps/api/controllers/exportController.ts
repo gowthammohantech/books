@@ -1182,5 +1182,3 @@ const handlers = {
   exportApAging,
   exportBackupZip,
 };
-module.exports = handlers;
-module.exports.default = handlers;

@@ -23,8 +23,3 @@ export const inventoryHistoryValidator: ValidationChain[] = [
   param('id')
     .notEmpty().withMessage('Inventory ID is required'),
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = { updateStockValidator, inventoryHistoryValidator };
-module.exports.updateStockValidator = updateStockValidator;
-module.exports.inventoryHistoryValidator = inventoryHistoryValidator;

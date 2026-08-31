@@ -575,14 +575,3 @@ export async function createTenant(req: Request, res: Response): Promise<void> {
 export function logout(_req: Request, res: Response): void {
   res.json({ message: 'Logout successful (handled client-side)' });
 }
-
-// CommonJS interop for legacy JS callers
-module.exports = { register, login, logout, switchTenant, session, createTenant, loadMemberships, signupsEnabled };
-module.exports.register = register;
-module.exports.login = login;
-module.exports.logout = logout;
-module.exports.switchTenant = switchTenant;
-module.exports.session = session;
-module.exports.createTenant = createTenant;
-module.exports.loadMemberships = loadMemberships;
-module.exports.signupsEnabled = signupsEnabled;

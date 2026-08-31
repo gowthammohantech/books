@@ -156,10 +156,3 @@ export async function deleteHoliday(req: Request, res: Response): Promise<void> 
     res.status(500).json({ success: false, message: 'Failed to remove holiday' });
   }
 }
-
-// CommonJS interop for legacy JS route files.
-module.exports = { listHolidays, createHoliday, updateHoliday, deleteHoliday };
-module.exports.listHolidays = listHolidays;
-module.exports.createHoliday = createHoliday;
-module.exports.updateHoliday = updateHoliday;
-module.exports.deleteHoliday = deleteHoliday;

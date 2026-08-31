@@ -229,33 +229,3 @@ export const rejectLeaveRequestValidator: ValidationChain[] = [
     .isString()
     .withMessage('rejectionNote must be a string'),
 ];
-
-// CommonJS interop for legacy JS route files.
-module.exports = {
-  createProjectMemberValidator,
-  updateProjectMemberValidator,
-  updateProjectSettingsValidator,
-  replaceEntriesValidator,
-  joinProjectValidator,
-  rejectTimesheetValidator,
-  createHolidayValidator,
-  updateHolidayValidator,
-  createLeaveTypeValidator,
-  updateLeaveTypeValidator,
-  upsertLeaveAllocationValidator,
-  createLeaveRequestValidator,
-  rejectLeaveRequestValidator,
-};
-module.exports.joinProjectValidator = joinProjectValidator;
-module.exports.createProjectMemberValidator = createProjectMemberValidator;
-module.exports.updateProjectMemberValidator = updateProjectMemberValidator;
-module.exports.updateProjectSettingsValidator = updateProjectSettingsValidator;
-module.exports.replaceEntriesValidator = replaceEntriesValidator;
-module.exports.rejectTimesheetValidator = rejectTimesheetValidator;
-module.exports.createHolidayValidator = createHolidayValidator;
-module.exports.updateHolidayValidator = updateHolidayValidator;
-module.exports.createLeaveTypeValidator = createLeaveTypeValidator;
-module.exports.updateLeaveTypeValidator = updateLeaveTypeValidator;
-module.exports.upsertLeaveAllocationValidator = upsertLeaveAllocationValidator;
-module.exports.createLeaveRequestValidator = createLeaveRequestValidator;
-module.exports.rejectLeaveRequestValidator = rejectLeaveRequestValidator;

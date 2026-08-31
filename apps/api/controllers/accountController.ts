@@ -180,5 +180,3 @@ export async function seedDefaults(req: Request, res: Response): Promise<void> {
 }
 
 const handlers = { list, getById, create, update, remove, seedDefaults };
-module.exports = handlers;
-module.exports.default = handlers;

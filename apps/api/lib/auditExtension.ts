@@ -251,9 +251,3 @@ function stripAddedTenantId(
   const { tenantId: _dropped, ...rest } = row;
   return rest;
 }
-
-module.exports = { DENYLIST, isAuditable, buildAuditRecord, auditExtension };
-module.exports.DENYLIST = DENYLIST;
-module.exports.isAuditable = isAuditable;
-module.exports.buildAuditRecord = buildAuditRecord;
-module.exports.auditExtension = auditExtension;

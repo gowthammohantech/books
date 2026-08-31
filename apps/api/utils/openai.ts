@@ -86,8 +86,3 @@ export const openaiProxy = new Proxy({} as OpenAI, {
 });
 
 export { openaiProxy as openai };
-
-// CommonJS interop for the JS/CJS call sites that still require() this module.
-module.exports = { openai: openaiProxy, createChatCompletion };
-module.exports.openai = openaiProxy;
-module.exports.createChatCompletion = createChatCompletion;

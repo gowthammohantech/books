@@ -1710,22 +1710,3 @@ export async function getQuotationSalesReport(req: Request, res: Response): Prom
     });
   }
 }
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  getInvoiceSalesReport,
-  getCreditNoteSalesReport,
-  getPurchaseReport,
-  getPurchaseOrderReport,
-  getDebitNoteReport,
-  getQuotationSalesReport,
-};
-module.exports.getInvoiceSalesReport = getInvoiceSalesReport;
-module.exports.getCreditNoteSalesReport = getCreditNoteSalesReport;
-module.exports.getPurchaseReport = getPurchaseReport;
-module.exports.getPurchaseOrderReport = getPurchaseOrderReport;
-module.exports.getDebitNoteReport = getDebitNoteReport;
-module.exports.getQuotationSalesReport = getQuotationSalesReport;
-
-// Silence unused-import warnings for util that is re-exported via type-only paths
-void safeDate;

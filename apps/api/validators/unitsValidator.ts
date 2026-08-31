@@ -115,11 +115,3 @@ export const updateUnitValidator: (ValidationChain | RequestHandler)[] = [
   ...updateChains,
   handleValidationResult,
 ];
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createUnitValidator,
-  updateUnitValidator,
-};
-module.exports.createUnitValidator = createUnitValidator;
-module.exports.updateUnitValidator = updateUnitValidator;

@@ -32,7 +32,3 @@ export const createExpenseValidator: ValidationChain[] = [
     .isFloat({ gt: 0 })
     .withMessage('exchangeRate must be a positive number'),
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = { createExpenseValidator };
-module.exports.createExpenseValidator = createExpenseValidator;

@@ -384,7 +384,3 @@ router.post('/stripe/webhook', express.raw({ type: 'application/json' }), async 
 });
 
 export default router;
-
-// CommonJS interop: kept while anything still require()s this router.
-module.exports = router;
-module.exports.default = router;

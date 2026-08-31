@@ -48,7 +48,3 @@ export function requirePermission(
     res.status(403).json({ success: false, message: 'Permission denied' });
   };
 }
-
-// CommonJS interop for legacy JS route files.
-module.exports = { requirePermission };
-module.exports.requirePermission = requirePermission;

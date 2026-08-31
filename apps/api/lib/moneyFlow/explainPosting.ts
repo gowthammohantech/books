@@ -1083,9 +1083,3 @@ export async function unexplain(input: UnexplainInput): Promise<void> {
     await unexplainCore(db, input, bankTxn);
   });
 }
-
-// CommonJS interop for any legacy JS consumers.
-module.exports = { explainAndPost, unexplain, ExplainError };
-module.exports.explainAndPost = explainAndPost;
-module.exports.unexplain = unexplain;
-module.exports.ExplainError = ExplainError;

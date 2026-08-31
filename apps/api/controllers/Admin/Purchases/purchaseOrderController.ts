@@ -33,9 +33,8 @@ import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
 import { resolveProductTaxRate } from '../../../lib/tax/resolveProductTaxRate';
 import { currentActorId } from '../../../lib/actor';
 
-// utils/mailer is still JS; static require is fine here.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const mailerModule: { sendMail: (opts: Record<string, unknown>) => Promise<void> } = require('../../../utils/mailer');
+import { sendMail } from '../../../utils/mailer';
 
 type Tx = Prisma.TransactionClient;
 
@@ -425,8 +424,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
     });
 
     if (supplier?.supplier_email && process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD) {
-      mailerModule
-        .sendMail({
+      sendMail({
           to: supplier.supplier_email,
           subject: 'New Purchase Order Created',
           html: `
@@ -1935,31 +1933,3 @@ export async function getAllTaxGroupsDetails(req: Request, res: Response): Promi
 
 // Touch type reference so unused-imports lint doesn't fail (PurchaseOrder type kept for clarity)
 export type { PurchaseOrder };
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  createPurchaseOrder,
-  listUsersByType,
-  getUserById,
-  getRecentProductsWithSearch,
-  listBankDetails,
-  listPurchaseOrdersMinimal,
-  getUserSignatures,
-  listPurchaseOrders,
-  getPurchaseOrderById,
-  updatePurchaseOrder,
-  deletePurchaseOrder,
-  getAllTaxGroupsDetails,
-};
-module.exports.createPurchaseOrder = createPurchaseOrder;
-module.exports.listUsersByType = listUsersByType;
-module.exports.getUserById = getUserById;
-module.exports.getRecentProductsWithSearch = getRecentProductsWithSearch;
-module.exports.listBankDetails = listBankDetails;
-module.exports.listPurchaseOrdersMinimal = listPurchaseOrdersMinimal;
-module.exports.getUserSignatures = getUserSignatures;
-module.exports.listPurchaseOrders = listPurchaseOrders;
-module.exports.getPurchaseOrderById = getPurchaseOrderById;
-module.exports.updatePurchaseOrder = updatePurchaseOrder;
-module.exports.deletePurchaseOrder = deletePurchaseOrder;
-module.exports.getAllTaxGroupsDetails = getAllTaxGroupsDetails;

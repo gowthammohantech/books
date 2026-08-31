@@ -183,13 +183,3 @@ export async function getLoginActivitiesByUser(
     });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  resetPassword,
-  deleteAccount,
-  getLoginActivitiesByUser,
-};
-module.exports.resetPassword = resetPassword;
-module.exports.deleteAccount = deleteAccount;
-module.exports.getLoginActivitiesByUser = getLoginActivitiesByUser;

@@ -170,6 +170,3 @@ router.post('/switch-tenant', protect, switchLimiter, switchTenant);
 router.post('/tenants', protect, signupHourlyLimiter, createTenant);
 
 export default router;
-
-// CommonJS interop so server.js's require() picks up the Express router
-module.exports = router;

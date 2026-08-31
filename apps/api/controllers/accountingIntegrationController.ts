@@ -195,5 +195,3 @@ export async function disconnect(req: Request, res: Response): Promise<void> {
 }
 
 const handlers = { list, connect, callback, syncNow, disconnect };
-module.exports = handlers;
-module.exports.default = handlers;

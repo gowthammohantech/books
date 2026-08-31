@@ -68,7 +68,3 @@ export async function postMoneyIn(
     instructions: lines,
   });
 }
-
-// CommonJS interop for any .js consumers (Task 6 uses ESM TS import; this is a safety net)
-module.exports = { postMoneyIn };
-module.exports.postMoneyIn = postMoneyIn;

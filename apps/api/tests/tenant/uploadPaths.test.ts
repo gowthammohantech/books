@@ -1,7 +1,7 @@
 /**
  * tests/tenant/uploadPaths.test.ts
  *
- * `server.js` serves the whole `uploads/` tree as UNAUTHENTICATED static
+ * `server.ts` serves the whole `uploads/` tree as UNAUTHENTICATED static
  * content. That was already a weakness on a single-company install — a
  * guessable filename is world-readable — and with several companies sharing a
  * deployment it becomes a cross-workspace one: logos, expense attachments and

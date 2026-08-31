@@ -30,9 +30,3 @@ export function decryptSecret(stored: string | null | undefined): string {
   if (isEncrypted(stored)) return decrypt(stored.slice(PREFIX.length));
   return stored;
 }
-
-// CommonJS interop for the CJS require() call sites that still reach this module.
-module.exports = { isEncrypted, encryptSecret, decryptSecret };
-module.exports.isEncrypted = isEncrypted;
-module.exports.encryptSecret = encryptSecret;
-module.exports.decryptSecret = decryptSecret;

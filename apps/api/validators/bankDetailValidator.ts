@@ -231,15 +231,3 @@ export const updateBankDetailStatusValidator: (ValidationChain | RequestHandler)
 
   validate,
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  createBankDetailValidator,
-  updateBankDetailValidator,
-  idValidator,
-  updateBankDetailStatusValidator,
-};
-module.exports.createBankDetailValidator = createBankDetailValidator;
-module.exports.updateBankDetailValidator = updateBankDetailValidator;
-module.exports.idValidator = idValidator;
-module.exports.updateBankDetailStatusValidator = updateBankDetailStatusValidator;

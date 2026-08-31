@@ -1102,15 +1102,3 @@ export async function deleteSupplierPayment(
 // Avoid unused-import lint when only the namespace import is used by tests.
  
 const _scopeRef = tenantScope;
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  createSupplierPayment,
-  listSupplierPayments,
-  updateSupplierPayment,
-  deleteSupplierPayment,
-};
-module.exports.createSupplierPayment = createSupplierPayment;
-module.exports.listSupplierPayments = listSupplierPayments;
-module.exports.updateSupplierPayment = updateSupplierPayment;
-module.exports.deleteSupplierPayment = deleteSupplierPayment;

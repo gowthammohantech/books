@@ -1,6 +1,6 @@
 // routes/timeTrackingRoutes.ts
 // Time Tracking — Phase 1 (Task 4): project members + project billing settings.
-// Mounted under /api/admin via routes/adminRoutes.js.
+// Mounted under /api/admin via routes/adminRoutes.ts.
 
 import { Router } from 'express';
 
@@ -316,8 +316,3 @@ router.get(
 );
 
 export default router;
-// CommonJS export so `require('./routes/timeTrackingRoutes')` under ts-node returns
-// the router directly (matches dimensionRoutes.ts / authRoutes.ts). Without this,
-// require() yields `{ default: router }` and `router.use(...)` throws
-// "argument handler must be a function".
-module.exports = router;

@@ -909,25 +909,3 @@ export async function leaveProject(req: Request, res: Response): Promise<void> {
     handleError(res, err, 'Failed to leave project');
   }
 }
-
-// CommonJS interop for legacy JS route files / require().
-module.exports = {
-  getOrCreateWeek,
-  replaceEntries,
-  submitTimesheet,
-  approveTimesheet,
-  rejectTimesheet,
-  listTimesheets,
-  listAvailableProjects,
-  joinProject,
-  leaveProject,
-};
-module.exports.getOrCreateWeek = getOrCreateWeek;
-module.exports.replaceEntries = replaceEntries;
-module.exports.submitTimesheet = submitTimesheet;
-module.exports.approveTimesheet = approveTimesheet;
-module.exports.rejectTimesheet = rejectTimesheet;
-module.exports.listTimesheets = listTimesheets;
-module.exports.listAvailableProjects = listAvailableProjects;
-module.exports.joinProject = joinProject;
-module.exports.leaveProject = leaveProject;

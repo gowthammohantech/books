@@ -7,10 +7,7 @@ import { requireTenantId, UnauthorizedError, requireActingUserId } from '../lib/
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
 import { sendReminderEmail } from '../lib/reminderMailer';
 
-// invoiceReminderCron.ts is required extensionless (ts-node/register resolves
-// it, same as recurringInvoicesCron.ts elsewhere) so a static require is fine here.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const cronModule: { runReminderCron: (scopeTenantId?: string) => Promise<unknown> } = require('../invoiceReminderCron');
+import { runReminderCron } from '../invoiceReminderCron';
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -1404,7 +1401,7 @@ export async function triggerReminderCron(req: Request, res: Response): Promise<
     console.log(`Manual trigger of invoice reminder cron requested (scoped to user ${tenantId})`);
 
     // Run the cron job, scoped to the caller.
-    await cronModule.runReminderCron(tenantId);
+    await runReminderCron(tenantId);
 
     res.status(200).json({
       success: true,
@@ -1425,35 +1422,3 @@ export async function triggerReminderCron(req: Request, res: Response): Promise<
 }
 
 void VALID_REMINDER_TYPES; // referenced for completeness; suppresses unused warnings
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  getReminders,
-  getReminderById,
-  createReminder,
-  createReminderQuotation,
-  updateReminder,
-  updateReminderQuotation,
-  deleteReminder,
-  toggleReminderStatus,
-  sendManualReminder,
-  getRemindersByType,
-  getReminderStats,
-  getInvoicePlaceholders,
-  getQuotationPlaceholders,
-  triggerReminderCron,
-};
-module.exports.getReminders = getReminders;
-module.exports.getReminderById = getReminderById;
-module.exports.createReminder = createReminder;
-module.exports.createReminderQuotation = createReminderQuotation;
-module.exports.updateReminder = updateReminder;
-module.exports.updateReminderQuotation = updateReminderQuotation;
-module.exports.deleteReminder = deleteReminder;
-module.exports.toggleReminderStatus = toggleReminderStatus;
-module.exports.sendManualReminder = sendManualReminder;
-module.exports.getRemindersByType = getRemindersByType;
-module.exports.getReminderStats = getReminderStats;
-module.exports.getInvoicePlaceholders = getInvoicePlaceholders;
-module.exports.getQuotationPlaceholders = getQuotationPlaceholders;
-module.exports.triggerReminderCron = triggerReminderCron;

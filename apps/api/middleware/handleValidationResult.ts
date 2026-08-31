@@ -30,7 +30,3 @@ export const handleValidationResult: RequestHandler = (
   }
   next();
 };
-
-// CommonJS interop for legacy JS route files.
-module.exports = { handleValidationResult };
-module.exports.handleValidationResult = handleValidationResult;

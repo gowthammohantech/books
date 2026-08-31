@@ -1072,19 +1072,3 @@ export async function getStockHistoryReport(req: Request, res: Response): Promis
 
 // Silence unused-import warning for tenantScope (kept for parity)
 void tenantScope;
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  getInventoryStockSummary,
-  getInventoryReport,
-  getBestSellerReport,
-  getLowStockReport,
-  getOutStockReport,
-  getStockHistoryReport,
-};
-module.exports.getInventoryStockSummary = getInventoryStockSummary;
-module.exports.getInventoryReport = getInventoryReport;
-module.exports.getBestSellerReport = getBestSellerReport;
-module.exports.getLowStockReport = getLowStockReport;
-module.exports.getOutStockReport = getOutStockReport;
-module.exports.getStockHistoryReport = getStockHistoryReport;

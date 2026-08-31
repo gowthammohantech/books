@@ -80,9 +80,3 @@ export async function tenantOwnerUserId(tenantId: string): Promise<string | null
 export async function resolveActorId(tenantId: string): Promise<string | null> {
   return currentActorId() ?? (await tenantOwnerUserId(tenantId));
 }
-
-// CommonJS interop, matching the other lib/* modules that legacy JS requires.
-module.exports = { currentActorId, tenantOwnerUserId, resolveActorId };
-module.exports.currentActorId = currentActorId;
-module.exports.tenantOwnerUserId = tenantOwnerUserId;
-module.exports.resolveActorId = resolveActorId;

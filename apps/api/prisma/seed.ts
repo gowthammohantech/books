@@ -22,7 +22,7 @@
  * Idempotent — re-running is safe.
  *
  * Exports:
- *   runBaselineSeed() — callable in-process (server.js boot bootstrap).
+ *   runBaselineSeed() — callable in-process (server.ts boot bootstrap).
  *                       Creates its own PrismaClient and disconnects it when
  *                       done, so the app's shared client is untouched.
  *                       Sub-seed helpers (seedModules, seedRoles, etc.) each
@@ -47,7 +47,7 @@ import { importGeoDataset } from './importGeoDataset';
  * Run all idempotent baseline seeds. A dedicated PrismaClient is created for
  * the direct DB operations in this function and disconnected before returning.
  * Sub-seed helpers manage their own clients. Safe to call from the boot
- * bootstrap in server.js — it does NOT interfere with the app's shared
+ * bootstrap in server.ts — it does NOT interfere with the app's shared
  * PrismaClient from lib/prisma.
  */
 export async function runBaselineSeed(): Promise<void> {
@@ -335,7 +335,3 @@ if (require.main === module) {
       process.exit(1);
     });
 }
-
-// CommonJS interop so server.js (plain JS) can: require('./prisma/seed').runBaselineSeed()
-module.exports = { runBaselineSeed };
-module.exports.runBaselineSeed = runBaselineSeed;

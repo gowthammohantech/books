@@ -261,19 +261,3 @@ export async function deleteExpenseCategory(req: Request, res: Response): Promis
     });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createExpenseCategory,
-  getAllExpenseCategories,
-  listExpenseCategories,
-  getExpenseCategoryById,
-  updateExpenseCategory,
-  deleteExpenseCategory,
-};
-module.exports.createExpenseCategory = createExpenseCategory;
-module.exports.getAllExpenseCategories = getAllExpenseCategories;
-module.exports.listExpenseCategories = listExpenseCategories;
-module.exports.getExpenseCategoryById = getExpenseCategoryById;
-module.exports.updateExpenseCategory = updateExpenseCategory;
-module.exports.deleteExpenseCategory = deleteExpenseCategory;

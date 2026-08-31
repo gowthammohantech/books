@@ -100,7 +100,3 @@ export const updateProfileValidator: (ValidationChain | RequestHandler)[] = [
 
   handleValidationResult,
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = { updateProfileValidator };
-module.exports.updateProfileValidator = updateProfileValidator;

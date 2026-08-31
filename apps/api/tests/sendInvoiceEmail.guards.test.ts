@@ -17,27 +17,23 @@
  *     (quotationController.ts:1165-1179): skip the attachment gracefully
  *     when the PDF hasn't been generated yet.
  *
- * Mocking note: `../../../utils/mailer` is pulled in via a top-level CJS
- * `require()` in invoiceController.ts (not an ESM `import`), and this
- * project's require() calls are NOT intercepted by `vi.mock` (verified:
- * ts-node/register's global require hook — see tests/setup-tsnode.ts —
- * resolves real modules regardless of vi.mock; only ESM `import`/dynamic
- * `import()` specifiers are mockable here). So instead of `vi.mock`, we grab
- * the SAME singleton module object via `require()` in this file (Node's
- * module cache guarantees identity with the controller's own require) and
- * `vi.spyOn` its `sendMail` export. `fs` IS accessed via dynamic
- * `import('fs')` in the (mirrored) guard implementation, so that one mocks
- * normally via `vi.mock('fs', ...)`.
+ * Mocking note: `utils/mailer` used to be JavaScript, pulled in by a top-level
+ * CJS `require()` that `vi.mock` could not intercept, so this file grabbed the
+ * real singleton and spied on it. Now that mailer is TypeScript and the
+ * controller imports `sendMail` normally, `vi.mock` works — the same pattern
+ * the rest of the suite already uses. `fs` is accessed via dynamic
+ * `import('fs')` and mocks normally too.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
 
 const TENANT_ID = 'tenant-alpha';
 
-const { mockInvoiceFindFirst, mockInvoiceUpdate, mockExistsSync } = vi.hoisted(() => ({
+const { mockInvoiceFindFirst, mockInvoiceUpdate, mockExistsSync, mockSendMail } = vi.hoisted(() => ({
   mockInvoiceFindFirst: vi.fn(),
   mockInvoiceUpdate: vi.fn(),
   mockExistsSync: vi.fn(),
+  mockSendMail: vi.fn(),
 }));
 
 vi.mock('../lib/prisma', () => ({
@@ -45,14 +41,9 @@ vi.mock('../lib/prisma', () => ({
 }));
 vi.mock('fs', () => ({ existsSync: mockExistsSync, default: { existsSync: mockExistsSync } }));
 
-// See mocking note above: `utils/mailer` is require()'d by the controller,
-// which vi.mock cannot intercept in this project. Grab the real singleton
-// and spy on it instead.
- 
-import { sendInvoiceEmail } from '../controllers/Admin/Invoice/invoiceController';
+vi.mock('../utils/mailer', () => ({ sendMail: mockSendMail }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports -- utils/mailer is still JS; becomes a real import in Phase 3.
-const mailerModule = require('../utils/mailer');
+import { sendInvoiceEmail } from '../controllers/Admin/Invoice/invoiceController';
 
 
 function makeReqRes(body: Record<string, unknown>) {
@@ -67,7 +58,7 @@ function makeReqRes(body: Record<string, unknown>) {
 beforeEach(() => {
   vi.restoreAllMocks();
   vi.clearAllMocks();
-  vi.spyOn(mailerModule, 'sendMail').mockResolvedValue(undefined);
+  mockSendMail.mockResolvedValue(undefined);
   mockExistsSync.mockReturnValue(false);
 });
 
@@ -84,7 +75,7 @@ describe('sendInvoiceEmail — status guard', () => {
     });
     await sendInvoiceEmail(req, res);
 
-    expect(mailerModule.sendMail).toHaveBeenCalled();
+    expect(mockSendMail).toHaveBeenCalled();
     expect(mockInvoiceUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ data: { status: 'OVERDUE' } }),
     );
@@ -141,8 +132,8 @@ describe('sendInvoiceEmail — phantom PDF attachment guard', () => {
     });
     await sendInvoiceEmail(req, res);
 
-    expect(mailerModule.sendMail).toHaveBeenCalledTimes(1);
-    const sentOptions = (mailerModule.sendMail as ReturnType<typeof vi.fn>).mock.calls[0][0] as Record<
+    expect(mockSendMail).toHaveBeenCalledTimes(1);
+    const sentOptions = mockSendMail.mock.calls[0][0] as Record<
       string,
       unknown
     >;
@@ -165,7 +156,7 @@ describe('sendInvoiceEmail — phantom PDF attachment guard', () => {
     });
     await sendInvoiceEmail(req, res);
 
-    const sentOptions = (mailerModule.sendMail as ReturnType<typeof vi.fn>).mock.calls[0][0] as Record<
+    const sentOptions = mockSendMail.mock.calls[0][0] as Record<
       string,
       unknown
     >;

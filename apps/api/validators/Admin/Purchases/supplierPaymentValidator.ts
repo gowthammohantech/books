@@ -85,9 +85,3 @@ export const supplierPaymentValidator: ValidationChain[] = [
   body('notes').optional({ checkFalsy: true }).isString(),
   body('attachment').optional({ checkFalsy: true }).isString(),
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  supplierPaymentValidator,
-};
-module.exports.supplierPaymentValidator = supplierPaymentValidator;

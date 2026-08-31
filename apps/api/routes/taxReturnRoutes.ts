@@ -1,7 +1,7 @@
 // routes/taxReturnRoutes.ts
 //
 // Country tax-return SUMMARY endpoints (Task 2): UK VAT 9-box, AU BAS (GST
-// portion), NZ GST. Mounted under /api/admin via routes/adminRoutes.js (same
+// portion), NZ GST. Mounted under /api/admin via routes/adminRoutes.ts (same
 // pattern as exportRoutes.ts / timeTrackingRoutes.ts).
 //
 // Every route is gated by protect + requirePermission('accounting-reports',
@@ -58,6 +58,3 @@ router.get('/tax-returns/eu-oss', view, euOssReturn);
 router.get('/tax-returns/eu-oss.csv', view, euOssReturn);
 
 export default router;
-// CommonJS export so `require('./routes/taxReturnRoutes')` under ts-node returns
-// the router directly (matches exportRoutes.ts / timeTrackingRoutes.ts).
-module.exports = router;

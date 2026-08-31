@@ -72,8 +72,3 @@ export const updateVehicleValidator: (ValidationChain | RequestHandler)[] = [
   ...optionalFieldChains,
   runValidation(),
 ];
-
-// CommonJS interop for adminRoutes.js which uses `require(...)`.
-module.exports = { createVehicleValidator, updateVehicleValidator };
-module.exports.createVehicleValidator = createVehicleValidator;
-module.exports.updateVehicleValidator = updateVehicleValidator;

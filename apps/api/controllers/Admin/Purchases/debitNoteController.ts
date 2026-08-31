@@ -40,9 +40,8 @@ import {
 } from '../../../lib/ledger/ledgerPosting';
 import { applyStockAdjustment, resolveRestockUnitCost } from '../../../lib/inventory/stockAdjust';
 
-// utils/mailer is still JS; static require is fine here.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const mailerModule: { sendMail: (opts: Record<string, unknown>) => Promise<void> } = require('../../../utils/mailer');
+import { sendMail } from '../../../utils/mailer';
 
 type Tx = Prisma.TransactionClient;
 
@@ -523,7 +522,7 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
     if (billToSupplier?.supplier_email && process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD) {
       try {
         const toName = billToSupplier?.supplier_name ?? '';
-        await mailerModule.sendMail({
+        await sendMail({
           to: billToSupplier.supplier_email,
           subject: 'New Debit Note Created',
           html: `
@@ -1274,17 +1273,3 @@ export async function deleteDebitNote(req: Request, res: Response): Promise<void
 }
 
 void tenantScope; // not used directly in this controller; suppresses unused-import warning if any
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  createDebitNote,
-  getAllDebitNotes,
-  getDebitNoteById,
-  updateDebitNoteStatus,
-  deleteDebitNote,
-};
-module.exports.createDebitNote = createDebitNote;
-module.exports.getAllDebitNotes = getAllDebitNotes;
-module.exports.getDebitNoteById = getDebitNoteById;
-module.exports.updateDebitNoteStatus = updateDebitNoteStatus;
-module.exports.deleteDebitNote = deleteDebitNote;

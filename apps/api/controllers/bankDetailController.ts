@@ -1276,33 +1276,3 @@ export async function getBankTransactionDetails(
     });
   }
 }
-
-// CommonJS interop for legacy JS routes
-const all = {
-  createBankDetail,
-  updateBankDetail,
-  getBankDetail,
-  listBankDetails,
-  updateBankDetailStatus,
-  listBankTransactions,
-  deleteBankDetail,
-  restoreBankDetail,
-  reconcileTransaction,
-  listFinancialDetails,
-  listBankTransactionsReconciled,
-  getBankTransactionDetails,
-};
-
-module.exports = { ...all };
-module.exports.createBankDetail = createBankDetail;
-module.exports.updateBankDetail = updateBankDetail;
-module.exports.getBankDetail = getBankDetail;
-module.exports.listBankDetails = listBankDetails;
-module.exports.updateBankDetailStatus = updateBankDetailStatus;
-module.exports.listBankTransactions = listBankTransactions;
-module.exports.deleteBankDetail = deleteBankDetail;
-module.exports.restoreBankDetail = restoreBankDetail;
-module.exports.reconcileTransaction = reconcileTransaction;
-module.exports.listFinancialDetails = listFinancialDetails;
-module.exports.listBankTransactionsReconciled = listBankTransactionsReconciled;
-module.exports.getBankTransactionDetails = getBankTransactionDetails;

@@ -787,17 +787,3 @@ export async function getFinancialSummary(
 // Avoid unused-import lint when only the namespace import is used by tests.
  
 const _scopeRef = tenantScope;
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  createPettyCash,
-  listPettyCash,
-  returnPettyCash,
-  listPettyCashTransactions,
-  getFinancialSummary,
-};
-module.exports.createPettyCash = createPettyCash;
-module.exports.listPettyCash = listPettyCash;
-module.exports.returnPettyCash = returnPettyCash;
-module.exports.listPettyCashTransactions = listPettyCashTransactions;
-module.exports.getFinancialSummary = getFinancialSummary;

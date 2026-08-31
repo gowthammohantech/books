@@ -193,17 +193,3 @@ export async function deleteCategory(req: Request, res: Response): Promise<void>
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createCategory,
-  getAllCategories,
-  getCategoryById,
-  updateCategory,
-  deleteCategory,
-};
-module.exports.createCategory = createCategory;
-module.exports.getAllCategories = getAllCategories;
-module.exports.getCategoryById = getCategoryById;
-module.exports.updateCategory = updateCategory;
-module.exports.deleteCategory = deleteCategory;

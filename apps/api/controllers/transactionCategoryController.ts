@@ -334,14 +334,3 @@ export async function remove(req: Request, res: Response): Promise<void> {
     sendPrismaError(res, err);
   }
 }
-
-// ---------------------------------------------------------------------------
-// CommonJS interop for legacy JS routes
-// ---------------------------------------------------------------------------
-
-module.exports = { list, create, update, updateStatus, remove };
-module.exports.list = list;
-module.exports.create = create;
-module.exports.update = update;
-module.exports.updateStatus = updateStatus;
-module.exports.remove = remove;

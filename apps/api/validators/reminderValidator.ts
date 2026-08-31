@@ -335,21 +335,3 @@ export const deleteReminderValidator: Array<
 
   handleValidationErrors,
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  createReminderValidator,
-  updateReminderValidator,
-  toggleReminderStatusValidator,
-  sendManualReminderValidator,
-  getRemindersByTypeValidator,
-  getReminderByIdValidator,
-  deleteReminderValidator,
-};
-module.exports.createReminderValidator = createReminderValidator;
-module.exports.updateReminderValidator = updateReminderValidator;
-module.exports.toggleReminderStatusValidator = toggleReminderStatusValidator;
-module.exports.sendManualReminderValidator = sendManualReminderValidator;
-module.exports.getRemindersByTypeValidator = getRemindersByTypeValidator;
-module.exports.getReminderByIdValidator = getReminderByIdValidator;
-module.exports.deleteReminderValidator = deleteReminderValidator;

@@ -95,7 +95,3 @@ export const handleUploadError = (
 
   next(err);
 };
-
-module.exports = { uploadCompanyFields, handleUploadError };
-module.exports.uploadCompanyFields = uploadCompanyFields;
-module.exports.handleUploadError = handleUploadError;

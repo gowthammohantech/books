@@ -154,14 +154,3 @@ export const updateTransactionCategoryValidator: (ValidationChain | RequestHandl
   ...updateChains,
   finaliser,
 ];
-
-// ---------------------------------------------------------------------------
-// CommonJS interop for legacy JS routes
-// ---------------------------------------------------------------------------
-
-module.exports = {
-  createTransactionCategoryValidator,
-  updateTransactionCategoryValidator,
-};
-module.exports.createTransactionCategoryValidator = createTransactionCategoryValidator;
-module.exports.updateTransactionCategoryValidator = updateTransactionCategoryValidator;

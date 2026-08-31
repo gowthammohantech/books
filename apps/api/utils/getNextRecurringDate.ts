@@ -19,8 +19,4 @@ export function getNextRecurringDate(
   return date;
 }
 
-// The JS version was `module.exports = getNextRecurringDate`, i.e. the function
-// itself was the module. Preserved so any CJS `require()` keeps working.
-module.exports = getNextRecurringDate;
-module.exports.getNextRecurringDate = getNextRecurringDate;
 export default getNextRecurringDate;

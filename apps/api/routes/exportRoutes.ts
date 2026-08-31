@@ -1,6 +1,6 @@
 // routes/exportRoutes.ts
 // "Own your data" — machine-readable CSV exports per module + a one-click
-// full-tenant backup zip. Mounted under /api/admin via routes/adminRoutes.js
+// full-tenant backup zip. Mounted under /api/admin via routes/adminRoutes.ts
 // (same pattern as routes/timeTrackingRoutes.ts).
 //
 // Every handler is tenant-scoped inside the controller (requireTenantId =
@@ -69,6 +69,3 @@ router.get('/export/ap-aging.csv', requirePermission('accounting-reports', 'view
 router.get('/export/backup.zip', requirePermission('settings', 'view'), requireOwner, exportBackupZip);
 
 export default router;
-// CommonJS export so `require('./routes/exportRoutes')` under ts-node returns
-// the router directly (matches timeTrackingRoutes.ts / dimensionRoutes.ts).
-module.exports = router;

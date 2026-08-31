@@ -648,21 +648,3 @@ export async function getLeaveBalances(req: Request, res: Response): Promise<voi
     res.status(500).json({ success: false, message: 'Failed to compute leave balances' });
   }
 }
-
-// CommonJS interop for legacy JS route files.
-module.exports = {
-  createLeaveRequest,
-  listLeaveRequests,
-  getLeaveRequest,
-  approveLeaveRequest,
-  rejectLeaveRequest,
-  cancelLeaveRequest,
-  getLeaveBalances,
-};
-module.exports.createLeaveRequest = createLeaveRequest;
-module.exports.listLeaveRequests = listLeaveRequests;
-module.exports.getLeaveRequest = getLeaveRequest;
-module.exports.approveLeaveRequest = approveLeaveRequest;
-module.exports.rejectLeaveRequest = rejectLeaveRequest;
-module.exports.cancelLeaveRequest = cancelLeaveRequest;
-module.exports.getLeaveBalances = getLeaveBalances;

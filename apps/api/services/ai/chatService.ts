@@ -263,7 +263,3 @@ export async function processChatMessage(
     processingTimeMs,
   } as ChatMessageResult;
 }
-
-// CommonJS interop for the require() call site in aiController.
-module.exports = { processChatMessage };
-module.exports.processChatMessage = processChatMessage;

@@ -288,13 +288,3 @@ export async function voidSupplierPayment(
     sendPrismaError(res, err);
   }
 }
-
-// CommonJS interop — required by routes/adminRoutes.js (.js file).
-module.exports = {
-  listSupplierPaymentsForPurchase,
-  purchaseActivity,
-  voidSupplierPayment,
-};
-module.exports.listSupplierPaymentsForPurchase = listSupplierPaymentsForPurchase;
-module.exports.purchaseActivity = purchaseActivity;
-module.exports.voidSupplierPayment = voidSupplierPayment;

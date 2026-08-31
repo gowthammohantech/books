@@ -444,19 +444,3 @@ export async function deleteRole(req: Request, res: Response): Promise<void> {
     });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createRole,
-  getRoles,
-  getAllRoles,
-  updateRole,
-  deleteRole,
-  listUsersByRole,
-};
-module.exports.createRole = createRole;
-module.exports.getRoles = getRoles;
-module.exports.getAllRoles = getAllRoles;
-module.exports.updateRole = updateRole;
-module.exports.deleteRole = deleteRole;
-module.exports.listUsersByRole = listUsersByRole;

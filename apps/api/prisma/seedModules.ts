@@ -35,7 +35,7 @@ const HIERARCHY: ParentDef[] = [
     // Suppliers screens, which now both redirect to it) was never given its
     // own permission module — admins had no way to enable/disable it for a
     // role at all. 'customers' is kept (existing roles already granted it),
-    // routes/adminRoutes.js now accepts EITHER for the contacts endpoints.
+    // routes/adminRoutes.ts now accepts EITHER for the contacts endpoints.
     { moduleName: 'Contacts', moduleSlug: 'contacts' },
     { moduleName: 'Customers', moduleSlug: 'customers' },
     { moduleName: 'Vehicles', moduleSlug: 'vehicles' },

@@ -577,19 +577,3 @@ export async function resolveDocumentTemplate(req: Request, res: Response): Prom
     });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createEmailTemplate,
-  listEmailTemplates,
-  updateEmailTemplate,
-  listNotificationTypes,
-  deleteEmailTemplate,
-  resolveDocumentTemplate,
-};
-module.exports.createEmailTemplate = createEmailTemplate;
-module.exports.listEmailTemplates = listEmailTemplates;
-module.exports.updateEmailTemplate = updateEmailTemplate;
-module.exports.listNotificationTypes = listNotificationTypes;
-module.exports.deleteEmailTemplate = deleteEmailTemplate;
-module.exports.resolveDocumentTemplate = resolveDocumentTemplate;

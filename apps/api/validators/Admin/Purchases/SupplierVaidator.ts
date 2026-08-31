@@ -87,9 +87,3 @@ export const createSupplierValidator = [
     next();
   },
 ];
-
-// CommonJS interop for legacy JS routes that still use require().
-module.exports = {
-  createSupplierValidator,
-};
-module.exports.createSupplierValidator = createSupplierValidator;

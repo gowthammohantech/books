@@ -86,7 +86,3 @@ export async function listPending(req: Request, res: Response): Promise<void> {
     });
   }
 }
-
-// CommonJS interop for legacy JS routes
-module.exports = { listPending };
-module.exports.listPending = listPending;

@@ -63,8 +63,3 @@ export const TRANSACTION_TYPES: TransactionTypeDef[] = [
 export function getTransactionType(key: string): TransactionTypeDef | undefined {
   return TRANSACTION_TYPES.find(t => t.key === key);
 }
-
-module.exports = { TRANSACTION_TYPES, getTransactionType, USER_PAYMENT_REASONS };
-module.exports.TRANSACTION_TYPES = TRANSACTION_TYPES;
-module.exports.getTransactionType = getTransactionType;
-module.exports.USER_PAYMENT_REASONS = USER_PAYMENT_REASONS;

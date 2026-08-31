@@ -27,9 +27,8 @@ import { splitNetByCentre } from '../../../lib/ledger/dimensionSplit';
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
 
-// utils/mailer is still JS; static require is fine here.
 // eslint-disable-next-line @typescript-eslint/no-require-imports, import/order
-const mailerModule: { sendMail: (opts: Record<string, unknown>) => Promise<void> } = require('../../../utils/mailer');
+import { sendMail } from '../../../utils/mailer';
 
 import { prisma } from '../../../lib/prisma';
 import {
@@ -883,7 +882,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
     // Fire-and-forget email — sent to the supplier (only when legacy supplier row exists)
     if (supplier && supplier.supplier_email && process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD) {
       try {
-        await mailerModule.sendMail({
+        await sendMail({
           to: supplier.supplier_email,
           subject: 'New Purchase Created',
           html: `
@@ -1424,7 +1423,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
     // Contact-based purchases carry no legacy supplier row, so skip (guarded by ?.).
     if (supplier?.supplier_email && process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD) {
       try {
-        await mailerModule.sendMail({
+        await sendMail({
           to: supplier.supplier_email,
           subject: 'Purchase Updated',
           html: `
@@ -3014,7 +3013,6 @@ export async function sendPurchaseEmail(req: Request, res: Response): Promise<vo
       return;
     }
 
-    const { sendMail } = mailerModule;
 
     const mailOptions: Record<string, unknown> = {
       to,
@@ -3055,35 +3053,3 @@ export async function sendPurchaseEmail(req: Request, res: Response): Promise<vo
     });
   }
 }
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  createPurchase,
-  createPurchaseFromPO,
-  updatePurchase,
-  getAllPurchases,
-  listPurchasesMinimal,
-  listPurchasesPending,
-  getPurchaseById,
-  updatePurchaseStatus,
-  deletePurchase,
-  createSupplierPayment,
-  getSupplierPayments,
-  approvePurchase,
-  rejectPurchase,
-  sendPurchaseEmail,
-};
-module.exports.createPurchase = createPurchase;
-module.exports.createPurchaseFromPO = createPurchaseFromPO;
-module.exports.updatePurchase = updatePurchase;
-module.exports.getAllPurchases = getAllPurchases;
-module.exports.listPurchasesMinimal = listPurchasesMinimal;
-module.exports.listPurchasesPending = listPurchasesPending;
-module.exports.getPurchaseById = getPurchaseById;
-module.exports.updatePurchaseStatus = updatePurchaseStatus;
-module.exports.deletePurchase = deletePurchase;
-module.exports.createSupplierPayment = createSupplierPayment;
-module.exports.getSupplierPayments = getSupplierPayments;
-module.exports.approvePurchase = approvePurchase;
-module.exports.rejectPurchase = rejectPurchase;
-module.exports.sendPurchaseEmail = sendPurchaseEmail;

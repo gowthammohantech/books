@@ -34,6 +34,3 @@ export function resolveEntityLabel(
   if (value != null && value !== '') return String(value);
   return record.id != null ? String(record.id) : null;
 }
-
-module.exports = { resolveEntityLabel };
-module.exports.resolveEntityLabel = resolveEntityLabel;

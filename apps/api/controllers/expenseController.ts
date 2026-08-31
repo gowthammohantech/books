@@ -2291,25 +2291,3 @@ export async function rejectExpense(req: Request, res: Response): Promise<void> 
     });
   }
 }
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  createExpense,
-  getAllExpenses,
-  getExpenseById,
-  updateExpense,
-  deleteExpense,
-  approveExpense,
-  rejectExpense,
-};
-module.exports.createExpense = createExpense;
-module.exports.getAllExpenses = getAllExpenses;
-module.exports.getExpenseById = getExpenseById;
-module.exports.updateExpense = updateExpense;
-module.exports.deleteExpense = deleteExpense;
-module.exports.getRecurringExpenses = getRecurringExpenses;
-module.exports.getExpenseChildren = getExpenseChildren;
-module.exports.runRecurringExpenseNow = runRecurringExpenseNow;
-module.exports.setExpenseRecurringStatus = setExpenseRecurringStatus;
-module.exports.approveExpense = approveExpense;
-module.exports.rejectExpense = rejectExpense;

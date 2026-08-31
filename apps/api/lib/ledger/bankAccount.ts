@@ -43,7 +43,3 @@ export async function resolveBankGlAccountId(
   });
   return bank?.accountId ?? null;
 }
-
-// CommonJS interop for any legacy JS consumers.
-module.exports = { resolveBankGlAccountId };
-module.exports.resolveBankGlAccountId = resolveBankGlAccountId;

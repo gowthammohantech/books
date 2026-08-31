@@ -38,8 +38,3 @@ export function redactChanges(changes: Change[]): Change[] {
     SENSITIVE.test(c.field) ? { field: c.field, old: REDACTED, new: REDACTED } : c,
   );
 }
-
-module.exports = { REDACTED, computeDiff, redactChanges };
-module.exports.REDACTED = REDACTED;
-module.exports.computeDiff = computeDiff;
-module.exports.redactChanges = redactChanges;

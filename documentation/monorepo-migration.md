@@ -146,3 +146,76 @@ bare "No such file or directory".
 built and `make up` / `make smoke` were not run. Compose files are validated with
 `docker compose config`, which resolves both build contexts to real paths. The Dockerfiles
 themselves need a real build before this is merged.
+
+## Phase 3 — the JS→TS migration itself
+
+Backend went from 20 `.js` files (3,294 lines) to zero. The only non-TypeScript
+files left in the repository are three tooling configs — `apps/api/eslint.config.mjs`,
+`apps/web/eslint.config.js`, `apps/web/scripts/check-legacy-tokens.mjs` — and the vendored
+static assets under `apps/web/public/`.
+
+Converted leaf-first: utils and middleware, then the three remaining AI services, then
+externalController, then the routers, then `server.js` last.
+
+### Verification beyond typecheck
+
+`routes/adminRoutes.js` was the keystone — 1,012 lines, 133 `require()` calls, 443 route
+registrations. Rather than review the diff by eye, the old and new routers were both loaded
+and their Express layer stacks compared element by element: 443 layers each, identical in
+method, path, middleware-chain length and order.
+
+The server was then booted against a real Postgres: `/api/healthz` returns ok,
+`/api/admin/units` and `/api/reminders/get-reminders` answer 401 (mounted and gated),
+`/api/external/sso/exchange` answers 503 (SSO not configured), and swagger auto-documents
+468 routes.
+
+### Defects the type checker surfaced
+
+Typing values the JS left implicit found several real problems:
+
+- **Cross-tenant reads in `routes/conversationRoutes`.** It resolved the workspace as
+  `req.tenantId || req.user` and passed the result straight into Prisma `where` clauses.
+  When neither is set that is `tenantId: undefined`, which Prisma drops from the filter
+  entirely — so `GET /:type/:id` and `DELETE /:type/:id` would have read and soft-deleted
+  across every workspace. Latent (protect populates one of them), but exactly the failure
+  mode `lib/tenantGuard` exists to prevent.
+- **`uploadSingle` / `uploadMultiple`** were destructured in adminRoutes from a module that
+  has only ever exported `uploadProductFields`. Permanently `undefined`; nothing used them.
+- **`requireAiEnabled` and `aiRateLimit`** are modules whose entire export IS the function,
+  unlike the controllers, which export a handlers object — so they needed named imports, not
+  namespace imports. Every other namespace import was then checked mechanically: for each
+  identifier adminRoutes reads off a namespace, the name exists in that module's runtime
+  handlers object.
+- **Unvalidated LLM output used as a Prisma enum.** aiController asserted
+  `documentType as AIDocumentType` on parsed model JSON, so an unexpected value failed at the
+  database rather than the edge. A `toDocumentType` guard now checks it.
+- **`response.content[0].text` and `message.content`** were read unconditionally from the
+  Anthropic and OpenAI SDKs. Both are unions/nullable; the hand-written CommonJS shims had
+  declared them as always-present. Guarded with clear errors.
+- **`status: 'Active'`** passed to `Customer.upsert` — right value, but widened to `string`,
+  which Prisma's input types reject. Now the `CustomerStatus` enum member.
+
+### The interop layer is gone
+
+With no JavaScript left to `require()` TypeScript, the scaffolding came out:
+
+- **181 files** had hand-written `module.exports` tails (plus redundant re-attachment lines,
+  because the assignment clobbers TS's emitted `exports`). All removed. Every changed file was
+  checked to confirm its exported-name set is unchanged — no file lost a named or default export.
+- **16 `require()` call sites** became imports. Six controllers reaching `utils/mailer` needed
+  care: `import * as` compiles through the `__importStar` helper, which *copies* the namespace,
+  breaking the two guard tests that spied on the real module object. Named imports compile to a
+  live property lookup instead, and those two tests move to the `vi.mock` pattern the other
+  twenty mailer tests already use — the special case existed only because mailer was JavaScript.
+- **The alias system** (`module-alias`, `_moduleAliases`, the never-registered `tsconfig-paths`
+  dependency, and the dead `paths`/`baseUrl` block in tsconfig) is deleted. All 77 alias usages
+  lived in the `.js` files, so converting them removed the last consumer. `tsconfig`'s `paths`
+  had never resolved anything: ts-node ignores it, and only `module-alias` worked, only for CJS.
+- **`'**/*.js'` came off ESLint's ignore list.** That immediately caught a raw `$queryRaw` in
+  `server.ts` that lint had never seen while it was `server.js` — the boot-time
+  `SELECT 1 FROM "Tenant"` schema probe. It is legitimately pre-tenant (it asks whether the
+  tenancy tables exist at all), so it is allow-listed alongside `lib/prisma.ts` and the guard
+  implementation, and the guard regression test now covers that exemption too.
+
+Entry points run `node -r ts-node/register server.ts` for now; Phase 4 replaces that with a
+compiled `dist/`.

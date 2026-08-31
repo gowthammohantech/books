@@ -184,7 +184,3 @@ export async function getLeaveSummaryReport(req: Request, res: Response): Promis
     handleError(res, err, 'Failed to generate leave summary report');
   }
 }
-
-// CommonJS interop.
-module.exports = { getLeaveSummaryReport };
-module.exports.getLeaveSummaryReport = getLeaveSummaryReport;

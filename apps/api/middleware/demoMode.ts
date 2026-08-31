@@ -61,8 +61,3 @@ export const blockSettingsWriteInDemo = (
   }
   next();
 };
-
-// CommonJS interop for server.js (require()).
-module.exports = { isDemoMode, blockSettingsWriteInDemo };
-module.exports.isDemoMode = isDemoMode;
-module.exports.blockSettingsWriteInDemo = blockSettingsWriteInDemo;

@@ -44,8 +44,3 @@ router.get('/reports/pnl-by-project', requirePermission('accounting-reports', 'v
 router.get('/reports/pnl-by-department', requirePermission('accounting-reports', 'view'), pnlByDepartment);
 
 export default router;
-// CommonJS export so `require('./routes/dimensionRoutes')` under ts-node returns
-// the router directly (matches authRoutes.ts / publicRoutes.ts). Without this,
-// require() yields `{ default: router }` and `app.use(...)` throws
-// "argument handler must be a function" — crashing the whole API on boot.
-module.exports = router;

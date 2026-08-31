@@ -478,5 +478,3 @@ const handlers = {
   liabilities,
   computeNineBox,
 };
-module.exports = handlers;
-module.exports.default = handlers;

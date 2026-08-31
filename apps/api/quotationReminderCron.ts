@@ -31,9 +31,8 @@
  * reminder is then processed inside runAsTenant() so its quotation lookup,
  * company-settings read and lastSent write all scope themselves.
  *
- * `module.exports` is kept so the extensionless `require('./quotationReminderCron')`
- * in server.js keeps resolving — ts-node/register (loaded first in server.js)
- * picks up the .ts file exactly as it already does for the sibling crons.
+ * Registered by importing it for its side effect from server.ts, alongside the
+ * sibling crons.
  */
 import cron from 'node-cron';
 import type { Reminder, ReminderEvent, ReminderTiming } from '@prisma/client';
@@ -227,5 +226,3 @@ if (ENABLED) {
 } else {
   console.log('[quotationReminderCron] Disabled via env.');
 }
-
-module.exports = { runQuotationReminderCron };

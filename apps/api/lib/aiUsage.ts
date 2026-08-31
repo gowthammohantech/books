@@ -50,6 +50,3 @@ export async function logAiUsage(args: LogAiUsageArgs): Promise<void> {
     console.error('logAiUsage failed (non-fatal):', err);
   }
 }
-
-module.exports = { logAiUsage };
-module.exports.default = module.exports;

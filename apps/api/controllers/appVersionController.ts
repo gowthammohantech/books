@@ -60,7 +60,3 @@ export async function getAppVersionStatus(_req: Request, res: Response): Promise
     });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = { getAppVersionStatus };
-module.exports.getAppVersionStatus = getAppVersionStatus;

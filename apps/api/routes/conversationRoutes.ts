@@ -234,7 +234,3 @@ router.delete('/:type/:id', protect, async (req: Request, res: Response) => {
 });
 
 export default router;
-
-// CommonJS interop: server.js still require()s this router.
-module.exports = router;
-module.exports.default = router;

@@ -150,5 +150,3 @@ export async function refund(req: Request, res: Response): Promise<void> {
 }
 
 const handlers = { createCheckoutSession, refund };
-module.exports = handlers;
-module.exports.default = handlers;

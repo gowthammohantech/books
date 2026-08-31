@@ -487,5 +487,3 @@ export async function trialBalance(req: Request, res: Response): Promise<void> {
 }
 
 const handlers = { profitLoss, balanceSheet, trialBalance };
-module.exports = handlers;
-module.exports.default = handlers;

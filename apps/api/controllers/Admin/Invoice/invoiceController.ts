@@ -35,9 +35,8 @@ import {
 import { splitNetByCentre } from '../../../lib/ledger/dimensionSplit';
 import { nextCentreDocumentNumber, peekCentreDocumentNumber } from '../../../lib/costCenterNumbering';
 
-// utils/mailer is still JS; static require is fine here.
 // eslint-disable-next-line @typescript-eslint/no-require-imports, import/order
-const mailerModule: { sendMail: (opts: Record<string, unknown>) => Promise<void> } = require('../../../utils/mailer');
+import { sendMail } from '../../../utils/mailer';
 
 import { prisma } from '../../../lib/prisma';
 import {
@@ -1173,7 +1172,6 @@ export async function sendInvoiceEmail(req: Request, res: Response): Promise<voi
       return;
     }
 
-    const { sendMail } = mailerModule;
 
     const mailOptions: Record<string, unknown> = {
       to,
@@ -3554,57 +3552,3 @@ export async function markInvoiceSent(req: Request, res: Response): Promise<void
     });
   }
 }
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  createInvoice,
-  updateInvoiceStatus,
-  markInvoiceSent,
-  sendInvoiceEmail,
-  updateInvoice,
-  getInvoice,
-  getAllInvoices,
-  getChildInvoices,
-  listInvoicesMinimal,
-  getInvoicePaymentDetails,
-  convertQuotationToInvoice,
-  convertProformaToInvoice,
-  recordInvoicePayment,
-  listInvoicesMinimalWithoutChallan,
-  getNextInvoiceNumber,
-  deleteInvoice,
-  getRecurringInvoices,
-  getInvoiceChildren,
-  runRecurringNow,
-  setRecurringStatus,
-  enablePublicLink,
-  disablePublicLink,
-  rotatePublicLink,
-  approveInvoice,
-  rejectInvoice,
-};
-module.exports.createInvoice = createInvoice;
-module.exports.updateInvoiceStatus = updateInvoiceStatus;
-module.exports.markInvoiceSent = markInvoiceSent;
-module.exports.sendInvoiceEmail = sendInvoiceEmail;
-module.exports.updateInvoice = updateInvoice;
-module.exports.getInvoice = getInvoice;
-module.exports.getAllInvoices = getAllInvoices;
-module.exports.getChildInvoices = getChildInvoices;
-module.exports.listInvoicesMinimal = listInvoicesMinimal;
-module.exports.getInvoicePaymentDetails = getInvoicePaymentDetails;
-module.exports.convertQuotationToInvoice = convertQuotationToInvoice;
-module.exports.convertProformaToInvoice = convertProformaToInvoice;
-module.exports.recordInvoicePayment = recordInvoicePayment;
-module.exports.listInvoicesMinimalWithoutChallan = listInvoicesMinimalWithoutChallan;
-module.exports.getNextInvoiceNumber = getNextInvoiceNumber;
-module.exports.deleteInvoice = deleteInvoice;
-module.exports.getRecurringInvoices = getRecurringInvoices;
-module.exports.getInvoiceChildren = getInvoiceChildren;
-module.exports.runRecurringNow = runRecurringNow;
-module.exports.setRecurringStatus = setRecurringStatus;
-module.exports.enablePublicLink = enablePublicLink;
-module.exports.disablePublicLink = disablePublicLink;
-module.exports.rotatePublicLink = rotatePublicLink;
-module.exports.approveInvoice = approveInvoice;
-module.exports.rejectInvoice = rejectInvoice;

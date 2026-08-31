@@ -189,17 +189,3 @@ export async function deleteUnit(req: Request, res: Response): Promise<void> {
     res.status(400).json({ message: 'Failed to delete unit' });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  getUnits,
-  createUnit,
-  getUnitById,
-  updateUnit,
-  deleteUnit,
-};
-module.exports.getUnits = getUnits;
-module.exports.createUnit = createUnit;
-module.exports.getUnitById = getUnitById;
-module.exports.updateUnit = updateUnit;
-module.exports.deleteUnit = deleteUnit;

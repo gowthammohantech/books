@@ -486,15 +486,3 @@ export async function deleteStaffUser(req: Request, res: Response): Promise<void
     });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createStaffUser,
-  listStaffUsers,
-  updateStaffUser,
-  deleteStaffUser,
-};
-module.exports.createStaffUser = createStaffUser;
-module.exports.listStaffUsers = listStaffUsers;
-module.exports.updateStaffUser = updateStaffUser;
-module.exports.deleteStaffUser = deleteStaffUser;

@@ -1,6 +1,6 @@
 // controllers/Admin/exchangeRateController.ts
 // Task G.6 — Tenant-scoped CRUD for manual exchange rates.
-// All endpoints require `protect` middleware (set in adminRoutes.js).
+// All endpoints require `protect` middleware (set in adminRoutes.ts).
 
 import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
@@ -139,9 +139,3 @@ export async function deleteExchangeRate(req: Request, res: Response): Promise<v
     });
   }
 }
-
-// CommonJS interop for legacy JS routes
-module.exports = { listExchangeRates, createExchangeRate, deleteExchangeRate };
-module.exports.listExchangeRates = listExchangeRates;
-module.exports.createExchangeRate = createExchangeRate;
-module.exports.deleteExchangeRate = deleteExchangeRate;

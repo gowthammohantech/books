@@ -3,7 +3,7 @@ import path from 'path';
 
 import { describe, it, expect } from 'vitest';
 
-// Both files are mounted at /api/admin (server.js): adminRoutes.js is the bulk,
+// Both files are mounted at /api/admin (server.ts): adminRoutes.ts is the bulk,
 // dimensionRoutes.ts adds cost-centers/projects/dimension P&L reports. Every
 // admin route in either file must carry requirePermission(...) OR an explicit
 // /* self */ exemption marker (self/identity routes intentionally gated by

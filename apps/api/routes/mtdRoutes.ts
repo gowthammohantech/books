@@ -1,7 +1,7 @@
 // routes/mtdRoutes.ts
 //
 // HMRC Making Tax Digital (MTD) VAT endpoints (Task 3): connect / obligations /
-// submit / liabilities. Mounted under /api/admin via routes/adminRoutes.js (same
+// submit / liabilities. Mounted under /api/admin via routes/adminRoutes.ts (same
 // pattern as taxReturnRoutes.ts / exportRoutes.ts / timeTrackingRoutes.ts).
 //
 // Every route requires authentication (protect) and is tenant-scoped inside the
@@ -57,6 +57,3 @@ router.post('/mtd/submit', edit, submit);
 router.get('/mtd/liabilities', edit, liabilities);
 
 export default router;
-// CommonJS export so `require('./routes/mtdRoutes')` under ts-node returns the
-// router directly (matches taxReturnRoutes.ts / exportRoutes.ts).
-module.exports = router;

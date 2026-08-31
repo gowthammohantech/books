@@ -167,5 +167,3 @@ export async function remove(req: Request, res: Response): Promise<void> {
 }
 
 const handlers = { list, create, update, lock, unlock, remove };
-module.exports = handlers;
-module.exports.default = handlers;

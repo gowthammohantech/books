@@ -256,19 +256,3 @@ export async function getCustomFieldDataTypesMinimal(
     });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createCustomFieldDataType,
-  getAllCustomFieldDataTypes,
-  getCustomFieldDataTypeById,
-  updateCustomFieldDataType,
-  deleteCustomFieldDataType,
-  getCustomFieldDataTypesMinimal,
-};
-module.exports.createCustomFieldDataType = createCustomFieldDataType;
-module.exports.getAllCustomFieldDataTypes = getAllCustomFieldDataTypes;
-module.exports.getCustomFieldDataTypeById = getCustomFieldDataTypeById;
-module.exports.updateCustomFieldDataType = updateCustomFieldDataType;
-module.exports.deleteCustomFieldDataType = deleteCustomFieldDataType;
-module.exports.getCustomFieldDataTypesMinimal = getCustomFieldDataTypesMinimal;

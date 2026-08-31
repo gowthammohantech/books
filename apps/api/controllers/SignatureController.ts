@@ -602,23 +602,3 @@ export async function listPaymentModes(_req: Request, res: Response): Promise<vo
 
 // Silence unused-import warning when only the namespace import is referenced.
 void ({} as Signature);
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createSignature,
-  getUserSignatures,
-  updateSignature,
-  deleteSignature,
-  setAsDefaultSignature,
-  updateSignatureStatus,
-  createPaymentMode,
-  listPaymentModes,
-};
-module.exports.createSignature = createSignature;
-module.exports.getUserSignatures = getUserSignatures;
-module.exports.updateSignature = updateSignature;
-module.exports.deleteSignature = deleteSignature;
-module.exports.setAsDefaultSignature = setAsDefaultSignature;
-module.exports.updateSignatureStatus = updateSignatureStatus;
-module.exports.createPaymentMode = createPaymentMode;
-module.exports.listPaymentModes = listPaymentModes;

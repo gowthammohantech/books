@@ -1,7 +1,7 @@
 /**
  * Where an uploaded file goes on disk.
  *
- * Everything used to land in one flat `uploads/` tree, and `server.js` serves
+ * Everything used to land in one flat `uploads/` tree, and `server.ts` serves
  * that tree as UNAUTHENTICATED static content. On a single-company install that
  * was a weakness — a guessable filename is world-readable. With many companies
  * on one deployment it is a cross-workspace one: company logos, expense
@@ -88,10 +88,3 @@ export function destinationFor(category?: string) {
     }
   };
 }
-
-// CommonJS interop: all four multer middlewares are plain CJS.
-module.exports = { UPLOAD_ROOT, TENANT_SEGMENT, uploadDirFor, destinationFor };
-module.exports.UPLOAD_ROOT = UPLOAD_ROOT;
-module.exports.TENANT_SEGMENT = TENANT_SEGMENT;
-module.exports.uploadDirFor = uploadDirFor;
-module.exports.destinationFor = destinationFor;

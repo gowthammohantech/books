@@ -1015,10 +1015,4 @@ router.use(taxReturnRoutes);
 // (and an Owner gate on credential/connect mutations) itself.
 router.use(mtdRoutes);
 
-module.exports = router;
-
 export default router;
-
-// CommonJS interop: server.js still require()s this router.
-module.exports = router;
-module.exports.default = router;

@@ -167,6 +167,3 @@ export async function protect(
 // can `require('../middleware/authMiddleware')` unchanged. Once everything is
 // TS we'll switch to named imports.
 export default protect;
-module.exports = protect;
-module.exports.protect = protect;
-module.exports.default = protect;

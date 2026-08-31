@@ -117,9 +117,3 @@ export async function revokeApiKey(req: Request, res: Response): Promise<void> {
     res.status(500).json({ success: false, message: 'Error revoking API key' });
   }
 }
-
-// CommonJS interop for the legacy JS route file.
-module.exports = { listApiKeys, createApiKey, revokeApiKey };
-module.exports.listApiKeys = listApiKeys;
-module.exports.createApiKey = createApiKey;
-module.exports.revokeApiKey = revokeApiKey;

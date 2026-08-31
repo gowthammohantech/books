@@ -71,9 +71,3 @@ export const saveLocalizationValidator: (ValidationChain | RequestHandler)[] = [
 
   validate,
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  saveLocalizationValidator,
-};
-module.exports.saveLocalizationValidator = saveLocalizationValidator;

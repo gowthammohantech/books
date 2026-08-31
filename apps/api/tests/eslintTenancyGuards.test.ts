@@ -58,6 +58,14 @@ describe('tenant-isolation ESLint guards', () => {
     expect(rules).not.toContain('no-restricted-syntax');
   });
 
+  it('still allows the boot-time schema probe in server.ts', async () => {
+    const rules = await lint(
+      'import { prismaUnscoped } from \'./lib/prisma\';\nexport const probe = () => prismaUnscoped.$queryRaw`SELECT 1 FROM "Tenant" LIMIT 1`;\n',
+      'server.ts',
+    );
+    expect(rules).not.toContain('no-restricted-syntax');
+  });
+
   it('still allows raw SQL inside the guard implementation itself', async () => {
     const rules = await lint(
       "import { prisma } from './prisma';\nexport const ok = () => prisma.$queryRaw`SELECT 1`;\n",

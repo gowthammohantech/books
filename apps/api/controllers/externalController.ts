@@ -324,8 +324,3 @@ export const upsertCustomer = async (req: Request, res: Response): Promise<void>
     return;
   }
 };
-
-// CommonJS interop: routes/externalRoutes.js require()s this module.
-module.exports = { ssoExchange, upsertCustomer };
-module.exports.ssoExchange = ssoExchange;
-module.exports.upsertCustomer = upsertCustomer;

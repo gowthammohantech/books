@@ -250,7 +250,3 @@ export function mergeGeneratedPaths(
   );
   return { added, total };
 }
-
-module.exports = { generateOpenApiPaths, mergeGeneratedPaths };
-module.exports.generateOpenApiPaths = generateOpenApiPaths;
-module.exports.mergeGeneratedPaths = mergeGeneratedPaths;

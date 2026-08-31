@@ -350,21 +350,3 @@ export async function createLeaveAllocation(req: Request, res: Response): Promis
 export async function updateLeaveAllocation(req: Request, res: Response): Promise<void> {
   await upsertAllocation(req, res);
 }
-
-// CommonJS interop for legacy JS route files.
-module.exports = {
-  listLeaveTypes,
-  createLeaveType,
-  updateLeaveType,
-  deleteLeaveType,
-  listLeaveAllocations,
-  createLeaveAllocation,
-  updateLeaveAllocation,
-};
-module.exports.listLeaveTypes = listLeaveTypes;
-module.exports.createLeaveType = createLeaveType;
-module.exports.updateLeaveType = updateLeaveType;
-module.exports.deleteLeaveType = deleteLeaveType;
-module.exports.listLeaveAllocations = listLeaveAllocations;
-module.exports.createLeaveAllocation = createLeaveAllocation;
-module.exports.updateLeaveAllocation = updateLeaveAllocation;

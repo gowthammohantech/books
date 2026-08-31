@@ -598,7 +598,3 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
     });
   }
 }
-
-// CommonJS interop for legacy JS routes
-module.exports = { getDashboard };
-module.exports.getDashboard = getDashboard;

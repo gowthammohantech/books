@@ -5,23 +5,23 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { prisma } from '../lib/prisma';
 
-// utils/openai is still JS — require via CommonJS shim.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const openaiModule = require('../utils/openai') as {
-  openai: {
-    chat: {
-      completions: {
-        create: (opts: {
-          model: string;
-          messages: Array<{ role: string; content: string }>;
-          temperature?: number;
-          response_format?: { type: string };
-        }) => Promise<{ choices: Array<{ message: { content: string } }> }>;
-      };
-    };
-  };
-};
-const openai = openaiModule.openai;
+import { openai } from '../utils/openai';
+
+/**
+ * OpenAI types `message.content` as `string | null`. The hand-written CommonJS
+ * shim this file used to declare for utils/openai typed it as `string`, hiding
+ * that — so a refusal or an empty completion would have reached JSON.parse(null)
+ * and thrown a bare SyntaxError. Fail with something readable instead.
+ */
+function completionJson(response: {
+  choices: Array<{ message: { content: string | null } }>;
+}): string {
+  const content = response.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error('OpenAI returned an empty completion');
+  }
+  return content;
+}
 
 type Tx = Prisma.TransactionClient;
 
@@ -515,7 +515,7 @@ class ConversationalAIController {
       response_format: { type: 'json_object' },
     });
 
-    return JSON.parse(response.choices[0].message.content) as {
+    return JSON.parse(completionJson(response)) as {
       documentType: string;
       extractedData: ExtractedData;
     };
@@ -1626,7 +1626,7 @@ class ConversationalAIController {
       response_format: { type: 'json_object' },
     });
 
-    return JSON.parse(response.choices[0].message.content) as Record<string, unknown>;
+    return JSON.parse(completionJson(response)) as Record<string, unknown>;
   }
 
   async extractProductInfo(message: string): Promise<{ items: ExtractedItem[] }> {
@@ -1652,7 +1652,7 @@ class ConversationalAIController {
         response_format: { type: 'json_object' },
       });
 
-      return JSON.parse(response.choices[0].message.content) as { items: ExtractedItem[] };
+      return JSON.parse(completionJson(response)) as { items: ExtractedItem[] };
     } catch (error) {
       console.error('Error extracting product info:', error);
       return { items: [] };
@@ -1681,7 +1681,7 @@ class ConversationalAIController {
       response_format: { type: 'json_object' },
     });
 
-    return JSON.parse(response.choices[0].message.content) as {
+    return JSON.parse(completionJson(response)) as {
       field: string | null;
       value: string | number | null;
     };
@@ -2062,7 +2062,7 @@ class ConversationalAIController {
         response_format: { type: 'json_object' },
       });
 
-      const customerData = JSON.parse(response.choices[0].message.content) as {
+      const customerData = JSON.parse(completionJson(response)) as {
         name: string;
         email?: string;
         phone?: string;
@@ -2135,7 +2135,3 @@ class ConversationalAIController {
 }
 
 export default ConversationalAIController;
-
-// CommonJS interop for legacy JS routes
-module.exports = ConversationalAIController;
-module.exports.default = ConversationalAIController;

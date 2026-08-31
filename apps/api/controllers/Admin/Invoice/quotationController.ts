@@ -26,9 +26,8 @@ import {
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
 
-// utils/mailer is still JS; static require is fine here.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const mailerModule: { sendMail: (opts: Record<string, unknown>) => Promise<void> } = require('../../../utils/mailer');
+import { sendMail } from '../../../utils/mailer';
 
 type Tx = Prisma.TransactionClient;
 
@@ -328,7 +327,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
     if (quotation.status === 'sent' && billToCustomer?.email && process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD) {
       try {
         const fromName = `${billFrom.firstName ?? ''} ${billFrom.lastName ?? ''}`.trim() || 'Your Company';
-        await mailerModule.sendMail({
+        await sendMail({
           to: billToCustomer.email,
           subject: 'New Quotation Sent',
           html: `
@@ -1220,7 +1219,7 @@ export async function sendQuotationEmailAndUpdateStatus(req: Request, res: Respo
     }
 
     // Send first — only persist status change on success
-    await mailerModule.sendMail(mailOptions);
+    await sendMail(mailOptions);
 
     const updated = await prisma.quotation.update({
       where: { id: quotationId },
@@ -1285,27 +1284,3 @@ export async function enableQuotationPublicLink(req: Request, res: Response): Pr
     res.status(500).json({ success: false, message: 'Failed to enable public link' });
   }
 }
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  createQuotation,
-  getQuotationById,
-  updateQuotation,
-  deleteQuotation,
-  listQuotations,
-  listQuotationsMinimal,
-  getAllCustomers,
-  updateQuotationStatus,
-  sendQuotationEmailAndUpdateStatus,
-  enableQuotationPublicLink,
-};
-module.exports.createQuotation = createQuotation;
-module.exports.getQuotationById = getQuotationById;
-module.exports.updateQuotation = updateQuotation;
-module.exports.deleteQuotation = deleteQuotation;
-module.exports.listQuotations = listQuotations;
-module.exports.listQuotationsMinimal = listQuotationsMinimal;
-module.exports.getAllCustomers = getAllCustomers;
-module.exports.updateQuotationStatus = updateQuotationStatus;
-module.exports.sendQuotationEmailAndUpdateStatus = sendQuotationEmailAndUpdateStatus;
-module.exports.enableQuotationPublicLink = enableQuotationPublicLink;

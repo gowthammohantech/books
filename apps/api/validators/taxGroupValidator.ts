@@ -82,11 +82,3 @@ export const updateTaxGroupValidator: (ValidationChain | RequestHandler)[] = [
   ...updateChains,
   handleValidationErrors,
 ];
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createTaxGroupValidator,
-  updateTaxGroupValidator,
-};
-module.exports.createTaxGroupValidator = createTaxGroupValidator;
-module.exports.updateTaxGroupValidator = updateTaxGroupValidator;

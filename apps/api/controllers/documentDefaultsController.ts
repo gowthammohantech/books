@@ -224,8 +224,3 @@ export async function updateDocumentDefaults(req: Request, res: Response): Promi
     });
   }
 }
-
-// CommonJS interop for JS routes
-module.exports = { getDocumentDefaults, updateDocumentDefaults };
-module.exports.getDocumentDefaults = getDocumentDefaults;
-module.exports.updateDocumentDefaults = updateDocumentDefaults;

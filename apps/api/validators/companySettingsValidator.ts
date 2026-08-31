@@ -87,7 +87,3 @@ export const updateCompanySettingsValidator: (ValidationChain | RequestHandler)[
   ...updateChains,
   validate,
 ];
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = { updateCompanySettingsValidator };
-module.exports.updateCompanySettingsValidator = updateCompanySettingsValidator;

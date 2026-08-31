@@ -68,7 +68,3 @@ export async function listActivityLogs(req: Request, res: Response): Promise<voi
     });
   }
 }
-
-// CommonJS interop for legacy JS routes.
-module.exports = { listActivityLogs };
-module.exports.listActivityLogs = listActivityLogs;

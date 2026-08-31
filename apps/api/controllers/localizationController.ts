@@ -290,15 +290,3 @@ export async function getLocalization(_req: Request, res: Response): Promise<voi
     });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  saveLocalization,
-  getLocalization,
-  getDropdownOptions,
-  getSettingsDropdownList,
-};
-module.exports.saveLocalization = saveLocalization;
-module.exports.getLocalization = getLocalization;
-module.exports.getDropdownOptions = getDropdownOptions;
-module.exports.getSettingsDropdownList = getSettingsDropdownList;

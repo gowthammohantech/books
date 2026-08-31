@@ -242,5 +242,3 @@ export async function deleteAiConfig(req: Request, res: Response): Promise<void>
 }
 
 const handlers = { getAiConfig, updateAiConfig, testAiConfig, deleteAiConfig };
-module.exports = handlers;
-module.exports.default = handlers;

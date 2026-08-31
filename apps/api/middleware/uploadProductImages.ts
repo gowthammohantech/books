@@ -35,7 +35,3 @@ const upload = multer({
 // Use .any() so product_image, gallery_images, and dynamic customField_<id>
 // file uploads all pass through to the controller.
 export const uploadProductFields = upload.any();
-
-// Export the single middleware
-module.exports = { uploadProductFields };
-module.exports.uploadProductFields = uploadProductFields;

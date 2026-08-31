@@ -10,9 +10,6 @@ export default tseslint.config(
       'coverage/**',
       'prisma/migrations/**',
       'uploads/**',
-      // Existing JS files are not linted in slice 0.1c. They'll be deleted or
-      // converted as their controllers are migrated in 0.1d/e/f.
-      '**/*.js',
     ],
   },
   ...tseslint.configs.recommended,
@@ -102,7 +99,13 @@ export default tseslint.config(
     // lib/prisma.ts defines `prismaUnscoped`; lib/tenantGuard.ts and
     // lib/auditExtension.ts implement the guard itself. Neither can be written
     // in terms of the rule it enforces.
-    files: ['lib/prisma.ts', 'lib/tenantGuard.ts', 'lib/auditExtension.ts'],
+    //
+    // server.ts is here for its boot-time schema-version probe
+    // (`SELECT 1 FROM "Tenant"`), which asks whether the tenancy tables exist
+    // at all — there is no tenant to scope it to, and it runs before the app
+    // serves a single request. This became visible only once the `**/*.js`
+    // ignore came off; as server.js it was never linted.
+    files: ['lib/prisma.ts', 'lib/tenantGuard.ts', 'lib/auditExtension.ts', 'server.ts'],
     rules: {
       'no-restricted-syntax': 'off',
     },

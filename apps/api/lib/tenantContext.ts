@@ -127,20 +127,3 @@ export function setVerifiedTenantId(tenantId: string | null): void {
   const ctx = getAuditContext();
   if (ctx) ctx.tenantId = tenantId;
 }
-
-// CommonJS interop — quotationReminderCron.js and controllers/externalController.js
-// are still CJS and require() this module. Mirrors lib/auditContext.ts.
-module.exports = {
-  TenantContextMissingError,
-  getTenantId,
-  isBypassed,
-  runAsSystem,
-  runAsTenant,
-  setVerifiedTenantId,
-};
-module.exports.TenantContextMissingError = TenantContextMissingError;
-module.exports.getTenantId = getTenantId;
-module.exports.isBypassed = isBypassed;
-module.exports.runAsSystem = runAsSystem;
-module.exports.runAsTenant = runAsTenant;
-module.exports.setVerifiedTenantId = setVerifiedTenantId;

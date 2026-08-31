@@ -419,17 +419,3 @@ export async function deleteSupplier(req: Request, res: Response): Promise<void>
     });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use require().
-module.exports = {
-  createSupplier,
-  listSuppliers,
-  getSupplierById,
-  updateSupplier,
-  deleteSupplier,
-};
-module.exports.createSupplier = createSupplier;
-module.exports.listSuppliers = listSuppliers;
-module.exports.getSupplierById = getSupplierById;
-module.exports.updateSupplier = updateSupplier;
-module.exports.deleteSupplier = deleteSupplier;

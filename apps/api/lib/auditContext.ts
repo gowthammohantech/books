@@ -8,7 +8,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
  * tenantGuard.ts needs a tenant on every Prisma query and a second
  * AsyncLocalStorage would be a second source of truth for "who is this
  * request?". One store, one middleware (middleware/auditContext.ts, mounted
- * globally in server.js before every route).
+ * globally in server.ts before every route).
  *
  * Prefer the helpers in lib/tenantContext.ts (getTenantId / runAsSystem /
  * runAsTenant) over touching `tenantId` and `bypass` directly.
@@ -49,8 +49,3 @@ export function runWithAuditContext<T>(ctx: AuditContext, fn: () => T): T {
 export function getAuditContext(): AuditContext | undefined {
   return storage.getStore();
 }
-
-// CommonJS interop for legacy JS requires.
-module.exports = { runWithAuditContext, getAuditContext };
-module.exports.runWithAuditContext = runWithAuditContext;
-module.exports.getAuditContext = getAuditContext;

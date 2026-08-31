@@ -189,17 +189,3 @@ export async function deleteBrand(req: Request, res: Response): Promise<void> {
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createBrand,
-  getAllBrands,
-  getBrandById,
-  updateBrand,
-  deleteBrand,
-};
-module.exports.createBrand = createBrand;
-module.exports.getAllBrands = getAllBrands;
-module.exports.getBrandById = getBrandById;
-module.exports.updateBrand = updateBrand;
-module.exports.deleteBrand = deleteBrand;

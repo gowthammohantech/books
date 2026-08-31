@@ -46,8 +46,3 @@ export const loginValidator: ValidationChain[] = [
   body('password')
     .notEmpty().withMessage('Password is required'),
 ];
-
-// CommonJS interop for legacy JS callers
-module.exports = { registerValidator, loginValidator };
-module.exports.registerValidator = registerValidator;
-module.exports.loginValidator = loginValidator;

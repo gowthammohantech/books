@@ -303,11 +303,3 @@ export async function remove(req: Request, res: Response): Promise<void> {
   }
 }
 
-const handlers = { list, getById, create, remove };
-module.exports = handlers;
-module.exports.default = handlers;
-// Pure helpers exported for unit testing (the `module.exports = handlers`
-// reassignment above clobbers the TS `export` named exports under CJS emit, so
-// re-attach them explicitly).
-module.exports.buildManualJeBaseLines = buildManualJeBaseLines;
-module.exports.resolveManualJeRate = resolveManualJeRate;

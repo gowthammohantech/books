@@ -71,8 +71,3 @@ export async function aiRateLimit(
     next();
   }
 }
-
-// CommonJS interop so the .js admin routes file can require this.
-module.exports = aiRateLimit;
-module.exports.aiRateLimit = aiRateLimit;
-module.exports.default = aiRateLimit;

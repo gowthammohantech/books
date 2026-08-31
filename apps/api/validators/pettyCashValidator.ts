@@ -86,11 +86,3 @@ export const returnPettyCashValidator: (ValidationChain | RequestHandler)[] = [
   ...returnChains,
   finaliser,
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  createPettyCashValidator,
-  returnPettyCashValidator,
-};
-module.exports.createPettyCashValidator = createPettyCashValidator;
-module.exports.returnPettyCashValidator = returnPettyCashValidator;

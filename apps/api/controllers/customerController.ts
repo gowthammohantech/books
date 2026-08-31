@@ -839,25 +839,3 @@ export async function customerImportConfirm(req: Request, res: Response): Promis
     res.status(500).json({ success: false, message: 'Failed to import customers' });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createCustomer,
-  createMinimalCustomer,
-  getCustomers,
-  getCustomerById,
-  updateCustomer,
-  deleteCustomer,
-  getStatement,
-  customerImportPreview,
-  customerImportConfirm,
-};
-module.exports.createCustomer = createCustomer;
-module.exports.createMinimalCustomer = createMinimalCustomer;
-module.exports.getCustomers = getCustomers;
-module.exports.getCustomerById = getCustomerById;
-module.exports.updateCustomer = updateCustomer;
-module.exports.deleteCustomer = deleteCustomer;
-module.exports.getStatement = getStatement;
-module.exports.customerImportPreview = customerImportPreview;
-module.exports.customerImportConfirm = customerImportConfirm;

@@ -172,5 +172,3 @@ export async function sendInvoiceWhatsapp(req: Request, res: Response): Promise<
 }
 
 const handlers = { getConfig, upsertConfig, sendMessage, sendInvoiceWhatsapp };
-module.exports = handlers;
-module.exports.default = handlers;

@@ -17,7 +17,7 @@
  *
  * Idempotent: re-running is a cheap no-op (single count-style existence check
  * per role, per tenant) once every tenant is caught up — safe to run on every
- * boot (see server.js BACKFILL_ON_BOOT wiring).
+ * boot (see server.ts BACKFILL_ON_BOOT wiring).
  *
  * Run:  npx ts-node prisma/backfillAccountCreditRoles.ts
  */

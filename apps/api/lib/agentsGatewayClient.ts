@@ -6,7 +6,7 @@
 // category + confidence. Elixir Books owns the write and the FOR_APPROVAL flow.
 //
 // Config is read from process.env at call time (matching the rest of the
-// backend — dotenv is loaded once in server.js, no central config loader):
+// backend — dotenv is loaded once in server.ts, no central config loader):
 //   GATEWAY_URL          default http://gateway:3002
 //   GATEWAY_PUBLIC_KEY   pk-drm-...  (per-tenant gateway key)
 //   GATEWAY_SECRET_KEY   sk-drm-...

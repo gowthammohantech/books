@@ -121,5 +121,3 @@ export async function exportGstr3b(req: Request, res: Response): Promise<void> {
 }
 
 const handlers = { exportGstr1, exportGstr3b };
-module.exports = handlers;
-module.exports.default = handlers;

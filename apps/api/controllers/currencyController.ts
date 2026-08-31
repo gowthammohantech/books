@@ -427,17 +427,3 @@ export async function updateCurrencyStatus(req: Request, res: Response): Promise
     });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createCurrency,
-  getAllCurrencies,
-  updateCurrency,
-  deleteCurrency,
-  updateCurrencyStatus,
-};
-module.exports.createCurrency = createCurrency;
-module.exports.getAllCurrencies = getAllCurrencies;
-module.exports.updateCurrency = updateCurrency;
-module.exports.deleteCurrency = deleteCurrency;
-module.exports.updateCurrencyStatus = updateCurrencyStatus;

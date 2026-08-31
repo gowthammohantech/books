@@ -49,7 +49,3 @@ const uploadAiJobs = multer({
 });
 
 export default uploadAiJobs;
-
-// CommonJS interop: the JS routers require() this module directly.
-module.exports = uploadAiJobs;
-module.exports.default = uploadAiJobs;

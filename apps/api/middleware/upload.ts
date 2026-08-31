@@ -54,7 +54,3 @@ const upload = multer({
 });
 
 export default upload;
-
-// CommonJS interop: the JS routers require() this module directly.
-module.exports = upload;
-module.exports.default = upload;

@@ -91,8 +91,3 @@ export const supplierPaymentValidator: ValidationChain[] = [
   body('referenceNumber').optional().isString(),
   body('notes').optional().isString(),
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = { purchaseValidator, supplierPaymentValidator };
-module.exports.purchaseValidator = purchaseValidator;
-module.exports.supplierPaymentValidator = supplierPaymentValidator;

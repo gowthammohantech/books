@@ -326,15 +326,3 @@ export async function deleteVehicle(req: Request, res: Response): Promise<void> 
     res.status(500).json({ success: false, message: 'Failed to delete vehicle' });
   }
 }
-
-// CommonJS interop for adminRoutes.js which uses `require(...)`.
-const handlers = {
-  getAllVehicles,
-  getVehiclesForCustomer,
-  getVehicleById,
-  createVehicle,
-  updateVehicle,
-  deleteVehicle,
-};
-module.exports = handlers;
-module.exports.default = handlers;

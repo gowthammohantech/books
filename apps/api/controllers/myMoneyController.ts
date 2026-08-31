@@ -385,6 +385,3 @@ export async function getMyMoney(req: Request, res: Response): Promise<void> {
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 }
-
-module.exports = { getMyMoney };
-module.exports.getMyMoney = getMyMoney;

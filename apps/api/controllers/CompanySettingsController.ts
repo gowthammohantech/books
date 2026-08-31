@@ -1154,19 +1154,3 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
 
 // Silence unused-warning helpers
 void ({} as GeneralSetting);
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  getCompanySettings,
-  updateCompanySettings,
-  getBasicDetails,
-  updateCompanySetup,
-  createOrUpdateGeneralSetting,
-  listGeneralSettings,
-};
-module.exports.getCompanySettings = getCompanySettings;
-module.exports.updateCompanySettings = updateCompanySettings;
-module.exports.getBasicDetails = getBasicDetails;
-module.exports.updateCompanySetup = updateCompanySetup;
-module.exports.createOrUpdateGeneralSetting = createOrUpdateGeneralSetting;
-module.exports.listGeneralSettings = listGeneralSettings;

@@ -441,13 +441,3 @@ export async function updateStock(req: Request, res: Response): Promise<void> {
     });
   }
 }
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  listInventory,
-  getInventoryHistory,
-  updateStock,
-};
-module.exports.listInventory = listInventory;
-module.exports.getInventoryHistory = getInventoryHistory;
-module.exports.updateStock = updateStock;

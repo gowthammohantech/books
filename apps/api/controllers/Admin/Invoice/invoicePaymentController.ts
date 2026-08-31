@@ -280,9 +280,3 @@ export async function voidInvoicePayment(req: Request, res: Response): Promise<v
     sendPrismaError(res, err);
   }
 }
-
-// CommonJS interop — required by routes/adminRoutes.js (.js file).
-module.exports = { listInvoicePayments, invoiceActivity, voidInvoicePayment };
-module.exports.listInvoicePayments = listInvoicePayments;
-module.exports.invoiceActivity = invoiceActivity;
-module.exports.voidInvoicePayment = voidInvoicePayment;

@@ -522,16 +522,3 @@ function assertOrWarn(ctx: GuardContext, fn: () => void): void {
 function warn(message: string): void {
   console.warn(`[tenant-guard] ${message}`);
 }
-
-module.exports = {
-  TENANT_MODELS, GLOBAL_MODELS, EXPLICIT_MODELS,
-  guardMode, guardContextFromStore, isGuarded,
-  applyTenantGuard, assertBeforeRowInTenant, flattenCompoundKeys, mentionsTenant,
-  TenantMismatchError, ForeignTenantRowError,
-};
-Object.assign(module.exports, {
-  TENANT_MODELS, GLOBAL_MODELS, EXPLICIT_MODELS,
-  guardMode, guardContextFromStore, isGuarded,
-  applyTenantGuard, assertBeforeRowInTenant, flattenCompoundKeys, mentionsTenant,
-  TenantMismatchError, ForeignTenantRowError,
-});

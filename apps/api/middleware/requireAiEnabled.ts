@@ -47,8 +47,3 @@ export async function requireAiEnabled(
     res.status(500).json({ success: false, message: 'Failed to load AI configuration' });
   }
 }
-
-// CommonJS interop so the .js admin routes file can require this.
-module.exports = requireAiEnabled;
-module.exports.requireAiEnabled = requireAiEnabled;
-module.exports.default = requireAiEnabled;

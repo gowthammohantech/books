@@ -37,7 +37,3 @@ export const createRoleValidator: (ValidationChain | RequestHandler)[] = [
 
   validate,
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = { createRoleValidator };
-module.exports.createRoleValidator = createRoleValidator;

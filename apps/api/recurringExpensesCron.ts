@@ -26,5 +26,3 @@ if (ENABLED) {
 } else {
   console.log('[recurringExpensesCron] Disabled via env.');
 }
-
-module.exports = { runRecurringExpenseCron };

@@ -13,7 +13,3 @@ router.post('/sso/exchange', ssoExchange);
 router.post('/customers', apiKeyAuth, upsertCustomer);
 
 export default router;
-
-// CommonJS interop: server.js still require()s this router.
-module.exports = router;
-module.exports.default = router;

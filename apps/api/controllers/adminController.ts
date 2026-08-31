@@ -278,25 +278,3 @@ export async function getCityById(req: Request, res: Response): Promise<void> {
     });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  dashboard,
-  getCountries,
-  getStates,
-  getCities,
-  getProfile,
-  updateProfile,
-  getCountryById,
-  getStateById,
-  getCityById,
-};
-module.exports.dashboard = dashboard;
-module.exports.getCountries = getCountries;
-module.exports.getStates = getStates;
-module.exports.getCities = getCities;
-module.exports.getProfile = getProfile;
-module.exports.updateProfile = updateProfile;
-module.exports.getCountryById = getCountryById;
-module.exports.getStateById = getStateById;
-module.exports.getCityById = getCityById;

@@ -8,19 +8,20 @@
  * (quotationController.ts:1165-1179): skip the attachment gracefully when
  * the PDF hasn't been generated yet.
  *
- * Mocking note: see tests/sendInvoiceEmail.guards.test.ts — `utils/mailer`
- * is require()'d by the controller, which vi.mock cannot intercept here, so
- * we spy on the real singleton module instead. `fs` is accessed via dynamic
- * `import('fs')`, which vi.mock DOES intercept normally.
+ * Mocking note: see tests/sendInvoiceEmail.guards.test.ts — mailer is
+ * TypeScript now and the controller imports `sendMail` normally, so `vi.mock`
+ * intercepts it like everything else. `fs` is accessed via dynamic
+ * `import('fs')`, which mocks normally too.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
 
 const TENANT_ID = 'tenant-alpha';
 
-const { mockPurchaseFindFirst, mockExistsSync } = vi.hoisted(() => ({
+const { mockPurchaseFindFirst, mockExistsSync, mockSendMail } = vi.hoisted(() => ({
   mockPurchaseFindFirst: vi.fn(),
   mockExistsSync: vi.fn(),
+  mockSendMail: vi.fn(),
 }));
 
 vi.mock('../lib/prisma', () => ({
@@ -28,11 +29,9 @@ vi.mock('../lib/prisma', () => ({
 }));
 vi.mock('fs', () => ({ existsSync: mockExistsSync, default: { existsSync: mockExistsSync } }));
 
- 
-import { sendPurchaseEmail } from '../controllers/Admin/Purchases/purchaseController';
+vi.mock('../utils/mailer', () => ({ sendMail: mockSendMail }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports -- utils/mailer is still JS; becomes a real import in Phase 3.
-const mailerModule = require('../utils/mailer');
+import { sendPurchaseEmail } from '../controllers/Admin/Purchases/purchaseController';
 
 
 function makeReqRes(body: Record<string, unknown>) {
@@ -47,7 +46,7 @@ function makeReqRes(body: Record<string, unknown>) {
 beforeEach(() => {
   vi.restoreAllMocks();
   vi.clearAllMocks();
-  vi.spyOn(mailerModule, 'sendMail').mockResolvedValue(undefined);
+  mockSendMail.mockResolvedValue(undefined);
   mockExistsSync.mockReturnValue(false);
   mockPurchaseFindFirst.mockResolvedValue({ id: 'pur-1', tenantId: TENANT_ID });
 });
@@ -63,8 +62,8 @@ describe('sendPurchaseEmail — phantom PDF attachment guard', () => {
     });
     await sendPurchaseEmail(req, res);
 
-    expect(mailerModule.sendMail).toHaveBeenCalledTimes(1);
-    const sentOptions = (mailerModule.sendMail as ReturnType<typeof vi.fn>).mock.calls[0][0] as Record<
+    expect(mockSendMail).toHaveBeenCalledTimes(1);
+    const sentOptions = mockSendMail.mock.calls[0][0] as Record<
       string,
       unknown
     >;
@@ -85,7 +84,7 @@ describe('sendPurchaseEmail — phantom PDF attachment guard', () => {
     });
     await sendPurchaseEmail(req, res);
 
-    const sentOptions = (mailerModule.sendMail as ReturnType<typeof vi.fn>).mock.calls[0][0] as Record<
+    const sentOptions = mockSendMail.mock.calls[0][0] as Record<
       string,
       unknown
     >;

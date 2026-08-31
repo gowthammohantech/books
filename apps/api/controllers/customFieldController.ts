@@ -371,19 +371,3 @@ export async function deleteCustomField(req: Request, res: Response): Promise<vo
     });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createCustomField,
-  updateCustomField,
-  getCustomFields,
-  getModuleFields,
-  getModuleFieldsNew,
-  deleteCustomField,
-};
-module.exports.createCustomField = createCustomField;
-module.exports.updateCustomField = updateCustomField;
-module.exports.getCustomFields = getCustomFields;
-module.exports.getModuleFields = getModuleFields;
-module.exports.getModuleFieldsNew = getModuleFieldsNew;
-module.exports.deleteCustomField = deleteCustomField;

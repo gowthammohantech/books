@@ -79,9 +79,3 @@ export function prismaErrorHandler(
   }
   res.status(status).json({ success: false, message });
 }
-
-// CommonJS interop for legacy JS route/server files.
-module.exports = { toHttpError, sendPrismaError, prismaErrorHandler };
-module.exports.toHttpError = toHttpError;
-module.exports.sendPrismaError = sendPrismaError;
-module.exports.prismaErrorHandler = prismaErrorHandler;

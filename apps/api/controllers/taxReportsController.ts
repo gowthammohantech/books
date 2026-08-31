@@ -373,5 +373,3 @@ export async function gstr3b(req: Request, res: Response): Promise<void> {
 }
 
 const handlers = { taxSummary, gstr1, gstr3b };
-module.exports = handlers;
-module.exports.default = handlers;

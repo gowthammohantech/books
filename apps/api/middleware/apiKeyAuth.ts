@@ -98,7 +98,3 @@ const apiKeyAuth = async (req: Request, res: Response, next: NextFunction): Prom
 };
 
 export default apiKeyAuth;
-
-// CommonJS interop: routes/externalRoutes.js require()s this module directly.
-module.exports = apiKeyAuth;
-module.exports.default = apiKeyAuth;

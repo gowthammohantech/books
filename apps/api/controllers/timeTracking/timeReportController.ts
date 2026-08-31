@@ -281,7 +281,3 @@ export async function getTimeSummaryReport(req: Request, res: Response): Promise
     handleError(res, err, 'Failed to generate time summary report');
   }
 }
-
-// CommonJS interop.
-module.exports = { getTimeSummaryReport };
-module.exports.getTimeSummaryReport = getTimeSummaryReport;

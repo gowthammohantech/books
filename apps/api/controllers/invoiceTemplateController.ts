@@ -74,9 +74,3 @@ export async function getAllTemplates(req: Request, res: Response): Promise<void
     res.status(500).json({ success: false, message: 'Server error', error: err instanceof Error ? err.message : String(err) });
   }
 }
-
-// CommonJS interop for legacy JS routes
-module.exports = { createOrUpdateTemplate, getMyTemplate, getAllTemplates };
-module.exports.createOrUpdateTemplate = createOrUpdateTemplate;
-module.exports.getMyTemplate = getMyTemplate;
-module.exports.getAllTemplates = getAllTemplates;

@@ -167,7 +167,3 @@ export const createCustomerValidator: (ValidationChain | RequestHandler)[] = [
 
 // Suppress unused-warning helper from the TS surface
 void objectShapeValidator;
-
-// CommonJS interop for legacy JS routes
-module.exports = { createCustomerValidator };
-module.exports.createCustomerValidator = createCustomerValidator;

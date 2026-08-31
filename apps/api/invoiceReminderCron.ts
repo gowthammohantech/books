@@ -26,11 +26,9 @@
  *     logged and left due for the next tick — never silently marked sent.
  *
  * Registration mirrors recurringInvoicesCron.ts / recurringExpensesCron.ts:
- * a `*_CRON_ENABLED` env escape hatch, `cron.schedule` at module load, and a
- * `module.exports` so `require('./invoiceReminderCron')` (extensionless, in
- * server.js and controllers/reminderController.ts) keeps working unchanged —
- * ts-node/register (loaded first in server.js) resolves the `.ts` file the
- * same way it already does for those sibling crons.
+ * a `*_CRON_ENABLED` env escape hatch and `cron.schedule` at module load. It is
+ * imported for that side effect by server.ts, and by name from
+ * controllers/reminderController.ts for the manual trigger.
  */
 import cron from 'node-cron';
 import type { Reminder, ReminderEvent, ReminderTiming } from '@prisma/client';
@@ -204,5 +202,3 @@ if (ENABLED) {
 } else {
   console.log('[invoiceReminderCron] Disabled via env.');
 }
-
-module.exports = { runReminderCron };

@@ -2017,22 +2017,3 @@ export async function rejectBankTransaction(req: Request, res: Response): Promis
     res.status(500).json({ success: false, message: 'Failed to reject bank transaction' });
   }
 }
-
-// CommonJS interop for adminRoutes.js which uses `require(...)`.
-const handlers = {
-  list,
-  getById,
-  create,
-  remove,
-  importPreview,
-  importConfirm,
-  suggestMatches,
-  link,
-  unlink,
-  analyse,
-  analyseAll,
-  approveBankTransaction,
-  rejectBankTransaction,
-};
-module.exports = handlers;
-module.exports.default = handlers;

@@ -96,9 +96,3 @@ export const createCurrencyValidator: (ValidationChain | RequestHandler)[] = [
 
   validate,
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  createCurrencyValidator,
-};
-module.exports.createCurrencyValidator = createCurrencyValidator;

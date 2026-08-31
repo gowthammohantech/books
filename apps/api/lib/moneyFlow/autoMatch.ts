@@ -365,7 +365,3 @@ function hintLabel(transactionTypeKey: string): string {
       return `${transactionTypeKey} (learned)`;
   }
 }
-
-// CommonJS interop for any legacy JS consumers.
-module.exports = { autoMatch };
-module.exports.autoMatch = autoMatch;

@@ -161,11 +161,3 @@ export const sendMail = async (options: SendMailOptions): Promise<unknown> => {
 export const clearMailerCache = (): void => {
   cache = { at: 0, settings: null };
 };
-
-// CommonJS interop. Roughly thirty call sites still reach this module through
-// `require()` — including routes/adminRoutes.js and several controllers — and
-// a number of tests spy on the object this returns. Removed with the rest of
-// the interop tails once adminRoutes.js is TypeScript.
-module.exports = { sendMail, clearMailerCache };
-module.exports.sendMail = sendMail;
-module.exports.clearMailerCache = clearMailerCache;

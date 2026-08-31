@@ -40,5 +40,3 @@ if (ENABLED) {
 } else {
   console.log('[recurringInvoicesCron] Disabled via env.');
 }
-
-module.exports = { runRecurringInvoiceCron };

@@ -86,7 +86,3 @@ router.post('/:id/send', protect, sendManualReminderValidator, sendManualReminde
 router.delete('/delete-reminder/:id', protect, deleteReminderValidator, deleteReminder);
 
 export default router;
-
-// CommonJS interop: server.js still require()s this router.
-module.exports = router;
-module.exports.default = router;

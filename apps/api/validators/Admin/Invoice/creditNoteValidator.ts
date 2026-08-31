@@ -55,8 +55,3 @@ export const applyCreditNoteValidator: ValidationChain[] = [
   body('invoiceId')
     .notEmpty().withMessage('Invoice ID is required'),
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = { createCreditNoteValidator, applyCreditNoteValidator };
-module.exports.createCreditNoteValidator = createCreditNoteValidator;
-module.exports.applyCreditNoteValidator = applyCreditNoteValidator;

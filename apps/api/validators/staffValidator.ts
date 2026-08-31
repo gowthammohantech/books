@@ -149,7 +149,3 @@ export const createStaffValidator: (ValidationChain | RequestHandler)[] = [
 
   validateAndCheckImage,
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = { createStaffValidator };
-module.exports.createStaffValidator = createStaffValidator;

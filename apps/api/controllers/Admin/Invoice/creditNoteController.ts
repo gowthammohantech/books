@@ -43,9 +43,8 @@ import {
   UnknownCostCentreError,
 } from '../../../lib/lineDimensions';
 
-// utils/mailer is still JS; static require is fine here.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const mailerModule: { sendMail: (opts: Record<string, unknown>) => Promise<void> } = require('../../../utils/mailer');
+import { sendMail } from '../../../utils/mailer';
 
 type Tx = Prisma.TransactionClient;
 
@@ -407,7 +406,7 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
     // Optional email (best-effort; billToCustomer is null on the contact path so guard it)
     if (billToCustomer && billToCustomer.email && process.env.SMTP_EMAIL) {
       try {
-        await mailerModule.sendMail({
+        await sendMail({
           to: billToCustomer.email,
           subject: `Credit Note Issued (Ref: ${creditNote.creditNoteNumber})`,
           html: `
@@ -1155,17 +1154,3 @@ export async function deleteCreditNote(req: Request, res: Response): Promise<voi
 }
 
 void tenantScope; // not used directly in this controller; suppresses unused-import warning if any
-
-// CommonJS interop for legacy JS routes
-module.exports = {
-  createCreditNote,
-  getAllCreditNotes,
-  getCreditNoteById,
-  updateCreditNote,
-  deleteCreditNote,
-};
-module.exports.createCreditNote = createCreditNote;
-module.exports.getAllCreditNotes = getAllCreditNotes;
-module.exports.getCreditNoteById = getCreditNoteById;
-module.exports.updateCreditNote = updateCreditNote;
-module.exports.deleteCreditNote = deleteCreditNote;

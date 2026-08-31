@@ -145,11 +145,3 @@ export const updateCategoryValidator: (ValidationChain | RequestHandler)[] = [
   ...updateChains,
   updateFinaliser,
 ];
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createCategoryValidator,
-  updateCategoryValidator,
-};
-module.exports.createCategoryValidator = createCategoryValidator;
-module.exports.updateCategoryValidator = updateCategoryValidator;

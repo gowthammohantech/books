@@ -244,13 +244,3 @@ export async function getModuleHierarchy(_req: Request, res: Response): Promise<
     });
   }
 }
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createOrUpdatePermissions,
-  getModuleHierarchy,
-  getPermissionsByRole,
-};
-module.exports.createOrUpdatePermissions = createOrUpdatePermissions;
-module.exports.getModuleHierarchy = getModuleHierarchy;
-module.exports.getPermissionsByRole = getPermissionsByRole;

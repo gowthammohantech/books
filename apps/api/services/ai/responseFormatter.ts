@@ -285,7 +285,3 @@ function calculateTotals(items: FormattedItem[], taxInfo?: AiTaxInfo): Totals {
     TotalAmount: Math.round(TotalAmount * 100) / 100,
   };
 }
-
-// CommonJS interop for the require() call site in aiController.
-module.exports = { formatForController };
-module.exports.formatForController = formatForController;

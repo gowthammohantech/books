@@ -50,7 +50,3 @@ export function handleUploadError(
 
   next(err);
 }
-
-// CommonJS interop: server.js and the JS routers require() this module.
-module.exports = { handleUploadError };
-module.exports.handleUploadError = handleUploadError;

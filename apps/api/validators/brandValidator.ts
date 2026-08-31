@@ -111,11 +111,3 @@ export const updateBrandValidator: (ValidationChain | RequestHandler)[] = [
   ...updateChains,
   updateFinaliser,
 ];
-
-// CommonJS interop for legacy JS routes that still use module-alias requires.
-module.exports = {
-  createBrandValidator,
-  updateBrandValidator,
-};
-module.exports.createBrandValidator = createBrandValidator;
-module.exports.updateBrandValidator = updateBrandValidator;

@@ -204,7 +204,3 @@ export async function getStaffActivity(req: Request, res: Response): Promise<voi
     handleError(res, err, 'fetching staff activity report');
   }
 }
-
-// CommonJS interop for legacy JS routes.
-module.exports = { getStaffActivity };
-module.exports.getStaffActivity = getStaffActivity;

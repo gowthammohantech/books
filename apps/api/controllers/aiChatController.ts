@@ -475,5 +475,3 @@ export async function deleteSession(req: Request, res: Response): Promise<void> 
 }
 
 const handlers = { streamChat, listSessions, getSession, renameSession, deleteSession };
-module.exports = handlers;
-module.exports.default = handlers;

@@ -110,8 +110,3 @@ export const updateProductValidator: (ValidationChain | RequestHandler)[] = [
   }),
   commonErrorHandler,
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = { createProductValidator, updateProductValidator };
-module.exports.createProductValidator = createProductValidator;
-module.exports.updateProductValidator = updateProductValidator;

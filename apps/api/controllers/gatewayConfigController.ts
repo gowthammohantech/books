@@ -151,5 +151,3 @@ export async function remove(req: Request, res: Response): Promise<void> {
 }
 
 const handlers = { list, get, upsert, remove };
-module.exports = handlers;
-module.exports.default = handlers;

@@ -136,8 +136,3 @@ export const updatePurchaseOrderValidator: ValidationChain[] = [
   body('vat').optional().isNumeric(),
   body('TotalAmount').optional().isNumeric(),
 ];
-
-// CommonJS interop for legacy JS routes
-module.exports = { purchaseOrderValidator, updatePurchaseOrderValidator };
-module.exports.purchaseOrderValidator = purchaseOrderValidator;
-module.exports.updatePurchaseOrderValidator = updatePurchaseOrderValidator;
