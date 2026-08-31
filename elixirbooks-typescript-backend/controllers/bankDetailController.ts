@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { tenantOwnerInclude, tenantOwner } from '../lib/tenantOwner';
 import { Prisma } from '@prisma/client';
 import type {
   BankAccountType,
@@ -7,9 +8,10 @@ import type {
 } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
+import { resolveDefaultCurrencyCode } from '../lib/defaultCurrency';
 import {
   tenantScope,
-  requireUserId,
+  requireTenantId,
   UnauthorizedError,
 } from '../lib/tenantScope';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
@@ -60,7 +62,7 @@ type BankDetailRow = {
   asOnDate: Date | null;
   currencyCode: string | null;
   status: boolean;
-  userId: string;
+  tenantId: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -80,7 +82,7 @@ function transformBankDetail(d: BankDetailRow): Record<string, unknown> {
     asOnDate: d.asOnDate,
     currencyCode: d.currencyCode ?? null,
     status: d.status,
-    userId: d.userId,
+    tenantId: d.tenantId,
     createdAt: d.createdAt,
     updatedAt: d.updatedAt,
   };
@@ -102,15 +104,6 @@ async function getOrCreateBankPaymentMode(
     data: { name: 'Bank Transfer', slug, status: true },
   });
   return { id: created.id };
-}
-
-// BC.1: resolve the company default currency code (ISO string).
-async function resolveDefaultCurrencyCode(): Promise<string | null> {
-  const defaultCurrency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return defaultCurrency?.code ?? null;
 }
 
 // =============================================================================
@@ -148,10 +141,10 @@ export async function createBankDetail(req: Request, res: Response): Promise<voi
     // Scope the new bank account to the company tenant (owner id), the same id
     // the list query filters by — NOT the acting user's own id. This endpoint
     // is also reachable from the invoice "New Bank Account" modal, which used
-    // to send the logged-in staff member's userId; those rows then never matched
+    // to send the logged-in staff member's tenantId; those rows then never matched
     // the tenant-scoped list and were invisible in Settings → Bank Accounts.
     // See lib/tenantScope.ts for the shared-workspace scoping contract.
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const resolvedCurrentBalance =
       currentBalance !== undefined ? currentBalance : openingBalance;
@@ -160,9 +153,9 @@ export async function createBankDetail(req: Request, res: Response): Promise<voi
     const resolvedCurrencyCode =
       currencyCode && String(currencyCode).trim() !== ''
         ? String(currencyCode).trim().toUpperCase()
-        : await resolveDefaultCurrencyCode();
+        : await resolveDefaultCurrencyCode(requireTenantId(req));
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({ where: { id: tenantId } });
     if (!user) {
       res.status(404).json({
         success: false,
@@ -185,7 +178,7 @@ export async function createBankDetail(req: Request, res: Response): Promise<voi
           currentBalance: toDecimal(resolvedCurrentBalance, 0),
           asOnDate: new Date(),
           currencyCode: resolvedCurrencyCode,
-          userId,
+          tenantId,
           status,
           isDeleted: false,
         },
@@ -197,6 +190,7 @@ export async function createBankDetail(req: Request, res: Response): Promise<voi
         const paymentMode = await getOrCreateBankPaymentMode(tx);
         await tx.bankTransaction.create({
           data: {
+            tenantId: tenantId,
             bankAccountId: bankDetail.id,
             transactionDate: new Date(),
             type: 'DEPOSIT',
@@ -243,19 +237,19 @@ export async function createBankDetail(req: Request, res: Response): Promise<voi
 
 export async function updateBankDetail(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const updates = { ...(req.body as Record<string, unknown>) };
 
     delete updates.id;
     delete updates._id;
-    delete updates.userId;
+    delete updates.tenantId;
     delete updates.createdAt;
     delete updates.updatedAt;
     delete updates.isDeleted;
 
     const existing = await prisma.bankDetail.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!existing) {
       res.status(404).json({
@@ -468,7 +462,7 @@ export async function listBankDetails(req: Request, res: Response): Promise<void
 
 export async function listBankTransactions(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -491,7 +485,7 @@ export async function listBankTransactions(req: Request, res: Response): Promise
 
     const where: Prisma.BankTransactionWhereInput = {
       isDeleted: false,
-      bankAccount: { userId },
+      bankAccount: { tenantId },
     };
 
     if (bankAccountId) {
@@ -596,7 +590,7 @@ export async function listBankTransactions(req: Request, res: Response): Promise
 
 export async function updateBankDetailStatus(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const { status } = req.body as { status: unknown };
 
@@ -609,7 +603,7 @@ export async function updateBankDetailStatus(req: Request, res: Response): Promi
     }
 
     const existing = await prisma.bankDetail.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!existing) {
       res.status(404).json({
@@ -649,10 +643,10 @@ export async function updateBankDetailStatus(req: Request, res: Response): Promi
 
 export async function deleteBankDetail(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
-    const existing = await prisma.bankDetail.findFirst({ where: { id, userId } });
+    const existing = await prisma.bankDetail.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({
         success: false,
@@ -687,10 +681,10 @@ export async function deleteBankDetail(req: Request, res: Response): Promise<voi
 
 export async function restoreBankDetail(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
-    const existing = await prisma.bankDetail.findFirst({ where: { id, userId } });
+    const existing = await prisma.bankDetail.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({
         success: false,
@@ -745,7 +739,7 @@ export async function restoreBankDetail(req: Request, res: Response): Promise<vo
 
 export async function reconcileTransaction(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const { isReconciled, reconciliationNote } = req.body as {
       isReconciled: boolean;
@@ -753,7 +747,7 @@ export async function reconcileTransaction(req: Request, res: Response): Promise
     };
 
     const transaction = await prisma.bankTransaction.findFirst({
-      where: { id, bankAccount: { userId } },
+      where: { id, bankAccount: { tenantId } },
     });
     if (!transaction || transaction.isDeleted) {
       res.status(404).json({ success: false, message: 'Transaction not found.' });
@@ -764,7 +758,7 @@ export async function reconcileTransaction(req: Request, res: Response): Promise
       where: { id },
       data: {
         isReconciled,
-        reconciledBy: isReconciled ? userId : null,
+        reconciledBy: isReconciled ? tenantId : null,
         reconciliationDate: isReconciled ? new Date() : null,
         reconciliationNote: isReconciled ? reconciliationNote ?? null : null,
       },
@@ -849,7 +843,7 @@ export async function listFinancialDetails(req: Request, res: Response): Promise
       select: { currentBalance: true, updatedAt: true },
     });
     const allPettyRows = await prisma.pettyCash.findMany({
-      where: { userId: scope.userId, isDeleted: false },
+      where: { tenantId: scope.tenantId, isDeleted: false },
       select: { currentBalance: true, updatedAt: true },
     });
 
@@ -910,7 +904,7 @@ export async function listBankTransactionsReconciled(
   res: Response,
 ): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -939,7 +933,7 @@ export async function listBankTransactionsReconciled(
 
     const where: Prisma.BankTransactionWhereInput = {
       isDeleted: false,
-      bankAccount: { userId },
+      bankAccount: { tenantId },
     };
 
     if (bankAccountId) {
@@ -1074,11 +1068,11 @@ export async function getBankTransactionDetails(
   res: Response,
 ): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const transaction = await prisma.bankTransaction.findFirst({
-      where: { id, bankAccount: { userId } },
+      where: { id, bankAccount: { tenantId } },
       include: {
         bankAccount: { select: { bankName: true, accountNumber: true } },
         paymentMode: { select: { name: true } },
@@ -1108,27 +1102,20 @@ export async function getBankTransactionDetails(
               expenseCategory: { select: { title: true } },
               paymentMode: { select: { name: true } },
               bank: { select: { bankName: true, accountNumber: true } },
-              user: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                  email: true,
-                  phone: true,
-                  profileImage: true,
-                },
-              },
+              tenant: tenantOwnerInclude,
             },
           });
 
           if (expense) {
-            const user = expense.user
+            const owner = tenantOwner(expense.tenant);
+            const user = owner
               ? {
-                  firstName: expense.user.firstName || '',
-                  lastName: expense.user.lastName || '',
-                  email: expense.user.email || '',
-                  phone: expense.user.phone || '',
-                  profileImage: expense.user.profileImage
-                    ? `${baseUrl}/${expense.user.profileImage}`
+                  firstName: owner.firstName || '',
+                  lastName: owner.lastName || '',
+                  email: owner.email || '',
+                  phone: owner.phone || '',
+                  profileImage: owner.profileImage
+                    ? `${baseUrl}/${owner.profileImage}`
                     : '',
                 }
               : null;

@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId } from '../lib/tenantScope';
+import { requireTenantId } from '../lib/tenantScope';
 
 /**
  * Daily AI call quota (Cluster H, slice H.4).
@@ -29,18 +29,18 @@ export async function aiRateLimit(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const limit = maxCallsPerDay();
     const windowStart = new Date(Date.now() - WINDOW_MS);
 
     const count = await prisma.aiUsageLog.count({
-      where: { userId, createdAt: { gte: windowStart } },
+      where: { tenantId, createdAt: { gte: windowStart } },
     });
 
     if (count >= limit) {
       // Time until the oldest in-window call ages out and frees a slot.
       const oldest = await prisma.aiUsageLog.findFirst({
-        where: { userId, createdAt: { gte: windowStart } },
+        where: { tenantId, createdAt: { gte: windowStart } },
         orderBy: { createdAt: 'asc' },
         select: { createdAt: true },
       });

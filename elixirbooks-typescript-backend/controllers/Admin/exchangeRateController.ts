@@ -5,7 +5,7 @@
 import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../../lib/tenantScope';
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -22,13 +22,13 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
 
 export async function listExchangeRates(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { fromCurrency, toCurrency } = req.query as {
       fromCurrency?: string;
       toCurrency?: string;
     };
 
-    const where: Prisma.ExchangeRateWhereInput = { userId };
+    const where: Prisma.ExchangeRateWhereInput = { tenantId };
     if (fromCurrency) where.fromCurrency = fromCurrency;
     if (toCurrency) where.toCurrency = toCurrency;
 
@@ -56,7 +56,7 @@ export async function listExchangeRates(req: Request, res: Response): Promise<vo
 
 export async function createExchangeRate(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { fromCurrency, toCurrency, rate, asOfDate } = req.body as {
       fromCurrency?: string;
       toCurrency?: string;
@@ -89,7 +89,7 @@ export async function createExchangeRate(req: Request, res: Response): Promise<v
 
     const created = await prisma.exchangeRate.create({
       data: {
-        userId,
+        tenantId,
         fromCurrency: fromCurrency.toUpperCase(),
         toCurrency: toCurrency.toUpperCase(),
         rate: parsedRate,
@@ -111,16 +111,16 @@ export async function createExchangeRate(req: Request, res: Response): Promise<v
 
 // ---------------------------------------------------------------------------
 // DELETE /exchange-rates/:id
-// Tenant-scoped: only the owning userId may delete their rate.
+// Tenant-scoped: only the owning tenantId may delete their rate.
 // ---------------------------------------------------------------------------
 
 export async function deleteExchangeRate(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const existing = await prisma.exchangeRate.findUnique({ where: { id } });
-    if (!existing || existing.userId !== userId) {
+    if (!existing || existing.tenantId !== tenantId) {
       res.status(404).json({ success: false, message: 'Exchange rate not found' });
       return;
     }

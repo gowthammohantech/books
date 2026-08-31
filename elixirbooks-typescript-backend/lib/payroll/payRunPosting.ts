@@ -10,7 +10,7 @@ function isZero(v: string): boolean {
 export async function postPayRunLineAccrual(
   tx: PostingTx,
   p: {
-    userId: string;
+    tenantId: string;
     lineId: string;
     date: Date;
     gross: string;
@@ -28,15 +28,15 @@ export async function postPayRunLineAccrual(
   if (!isZero(p.deductions)) {
     lines.push({ accountId: p.deductionsPayableAccountId, side: 'credit', amount: p.deductions });
   }
-  await gatedPost(tx, p.userId, p.date, 'PayRunLine', p.lineId, 'accrued', lines);
+  await gatedPost(tx, p.tenantId, p.date, 'PayRunLine', p.lineId, 'accrued', lines);
 }
 
 export async function reversePayRunLineAccrual(
   tx: PostingTx,
-  p: { userId: string; lineId: string },
+  p: { tenantId: string; lineId: string },
 ): Promise<void> {
   const je = await tx.journalEntry.findFirst({
-    where: { userId: p.userId, sourceType: 'PayRunLine', sourceId: p.lineId, event: 'accrued', isDeleted: false },
+    where: { tenantId: p.tenantId, sourceType: 'PayRunLine', sourceId: p.lineId, event: 'accrued', isDeleted: false },
     select: { id: true },
   } as never);
   if (!je) return;

@@ -111,13 +111,13 @@ const D = (s: string) => new Date(s);
 // Invoices: baseline (well before), boundary (exactly at the inclusive UTC
 // cutoff), after (1ms past it). None have payments so amounts stay gross.
 const INVOICES = [
-  { id: 'inv-baseline', userId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'UNPAID',
+  { id: 'inv-baseline', tenantId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'UNPAID',
     invoiceNumber: 'INV-BASELINE', invoiceDate: D('2024-06-01'), dueDate: D('2024-06-01'),
     TotalAmount: 1000, customer: { name: 'Baseline Co' }, payments: [] },
-  { id: 'inv-boundary', userId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'UNPAID',
+  { id: 'inv-boundary', tenantId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'UNPAID',
     invoiceNumber: 'INV-BOUNDARY', invoiceDate: BOUNDARY, dueDate: BOUNDARY,
     TotalAmount: 500, customer: { name: 'Boundary Co' }, payments: [] },
-  { id: 'inv-after', userId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'UNPAID',
+  { id: 'inv-after', tenantId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'UNPAID',
     invoiceNumber: 'INV-AFTER', invoiceDate: JUST_AFTER, dueDate: JUST_AFTER,
     TotalAmount: 300, customer: { name: 'After Co' }, payments: [] },
 ];
@@ -125,15 +125,15 @@ const INVOICES = [
 // Purchases: same baseline/boundary/after shape, via balanceAmount (no later
 // supplier payments so add-back is inert).
 const PURCHASES = [
-  { id: 'pur-baseline', userId: TENANT, isDeleted: false, status: 'pending', purchaseId: 'PUR-BASELINE',
+  { id: 'pur-baseline', tenantId: TENANT, isDeleted: false, status: 'pending', purchaseId: 'PUR-BASELINE',
     purchaseDate: D('2024-06-01'), dueDate: D('2024-06-01'), balanceAmount: 700,
     contact: null, billFromUser: { firstName: 'Sup', lastName: 'Base' },
     supplier: { supplier_name: 'Sup Base' }, supplierPayments: [] },
-  { id: 'pur-boundary', userId: TENANT, isDeleted: false, status: 'pending', purchaseId: 'PUR-BOUNDARY',
+  { id: 'pur-boundary', tenantId: TENANT, isDeleted: false, status: 'pending', purchaseId: 'PUR-BOUNDARY',
     purchaseDate: BOUNDARY, dueDate: BOUNDARY, balanceAmount: 500,
     contact: null, billFromUser: { firstName: 'Sup', lastName: 'Boundary' },
     supplier: { supplier_name: 'Sup Boundary' }, supplierPayments: [] },
-  { id: 'pur-after', userId: TENANT, isDeleted: false, status: 'pending', purchaseId: 'PUR-AFTER',
+  { id: 'pur-after', tenantId: TENANT, isDeleted: false, status: 'pending', purchaseId: 'PUR-AFTER',
     purchaseDate: JUST_AFTER, dueDate: JUST_AFTER, balanceAmount: 300,
     contact: null, billFromUser: { firstName: 'Sup', lastName: 'After' },
     supplier: { supplier_name: 'Sup After' }, supplierPayments: [] },
@@ -152,7 +152,7 @@ beforeEach(() => {
 
   mockInvoiceFindMany.mockImplementation(async ({ where, select }: any) => {
     let list = INVOICES.filter(
-      (i) => i.userId === where.userId && !i.isDeleted && i.invoiceType === where.invoiceType,
+      (i) => i.tenantId === where.tenantId && !i.isDeleted && i.invoiceType === where.invoiceType,
     );
     if (where.status?.notIn) list = list.filter((i) => !where.status.notIn.includes(i.status));
     if (where.invoiceDate?.lte) list = list.filter((i) => le(i.invoiceDate, where.invoiceDate.lte));
@@ -166,7 +166,7 @@ beforeEach(() => {
   });
 
   mockPurchaseFindMany.mockImplementation(async ({ where, select }: any) => {
-    let list = PURCHASES.filter((p) => p.userId === where.userId && !p.isDeleted);
+    let list = PURCHASES.filter((p) => p.tenantId === where.tenantId && !p.isDeleted);
     if (where.status?.not) list = list.filter((p) => p.status !== where.status.not);
     if (where.purchaseDate?.lte) list = list.filter((p) => le(p.purchaseDate, where.purchaseDate.lte));
     const sw = select?.supplierPayments?.where;

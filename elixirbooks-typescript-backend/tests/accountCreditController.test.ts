@@ -94,7 +94,7 @@ beforeEach(() => {
 
 describe('grantAccountCredit', () => {
   it('creates a GRANT entry, posts Dr CUSTOMER_CREDIT_EXPENSE / Cr ACCOUNT_CREDIT, and returns the updated balance', async () => {
-    mockTxEntryCreate.mockResolvedValue({ id: 'ace-1', userId: TENANT_ID, contactId: CONTACT_ID, type: 'GRANT', amount: new Prisma.Decimal(100) });
+    mockTxEntryCreate.mockResolvedValue({ id: 'ace-1', tenantId: TENANT_ID, contactId: CONTACT_ID, type: 'GRANT', amount: new Prisma.Decimal(100) });
     mockGetBalance.mockResolvedValue(new Prisma.Decimal(100));
 
     const { req, res, statusMock, jsonMock } = makeReqRes({ id: CONTACT_ID }, { amount: 100, reason: 'goodwill' });
@@ -103,7 +103,7 @@ describe('grantAccountCredit', () => {
     expect(mockTxEntryCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          userId: TENANT_ID,
+          tenantId: TENANT_ID,
           contactId: CONTACT_ID,
           type: 'GRANT',
           reason: 'goodwill',
@@ -115,7 +115,7 @@ describe('grantAccountCredit', () => {
     expect(mockPost).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        userId: TENANT_ID,
+        tenantId: TENANT_ID,
         sourceType: 'AccountCreditEntry',
         sourceId: 'ace-1',
         event: 'grant',
@@ -154,7 +154,7 @@ describe('grantAccountCredit', () => {
 describe('voidAccountCredit', () => {
   it('succeeds when nothing has been redeemed yet', async () => {
     mockEntryFindFirst.mockResolvedValue({
-      id: 'ace-1', userId: TENANT_ID, contactId: CONTACT_ID, type: 'GRANT', isVoided: false,
+      id: 'ace-1', tenantId: TENANT_ID, contactId: CONTACT_ID, type: 'GRANT', isVoided: false,
       amount: new Prisma.Decimal(100),
     });
     // Outside-tx guard check: full grant still outstanding (nothing redeemed).
@@ -168,7 +168,7 @@ describe('voidAccountCredit', () => {
 
     expect(mockVoidDocument).toHaveBeenCalledWith(
       expect.anything(),
-      { userId: TENANT_ID, sourceType: 'AccountCreditEntry', sourceId: 'ace-1', event: 'grant' },
+      { tenantId: TENANT_ID, sourceType: 'AccountCreditEntry', sourceId: 'ace-1', event: 'grant' },
     );
     expect(mockTxEntryUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -184,7 +184,7 @@ describe('voidAccountCredit', () => {
 
   it('is REJECTED with 400 when voiding would push the balance negative (already partly redeemed)', async () => {
     mockEntryFindFirst.mockResolvedValue({
-      id: 'ace-1', userId: TENANT_ID, contactId: CONTACT_ID, type: 'GRANT', isVoided: false,
+      id: 'ace-1', tenantId: TENANT_ID, contactId: CONTACT_ID, type: 'GRANT', isVoided: false,
       amount: new Prisma.Decimal(100),
     });
     // 100 granted, 50 already redeemed against an invoice -> current balance 50.

@@ -18,9 +18,12 @@ function buildBase(): PrismaClient {
   });
 }
 
+const base: PrismaClient = globalThis.__elixirBooksPrismaBase ?? buildBase();
+// Cached unconditionally (not just in dev) so `prisma` and `prismaUnscoped`
+// are guaranteed to share one connection pool.
+globalThis.__elixirBooksPrismaBase = base;
+
 function buildClient(): PrismaClient {
-  const base = globalThis.__elixirBooksPrismaBase ?? buildBase();
-  if (process.env.NODE_ENV !== 'production') globalThis.__elixirBooksPrismaBase = base;
   // The extension is a query-only interceptor; cast the extended client back to
   // PrismaClient so existing call sites (and $transaction callbacks typed as
   // Prisma.TransactionClient) keep type-checking. Runtime interception is
@@ -28,8 +31,30 @@ function buildClient(): PrismaClient {
   return base.$extends(auditExtension(base)) as unknown as PrismaClient;
 }
 
+/**
+ * The application client. Audits every write and — once lib/tenantGuard.ts is
+ * wired in — scopes every query to the tenant on the request context. Use this
+ * everywhere by default.
+ */
 export const prisma = globalThis.__elixirBooksPrisma ?? buildClient();
 
 if (process.env.NODE_ENV !== 'production') {
   globalThis.__elixirBooksPrisma = prisma;
 }
+
+/**
+ * The raw, un-extended client: NO tenant filtering and NO audit logging.
+ *
+ * This is the deliberate cross-tenant escape hatch, and it is deliberately
+ * grep-able — `grep -rn prismaUnscoped` is the complete audit surface for
+ * queries that can see every tenant's data. Legitimate users are the ones that
+ * cannot have a tenant by nature:
+ *   - authentication (finding a user by email before we know their tenant)
+ *   - public token links (resolving an invoice by its publicViewToken)
+ *   - crons selecting due work across all tenants before fanning out
+ *   - platform seeds, backfills and migrations
+ *
+ * Anything else should use `prisma` and, if it runs outside a request, declare
+ * its scope with runAsTenant()/runAsSystem() from lib/tenantContext.
+ */
+export const prismaUnscoped: PrismaClient = base;

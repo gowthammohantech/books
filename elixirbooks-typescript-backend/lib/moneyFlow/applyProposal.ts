@@ -51,7 +51,7 @@ export interface ApplyAutoMatchResult extends AutoMatchResult {
 export async function applyAutoMatch(
   tx: ApplyProposalDb,
   bankTxn: ApplyBankTxn,
-  userId: string,
+  tenantId: string,
 ): Promise<ApplyAutoMatchResult> {
   const relatedType = bankTxn.relatedType ?? 'MANUAL';
   const explainStatus = bankTxn.explainStatus ?? 'UNEXPLAINED';
@@ -61,7 +61,7 @@ export async function applyAutoMatch(
     return { candidates: [], best: undefined, status: explainStatus, autoPostEligible: false };
   }
 
-  const result = await autoMatch(tx, bankTxn, userId);
+  const result = await autoMatch(tx, bankTxn, tenantId);
   const best = result.best;
 
   if (best && best.confidence === 'AUTO') {

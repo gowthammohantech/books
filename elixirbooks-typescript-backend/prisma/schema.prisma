@@ -505,6 +505,195 @@ enum PayFrequency {
   MONTHLY
 }
 
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_DELETION
+}
+
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+}
+
+// =============================================================================
+// Models — Tenancy
+// =============================================================================
+
+/// A customer workspace. Every business row in this schema belongs to exactly
+/// one Tenant, and lib/tenantGuard.ts filters every query by it.
+///
+/// On an install that predates multi-tenancy, tenant #1 is created with
+/// `id` = the primary owner's User.id (see the tenant_core migration). That is
+/// deliberate: every pre-existing tenant column already held `ownerId ?? id`,
+/// so reusing the id makes the conversion a pure column rename with no data
+/// movement, and leaves already-issued JWTs valid.
+model Tenant {
+  id        String       @id @default(uuid())
+  name      String
+  slug      String       @unique
+  status    TenantStatus @default(ACTIVE)
+  plan      String?      @default("free")
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  deletedAt DateTime?
+
+  memberships TenantMembership[] @relation("TenantMemberships")
+  roles       Role[]             @relation("TenantRoles")
+  permissions Permission[]       @relation("TenantPermissions")
+  users       User[]             @relation("UserLastTenant")
+
+  // Tenant-owned business data. These moved off User in P3, when the tenant
+  // column stopped meaning "the owner user" and started meaning "the workspace".
+  aIChatSessions            AIChatSession[]            @relation("TenantAIChatSession")
+  aIConfiguration           AIConfiguration?           @relation("TenantAIConfiguration")
+  aIPromptLogs              AIPromptLog[]              @relation("TenantAIPromptLog")
+  aIPromptTemplates         AIPromptTemplate[]         @relation("TenantAIPromptTemplate")
+  accountCreditEntrys       AccountCreditEntry[]       @relation("TenantAccountCreditEntry")
+  accountingIntegrations    AccountingIntegration[]    @relation("TenantAccountingIntegration")
+  accountingPeriods         AccountingPeriod[]         @relation("TenantAccountingPeriod")
+  accounts                  Account[]                  @relation("TenantAccount")
+  aiChatSessions            AiChatSession[]            @relation("TenantAiChatSession")
+  aiConfig                  AiConfig?                  @relation("TenantAiConfig")
+  aiExtractionJobs          AiExtractionJob[]          @relation("TenantAiExtractionJob")
+  aiUsageLogs               AiUsageLog[]               @relation("TenantAiUsageLog")
+  bankDetails               BankDetail[]               @relation("TenantBankDetail")
+  budgets                   Budget[]                   @relation("TenantBudget")
+  companySettings           CompanySettings?           @relation("TenantCompanySettings")
+  contacts                  Contact[]                  @relation("TenantContact")
+  conversations             Conversation[]             @relation("TenantConversation")
+  costCenters               CostCenter[]               @relation("TenantCostCenter")
+  creditNotes               CreditNote[]               @relation("TenantCreditNote")
+  customers                 Customer[]                 @relation("TenantCustomer")
+  debitNotes                DebitNote[]                @relation("TenantDebitNote")
+  deliveryChallans          DeliveryChallan[]          @relation("TenantDeliveryChallan")
+  eInvoiceRecords           EInvoiceRecord[]           @relation("TenantEInvoiceRecord")
+  emailSettingss            EmailSettings[]            @relation("TenantEmailSettings")
+  exchangeRates             ExchangeRate[]             @relation("TenantExchangeRate")
+  expenses                  Expense[]                  @relation("TenantExpense")
+  explanationHints          ExplanationHint[]          @relation("TenantExplanationHint")
+  fixedAssets               FixedAsset[]               @relation("TenantFixedAsset")
+  gatewayConfigs            GatewayConfig[]            @relation("TenantGatewayConfig")
+  holidays                  Holiday[]                  @relation("TenantHoliday")
+  inventoryCostLayers       InventoryCostLayer[]       @relation("TenantInventoryCostLayer")
+  inventorys                Inventory[]                @relation("TenantInventory")
+  invoiceTemplates          InvoiceTemplate[]          @relation("TenantInvoiceTemplate")
+  invoices                  Invoice[]                  @relation("TenantInvoice")
+  journalEntrys             JournalEntry[]             @relation("TenantJournalEntry")
+  leaveAllocations          LeaveAllocation[]          @relation("TenantLeaveAllocation")
+  leaveRequests             LeaveRequest[]             @relation("TenantLeaveRequest")
+  leaveTypes                LeaveType[]                @relation("TenantLeaveType")
+  ledgerAccountMappings     LedgerAccountMapping[]     @relation("TenantLedgerAccountMapping")
+  localizations             Localization[]             @relation("TenantLocalization")
+  messagingConfig           MessagingConfig?           @relation("TenantMessagingConfig")
+  mtdConfig                 MtdConfig?                 @relation("TenantMtdConfig")
+  payRuns                   PayRun[]                   @relation("TenantPayRun")
+  paymentLinkMethods        PaymentLinkMethod[]        @relation("TenantPaymentLinkMethod")
+  paymentTransactions       PaymentTransaction[]       @relation("TenantPaymentTransaction")
+  payrollProfiles           PayrollProfile[]           @relation("TenantPayrollProfile")
+  pettyCashs                PettyCash[]                @relation("TenantPettyCash")
+  projectMembers            ProjectMember[]            @relation("TenantProjectMember")
+  projects                  Project[]                  @relation("TenantProject")
+  purchaseOrders            PurchaseOrder[]            @relation("TenantPurchaseOrder")
+  purchases                 Purchase[]                 @relation("TenantPurchase")
+  quotations                Quotation[]                @relation("TenantQuotation")
+  recurringInvoiceSchedules RecurringInvoiceSchedule[] @relation("TenantRecurringInvoiceSchedule")
+  refunds                   Refund[]                   @relation("TenantRefund")
+  signatures                Signature[]                @relation("TenantSignature")
+  suppliers                 Supplier[]                 @relation("TenantSupplier")
+  taxRates                  TaxRate[]                  @relation("TenantTaxRate")
+  timesheets                Timesheet[]                @relation("TenantTimesheet")
+  transactionCategorys      TransactionCategory[]      @relation("TenantTransactionCategory")
+  vehicles                  Vehicle[]                  @relation("TenantVehicle")
+
+  auditLogs AuditLog[] @relation("TenantAuditLogs")
+
+  // Denormalized child tables (see the note on each model).
+  invoicePayments       InvoicePayment[]       @relation("TenantInvoicePayments")
+  supplierPayments      SupplierPayment[]      @relation("TenantSupplierPayments")
+  expenseChangeLogs     ExpenseChangeLog[]     @relation("TenantExpenseChangeLogs")
+  bankTransactions      BankTransaction[]      @relation("TenantBankTransactions")
+  pettyCashTransactions PettyCashTransaction[] @relation("TenantPettyCashTransactions")
+  journalLines          JournalLine[]          @relation("TenantJournalLines")
+  aiChatMessages        AiChatMessage[]        @relation("TenantAiChatMessages")
+  timeEntries           TimeEntry[]            @relation("TenantTimeEntries")
+  leaveRequestDays      LeaveRequestDay[]      @relation("TenantLeaveRequestDays")
+  payRunLines           PayRunLine[]           @relation("TenantPayRunLines")
+  reminders             Reminder[]             @relation("TenantReminders")
+
+  // Formerly install-global catalogs, tenant-scoped in P4.
+  products             Product[]             @relation("TenantProduct")
+  brands               Brand[]               @relation("TenantBrand")
+  categories           Category[]            @relation("TenantCategory")
+  units                Unit[]                @relation("TenantUnit")
+  taxGroups            TaxGroup[]            @relation("TenantTaxGroup")
+  expenseCategories    ExpenseCategory[]     @relation("TenantExpenseCategory")
+  customFields         CustomField[]         @relation("TenantCustomField")
+  customFieldValues    CustomFieldValue[]    @relation("TenantCustomFieldValue")
+  customFieldDataTypes CustomFieldDataType[] @relation("TenantCustomFieldDataType")
+  emailTemplates       EmailTemplate[]       @relation("TenantEmailTemplate")
+  generalSettings      GeneralSetting[]      @relation("TenantGeneralSetting")
+  currencies           Currency[]            @relation("TenantCurrency")
+
+  apiKeys TenantApiKey[] @relation("TenantApiKeys")
+
+  @@index([status])
+}
+
+/// Joins a User to a Tenant with a role. A user may hold memberships in several
+/// tenants; the JWT names the one the session is currently acting on, and
+/// POST /api/auth/switch-tenant mints a token for another.
+///
+/// `roleId` lives here rather than on User because a user's role is per-tenant:
+/// an Owner in one workspace may be Staff in another.
+model TenantMembership {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation("UserMemberships", fields: [userId], references: [id], onDelete: Cascade)
+  tenantId  String
+  tenant    Tenant           @relation("TenantMemberships", fields: [tenantId], references: [id], onDelete: Cascade)
+  roleId    String?
+  role      Role?            @relation("RoleMemberships", fields: [roleId], references: [id])
+  status    MembershipStatus @default(ACTIVE)
+  isOwner   Boolean          @default(false)
+  invitedBy String?
+  joinedAt  DateTime?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([userId, tenantId])
+  @@index([tenantId, status])
+  @@index([userId, status])
+}
+
+/// A server-to-server credential scoped to ONE workspace.
+///
+/// The external API (controllers/externalController.js) used to authenticate
+/// against a single install-wide `WHATSAPPCRM_API_KEY` env var, which cannot
+/// say WHICH company an incoming contact belongs to. A presented key now names
+/// its tenant, so `upsertCustomer` writes into the right workspace by
+/// construction rather than by guessing at the sole admin.
+///
+/// Only the SHA-256 of the key is stored — the key itself is shown once, at
+/// creation, and is unrecoverable afterwards. `prefix` is the non-secret
+/// leading characters, kept so a human can tell two keys apart in a list.
+model TenantApiKey {
+  id         String    @id @default(uuid())
+  tenantId   String
+  tenant     Tenant    @relation("TenantApiKeys", fields: [tenantId], references: [id], onDelete: Cascade)
+  name       String
+  keyHash    String    @unique
+  prefix     String
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdBy  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([tenantId])
+}
+
 // =============================================================================
 // Models — Auth / RBAC
 // =============================================================================
@@ -540,6 +729,11 @@ model Module {
 
 model Permission {
   id        String    @id @default(uuid())
+  // Denormalized from Role.tenantId so the tenant guard can filter Permission
+  // with a top-level `where` instead of a relation traversal. Kept in sync by
+  // every writer; prisma/checkTenantIntegrity.ts asserts it matches the Role.
+  tenantId  String
+  tenant    Tenant    @relation("TenantPermissions", fields: [tenantId], references: [id], onDelete: Cascade)
   roleId    String
   role      Role      @relation("RolePermissions", fields: [roleId], references: [id])
   moduleId  String?
@@ -552,10 +746,17 @@ model Permission {
   deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+
+  @@index([tenantId])
 }
 
 model Role {
   id           String    @id @default(uuid())
+  // Roles are per-tenant: each workspace owns its own Owner/Admin/Staff/... set
+  // and may rename or re-permission them without affecting anyone else.
+  // Module stays global — it names features, not data.
+  tenantId     String
+  tenant       Tenant    @relation("TenantRoles", fields: [tenantId], references: [id], onDelete: Cascade)
   roleName     String
   status       Boolean   @default(true)
   defaultRoute String?   @default("dashboard")
@@ -564,8 +765,21 @@ model Role {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  permissions Permission[] @relation("RolePermissions")
-  users       User[]       @relation("UserRole")
+  permissions Permission[]       @relation("RolePermissions")
+  users       User[]             @relation("UserRole")
+  memberships TenantMembership[] @relation("RoleMemberships")
+
+  // NOTE: deliberately no @@unique([tenantId, roleName]).
+  // deleteRole soft-deletes (sets deletedAt) and every name-uniqueness check in
+  // roleController is scoped to `deletedAt: null`, so a plain unique constraint
+  // would make "delete a role, then recreate it with the same name" fail with a
+  // P2002. The correct DB-level constraint is a PARTIAL unique index
+  // (... WHERE "deletedAt" IS NULL), which Prisma 5 cannot express in the
+  // schema — declaring it in raw SQL only would show up as permanent drift on
+  // every `prisma migrate dev`. Uniqueness therefore stays where it already
+  // lives: the case-insensitive, tenant-scoped checks in roleController and
+  // lib/defaultRoles.ensureRole.
+  @@index([tenantId])
 }
 
 model User {
@@ -589,13 +803,19 @@ model User {
   user_type    Int              @default(1)
   roleId       String?
   role         Role?            @relation("UserRole", fields: [roleId], references: [id])
-  // Shared-workspace tenancy: links a staff/admin user to the sole company
-  // owner (the single user_type:1 account). `ownerId = null` means the row IS
-  // the owner, so the tenant id resolves to `ownerId ?? id` and every member
-  // of a company shares one dataset. See lib/tenantScope.ts + seedUserOwner.ts.
+  // DEPRECATED (P5), dropped in P9. This was the whole tenancy story: a staff
+  // user pointed at the sole company owner, and the tenant resolved to
+  // `ownerId ?? id`. TenantMembership replaced it — a person can belong to
+  // several workspaces, which one column can never express. Still written by
+  // createStaffUser for one release so nothing that reads it breaks mid-upgrade;
+  // NOTHING should start reading it.
   ownerId      String?
   owner        User?            @relation("UserOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   staff        User[]           @relation("UserOwner")
+  // Which workspace to open on next login, for users who belong to several.
+  // Advisory only — a membership is still required and re-checked every request.
+  lastTenantId String?
+  lastTenant   Tenant?          @relation("UserLastTenant", fields: [lastTenantId], references: [id], onDelete: SetNull)
   balance      Decimal          @default(0) @db.Decimal(18, 4)
   balance_type UserBalanceType?
   isDeleted    Boolean          @default(false)
@@ -604,106 +824,59 @@ model User {
   updatedAt    DateTime         @updatedAt
 
   // --- Back-relations from other batches ---
-  loginActivities            LoginActivity[]         @relation("UserLoginActivities")
-  bankDetails                BankDetail[]            @relation("UserBankDetails")
-  reconciledBankTxs          BankTransaction[]       @relation("UserReconciledBankTransactions")
-  customers                  Customer[]              @relation("UserCustomers")
-  inventories                Inventory[]             @relation("UserInventories")
-  pettyCashAccounts          PettyCash[]             @relation("UserPettyCash")
-  signatures                 Signature[]             @relation("UserSignatures")
-  suppliers                  Supplier[]              @relation("UserSuppliers")
-  supplierPaymentsCreated    SupplierPayment[]       @relation("UserSupplierPaymentsCreated")
-  expenses                   Expense[]               @relation("UserExpenses")
-  reimbursableExpenses       Expense[]               @relation("ExpensePaidBy")
+  memberships                TenantMembership[]    @relation("UserMemberships")
+  loginActivities            LoginActivity[]       @relation("UserLoginActivities")
+  reconciledBankTxs          BankTransaction[]     @relation("UserReconciledBankTransactions")
+  supplierPaymentsCreated    SupplierPayment[]     @relation("UserSupplierPaymentsCreated")
+  reimbursableExpenses       Expense[]             @relation("ExpensePaidBy")
   // Phase 2 — Payroll
-  payrollProfilesOwned       PayrollProfile[]        @relation("CompanyPayrollProfiles")
-  payrollProfile             PayrollProfile[]        @relation("EmployeePayrollProfile")
-  companyPayRuns             PayRun[]                @relation("CompanyPayRuns")
-  payRunLines                PayRunLine[]            @relation("EmployeePayRunLines")
-  expenseChangeLogs          ExpenseChangeLog[]      @relation("UserExpenseChangeLogs")
-  purchases                  Purchase[]              @relation("PurchaseUser")
-  purchasesBillFrom          Purchase[]              @relation("PurchaseBillFrom")
-  purchasesBillTo            Purchase[]              @relation("PurchaseBillTo")
-  purchaseOrders             PurchaseOrder[]         @relation("PurchaseOrderUser")
-  purchaseOrdersBillFrom     PurchaseOrder[]         @relation("PurchaseOrderBillFrom")
-  purchaseOrdersBillTo       PurchaseOrder[]         @relation("PurchaseOrderBillTo")
-  companySettings            CompanySettings?        @relation("UserCompanySettings")
-  emailSettings              EmailSettings[]         @relation("UserEmailSettings")
-  currenciesCreated          Currency[]              @relation("CurrencyCreatedBy")
-  dateFormatsCreated         DateFormat[]            @relation("DateFormatCreatedBy")
-  dateFormatsUpdated         DateFormat[]            @relation("DateFormatUpdatedBy")
-  timeFormatsCreated         TimeFormat[]            @relation("TimeFormatCreatedBy")
-  timeFormatsUpdated         TimeFormat[]            @relation("TimeFormatUpdatedBy")
-  generalSettingsCreated     GeneralSetting[]        @relation("GeneralSettingCreatedBy")
-  generalSettingsUpdated     GeneralSetting[]        @relation("GeneralSettingUpdatedBy")
-  localizations              Localization[]          @relation("UserLocalizations")
-  customFieldDataTypes       CustomFieldDataType[]   @relation("UserCustomFieldDataTypes")
-  customFieldValues          CustomFieldValue[]      @relation("UserCustomFieldValues")
-  aiChatSessions             AIChatSession[]         @relation("UserAIChatSessions")
-  aiConfiguration            AIConfiguration?        @relation("UserAIConfiguration")
-  aiPromptLogs               AIPromptLog[]           @relation("UserAIPromptLogs")
-  aiPromptTemplates          AIPromptTemplate[]      @relation("UserAIPromptTemplates")
-  conversations              Conversation[]          @relation("UserConversations")
-  invoicesAsUser             Invoice[]               @relation("InvoiceUser")
-  invoicesAsBillFrom         Invoice[]               @relation("InvoiceBillFrom")
-  invoicePaymentsReceived    InvoicePayment[]        @relation("InvoicePaymentReceivedBy")
-  voidedInvoicePayments      InvoicePayment[]        @relation("UserVoidedInvoicePayments")
-  invoiceTemplates           InvoiceTemplate[]       @relation("UserInvoiceTemplates")
-  quotationsAsUser           Quotation[]             @relation("QuotationUser")
-  quotationsAsSalesPerson    Quotation[]             @relation("QuotationSalesPerson")
-  quotationsAsBillFrom       Quotation[]             @relation("QuotationBillFrom")
-  creditNotesAsUser          CreditNote[]            @relation("CreditNoteUser")
-  creditNotesAsBillFrom      CreditNote[]            @relation("CreditNoteBillFrom")
-  debitNotesAsUser           DebitNote[]             @relation("DebitNoteUser")
-  debitNotesAsCreatedBy      DebitNote[]             @relation("DebitNoteCreatedBy")
-  debitNotesAsApprovedBy     DebitNote[]             @relation("DebitNoteApprovedBy")
-  debitNotesAsBillFrom       DebitNote[]             @relation("DebitNoteBillFrom")
-  deliveryChallansAsUser     DeliveryChallan[]       @relation("DeliveryChallanUser")
-  deliveryChallansAsBillFrom DeliveryChallan[]       @relation("DeliveryChallanBillFrom")
-  remindersCreated           Reminder[]              @relation("ReminderCreatedBy")
-  vehicles                   Vehicle[]               @relation("UserVehicles")
-  taxRates                   TaxRate[]               @relation("UserTaxRates")
-  gatewayConfigs             GatewayConfig[]         @relation("UserGatewayConfigs")
-  paymentTransactions        PaymentTransaction[]    @relation("UserPaymentTransactions")
-  paymentLinkMethods         PaymentLinkMethod[]     @relation("UserPaymentLinkMethods")
-  refunds                    Refund[]                @relation("UserRefunds")
-  accounts                   Account[]               @relation("UserAccounts")
-  journalEntries             JournalEntry[]          @relation("UserJournalEntries")
-  accountingPeriods          AccountingPeriod[]      @relation("UserAccountingPeriods")
-  eInvoices                  EInvoiceRecord[]        @relation("UserEInvoices")
-  accountingIntegrations     AccountingIntegration[] @relation("UserAccountingIntegrations")
-  messagingConfig            MessagingConfig?        @relation("UserMessagingConfig")
-  mtdConfig                  MtdConfig?              @relation("UserMtdConfig")
+  payrollProfile             PayrollProfile[]      @relation("EmployeePayrollProfile")
+  payRunLines                PayRunLine[]          @relation("EmployeePayRunLines")
+  expenseChangeLogs          ExpenseChangeLog[]    @relation("UserExpenseChangeLogs")
+  purchasesBillFrom          Purchase[]            @relation("PurchaseBillFrom")
+  purchasesBillTo            Purchase[]            @relation("PurchaseBillTo")
+  purchaseOrdersBillFrom     PurchaseOrder[]       @relation("PurchaseOrderBillFrom")
+  purchaseOrdersBillTo       PurchaseOrder[]       @relation("PurchaseOrderBillTo")
+  currenciesCreated          Currency[]            @relation("CurrencyCreatedBy")
+  dateFormatsCreated         DateFormat[]          @relation("DateFormatCreatedBy")
+  dateFormatsUpdated         DateFormat[]          @relation("DateFormatUpdatedBy")
+  timeFormatsCreated         TimeFormat[]          @relation("TimeFormatCreatedBy")
+  timeFormatsUpdated         TimeFormat[]          @relation("TimeFormatUpdatedBy")
+  generalSettingsCreated     GeneralSetting[]      @relation("GeneralSettingCreatedBy")
+  generalSettingsUpdated     GeneralSetting[]      @relation("GeneralSettingUpdatedBy")
+  customFieldDataTypes       CustomFieldDataType[] @relation("UserCustomFieldDataTypes")
+  customFieldValues          CustomFieldValue[]    @relation("UserCustomFieldValues")
+  invoicesAsBillFrom         Invoice[]             @relation("InvoiceBillFrom")
+  invoicePaymentsReceived    InvoicePayment[]      @relation("InvoicePaymentReceivedBy")
+  voidedInvoicePayments      InvoicePayment[]      @relation("UserVoidedInvoicePayments")
+  quotationsAsSalesPerson    Quotation[]           @relation("QuotationSalesPerson")
+  quotationsAsBillFrom       Quotation[]           @relation("QuotationBillFrom")
+  creditNotesAsBillFrom      CreditNote[]          @relation("CreditNoteBillFrom")
+  debitNotesAsCreatedBy      DebitNote[]           @relation("DebitNoteCreatedBy")
+  debitNotesAsApprovedBy     DebitNote[]           @relation("DebitNoteApprovedBy")
+  debitNotesAsBillFrom       DebitNote[]           @relation("DebitNoteBillFrom")
+  deliveryChallansAsBillFrom DeliveryChallan[]     @relation("DeliveryChallanBillFrom")
+  remindersCreated           Reminder[]            @relation("ReminderCreatedBy")
   // Cluster H — slice H.1
-  aiConfig                   AiConfig?               @relation("UserAiConfig")
   // Cluster H — slice H.2
-  aiExtractionJobs           AiExtractionJob[]       @relation("UserAiJobs")
   // Cluster H — slice H.3
-  aiCopilotSessions          AiChatSession[]         @relation("UserAiChats")
   // Cluster H — slice H.4
-  aiUsageLogs                AiUsageLog[]            @relation("UserAiUsage")
   // Audit trail
-  auditLogs                  AuditLog[]              @relation("UserAuditLogs")
+  auditLogs                  AuditLog[]            @relation("UserAuditLogs")
   // Slice B.1 — ledger
-  ledgerMappings             LedgerAccountMapping[]  @relation("UserLedgerMappings")
   // Spec G — multi-currency
-  exchangeRates              ExchangeRate[]          @relation("UserExchangeRates")
   // P3.2 — budgets
-  budgets                    Budget[]                @relation("UserBudgets")
   // P3.3 — cost centers / projects (no relation needed; userId is a plain scalar FK)
   // P3.4 — fixed assets
-  fixedAssets                FixedAsset[]            @relation("UserFixedAssets")
   // Purchase-parity void
-  voidedSupplierPayments     SupplierPayment[]       @relation("UserVoidedSupplierPayments")
+  voidedSupplierPayments     SupplierPayment[]     @relation("UserVoidedSupplierPayments")
   // Unified contacts (Stage A)
-  contacts                   Contact[]               @relation("UserContacts")
   // Time Tracking — Phase 1
-  projectMemberships         ProjectMember[]         @relation("ProjectMemberEmployee")
-  timesheets                 Timesheet[]             @relation("TimesheetEmployee")
-  leaveRequests              LeaveRequest[]          @relation("LeaveRequestEmployee")
-  leaveAllocations           LeaveAllocation[]       @relation("LeaveAllocationEmployee")
+  projectMemberships         ProjectMember[]       @relation("ProjectMemberEmployee")
+  timesheets                 Timesheet[]           @relation("TimesheetEmployee")
+  leaveRequests              LeaveRequest[]        @relation("LeaveRequestEmployee")
+  leaveAllocations           LeaveAllocation[]     @relation("LeaveAllocationEmployee")
   // Account Credit (per-contact goodwill/promo credit)
-  accountCreditEntries       AccountCreditEntry[]    @relation("AccountCreditEntryUser")
 }
 
 // =============================================================================
@@ -732,8 +905,8 @@ model BankDetail {
   currencyCode      String?
   isDeleted         Boolean         @default(false)
   status            Boolean         @default(true)
-  userId            String
-  user              User            @relation("UserBankDetails", fields: [userId], references: [id])
+  tenantId          String
+  tenant            Tenant          @relation("TenantBankDetail", fields: [tenantId], references: [id], onDelete: Restrict)
   // A1: per-bank GL sub-account under the tenant's BANK control account, so each
   // bank reconciles independently. Null = falls back to the shared BANK role account.
   accountId         String?
@@ -753,52 +926,58 @@ model BankDetail {
   invoicePayments        InvoicePayment[]  @relation("InvoicePaymentBank")
   quotationsAsBank       Quotation[]       @relation("QuotationBank")
 
-  @@index([userId])
+  @@index([tenantId])
   @@index([isDeleted])
   @@index([status])
 }
 
 model BankTransaction {
-  id                 String                      @id @default(uuid())
-  bankAccountId      String
-  bankAccount        BankDetail                  @relation("BankDetailTransactions", fields: [bankAccountId], references: [id])
-  transactionDate    DateTime                    @default(now())
-  type               BankTransactionType
-  amount             Decimal                     @db.Decimal(18, 4)
-  balanceBefore      Decimal                     @db.Decimal(18, 4)
-  balanceAfter       Decimal                     @db.Decimal(18, 4)
-  paymentModeId      String
-  paymentMode        PaymentMode                 @relation("PaymentModeBankTransactions", fields: [paymentModeId], references: [id])
-  referenceNo        String?
-  remarks            String?
-  relatedType        BankTransactionRelatedType? @default(MANUAL)
-  relatedId          String?
-  isReconciled       Boolean                     @default(false)
-  reconciledBy       String?
-  reconciledByUser   User?                       @relation("UserReconciledBankTransactions", fields: [reconciledBy], references: [id])
-  reconciliationDate DateTime?
-  reconciliationNote String?
-  isDeleted            Boolean                     @default(false)
-  createdAt            DateTime                    @default(now())
-  updatedAt            DateTime                    @updatedAt
-  explainStatus        ExplainStatus               @default(UNEXPLAINED)
-  transactionTypeKey   String?
-  categoryId           String?
-  category             TransactionCategory?        @relation("CategoryBankTransactions", fields: [categoryId], references: [id])
-  payToUserId          String?
-  taxTreatment         String?
-  taxAmount            Decimal?                    @db.Decimal(18, 4)
-  explainedDescription String?
-  attachment           String?
-  assetType            String?
-  depreciationMethod   String?
-  assetLifeMonths      Int?
-  userPaymentReason    String?
-  approvedById         String?
-  approvedAt           DateTime?
-  postedSourceType     String?
-  postedSourceId       String?
-  createdAssetId       String?
+  id                         String                      @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId                   String
+  tenant                     Tenant                      @relation("TenantBankTransactions", fields: [tenantId], references: [id], onDelete: Restrict)
+  bankAccountId              String
+  bankAccount                BankDetail                  @relation("BankDetailTransactions", fields: [bankAccountId], references: [id])
+  transactionDate            DateTime                    @default(now())
+  type                       BankTransactionType
+  amount                     Decimal                     @db.Decimal(18, 4)
+  balanceBefore              Decimal                     @db.Decimal(18, 4)
+  balanceAfter               Decimal                     @db.Decimal(18, 4)
+  paymentModeId              String
+  paymentMode                PaymentMode                 @relation("PaymentModeBankTransactions", fields: [paymentModeId], references: [id])
+  referenceNo                String?
+  remarks                    String?
+  relatedType                BankTransactionRelatedType? @default(MANUAL)
+  relatedId                  String?
+  isReconciled               Boolean                     @default(false)
+  reconciledBy               String?
+  reconciledByUser           User?                       @relation("UserReconciledBankTransactions", fields: [reconciledBy], references: [id])
+  reconciliationDate         DateTime?
+  reconciliationNote         String?
+  isDeleted                  Boolean                     @default(false)
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  explainStatus              ExplainStatus               @default(UNEXPLAINED)
+  transactionTypeKey         String?
+  categoryId                 String?
+  category                   TransactionCategory?        @relation("CategoryBankTransactions", fields: [categoryId], references: [id])
+  payToUserId                String?
+  taxTreatment               String?
+  taxAmount                  Decimal?                    @db.Decimal(18, 4)
+  explainedDescription       String?
+  attachment                 String?
+  assetType                  String?
+  depreciationMethod         String?
+  assetLifeMonths            Int?
+  userPaymentReason          String?
+  approvedById               String?
+  approvedAt                 DateTime?
+  postedSourceType           String?
+  postedSourceId             String?
+  createdAssetId             String?
   proposedRelatedType        String?
   proposedRelatedId          String?
   matchConfidence            String?
@@ -807,40 +986,50 @@ model BankTransaction {
   proposedCategoryId         String?
   // Marks rows posted to the GL by the AUTO-POST tier (skipping the approval
   // queue). Drives the FE badge + Undo affordance and is cleared by unexplain.
-  autoPosted                 Boolean @default(false)
+  autoPosted                 Boolean                     @default(false)
   // True when this row was CREATED by a module payment flow (invoice payment,
   // supplier payment, expense, petty-cash) — see lib/moneyFlow/explainedBankFields.ts.
   // Payment-born rows are read-only in banking (edit at source); banking-explained
   // rows are always editable. Cleared by unexplain (converts to a normal manual row).
-  isPaymentBorn              Boolean @default(false)
+  isPaymentBorn              Boolean                     @default(false)
 
   @@index([bankAccountId])
   @@index([transactionDate])
   @@index([relatedType, relatedId])
   @@index([isDeleted])
+  @@index([tenantId])
 }
 
 model Brand {
   id          String   @id @default(uuid())
-  brand_name  String   @unique
+  tenantId    String
+  tenant      Tenant   @relation("TenantBrand", fields: [tenantId], references: [id])
+  brand_name  String
   brand_image String?
   status      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   products Product[] @relation("BrandProducts")
+
+  @@unique([tenantId, brand_name])
 }
 
 model Category {
   id             String   @id @default(uuid())
-  category_name  String   @unique
-  slug           String   @unique
+  tenantId       String
+  tenant         Tenant   @relation("TenantCategory", fields: [tenantId], references: [id])
+  category_name  String
+  slug           String
   category_image String?
   status         Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   products Product[] @relation("CategoryProducts")
+
+  @@unique([tenantId, category_name])
+  @@unique([tenantId, slug])
 }
 
 model Customer {
@@ -861,8 +1050,8 @@ model Customer {
   gstin           String?
   // CC.1: customer's default transaction currency (null = legacy/company-default currency)
   currencyCode    String?
-  userId          String
-  user            User           @relation("UserCustomers", fields: [userId], references: [id])
+  tenantId        String
+  tenant          Tenant         @relation("TenantCustomer", fields: [tenantId], references: [id], onDelete: Restrict)
   isDeleted       Boolean        @default(false)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -878,8 +1067,8 @@ model Customer {
   reminders                  Reminder[]        @relation("ReminderCustomer")
   vehicles                   Vehicle[]
 
-  @@unique([externalSource, externalRef, userId], name: "customer_external_upsert_idx")
-  @@unique([userId, email], name: "customer_email_per_user_idx")
+  @@unique([externalSource, externalRef, tenantId], name: "customer_external_upsert_idx")
+  @@unique([tenantId, email], name: "customer_email_per_user_idx")
 }
 
 model Inventory {
@@ -889,8 +1078,8 @@ model Inventory {
   quantity          Int      @default(0) // legacy integer stock; use quantityOnHand for ledger-aware (WAC) stock
   avgCost           Decimal  @default(0) @db.Decimal(18, 4)
   quantityOnHand    Decimal  @default(0) @db.Decimal(18, 4)
-  userId            String
-  user              User     @relation("UserInventories", fields: [userId], references: [id])
+  tenantId          String
+  tenant            Tenant   @relation("TenantInventory", fields: [tenantId], references: [id], onDelete: Restrict)
   isDeleted         Boolean  @default(false)
   inventory_history Json?
   notes             String?
@@ -900,9 +1089,11 @@ model Inventory {
 
 model Product {
   id               String          @id @default(uuid())
+  tenantId         String
+  tenant           Tenant          @relation("TenantProduct", fields: [tenantId], references: [id])
   item_type        ProductItemType
   name             String
-  code             String          @unique
+  code             String
   categoryId       String?
   category         Category?       @relation("CategoryProducts", fields: [categoryId], references: [id])
   brandId          String?
@@ -919,7 +1110,7 @@ model Product {
   // deprecated legacy fallback, read only when taxRateId is null.
   taxRateId        String?
   taxRate          TaxRate?        @relation("TaxRateProducts", fields: [taxRateId], references: [id])
-  barcode          String?         @unique
+  barcode          String?
   alert_quantity   Int             @default(0)
   description      String?
   product_image    String?
@@ -935,6 +1126,9 @@ model Product {
   updatedAt        DateTime        @updatedAt
 
   inventories Inventory[] @relation("ProductInventories")
+
+  @@unique([tenantId, code])
+  @@unique([tenantId, barcode])
 }
 
 model Signature {
@@ -944,8 +1138,8 @@ model Signature {
   status         Boolean  @default(true)
   markAsDefault  Boolean  @default(false)
   isDeleted      Boolean  @default(false)
-  userId         String
-  user           User     @relation("UserSignatures", fields: [userId], references: [id])
+  tenantId       String
+  tenant         Tenant   @relation("TenantSignature", fields: [tenantId], references: [id], onDelete: Restrict)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -960,10 +1154,10 @@ model Signature {
 
 model Supplier {
   id             String               @id @default(uuid())
-  user_id        String
-  user           User                 @relation("UserSuppliers", fields: [user_id], references: [id])
+  tenantId       String
+  tenant         Tenant               @relation("TenantSupplier", fields: [tenantId], references: [id], onDelete: Restrict)
   supplier_name  String
-  supplier_email String               @unique
+  supplier_email String
   supplier_phone String
   balance        Decimal?             @default(0) @db.Decimal(18, 4)
   balance_type   SupplierBalanceType?
@@ -977,40 +1171,48 @@ model Supplier {
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 
-  expenses         Expense[]
+  expenses           Expense[]
   purchases          Purchase[]        @relation("PurchaseSupplier")
   purchaseOrders     PurchaseOrder[]   @relation("PurchaseOrderSupplier")
   supplierPayments   SupplierPayment[] @relation("SupplierPaymentSupplier")
   debitNotesAsVendor DebitNote[]       @relation("DebitNoteSupplier")
   debitNotesAsBillTo DebitNote[]       @relation("DebitNoteBillToSupplier")
+
+  @@unique([tenantId, supplier_email])
 }
 
 model SupplierPayment {
-  id              String                    @id @default(uuid())
-  paymentId       String?                   @unique // TODO 0.1c: app-generated PAY-NNNNNN sequence
-  purchaseId      String
-  purchase        Purchase                  @relation("PurchaseSupplierPayments", fields: [purchaseId], references: [id])
-  supplierId      String?
-  supplier        Supplier?                 @relation("SupplierPaymentSupplier", fields: [supplierId], references: [id])
-  contactId       String?
-  contact         Contact?                  @relation("SupplierPaymentContact", fields: [contactId], references: [id])
-  referenceNumber String?
-  paymentDate     DateTime                  @default(now())
-  paymentModeId   String?
-  paymentMode     PaymentMode?              @relation("PaymentModeSupplierPayments", fields: [paymentModeId], references: [id])
-  sourceType      SupplierPaymentSourceType
-  bankId          String?
-  bank            BankDetail?               @relation("BankDetailSupplierPayments", fields: [bankId], references: [id])
-  amount          Decimal                   @db.Decimal(18, 4)
-  paidAmount      Decimal                   @db.Decimal(18, 4)
-  dueAmount       Decimal                   @db.Decimal(18, 4)
-  notes           String?
-  attachment      String?
-  isDeleted       Boolean                   @default(false)
-  createdBy       String?
-  createdByUser   User?                     @relation("UserSupplierPaymentsCreated", fields: [createdBy], references: [id])
-  currencyCode    String?
-  exchangeRate    Decimal?                  @db.Decimal(18, 8)
+  id               String                    @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId         String
+  tenant           Tenant                    @relation("TenantSupplierPayments", fields: [tenantId], references: [id], onDelete: Restrict)
+  paymentId        String? // TODO 0.1c: app-generated PAY-NNNNNN sequence
+  purchaseId       String
+  purchase         Purchase                  @relation("PurchaseSupplierPayments", fields: [purchaseId], references: [id])
+  supplierId       String?
+  supplier         Supplier?                 @relation("SupplierPaymentSupplier", fields: [supplierId], references: [id])
+  contactId        String?
+  contact          Contact?                  @relation("SupplierPaymentContact", fields: [contactId], references: [id])
+  referenceNumber  String?
+  paymentDate      DateTime                  @default(now())
+  paymentModeId    String?
+  paymentMode      PaymentMode?              @relation("PaymentModeSupplierPayments", fields: [paymentModeId], references: [id])
+  sourceType       SupplierPaymentSourceType
+  bankId           String?
+  bank             BankDetail?               @relation("BankDetailSupplierPayments", fields: [bankId], references: [id])
+  amount           Decimal                   @db.Decimal(18, 4)
+  paidAmount       Decimal                   @db.Decimal(18, 4)
+  dueAmount        Decimal                   @db.Decimal(18, 4)
+  notes            String?
+  attachment       String?
+  isDeleted        Boolean                   @default(false)
+  createdBy        String?
+  createdByUser    User?                     @relation("UserSupplierPaymentsCreated", fields: [createdBy], references: [id])
+  currencyCode     String?
+  exchangeRate     Decimal?                  @db.Decimal(18, 8)
   // TRUE iff this payment's CREATE path moved a cash register (bankDetail or
   // pettyCash currentBalance). The record path createSupplierPayment moves it
   // for both BANK and PETTY_CASH; the EXPLAIN flow (applyBillPayment) sets
@@ -1018,14 +1220,17 @@ model SupplierPayment {
   // statement line owns it). The delete/void reversal reverses the register IFF
   // this is TRUE — see the InvoicePayment.movedBankBalance note for why a
   // bank-line lookup cannot substitute for this persisted flag.
-  movedBankBalance Boolean                  @default(false)
-  isVoided        Boolean                   @default(false)
-  voidedById      String?
-  voidedBy        User?                     @relation("UserVoidedSupplierPayments", fields: [voidedById], references: [id])
-  voidedAt        DateTime?
-  voidReason      String?
-  createdAt       DateTime                  @default(now())
-  updatedAt       DateTime                  @updatedAt
+  movedBankBalance Boolean                   @default(false)
+  isVoided         Boolean                   @default(false)
+  voidedById       String?
+  voidedBy         User?                     @relation("UserVoidedSupplierPayments", fields: [voidedById], references: [id])
+  voidedAt         DateTime?
+  voidReason       String?
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+
+  @@unique([tenantId, paymentId])
+  @@index([tenantId])
 }
 
 // =============================================================================
@@ -1040,7 +1245,7 @@ model Counter {
 
 model CreditNote {
   id                  String                 @id @default(uuid())
-  creditNoteNumber    String?                @unique // TODO 0.1c: app-generated CN-NNNNNN
+  creditNoteNumber    String? // TODO 0.1c: app-generated CN-NNNNNN
   invoiceId           String
   invoice             Invoice                @relation("CreditNoteInvoice", fields: [invoiceId], references: [id])
   customerId          String?
@@ -1073,8 +1278,8 @@ model CreditNote {
   signatureImage      String?
   currencyCode        String? // C.1: per-document currency (ISO code, e.g. 'USD')
   isDeleted           Boolean                @default(false)
-  userId              String
-  user                User                   @relation("CreditNoteUser", fields: [userId], references: [id])
+  tenantId            String
+  tenant              Tenant                 @relation("TenantCreditNote", fields: [tenantId], references: [id], onDelete: Restrict)
   billFrom            String
   billFromUser        User                   @relation("CreditNoteBillFrom", fields: [billFrom], references: [id])
   billTo              String?
@@ -1084,13 +1289,15 @@ model CreditNote {
   appliedDate         DateTime?
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
-  costCenterId String?
-  costCenter   CostCenter? @relation("CostCenterCreditNotes", fields: [costCenterId], references: [id], onDelete: SetNull)
+  costCenterId        String?
+  costCenter          CostCenter?            @relation("CostCenterCreditNotes", fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, creditNoteNumber])
 }
 
 model DebitNote {
   id                String           @id @default(uuid())
-  debitNoteId       String?          @unique // TODO 0.1c: app-generated DN-NNNNNN
+  debitNoteId       String? // TODO 0.1c: app-generated DN-NNNNNN
   purchaseId        String
   purchase          Purchase         @relation("DebitNotePurchase", fields: [purchaseId], references: [id])
   supplierId        String? // vendor sourced from the purchase's supplier (new path)
@@ -1121,8 +1328,8 @@ model DebitNote {
   checkNumber       String?
   currencyCode      String? // C.1: per-document currency (ISO code, e.g. 'USD')
   isDeleted         Boolean          @default(false)
-  userId            String
-  user              User             @relation("DebitNoteUser", fields: [userId], references: [id])
+  tenantId          String
+  tenant            Tenant           @relation("TenantDebitNote", fields: [tenantId], references: [id], onDelete: Restrict)
   createdBy         String
   createdByUser     User             @relation("DebitNoteCreatedBy", fields: [createdBy], references: [id])
   approvedBy        String?
@@ -1137,13 +1344,15 @@ model DebitNote {
   billToContact     Contact?         @relation("DebitNoteBillToContact", fields: [billToContactId], references: [id])
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
-  costCenterId String?
-  costCenter   CostCenter? @relation("CostCenterDebitNotes", fields: [costCenterId], references: [id], onDelete: SetNull)
+  costCenterId      String?
+  costCenter        CostCenter?      @relation("CostCenterDebitNotes", fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, debitNoteId])
 }
 
 model DeliveryChallan {
   id                String                @id @default(uuid())
-  challanNumber     String?               @unique // TODO 0.1c: app-generated DC-NNNNNN
+  challanNumber     String? // TODO 0.1c: app-generated DC-NNNNNN
   invoiceId         String?
   invoice           Invoice?              @relation("DeliveryChallanInvoice", fields: [invoiceId], references: [id])
   customerId        String?
@@ -1173,8 +1382,8 @@ model DeliveryChallan {
   signatureImage    String?
   currencyCode      String? // C.1: per-document currency (ISO code, e.g. 'USD')
   isDeleted         Boolean               @default(false)
-  userId            String
-  user              User                  @relation("DeliveryChallanUser", fields: [userId], references: [id])
+  tenantId          String
+  tenant            Tenant                @relation("TenantDeliveryChallan", fields: [tenantId], references: [id], onDelete: Restrict)
   billFrom          String
   billFromUser      User                  @relation("DeliveryChallanBillFrom", fields: [billFrom], references: [id])
   billTo            String?
@@ -1183,12 +1392,16 @@ model DeliveryChallan {
   receivedDate      DateTime?
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
-  costCenterId String?
-  costCenter   CostCenter? @relation("CostCenterDeliveryChallans", fields: [costCenterId], references: [id], onDelete: SetNull)
+  costCenterId      String?
+  costCenter        CostCenter?           @relation("CostCenterDeliveryChallans", fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, challanNumber])
 }
 
 model EmailTemplate {
   id                   String              @id @default(uuid())
+  tenantId             String
+  tenant               Tenant              @relation("TenantEmailTemplate", fields: [tenantId], references: [id])
   title                String
   notificationTypeId   String
   notificationType     NotificationType    @relation("NotificationTypeEmailTemplates", fields: [notificationTypeId], references: [id])
@@ -1199,11 +1412,13 @@ model EmailTemplate {
   status               EmailTemplateStatus @default(active)
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
+
+  @@unique([tenantId, notificationTypeId, title])
 }
 
 model Invoice {
   id                   String                        @id @default(uuid())
-  invoiceNumber        String?                       @unique // TODO 0.1c: app-generated INV-NNNNNN
+  invoiceNumber        String? // TODO 0.1c: app-generated INV-NNNNNN
   customerId           String?
   customer             Customer?                     @relation("InvoiceCustomer", fields: [customerId], references: [id])
   contactId            String?
@@ -1252,8 +1467,8 @@ model Invoice {
   signature            Signature?                    @relation("InvoiceSignature", fields: [signatureId], references: [id])
   signatureImage       String?
   isDeleted            Boolean                       @default(false)
-  userId               String
-  user                 User                          @relation("InvoiceUser", fields: [userId], references: [id])
+  tenantId             String
+  tenant               Tenant                        @relation("TenantInvoice", fields: [tenantId], references: [id], onDelete: Restrict)
   billFrom             String
   billFromUser         User                          @relation("InvoiceBillFrom", fields: [billFrom], references: [id])
   billTo               String?
@@ -1282,25 +1497,28 @@ model Invoice {
   projectId    String?
   project      Project?    @relation("ProjectInvoices", fields: [projectId], references: [id], onDelete: SetNull)
 
-  creditNotes         CreditNote[]         @relation("CreditNoteInvoice")
-  creditNotesApplied  CreditNote[]         @relation("CreditNoteAppliedToInvoice")
-  deliveryChallans    DeliveryChallan[]    @relation("DeliveryChallanInvoice")
-  payments            InvoicePayment[]     @relation("InvoicePaymentInvoice")
-  paymentTransactions PaymentTransaction[] @relation("InvoicePaymentTransactions")
-  quotations          Quotation[]          @relation("QuotationConvertedInvoice")
-  reminders           Reminder[]           @relation("ReminderTargetInvoice")
-  eInvoices           EInvoiceRecord[]     @relation("InvoiceEInvoice")
+  creditNotes          CreditNote[]         @relation("CreditNoteInvoice")
+  creditNotesApplied   CreditNote[]         @relation("CreditNoteAppliedToInvoice")
+  deliveryChallans     DeliveryChallan[]    @relation("DeliveryChallanInvoice")
+  payments             InvoicePayment[]     @relation("InvoicePaymentInvoice")
+  paymentTransactions  PaymentTransaction[] @relation("InvoicePaymentTransactions")
+  quotations           Quotation[]          @relation("QuotationConvertedInvoice")
+  reminders            Reminder[]           @relation("ReminderTargetInvoice")
+  eInvoices            EInvoiceRecord[]     @relation("InvoiceEInvoice")
   accountCreditEntries AccountCreditEntry[] @relation("AccountCreditEntryInvoice")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, invoiceNumber])
 }
 
 // Recurring engine v2: a non-posting schedule that holds an invoice TEMPLATE + cadence + lifecycle.
 // NEVER posts to GL or touches inventory — only the generated child Invoices (recurringScheduleId) do.
 model RecurringInvoiceSchedule {
   id                   String                        @id @default(uuid())
-  userId               String // tenant scope (raw string, app-enforced — mirrors Invoice/Contact tenant column)
+  tenantId             String // tenant scope (raw string, app-enforced — mirrors Invoice/Contact tenant column)
+  tenant               Tenant                        @relation("TenantRecurringInvoiceSchedule", fields: [tenantId], references: [id], onDelete: Restrict)
   name                 String? // human label for the schedule
   contactId            String?
   contact              Contact?                      @relation("RecurringScheduleContact", fields: [contactId], references: [id])
@@ -1335,12 +1553,18 @@ model RecurringInvoiceSchedule {
   createdAt            DateTime                      @default(now())
   updatedAt            DateTime                      @updatedAt
 
-  @@index([userId])
+  @@index([tenantId])
   @@index([status])
 }
 
 model InvoicePayment {
   id                   String              @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId             String
+  tenant               Tenant              @relation("TenantInvoicePayments", fields: [tenantId], references: [id], onDelete: Restrict)
   invoiceId            String
   invoice              Invoice             @relation("InvoicePaymentInvoice", fields: [invoiceId], references: [id])
   amount               Decimal             @db.Decimal(18, 4)
@@ -1375,6 +1599,8 @@ model InvoicePayment {
   updatedAt            DateTime            @updatedAt
 
   accountCreditEntries AccountCreditEntry[] @relation("AccountCreditEntryInvoicePayment")
+
+  @@index([tenantId])
 }
 
 // Per-contact "Account Credit": a running credit a business can manually grant a
@@ -1390,8 +1616,8 @@ enum AccountCreditEntryType {
 
 model AccountCreditEntry {
   id               String                 @id @default(uuid())
-  userId           String
-  user             User                   @relation("AccountCreditEntryUser", fields: [userId], references: [id])
+  tenantId         String
+  tenant           Tenant                 @relation("TenantAccountCreditEntry", fields: [tenantId], references: [id], onDelete: Restrict)
   contactId        String
   contact          Contact                @relation("AccountCreditEntryContact", fields: [contactId], references: [id])
   type             AccountCreditEntryType
@@ -1410,7 +1636,7 @@ model AccountCreditEntry {
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
 
-  @@index([userId, contactId])
+  @@index([tenantId, contactId])
   @@index([invoiceId])
   @@index([invoicePaymentId])
 }
@@ -1418,15 +1644,15 @@ model AccountCreditEntry {
 model InvoiceTemplate {
   id                       String   @id @default(uuid())
   default_invoice_template String
-  userId                   String
-  user                     User     @relation("UserInvoiceTemplates", fields: [userId], references: [id])
+  tenantId                 String
+  tenant                   Tenant   @relation("TenantInvoiceTemplate", fields: [tenantId], references: [id], onDelete: Restrict)
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
 }
 
 model Quotation {
   id                String               @id @default(uuid())
-  quotationId       String?              @unique // TODO 0.1c: app-generated QT-NNNNNN
+  quotationId       String? // TODO 0.1c: app-generated QT-NNNNNN
   customerId        String?
   customer          Customer?            @relation("QuotationCustomer", fields: [customerId], references: [id])
   contactId         String?
@@ -1453,8 +1679,8 @@ model Quotation {
   signatureImage    String?
   signatureName     String?
   isDeleted         Boolean              @default(false)
-  userId            String
-  user              User                 @relation("QuotationUser", fields: [userId], references: [id])
+  tenantId          String
+  tenant            Tenant               @relation("TenantQuotation", fields: [tenantId], references: [id], onDelete: Restrict)
   salesPerson       String?
   salesPersonUser   User?                @relation("QuotationSalesPerson", fields: [salesPerson], references: [id])
   billFrom          String
@@ -1468,19 +1694,27 @@ model Quotation {
   convert_type      QuotationConvertType @default(quotation)
   currencyCode      String? // C.1: per-document currency (ISO code, e.g. 'USD')
 
-  publicViewToken   String?              @unique
-  publicViewEnabled Boolean              @default(false)
+  publicViewToken   String? @unique
+  publicViewEnabled Boolean @default(false)
 
   reminders Reminder[] @relation("ReminderTargetQuotation")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
   costCenterId String?
   costCenter   CostCenter? @relation("CostCenterQuotations", fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, quotationId])
 }
 
 model Reminder {
   id                 String          @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId           String
+  tenant             Tenant          @relation("TenantReminders", fields: [tenantId], references: [id], onDelete: Restrict)
   name               String
   type               ReminderType    @default(automatic)
   remindDays         Int?
@@ -1499,8 +1733,6 @@ model Reminder {
   manualReminderData Json?
   createdBy          String
   createdByUser      User            @relation("ReminderCreatedBy", fields: [createdBy], references: [id])
-  companyId          String
-  company            CompanySettings @relation("CompanySettingsReminders", fields: [companyId], references: [id])
   status             ReminderStatus  @default(active)
   lastSent           DateTime?
   nextSend           DateTime?
@@ -1509,7 +1741,7 @@ model Reminder {
 
   @@index([createdBy, status])
   @@index([type, status])
-  @@index([companyId, status])
+  @@index([tenantId, status])
   @@index([nextSend, isEnabled])
   @@index([targetInvoice])
   @@index([targetQuotation])
@@ -1522,7 +1754,7 @@ model Reminder {
 
 model Expense {
   id                String               @id @default(uuid())
-  expenseId         String?              @unique // TODO 0.1c: app-generated EXP-NNNNNN
+  expenseId         String? // TODO 0.1c: app-generated EXP-NNNNNN
   referenceNo       String?              @default("")
   amount            Decimal              @db.Decimal(18, 4)
   expenseDate       DateTime             @default(now())
@@ -1541,8 +1773,8 @@ model Expense {
   contactId         String?
   contact           Contact?             @relation("ExpenseContact", fields: [contactId], references: [id])
   isDeleted         Boolean              @default(false)
-  userId            String
-  user              User                 @relation("UserExpenses", fields: [userId], references: [id])
+  tenantId          String
+  tenant            Tenant               @relation("TenantExpense", fields: [tenantId], references: [id], onDelete: Restrict)
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
 
@@ -1576,12 +1808,16 @@ model Expense {
 
   changeLogs ExpenseChangeLog[] @relation("ExpenseChangeLogs")
 
-  paidByUserId      String?
-  paidByUser        User?                @relation("ExpensePaidBy", fields: [paidByUserId], references: [id])
+  paidByUserId String?
+  paidByUser   User?   @relation("ExpensePaidBy", fields: [paidByUserId], references: [id])
+
+  @@unique([tenantId, expenseId])
 }
 
 model ExpenseCategory {
   id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation("TenantExpenseCategory", fields: [tenantId], references: [id])
   title       String
   description String?
   status      Boolean  @default(true)
@@ -1590,10 +1826,18 @@ model ExpenseCategory {
   updatedAt   DateTime @updatedAt
 
   expenses Expense[] @relation("ExpenseCategoryExpenses")
+
+  @@index([tenantId])
 }
 
 model ExpenseChangeLog {
   id            String   @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId      String
+  tenant        Tenant   @relation("TenantExpenseChangeLogs", fields: [tenantId], references: [id], onDelete: Restrict)
   expenseId     String
   expense       Expense  @relation("ExpenseChangeLogs", fields: [expenseId], references: [id])
   changedBy     String
@@ -1602,6 +1846,8 @@ model ExpenseChangeLog {
   changeDate    DateTime @default(now())
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model PettyCash {
@@ -1618,18 +1864,24 @@ model PettyCash {
   // stamps userId on create. Reads/writes (controllers/pettyCashController.ts)
   // use a strict `{ userId }` match; there is no cross-tenant null-row
   // fallback.
-  userId         String?
-  user           User?    @relation("UserPettyCash", fields: [userId], references: [id])
+  tenantId       String?
+  tenant         Tenant?  @relation("TenantPettyCash", fields: [tenantId], references: [id], onDelete: Restrict)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   transactions PettyCashTransaction[] @relation("PettyCashTransactions")
 
-  @@index([userId])
+  @@index([tenantId])
 }
 
 model PettyCashTransaction {
   id              String                          @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId        String
+  tenant          Tenant                          @relation("TenantPettyCashTransactions", fields: [tenantId], references: [id], onDelete: Restrict)
   pettyCashId     String
   pettyCash       PettyCash                       @relation("PettyCashTransactions", fields: [pettyCashId], references: [id])
   transactionDate DateTime                        @default(now())
@@ -1648,11 +1900,12 @@ model PettyCashTransaction {
   @@index([transactionDate])
   @@index([relatedType, relatedId])
   @@index([isDeleted])
+  @@index([tenantId])
 }
 
 model Purchase {
   id                String           @id @default(uuid())
-  purchaseId        String?          @unique // TODO 0.1c: app-generated PUR-NNNNNN
+  purchaseId        String? // TODO 0.1c: app-generated PUR-NNNNNN
   purchaseOrderId   String?
   purchaseOrder     PurchaseOrder?   @relation("PurchaseFromOrder", fields: [purchaseOrderId], references: [id])
   supplierId        String?
@@ -1685,8 +1938,8 @@ model Purchase {
   signatureName     String?
   checkNumber       String?
   isDeleted         Boolean          @default(false)
-  userId            String
-  user              User             @relation("PurchaseUser", fields: [userId], references: [id])
+  tenantId          String
+  tenant            Tenant           @relation("TenantPurchase", fields: [tenantId], references: [id], onDelete: Restrict)
   billFrom          String
   billFromUser      User             @relation("PurchaseBillFrom", fields: [billFrom], references: [id])
   billTo            String?
@@ -1712,11 +1965,13 @@ model Purchase {
   debitNotes       DebitNote[]       @relation("DebitNotePurchase")
   // Cluster H — slice H.2 (purchase created from an AI extraction job)
   aiExtractionJob  AiExtractionJob?  @relation("PurchaseFromAi")
+
+  @@unique([tenantId, purchaseId])
 }
 
 model PurchaseOrder {
   id                String                    @id @default(uuid())
-  purchaseOrderId   String?                   @unique // TODO 0.1c: app-generated PO-NNNNNN
+  purchaseOrderId   String? // TODO 0.1c: app-generated PO-NNNNNN
   supplierId        String?
   supplier          Supplier?                 @relation("PurchaseOrderSupplier", fields: [supplierId], references: [id])
   contactId         String?
@@ -1743,8 +1998,8 @@ model PurchaseOrder {
   signatureImage    String?
   signatureName     String?
   isDeleted         Boolean                   @default(false)
-  userId            String
-  user              User                      @relation("PurchaseOrderUser", fields: [userId], references: [id])
+  tenantId          String
+  tenant            Tenant                    @relation("TenantPurchaseOrder", fields: [tenantId], references: [id], onDelete: Restrict)
   billFrom          String
   billFromUser      User                      @relation("PurchaseOrderBillFrom", fields: [billFrom], references: [id])
   billTo            String?
@@ -1754,9 +2009,11 @@ model PurchaseOrder {
   createdAt         DateTime                  @default(now())
   updatedAt         DateTime                  @updatedAt
 
-  purchases Purchase[] @relation("PurchaseFromOrder")
+  purchases    Purchase[]  @relation("PurchaseFromOrder")
   costCenterId String?
   costCenter   CostCenter? @relation("CostCenterPurchaseOrders", fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, purchaseOrderId])
 }
 
 // =============================================================================
@@ -1823,8 +2080,8 @@ model CompanySettings {
   companyLogo          String?   @default("")
   companyBanner        String?   @default("")
   fax                  String?
-  userId               String    @unique
-  user                 User      @relation("UserCompanySettings", fields: [userId], references: [id])
+  tenantId             String    @unique
+  tenant               Tenant    @relation("TenantCompanySettings", fields: [tenantId], references: [id], onDelete: Restrict)
   taxRegime            TaxRegime @default(NONE)
   countryId            String?
   countryRef           Country?  @relation("CompanySettingsCountry", fields: [countryId], references: [id])
@@ -1861,7 +2118,7 @@ model CompanySettings {
   // outbound call to the EU government service, so it must never fire unless the
   // tenant explicitly opts in. Validation is fail-open and non-blocking: a save
   // is never rejected on a VIES result, only the audit flag on Contact is set.
-  viesValidationEnabled Boolean  @default(false)
+  viesValidationEnabled Boolean @default(false)
 
   // EU One-Stop-Shop (OSS) registration. When ON, B2C cross-border EU supplies are
   // taxed at the DESTINATION member-state rate (instead of origin). OFF BY DEFAULT —
@@ -1870,16 +2127,16 @@ model CompanySettings {
   ossRegistered Boolean @default(false)
 
   // Tax registration identifiers (tenant-level). Nullable / additive — null = not registered.
-  gstin                String? // India GSTIN (also used by e-invoicing)
-  vatNumber            String? // UK / EU VAT registration number
-  abn                  String? // Australia Business Number
-  nzGstNumber          String? // New Zealand GST registration number
-
-  reminders Reminder[] @relation("CompanySettingsReminders")
+  gstin       String? // India GSTIN (also used by e-invoicing)
+  vatNumber   String? // UK / EU VAT registration number
+  abn         String? // Australia Business Number
+  nzGstNumber String? // New Zealand GST registration number
 }
 
 model Currency {
   id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation("TenantCurrency", fields: [tenantId], references: [id])
   name          String
   code          String
   symbol        String
@@ -1890,6 +2147,8 @@ model Currency {
   createdByUser User     @relation("CurrencyCreatedBy", fields: [createdBy], references: [id])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model DateFormat {
@@ -1912,38 +2171,40 @@ model DateFormat {
 }
 
 model EmailSettings {
-  id            String                    @id @default(uuid())
-  provider_type EmailSettingsProviderType
-  nodeFromName  String?
-  nodeFromEmail String?
-  nodeReplyTo   String?
-  nodeHost      String?
-  nodePort      String?
-  nodeUsername  String?
-  nodePassword  String?
-  smtpFromName  String?
-  smtpFromEmail String?
-  smtpReplyTo   String?
-  smtpHost      String?
-  smtpPort      String?
-  smtpUsername  String?
-  smtpPassword  String?
+  id              String                    @id @default(uuid())
+  provider_type   EmailSettingsProviderType
+  nodeFromName    String?
+  nodeFromEmail   String?
+  nodeReplyTo     String?
+  nodeHost        String?
+  nodePort        String?
+  nodeUsername    String?
+  nodePassword    String?
+  smtpFromName    String?
+  smtpFromEmail   String?
+  smtpReplyTo     String?
+  smtpHost        String?
+  smtpPort        String?
+  smtpUsername    String?
+  smtpPassword    String?
   resendFromName  String?
   resendFromEmail String?
   resendReplyTo   String?
   resendApiKey    String?
-  smtp_status   Boolean?                  @default(false)
-  node_status   Boolean?                  @default(false)
-  resend_status Boolean?                  @default(false)
-  userId        String
-  user          User                      @relation("UserEmailSettings", fields: [userId], references: [id])
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
+  smtp_status     Boolean?                  @default(false)
+  node_status     Boolean?                  @default(false)
+  resend_status   Boolean?                  @default(false)
+  tenantId        String
+  tenant          Tenant                    @relation("TenantEmailSettings", fields: [tenantId], references: [id], onDelete: Restrict)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
 }
 
 model GeneralSetting {
   id            String   @id @default(uuid())
-  key           String   @unique
+  tenantId      String
+  tenant        Tenant   @relation("TenantGeneralSetting", fields: [tenantId], references: [id])
+  key           String
   value         Json
   groupSlug     String?  @default("general")
   createdBy     String?
@@ -1953,14 +2214,15 @@ model GeneralSetting {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  @@unique([tenantId, key])
   @@index([key])
   @@index([groupSlug])
 }
 
 model Localization {
   id           String                 @id @default(uuid())
-  userId       String?
-  user         User?                  @relation("UserLocalizations", fields: [userId], references: [id])
+  tenantId     String?
+  tenant       Tenant?                @relation("TenantLocalization", fields: [tenantId], references: [id], onDelete: Restrict)
   dateFormatId String
   dateFormat   DateFormat             @relation("LocalizationDateFormat", fields: [dateFormatId], references: [id])
   timeFormatId String
@@ -1972,7 +2234,7 @@ model Localization {
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
 
-  @@unique([userId, isActive], name: "localization_user_active_unique")
+  @@unique([tenantId, isActive], name: "localization_user_active_unique")
 }
 
 model PaymentMode {
@@ -1993,6 +2255,8 @@ model PaymentMode {
 
 model TaxGroup {
   id         String    @id @default(uuid())
+  tenantId   String
+  tenant     Tenant    @relation("TenantTaxGroup", fields: [tenantId], references: [id])
   tax_name   String
   status     Boolean?  @default(true)
   created_on DateTime? @default(now())
@@ -2001,33 +2265,35 @@ model TaxGroup {
 
   tax_rates TaxRate[] @relation("TaxGroupTaxRates")
   products  Product[] @relation("TaxGroupProducts")
+
+  @@index([tenantId])
 }
 
 model TaxRate {
-  id        String    @id @default(uuid())
-  userId    String
-  user      User      @relation("UserTaxRates", fields: [userId], references: [id])
-  regime    TaxRegime
-  taxKind   TaxKind?
-  name      String
-  rate      Decimal   @db.Decimal(7, 4)
-  countryId String?
-  country   Country?  @relation("TaxRateCountry", fields: [countryId], references: [id])
-  stateId   String?
-  state     State?    @relation("TaxRateState", fields: [stateId], references: [id])
-  isActive  Boolean   @default(true)
-  isDeleted Boolean   @default(false)
+  id                String    @id @default(uuid())
+  tenantId          String
+  tenant            Tenant    @relation("TenantTaxRate", fields: [tenantId], references: [id], onDelete: Restrict)
+  regime            TaxRegime
+  taxKind           TaxKind?
+  name              String
+  rate              Decimal   @db.Decimal(7, 4)
+  countryId         String?
+  country           Country?  @relation("TaxRateCountry", fields: [countryId], references: [id])
+  stateId           String?
+  state             State?    @relation("TaxRateState", fields: [stateId], references: [id])
+  isActive          Boolean   @default(true)
+  isDeleted         Boolean   @default(false)
   // Unified tax: engine-provisioned GST component rows (CGST/SGST/IGST halves)
   // are flagged so user-facing tax lists can hide them. Engine + reports see them.
-  isSystemComponent Boolean @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  isSystemComponent Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   tax_groups            TaxGroup[]            @relation("TaxGroupTaxRates")
   transactionCategories TransactionCategory[] @relation("TaxRateTransactionCategories")
   products              Product[]             @relation("TaxRateProducts")
 
-  @@index([userId, isDeleted, regime])
+  @@index([tenantId, isDeleted, regime])
 }
 
 model TimeFormat {
@@ -2061,6 +2327,8 @@ model Timezone {
 
 model Unit {
   id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation("TenantUnit", fields: [tenantId], references: [id])
   unit_name  String
   short_name String
   status     Boolean? @default(true)
@@ -2068,6 +2336,8 @@ model Unit {
   updatedAt  DateTime @updatedAt
 
   products Product[] @relation("UnitProducts")
+
+  @@index([tenantId])
 }
 
 // =============================================================================
@@ -2075,31 +2345,36 @@ model Unit {
 // =============================================================================
 
 model CustomField {
-  id          String            @id @default(uuid())
+  id          String               @id @default(uuid())
+  tenantId    String
+  tenant      Tenant               @relation("TenantCustomField", fields: [tenantId], references: [id])
   moduleId    String
-  module      Module            @relation("ModuleCustomFields", fields: [moduleId], references: [id])
+  module      Module               @relation("ModuleCustomFields", fields: [moduleId], references: [id])
   labelName   String
   fieldSlug   String
   fieldTypeId String
-  fieldType   FieldType         @relation("FieldTypeCustomFields", fields: [fieldTypeId], references: [id])
-  helpText    String?           @default("")
-  isMandatory Boolean           @default(false)
-  showInTable Boolean           @default(false)
+  fieldType   FieldType            @relation("FieldTypeCustomFields", fields: [fieldTypeId], references: [id])
+  helpText    String?              @default("")
+  isMandatory Boolean              @default(false)
+  showInTable Boolean              @default(false)
   placement   CustomFieldPlacement @default(document)
   options     Json?
-  status      CustomFieldStatus @default(Active)
+  status      CustomFieldStatus    @default(Active)
   deletedAt   DateTime?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
 
   values CustomFieldValue[] @relation("CustomFieldValues")
 
   @@index([moduleId, fieldSlug])
+  @@index([tenantId])
 }
 
 model CustomFieldDataType {
   id            String                  @id @default(uuid())
-  type          CustomFieldDataTypeKind @unique
+  tenantId      String
+  tenant        Tenant                  @relation("TenantCustomFieldDataType", fields: [tenantId], references: [id])
+  type          CustomFieldDataTypeKind
   description   String?
   isActive      Boolean                 @default(true)
   createdBy     String
@@ -2107,12 +2382,15 @@ model CustomFieldDataType {
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
 
+  @@unique([tenantId, type])
   @@index([isActive])
   @@index([createdBy])
 }
 
 model CustomFieldValue {
   id            String                 @id @default(uuid())
+  tenantId      String
+  tenant        Tenant                 @relation("TenantCustomFieldValue", fields: [tenantId], references: [id])
   customFieldId String
   customField   CustomField            @relation("CustomFieldValues", fields: [customFieldId], references: [id])
   module        CustomFieldValueModule
@@ -2122,6 +2400,8 @@ model CustomFieldValue {
   createdByUser User?                  @relation("UserCustomFieldValues", fields: [createdBy], references: [id])
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
+
+  @@index([tenantId])
 }
 
 model FieldType {
@@ -2174,17 +2454,19 @@ model NotificationTypeTag {
 
 model AIChatSession {
   id                   String              @id @default(uuid())
-  sessionId            String?             @unique // TODO 0.1c: app-generated CHAT-NNNNNN
+  sessionId            String? // TODO 0.1c: app-generated CHAT-NNNNNN
   messages             Json?
   documentType         AIDocumentType?
   currentExtractedData Json?
   status               AIChatSessionStatus @default(active)
   createdDocumentId    String?
-  userId               String
-  user                 User                @relation("UserAIChatSessions", fields: [userId], references: [id])
+  tenantId             String
+  tenant               Tenant              @relation("TenantAIChatSession", fields: [tenantId], references: [id], onDelete: Restrict)
   isDeleted            Boolean             @default(false)
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
+
+  @@unique([tenantId, sessionId])
 }
 
 model AIConfiguration {
@@ -2199,15 +2481,15 @@ model AIConfiguration {
   autoApplyTax                Boolean                       @default(true)
   defaultPaymentTermsDays     Int                           @default(15)
   maxPromptsPerDay            Int                           @default(100)
-  userId                      String                        @unique
-  user                        User                          @relation("UserAIConfiguration", fields: [userId], references: [id])
+  tenantId                    String                        @unique
+  tenant                      Tenant                        @relation("TenantAIConfiguration", fields: [tenantId], references: [id], onDelete: Restrict)
   createdAt                   DateTime                      @default(now())
   updatedAt                   DateTime                      @updatedAt
 }
 
 model AIPromptLog {
   id                  String                          @id @default(uuid())
-  promptId            String?                         @unique // TODO 0.1c: app-generated AI-NNNNNN
+  promptId            String? // TODO 0.1c: app-generated AI-NNNNNN
   prompt              String
   documentType        AIDocumentType
   extractedData       Json?
@@ -2218,11 +2500,13 @@ model AIPromptLog {
   inputTokens         Int                             @default(0)
   outputTokens        Int                             @default(0)
   errorMessage        String?
-  userId              String
-  user                User                            @relation("UserAIPromptLogs", fields: [userId], references: [id])
+  tenantId            String
+  tenant              Tenant                          @relation("TenantAIPromptLog", fields: [tenantId], references: [id], onDelete: Restrict)
   isDeleted           Boolean                         @default(false)
   createdAt           DateTime                        @default(now())
   updatedAt           DateTime                        @updatedAt
+
+  @@unique([tenantId, promptId])
 }
 
 model AIPromptTemplate {
@@ -2232,8 +2516,8 @@ model AIPromptTemplate {
   documentType AIPromptTemplateDocumentType @default(any)
   category     String                       @default("General")
   usageCount   Int                          @default(0)
-  userId       String
-  user         User                         @relation("UserAIPromptTemplates", fields: [userId], references: [id])
+  tenantId     String
+  tenant       Tenant                       @relation("TenantAIPromptTemplate", fields: [tenantId], references: [id], onDelete: Restrict)
   isDeleted    Boolean                      @default(false)
   createdAt    DateTime                     @default(now())
   updatedAt    DateTime                     @updatedAt
@@ -2241,8 +2525,8 @@ model AIPromptTemplate {
 
 model Conversation {
   id           String                    @id @default(uuid())
-  userId       String
-  user         User                      @relation("UserConversations", fields: [userId], references: [id])
+  tenantId     String
+  tenant       Tenant                    @relation("TenantConversation", fields: [tenantId], references: [id], onDelete: Restrict)
   sessionId    String                    @unique
   documentType ConversationDocumentType?
   context      Json?
@@ -2255,11 +2539,11 @@ model Conversation {
 }
 
 model Vehicle {
-  id                 String   @id @default(uuid())
+  id                 String    @id @default(uuid())
   customerId         String?
   customer           Customer? @relation(fields: [customerId], references: [id])
   contactId          String?
-  contact            Contact? @relation("VehicleContact", fields: [contactId], references: [id])
+  contact            Contact?  @relation("VehicleContact", fields: [contactId], references: [id])
   name               String?
   make               String?
   model              String?
@@ -2268,17 +2552,17 @@ model Vehicle {
   vin                String?
   mileage            Int?
   notes              String?
-  status             Boolean  @default(true)
-  isDeleted          Boolean  @default(false)
-  userId             String
-  user               User     @relation("UserVehicles", fields: [userId], references: [id])
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  status             Boolean   @default(true)
+  isDeleted          Boolean   @default(false)
+  tenantId           String
+  tenant             Tenant    @relation("TenantVehicle", fields: [tenantId], references: [id], onDelete: Restrict)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   invoices Invoice[] @relation("InvoiceVehicle")
 
   @@index([customerId])
-  @@index([userId, isDeleted])
+  @@index([tenantId, isDeleted])
 }
 
 // =============================================================================
@@ -2287,8 +2571,8 @@ model Vehicle {
 
 model GatewayConfig {
   id        String      @id @default(uuid())
-  userId    String
-  user      User        @relation("UserGatewayConfigs", fields: [userId], references: [id])
+  tenantId  String
+  tenant    Tenant      @relation("TenantGatewayConfig", fields: [tenantId], references: [id], onDelete: Restrict)
   kind      GatewayKind
   enabled   Boolean     @default(false)
   config    Json
@@ -2296,7 +2580,7 @@ model GatewayConfig {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
-  @@unique([userId, kind])
+  @@unique([tenantId, kind])
 }
 
 /// Company-defined link-based payment methods (Wise, Revolut, PayPal, a Stripe
@@ -2304,8 +2588,8 @@ model GatewayConfig {
 /// is supplied per-invoice (optionally pre-filled from defaultUrl).
 model PaymentLinkMethod {
   id         String   @id @default(uuid())
-  userId     String
-  user       User     @relation("UserPaymentLinkMethods", fields: [userId], references: [id])
+  tenantId   String
+  tenant     Tenant   @relation("TenantPaymentLinkMethod", fields: [tenantId], references: [id], onDelete: Restrict)
   name       String
   defaultUrl String?
   enabled    Boolean  @default(true)
@@ -2314,13 +2598,13 @@ model PaymentLinkMethod {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@index([userId])
+  @@index([tenantId])
 }
 
 model PaymentTransaction {
   id               String                   @id @default(uuid())
-  userId           String
-  user             User                     @relation("UserPaymentTransactions", fields: [userId], references: [id])
+  tenantId         String
+  tenant           Tenant                   @relation("TenantPaymentTransaction", fields: [tenantId], references: [id], onDelete: Restrict)
   invoiceId        String?
   invoice          Invoice?                 @relation("InvoicePaymentTransactions", fields: [invoiceId], references: [id])
   kind             GatewayKind
@@ -2336,15 +2620,15 @@ model PaymentTransaction {
   createdAt        DateTime                 @default(now())
   updatedAt        DateTime                 @updatedAt
 
-  @@index([userId, status])
+  @@index([tenantId, status])
   @@index([invoiceId])
   @@index([gatewayOrderId])
 }
 
 model Refund {
   id                   String                   @id @default(uuid())
-  userId               String
-  user                 User                     @relation("UserRefunds", fields: [userId], references: [id])
+  tenantId             String
+  tenant               Tenant                   @relation("TenantRefund", fields: [tenantId], references: [id], onDelete: Restrict)
   paymentTransactionId String
   paymentTransaction   PaymentTransaction       @relation(fields: [paymentTransactionId], references: [id])
   amount               Decimal                  @db.Decimal(18, 4)
@@ -2371,35 +2655,35 @@ enum AccountType {
 }
 
 model Account {
-  id            String                 @id @default(uuid())
-  userId        String
-  user          User                   @relation("UserAccounts", fields: [userId], references: [id])
-  code          String
-  name          String
-  accountType   AccountType
-  parentId      String?
-  parent        Account?               @relation("AccountParent", fields: [parentId], references: [id])
-  children      Account[]              @relation("AccountParent")
-  description   String?
-  currencyCode  String?
-  roleProtected Boolean                @default(false)
-  isDeleted     Boolean                @default(false)
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-  journalLines         JournalLine[]
-  roleMappings         LedgerAccountMapping[]
-  budgets              Budget[]               @relation("AccountBudgets")
-  transactionCategories TransactionCategory[] @relation("AccountTransactionCategories")
-  bankDetails          BankDetail[]           @relation("BankDetailAccount")
+  id                    String                 @id @default(uuid())
+  tenantId              String
+  tenant                Tenant                 @relation("TenantAccount", fields: [tenantId], references: [id], onDelete: Restrict)
+  code                  String
+  name                  String
+  accountType           AccountType
+  parentId              String?
+  parent                Account?               @relation("AccountParent", fields: [parentId], references: [id])
+  children              Account[]              @relation("AccountParent")
+  description           String?
+  currencyCode          String?
+  roleProtected         Boolean                @default(false)
+  isDeleted             Boolean                @default(false)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  journalLines          JournalLine[]
+  roleMappings          LedgerAccountMapping[]
+  budgets               Budget[]               @relation("AccountBudgets")
+  transactionCategories TransactionCategory[]  @relation("AccountTransactionCategories")
+  bankDetails           BankDetail[]           @relation("BankDetailAccount")
 
-  @@unique([userId, code])
-  @@index([userId, accountType])
+  @@unique([tenantId, code])
+  @@index([tenantId, accountType])
 }
 
 model JournalEntry {
   id                String            @id @default(uuid())
-  userId            String
-  user              User              @relation("UserJournalEntries", fields: [userId], references: [id])
+  tenantId          String
+  tenant            Tenant            @relation("TenantJournalEntry", fields: [tenantId], references: [id], onDelete: Restrict)
   entryNumber       String?
   entryDate         DateTime
   postingDate       DateTime?
@@ -2421,12 +2705,18 @@ model JournalEntry {
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
-  @@unique([userId, sourceType, sourceId, event])
-  @@index([userId, entryDate])
+  @@unique([tenantId, sourceType, sourceId, event])
+  @@index([tenantId, entryDate])
 }
 
 model JournalLine {
   id             String       @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId       String
+  tenant         Tenant       @relation("TenantJournalLines", fields: [tenantId], references: [id], onDelete: Restrict)
   journalEntryId String
   journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
   accountId      String
@@ -2447,26 +2737,27 @@ model JournalLine {
   @@index([accountId])
   @@index([costCenterId])
   @@index([projectId])
+  @@index([tenantId])
 }
 
 model LedgerAccountMapping {
   id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation("UserLedgerMappings", fields: [userId], references: [id])
+  tenantId  String
+  tenant    Tenant   @relation("TenantLedgerAccountMapping", fields: [tenantId], references: [id], onDelete: Restrict)
   roleKey   String
   accountId String
   account   Account  @relation(fields: [accountId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, roleKey])
-  @@index([userId])
+  @@unique([tenantId, roleKey])
+  @@index([tenantId])
 }
 
 model AccountingPeriod {
   id             String         @id @default(uuid())
-  userId         String
-  user           User           @relation("UserAccountingPeriods", fields: [userId], references: [id])
+  tenantId       String
+  tenant         Tenant         @relation("TenantAccountingPeriod", fields: [tenantId], references: [id], onDelete: Restrict)
   name           String
   startDate      DateTime
   endDate        DateTime
@@ -2478,7 +2769,7 @@ model AccountingPeriod {
   updatedAt      DateTime       @updatedAt
   journalEntries JournalEntry[] @relation("PeriodJournalEntries")
 
-  @@index([userId, startDate])
+  @@index([tenantId, startDate])
 }
 
 // =============================================================================
@@ -2494,8 +2785,8 @@ enum EInvoiceStatus {
 
 model EInvoiceRecord {
   id            String         @id @default(uuid())
-  userId        String
-  user          User           @relation("UserEInvoices", fields: [userId], references: [id])
+  tenantId      String
+  tenant        Tenant         @relation("TenantEInvoiceRecord", fields: [tenantId], references: [id], onDelete: Restrict)
   invoiceId     String
   invoice       Invoice        @relation("InvoiceEInvoice", fields: [invoiceId], references: [id])
   irn           String?        @unique
@@ -2513,13 +2804,13 @@ model EInvoiceRecord {
   updatedAt     DateTime       @updatedAt
 
   @@index([invoiceId])
-  @@index([userId, status])
+  @@index([tenantId, status])
 }
 
 model AccountingIntegration {
   id           String          @id @default(uuid())
-  userId       String
-  user         User            @relation("UserAccountingIntegrations", fields: [userId], references: [id])
+  tenantId     String
+  tenant       Tenant          @relation("TenantAccountingIntegration", fields: [tenantId], references: [id], onDelete: Restrict)
   kind         IntegrationKind
   enabled      Boolean         @default(false)
   config       Json
@@ -2529,7 +2820,7 @@ model AccountingIntegration {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
-  @@unique([userId, kind])
+  @@unique([tenantId, kind])
 }
 
 /// HMRC Making Tax Digital (MTD) VAT per-tenant config (BYOK + OAuth tokens).
@@ -2537,8 +2828,8 @@ model AccountingIntegration {
 /// (see lib/emailSecret + lib/configSecret) and are NEVER returned cleartext.
 model MtdConfig {
   id             String    @id @default(uuid())
-  userId         String    @unique
-  user           User      @relation("UserMtdConfig", fields: [userId], references: [id])
+  tenantId       String    @unique
+  tenant         Tenant    @relation("TenantMtdConfig", fields: [tenantId], references: [id], onDelete: Restrict)
   enabled        Boolean   @default(false)
   clientId       String?
   clientSecret   String? // encrypted at rest (enc::)
@@ -2553,8 +2844,8 @@ model MtdConfig {
 
 model MessagingConfig {
   id               String   @id @default(uuid())
-  userId           String   @unique
-  user             User     @relation("UserMessagingConfig", fields: [userId], references: [id])
+  tenantId         String   @unique
+  tenant           Tenant   @relation("TenantMessagingConfig", fields: [tenantId], references: [id], onDelete: Restrict)
   whatsappEnabled  Boolean  @default(false)
   whatsappProvider String?
   whatsappConfig   Json?
@@ -2569,8 +2860,8 @@ model MessagingConfig {
 
 model AiConfig {
   id               String         @id @default(uuid())
-  userId           String         @unique
-  user             User           @relation("UserAiConfig", fields: [userId], references: [id])
+  tenantId         String         @unique
+  tenant           Tenant         @relation("TenantAiConfig", fields: [tenantId], references: [id], onDelete: Restrict)
   provider         AiProviderKind @default(MOCK)
   enabled          Boolean        @default(false)
   encryptedApiKey  String?        @db.Text
@@ -2585,8 +2876,8 @@ model AiConfig {
 // Cluster H — slice H.2 (bill OCR → draft purchase)
 model AiExtractionJob {
   id                  String             @id @default(uuid())
-  userId              String
-  user                User               @relation("UserAiJobs", fields: [userId], references: [id])
+  tenantId            String
+  tenant              Tenant             @relation("TenantAiExtractionJob", fields: [tenantId], references: [id], onDelete: Restrict)
   sourceFilePath      String
   mimeType            String
   status              AiExtractionStatus @default(PENDING)
@@ -2600,25 +2891,31 @@ model AiExtractionJob {
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
-  @@index([userId, status])
+  @@index([tenantId, status])
 }
 
 // Cluster H — slice H.3 (financial co-pilot chat)
 model AiChatSession {
   id        String          @id @default(uuid())
-  userId    String
-  user      User            @relation("UserAiChats", fields: [userId], references: [id])
+  tenantId  String
+  tenant    Tenant          @relation("TenantAiChatSession", fields: [tenantId], references: [id], onDelete: Restrict)
   title     String?
   messages  AiChatMessage[]
   isDeleted Boolean         @default(false)
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
-  @@index([userId, updatedAt])
+  @@index([tenantId, updatedAt])
 }
 
 model AiChatMessage {
   id         String        @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId   String
+  tenant     Tenant        @relation("TenantAiChatMessages", fields: [tenantId], references: [id], onDelete: Restrict)
   sessionId  String
   session    AiChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   role       AiChatRole
@@ -2630,13 +2927,14 @@ model AiChatMessage {
   createdAt  DateTime      @default(now())
 
   @@index([sessionId, createdAt])
+  @@index([tenantId])
 }
 
 // Cluster H — slice H.4 (per-call usage logging for cost charts + rate limits)
 model AiUsageLog {
   id           String         @id @default(uuid())
-  userId       String
-  user         User           @relation("UserAiUsage", fields: [userId], references: [id])
+  tenantId     String
+  tenant       Tenant         @relation("TenantAiUsageLog", fields: [tenantId], references: [id], onDelete: Restrict)
   feature      String
   provider     AiProviderKind
   model        String?
@@ -2645,7 +2943,7 @@ model AiUsageLog {
   costUsd      Decimal?       @db.Decimal(10, 6)
   createdAt    DateTime       @default(now())
 
-  @@index([userId, createdAt])
+  @@index([tenantId, createdAt])
 }
 
 // =============================================================================
@@ -2692,8 +2990,14 @@ model AuditLog {
   summary       String
   changes       Json?
   affectedCount Int?
+  // The ACTOR, not the tenant. Deliberately left as userId.
   userId        String?
   user          User?       @relation("UserAuditLogs", fields: [userId], references: [id])
+  // The tenant the audited write belonged to. Nullable because system work
+  // (seeds, boot backfills, migrations -- anything under runAsSystem) has no
+  // tenant, and an audit row is worth keeping even then.
+  tenantId      String?
+  tenant        Tenant?     @relation("TenantAuditLogs", fields: [tenantId], references: [id], onDelete: SetNull)
   userName      String
   ipAddress     String?
   userAgent     String?
@@ -2702,6 +3006,7 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([userId])
   @@index([createdAt])
+  @@index([tenantId, createdAt])
 }
 
 // =============================================================================
@@ -2710,8 +3015,8 @@ model AuditLog {
 
 model ExchangeRate {
   id           String   @id @default(uuid())
-  userId       String
-  user         User     @relation("UserExchangeRates", fields: [userId], references: [id])
+  tenantId     String
+  tenant       Tenant   @relation("TenantExchangeRate", fields: [tenantId], references: [id], onDelete: Restrict)
   fromCurrency String
   toCurrency   String
   rate         Decimal  @db.Decimal(18, 8)
@@ -2719,7 +3024,7 @@ model ExchangeRate {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  @@index([userId, fromCurrency, toCurrency, asOfDate])
+  @@index([tenantId, fromCurrency, toCurrency, asOfDate])
 }
 
 // =============================================================================
@@ -2728,7 +3033,8 @@ model ExchangeRate {
 
 model CostCenter {
   id          String         @id @default(uuid())
-  userId      String
+  tenantId    String
+  tenant      Tenant         @relation("TenantCostCenter", fields: [tenantId], references: [id], onDelete: Restrict)
   code        String
   name        String
   description String?
@@ -2762,13 +3068,13 @@ model CostCenter {
   purchaseOrders   PurchaseOrder[]   @relation("CostCenterPurchaseOrders")
   deliveryChallans DeliveryChallan[] @relation("CostCenterDeliveryChallans")
 
-  @@unique([userId, code])
+  @@unique([tenantId, code])
   /// Postgres treats NULLs as distinct here, so unprefixed centres coexist
   /// freely while two centres can never share a live document series.
-  @@unique([userId, numberPrefix])
-  @@index([userId])
+  @@unique([tenantId, numberPrefix])
+  @@index([tenantId])
   @@index([parentId])
-  @@index([userId, isDeleted])
+  @@index([tenantId, isDeleted])
 }
 
 enum CostCenterType {
@@ -2779,7 +3085,8 @@ enum CostCenterType {
 
 model Project {
   id          String    @id @default(uuid())
-  userId      String
+  tenantId    String
+  tenant      Tenant    @relation("TenantProject", fields: [tenantId], references: [id], onDelete: Restrict)
   code        String
   name        String
   description String?
@@ -2798,8 +3105,8 @@ model Project {
   members      ProjectMember[]
   timeEntries  TimeEntry[]
 
-  @@unique([userId, code])
-  @@index([userId])
+  @@unique([tenantId, code])
+  @@index([tenantId])
 }
 
 // =============================================================================
@@ -2820,7 +3127,8 @@ enum TimesheetStatus {
 
 model ProjectMember {
   id             String            @id @default(uuid())
-  userId         String // tenant (raw, matches Project)
+  tenantId       String // tenant (raw, matches Project)
+  tenant         Tenant            @relation("TenantProjectMember", fields: [tenantId], references: [id], onDelete: Restrict)
   projectId      String
   employeeUserId String
   role           ProjectMemberRole @default(MEMBER)
@@ -2833,13 +3141,14 @@ model ProjectMember {
   employee User    @relation("ProjectMemberEmployee", fields: [employeeUserId], references: [id])
 
   @@unique([projectId, employeeUserId])
-  @@index([userId])
+  @@index([tenantId])
   @@index([employeeUserId])
 }
 
 model Timesheet {
   id             String          @id @default(uuid())
-  userId         String // tenant
+  tenantId       String // tenant
+  tenant         Tenant          @relation("TenantTimesheet", fields: [tenantId], references: [id], onDelete: Restrict)
   employeeUserId String
   weekStartDate  DateTime // Monday, UTC midnight
   status         TimesheetStatus @default(DRAFT)
@@ -2854,12 +3163,18 @@ model Timesheet {
   entries  TimeEntry[]
 
   @@unique([employeeUserId, weekStartDate])
-  @@index([userId])
+  @@index([tenantId])
   @@index([status])
 }
 
 model TimeEntry {
   id          String   @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId    String
+  tenant      Tenant   @relation("TenantTimeEntries", fields: [tenantId], references: [id], onDelete: Restrict)
   timesheetId String
   projectId   String
   date        DateTime
@@ -2875,6 +3190,7 @@ model TimeEntry {
   @@index([timesheetId])
   @@index([projectId])
   @@index([date])
+  @@index([tenantId])
 }
 
 // =============================================================================
@@ -2896,20 +3212,22 @@ enum LeavePortion {
 
 model Holiday {
   id              String   @id @default(uuid())
-  userId          String // tenant (raw, matches Project)
+  tenantId        String // tenant (raw, matches Project)
+  tenant          Tenant   @relation("TenantHoliday", fields: [tenantId], references: [id], onDelete: Restrict)
   name            String
   date            DateTime // UTC midnight (date-only)
   recurringYearly Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  @@unique([userId, date])
-  @@index([userId])
+  @@unique([tenantId, date])
+  @@index([tenantId])
 }
 
 model LeaveType {
   id                    String   @id @default(uuid())
-  userId                String // tenant
+  tenantId              String // tenant
+  tenant                Tenant   @relation("TenantLeaveType", fields: [tenantId], references: [id], onDelete: Restrict)
   name                  String
   paid                  Boolean  @default(true)
   defaultAllocationDays Decimal? @db.Decimal(5, 1)
@@ -2920,12 +3238,13 @@ model LeaveType {
   allocations LeaveAllocation[]
   requests    LeaveRequest[]
 
-  @@unique([userId, name])
+  @@unique([tenantId, name])
 }
 
 model LeaveAllocation {
   id              String   @id @default(uuid())
-  userId          String // tenant
+  tenantId        String // tenant
+  tenant          Tenant   @relation("TenantLeaveAllocation", fields: [tenantId], references: [id], onDelete: Restrict)
   employeeUserId  String
   leaveTypeId     String
   year            Int
@@ -2938,12 +3257,13 @@ model LeaveAllocation {
   leaveType LeaveType @relation(fields: [leaveTypeId], references: [id])
 
   @@unique([employeeUserId, leaveTypeId, year])
-  @@index([userId])
+  @@index([tenantId])
 }
 
 model LeaveRequest {
   id             String      @id @default(uuid())
-  userId         String // tenant
+  tenantId       String // tenant
+  tenant         Tenant      @relation("TenantLeaveRequest", fields: [tenantId], references: [id], onDelete: Restrict)
   employeeUserId String
   leaveTypeId    String
   startDate      DateTime
@@ -2961,13 +3281,19 @@ model LeaveRequest {
   leaveType LeaveType         @relation(fields: [leaveTypeId], references: [id])
   days      LeaveRequestDay[]
 
-  @@index([userId])
+  @@index([tenantId])
   @@index([employeeUserId])
   @@index([status])
 }
 
 model LeaveRequestDay {
   id             String       @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId       String
+  tenant         Tenant       @relation("TenantLeaveRequestDays", fields: [tenantId], references: [id], onDelete: Restrict)
   leaveRequestId String
   date           DateTime
   portion        LeavePortion @default(FULL)
@@ -2977,6 +3303,7 @@ model LeaveRequestDay {
 
   @@unique([leaveRequestId, date])
   @@index([date])
+  @@index([tenantId])
 }
 
 // =============================================================================
@@ -2985,8 +3312,8 @@ model LeaveRequestDay {
 
 model Budget {
   id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation("UserBudgets", fields: [userId], references: [id])
+  tenantId    String
+  tenant      Tenant   @relation("TenantBudget", fields: [tenantId], references: [id], onDelete: Restrict)
   accountId   String
   account     Account  @relation("AccountBudgets", fields: [accountId], references: [id])
   periodStart DateTime
@@ -2995,7 +3322,7 @@ model Budget {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@index([userId, accountId, periodStart])
+  @@index([tenantId, accountId, periodStart])
 }
 
 // =============================================================================
@@ -3004,8 +3331,8 @@ model Budget {
 
 model FixedAsset {
   id                      String    @id @default(uuid())
-  userId                  String
-  user                    User      @relation("UserFixedAssets", fields: [userId], references: [id])
+  tenantId                String
+  tenant                  Tenant    @relation("TenantFixedAsset", fields: [tenantId], references: [id], onDelete: Restrict)
   name                    String
   cost                    Decimal   @db.Decimal(18, 4)
   salvageValue            Decimal   @default(0) @db.Decimal(18, 4)
@@ -3022,7 +3349,7 @@ model FixedAsset {
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
-  @@index([userId, status])
+  @@index([tenantId, status])
 }
 
 // =============================================================================
@@ -3031,7 +3358,8 @@ model FixedAsset {
 
 model InventoryCostLayer {
   id           String   @id @default(uuid())
-  userId       String
+  tenantId     String
+  tenant       Tenant   @relation("TenantInventoryCostLayer", fields: [tenantId], references: [id], onDelete: Restrict)
   productId    String
   qtyRemaining Decimal  @db.Decimal(18, 4)
   unitCost     Decimal  @db.Decimal(18, 4)
@@ -3041,12 +3369,13 @@ model InventoryCostLayer {
   isDeleted    Boolean  @default(false)
   createdAt    DateTime @default(now())
 
-  @@index([userId, productId, receivedAt])
+  @@index([tenantId, productId, receivedAt])
 }
 
 model TransactionCategory {
   id               String            @id @default(uuid())
-  userId           String
+  tenantId         String
+  tenant           Tenant            @relation("TenantTransactionCategory", fields: [tenantId], references: [id], onDelete: Restrict)
   code             String
   name             String
   group            CategoryGroup
@@ -3063,7 +3392,7 @@ model TransactionCategory {
   updatedAt        DateTime          @updatedAt
   bankTransactions BankTransaction[] @relation("CategoryBankTransactions")
 
-  @@unique([userId, code])
+  @@unique([tenantId, code])
 }
 
 // =============================================================================
@@ -3071,58 +3400,65 @@ model TransactionCategory {
 // =============================================================================
 
 model PayrollProfile {
-  id              String       @id @default(uuid())
-  userId          String       // owner / tenant (the company)
-  user            User         @relation("CompanyPayrollProfiles", fields: [userId], references: [id])
-  employeeUserId  String
-  employee        User         @relation("EmployeePayrollProfile", fields: [employeeUserId], references: [id])
-  defaultGross    Decimal?     @db.Decimal(18, 4)
-  payFrequency    PayFrequency @default(MONTHLY)
-  isActive        Boolean      @default(true)
-  isDeleted       Boolean      @default(false)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id             String       @id @default(uuid())
+  tenantId       String // owner / tenant (the company)
+  tenant         Tenant       @relation("TenantPayrollProfile", fields: [tenantId], references: [id], onDelete: Restrict)
+  employeeUserId String
+  employee       User         @relation("EmployeePayrollProfile", fields: [employeeUserId], references: [id])
+  defaultGross   Decimal?     @db.Decimal(18, 4)
+  payFrequency   PayFrequency @default(MONTHLY)
+  isActive       Boolean      @default(true)
+  isDeleted      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  @@index([userId])
+  @@index([tenantId])
   @@index([employeeUserId])
 }
 
 model PayRun {
-  id            String        @id @default(uuid())
-  userId        String        // owner / tenant
-  user          User          @relation("CompanyPayRuns", fields: [userId], references: [id])
-  taxYearLabel  String
-  taxMonth      Int
-  periodStart   DateTime
-  periodEnd     DateTime
-  status        PayRunStatus  @default(DRAFT)
-  finalizedAt   DateTime?
-  voidedAt      DateTime?
-  isDeleted     Boolean       @default(false)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  lines         PayRunLine[]  @relation("PayRunLines")
+  id           String       @id @default(uuid())
+  tenantId     String // owner / tenant
+  tenant       Tenant       @relation("TenantPayRun", fields: [tenantId], references: [id], onDelete: Restrict)
+  taxYearLabel String
+  taxMonth     Int
+  periodStart  DateTime
+  periodEnd    DateTime
+  status       PayRunStatus @default(DRAFT)
+  finalizedAt  DateTime?
+  voidedAt     DateTime?
+  isDeleted    Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  lines        PayRunLine[] @relation("PayRunLines")
 
-  @@index([userId])
-  @@index([userId, taxYearLabel, taxMonth])
+  @@index([tenantId])
+  @@index([tenantId, taxYearLabel, taxMonth])
 }
 
 model PayRunLine {
-  id              String   @id @default(uuid())
-  payRunId        String
-  payRun          PayRun   @relation("PayRunLines", fields: [payRunId], references: [id], onDelete: Cascade)
-  employeeUserId  String
-  employee        User     @relation("EmployeePayRunLines", fields: [employeeUserId], references: [id])
-  gross           Decimal  @db.Decimal(18, 4)
-  deductions      Decimal  @default(0) @db.Decimal(18, 4)
-  net             Decimal  @db.Decimal(18, 4)
-  deductionLines  Json?
-  note            String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId       String
+  tenant         Tenant   @relation("TenantPayRunLines", fields: [tenantId], references: [id], onDelete: Restrict)
+  payRunId       String
+  payRun         PayRun   @relation("PayRunLines", fields: [payRunId], references: [id], onDelete: Cascade)
+  employeeUserId String
+  employee       User     @relation("EmployeePayRunLines", fields: [employeeUserId], references: [id])
+  gross          Decimal  @db.Decimal(18, 4)
+  deductions     Decimal  @default(0) @db.Decimal(18, 4)
+  net            Decimal  @db.Decimal(18, 4)
+  deductionLines Json?
+  note           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([payRunId])
   @@index([employeeUserId])
+  @@index([tenantId])
 }
 
 // =============================================================================
@@ -3143,13 +3479,13 @@ enum TaxTreatment {
 }
 
 model Contact {
-  id                      String         @id @default(uuid())
-  userId                  String
-  user                    User           @relation("UserContacts", fields: [userId], references: [id])
+  id                      String        @id @default(uuid())
+  tenantId                String
+  tenant                  Tenant        @relation("TenantContact", fields: [tenantId], references: [id], onDelete: Restrict)
   firstName               String?
   lastName                String?
   organisation            String?
-  showNameOnInvoice       Boolean        @default(false)
+  showNameOnInvoice       Boolean       @default(false)
   email                   String?
   billingEmail            String?
   telephone               String?
@@ -3162,49 +3498,49 @@ model Contact {
   postcode                String?
   countryId               String?
   defaultPaymentTermDays  Int?
-  useContactEmailSettings Boolean        @default(false)
+  useContactEmailSettings Boolean       @default(false)
   invoiceSequencePrefix   String?
-  defaultTaxTreatment     TaxTreatment   @default(STANDARD)
+  defaultTaxTreatment     TaxTreatment  @default(STANDARD)
   vatRegNumber            String?
   vatNumber               String? // customer VAT number (EU/UK), used for reverse-charge detection
   country                 String? // ISO country code, used for EU cross-border detection
-  viesValid               Boolean?       // last online VIES result (null = never checked / VIES disabled / non-EU)
-  viesCheckedAt           DateTime?      // audit: timestamp of the last VIES check
+  viesValid               Boolean? // last online VIES result (null = never checked / VIES disabled / non-EU)
+  viesCheckedAt           DateTime? // audit: timestamp of the last VIES check
   gstin                   String?
   invoiceLanguage         String?
   currencyCode            String?
   bankDetails             Json?
   notes                   String?
   image                   String?
-  status                  ContactStatus  @default(ACTIVE)
+  status                  ContactStatus @default(ACTIVE)
   legacyCustomerId        String?
   legacySupplierId        String?
-  isDeleted               Boolean        @default(false)
-  createdAt               DateTime       @default(now())
-  updatedAt               DateTime       @updatedAt
+  isDeleted               Boolean       @default(false)
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
 
   // Back-relations from party models (task 5: contactId FK columns)
-  invoicesAsContact           Invoice[]         @relation("InvoiceContact")
-  invoicesAsBillToContact     Invoice[]         @relation("InvoiceBillToContact")
-  quotationsAsContact         Quotation[]       @relation("QuotationContact")
-  quotationsAsBillToContact   Quotation[]       @relation("QuotationBillToContact")
-  creditNotesAsContact        CreditNote[]      @relation("CreditNoteContact")
-  creditNotesAsBillToContact  CreditNote[]      @relation("CreditNoteBillToContact")
-  challansAsContact           DeliveryChallan[] @relation("DeliveryChallanContact")
-  challansAsBillToContact     DeliveryChallan[] @relation("DeliveryChallanBillToContact")
-  remindersAsTarget           Reminder[]        @relation("ReminderTargetContact")
-  vehiclesAsContact           Vehicle[]         @relation("VehicleContact")
-  purchasesAsContact          Purchase[]        @relation("PurchaseContact")
-  purchaseOrdersAsContact     PurchaseOrder[]   @relation("PurchaseOrderContact")
-  supplierPaymentsAsContact   SupplierPayment[] @relation("SupplierPaymentContact")
-  debitNotesAsContact         DebitNote[]       @relation("DebitNoteContact")
-  debitNotesAsBillToContact   DebitNote[]       @relation("DebitNoteBillToContact")
-  expensesAsContact           Expense[]         @relation("ExpenseContact")
-  recurringSchedules          RecurringInvoiceSchedule[] @relation("RecurringScheduleContact")
-  accountCreditEntries        AccountCreditEntry[] @relation("AccountCreditEntryContact")
+  invoicesAsContact          Invoice[]                  @relation("InvoiceContact")
+  invoicesAsBillToContact    Invoice[]                  @relation("InvoiceBillToContact")
+  quotationsAsContact        Quotation[]                @relation("QuotationContact")
+  quotationsAsBillToContact  Quotation[]                @relation("QuotationBillToContact")
+  creditNotesAsContact       CreditNote[]               @relation("CreditNoteContact")
+  creditNotesAsBillToContact CreditNote[]               @relation("CreditNoteBillToContact")
+  challansAsContact          DeliveryChallan[]          @relation("DeliveryChallanContact")
+  challansAsBillToContact    DeliveryChallan[]          @relation("DeliveryChallanBillToContact")
+  remindersAsTarget          Reminder[]                 @relation("ReminderTargetContact")
+  vehiclesAsContact          Vehicle[]                  @relation("VehicleContact")
+  purchasesAsContact         Purchase[]                 @relation("PurchaseContact")
+  purchaseOrdersAsContact    PurchaseOrder[]            @relation("PurchaseOrderContact")
+  supplierPaymentsAsContact  SupplierPayment[]          @relation("SupplierPaymentContact")
+  debitNotesAsContact        DebitNote[]                @relation("DebitNoteContact")
+  debitNotesAsBillToContact  DebitNote[]                @relation("DebitNoteBillToContact")
+  expensesAsContact          Expense[]                  @relation("ExpenseContact")
+  recurringSchedules         RecurringInvoiceSchedule[] @relation("RecurringScheduleContact")
+  accountCreditEntries       AccountCreditEntry[]       @relation("AccountCreditEntryContact")
 
-  @@index([userId])
-  @@index([userId, status])
+  @@index([tenantId])
+  @@index([tenantId, status])
   @@index([legacyCustomerId])
   @@index([legacySupplierId])
   @@index([email])
@@ -3216,8 +3552,9 @@ model Contact {
 
 model ExplanationHint {
   id                 String   @id @default(uuid())
-  userId             String
-  payeeKey           String   // normalised payee/description
+  tenantId           String
+  tenant             Tenant   @relation("TenantExplanationHint", fields: [tenantId], references: [id], onDelete: Restrict)
+  payeeKey           String // normalised payee/description
   transactionTypeKey String
   categoryId         String?
   payToUserId        String?
@@ -3226,6 +3563,6 @@ model ExplanationHint {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  @@unique([userId, payeeKey])
-  @@index([userId])
+  @@unique([tenantId, payeeKey])
+  @@index([tenantId])
 }

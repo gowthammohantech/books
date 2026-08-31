@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import type { Vehicle, Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { tenantScope, requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { tenantScope, requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
 
 
@@ -53,7 +53,7 @@ function formatVehicle(v: VehicleWithCustomer): VehicleResponse {
 
 export async function getAllVehicles(req: Request, res: Response): Promise<void> {
   try {
-    requireUserId(req); // throws UnauthorizedError if no user
+    requireTenantId(req); // throws UnauthorizedError if no user
     const page = Math.max(1, parseInt((req.query.page as string) ?? '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt((req.query.limit as string) ?? '10', 10)));
     const search = ((req.query.search as string) ?? '').trim();
@@ -118,11 +118,11 @@ export async function getAllVehicles(req: Request, res: Response): Promise<void>
 // Non-paginated list used by the invoice form dropdown.
 export async function getVehiclesForCustomer(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { customerId } = req.params as { customerId: string };
 
     const rows = await prisma.vehicle.findMany({
-      where: { customerId, userId, isDeleted: false, status: true },
+      where: { customerId, tenantId, isDeleted: false, status: true },
       include: {
         customer: { select: { id: true, name: true } },
         contact: {
@@ -157,11 +157,11 @@ export async function getVehiclesForCustomer(req: Request, res: Response): Promi
 
 export async function getVehicleById(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const row = await prisma.vehicle.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       include: {
         customer: { select: { id: true, name: true } },
         contact: {
@@ -196,7 +196,7 @@ export async function getVehicleById(req: Request, res: Response): Promise<void>
 
 export async function createVehicle(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as Record<string, unknown>;
 
     const created = await prisma.vehicle.create({
@@ -211,7 +211,7 @@ export async function createVehicle(req: Request, res: Response): Promise<void> 
         mileage: body.mileage !== undefined && body.mileage !== null ? Number(body.mileage) : null,
         notes: (body.notes as string | undefined) ?? null,
         status: body.status === undefined ? true : body.status === true || body.status === 'true',
-        userId,
+        tenantId,
       },
       include: {
         customer: { select: { id: true, name: true } },
@@ -247,11 +247,11 @@ export async function createVehicle(req: Request, res: Response): Promise<void> 
 
 export async function updateVehicle(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = req.body as Record<string, unknown>;
 
-    const existing = await prisma.vehicle.findFirst({ where: { id, userId, isDeleted: false } });
+    const existing = await prisma.vehicle.findFirst({ where: { id, tenantId, isDeleted: false } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Vehicle not found' });
       return;
@@ -306,10 +306,10 @@ export async function updateVehicle(req: Request, res: Response): Promise<void> 
 
 export async function deleteVehicle(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
-    const existing = await prisma.vehicle.findFirst({ where: { id, userId, isDeleted: false } });
+    const existing = await prisma.vehicle.findFirst({ where: { id, tenantId, isDeleted: false } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Vehicle not found' });
       return;

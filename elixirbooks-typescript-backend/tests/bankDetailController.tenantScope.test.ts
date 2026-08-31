@@ -5,18 +5,18 @@
  * unscoped by-id / list gaps of the same class the P0-2b tenant-scoping
  * pass fixes elsewhere:
  *  - updateBankDetail / updateBankDetailStatus / deleteBankDetail loaded
- *    the existing BankDetail by `id` only (no `userId`), so any
+ *    the existing BankDetail by `id` only (no `tenantId`), so any
  *    authenticated user could rewrite/disable/soft-delete another
  *    tenant's bank account.
  *  - reconcileTransaction / getBankTransactionDetails loaded the
  *    BankTransaction by `id` only; both now go through the owning
- *    `bankAccount.userId`.
+ *    `bankAccount.tenantId`.
  *  - listBankTransactions / listBankTransactionsReconciled listed ALL
  *    transactions across every tenant (only `isDeleted: false`); both now
- *    filter on `bankAccount: { userId }`.
+ *    filter on `bankAccount: { tenantId }`.
  *  - listFinancialDetails computed "today vs last day" totals by scanning
  *    `bankDetail`/`pettyCash` "across users"; both now scope by tenant
- *    (PettyCash via its Task 2 `userId` column, strict — no null fallback).
+ *    (PettyCash via its Task 2 `tenantId` column, strict — no null fallback).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
@@ -90,7 +90,7 @@ function makeReqRes(
   return { req, res };
 }
 
-/** Tripwire: fails if any where-object anywhere carries a null-userId OR
+/** Tripwire: fails if any where-object anywhere carries a null-tenantId OR
  * branch — a cross-tenant leak shape. Recurses into arrays/objects. */
 function assertNoNullUserIdBranch(value: unknown, path = 'where'): void {
   if (value === null || typeof value !== 'object') return;
@@ -99,8 +99,8 @@ function assertNoNullUserIdBranch(value: unknown, path = 'where'): void {
     return;
   }
   const obj = value as Record<string, unknown>;
-  if ('userId' in obj && obj.userId === null) {
-    throw new Error(`found userId: null at ${path} — cross-tenant leak`);
+  if ('tenantId' in obj && obj.tenantId === null) {
+    throw new Error(`found tenantId: null at ${path} — cross-tenant leak`);
   }
   for (const [key, val] of Object.entries(obj)) {
     assertNoNullUserIdBranch(val, `${path}.${key}`);
@@ -121,56 +121,56 @@ beforeEach(() => {
 });
 
 describe('bankDetailController — tenant scoping', () => {
-  it('updateBankDetail 404s on a foreign id (findFirst scoped by userId)', async () => {
+  it('updateBankDetail 404s on a foreign id (findFirst scoped by tenantId)', async () => {
     const { req, res } = makeReqRes({ id: 'foreign-bank' }, { bankName: 'X' });
     await updateBankDetail(req, res);
 
     expect(mockBankDetailFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ id: 'foreign-bank', userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ id: 'foreign-bank', tenantId: TENANT_ID }) }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
     assertNoNullUserIdBranch(mockBankDetailFindFirst.mock.calls[0][0].where);
   });
 
-  it('updateBankDetailStatus 404s on a foreign id (findFirst scoped by userId)', async () => {
+  it('updateBankDetailStatus 404s on a foreign id (findFirst scoped by tenantId)', async () => {
     const { req, res } = makeReqRes({ id: 'foreign-bank' }, { status: true });
     await updateBankDetailStatus(req, res);
 
     expect(mockBankDetailFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ id: 'foreign-bank', userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ id: 'foreign-bank', tenantId: TENANT_ID }) }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
 
-  it('deleteBankDetail 404s on a foreign id (findFirst scoped by userId)', async () => {
+  it('deleteBankDetail 404s on a foreign id (findFirst scoped by tenantId)', async () => {
     const { req, res } = makeReqRes({ id: 'foreign-bank' });
     await deleteBankDetail(req, res);
 
     expect(mockBankDetailFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'foreign-bank', userId: TENANT_ID } }),
+      expect.objectContaining({ where: { id: 'foreign-bank', tenantId: TENANT_ID } }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
 
-  it('reconcileTransaction 404s on a foreign id (findFirst scoped via bankAccount.userId)', async () => {
+  it('reconcileTransaction 404s on a foreign id (findFirst scoped via bankAccount.tenantId)', async () => {
     const { req, res } = makeReqRes({ id: 'foreign-txn' }, { isReconciled: true });
     await reconcileTransaction(req, res);
 
     expect(mockBankTransactionFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'foreign-txn', bankAccount: { userId: TENANT_ID } },
+        where: { id: 'foreign-txn', bankAccount: { tenantId: TENANT_ID } },
       }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
 
-  it('getBankTransactionDetails 404s on a foreign id (findFirst scoped via bankAccount.userId)', async () => {
+  it('getBankTransactionDetails 404s on a foreign id (findFirst scoped via bankAccount.tenantId)', async () => {
     const { req, res } = makeReqRes({ id: 'foreign-txn' });
     await getBankTransactionDetails(req, res);
 
     expect(mockBankTransactionFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 'foreign-txn', bankAccount: { userId: TENANT_ID } },
+        where: { id: 'foreign-txn', bankAccount: { tenantId: TENANT_ID } },
       }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
@@ -211,27 +211,27 @@ describe('bankDetailController — tenant scoping', () => {
     expect(payload.data.supplierId.supplier_name).toBe('Jordan Rivera');
   });
 
-  it('listBankTransactions scopes both findMany and count by bankAccount.userId', async () => {
+  it('listBankTransactions scopes both findMany and count by bankAccount.tenantId', async () => {
     const { req, res } = makeReqRes({}, {}, {});
     await listBankTransactions(req, res);
 
     expect(mockBankTransactionFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ bankAccount: { userId: TENANT_ID } }) }),
+      expect.objectContaining({ where: expect.objectContaining({ bankAccount: { tenantId: TENANT_ID } }) }),
     );
     expect(mockBankTransactionCount).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ bankAccount: { userId: TENANT_ID } }) }),
+      expect.objectContaining({ where: expect.objectContaining({ bankAccount: { tenantId: TENANT_ID } }) }),
     );
   });
 
-  it('listBankTransactionsReconciled scopes both findMany and count by bankAccount.userId', async () => {
+  it('listBankTransactionsReconciled scopes both findMany and count by bankAccount.tenantId', async () => {
     const { req, res } = makeReqRes({}, {}, {});
     await listBankTransactionsReconciled(req, res);
 
     expect(mockBankTransactionFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ bankAccount: { userId: TENANT_ID } }) }),
+      expect.objectContaining({ where: expect.objectContaining({ bankAccount: { tenantId: TENANT_ID } }) }),
     );
     expect(mockBankTransactionCount).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ bankAccount: { userId: TENANT_ID } }) }),
+      expect.objectContaining({ where: expect.objectContaining({ bankAccount: { tenantId: TENANT_ID } }) }),
     );
   });
 
@@ -240,12 +240,12 @@ describe('bankDetailController — tenant scoping', () => {
     await listFinancialDetails(req, res);
 
     // First findMany call is the paginated/searched list; the second is the
-    // "all rows for totals" query — both must carry userId.
+    // "all rows for totals" query — both must carry tenantId.
     for (const call of mockBankDetailFindMany.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ userId: TENANT_ID }));
+      expect(call[0].where).toEqual(expect.objectContaining({ tenantId: TENANT_ID }));
     }
     expect(mockPettyCashFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     assertNoNullUserIdBranch(mockPettyCashFindMany.mock.calls[0][0].where);
   });

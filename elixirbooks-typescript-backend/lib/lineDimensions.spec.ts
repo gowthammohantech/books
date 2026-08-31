@@ -88,7 +88,7 @@ describe('assertCostCentresExist', () => {
     await assertCostCentresExist(tx as never, 'u1', ['cc-a']);
     expect(tx.costCenter.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ userId: 'u1', isDeleted: false }),
+        where: expect.objectContaining({ tenantId: 'u1', isDeleted: false }),
       }),
     );
   });

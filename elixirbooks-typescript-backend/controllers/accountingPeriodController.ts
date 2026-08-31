@@ -2,14 +2,14 @@ import type { Request, Response } from 'express';
 import type { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 
 export async function list(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const rows = await prisma.accountingPeriod.findMany({
-      where: { userId },
+      where: { tenantId },
       orderBy: { startDate: 'desc' },
     });
     res.json({
@@ -30,7 +30,7 @@ export async function list(req: Request, res: Response): Promise<void> {
 
 export async function create(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as { name?: string; startDate?: string; endDate?: string; notes?: string };
     if (!body.name || !body.startDate || !body.endDate) {
       res.status(400).json({ success: false, message: 'name + startDate + endDate required' });
@@ -38,7 +38,7 @@ export async function create(req: Request, res: Response): Promise<void> {
     }
     const created = await prisma.accountingPeriod.create({
       data: {
-        userId,
+        tenantId,
         name: body.name,
         startDate: new Date(body.startDate),
         endDate: new Date(body.endDate),
@@ -58,11 +58,11 @@ export async function create(req: Request, res: Response): Promise<void> {
 
 export async function update(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = req.body as { name?: string; startDate?: string; endDate?: string; notes?: string };
 
-    const existing = await prisma.accountingPeriod.findFirst({ where: { id, userId } });
+    const existing = await prisma.accountingPeriod.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Period not found' });
       return;
@@ -91,9 +91,9 @@ export async function update(req: Request, res: Response): Promise<void> {
 
 export async function lock(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
-    const existing = await prisma.accountingPeriod.findFirst({ where: { id, userId } });
+    const existing = await prisma.accountingPeriod.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Period not found' });
       return;
@@ -104,7 +104,7 @@ export async function lock(req: Request, res: Response): Promise<void> {
     }
     const updated = await prisma.accountingPeriod.update({
       where: { id },
-      data: { isLocked: true, lockedAt: new Date(), lockedBy: userId },
+      data: { isLocked: true, lockedAt: new Date(), lockedBy: tenantId },
     });
     res.json({ success: true, message: 'Period locked', data: { accountingPeriod: { ...updated } } });
   } catch (err) {
@@ -119,9 +119,9 @@ export async function lock(req: Request, res: Response): Promise<void> {
 
 export async function unlock(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
-    const existing = await prisma.accountingPeriod.findFirst({ where: { id, userId } });
+    const existing = await prisma.accountingPeriod.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Period not found' });
       return;
@@ -143,9 +143,9 @@ export async function unlock(req: Request, res: Response): Promise<void> {
 
 export async function remove(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
-    const existing = await prisma.accountingPeriod.findFirst({ where: { id, userId } });
+    const existing = await prisma.accountingPeriod.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Period not found' });
       return;

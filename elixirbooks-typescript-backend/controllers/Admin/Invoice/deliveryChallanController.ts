@@ -4,7 +4,8 @@ import type { DeliveryChallanStatus } from '@prisma/client';
 import { validationResult } from 'express-validator';
 
 import { prisma } from '../../../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../../../lib/tenantScope';
+import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
+import { requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 import { applyDocumentTreatment } from '../../../lib/tax/applyTreatment';
 import { sanitizeLineCustomFields } from '../../../lib/lineCustomFields';
@@ -16,15 +17,6 @@ import {
 } from '../../../lib/lineDimensions';
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
-
-// C.1: resolve the company default currency code (ISO string).
-async function resolveDefaultCurrencyCode(): Promise<string | null> {
-  const defaultCurrency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return defaultCurrency?.code ?? null;
-}
 
 type Tx = Prisma.TransactionClient;
 
@@ -128,7 +120,7 @@ export async function createDeliveryChallan(req: Request, res: Response): Promis
   }
 
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as Record<string, unknown>;
     // Resolved before the items so each line can inherit the document centre.
     const docCostCenterId = typeof body.costCenterId === 'string' && body.costCenterId ? body.costCenterId : null;
@@ -138,7 +130,7 @@ export async function createDeliveryChallan(req: Request, res: Response): Promis
     // id on a line would reach the ledger unnoticed. One query covers the
     // header and every line.
     try {
-      await assertCostCentresExist(prisma, userId, collectCostCentreIds(docCostCenterId, items));
+      await assertCostCentresExist(prisma, tenantId, collectCostCentreIds(docCostCenterId, items));
     } catch (centreErr) {
       if (centreErr instanceof UnknownCostCentreError) {
         res.status(400).json({ success: false, message: centreErr.message, errors: { costCenterId: centreErr.message } });
@@ -172,7 +164,7 @@ export async function createDeliveryChallan(req: Request, res: Response): Promis
 
     if (incomingContactId) {
       const ownedContact = await cdb().contact.findFirst({
-        where: { id: incomingContactId, userId, isDeleted: false },
+        where: { id: incomingContactId, tenantId, isDeleted: false },
         select: { id: true, defaultTaxTreatment: true },
       } as never) as { id: string; defaultTaxTreatment: TaxTreatment | null } | null;
       if (!ownedContact) {
@@ -184,7 +176,7 @@ export async function createDeliveryChallan(req: Request, res: Response): Promis
       resolvedCustomerId = legacyCustomerId;
       resolvedBillTo = legacyCustomerId;
       const contactRow = await cdb().contact.findFirst({
-        where: { legacyCustomerId, userId, isDeleted: false },
+        where: { legacyCustomerId, tenantId, isDeleted: false },
         select: { id: true, defaultTaxTreatment: true },
       } as never) as { id: string; defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) {
@@ -195,7 +187,7 @@ export async function createDeliveryChallan(req: Request, res: Response): Promis
     }
 
     // billFrom is a User FK — validate it
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({ where: { id: tenantId } });
     if (!user) {
       res.status(404).json({ message: 'User not found' });
       return;
@@ -216,7 +208,7 @@ export async function createDeliveryChallan(req: Request, res: Response): Promis
     // C.1: per-document currency — use caller-supplied code or fall back to company default.
     const docCurrencyCode =
       (typeof body.currencyCode === 'string' && body.currencyCode ? body.currencyCode : null) ??
-      (await resolveDefaultCurrencyCode());
+      (await resolveDefaultCurrencyCode(requireTenantId(req)));
 
     // C2: per-document tax treatment.
     const docTreatment: TaxTreatment =
@@ -263,7 +255,7 @@ export async function createDeliveryChallan(req: Request, res: Response): Promis
           signatureImage,
           signatureId,
           receivedBy: (body.receivedBy as string) ?? '',
-          userId,
+          tenantId,
           billFrom: billFromId,
           billTo: resolvedBillTo,
           taxTreatment: docTreatment,
@@ -347,7 +339,7 @@ export async function updateDeliveryChallan(req: Request, res: Response): Promis
   }
 
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = req.body as Record<string, unknown>;
 
@@ -363,7 +355,7 @@ export async function updateDeliveryChallan(req: Request, res: Response): Promis
     let dcContactDefaultTreatment: TaxTreatment | null = null;
     if (dcContactId) {
       const contactRow = (await cdbDC().contact.findFirst({
-        where: { id: dcContactId, userId, isDeleted: false },
+        where: { id: dcContactId, tenantId, isDeleted: false },
         select: { defaultTaxTreatment: true },
       } as never)) as { defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) dcContactDefaultTreatment = contactRow.defaultTaxTreatment;
@@ -412,7 +404,7 @@ export async function updateDeliveryChallan(req: Request, res: Response): Promis
 
       if (incomingContactId) {
         const ownedContact = (await cdbDC().contact.findFirst({
-          where: { id: incomingContactId, userId, isDeleted: false },
+          where: { id: incomingContactId, tenantId, isDeleted: false },
           select: { id: true },
         } as never)) as { id: string } | null;
         if (!ownedContact) {
@@ -422,7 +414,7 @@ export async function updateDeliveryChallan(req: Request, res: Response): Promis
         const billToContactId = incomingBillToContactId ?? incomingContactId;
         if (incomingBillToContactId && incomingBillToContactId !== incomingContactId) {
           const ownedBillTo = (await cdbDC().contact.findFirst({
-            where: { id: incomingBillToContactId, userId, isDeleted: false },
+            where: { id: incomingBillToContactId, tenantId, isDeleted: false },
             select: { id: true },
           } as never)) as { id: string } | null;
           if (!ownedBillTo) {
@@ -437,7 +429,7 @@ export async function updateDeliveryChallan(req: Request, res: Response): Promis
       } else if (incomingLegacyCustomerId) {
         const contactRow = (await cdbDC().contact.findFirst({
           where: {
-            userId,
+            tenantId,
             isDeleted: false,
             OR: [
               { legacyCustomerId: incomingLegacyCustomerId },

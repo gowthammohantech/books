@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 import type { CompanySettings, Permission, Module, GeneralSetting } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireActingUserId, requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireActingUserId, requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { applyPack, type ApplyPackTx } from '../lib/ledger/applyPack';
 import { resolvePackCode } from '../lib/ledger/resolvePackCode';
 import { seedTransactionCategoriesForUser } from '../prisma/seedTransactionCategories';
@@ -113,7 +113,7 @@ interface IncomingSetting {
 
 export async function createOrUpdateGeneralSetting(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { settings } = req.body as { settings?: IncomingSetting[] };
 
     if (!settings || !Array.isArray(settings) || settings.length === 0) {
@@ -124,7 +124,7 @@ export async function createOrUpdateGeneralSetting(req: Request, res: Response):
       return;
     }
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({ where: { id: tenantId } });
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' });
       return;
@@ -142,11 +142,13 @@ export async function createOrUpdateGeneralSetting(req: Request, res: Response):
         continue;
       }
 
-      const existing = await prisma.generalSetting.findUnique({ where: { key } });
+      const existing = await prisma.generalSetting.findUnique({
+        where: { tenantId_key: { tenantId, key } },
+      });
 
       if (existing) {
         await prisma.generalSetting.update({
-          where: { key },
+          where: { tenantId_key: { tenantId, key } },
           data: {
             value: value as Prisma.InputJsonValue,
             groupSlug,
@@ -164,6 +166,7 @@ export async function createOrUpdateGeneralSetting(req: Request, res: Response):
       } else {
         await prisma.generalSetting.create({
           data: {
+            tenantId,
             key,
             value: value as Prisma.InputJsonValue,
             groupSlug,
@@ -202,7 +205,7 @@ export async function listGeneralSettings(req: Request, res: Response): Promise<
   try {
     const { groupSlug } = req.query as { groupSlug?: string };
 
-    const where: Prisma.GeneralSettingWhereInput = {};
+    const where: Prisma.GeneralSettingWhereInput = { tenantId: requireTenantId(req) };
     if (groupSlug) where.groupSlug = groupSlug;
 
     const settings = await prisma.generalSetting.findMany({
@@ -229,15 +232,15 @@ export async function listGeneralSettings(req: Request, res: Response): Promise<
 }
 
 // =============================================================================
-// Company Settings (per-user; userId is unique on the schema)
+// Company Settings (per-user; tenantId is unique on the schema)
 // =============================================================================
 
 export async function getCompanySettings(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const settings = await prisma.companySettings.findUnique({
-      where: { userId },
+      where: { tenantId },
     });
 
     if (!settings) {
@@ -331,12 +334,12 @@ export async function getCompanySettings(req: Request, res: Response): Promise<v
  * route to the generic 'EU' pack while the real member ISO-2 is preserved so the
  * VAT rate + reverse-charge resolve correctly.
  */
-async function autoInitLedgerForUser(userId: string): Promise<void> {
+async function autoInitLedgerForUser(tenantId: string): Promise<void> {
   try {
-    const mappings = await prisma.ledgerAccountMapping.count({ where: { userId } });
+    const mappings = await prisma.ledgerAccountMapping.count({ where: { tenantId } });
     if (mappings === 0) {
       const settings = await prisma.companySettings.findUnique({
-        where: { userId },
+        where: { tenantId },
         select: { countryCode: true, countryId: true, ledgerInitialized: true },
       });
 
@@ -361,13 +364,13 @@ async function autoInitLedgerForUser(userId: string): Promise<void> {
         if (wasInitialized) {
           // Temporarily clear the flag so applyPack's guard does not throw.
           await tx.companySettings.update({
-            where: { userId },
+            where: { tenantId },
             data: { ledgerInitialized: false },
           });
         }
 
         await applyPack(tx as unknown as ApplyPackTx, {
-          userId,
+          tenantId,
           countryCode: packCode,
           memberCountryCode: memberIso2,
           goLiveDate: new Date(),
@@ -376,22 +379,22 @@ async function autoInitLedgerForUser(userId: string): Promise<void> {
         if (wasInitialized) {
           // Restore the flag after applyPack succeeds.
           await tx.companySettings.update({
-            where: { userId },
+            where: { tenantId },
             data: { ledgerInitialized: true },
           });
         }
       });
 
-      console.log(`[ledger auto-init] initialized pack ${packCode} for user ${userId}`);
+      console.log(`[ledger auto-init] initialized pack ${packCode} for user ${tenantId}`);
     }
 
     // Seed the Money In/Out transaction-category catalog now that role mappings
     // exist — so banking explain/reconcile dropdowns are populated immediately.
-    // Idempotent on (userId, code); no-op if the ledger isn't fully set up.
-    const catResult = await seedTransactionCategoriesForUser(userId);
+    // Idempotent on (tenantId, code); no-op if the ledger isn't fully set up.
+    const catResult = await seedTransactionCategoriesForUser(tenantId);
     if (catResult.created || catResult.migrated) {
       console.log(
-        `[onboarding] seeded transaction categories for user ${userId} ` +
+        `[onboarding] seeded transaction categories for user ${tenantId} ` +
         `(created ${catResult.created}, migrated ${catResult.migrated})`,
       );
     }
@@ -399,9 +402,9 @@ async function autoInitLedgerForUser(userId: string): Promise<void> {
     // Ensure a default "No Tax" TaxGroup/TaxRate exists so this tenant can
     // create Products right away (Product.taxGroupId is optional, but this
     // gives new tenants a sensible default out of the box). Idempotent.
-    const taxResult = await ensureDefaultTaxGroup(userId);
+    const taxResult = await ensureDefaultTaxGroup(tenantId);
     if (taxResult.created) {
-      console.log(`[onboarding] ensured default tax group for user ${userId}`);
+      console.log(`[onboarding] ensured default tax group for user ${tenantId}`);
     }
   } catch (ledgerErr) {
     console.warn('ledger auto-init skipped (non-fatal):', ledgerErr);
@@ -410,11 +413,11 @@ async function autoInitLedgerForUser(userId: string): Promise<void> {
 
 export async function updateCompanySettings(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const updates: Record<string, unknown> = { ...(req.body as Record<string, unknown>) };
 
     const currentSettings = await prisma.companySettings.findUnique({
-      where: { userId },
+      where: { tenantId },
     });
 
     const files = req.files as
@@ -549,10 +552,10 @@ export async function updateCompanySettings(req: Request, res: Response): Promis
       Prisma.CompanySettingsUncheckedCreateInput;
 
     const settings = await prisma.companySettings.upsert({
-      where: { userId },
+      where: { tenantId },
       update: data,
       create: {
-        userId,
+        tenantId,
         companyName: (data.companyName as string) ?? '',
         email: (data.email as string) ?? '',
         phone: (data.phone as string) ?? '',
@@ -574,7 +577,7 @@ export async function updateCompanySettings(req: Request, res: Response): Promis
 
     // Best-effort ledger onboarding (apply country pack + seed tx categories +
     // default tax group). Shared with the setup wizard; idempotent + non-fatal.
-    await autoInitLedgerForUser(userId);
+    await autoInitLedgerForUser(tenantId);
 
     res.status(200).json({
       success: true,
@@ -656,20 +659,20 @@ function cleanObject<T extends CleanObjectInput | null | undefined>(
 
 export async function getBasicDetails(req: Request, res: Response): Promise<void> {
   try {
-    const userIdParam = (req.query.userId as string | undefined) ?? undefined;
+    const userIdParam = (req.query.tenantId as string | undefined) ?? undefined;
     // Tenant (company-owner) id — scopes shared company data (company settings,
     // localization, invoice template) so every member of a workspace sees the
     // same company configuration.
-    let userId: string | undefined;
+    let tenantId: string | undefined;
     try {
-      userId = requireUserId(req);
+      tenantId = requireTenantId(req);
     } catch {
-      userId = undefined;
+      tenantId = undefined;
     }
-    userId = userId ?? userIdParam;
+    tenantId = tenantId ?? userIdParam;
 
     // Acting (logged-in) user id — resolves THIS user's own identity, role and
-    // permissions. Must NOT use the tenant id here: requireUserId returns the
+    // permissions. Must NOT use the tenant id here: requireTenantId returns the
     // company-owner id, so using it would make every non-owner user inherit the
     // owner's role/permissions (often empty) and get locked out of the app.
     let actingUserId: string | undefined;
@@ -678,9 +681,9 @@ export async function getBasicDetails(req: Request, res: Response): Promise<void
     } catch {
       actingUserId = undefined;
     }
-    actingUserId = actingUserId ?? userIdParam ?? userId;
+    actingUserId = actingUserId ?? userIdParam ?? tenantId;
 
-    if (!userId || !actingUserId) {
+    if (!tenantId || !actingUserId) {
       res.status(400).json({ message: 'User ID is required' });
       return;
     }
@@ -736,11 +739,11 @@ export async function getBasicDetails(req: Request, res: Response): Promise<void
       invoiceNumberTypeSetting,
     ] = await Promise.all([
       prisma.currency.findFirst({
-        where: { isDeleted: false, isDefault: true },
+        where: { tenantId, isDeleted: false, isDefault: true },
       }),
-      prisma.companySettings.findUnique({ where: { userId } }),
+      prisma.companySettings.findUnique({ where: { tenantId } }),
       prisma.localization.findFirst({
-        where: { isActive: true, userId },
+        where: { isActive: true, tenantId },
         include: { dateFormat: true, timeFormat: true, timezone: true },
         orderBy: { createdAt: 'desc' },
       }),
@@ -756,11 +759,11 @@ export async function getBasicDetails(req: Request, res: Response): Promise<void
         orderBy: { createdAt: 'asc' },
       }),
       prisma.invoiceTemplate.findFirst({
-        where: { userId },
+        where: { tenantId },
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.generalSetting.findUnique({ where: { key: 'invoicePrefix' } }),
-      prisma.generalSetting.findUnique({ where: { key: 'invoiceNumberType' } }),
+      prisma.generalSetting.findUnique({ where: { tenantId_key: { tenantId, key: 'invoicePrefix' } } }),
+      prisma.generalSetting.findUnique({ where: { tenantId_key: { tenantId, key: 'invoiceNumberType' } } }),
     ]);
 
     const defaultValues = {
@@ -816,7 +819,7 @@ export async function getBasicDetails(req: Request, res: Response): Promise<void
       invoiceTemplate: {
         _id: null,
         default_invoice_template: 'default-template',
-        userId,
+        tenantId,
         createdAt: null,
         updatedAt: null,
       },
@@ -924,9 +927,9 @@ export async function getBasicDetails(req: Request, res: Response): Promise<void
 
 export async function updateCompanySetup(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({ where: { id: tenantId } });
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' });
       return;
@@ -954,7 +957,7 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
 
     // Validate references (preserve original semantics; throw inside try block).
     const currency = currencyId
-      ? await prisma.currency.findUnique({ where: { id: currencyId } })
+      ? await prisma.currency.findFirst({ where: { id: currencyId, tenantId } })
       : null;
     const timezone = timezoneId
       ? await prisma.timezone.findUnique({ where: { id: timezoneId } })
@@ -979,7 +982,7 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
       companyLogoUrl = `/uploads/company/${req.file.filename}`;
     }
 
-    let companySettings = await prisma.companySettings.findUnique({ where: { userId } });
+    let companySettings = await prisma.companySettings.findUnique({ where: { tenantId } });
 
     const result = await prisma.$transaction(async (tx) => {
       if (companySettings) {
@@ -988,7 +991,7 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
         }
 
         companySettings = await tx.companySettings.update({
-          where: { userId },
+          where: { tenantId },
           data: {
             companyName: companyName!,
             address: address ?? companySettings.address,
@@ -1013,14 +1016,14 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
             city: city!,
             pincode: pincode ?? '',
             siteLogo: companyLogoUrl ?? '',
-            userId,
+            tenantId,
           },
         });
       }
 
       // Update or create localization
       let localization = await tx.localization.findFirst({
-        where: { userId, isActive: true },
+        where: { tenantId, isActive: true },
       });
 
       const firstActiveTimeFormat = await tx.timeFormat.findFirst({
@@ -1042,7 +1045,7 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
         // ids are present.
         localization = await tx.localization.create({
           data: {
-            userId,
+            tenantId,
             timezoneId,
             dateFormatId,
             timeFormatId,
@@ -1055,7 +1058,7 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
       // Update default currency if needed
       if (currencyId && currency) {
         await tx.currency.updateMany({
-          where: { isDefault: true },
+          where: { tenantId, isDefault: true },
           data: { isDefault: false },
         });
         await tx.currency.update({
@@ -1071,7 +1074,7 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
     // the chosen country and seed onboarding lookups, now that CompanySettings
     // (with countryId) is committed. Shared with the settings-page save;
     // idempotent + non-fatal so it can never break setup completion.
-    await autoInitLedgerForUser(userId);
+    await autoInitLedgerForUser(tenantId);
 
     const baseUrl = buildBaseUrl(req);
     const responseData = {

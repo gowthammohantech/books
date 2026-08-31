@@ -2,9 +2,9 @@ import type { Request, Response } from 'express';
 import { Prisma, LocalizationStartWeek } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
-// Localization is per-user (Localization.userId → User), but legacy routes
+// Localization is per-user (Localization.tenantId → User), but legacy routes
 // vary: `getDropdownOptions` reads the active row scoped to the calling
 // user, while `saveLocalization`/`getLocalization` operate on a single
 // global "isActive: true" row regardless of user. We preserve that mixed
@@ -28,11 +28,11 @@ function parseStartWeek(value: unknown): LocalizationStartWeek | undefined {
 
 export async function getDropdownOptions(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const [localization, dateFormats, timeFormats, timezones] = await Promise.all([
       prisma.localization.findFirst({
-        where: { userId, isActive: true },
+        where: { tenantId, isActive: true },
         include: {
           dateFormat: { select: { id: true, title: true, format: true } },
           timeFormat: { select: { id: true, name: true, format: true } },
@@ -116,8 +116,12 @@ export async function getDropdownOptions(req: Request, res: Response): Promise<v
   }
 }
 
-export async function getSettingsDropdownList(_req: Request, res: Response): Promise<void> {
+export async function getSettingsDropdownList(req: Request, res: Response): Promise<void> {
   try {
+    // Timezone and DateFormat stay platform reference data; Currency does
+    // not -- each tenant owns and edits its own rows (P4), so this dropdown
+    // must not offer another company's currencies.
+    const tenantId = requireTenantId(req);
     const [timezones, dateFormats, currencies] = await Promise.all([
       prisma.timezone.findMany({
         select: { id: true, name: true, utc_offset: true },
@@ -129,7 +133,7 @@ export async function getSettingsDropdownList(_req: Request, res: Response): Pro
         orderBy: { title: 'asc' },
       }),
       prisma.currency.findMany({
-        where: { isDeleted: false, status: true },
+        where: { tenantId, isDeleted: false, status: true },
         select: { id: true, name: true, code: true, symbol: true, isDefault: true },
         orderBy: { name: 'asc' },
       }),

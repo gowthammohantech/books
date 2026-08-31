@@ -27,6 +27,16 @@ export const registerValidator: ValidationChain[] = [
       }
       return true;
     }),
+
+  // P5: registration creates a WORKSPACE, and this names it. Optional — it
+  // falls back to "Default Workspace" — because the field is new and an older
+  // client that does not send it must still be able to sign up. It is also
+  // what Tenant.slug is derived from, so it is length-capped here rather than
+  // silently truncated later.
+  body('companyName')
+    .optional({ values: 'falsy' })
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Company name must be between 2 and 100 characters'),
 ];
 
 export const loginValidator: ValidationChain[] = [

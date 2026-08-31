@@ -5,7 +5,7 @@ import type { Request, Response } from 'express';
 import type { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { matchSupplier } from '../lib/aiSupplierMatcher';
 import { normalizeBillExtraction, type BillExtractionResult } from '../lib/aiPrompts/billExtraction';
 import { getProviderForUser } from '../lib/aiProviders/registry';
@@ -43,7 +43,7 @@ async function generateNextPurchaseId(tx: Tx): Promise<string> {
 
 export async function extractBill(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     if (!req.file) {
       res.status(400).json({ success: false, message: 'No file uploaded (expected field name "bill")' });
       return;
@@ -58,7 +58,7 @@ export async function extractBill(req: Request, res: Response): Promise<void> {
     // the provider blows up. Errors get persisted into the same row.
     const job = await prisma.aiExtractionJob.create({
       data: {
-        userId,
+        tenantId,
         sourceFilePath,
         mimeType: req.file.mimetype,
         status: 'PENDING',
@@ -69,7 +69,7 @@ export async function extractBill(req: Request, res: Response): Promise<void> {
     let rawResponse = '';
     let costUsd = 0;
     try {
-      const provider = req.aiProvider ?? (await getProviderForUser(userId, { requireEnabled: true }));
+      const provider = req.aiProvider ?? (await getProviderForUser(tenantId, { requireEnabled: true }));
       const fileBuffer = await fs.readFile(req.file.path);
       const result = await provider.extractDocument(fileBuffer, req.file.mimetype);
       extracted = normalizeBillExtraction(result.fields);
@@ -96,7 +96,7 @@ export async function extractBill(req: Request, res: Response): Promise<void> {
 
     const supplierMatch = await matchSupplier(
       { vendorName: extracted.vendorName, vendorGstin: extracted.vendorGstin },
-      userId,
+      tenantId,
     );
 
     const updated = await prisma.aiExtractionJob.update({
@@ -112,7 +112,7 @@ export async function extractBill(req: Request, res: Response): Promise<void> {
 
     // Best-effort usage log (Cluster H, slice H.4). Never fails the request.
     await logAiUsage({
-      userId,
+      tenantId,
       feature: 'extraction',
       provider: req.aiConfig?.provider ?? 'MOCK',
       model: req.aiConfig?.extractionModel ?? null,
@@ -143,12 +143,12 @@ export async function extractBill(req: Request, res: Response): Promise<void> {
 
 export async function listJobs(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const page = Math.max(1, parseInt(String(req.query.page ?? '1'), 10) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? '20'), 10) || 20));
     const status = req.query.status as string | undefined;
 
-    const where: Prisma.AiExtractionJobWhereInput = { userId };
+    const where: Prisma.AiExtractionJobWhereInput = { tenantId };
     if (status && ['PENDING', 'EXTRACTED', 'CONFIRMED', 'FAILED', 'DISCARDED'].includes(status)) {
       where.status = status as Prisma.AiExtractionJobWhereInput['status'];
     }
@@ -203,10 +203,10 @@ export async function listJobs(req: Request, res: Response): Promise<void> {
 
 export async function getJob(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const job = await prisma.aiExtractionJob.findFirst({
-      where: { id, userId },
+      where: { id, tenantId },
     });
     if (!job) {
       res.status(404).json({ success: false, message: 'Extraction job not found' });
@@ -252,11 +252,11 @@ interface ConfirmBody {
 
 export async function confirmJob(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = (req.body ?? {}) as ConfirmBody;
 
-    const job = await prisma.aiExtractionJob.findFirst({ where: { id, userId } });
+    const job = await prisma.aiExtractionJob.findFirst({ where: { id, tenantId } });
     if (!job) {
       res.status(404).json({ success: false, message: 'Extraction job not found' });
       return;
@@ -289,14 +289,14 @@ export async function confirmJob(req: Request, res: Response): Promise<void> {
     // Resolve supplier name + optional Supplier row creation. The Purchase
     // model takes `billFrom`/`billTo` as User.id refs (legacy schema), so
     // we store the AI-confirmed supplier as a `Supplier` row for the
-    // supplier list, and seed billFrom=billTo=userId on the Purchase
+    // supplier list, and seed billFrom=billTo=tenantId on the Purchase
     // itself — matching the existing demo seed pattern.
     let supplierRowId: string | null = body.supplierId ?? null;
     let supplierName = extracted.vendorName ?? '';
     if (!supplierRowId && body.createSupplier && body.createSupplier.name) {
       const created = await prisma.supplier.create({
         data: {
-          user_id: userId,
+          tenantId: tenantId,
           supplier_name: body.createSupplier.name,
           supplier_email:
             body.createSupplier.email && body.createSupplier.email.trim()
@@ -311,7 +311,7 @@ export async function confirmJob(req: Request, res: Response): Promise<void> {
       supplierName = created.supplier_name;
     } else if (supplierRowId) {
       const existing = await prisma.supplier.findFirst({
-        where: { id: supplierRowId, user_id: userId },
+        where: { id: supplierRowId, tenantId: tenantId },
       });
       if (existing) supplierName = existing.supplier_name;
     }
@@ -373,9 +373,9 @@ export async function confirmJob(req: Request, res: Response): Promise<void> {
             ?? `Created from AI extraction (job ${job.id}). Supplier: ${supplierName || 'unknown'}.`,
           termsAndCondition: null,
           sign_type: 'none',
-          userId,
-          billFrom: userId,
-          billTo: userId,
+          tenantId,
+          billFrom: tenantId,
+          billTo: tenantId,
         },
       });
 
@@ -411,9 +411,9 @@ export async function confirmJob(req: Request, res: Response): Promise<void> {
 
 export async function discardJob(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
-    const job = await prisma.aiExtractionJob.findFirst({ where: { id, userId } });
+    const job = await prisma.aiExtractionJob.findFirst({ where: { id, tenantId } });
     if (!job) {
       res.status(404).json({ success: false, message: 'Extraction job not found' });
       return;

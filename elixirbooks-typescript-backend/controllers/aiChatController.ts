@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import type { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { getProviderForUser } from '../lib/aiProviders/registry';
 import { financialTools, financialToolRegistry } from '../lib/aiTools/financialTools';
 import { logAiUsage } from '../lib/aiUsage';
@@ -33,9 +33,9 @@ function autoTitle(message: string): string {
 // -----------------------------------------------------------------------------
 
 export async function streamChat(req: Request, res: Response): Promise<void> {
-  let userId: string;
+  let tenantId: string;
   try {
-    userId = requireUserId(req);
+    tenantId = requireTenantId(req);
   } catch {
     res.status(401).json({ success: false, message: 'Not authorized' });
     return;
@@ -54,7 +54,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
   try {
     if (body.sessionId) {
       session = await prisma.aiChatSession.findFirst({
-        where: { id: body.sessionId, userId, isDeleted: false },
+        where: { id: body.sessionId, tenantId, isDeleted: false },
       });
       if (!session) {
         res.status(404).json({ success: false, message: 'Chat session not found' });
@@ -62,7 +62,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
       }
     } else {
       session = await prisma.aiChatSession.create({
-        data: { userId, title: autoTitle(message) },
+        data: { tenantId, title: autoTitle(message) },
       });
     }
   } catch (err) {
@@ -73,7 +73,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
 
   // Persist the USER message up front.
   const userMessageRow = await prisma.aiChatMessage.create({
-    data: { sessionId: session.id, role: 'USER', content: message },
+    data: { tenantId: tenantId, sessionId: session.id, role: 'USER', content: message },
   });
 
   // Open the SSE stream.
@@ -90,7 +90,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
   sse('meta', { sessionId: session.id, messageId: userMessageRow.id });
 
   try {
-    const provider = req.aiProvider ?? (await getProviderForUser(userId, { requireEnabled: true }));
+    const provider = req.aiProvider ?? (await getProviderForUser(tenantId, { requireEnabled: true }));
 
     // Seed the conversation with prior history (chronological) + the new
     // user message. Prior tool calls/results are replayed so the model has
@@ -143,7 +143,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
       const inlineToolResults: Array<{ name: string; result: unknown }> = [];
       let stopReason = 'end_turn';
 
-      const iter = provider.chatStream(conversation, financialTools, { userId });
+      const iter = provider.chatStream(conversation, financialTools, { tenantId });
       for await (const evt of iter as AsyncIterable<ChatStreamEvent>) {
         if (evt.type === 'token') {
           const delta = String(evt.data.delta ?? '');
@@ -192,6 +192,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
           const inline = inlineToolResults[i] ?? inlineToolResults.find((r) => r.name === call.name);
           await prisma.aiChatMessage.create({
             data: {
+              tenantId: tenantId,
               sessionId: session.id,
               role: 'ASSISTANT',
               content: '',
@@ -201,6 +202,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
           });
           await prisma.aiChatMessage.create({
             data: {
+              tenantId: tenantId,
               sessionId: session.id,
               role: 'TOOL',
               content: '',
@@ -224,7 +226,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
           result = { error: `Unknown tool: ${call.name}` };
         } else {
           try {
-            result = await tool.handler(call.input, { userId });
+            result = await tool.handler(call.input, { tenantId });
           } catch (toolErr) {
             console.error(`aiChat tool "${call.name}" error:`, toolErr);
             result = { error: toolErr instanceof Error ? toolErr.message : 'Tool failed' };
@@ -236,6 +238,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
         // Persist the assistant tool_use and the tool result as two rows.
         const assistantToolRow = await prisma.aiChatMessage.create({
           data: {
+            tenantId: tenantId,
             sessionId: session.id,
             role: 'ASSISTANT',
             content: '',
@@ -245,6 +248,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
         });
         await prisma.aiChatMessage.create({
           data: {
+            tenantId: tenantId,
             sessionId: session.id,
             role: 'TOOL',
             content: '',
@@ -281,6 +285,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
     // Persist the final ASSISTANT message.
     const assistantRow = await prisma.aiChatMessage.create({
       data: {
+        tenantId: tenantId,
         sessionId: session.id,
         role: 'ASSISTANT',
         content: finalAssistantText,
@@ -301,7 +306,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
     // Best-effort per-turn usage log (Cluster H, slice H.4) at the `done`
     // hook point H.3 flagged. Never fails the request.
     await logAiUsage({
-      userId,
+      tenantId,
       feature: 'chat',
       provider: req.aiConfig?.provider ?? 'MOCK',
       model: req.aiConfig?.chatModel ?? null,
@@ -327,11 +332,11 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
 
 export async function listSessions(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit ?? '20'), 10) || 20));
 
     const sessions = await prisma.aiChatSession.findMany({
-      where: { userId, isDeleted: false },
+      where: { tenantId, isDeleted: false },
       orderBy: { updatedAt: 'desc' },
       take: limit,
       select: {
@@ -367,11 +372,11 @@ export async function listSessions(req: Request, res: Response): Promise<void> {
 
 export async function getSession(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const session = await prisma.aiChatSession.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       include: { messages: { orderBy: { createdAt: 'asc' } } },
     });
     if (!session) {
@@ -411,7 +416,7 @@ export async function getSession(req: Request, res: Response): Promise<void> {
 
 export async function renameSession(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const title = ((req.body ?? {}) as { title?: string }).title?.trim();
     if (!title) {
@@ -420,7 +425,7 @@ export async function renameSession(req: Request, res: Response): Promise<void> 
     }
 
     const existing = await prisma.aiChatSession.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Chat session not found' });
@@ -446,11 +451,11 @@ export async function renameSession(req: Request, res: Response): Promise<void> 
 
 export async function deleteSession(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const existing = await prisma.aiChatSession.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Chat session not found' });

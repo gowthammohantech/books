@@ -19,7 +19,7 @@
 //   }
 //
 // Aggregates APPROVED LeaveRequestDay.portionDays whose `date` falls within
-// [from, to] (inclusive), tenant-scoped via the parent LeaveRequest.userId.
+// [from, to] (inclusive), tenant-scoped via the parent LeaveRequest.tenantId.
 //
 // Data-scope rule (mirrors timeReportController):
 //   - Admin / owner OR time-tracking-others,view → may query any employee(s).
@@ -29,7 +29,7 @@
 import type { Request, Response } from 'express';
 
 import { prisma } from '../../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../../lib/tenantScope';
 import { ForbiddenError } from '../../lib/timeTracking/scope';
 
 // =============================================================================
@@ -71,7 +71,7 @@ function isAdminOrOwner(actor: { isOwner: boolean; roleName: string | null }): b
 
 export async function getLeaveSummaryReport(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actor = req.actor;
     if (!actor) throw new UnauthorizedError();
 
@@ -113,7 +113,7 @@ export async function getLeaveSummaryReport(req: Request, res: Response): Promis
       where: {
         date: { gte: from, lte: toEndOfDay },
         leaveRequest: {
-          userId: tenantId,
+          tenantId: tenantId,
           status: 'APPROVED',
           ...(employeeUserIdFilter ? { employeeUserId: employeeUserIdFilter } : {}),
           ...(leaveTypeIdFilter ? { leaveTypeId: leaveTypeIdFilter } : {}),

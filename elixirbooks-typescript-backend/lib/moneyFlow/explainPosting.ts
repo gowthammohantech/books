@@ -44,7 +44,7 @@ export class ExplainError extends Error {
 
 export interface ExplainInput {
   bankTxnId: string;
-  userId: string;
+  tenantId: string;
   transactionTypeKey: string;
   categoryId?: string;
   payToUserId?: string;
@@ -78,7 +78,7 @@ export interface ExplainResult {
 
 export interface UnexplainInput {
   bankTxnId: string;
-  userId: string;
+  tenantId: string;
 }
 
 // Minimal structural slice of the Prisma client this service needs. Keeping it
@@ -89,7 +89,7 @@ interface ExplainDb extends PostingTx {
     update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown>;
   };
   bankDetail: {
-    findUnique: (args: { where: { id: string } }) => Promise<{ id: string; userId: string; currencyCode: string | null; accountId?: string | null } | null>;
+    findUnique: (args: { where: { id: string } }) => Promise<{ id: string; tenantId: string; currencyCode: string | null; accountId?: string | null } | null>;
   };
   transactionCategory: {
     findUnique: (args: { where: { id: string } }) => Promise<Record<string, unknown> | null>;
@@ -110,10 +110,10 @@ interface ExplainDb extends PostingTx {
     update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown>;
   };
   account: {
-    findFirst: (args: { where: { userId: string; code: string; isDeleted: boolean } }) => Promise<{ id: string; accountType: string } | null>;
+    findFirst: (args: { where: { tenantId: string; code: string; isDeleted: boolean } }) => Promise<{ id: string; accountType: string } | null>;
   };
   invoice: {
-    findFirst: (args: { where: { id: string; userId: string; isDeleted: boolean } }) => Promise<{ id: string; TotalAmount: unknown; status: string; userId: string; exchangeRate?: unknown } | null>;
+    findFirst: (args: { where: { id: string; tenantId: string; isDeleted: boolean } }) => Promise<{ id: string; TotalAmount: unknown; status: string; tenantId: string; exchangeRate?: unknown } | null>;
     update: (args: { where: { id: string }; data: { status: string } }) => Promise<unknown>;
   };
   invoicePayment: {
@@ -123,11 +123,11 @@ interface ExplainDb extends PostingTx {
     update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown>;
   };
   creditNote: {
-    findFirst: (args: { where: { id: string; userId: string; isDeleted: boolean } }) => Promise<{ id: string; totalAmount: unknown; status: string; userId: string } | null>;
+    findFirst: (args: { where: { id: string; tenantId: string; isDeleted: boolean } }) => Promise<{ id: string; totalAmount: unknown; status: string; tenantId: string } | null>;
     update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown>;
   };
   purchase: {
-    findFirst: (args: { where: { id: string; userId: string; isDeleted: boolean } }) => Promise<{ id: string; totalAmount: unknown; paidAmount: unknown; balanceAmount: unknown; status: string; userId: string; supplierId?: string | null; vendorId?: string | null; billTo?: string | null } | null>;
+    findFirst: (args: { where: { id: string; tenantId: string; isDeleted: boolean } }) => Promise<{ id: string; totalAmount: unknown; paidAmount: unknown; balanceAmount: unknown; status: string; tenantId: string; supplierId?: string | null; vendorId?: string | null; billTo?: string | null } | null>;
     update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown>;
   };
   supplierPayment: {
@@ -262,12 +262,12 @@ const ACCOUNT_TYPE_BY_CODE: Record<string, string> = {
 
 async function resolveAccountByCode(
   db: ExplainDb,
-  userId: string,
+  tenantId: string,
   code: string,
 ): Promise<string> {
   // Filter isDeleted: a soft-deleted account at this code must NOT resolve and
-  // get posted to (the @@unique([userId, code]) row survives a soft delete).
-  const acct = await db.account.findFirst({ where: { userId, code, isDeleted: false } });
+  // get posted to (the @@unique([tenantId, code]) row survives a soft delete).
+  const acct = await db.account.findFirst({ where: { tenantId, code, isDeleted: false } });
   if (!acct) throw new ExplainError(400, `Required account code ${code} not found. Please ensure the ledger is initialized.`);
   const expectedType = ACCOUNT_TYPE_BY_CODE[code];
   if (expectedType && acct.accountType !== expectedType) {
@@ -289,7 +289,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
     if (!bankTxn) throw new ExplainError(404, 'Bank transaction not found');
 
     const bank = await db.bankDetail.findUnique({ where: { id: bankTxn.bankAccountId as string } });
-    if (!bank || bank.userId !== input.userId) {
+    if (!bank || bank.tenantId !== input.tenantId) {
       throw new ExplainError(404, 'Bank transaction not found');
     }
 
@@ -320,7 +320,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
     // e.g. 409 if depreciation was posted on a created asset) inside THIS
     // transaction, then fall through and post the new explanation atomically.
     if (bankTxn.explainStatus === 'EXPLAINED') {
-      await unexplainCore(db, { bankTxnId: input.bankTxnId, userId: input.userId }, bankTxn);
+      await unexplainCore(db, { bankTxnId: input.bankTxnId, tenantId: input.tenantId }, bankTxn);
     }
 
     // Load the Type def.
@@ -352,7 +352,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
     const moneyIn = isMoneyIn(String(bankTxn.type));
     void moneyIn; // direction is captured here; behaviours already encode in/out
 
-    const userId = input.userId;
+    const tenantId = input.tenantId;
     let postedSourceType: string | null = null;
     let postedSourceId: string | null = null;
     let expenseId: string | undefined;
@@ -365,7 +365,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
     // Pre-fetch ledger settings once so we can decide isReconciled at stamp time
     // without an extra round-trip (the posting sub-functions also fetch settings
     // inside the same transaction).
-    const ledgerSettings = await db.companySettings.findFirst({ where: { userId } });
+    const ledgerSettings = await db.companySettings.findFirst({ where: { tenantId } });
     // willPost is true when the ledger gate would allow a JE for this date.
     // Used below to avoid marking the bank txn isReconciled=true when no GL
     // entry was actually posted (pre-go-live transactions are explained but
@@ -393,7 +393,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
             attachment: input.attachment ?? null,
             sourceType: 'BANK',
             bankId: bankTxn.bankAccountId,
-            userId,
+            tenantId,
             // The money-flow layer categorizes via TransactionCategory (kept on
             // the bank txn), not the legacy ExpenseCategory. Column is nullable.
             expenseCategoryId: null,
@@ -402,7 +402,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
         expenseId = expense.id;
 
         await postExpense(db, {
-          userId,
+          tenantId,
           expenseId: expense.id,
           date,
           total,
@@ -425,7 +425,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
         resolvedTaxAmount = tax.amount;
 
         await postMoneyIn(db, {
-          userId,
+          tenantId,
           sourceType: 'BankTxnExplain',
           sourceId: bankTxn.id as string,
           event: 'explained',
@@ -455,7 +455,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
         instructions.push(bankLeg('credit', total));
 
         const je = await postGated(db, {
-          userId, sourceType: 'BankTxnExplain', sourceId: bankTxn.id as string,
+          tenantId, sourceType: 'BankTxnExplain', sourceId: bankTxn.id as string,
           event: 'explained', date, currencyCode, instructions,
         });
         journalEntryId = je?.id;
@@ -489,7 +489,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
 
           const createdAsset = await db.fixedAsset.create({
             data: {
-              userId,
+              tenantId,
               name: assetName,
               cost: net,
               salvageValue: '0',
@@ -514,10 +514,10 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
           if (!input.reason) throw new ExplainError(400, 'Reason is required for Money Received from User');
           const reasonDef = USER_PAYMENT_REASONS.money_received_from_user.find((r) => r.key === input.reason);
           if (!reasonDef) throw new ExplainError(400, `Invalid reason for Money Received from User: ${input.reason}`);
-          const acctId = await resolveAccountByCode(db, userId, reasonDef.accountCode);
+          const acctId = await resolveAccountByCode(db, tenantId, reasonDef.accountCode);
           // Dr Bank, Cr resolved account (loan/equity) — no tax.
           const je = await postGated(db, {
-            userId, sourceType: 'BankTxnExplain', sourceId: bankTxn.id as string,
+            tenantId, sourceType: 'BankTxnExplain', sourceId: bankTxn.id as string,
             event: 'explained', date, currencyCode,
             instructions: [
               bankLeg('debit', total),
@@ -534,7 +534,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
         const acctId = categoryAccountId(category);
         // Dr Bank, Cr category (loan/equity) — no tax.
         const je = await postGated(db, {
-          userId, sourceType: 'BankTxnExplain', sourceId: bankTxn.id as string,
+          tenantId, sourceType: 'BankTxnExplain', sourceId: bankTxn.id as string,
           event: 'explained', date, currencyCode,
           instructions: [
             { roleKey: 'BANK', side: 'debit', amount: total },
@@ -554,10 +554,10 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
           if (!input.reason) throw new ExplainError(400, 'Reason is required for Money Paid to User');
           const reasonDef = USER_PAYMENT_REASONS.money_paid_to_user.find((r) => r.key === input.reason);
           if (!reasonDef) throw new ExplainError(400, `Invalid reason for Money Paid to User: ${input.reason}`);
-          const acctId = await resolveAccountByCode(db, userId, reasonDef.accountCode);
+          const acctId = await resolveAccountByCode(db, tenantId, reasonDef.accountCode);
           // Dr resolved account (payroll/dividend/loan), Cr Bank — no tax.
           const je = await postGated(db, {
-            userId, sourceType: 'BankTxnExplain', sourceId: bankTxn.id as string,
+            tenantId, sourceType: 'BankTxnExplain', sourceId: bankTxn.id as string,
             event: 'explained', date, currencyCode,
             instructions: [
               { accountId: acctId, side: 'debit', amount: total },
@@ -575,7 +575,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
         const acctId = categoryAccountId(category);
         // Dr category (payroll/dividend/loan), Cr Bank — no tax.
         const je = await postGated(db, {
-          userId, sourceType: 'BankTxnExplain', sourceId: bankTxn.id as string,
+          tenantId, sourceType: 'BankTxnExplain', sourceId: bankTxn.id as string,
           event: 'explained', date, currencyCode,
           instructions: [
             { accountId: acctId, side: 'debit', amount: total },
@@ -599,7 +599,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
         let receiptResult: { invoicePaymentId: string };
         try {
           receiptResult = await applyInvoiceReceipt(db as unknown as ApplyDb, {
-            userId,
+            tenantId,
             invoiceId: input.invoiceId,
             amount: total,
             date,
@@ -635,7 +635,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
         let billResult: { supplierPaymentId: string };
         try {
           billResult = await applyBillPayment(db as unknown as ApplyBillPaymentDb, {
-            userId,
+            tenantId,
             purchaseId: input.billId,
             amount: total,
             date,
@@ -665,7 +665,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
       case 'credit_note_link': {
         if (!input.creditNoteId) throw new ExplainError(400, 'Credit note is required for this transaction type');
         const creditNote = await db.creditNote.findFirst({
-          where: { id: input.creditNoteId, userId, isDeleted: false },
+          where: { id: input.creditNoteId, tenantId, isDeleted: false },
         });
         if (!creditNote) throw new ExplainError(404, 'Credit note not found');
         // Post: Dr AR / Cr Bank.
@@ -673,7 +673,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
         //  money owed back to the customer. Refunding cash: Dr AR / Cr Bank — relieves the
         //  credit-note AR balance and pays out from bank. No tax: accounted on original issuance.)
         const je = await postGated(db, {
-          userId,
+          tenantId,
           sourceType: 'CreditNote',
           sourceId: input.creditNoteId,
           event: 'refund',
@@ -695,7 +695,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
           throw new ExplainError(400, 'A linked fixed asset is required for disposal');
         }
         const asset = await db.fixedAsset.findFirst({
-          where: { id: input.assetId, userId, isDeleted: false },
+          where: { id: input.assetId, tenantId, isDeleted: false },
         });
         if (!asset) throw new ExplainError(404, 'Fixed asset not found');
         if (asset.status !== 'active' && asset.status !== 'fully_depreciated') {
@@ -706,7 +706,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
         resolvedTaxAmount = tax.amount;
 
         await postAssetDisposal(db, {
-          userId,
+          tenantId,
           assetId: input.assetId,
           date,
           grossProceeds: total,
@@ -766,7 +766,7 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
         assetLifeMonths: input.assetLifeMonths ?? null,
         userPaymentReason: input.reason ?? null,
         explainStatus: 'EXPLAINED',
-        approvedById: userId,
+        approvedById: tenantId,
         approvedAt: new Date(),
         // Only mark reconciled when a GL posting was actually made.
         isReconciled: willPost,
@@ -801,15 +801,15 @@ export async function explainAndPost(input: ExplainInput): Promise<ExplainResult
 async function postGated(
   db: ExplainDb,
   p: {
-    userId: string; sourceType: string; sourceId: string; event: string;
+    tenantId: string; sourceType: string; sourceId: string; event: string;
     date: Date; currencyCode: string; instructions: LineInstruction[];
   },
 ): Promise<{ id: string } | undefined> {
-  const settings = await db.companySettings.findFirst({ where: { userId: p.userId } });
+  const settings = await db.companySettings.findFirst({ where: { tenantId: p.tenantId } });
   if (!shouldPost(settings, p.date)) return undefined;
   const effectiveCurrency = p.currencyCode && p.currencyCode !== 'BASE' ? p.currencyCode : 'BASE';
   return post(db as unknown as LedgerTx, {
-    userId: p.userId,
+    tenantId: p.tenantId,
     sourceType: p.sourceType,
     sourceId: p.sourceId,
     event: p.event,
@@ -852,7 +852,7 @@ async function unexplainCore(
   if (postedSourceType === 'Expense' && postedSourceId) {
     // Void the expense's GL entry, then soft-delete the expense itself.
     await voidDocument(db, {
-      userId: input.userId,
+      tenantId: input.tenantId,
       sourceType: 'Expense',
       sourceId: postedSourceId,
       event: 'recorded',
@@ -863,7 +863,7 @@ async function unexplainCore(
     if (invoicePaymentId) {
       // 1. Void the GL journal entry for this InvoicePayment.
       await voidDocument(db, {
-        userId: input.userId,
+        tenantId: input.tenantId,
         sourceType: 'InvoicePayment',
         sourceId: invoicePaymentId,
         event: 'payment',
@@ -873,7 +873,7 @@ async function unexplainCore(
         where: { id: invoicePaymentId },
         data: {
           isVoided: true,
-          voidedById: input.userId,
+          voidedById: input.tenantId,
           voidedAt: new Date(),
           voidReason: 'Unexplained from bank transaction',
         },
@@ -889,7 +889,7 @@ async function unexplainCore(
         });
         const paid = Number(paidAgg._sum.amount ?? 0);
         const inv = await db.invoice.findFirst({
-          where: { id: invoiceId, userId: input.userId, isDeleted: false },
+          where: { id: invoiceId, tenantId: input.tenantId, isDeleted: false },
         });
         if (inv) {
           const total = Number(inv.TotalAmount);
@@ -902,7 +902,7 @@ async function unexplainCore(
     } else {
       // Fallback: just void the GL entry keyed to the bank txn (old behavior for legacy records).
       await voidDocument(db, {
-        userId: input.userId,
+        tenantId: input.tenantId,
         sourceType: 'InvoicePayment',
         sourceId: input.bankTxnId,
         event: 'payment',
@@ -913,7 +913,7 @@ async function unexplainCore(
     if (supplierPaymentId) {
       // 1. Void the GL journal entry for this SupplierPayment.
       await voidDocument(db, {
-        userId: input.userId,
+        tenantId: input.tenantId,
         sourceType: 'SupplierPayment',
         sourceId: supplierPaymentId,
         event: 'payment',
@@ -923,7 +923,7 @@ async function unexplainCore(
         where: { id: supplierPaymentId },
         data: {
           isVoided: true,
-          voidedById: input.userId,
+          voidedById: input.tenantId,
           voidedAt: new Date(),
           voidReason: 'Unexplained from bank transaction',
         },
@@ -938,7 +938,7 @@ async function unexplainCore(
         });
         const paid = Number(paidAgg._sum.amount ?? 0);
         const purchase = await db.purchase.findFirst({
-          where: { id: purchaseId, userId: input.userId, isDeleted: false },
+          where: { id: purchaseId, tenantId: input.tenantId, isDeleted: false },
         });
         if (purchase) {
           const purchaseTotal = Number(purchase.totalAmount);
@@ -961,7 +961,7 @@ async function unexplainCore(
     } else {
       // Fallback: legacy record with no SupplierPayment id, just void the GL.
       await voidDocument(db, {
-        userId: input.userId,
+        tenantId: input.tenantId,
         sourceType: 'SupplierPayment',
         sourceId: input.bankTxnId,
         event: 'payment',
@@ -969,14 +969,14 @@ async function unexplainCore(
     }
   } else if (postedSourceType === 'CreditNote') {
     await voidDocument(db, {
-      userId: input.userId,
+      tenantId: input.tenantId,
       sourceType: 'CreditNote',
       sourceId: postedSourceId ?? input.bankTxnId,
       event: 'refund',
     });
   } else if (postedSourceType === 'FixedAssetDisposal' && postedSourceId) {
     await voidDocument(db, {
-      userId: input.userId,
+      tenantId: input.tenantId,
       sourceType: 'FixedAssetDisposal',
       sourceId: postedSourceId,
       event: 'disposal',
@@ -984,7 +984,7 @@ async function unexplainCore(
     // Restore the pre-disposal status: derive from depreciation state rather than
     // hard-coding 'active', so a fully-depreciated asset isn't silently downgraded
     // (which would wrongly re-depreciate it on the next run).
-    const disposed = await db.fixedAsset.findFirst({ where: { id: postedSourceId, userId: input.userId } });
+    const disposed = await db.fixedAsset.findFirst({ where: { id: postedSourceId, tenantId: input.tenantId } });
     let restoreStatus = 'active';
     if (disposed) {
       const accum = toDecimal(String(disposed.accumulatedDepreciation ?? '0'));
@@ -1003,7 +1003,7 @@ async function unexplainCore(
   } else {
     // BankTxnExplain behaviours (income_generic / capital_asset / owner_funds / user_payment)
     await voidDocument(db, {
-      userId: input.userId,
+      tenantId: input.tenantId,
       sourceType: postedSourceType ?? 'BankTxnExplain',
       sourceId: postedSourceId ?? input.bankTxnId,
       event: 'explained',
@@ -1015,7 +1015,7 @@ async function unexplainCore(
     // auto-reverse here; the user must reverse depreciation first.
     const linkedAssetId = (bankTxn.createdAssetId as string | null) ?? null;
     if (linkedAssetId) {
-      const asset = await db.fixedAsset.findFirst({ where: { id: linkedAssetId, userId: input.userId } });
+      const asset = await db.fixedAsset.findFirst({ where: { id: linkedAssetId, tenantId: input.tenantId } });
       if (asset) {
         const hasDepreciation =
           toDecimal(String(asset.accumulatedDepreciation ?? '0')).greaterThan(0) ||
@@ -1074,7 +1074,7 @@ export async function unexplain(input: UnexplainInput): Promise<void> {
     if (!bankTxn) throw new ExplainError(404, 'Bank transaction not found');
 
     const bank = await db.bankDetail.findUnique({ where: { id: bankTxn.bankAccountId as string } });
-    if (!bank || bank.userId !== input.userId) {
+    if (!bank || bank.tenantId !== input.tenantId) {
       throw new ExplainError(404, 'Bank transaction not found');
     }
 

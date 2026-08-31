@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { trialBalanceFrom, type AccountBalance } from '../lib/ledger/statements';
 import { parseAsOf } from '../lib/reports/asOf';
 
@@ -15,13 +15,13 @@ import { parseAsOf } from '../lib/reports/asOf';
  *  up to their BANK/CASH control parent (A2). */
 type AccountBalanceWithParent = AccountBalance & { parentId: string | null };
 
-async function loadAccountBalances(userId: string, asOf: Date): Promise<AccountBalanceWithParent[]> {
+async function loadAccountBalances(tenantId: string, asOf: Date): Promise<AccountBalanceWithParent[]> {
   const accounts = await prisma.account.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     include: {
       journalLines: {
         where: {
-          journalEntry: { userId, isDeleted: false, entryDate: { lte: asOf } },
+          journalEntry: { tenantId, isDeleted: false, entryDate: { lte: asOf } },
         },
         select: { baseDebit: true, baseCredit: true },
       },
@@ -122,10 +122,10 @@ function tied(diff: number): boolean {
 // for a historical asOf where a payment landed afterwards (intentional — a rec
 // is a point-in-time statement).
 // ---------------------------------------------------------------------------
-async function openInvoicesTotal(userId: string, asOf: Date): Promise<number> {
+async function openInvoicesTotal(tenantId: string, asOf: Date): Promise<number> {
   const invoices = await prisma.invoice.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       invoiceType: 'INVOICE',
       invoiceDate: { lte: asOf },
@@ -170,10 +170,10 @@ async function openInvoicesTotal(userId: string, asOf: Date): Promise<number> {
 // reversed (the reversal re-debits AR), so it no longer reduces GL AR. We
 // therefore exclude CANCELLED credit notes from the AR subledger deduction.
 // ---------------------------------------------------------------------------
-async function openCreditNotesAr(userId: string, asOf: Date): Promise<number> {
+async function openCreditNotesAr(tenantId: string, asOf: Date): Promise<number> {
   const creditNotes = await prisma.creditNote.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       status: { not: 'CANCELLED' },
       creditNoteDate: { lte: asOf },
@@ -191,7 +191,7 @@ async function openCreditNotesAr(userId: string, asOf: Date): Promise<number> {
   const refundedIds = new Set<string>();
   const refundJEs = await prisma.journalEntry.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       sourceType: 'CreditNote',
       sourceId: { in: creditNotes.map((cn) => cn.id) },
@@ -224,10 +224,10 @@ async function openCreditNotesAr(userId: string, asOf: Date): Promise<number> {
 // now-settled bill that was open at asOf and manufacture a false AP mismatch.
 // Cancelled bills are excluded (they never sit in AP). purchaseDate <= asOf.
 // ---------------------------------------------------------------------------
-async function openBillsTotal(userId: string, asOf: Date): Promise<number> {
+async function openBillsTotal(tenantId: string, asOf: Date): Promise<number> {
   const purchases = await prisma.purchase.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       status: { not: 'cancelled' },
       purchaseDate: { lte: asOf },
@@ -315,12 +315,12 @@ interface BankAggregate {
 const MONEY_OUT_TYPES = new Set(['WITHDRAWAL', 'PAYMENT', 'TRANSFER_OUT']);
 
 async function bankRows(
-  userId: string,
+  tenantId: string,
   accounts: AccountBalanceWithParent[],
   asOf: Date,
 ): Promise<{ rows: BankRow[]; aggregate: BankAggregate }> {
   const banks = await prisma.bankDetail.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     select: {
       id: true,
       bankName: true,
@@ -444,12 +444,12 @@ async function bankRows(
 
 export async function tallyCheck(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const asOf = parseAsOf(req.query.asOf);
 
     // 1. GL account balances (all accounts up to asOf)
-    const accounts = await loadAccountBalances(userId, asOf);
+    const accounts = await loadAccountBalances(tenantId, asOf);
 
     // 2. Trial balance
     const tb = trialBalanceFrom(accounts);
@@ -459,18 +459,18 @@ export async function tallyCheck(req: Request, res: Response): Promise<void> {
     // GL AR = invoices in AR − credit notes sitting in AR (issued, not yet refunded).
     // The subledger must net the same two components to tie to the GL control.
     const arGl = sumByRole(accounts, 'AR');
-    const arOpenInvoices = await openInvoicesTotal(userId, asOf);
-    const arOpenCreditNotes = await openCreditNotesAr(userId, asOf);
+    const arOpenInvoices = await openInvoicesTotal(tenantId, asOf);
+    const arOpenCreditNotes = await openCreditNotesAr(tenantId, asOf);
     const arSubledger = Number((arOpenInvoices - arOpenCreditNotes).toFixed(4));
     const arDiff = Number((arGl - arSubledger).toFixed(4));
 
     // 4. AP: GL control vs sub-ledger open bills
     const apGl = sumByRole(accounts, 'AP');
-    const apSubledger = await openBillsTotal(userId, asOf);
+    const apSubledger = await openBillsTotal(tenantId, asOf);
     const apDiff = Number((apGl - apSubledger).toFixed(4));
 
     // 5. Bank: per-account comparison + aggregate GL check
-    const { rows: bankRowsData, aggregate: bankAggregate } = await bankRows(userId, accounts, asOf);
+    const { rows: bankRowsData, aggregate: bankAggregate } = await bankRows(tenantId, accounts, asOf);
 
     // 6. Overall tied (honest: only count checks we actually performed)
     const arTied = tied(arDiff);

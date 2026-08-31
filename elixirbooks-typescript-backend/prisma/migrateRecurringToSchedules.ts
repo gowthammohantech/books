@@ -91,7 +91,7 @@ async function main(): Promise<MigrationCounts> {
         // 1) Create the mirroring schedule. NEVER posts to GL / touches inventory.
         const schedule = await tx.recurringInvoiceSchedule.create({
           data: {
-            userId: t.userId,
+            tenantId: t.tenantId,
             name: t.invoiceNumber ?? null,
             contactId: t.contactId ?? null,
             currencyCode: t.currencyCode ?? null,
@@ -143,11 +143,11 @@ async function main(): Promise<MigrationCounts> {
       counts.templatesMigrated += 1;
       counts.childrenRelinked += result.childrenRelinked;
       console.log(
-        `[OK] template=${t.id} user=${t.userId} -> schedule created, ${result.childrenRelinked} child(ren) relinked, status=${t.stopped ? 'PAUSED' : 'ACTIVE'}`,
+        `[OK] template=${t.id} user=${t.tenantId} -> schedule created, ${result.childrenRelinked} child(ren) relinked, status=${t.stopped ? 'PAUSED' : 'ACTIVE'}`,
       );
     } catch (e) {
       counts.skipped += 1;
-      console.error(`[SKIP] template=${t.id} user=${t.userId} — migration failed, left un-migrated:`, e);
+      console.error(`[SKIP] template=${t.id} user=${t.tenantId} — migration failed, left un-migrated:`, e);
     }
   }
 

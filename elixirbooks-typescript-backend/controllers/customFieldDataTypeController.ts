@@ -3,7 +3,7 @@ import type { CustomFieldDataTypeKind } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -16,7 +16,7 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
 // Create a new custom field data type
 export async function createCustomFieldDataType(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { type, description } = req.body as {
       type?: CustomFieldDataTypeKind;
       description?: string;
@@ -25,6 +25,7 @@ export async function createCustomFieldDataType(req: Request, res: Response): Pr
     // Check if a custom field data type with the same type already exists
     const existingDataType = await prisma.customFieldDataType.findFirst({
       where: {
+        tenantId,
         type: type as CustomFieldDataTypeKind,
         isActive: true,
       },
@@ -40,9 +41,10 @@ export async function createCustomFieldDataType(req: Request, res: Response): Pr
 
     const savedCustomFieldDataType = await prisma.customFieldDataType.create({
       data: {
+        tenantId,
         type: type as CustomFieldDataTypeKind,
         description: description ?? null,
-        createdBy: userId,
+        createdBy: tenantId,
       },
     });
 
@@ -64,7 +66,7 @@ export async function createCustomFieldDataType(req: Request, res: Response): Pr
 export async function getAllCustomFieldDataTypes(req: Request, res: Response): Promise<void> {
   try {
     const { search, isActive } = req.query as { search?: string; isActive?: string };
-    const where: Prisma.CustomFieldDataTypeWhereInput = {};
+    const where: Prisma.CustomFieldDataTypeWhereInput = { tenantId: requireTenantId(req) };
 
     // Add search filter
     if (search) {
@@ -104,8 +106,8 @@ export async function getCustomFieldDataTypeById(req: Request, res: Response): P
   try {
     const { id } = req.params as { id: string };
 
-    const customFieldDataType = await prisma.customFieldDataType.findUnique({
-      where: { id },
+    const customFieldDataType = await prisma.customFieldDataType.findFirst({
+      where: { id, tenantId: requireTenantId(req) },
       include: {
         createdByUser: { select: { id: true, firstName: true, lastName: true, email: true } },
       },
@@ -141,7 +143,9 @@ export async function updateCustomFieldDataType(req: Request, res: Response): Pr
     };
 
     // Check if custom field data type exists
-    const existingDataType = await prisma.customFieldDataType.findUnique({ where: { id } });
+    const existingDataType = await prisma.customFieldDataType.findFirst({
+      where: { id, tenantId: requireTenantId(req) },
+    });
 
     if (!existingDataType) {
       res.status(404).json({
@@ -154,6 +158,7 @@ export async function updateCustomFieldDataType(req: Request, res: Response): Pr
     if (type && type !== existingDataType.type) {
       const duplicateDataType = await prisma.customFieldDataType.findFirst({
         where: {
+          tenantId: requireTenantId(req),
           type,
           isActive: true,
           id: { not: id },
@@ -200,7 +205,9 @@ export async function deleteCustomFieldDataType(req: Request, res: Response): Pr
   try {
     const { id } = req.params as { id: string };
 
-    const existing = await prisma.customFieldDataType.findUnique({ where: { id } });
+    const existing = await prisma.customFieldDataType.findFirst({
+      where: { id, tenantId: requireTenantId(req) },
+    });
 
     if (!existing) {
       res.status(404).json({
@@ -228,12 +235,12 @@ export async function deleteCustomFieldDataType(req: Request, res: Response): Pr
 
 // Get custom field data types for dropdown/select options
 export async function getCustomFieldDataTypesMinimal(
-  _req: Request,
+  req: Request,
   res: Response,
 ): Promise<void> {
   try {
     const customFieldDataTypes = await prisma.customFieldDataType.findMany({
-      where: { isActive: true },
+      where: { tenantId: requireTenantId(req), isActive: true },
       select: { id: true, type: true, description: true },
       orderBy: { type: 'asc' },
     });

@@ -3,14 +3,14 @@
  *
  * P0-2b regression tripwire: controllers/Admin/Purchases/debitNoteController.ts's
  * by-id handlers (getDebitNoteById, updateDebitNoteStatus) loaded the DebitNote
- * row with `findUnique({ where: { id } })` — no `userId` filter — letting any
+ * row with `findUnique({ where: { id } })` — no `tenantId` filter — letting any
  * authenticated tenant read/mutate another tenant's debit note by guessing an
- * id. getAllDebitNotes's list query was missing `userId` too. createDebitNote's
+ * id. getAllDebitNotes's list query was missing `tenantId` too. createDebitNote's
  * source-Purchase lookup and the debit-note numbering sequence were also
  * unscoped (sibling gaps fixed alongside the brief items).
  *
  * These tests mock prisma and assert every fixed handler's lookup carries
- * `userId` (the authenticated tenant) and 404s when the mocked lookup
+ * `tenantId` (the authenticated tenant) and 404s when the mocked lookup
  * returns null (simulating a foreign-tenant id).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -43,7 +43,7 @@ const {
 vi.mock('../lib/prisma', () => {
   const tx = {
     debitNote: { findFirst: mockTxDebitNoteFindFirst, create: mockDebitNoteCreate, update: mockDebitNoteUpdate },
-    product: { findUnique: vi.fn().mockResolvedValue(null) },
+    product: { findFirst: vi.fn().mockResolvedValue(null) },
   };
   return {
     prisma: {
@@ -103,7 +103,7 @@ function makeReqRes(overrides: { params?: Record<string, unknown>; query?: Recor
   return { req, res };
 }
 
-/** Tripwire: fails if any where-object carries a null-userId OR branch. */
+/** Tripwire: fails if any where-object carries a null-tenantId OR branch. */
 function assertNoNullUserIdBranch(value: unknown, path = 'where'): void {
   if (value === null || typeof value !== 'object') return;
   if (Array.isArray(value)) {
@@ -111,8 +111,8 @@ function assertNoNullUserIdBranch(value: unknown, path = 'where'): void {
     return;
   }
   const obj = value as Record<string, unknown>;
-  if ('userId' in obj && obj.userId === null) {
-    throw new Error(`found userId: null at ${path} — cross-tenant leak`);
+  if ('tenantId' in obj && obj.tenantId === null) {
+    throw new Error(`found tenantId: null at ${path} — cross-tenant leak`);
   }
   for (const [key, val] of Object.entries(obj)) {
     assertNoNullUserIdBranch(val, `${path}.${key}`);
@@ -146,10 +146,10 @@ describe('debitNoteController — tenant scoping (P0-2b)', () => {
 
     expect(res.status).not.toHaveBeenCalledWith(401);
     expect(mockDebitNoteCount).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     expect(mockDebitNoteFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     assertNoNullUserIdBranch(mockDebitNoteFindMany.mock.calls[0][0].where);
     assertNoNullUserIdBranch(mockDebitNoteCount.mock.calls[0][0].where);
@@ -161,7 +161,7 @@ describe('debitNoteController — tenant scoping (P0-2b)', () => {
     await getDebitNoteById(req, res);
 
     expect(mockDebitNoteFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'dn-foreign', userId: TENANT_ID } }),
+      expect.objectContaining({ where: { id: 'dn-foreign', tenantId: TENANT_ID } }),
     );
     assertNoNullUserIdBranch(mockDebitNoteFindFirst.mock.calls[0][0].where);
     expect(res.status).toHaveBeenCalledWith(404);
@@ -173,7 +173,7 @@ describe('debitNoteController — tenant scoping (P0-2b)', () => {
     await updateDebitNoteStatus(req, res);
 
     expect(mockDebitNoteFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'dn-foreign', userId: TENANT_ID } }),
+      expect.objectContaining({ where: { id: 'dn-foreign', tenantId: TENANT_ID } }),
     );
     assertNoNullUserIdBranch(mockDebitNoteFindFirst.mock.calls[0][0].where);
     expect(res.status).toHaveBeenCalledWith(404);
@@ -186,7 +186,7 @@ describe('debitNoteController — tenant scoping (P0-2b)', () => {
     await deleteDebitNote(req, res);
 
     expect(mockDebitNoteFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'dn-foreign', userId: TENANT_ID, isDeleted: false } }),
+      expect.objectContaining({ where: { id: 'dn-foreign', tenantId: TENANT_ID, isDeleted: false } }),
     );
     assertNoNullUserIdBranch(mockDebitNoteFindFirst.mock.calls[0][0].where);
     expect(res.status).toHaveBeenCalledWith(404);
@@ -200,7 +200,7 @@ describe('debitNoteController — tenant scoping (P0-2b)', () => {
     await createDebitNote(req, res);
 
     expect(mockPurchaseFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ id: 'purchase-foreign', userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ id: 'purchase-foreign', tenantId: TENANT_ID }) }),
     );
     assertNoNullUserIdBranch(mockPurchaseFindFirst.mock.calls[0][0].where);
     expect(res.status).toHaveBeenCalledWith(404);
@@ -216,26 +216,22 @@ describe('debitNoteController — tenant scoping (P0-2b)', () => {
     expect(res.status).toHaveBeenCalledWith(201);
     expect(mockTxDebitNoteFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ debitNoteId: { not: null }, userId: TENANT_ID }),
+        where: expect.objectContaining({ debitNoteId: { not: null }, tenantId: TENANT_ID }),
       }),
     );
     assertNoNullUserIdBranch(mockTxDebitNoteFindFirst.mock.calls[0][0].where);
     expect(mockDebitNoteCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ user: { connect: { id: TENANT_ID } } }) }),
+      expect.objectContaining({ data: expect.objectContaining({ tenant: { connect: { id: TENANT_ID } } }) }),
     );
   });
 
-  it('createDebitNote numbering falls back to the install-wide highest + 1 when the tenant candidate clashes (debitNoteId is globally @unique)', async () => {
-    mockTxDebitNoteFindFirst.mockImplementation(
-      async (args: { where: Record<string, unknown> }) => {
-        // Tenant-scoped sequence lookup → fresh tenant, no rows yet.
-        if ('userId' in args.where) return null;
-        // Clash check: DN-000001 already held by another tenant.
-        if (args.where.debitNoteId === 'DN-000001') return { id: 'dn-other-tenant' };
-        // Install-wide highest lookup.
-        return { debitNoteId: 'DN-000042' };
-      },
-    );
+  it('createDebitNote starts a fresh tenant at DN-000001 even when another tenant holds that number', async () => {
+    // P4/M11 made debitNoteId unique per (tenantId, debitNoteId). Before it,
+    // this tenant was silently skipped forward to DN-000043 to dodge an
+    // install-wide constraint. The mock returns null for the ONLY query the
+    // helper still makes — the tenant-scoped one — and there is no second
+    // query that could observe the other tenant's row.
+    mockTxDebitNoteFindFirst.mockResolvedValue(null);
     const { req, res } = makeReqRes({
       body: { purchaseId: 'purchase-1', billFrom: 'user-1', items: [] },
     });
@@ -243,7 +239,11 @@ describe('debitNoteController — tenant scoping (P0-2b)', () => {
 
     expect(res.status).toHaveBeenCalledWith(201);
     expect(mockDebitNoteCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ debitNoteId: 'DN-000043' }) }),
+      expect.objectContaining({ data: expect.objectContaining({ debitNoteId: 'DN-000001' }) }),
     );
+    // Every numbering read named this tenant.
+    for (const call of mockTxDebitNoteFindFirst.mock.calls) {
+      expect(call[0].where).toHaveProperty('tenantId', TENANT_ID);
+    }
   });
 });

@@ -3,7 +3,7 @@ import type { TaxRate, TaxRegime } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { tenantScope, requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { tenantScope, requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 import {
   suggestTaxesForLine,
@@ -44,7 +44,7 @@ function formatTaxRate(r: TaxRate): TaxRateResponse {
 
 export async function getAllTaxRates(req: Request, res: Response): Promise<void> {
   try {
-    requireUserId(req);
+    requireTenantId(req);
     const page = Math.max(1, parseInt((req.query.page as string) ?? '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt((req.query.limit as string) ?? '10', 10)));
     const search = ((req.query.search as string) ?? '').trim();
@@ -95,10 +95,10 @@ export async function getAllTaxRates(req: Request, res: Response): Promise<void>
 
 export async function getTaxRateById(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const row = await prisma.taxRate.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!row) {
       res.status(404).json({ success: false, message: 'Tax rate not found' });
@@ -117,7 +117,7 @@ export async function getTaxRateById(req: Request, res: Response): Promise<void>
 
 export async function createTaxRate(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as Record<string, unknown>;
 
     const created = await prisma.taxRate.create({
@@ -129,7 +129,7 @@ export async function createTaxRate(req: Request, res: Response): Promise<void> 
         countryId: (body.countryId as string | null) ?? null,
         stateId: (body.stateId as string | null) ?? null,
         isActive: body.isActive === undefined ? true : body.isActive === true || body.isActive === 'true',
-        userId,
+        tenantId,
       },
     });
 
@@ -150,11 +150,11 @@ export async function createTaxRate(req: Request, res: Response): Promise<void> 
 
 export async function updateTaxRate(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = req.body as Record<string, unknown>;
 
-    const existing = await prisma.taxRate.findFirst({ where: { id, userId, isDeleted: false } });
+    const existing = await prisma.taxRate.findFirst({ where: { id, tenantId, isDeleted: false } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Tax rate not found' });
       return;
@@ -191,9 +191,9 @@ export async function updateTaxRate(req: Request, res: Response): Promise<void> 
 
 export async function deleteTaxRate(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
-    const existing = await prisma.taxRate.findFirst({ where: { id, userId, isDeleted: false } });
+    const existing = await prisma.taxRate.findFirst({ where: { id, tenantId, isDeleted: false } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Tax rate not found' });
       return;
@@ -217,10 +217,10 @@ export async function deleteTaxRate(req: Request, res: Response): Promise<void> 
  */
 export async function suggestForLine(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as { customerId?: string };
 
-    const company = await prisma.companySettings.findUnique({ where: { userId } });
+    const company = await prisma.companySettings.findUnique({ where: { tenantId } });
     if (!company) {
       res.status(400).json({ success: false, message: 'Company settings not configured. Set tax regime first.' });
       return;
@@ -230,7 +230,7 @@ export async function suggestForLine(req: Request, res: Response): Promise<void>
     let customerStateId: string | null = null;
     if (body.customerId) {
       const customer = await prisma.customer.findFirst({
-        where: { id: body.customerId, userId, isDeleted: false },
+        where: { id: body.customerId, tenantId, isDeleted: false },
         select: { billingAddress: true, shippingAddress: true },
       });
       // billingAddress is a JSON blob; defensively pull stateId/countryId if present
@@ -240,7 +240,7 @@ export async function suggestForLine(req: Request, res: Response): Promise<void>
     }
 
     const library = await prisma.taxRate.findMany({
-      where: { userId, isDeleted: false, isActive: true, regime: company.taxRegime },
+      where: { tenantId, isDeleted: false, isActive: true, regime: company.taxRegime },
     });
 
     const suggested = suggestTaxesForLine({
@@ -278,7 +278,7 @@ export async function suggestForLine(req: Request, res: Response): Promise<void>
  */
 export async function resolveLine(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as {
       taxableAmount?: unknown;
       taxRateId?: unknown;
@@ -305,7 +305,7 @@ export async function resolveLine(req: Request, res: Response): Promise<void> {
     }
 
     // Load company settings (same as suggestForLine)
-    const company = await prisma.companySettings.findUnique({ where: { userId } });
+    const company = await prisma.companySettings.findUnique({ where: { tenantId } });
     if (!company) {
       res.status(400).json({ success: false, message: 'Company settings not configured. Set tax regime first.' });
       return;
@@ -316,8 +316,8 @@ export async function resolveLine(req: Request, res: Response): Promise<void> {
     let regime: TaxRegime = company.taxRegime;
     let groupRateIds: string[] = [];
     if (!hasRateId) {
-      const taxGroup = await prisma.taxGroup.findUnique({
-        where: { id: body.taxGroupId as string },
+      const taxGroup = await prisma.taxGroup.findFirst({
+        where: { id: body.taxGroupId as string, tenantId },
         include: { tax_rates: true },
       });
       if (!taxGroup) {
@@ -338,7 +338,7 @@ export async function resolveLine(req: Request, res: Response): Promise<void> {
 
     if (body.customerId) {
       const customer = await prisma.customer.findFirst({
-        where: { id: body.customerId, userId, isDeleted: false },
+        where: { id: body.customerId, tenantId, isDeleted: false },
         select: { billingAddress: true },
       });
       let addr = (customer?.billingAddress as { countryId?: string; stateId?: string } | null) ?? null;
@@ -351,7 +351,7 @@ export async function resolveLine(req: Request, res: Response): Promise<void> {
         // (Contact.region is a plain string input, not a State-table id, so
         // it can't be compared against company.stateId).
         const contact = await prisma.contact.findFirst({
-          where: { id: body.customerId, userId, isDeleted: false },
+          where: { id: body.customerId, tenantId, isDeleted: false },
           select: { legacyCustomerId: true, countryId: true, region: true },
         });
         if (!contact) {
@@ -360,7 +360,7 @@ export async function resolveLine(req: Request, res: Response): Promise<void> {
         }
         if (contact.legacyCustomerId) {
           const linkedCustomer = await prisma.customer.findFirst({
-            where: { id: contact.legacyCustomerId, userId, isDeleted: false },
+            where: { id: contact.legacyCustomerId, tenantId, isDeleted: false },
             select: { billingAddress: true },
           });
           addr = (linkedCustomer?.billingAddress as { countryId?: string; stateId?: string } | null) ?? null;
@@ -379,7 +379,7 @@ export async function resolveLine(req: Request, res: Response): Promise<void> {
       partyStateMissing = partyStateId === null;
     } else if (body.supplierId) {
       const supplier = await prisma.supplier.findFirst({
-        where: { id: body.supplierId, user_id: userId, isDeleted: false },
+        where: { id: body.supplierId, tenantId: tenantId, isDeleted: false },
         select: { id: true, stateId: true, countryId: true },
       });
       let stateId = supplier?.stateId ?? null;
@@ -387,7 +387,7 @@ export async function resolveLine(req: Request, res: Response): Promise<void> {
       if (!supplier) {
         // Same unified-Contact fallback as the customerId branch above.
         const contact = await prisma.contact.findFirst({
-          where: { id: body.supplierId, userId, isDeleted: false },
+          where: { id: body.supplierId, tenantId, isDeleted: false },
           select: { legacySupplierId: true, countryId: true, region: true },
         });
         if (!contact) {
@@ -396,7 +396,7 @@ export async function resolveLine(req: Request, res: Response): Promise<void> {
         }
         if (contact.legacySupplierId) {
           const linkedSupplier = await prisma.supplier.findFirst({
-            where: { id: contact.legacySupplierId, user_id: userId, isDeleted: false },
+            where: { id: contact.legacySupplierId, tenantId: tenantId, isDeleted: false },
             select: { stateId: true, countryId: true },
           });
           stateId = linkedSupplier?.stateId ?? null;
@@ -418,7 +418,7 @@ export async function resolveLine(req: Request, res: Response): Promise<void> {
 
     if (hasRateId) {
       const rateRow = await prisma.taxRate.findFirst({
-        where: { id: body.taxRateId as string, userId, isDeleted: false },
+        where: { id: body.taxRateId as string, tenantId, isDeleted: false },
       });
       if (!rateRow) {
         res.status(404).json({ success: false, message: 'Tax rate not found' });
@@ -445,12 +445,12 @@ export async function resolveLine(req: Request, res: Response): Promise<void> {
         const specs = splitGstRate({ totalPercent: Number(rateRow.rate), intraState, unionTerritory });
         // Not race-safe: ensureGstComponentRates' find-or-create has no unique
         // constraint backing it, so concurrent first-resolves for the same
-        // (userId, taxKind, rate) can each miss the find and both create a
+        // (tenantId, taxKind, rate) can each miss the find and both create a
         // component row. Accepted for now — harmless-but-untidy duplicate
         // system rows, cleanable later via migrateTaxesToRates.
         const components = await ensureGstComponentRates(
           prisma as unknown as ComponentRateDb,
-          userId,
+          tenantId,
           specs,
           rateRow.countryId,
         );
@@ -484,7 +484,7 @@ export async function resolveLine(req: Request, res: Response): Promise<void> {
 
     // Legacy group path (unchanged): load the library, run the engine.
     const library = await prisma.taxRate.findMany({
-      where: { userId, isDeleted: false, isActive: true, regime: company.taxRegime },
+      where: { tenantId, isDeleted: false, isActive: true, regime: company.taxRegime },
     });
 
     const { taxes, totalTax } = resolveLineTaxes({

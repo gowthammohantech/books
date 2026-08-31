@@ -5,7 +5,7 @@ import { Prisma } from '@prisma/client';
 import type { Signature } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { tenantScope, requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { tenantScope, requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 interface SignatureResponse {
   id: string;
@@ -48,7 +48,7 @@ function slugify(str: string): string {
 
 export async function createSignature(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { signatureName, markAsDefault } = req.body as {
       signatureName?: string;
       markAsDefault?: boolean | string;
@@ -59,7 +59,7 @@ export async function createSignature(req: Request, res: Response): Promise<void
         ? markAsDefault === 'true'
         : Boolean(markAsDefault);
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({ where: { id: tenantId } });
     if (!user) {
       tryUnlink(req.file?.path);
       res.status(404).json({
@@ -81,7 +81,7 @@ export async function createSignature(req: Request, res: Response): Promise<void
       // If creating as default, demote all other signatures for this user.
       if (markAsDefaultBool) {
         await tx.signature.updateMany({
-          where: { userId, markAsDefault: true },
+          where: { tenantId, markAsDefault: true },
           data: { markAsDefault: false },
         });
       }
@@ -91,7 +91,7 @@ export async function createSignature(req: Request, res: Response): Promise<void
           signatureName: signatureName as string,
           signatureImage: req.file!.path,
           markAsDefault: markAsDefaultBool,
-          userId,
+          tenantId,
         },
       });
     });
@@ -245,7 +245,7 @@ export async function updateSignature(req: Request, res: Response): Promise<void
       if (markAsDefaultBool === true) {
         await tx.signature.updateMany({
           where: {
-            userId: scope.userId,
+            tenantId: scope.tenantId,
             markAsDefault: true,
             id: { not: existing.id },
           },
@@ -327,7 +327,7 @@ export async function deleteSignature(req: Request, res: Response): Promise<void
       if (existing.markAsDefault) {
         const newDefault = await tx.signature.findFirst({
           where: {
-            userId: scope.userId,
+            tenantId: scope.tenantId,
             isDeleted: false,
             status: true,
           },
@@ -392,7 +392,7 @@ export async function setAsDefaultSignature(req: Request, res: Response): Promis
         // Demote every other default signature for this user.
         await tx.signature.updateMany({
           where: {
-            userId: scope.userId,
+            tenantId: scope.tenantId,
             markAsDefault: true,
             id: { not: existing.id },
           },
@@ -476,7 +476,7 @@ export async function updateSignatureStatus(req: Request, res: Response): Promis
       if (status === false && wasDefault) {
         const newDefault = await tx.signature.findFirst({
           where: {
-            userId: scope.userId,
+            tenantId: scope.tenantId,
             isDeleted: false,
             status: true,
             id: { not: existing.id },

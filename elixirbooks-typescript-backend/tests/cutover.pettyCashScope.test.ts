@@ -3,8 +3,8 @@
  *
  * Task 2 review carryover item A: lib/ledger/cutover.ts's
  * computeOpeningSummary queried PettyCash as an unscoped singleton
- * (`findFirst({ where: {} })`) under a stale "PettyCash has no userId"
- * comment. PettyCash gained a `userId` column in Task 2; this pins the
+ * (`findFirst({ where: {} })`) under a stale "PettyCash has no tenantId"
+ * comment. PettyCash gained a `tenantId` column in Task 2; this pins the
  * opening-balance cash figure to the tenant's own petty cash row.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -47,13 +47,13 @@ beforeEach(() => {
 });
 
 describe('computeOpeningSummary — PettyCash tenant scope', () => {
-  it('scopes the pettyCash.findFirst lookup by userId', async () => {
+  it('scopes the pettyCash.findFirst lookup by tenantId', async () => {
     const tx = makeTx();
 
     const summary = await computeOpeningSummary(tx, TENANT_ID, new Date('2026-01-01'));
 
     expect(tx.pettyCash.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { userId: TENANT_ID } }),
+      expect.objectContaining({ where: { tenantId: TENANT_ID } }),
     );
     expect(summary.cash).toBe('250');
   });

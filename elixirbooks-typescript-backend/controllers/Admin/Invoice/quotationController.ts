@@ -4,7 +4,8 @@ import { Prisma } from '@prisma/client';
 import type { Quotation, QuotationStatus, Customer } from '@prisma/client';
 
 import { prisma } from '../../../lib/prisma';
-import { tenantScope, requireUserId, UnauthorizedError } from '../../../lib/tenantScope';
+import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
+import { tenantScope, requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 import { applyDocumentTreatment } from '../../../lib/tax/applyTreatment';
 import {
@@ -23,16 +24,6 @@ import {
 } from '../../../lib/lineDimensions';
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
-
-// C.1: resolve the company default currency code (ISO string).
-// Returns null when no default currency is configured (no-op; column stays null).
-async function resolveDefaultCurrencyCode(): Promise<string | null> {
-  const defaultCurrency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return defaultCurrency?.code ?? null;
-}
 
 // utils/mailer is still JS; static require is fine here.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -107,9 +98,16 @@ function normaliseItems(raw: unknown, headerCostCenterId?: string | null): Incom
   }));
 }
 
-async function generateNextQuotationId(tx: Tx, prefix = 'QT-'): Promise<string> {
+async function generateNextQuotationId(
+  tx: Tx,
+  tenantId: string,
+  prefix = 'QT-',
+): Promise<string> {
+  // This tenant's series. It read the INSTALL-WIDE last quotation, so a
+  // second company's first quotation would have continued the first
+  // company's numbering.
   const last = await tx.quotation.findFirst({
-    where: { quotationId: { not: null } },
+    where: { tenantId, quotationId: { not: null } },
     orderBy: { createdAt: 'desc' },
     select: { quotationId: true },
   });
@@ -141,7 +139,7 @@ function formatDateShort(date: Date | null | undefined): string | null {
 
 export async function createQuotation(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as Record<string, unknown>;
     // Resolved before the items so each line can inherit the document centre.
     const docCostCenterId = typeof body.costCenterId === 'string' && body.costCenterId ? body.costCenterId : null;
@@ -151,7 +149,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
     // id on a line would reach the ledger unnoticed. One query covers the
     // header and every line.
     try {
-      await assertCostCentresExist(prisma, userId, collectCostCentreIds(docCostCenterId, items));
+      await assertCostCentresExist(prisma, tenantId, collectCostCentreIds(docCostCenterId, items));
     } catch (centreErr) {
       if (centreErr instanceof UnknownCostCentreError) {
         res.status(400).json({ success: false, message: centreErr.message, errors: { costCenterId: centreErr.message } });
@@ -185,7 +183,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
 
     if (incomingContactId) {
       const ownedContact = (await cdb().contact.findFirst({
-        where: { id: incomingContactId, userId, isDeleted: false },
+        where: { id: incomingContactId, tenantId, isDeleted: false },
         select: { id: true, defaultTaxTreatment: true },
       } as never)) as { id: string; defaultTaxTreatment: TaxTreatment | null } | null;
       if (!ownedContact) {
@@ -195,7 +193,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
       contactDefaultTaxTreatment = ownedContact.defaultTaxTreatment;
       if (incomingBillToContactId && incomingBillToContactId !== incomingContactId) {
         const ownedBillTo = (await cdb().contact.findFirst({
-          where: { id: incomingBillToContactId, userId, isDeleted: false },
+          where: { id: incomingBillToContactId, tenantId, isDeleted: false },
           select: { id: true },
         } as never)) as { id: string } | null;
         if (!ownedBillTo) {
@@ -207,7 +205,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
       resolvedCustomerId = legacyCustomerId;
       resolvedBillTo = legacyCustomerId;
       const contactRow = (await cdb().contact.findFirst({
-        where: { legacyCustomerId, userId, isDeleted: false },
+        where: { legacyCustomerId, tenantId, isDeleted: false },
         select: { id: true, defaultTaxTreatment: true },
       } as never)) as { id: string; defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) {
@@ -219,7 +217,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
 
     // billFrom is a User FK — validate it
     const [user, billFrom] = await Promise.all([
-      prisma.user.findUnique({ where: { id: userId } }),
+      prisma.user.findUnique({ where: { id: tenantId } }),
       prisma.user.findUnique({ where: { id: billFromId } }),
     ]);
     // Also fetch legacy billTo customer for email sending (only on legacy path)
@@ -243,7 +241,11 @@ export async function createQuotation(req: Request, res: Response): Promise<void
     // tax_group_id (no per-line percent), so resolve the group's rate then
     // recompute tax on the discounted base. Also fixes the legacy calcTotals bug
     // where the grand total dropped tax and discount (total = taxable only).
-    const itemsWithRates = await resolveItemTaxRates(prisma as unknown as TaxGroupLookupDb, items as TotalsItem[]);
+    const itemsWithRates = await resolveItemTaxRates(
+      prisma as unknown as TaxGroupLookupDb,
+      items as TotalsItem[],
+      tenantId,
+    );
     const serverTotals = computeDocumentTotals(itemsWithRates);
     warnOnTotalsDivergence(
       'quotation',
@@ -260,7 +262,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
     // C.1: per-document currency — use caller-supplied code or fall back to company default.
     const docCurrencyCode =
       (typeof body.currencyCode === 'string' && body.currencyCode ? body.currencyCode : null) ??
-      (await resolveDefaultCurrencyCode());
+      (await resolveDefaultCurrencyCode(requireTenantId(req)));
 
     // C2: per-document tax treatment.
     const docTreatment: TaxTreatment =
@@ -281,7 +283,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
     const enforcedTotal = docTreatment === 'STANDARD' ? finalTotal : finalTaxable + enforcedVat - finalDiscount;
 
     const quotation = await prisma.$transaction(async (tx) => {
-      const quotationId = await generateNextQuotationId(tx);
+      const quotationId = await generateNextQuotationId(tx, tenantId);
       return tx.quotation.create({
         data: {
           quotationId,
@@ -307,7 +309,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
           signatureId: signType === 'digitalSignature' ? ((body.signatureId as string) || null) : null,
           signatureImage: signType === 'eSignature' && req.file ? req.file.path : null,
           signatureName: signType === 'eSignature' ? ((body.signatureName as string) ?? null) : null,
-          userId,
+          tenantId,
           // FK to User — empty string from the form must become null, not '' (FK violation).
           salesPerson: (body.salesPerson as string) || null,
           billFrom: billFromId,
@@ -376,7 +378,6 @@ export async function getQuotationById(req: Request, res: Response): Promise<voi
         contact: { select: { id: true, firstName: true, lastName: true, organisation: true, email: true, mobile: true, vatRegNumber: true, gstin: true } },
         billToContact: { select: { id: true, firstName: true, lastName: true, organisation: true, email: true, mobile: true, vatRegNumber: true, gstin: true } },
         customer: { select: { id: true, name: true, email: true, phone: true, image: true, billingAddress: true } },
-        user: { select: { id: true, firstName: true, lastName: true, email: true, phone: true, profileImage: true, address: true } },
         billFromUser: { select: { id: true, firstName: true, lastName: true, email: true, phone: true, profileImage: true, address: true, user_type: true } },
         billToCustomer: { select: { id: true, name: true, email: true, phone: true, image: true, billingAddress: true } },
         signature: { select: { id: true, signatureName: true, signatureImage: true } },
@@ -553,7 +554,7 @@ export async function getQuotationById(req: Request, res: Response): Promise<voi
 
 export async function updateQuotation(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = req.body as Record<string, unknown>;
 
@@ -569,7 +570,7 @@ export async function updateQuotation(req: Request, res: Response): Promise<void
     let contactDefaultTaxTreatment: TaxTreatment | null = null;
     if (effectiveContactId) {
       const contactRow = (await cdb().contact.findFirst({
-        where: { id: effectiveContactId, userId, isDeleted: false },
+        where: { id: effectiveContactId, tenantId, isDeleted: false },
         select: { defaultTaxTreatment: true },
       } as never)) as { defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) contactDefaultTaxTreatment = contactRow.defaultTaxTreatment;
@@ -604,7 +605,7 @@ export async function updateQuotation(req: Request, res: Response): Promise<void
 
       if (incomingContactId) {
         const ownedContact = (await cdb().contact.findFirst({
-          where: { id: incomingContactId, userId, isDeleted: false },
+          where: { id: incomingContactId, tenantId, isDeleted: false },
           select: { id: true },
         } as never)) as { id: string } | null;
         if (!ownedContact) {
@@ -614,7 +615,7 @@ export async function updateQuotation(req: Request, res: Response): Promise<void
         const billToContactId = incomingBillToContactId ?? incomingContactId;
         if (incomingBillToContactId && incomingBillToContactId !== incomingContactId) {
           const ownedBillTo = (await cdb().contact.findFirst({
-            where: { id: incomingBillToContactId, userId, isDeleted: false },
+            where: { id: incomingBillToContactId, tenantId, isDeleted: false },
             select: { id: true },
           } as never)) as { id: string } | null;
           if (!ownedBillTo) {
@@ -629,7 +630,7 @@ export async function updateQuotation(req: Request, res: Response): Promise<void
       } else if (incomingLegacyCustomerId) {
         const contactRow = (await cdb().contact.findFirst({
           where: {
-            userId,
+            tenantId,
             isDeleted: false,
             OR: [
               { legacyCustomerId: incomingLegacyCustomerId },
@@ -698,7 +699,11 @@ export async function updateQuotation(req: Request, res: Response): Promise<void
       const items = normaliseItems(body.items);
       // Server-authoritative totals (see createQuotation): resolve tax-group
       // rates, recompute on the discounted base, ignore client-sent totals.
-      const itemsWithRates = await resolveItemTaxRates(prisma as unknown as TaxGroupLookupDb, items as TotalsItem[]);
+      const itemsWithRates = await resolveItemTaxRates(
+      prisma as unknown as TaxGroupLookupDb,
+      items as TotalsItem[],
+      tenantId,
+    );
       const serverTotals = computeDocumentTotals(itemsWithRates);
       warnOnTotalsDivergence('quotation', id, asNumber(body.grandTotal, asNumber(body.TotalAmount, NaN)), serverTotals.grandTotal);
       const finalTaxable = serverTotals.subTotal;
@@ -835,9 +840,10 @@ export async function listQuotations(req: Request, res: Response): Promise<void>
       }),
     ]);
 
-    // Next quotationId
+    // Next quotationId — this tenant's series, so the preview agrees with
+    // what the create path will issue.
     const lastQuotation = await prisma.quotation.findFirst({
-      where: { quotationId: { not: null } },
+      where: { tenantId: scope.tenantId, quotationId: { not: null } },
       orderBy: { quotationId: 'desc' },
       select: { quotationId: true },
     });
@@ -1253,11 +1259,11 @@ function generatePublicToken(): string {
  */
 export async function enableQuotationPublicLink(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const existing = await prisma.quotation.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       select: { id: true, publicViewToken: true, publicViewEnabled: true },
     });
     if (!existing) {

@@ -1,3 +1,17 @@
+// -----------------------------------------------------------------------------
+// INERT. This job is still entirely Mongoose: it reads models/Quotation,
+// models/Reminder, models/Customer and models/User from Mongo, and
+// initializeCron() below returns immediately when MONGO_URI is unset — which it
+// always is, because quotations and reminders live in Postgres/Prisma.
+//
+// It therefore touches NO tenant-scoped data and needed no work in the
+// multi-tenancy conversion. Deliberately left alone rather than half-converted:
+// the live reminder job is invoiceReminderCron.ts, which was converted, and
+// pretending this one was too would be worse than saying it is dead.
+//
+// Deleting it is a separate decision (it is still required() by server.js) and
+// is out of scope for the tenancy work.
+// -----------------------------------------------------------------------------
 require('dotenv').config();
 const mongoose = require('mongoose');
 const cron = require('node-cron');

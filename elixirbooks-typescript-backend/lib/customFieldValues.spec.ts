@@ -17,20 +17,24 @@ describe('insertCustomFieldValues', () => {
   it('maps fieldId->customFieldId, sets module/recordId/value, deletes first', async () => {
     const tx = fakeTx();
     await insertCustomFieldValues(tx as any, {
-      module: CustomFieldValueModule.product, recordId: 'p1', userId: 'u1', files: [],
+      module: CustomFieldValueModule.product, recordId: 'p1', tenantId: 'u1', files: [],
       customFields: [{ fieldId: 'cf1', value: 'red' }, { fieldId: 'cf2', value: '5' }],
     });
-    expect(tx.calls.deleted).toEqual({ where: { module: CustomFieldValueModule.product, recordId: 'p1' } });
+    // The delete is tenant-scoped too: without it, writing custom fields for
+    // one company's record could clear another's rows for the same recordId.
+    expect(tx.calls.deleted).toEqual({
+      where: { tenantId: 'u1', module: CustomFieldValueModule.product, recordId: 'p1' },
+    });
     expect(tx.calls.created.data).toEqual([
-      { customFieldId: 'cf1', module: CustomFieldValueModule.product, recordId: 'p1', value: 'red', createdBy: 'u1' },
-      { customFieldId: 'cf2', module: CustomFieldValueModule.product, recordId: 'p1', value: '5', createdBy: 'u1' },
+      { tenantId: 'u1', customFieldId: 'cf1', module: CustomFieldValueModule.product, recordId: 'p1', value: 'red', createdBy: 'u1' },
+      { tenantId: 'u1', customFieldId: 'cf2', module: CustomFieldValueModule.product, recordId: 'p1', value: '5', createdBy: 'u1' },
     ]);
   });
 
   it('accepts a JSON string for customFields', async () => {
     const tx = fakeTx();
     await insertCustomFieldValues(tx as any, {
-      module: CustomFieldValueModule.brand, recordId: 'b1', userId: 'u1', files: [],
+      module: CustomFieldValueModule.brand, recordId: 'b1', tenantId: 'u1', files: [],
       customFields: JSON.stringify([{ fieldId: 'cf9', value: 'x' }]),
     });
     expect(tx.calls.created.data[0]).toMatchObject({ customFieldId: 'cf9', module: CustomFieldValueModule.brand, recordId: 'b1', value: 'x' });
@@ -39,7 +43,7 @@ describe('insertCustomFieldValues', () => {
   it('uses file path for file-type field (customField_<fieldId>)', async () => {
     const tx = fakeTx();
     await insertCustomFieldValues(tx as any, {
-      module: CustomFieldValueModule.unit, recordId: 'u9', userId: 'u1',
+      module: CustomFieldValueModule.unit, recordId: 'u9', tenantId: 'u1',
       files: [{ fieldname: 'customField_cf3', path: 'uploads/x.png' } as any],
       customFields: [{ fieldId: 'cf3', value: '' }],
     });
@@ -48,7 +52,7 @@ describe('insertCustomFieldValues', () => {
 
   it('no-ops cleanly on empty customFields', async () => {
     const tx = fakeTx();
-    await insertCustomFieldValues(tx as any, { module: CustomFieldValueModule.product, recordId: 'p2', userId: 'u1', files: [], customFields: [] });
+    await insertCustomFieldValues(tx as any, { module: CustomFieldValueModule.product, recordId: 'p2', tenantId: 'u1', files: [], customFields: [] });
     // delete still runs (clears prior), createMany skipped or empty
     expect(tx.calls.deleted).toBeTruthy();
     expect(tx.customFieldValue.createMany).not.toHaveBeenCalled();
@@ -58,7 +62,7 @@ describe('insertCustomFieldValues', () => {
     const tx = fakeTx();
     await expect(
       insertCustomFieldValues(tx as any, {
-        module: CustomFieldValueModule.product, recordId: 'p3', userId: 'u1', files: [],
+        module: CustomFieldValueModule.product, recordId: 'p3', tenantId: 'u1', files: [],
         customFields: '{not valid json',
       }),
     ).rejects.toThrow('Invalid customFields payload');
@@ -77,6 +81,7 @@ describe('readCustomFieldValuesForRecords', () => {
     };
     const out = await readCustomFieldValuesForRecords(prisma, {
       module: CustomFieldValueModule.product, recordIds: ['p1', 'p2'], moduleSlug: 'product-services',
+      tenantId: 'u1',
     });
     expect(out).toEqual({ p1: { hsn_code: '8471' }, p2: { hsn_code: null } });
   });
@@ -84,10 +89,10 @@ describe('readCustomFieldValuesForRecords', () => {
   it('returns {} for empty ids, unknown module, or no fields', async () => {
     const noMod: any = { module: { findFirst: async () => null } };
     expect(await readCustomFieldValuesForRecords(noMod, {
-      module: CustomFieldValueModule.product, recordIds: ['p1'], moduleSlug: 'nope',
+      module: CustomFieldValueModule.product, recordIds: ['p1'], moduleSlug: 'nope', tenantId: 'u1',
     })).toEqual({});
     expect(await readCustomFieldValuesForRecords({} as any, {
-      module: CustomFieldValueModule.product, recordIds: [], moduleSlug: 'product-services',
+      module: CustomFieldValueModule.product, recordIds: [], moduleSlug: 'product-services', tenantId: 'u1',
     })).toEqual({});
   });
 
@@ -105,8 +110,10 @@ describe('readCustomFieldValuesForRecords', () => {
     };
     await readCustomFieldValuesForRecords(prisma, {
       module: CustomFieldValueModule.product, recordIds: ['p1'], moduleSlug: 'product-services',
+      tenantId: 'u1',
     });
     expect(captured.where).toEqual({
+      tenantId: 'u1',
       module: CustomFieldValueModule.product,
       recordId: { in: ['p1'] },
       customFieldId: { in: ['cf1'] },

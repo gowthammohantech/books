@@ -51,25 +51,25 @@ const cgstSgst = (c: number, s: number) => [{ taxes: [{ kind: 'CGST', amount: c 
 
 const INVOICES = [
   // DRAFT — must be excluded from output tax.
-  { userId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'DRAFT',
+  { tenantId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'DRAFT',
     invoiceDate: D('2024-01-10'), taxableAmount: 1000, vat: 180, items: igst(180), billToCustomer: null },
   // CANCELLED — must be excluded.
-  { userId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'CANCELLED',
+  { tenantId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'CANCELLED',
     invoiceDate: D('2024-01-11'), taxableAmount: 500, vat: 90, items: igst(90), billToCustomer: null },
   // Valid PAID invoice: CGST 90 + SGST 90 on 1000.
-  { userId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'PAID', invoiceNumber: 'INV-C',
+  { tenantId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'PAID', invoiceNumber: 'INV-C',
     invoiceDate: D('2024-01-15'), taxableAmount: 1000, vat: 180, items: cgstSgst(90, 90), billToCustomer: null },
   // Valid SENT invoice with NO decomposable items → vat→IGST fallback (360).
-  { userId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'SENT', invoiceNumber: 'INV-D',
+  { tenantId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'SENT', invoiceNumber: 'INV-D',
     invoiceDate: D('2024-01-20'), taxableAmount: 2000, vat: 360, items: [], billToCustomer: null },
 ];
 
 const CREDIT_NOTES = [
   // Non-cancelled CN against INV-C: CGST 18 + SGST 18 on 200 → netted.
-  { userId: TENANT, isDeleted: false, status: 'PENDING', invoiceId: 'inv-c',
+  { tenantId: TENANT, isDeleted: false, status: 'PENDING', invoiceId: 'inv-c',
     creditNoteDate: D('2024-01-25'), taxableAmount: 200, vat: 36, items: cgstSgst(18, 18) },
   // Cancelled CN → excluded from netting.
-  { userId: TENANT, isDeleted: false, status: 'CANCELLED', invoiceId: 'inv-c',
+  { tenantId: TENANT, isDeleted: false, status: 'CANCELLED', invoiceId: 'inv-c',
     creditNoteDate: D('2024-01-26'), taxableAmount: 100, vat: 18, items: igst(18) },
 ];
 
@@ -85,14 +85,14 @@ function inRange(d: Date, w: { gte?: Date; lte?: Date }): boolean {
 beforeEach(() => {
   vi.clearAllMocks();
   mockInvoiceFindMany.mockImplementation(async ({ where }: any) => {
-    let list = INVOICES.filter((i) => i.userId === where.userId && !i.isDeleted && i.invoiceType === where.invoiceType);
+    let list = INVOICES.filter((i) => i.tenantId === where.tenantId && !i.isDeleted && i.invoiceType === where.invoiceType);
     if (where.status?.in) list = list.filter((i) => where.status.in.includes(i.status));
     if (where.status?.notIn) list = list.filter((i) => !where.status.notIn.includes(i.status));
     if (where.invoiceDate) list = list.filter((i) => inRange(i.invoiceDate, where.invoiceDate));
     return list;
   });
   mockCreditNoteFindMany.mockImplementation(async ({ where }: any) => {
-    let list = CREDIT_NOTES.filter((c) => c.userId === where.userId && !c.isDeleted);
+    let list = CREDIT_NOTES.filter((c) => c.tenantId === where.tenantId && !c.isDeleted);
     if (where.status?.not) list = list.filter((c) => c.status !== where.status.not);
     if (where.creditNoteDate) list = list.filter((c) => inRange(c.creditNoteDate, where.creditNoteDate));
     return list;

@@ -1,6 +1,7 @@
 import type { Expense } from '@prisma/client';
 
-import { prisma } from './prisma';
+import { prisma, prismaUnscoped } from './prisma';
+import { runAsTenant } from './tenantContext';
 import { getNextRecurringDate } from './recurringInvoiceRunner';
 import {
   nextDocumentNumber,
@@ -52,7 +53,7 @@ export async function runRecurringForExpense(expenseId: string): Promise<CloneRe
         model: tx.expense as unknown as NumberingModel,
         field: 'expenseId',
         prefix: 'EXP-',
-        tenantWhere: { userId: source.userId },
+        tenantWhere: { tenantId: source.tenantId },
       });
 
       const {
@@ -93,7 +94,7 @@ export async function runRecurringForExpense(expenseId: string): Promise<CloneRe
     // is a no-op until the ledger is live and is idempotent per (Expense,
     // created.id, 'recorded') so a re-run cannot double-post.
     const mapping = await tx.ledgerAccountMapping.findFirst({
-      where: { userId: created.userId, roleKey: 'PURCHASES' },
+      where: { tenantId: created.tenantId, roleKey: 'PURCHASES' },
       select: { accountId: true },
     });
     if (mapping?.accountId) {
@@ -112,7 +113,7 @@ export async function runRecurringForExpense(expenseId: string): Promise<CloneRe
       let employeePayableAccountId: string | undefined;
       if ((created.sourceType as string) === 'EMPLOYEE_PAID') {
         const owed = await tx.account.findFirst({
-          where: { userId: created.userId, code: '9250', isDeleted: false },
+          where: { tenantId: created.tenantId, code: '9250', isDeleted: false },
           select: { id: true },
         });
         if (!owed?.id) {
@@ -129,7 +130,7 @@ export async function runRecurringForExpense(expenseId: string): Promise<CloneRe
           : null;
 
       await postExpense(tx as unknown as PostingTx, {
-        userId: created.userId,
+        tenantId: created.tenantId,
         expenseId: created.id,
         date: created.expenseDate,
         total: String(created.amount),
@@ -163,7 +164,8 @@ export async function runDueRecurringExpenses(): Promise<{
 }> {
   const today = startOfToday();
 
-  const due = await prisma.expense.findMany({
+  // CROSS-TENANT BY DESIGN: see the note in lib/recurring/runner.ts.
+  const due = await prismaUnscoped.expense.findMany({
     where: {
       isRecurring: true,
       isDeleted: false,
@@ -176,7 +178,7 @@ export async function runDueRecurringExpenses(): Promise<{
         { endsOn: { gte: today } },
       ],
     },
-    select: { id: true, referenceNo: true },
+    select: { id: true, referenceNo: true, tenantId: true },
   });
 
   const successes: string[] = [];
@@ -184,6 +186,9 @@ export async function runDueRecurringExpenses(): Promise<{
 
   for (const exp of due) {
     try {
+      // Each expense is caught up AS ITS OWN TENANT — the generated expense,
+      // its GL posting and the schedule advance all scope from this context.
+      await runAsTenant(exp.tenantId, async () => {
       // Catch up EVERY missed period deterministically, one occurrence per
       // scheduled date, until the next due date lands on/after today (or the
       // schedule ends). Advancing from the scheduled date (inside
@@ -202,6 +207,7 @@ export async function runDueRecurringExpenses(): Promise<{
           break;
         }
       }
+      });
     } catch (err) {
       failures.push({ id: exp.id, error: err instanceof Error ? err.message : String(err) });
     }

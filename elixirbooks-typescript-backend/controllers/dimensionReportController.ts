@@ -6,7 +6,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import {
   pivotPnlByDimension,
   rollUpToParents,
@@ -58,7 +58,7 @@ interface CostCenterBody {
   nextNumber?: number | string;
 }
 
-/** '' -> null, so clearing a form field releases the unique (userId, numberPrefix)
+/** '' -> null, so clearing a form field releases the unique (tenantId, numberPrefix)
  *  slot instead of colliding with every other blank one. */
 function normaliseOptionalText(value: unknown): string | null | undefined {
   if (value === undefined) return undefined;
@@ -80,14 +80,14 @@ function parseType(value: unknown): CostCenterTypeValue | undefined | null {
  *  itself, or one of its own descendants — any of which makes the roll-up
  *  hierarchy cyclic and would hang the report that walks it. */
 async function validateParent(
-  userId: string,
+  tenantId: string,
   parentId: string,
   selfId?: string,
 ): Promise<string | null> {
   if (selfId && parentId === selfId) return 'A profit center cannot be its own parent';
 
   const parent = await prisma.costCenter.findFirst({
-    where: { id: parentId, userId, isDeleted: false },
+    where: { id: parentId, tenantId, isDeleted: false },
     select: { id: true },
   });
   if (!parent) return 'Parent profit center not found';
@@ -98,7 +98,7 @@ async function validateParent(
     let cursor: string | null = parentId;
     while (cursor) {
       const row: { parentId: string | null } | null = await prisma.costCenter.findFirst({
-        where: { id: cursor, userId },
+        where: { id: cursor, tenantId },
         select: { parentId: true },
       });
       cursor = row?.parentId ?? null;
@@ -145,7 +145,7 @@ function validateNumbering(
  */
 export async function listCostCenters(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const includeInactive = String(req.query.includeInactive ?? '') === 'true';
     const returnAll = String(req.query.all ?? '') === '1' || String(req.query.all ?? '') === 'true';
@@ -161,7 +161,7 @@ export async function listCostCenters(req: Request, res: Response): Promise<void
     const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
 
     const where: Prisma.CostCenterWhereInput = {
-      userId,
+      tenantId,
       isDeleted: false,
       ...(includeInactive ? {} : { isActive: true }),
       // A PROFIT or COST filter must still return BOTH centres — they play either role.
@@ -215,7 +215,7 @@ export async function listCostCenters(req: Request, res: Response): Promise<void
 /** POST /cost-centers */
 export async function createCostCenter(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as CostCenterBody;
 
     const code = normaliseOptionalText(body.code);
@@ -236,7 +236,7 @@ export async function createCostCenter(req: Request, res: Response): Promise<voi
 
     const parentId = normaliseOptionalText(body.parentId);
     if (parentId) {
-      const parentError = await validateParent(userId, parentId);
+      const parentError = await validateParent(tenantId, parentId);
       if (parentError) {
         res.status(400).json({ success: false, message: parentError });
         return;
@@ -253,7 +253,7 @@ export async function createCostCenter(req: Request, res: Response): Promise<voi
 
     const item = await prisma.costCenter.create({
       data: {
-        userId,
+        tenantId,
         code,
         name,
         description: normaliseOptionalText(body.description) ?? null,
@@ -279,10 +279,10 @@ export async function createCostCenter(req: Request, res: Response): Promise<voi
 /** PUT /cost-centers/:id */
 export async function updateCostCenter(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const id = String(req.params.id);
 
-    const existing = await prisma.costCenter.findFirst({ where: { id, userId, isDeleted: false } });
+    const existing = await prisma.costCenter.findFirst({ where: { id, tenantId, isDeleted: false } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Profit center not found' });
       return;
@@ -312,7 +312,7 @@ export async function updateCostCenter(req: Request, res: Response): Promise<voi
 
     const parentId = normaliseOptionalText(body.parentId);
     if (parentId) {
-      const parentError = await validateParent(userId, parentId, id);
+      const parentError = await validateParent(tenantId, parentId, id);
       if (parentError) {
         res.status(400).json({ success: false, message: parentError });
         return;
@@ -373,17 +373,17 @@ export async function updateCostCenter(req: Request, res: Response): Promise<voi
  */
 export async function deleteCostCenter(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const id = String(req.params.id);
 
-    const existing = await prisma.costCenter.findFirst({ where: { id, userId, isDeleted: false } });
+    const existing = await prisma.costCenter.findFirst({ where: { id, tenantId, isDeleted: false } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Profit center not found' });
       return;
     }
 
     const childCount = await prisma.costCenter.count({
-      where: { parentId: id, userId, isDeleted: false },
+      where: { parentId: id, tenantId, isDeleted: false },
     });
     if (childCount > 0) {
       res.status(409).json({
@@ -393,7 +393,7 @@ export async function deleteCostCenter(req: Request, res: Response): Promise<voi
       return;
     }
 
-    // Release the unique (userId, code) and (userId, numberPrefix) slots so the
+    // Release the unique (tenantId, code) and (tenantId, numberPrefix) slots so the
     // same code or document prefix can be reused after deletion. Prisma cannot
     // express a partial unique index, so freeing the slot beats making the
     // constraint conditional and living with permanent migrate-diff drift.
@@ -421,9 +421,9 @@ export async function deleteCostCenter(req: Request, res: Response): Promise<voi
 /** GET /projects */
 export async function listProjects(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const items = await prisma.project.findMany({
-      where: { userId },
+      where: { tenantId },
       orderBy: { code: 'asc' },
     });
     res.json({ success: true, data: items });
@@ -437,11 +437,11 @@ export async function listProjects(req: Request, res: Response): Promise<void> {
 /** GET /projects/:id */
 export async function getProject(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const id = String(req.params.id);
 
     const project = await prisma.project.findFirst({
-      where: { id, userId },
+      where: { id, tenantId },
       select: {
         id: true,
         code: true,
@@ -471,7 +471,7 @@ export async function getProject(req: Request, res: Response): Promise<void> {
 /** POST /projects */
 export async function createProject(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { code, name, description, status } = req.body as { code?: string; name?: string; description?: string; status?: string };
 
     if (!code || !name) {
@@ -480,7 +480,7 @@ export async function createProject(req: Request, res: Response): Promise<void> 
     }
 
     const item = await prisma.project.create({
-      data: { userId, code, name, description: description ?? null, status: status ?? 'active' },
+      data: { tenantId, code, name, description: description ?? null, status: status ?? 'active' },
     });
     res.status(201).json({ success: true, data: item });
   } catch (err) {
@@ -500,10 +500,10 @@ export async function createProject(req: Request, res: Response): Promise<void> 
 /** PUT /projects/:id */
 export async function updateProject(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const id = String(req.params.id);
 
-    const existing = await prisma.project.findFirst({ where: { id, userId } });
+    const existing = await prisma.project.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Project not found' });
       return;
@@ -538,10 +538,10 @@ export async function updateProject(req: Request, res: Response): Promise<void> 
 /** DELETE /projects/:id */
 export async function deleteProject(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const id = String(req.params.id);
 
-    const existing = await prisma.project.findFirst({ where: { id, userId } });
+    const existing = await prisma.project.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Project not found' });
       return;
@@ -567,7 +567,7 @@ export async function deleteProject(req: Request, res: Response): Promise<void> 
  * Returns: { revenue: string; expenses: string; net: string }
  */
 async function pnlForDimension(
-  userId: string,
+  tenantId: string,
   dimField: 'costCenterId' | 'projectId',
   dimId: string | undefined,
   from: Date,
@@ -575,14 +575,14 @@ async function pnlForDimension(
 ): Promise<{ revenue: string; expenses: string; net: string }> {
   // Load INCOME accounts with their filtered journal lines
   const accounts = await prisma.account.findMany({
-    where: { userId, isDeleted: false, accountType: { in: ['INCOME', 'EXPENSE'] } },
+    where: { tenantId, isDeleted: false, accountType: { in: ['INCOME', 'EXPENSE'] } },
     select: {
       accountType: true,
       journalLines: {
         where: {
           ...(dimId ? { [dimField]: dimId } : { [dimField]: null }),
           journalEntry: {
-            userId,
+            tenantId,
             isDeleted: false,
             entryDate: { gte: from, lte: to },
           },
@@ -615,7 +615,7 @@ async function pnlForDimension(
  */
 export async function pnlByCostCenter(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const toDateRaw = parseDate(req.query.to);
     const toDate = toDateRaw ?? new Date();
@@ -628,25 +628,25 @@ export async function pnlByCostCenter(req: Request, res: Response): Promise<void
 
     if (filterCostCenterId) {
       // Single cost center P&L
-      const cc = await prisma.costCenter.findFirst({ where: { id: filterCostCenterId, userId } });
+      const cc = await prisma.costCenter.findFirst({ where: { id: filterCostCenterId, tenantId } });
       if (!cc) {
         res.status(404).json({ success: false, message: 'Cost center not found' });
         return;
       }
-      const pnl = await pnlForDimension(userId, 'costCenterId', filterCostCenterId, fromDate, toDate);
+      const pnl = await pnlForDimension(tenantId, 'costCenterId', filterCostCenterId, fromDate, toDate);
       res.json({ success: true, data: { period: { from: fromDate, to: toDate }, costCenter: { id: cc.id, code: cc.code, name: cc.name }, ...pnl } });
       return;
     }
 
     // All cost centers summary
     const costCenters = await prisma.costCenter.findMany({
-      where: { userId, isDeleted: false },
+      where: { tenantId, isDeleted: false },
       orderBy: { code: 'asc' },
     });
 
     const rows = await Promise.all(
       costCenters.map(async (cc) => {
-        const pnl = await pnlForDimension(userId, 'costCenterId', cc.id, fromDate, toDate);
+        const pnl = await pnlForDimension(tenantId, 'costCenterId', cc.id, fromDate, toDate);
         return { id: cc.id, code: cc.code, name: cc.name, ...pnl };
       }),
     );
@@ -665,7 +665,7 @@ export async function pnlByCostCenter(req: Request, res: Response): Promise<void
  */
 export async function pnlByProject(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const toDateRaw = parseDate(req.query.to);
     const toDate = toDateRaw ?? new Date();
@@ -678,25 +678,25 @@ export async function pnlByProject(req: Request, res: Response): Promise<void> {
 
     if (filterProjectId) {
       // Single project P&L
-      const project = await prisma.project.findFirst({ where: { id: filterProjectId, userId } });
+      const project = await prisma.project.findFirst({ where: { id: filterProjectId, tenantId } });
       if (!project) {
         res.status(404).json({ success: false, message: 'Project not found' });
         return;
       }
-      const pnl = await pnlForDimension(userId, 'projectId', filterProjectId, fromDate, toDate);
+      const pnl = await pnlForDimension(tenantId, 'projectId', filterProjectId, fromDate, toDate);
       res.json({ success: true, data: { period: { from: fromDate, to: toDate }, project: { id: project.id, code: project.code, name: project.name, status: project.status }, ...pnl } });
       return;
     }
 
     // All projects summary
     const projects = await prisma.project.findMany({
-      where: { userId },
+      where: { tenantId },
       orderBy: { code: 'asc' },
     });
 
     const rows = await Promise.all(
       projects.map(async (project) => {
-        const pnl = await pnlForDimension(userId, 'projectId', project.id, fromDate, toDate);
+        const pnl = await pnlForDimension(tenantId, 'projectId', project.id, fromDate, toDate);
         return { id: project.id, code: project.code, name: project.name, status: project.status, ...pnl };
       }),
     );
@@ -726,7 +726,7 @@ export async function pnlByProject(req: Request, res: Response): Promise<void> {
  */
 export async function pnlByDepartment(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const toDateRaw = parseDate(req.query.to);
     const toDate = toDateRaw ?? new Date();
@@ -740,18 +740,18 @@ export async function pnlByDepartment(req: Request, res: Response): Promise<void
       prisma.journalLine.groupBy({
         by: ['accountId', 'costCenterId'],
         where: {
-          account: { userId, isDeleted: false, accountType: { in: ['INCOME', 'EXPENSE'] } },
-          journalEntry: { userId, isDeleted: false, entryDate: { gte: fromDate, lte: toDate } },
+          account: { tenantId, isDeleted: false, accountType: { in: ['INCOME', 'EXPENSE'] } },
+          journalEntry: { tenantId, isDeleted: false, entryDate: { gte: fromDate, lte: toDate } },
         },
         _sum: { baseDebit: true, baseCredit: true },
       }),
       prisma.account.findMany({
-        where: { userId, isDeleted: false, accountType: { in: ['INCOME', 'EXPENSE'] } },
+        where: { tenantId, isDeleted: false, accountType: { in: ['INCOME', 'EXPENSE'] } },
         select: { id: true, code: true, name: true, accountType: true },
         orderBy: { code: 'asc' },
       }),
       prisma.costCenter.findMany({
-        where: { userId, isDeleted: false },
+        where: { tenantId, isDeleted: false },
         select: { id: true, code: true, name: true, parentId: true },
         orderBy: { code: 'asc' },
       }),

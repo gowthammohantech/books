@@ -53,19 +53,19 @@ describe('cashRoleFor', () => {
 describe('ledgerPosting (gated)', () => {
   it('no-ops when ledger not initialized', async () => {
     const tx = fakeTx({ initialized: false });
-    await postInvoiceIssued(tx as never, { userId: 'u1', invoiceId: 'i1', date: new Date('2026-06-01'), total: '118', tax: '18' });
+    await postInvoiceIssued(tx as never, { tenantId: 'u1', invoiceId: 'i1', date: new Date('2026-06-01'), total: '118', tax: '18' });
     expect(tx.journalEntry.create).not.toHaveBeenCalled();
   });
 
   it('no-ops when date before go-live', async () => {
     const tx = fakeTx({ goLive: '2026-07-01' });
-    await postInvoiceIssued(tx as never, { userId: 'u1', invoiceId: 'i1', date: new Date('2026-06-01'), total: '118', tax: '18' });
+    await postInvoiceIssued(tx as never, { tenantId: 'u1', invoiceId: 'i1', date: new Date('2026-06-01'), total: '118', tax: '18' });
     expect(tx.journalEntry.create).not.toHaveBeenCalled();
   });
 
   it('posts invoice.issued: Dr AR total, Cr revenue net, Cr output tax', async () => {
     const tx = fakeTx();
-    await postInvoiceIssued(tx as never, { userId: 'u1', invoiceId: 'i1', date: new Date('2026-06-01'), total: '118', tax: '18' });
+    await postInvoiceIssued(tx as never, { tenantId: 'u1', invoiceId: 'i1', date: new Date('2026-06-01'), total: '118', tax: '18' });
     const data = tx.createCalls[0];
     expect(data).toMatchObject({ sourceType: 'Invoice', sourceId: 'i1', event: 'issued' });
     const byAcc = Object.fromEntries(data.lines.create.map((l: any) => [l.accountId, l]));
@@ -76,7 +76,7 @@ describe('ledgerPosting (gated)', () => {
 
   it('posts invoice.payment into BANK', async () => {
     const tx = fakeTx();
-    await postInvoicePayment(tx as never, { userId: 'u1', invoiceId: 'i1', paymentId: 'p1', date: new Date('2026-06-02'), amount: '50', paymentModeSlug: 'neft' });
+    await postInvoicePayment(tx as never, { tenantId: 'u1', invoiceId: 'i1', paymentId: 'p1', date: new Date('2026-06-02'), amount: '50', paymentModeSlug: 'neft' });
     const data = tx.createCalls[0];
     expect(data).toMatchObject({ sourceType: 'InvoicePayment', sourceId: 'p1', event: 'payment' });
     const byAcc = Object.fromEntries(data.lines.create.map((l: any) => [l.accountId, l]));
@@ -87,7 +87,7 @@ describe('ledgerPosting (gated)', () => {
   it('posts purchase.received split across inventory + purchases', async () => {
     const tx = fakeTx();
     await postPurchaseReceived(tx as never, {
-      userId: 'u1', purchaseId: 'pu1', date: new Date('2026-06-03'),
+      tenantId: 'u1', purchaseId: 'pu1', date: new Date('2026-06-03'),
       total: '236', tax: '36', inventoryNet: '120', expenseNet: '80',
     });
     const data = tx.createCalls[0];
@@ -101,7 +101,7 @@ describe('ledgerPosting (gated)', () => {
   it('posts expense to a specific expense account + input tax, credit source', async () => {
     const tx = fakeTx();
     await postExpense(tx as never, {
-      userId: 'u1', expenseId: 'e1', date: new Date('2026-06-04'),
+      tenantId: 'u1', expenseId: 'e1', date: new Date('2026-06-04'),
       total: '100', tax: '10', expenseAccountId: 'a-rent', sourceType: 'BANK', paymentModeSlug: 'card',
     });
     const data = tx.createCalls[0];
@@ -114,7 +114,7 @@ describe('ledgerPosting (gated)', () => {
   it('posts reimbursable expense: Dr expense + input tax, Cr 9250 owed (not bank)', async () => {
     const tx = fakeTx();
     await postExpense(tx as never, {
-      userId: 'u1', expenseId: 'e2', date: new Date('2026-06-04'),
+      tenantId: 'u1', expenseId: 'e2', date: new Date('2026-06-04'),
       total: '100', tax: '10', expenseAccountId: 'a-rent',
       sourceType: 'EMPLOYEE_PAID', employeePayableAccountId: 'a-9250',
     });
@@ -129,7 +129,7 @@ describe('ledgerPosting (gated)', () => {
 
   it('posts creditNote.issued', async () => {
     const tx = fakeTx();
-    await postCreditNoteIssued(tx as never, { userId: 'u1', creditNoteId: 'c1', date: new Date('2026-06-05'), total: '118', tax: '18' });
+    await postCreditNoteIssued(tx as never, { tenantId: 'u1', creditNoteId: 'c1', date: new Date('2026-06-05'), total: '118', tax: '18' });
     const data = tx.createCalls[0];
     const byAcc = Object.fromEntries(data.lines.create.map((l: any) => [l.accountId, l]));
     expect(byAcc['a-ret']).toMatchObject({ debit: '100.0000' });
@@ -141,7 +141,7 @@ describe('ledgerPosting (gated)', () => {
     const tx = fakeTx();
     // 100 USD net, no tax, rate 83 → AR base credit = 8300, SALES_RETURNS base debit = 8300.
     await postCreditNoteIssued(tx as never, {
-      userId: 'u1', creditNoteId: 'c1', date: new Date('2026-06-05'),
+      tenantId: 'u1', creditNoteId: 'c1', date: new Date('2026-06-05'),
       total: '100', tax: '0', currencyCode: 'USD', exchangeRate: '83',
     });
     const data = tx.createCalls[0];
@@ -154,7 +154,7 @@ describe('ledgerPosting (gated)', () => {
   it('posts creditNote.refund in FOREIGN currency — Dr AR / Cr BANK at rate', async () => {
     const tx = fakeTx();
     await postCreditNoteRefund(tx as never, {
-      userId: 'u1', creditNoteId: 'c1', date: new Date('2026-06-05'),
+      tenantId: 'u1', creditNoteId: 'c1', date: new Date('2026-06-05'),
       amount: '100', currencyCode: 'USD', exchangeRate: '83',
     });
     const data = tx.createCalls[0];
@@ -167,7 +167,7 @@ describe('ledgerPosting (gated)', () => {
   it('posts supplierPayment: Dr AP, Cr source (CASH for petty cash)', async () => {
     const tx = fakeTx();
     await postSupplierPayment(tx as never, {
-      userId: 'u1', purchaseId: 'pu1', paymentId: 'sp1', date: new Date('2026-06-06'),
+      tenantId: 'u1', purchaseId: 'pu1', paymentId: 'sp1', date: new Date('2026-06-06'),
       amount: '120', sourceType: 'PETTY_CASH',
     });
     const data = tx.createCalls[0];
@@ -180,7 +180,7 @@ describe('ledgerPosting (gated)', () => {
   it('posts debitNote.issued: Dr AP total, Cr input tax + inventory + purchases', async () => {
     const tx = fakeTx();
     await postDebitNoteIssued(tx as never, {
-      userId: 'u1', debitNoteId: 'd1', date: new Date('2026-06-06'),
+      tenantId: 'u1', debitNoteId: 'd1', date: new Date('2026-06-06'),
       total: '236', tax: '36', inventoryNet: '120', expenseNet: '80',
     });
     const data = tx.createCalls[0];
@@ -194,7 +194,7 @@ describe('ledgerPosting (gated)', () => {
   it('throws a domain error when a purchase split does not reconcile to total', async () => {
     const tx = fakeTx();
     await expect(postPurchaseReceived(tx as never, {
-      userId: 'u1', purchaseId: 'pu2', date: new Date('2026-06-06'),
+      tenantId: 'u1', purchaseId: 'pu2', date: new Date('2026-06-06'),
       total: '236', tax: '36', inventoryNet: '120', expenseNet: '50', // 120+50+36 = 206 != 236
     })).rejects.toThrow(LedgerError);
     expect(tx.journalEntry.create).not.toHaveBeenCalled();
@@ -202,7 +202,7 @@ describe('ledgerPosting (gated)', () => {
 
   it('reverseDocument no-ops when no entry exists', async () => {
     const tx = fakeTx();
-    await reverseDocument(tx as never, { userId: 'u1', sourceType: 'Invoice', sourceId: 'i1', event: 'issued' });
+    await reverseDocument(tx as never, { tenantId: 'u1', sourceType: 'Invoice', sourceId: 'i1', event: 'issued' });
     expect(tx.journalEntry.create).not.toHaveBeenCalled();
   });
 });
@@ -210,7 +210,7 @@ describe('ledgerPosting (gated)', () => {
 describe('postSaleCogs', () => {
   it('posts Dr COGS / Cr INVENTORY at cost (event cogs)', async () => {
     const tx = fakeTx(); // mappings include COGS:a-cogs and INVENTORY:a-inv
-    await postSaleCogs(tx as never, { userId: 'u1', invoiceId: 'i1', date: new Date('2026-06-06'), cost: '70' });
+    await postSaleCogs(tx as never, { tenantId: 'u1', invoiceId: 'i1', date: new Date('2026-06-06'), cost: '70' });
     const data = tx.createCalls[0];
     expect(data).toMatchObject({ sourceType: 'Invoice', sourceId: 'i1', event: 'cogs' });
     const byAcc = Object.fromEntries(data.lines.create.map((l: any) => [l.accountId, l]));
@@ -219,7 +219,7 @@ describe('postSaleCogs', () => {
   });
   it('no-ops when cost is zero', async () => {
     const tx = fakeTx();
-    await postSaleCogs(tx as never, { userId: 'u1', invoiceId: 'i1', date: new Date('2026-06-06'), cost: '0' });
+    await postSaleCogs(tx as never, { tenantId: 'u1', invoiceId: 'i1', date: new Date('2026-06-06'), cost: '0' });
     expect(tx.journalEntry.create).not.toHaveBeenCalled();
   });
 });
@@ -227,7 +227,7 @@ describe('postSaleCogs', () => {
 describe('postReturnCogs', () => {
   it('posts Dr INVENTORY / Cr COGS at cost (event cogs on CreditNote)', async () => {
     const tx = fakeTx();
-    await postReturnCogs(tx as never, { userId: 'u1', creditNoteId: 'c1', date: new Date('2026-06-06'), cost: '50' });
+    await postReturnCogs(tx as never, { tenantId: 'u1', creditNoteId: 'c1', date: new Date('2026-06-06'), cost: '50' });
     const data = tx.createCalls[0];
     expect(data).toMatchObject({ sourceType: 'CreditNote', sourceId: 'c1', event: 'cogs' });
     const byAcc = Object.fromEntries(data.lines.create.map((l: any) => [l.accountId, l]));
@@ -236,7 +236,7 @@ describe('postReturnCogs', () => {
   });
   it('no-ops when cost is zero', async () => {
     const tx = fakeTx();
-    await postReturnCogs(tx as never, { userId: 'u1', creditNoteId: 'c1', date: new Date('2026-06-06'), cost: '0' });
+    await postReturnCogs(tx as never, { tenantId: 'u1', creditNoteId: 'c1', date: new Date('2026-06-06'), cost: '0' });
     expect(tx.journalEntry.create).not.toHaveBeenCalled();
   });
 });
@@ -247,7 +247,7 @@ describe('postInvoiceIssued — foreign currency', () => {
   it('passes currencyCode + exchangeRate through to journal lines', async () => {
     const tx = fakeTx();
     await postInvoiceIssued(tx as never, {
-      userId: 'u1', invoiceId: 'i1', date: new Date('2026-06-01'),
+      tenantId: 'u1', invoiceId: 'i1', date: new Date('2026-06-01'),
       total: '1000', tax: '0',
       currencyCode: 'USD', exchangeRate: '83',
     });
@@ -261,7 +261,7 @@ describe('postInvoiceIssued — foreign currency', () => {
   it('functional-currency path unchanged (no currencyCode) — base = amount × 1, currencyCode BASE on lines', async () => {
     const tx = fakeTx();
     await postInvoiceIssued(tx as never, {
-      userId: 'u1', invoiceId: 'i2', date: new Date('2026-06-01'),
+      tenantId: 'u1', invoiceId: 'i2', date: new Date('2026-06-01'),
       total: '118', tax: '18',
     });
     const data = tx.createCalls[0];
@@ -274,7 +274,7 @@ describe('postPurchaseReceived — foreign currency', () => {
   it('passes currencyCode + exchangeRate through to lines', async () => {
     const tx = fakeTx();
     await postPurchaseReceived(tx as never, {
-      userId: 'u1', purchaseId: 'p1', date: new Date('2026-06-01'),
+      tenantId: 'u1', purchaseId: 'p1', date: new Date('2026-06-01'),
       total: '500', tax: '0', inventoryNet: '500', expenseNet: '0',
       currencyCode: 'USD', exchangeRate: '83',
     });
@@ -297,7 +297,7 @@ describe('postInvoicePayment — FX settlement', () => {
   it('paymentRate > documentRate → FX GAIN (credit FX_GAIN_LOSS), entry balances, AR at docRate', async () => {
     const tx = fakeTx();
     await postInvoicePayment(tx as never, {
-      userId: 'u1', invoiceId: 'i1', paymentId: 'p1',
+      tenantId: 'u1', invoiceId: 'i1', paymentId: 'p1',
       date: new Date('2026-06-05'), amount: '1000',
       currencyCode: 'USD', paymentRate: '83', documentRate: '80',
     });
@@ -324,7 +324,7 @@ describe('postInvoicePayment — FX settlement', () => {
     // Dr BANK 79000 + Dr FX 1000 = Cr AR 80000 ✓
     const tx = fakeTx();
     await postInvoicePayment(tx as never, {
-      userId: 'u1', invoiceId: 'i1', paymentId: 'p2',
+      tenantId: 'u1', invoiceId: 'i1', paymentId: 'p2',
       date: new Date('2026-06-05'), amount: '1000',
       currencyCode: 'USD', paymentRate: '79', documentRate: '80',
     });
@@ -345,7 +345,7 @@ describe('postInvoicePayment — FX settlement', () => {
   it('equal paymentRate and documentRate → no FX leg (only 2 lines)', async () => {
     const tx = fakeTx();
     await postInvoicePayment(tx as never, {
-      userId: 'u1', invoiceId: 'i1', paymentId: 'p3',
+      tenantId: 'u1', invoiceId: 'i1', paymentId: 'p3',
       date: new Date('2026-06-05'), amount: '1000',
       currencyCode: 'USD', paymentRate: '83', documentRate: '83',
     });
@@ -356,7 +356,7 @@ describe('postInvoicePayment — FX settlement', () => {
   it('functional-currency path (no currencyCode) — unchanged 2-line entry, lines carry BASE', async () => {
     const tx = fakeTx();
     await postInvoicePayment(tx as never, {
-      userId: 'u1', invoiceId: 'i1', paymentId: 'p4',
+      tenantId: 'u1', invoiceId: 'i1', paymentId: 'p4',
       date: new Date('2026-06-05'), amount: '500',
     });
     const data = tx.createCalls[0];
@@ -382,7 +382,7 @@ describe('postSupplierPayment — FX settlement', () => {
   it('paymentRate > documentRate → FX LOSS (debit FX_GAIN_LOSS), AP at docRate, entry balances', async () => {
     const tx = fakeTx();
     await postSupplierPayment(tx as never, {
-      userId: 'u1', purchaseId: 'pu1', paymentId: 'sp1',
+      tenantId: 'u1', purchaseId: 'pu1', paymentId: 'sp1',
       date: new Date('2026-06-05'), amount: '1000',
       currencyCode: 'USD', paymentRate: '83', documentRate: '80',
     });
@@ -407,7 +407,7 @@ describe('postSupplierPayment — FX settlement', () => {
     // Dr AP 80000 = Cr BANK 79000 + Cr FX 1000 ✓
     const tx = fakeTx();
     await postSupplierPayment(tx as never, {
-      userId: 'u1', purchaseId: 'pu1', paymentId: 'sp2',
+      tenantId: 'u1', purchaseId: 'pu1', paymentId: 'sp2',
       date: new Date('2026-06-05'), amount: '1000',
       currencyCode: 'USD', paymentRate: '79', documentRate: '80',
     });
@@ -428,7 +428,7 @@ describe('postSupplierPayment — FX settlement', () => {
   it('equal rates → no FX leg (only 2 lines)', async () => {
     const tx = fakeTx();
     await postSupplierPayment(tx as never, {
-      userId: 'u1', purchaseId: 'pu1', paymentId: 'sp3',
+      tenantId: 'u1', purchaseId: 'pu1', paymentId: 'sp3',
       date: new Date('2026-06-05'), amount: '1000',
       currencyCode: 'USD', paymentRate: '83', documentRate: '83',
     });
@@ -439,7 +439,7 @@ describe('postSupplierPayment — FX settlement', () => {
   it('functional-currency path (no currencyCode) — unchanged 2-line entry, lines carry BASE', async () => {
     const tx = fakeTx();
     await postSupplierPayment(tx as never, {
-      userId: 'u1', purchaseId: 'pu1', paymentId: 'sp4',
+      tenantId: 'u1', purchaseId: 'pu1', paymentId: 'sp4',
       date: new Date('2026-06-05'), amount: '120', sourceType: 'PETTY_CASH',
     });
     const data = tx.createCalls[0];
@@ -459,7 +459,7 @@ describe('postInvoicePayment — repeating-decimal rates', () => {
     // fxBase   = |1.3333 − 1.1112| = "0.2221"  ← residual, balances exactly
     const tx = fakeTx();
     await expect(postInvoicePayment(tx as never, {
-      userId: 'u1', invoiceId: 'i1', paymentId: 'p-rd1',
+      tenantId: 'u1', invoiceId: 'i1', paymentId: 'p-rd1',
       date: new Date('2026-06-05'), amount: '1',
       currencyCode: 'EUR', paymentRate: '1.33333', documentRate: '1.11115',
     })).resolves.toBeUndefined();
@@ -484,7 +484,7 @@ describe('postSupplierPayment — repeating-decimal rates', () => {
     // fxBase   = |83.3333 − 80.1111| = "3.2222"  ← residual
     const tx = fakeTx();
     await expect(postSupplierPayment(tx as never, {
-      userId: 'u1', purchaseId: 'pu1', paymentId: 'sp-rd1',
+      tenantId: 'u1', purchaseId: 'pu1', paymentId: 'sp-rd1',
       date: new Date('2026-06-05'), amount: '1',
       currencyCode: 'JPY', paymentRate: '83.3333', documentRate: '80.1111',
     })).resolves.toBeUndefined();
@@ -521,7 +521,7 @@ describe('postAssetDisposal', () => {
     // Cr FIXED_ASSET 1000 + Cr GAIN 100 = Cr total 1100 ✓
     const tx = fakeTx();
     await postAssetDisposal(tx as never, {
-      userId: 'u1', assetId: 'ast1', date: new Date('2026-06-10'),
+      tenantId: 'u1', assetId: 'ast1', date: new Date('2026-06-10'),
       grossProceeds: '500', tax: '0', cost: '1000', accumulatedDepreciation: '600',
     });
     const data = tx.createCalls[0];
@@ -540,7 +540,7 @@ describe('postAssetDisposal', () => {
     // Cr FIXED_ASSET 1000 = Cr total 1000 ✓
     const tx = fakeTx();
     await postAssetDisposal(tx as never, {
-      userId: 'u1', assetId: 'ast2', date: new Date('2026-06-11'),
+      tenantId: 'u1', assetId: 'ast2', date: new Date('2026-06-11'),
       grossProceeds: '500', tax: '0', cost: '1000', accumulatedDepreciation: '200',
     });
     const data = tx.createCalls[0];
@@ -558,7 +558,7 @@ describe('postAssetDisposal', () => {
     // Cr OUTPUT_TAX 100 + Cr FIXED_ASSET 1000 + Cr GAIN 100 = Cr total 1200 ✓
     const tx = fakeTx();
     await postAssetDisposal(tx as never, {
-      userId: 'u1', assetId: 'ast3', date: new Date('2026-06-12'),
+      tenantId: 'u1', assetId: 'ast3', date: new Date('2026-06-12'),
       grossProceeds: '600', tax: '100', cost: '1000', accumulatedDepreciation: '600',
     });
     const data = tx.createCalls[0];
@@ -576,7 +576,7 @@ describe('postAssetDisposal', () => {
     // Cr FIXED_ASSET 1000 = Cr total 1000 ✓
     const tx = fakeTx();
     await postAssetDisposal(tx as never, {
-      userId: 'u1', assetId: 'ast4', date: new Date('2026-06-13'),
+      tenantId: 'u1', assetId: 'ast4', date: new Date('2026-06-13'),
       grossProceeds: '400', tax: '0', cost: '1000', accumulatedDepreciation: '600',
     });
     const data = tx.createCalls[0];
@@ -592,7 +592,7 @@ describe('postAssetDisposal', () => {
   it('no-ops when ledger not initialized (gating respected)', async () => {
     const tx = fakeTx({ initialized: false });
     await postAssetDisposal(tx as never, {
-      userId: 'u1', assetId: 'ast5', date: new Date('2026-06-14'),
+      tenantId: 'u1', assetId: 'ast5', date: new Date('2026-06-14'),
       grossProceeds: '500', tax: '0', cost: '1000', accumulatedDepreciation: '600',
     });
     expect(tx.journalEntry.create).not.toHaveBeenCalled();
@@ -603,7 +603,7 @@ describe('postInvoicePayment — equal rates with foreign currency', () => {
   it('equal payRate===docRate with currencyCode set → 2-line entry (no FX leg) carrying currencyCode', async () => {
     const tx = fakeTx();
     await postInvoicePayment(tx as never, {
-      userId: 'u1', invoiceId: 'i1', paymentId: 'p-eq1',
+      tenantId: 'u1', invoiceId: 'i1', paymentId: 'p-eq1',
       date: new Date('2026-06-05'), amount: '500',
       currencyCode: 'EUR', paymentRate: '1.2', documentRate: '1.2',
     });

@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -13,11 +13,11 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
 
 export async function createOrUpdateTemplate(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { default_invoice_template } = req.body as { default_invoice_template?: string | number };
     const defaultTemplate = default_invoice_template !== undefined ? String(default_invoice_template) : undefined;
 
-    const existing = await prisma.invoiceTemplate.findFirst({ where: { userId } });
+    const existing = await prisma.invoiceTemplate.findFirst({ where: { tenantId } });
 
     if (existing) {
       const template = await prisma.invoiceTemplate.update({
@@ -31,7 +31,7 @@ export async function createOrUpdateTemplate(req: Request, res: Response): Promi
     const template = await prisma.invoiceTemplate.create({
       data: {
         default_invoice_template: defaultTemplate ?? '',
-        userId,
+        tenantId,
       },
     });
     res.status(201).json({ success: true, message: 'Template created successfully', data: template });
@@ -44,8 +44,8 @@ export async function createOrUpdateTemplate(req: Request, res: Response): Promi
 
 export async function getMyTemplate(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const template = await prisma.invoiceTemplate.findFirst({ where: { userId } });
+    const tenantId = requireTenantId(req);
+    const template = await prisma.invoiceTemplate.findFirst({ where: { tenantId } });
     if (!template) {
       res.status(404).json({ success: false, message: 'Template not found for this user' });
       return;
@@ -61,11 +61,10 @@ export async function getMyTemplate(req: Request, res: Response): Promise<void> 
 export async function getAllTemplates(req: Request, res: Response): Promise<void> {
   try {
     // Scope to the authenticated user — prevents cross-tenant data leaks.
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const templates = await prisma.invoiceTemplate.findMany({
-      where: { userId },
+      where: { tenantId },
       include: {
-        user: { select: { firstName: true, email: true } },
       },
     });
     res.status(200).json({ success: true, count: templates.length, data: templates });

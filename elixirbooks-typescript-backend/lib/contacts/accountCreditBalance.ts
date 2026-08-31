@@ -12,7 +12,7 @@ export interface AccountCreditBalanceDb {
 }
 
 export interface AccountCreditBalanceParams {
-  userId: string;
+  tenantId: string;
   contactId: string;
 }
 
@@ -24,21 +24,21 @@ export interface AccountCreditBalanceParams {
  *   balance = SUM(amount WHERE type='GRANT' AND isVoided=false)
  *           - SUM(amount WHERE type='REDEMPTION' AND isVoided=false)
  *
- * scoped to (userId, contactId) — voided grants/redemptions are excluded entirely.
+ * scoped to (tenantId, contactId) — voided grants/redemptions are excluded entirely.
  * Both the grant/void endpoints in this slice AND the (separate) invoice-payment
  * redemption flow call this so the computed balance is always consistent.
  */
 export async function getAccountCreditBalance(
   db: AccountCreditBalanceDb,
-  { userId, contactId }: AccountCreditBalanceParams,
+  { tenantId, contactId }: AccountCreditBalanceParams,
 ): Promise<Prisma.Decimal> {
   const [grants, redemptions] = await Promise.all([
     db.accountCreditEntry.aggregate({
-      where: { userId, contactId, type: 'GRANT', isVoided: false },
+      where: { tenantId, contactId, type: 'GRANT', isVoided: false },
       _sum: { amount: true },
     }),
     db.accountCreditEntry.aggregate({
-      where: { userId, contactId, type: 'REDEMPTION', isVoided: false },
+      where: { tenantId, contactId, type: 'REDEMPTION', isVoided: false },
       _sum: { amount: true },
     }),
   ]);

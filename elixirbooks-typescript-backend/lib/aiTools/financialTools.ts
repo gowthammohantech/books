@@ -5,7 +5,7 @@
  * Each tool's `handler` calls a shared, user-scoped query function in
  * `lib/financialQueries.ts` — the SAME functions the human-facing report
  * controllers use — so the AI never sees numbers that diverge from the
- * dashboard / reports. Handlers receive `(args, { userId })` and return
+ * dashboard / reports. Handlers receive `(args, { tenantId })` and return
  * plain JSON-serialisable data.
  *
  * `parameters` are JSON Schema objects passed verbatim to the provider so
@@ -69,7 +69,7 @@ export const financialTools: ToolDef[] = [
       properties: {},
       additionalProperties: false,
     },
-    handler: async (_args, { userId }) => getDashboardOverview(userId),
+    handler: async (_args, { tenantId }) => getDashboardOverview(tenantId),
   },
 
   {
@@ -92,8 +92,8 @@ export const financialTools: ToolDef[] = [
       },
       additionalProperties: false,
     },
-    handler: async (args, { userId }) =>
-      getOutstandingInvoices(userId, {
+    handler: async (args, { tenantId }) =>
+      getOutstandingInvoices(tenantId, {
         minDaysOverdue: asNumber(args.min_days_overdue),
         customerName: asString(args.customer_name),
       }),
@@ -114,7 +114,7 @@ export const financialTools: ToolDef[] = [
       },
       additionalProperties: false,
     },
-    handler: async (args, { userId }) => getTopDebtors(userId, asNumber(args.limit) ?? 5),
+    handler: async (args, { tenantId }) => getTopDebtors(tenantId, asNumber(args.limit) ?? 5),
   },
 
   {
@@ -131,9 +131,9 @@ export const financialTools: ToolDef[] = [
       },
       additionalProperties: false,
     },
-    handler: async (args, { userId }) => {
+    handler: async (args, { tenantId }) => {
       const { from, to } = resolveRange(args);
-      return getRevenueSummary(userId, from, to);
+      return getRevenueSummary(tenantId, from, to);
     },
   },
 
@@ -154,9 +154,9 @@ export const financialTools: ToolDef[] = [
       },
       additionalProperties: false,
     },
-    handler: async (args, { userId }) => {
+    handler: async (args, { tenantId }) => {
       const { from, to } = resolveRange(args);
-      return getExpenseSummary(userId, from, to, asString(args.category));
+      return getExpenseSummary(tenantId, from, to, asString(args.category));
     },
   },
 
@@ -175,9 +175,9 @@ export const financialTools: ToolDef[] = [
       },
       additionalProperties: false,
     },
-    handler: async (args, { userId }) => {
+    handler: async (args, { tenantId }) => {
       const { from, to } = resolveRange(args);
-      return getGstSummary(userId, from, to);
+      return getGstSummary(tenantId, from, to);
     },
   },
 
@@ -199,8 +199,8 @@ export const financialTools: ToolDef[] = [
       required: ['customer_name'],
       additionalProperties: false,
     },
-    handler: async (args, { userId }) =>
-      getCustomerSummary(userId, asString(args.customer_name) ?? ''),
+    handler: async (args, { tenantId }) =>
+      getCustomerSummary(tenantId, asString(args.customer_name) ?? ''),
   },
 
   {
@@ -217,7 +217,7 @@ export const financialTools: ToolDef[] = [
       required: ['query'],
       additionalProperties: false,
     },
-    handler: async (args, { userId }) => searchCustomers(userId, asString(args.query) ?? ''),
+    handler: async (args, { tenantId }) => searchCustomers(tenantId, asString(args.query) ?? ''),
   },
 ];
 

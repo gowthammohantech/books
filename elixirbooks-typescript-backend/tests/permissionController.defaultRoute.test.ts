@@ -47,8 +47,12 @@ const { createOrUpdatePermissions, getPermissionsByRole } = await import(
 
 const ROLE_ID = 'role-1';
 
+const TENANT_ID = 'tenant-1';
+
 function makeReqRes(body: Record<string, unknown> = {}, params: Record<string, unknown> = {}) {
-  const req = { body, params } as unknown as Request;
+  // tenantId is what authMiddleware.protect sets; the role lookup is scoped to
+  // it so one tenant cannot re-permission another tenant's role.
+  const req = { body, params, tenantId: TENANT_ID } as unknown as Request;
   const statusMock = vi.fn().mockReturnThis();
   const jsonMock = vi.fn().mockReturnThis();
   const res = { status: statusMock, json: jsonMock } as unknown as Response;
@@ -61,7 +65,7 @@ beforeEach(() => {
 
 describe('createOrUpdatePermissions — defaultRoute', () => {
   it('persists defaultRoute on the role when provided', async () => {
-    mockRoleFindUnique.mockResolvedValue({ id: ROLE_ID, defaultRoute: 'dashboard' });
+    mockRoleFindFirst.mockResolvedValue({ id: ROLE_ID, tenantId: TENANT_ID, defaultRoute: 'dashboard' });
     mockRoleUpdate.mockResolvedValue({ id: ROLE_ID, defaultRoute: 'invoices' });
 
     const { req, res, statusMock, jsonMock } = makeReqRes({
@@ -83,7 +87,7 @@ describe('createOrUpdatePermissions — defaultRoute', () => {
   });
 
   it('rejects a blank defaultRoute without touching the role', async () => {
-    mockRoleFindUnique.mockResolvedValue({ id: ROLE_ID, defaultRoute: 'dashboard' });
+    mockRoleFindFirst.mockResolvedValue({ id: ROLE_ID, tenantId: TENANT_ID, defaultRoute: 'dashboard' });
 
     const { req, res, statusMock } = makeReqRes({
       roleId: ROLE_ID,
@@ -98,7 +102,7 @@ describe('createOrUpdatePermissions — defaultRoute', () => {
   });
 
   it('leaves defaultRoute untouched when omitted from the payload', async () => {
-    mockRoleFindUnique.mockResolvedValue({ id: ROLE_ID, defaultRoute: 'dashboard' });
+    mockRoleFindFirst.mockResolvedValue({ id: ROLE_ID, tenantId: TENANT_ID, defaultRoute: 'dashboard' });
 
     const { req, res, jsonMock } = makeReqRes({
       roleId: ROLE_ID,
@@ -111,6 +115,40 @@ describe('createOrUpdatePermissions — defaultRoute', () => {
     expect(jsonMock).toHaveBeenCalledWith(
       expect.objectContaining({ success: true, defaultRoute: 'dashboard' }),
     );
+  });
+
+  it('scopes the role lookup to the caller tenant', () => {
+    // Regression guard: this used to be findUnique({ where: { id } }), which
+    // let any tenant re-permission another tenant's role by guessing its uuid.
+    mockRoleFindFirst.mockResolvedValue({ id: ROLE_ID, tenantId: TENANT_ID, defaultRoute: 'dashboard' });
+
+    const { req, res } = makeReqRes({
+      roleId: ROLE_ID,
+      permissions: [{ moduleId: 'mod-1', view: true }],
+    });
+
+    return createOrUpdatePermissions(req, res).then(() => {
+      expect(mockRoleFindUnique).not.toHaveBeenCalled();
+      expect(mockRoleFindFirst).toHaveBeenCalledWith({
+        where: { id: ROLE_ID, tenantId: TENANT_ID },
+      });
+    });
+  });
+
+  it('404s on a role belonging to another tenant', async () => {
+    // The tenant-scoped lookup finds nothing, so the role reads as missing
+    // rather than leaking its existence.
+    mockRoleFindFirst.mockResolvedValue(null);
+
+    const { req, res, statusMock } = makeReqRes({
+      roleId: 'role-owned-by-another-tenant',
+      permissions: [{ moduleId: 'mod-1', view: true }],
+    });
+
+    await createOrUpdatePermissions(req, res);
+
+    expect(statusMock).toHaveBeenCalledWith(404);
+    expect(mockRoleUpdate).not.toHaveBeenCalled();
   });
 });
 

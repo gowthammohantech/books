@@ -5,6 +5,12 @@ const Constants = {
   BASE_URL,
   LOGIN_URL: `${API_BASE_URL}/auth/login`,
   REGISTER_URL: `${API_BASE_URL}/auth/register`,
+  // Everything the SPA needs for the current user in the current workspace,
+  // in one authenticated call. Replaces the install-wide question the boot
+  // probe used to answer (see APP_VERSION_URL).
+  SESSION_URL: `${API_BASE_URL}/auth/session`,
+  SWITCH_TENANT_URL: `${API_BASE_URL}/auth/switch-tenant`,
+  CREATE_TENANT_URL: `${API_BASE_URL}/auth/tenants`,
   APP_VERSION_URL: `${API_BASE_URL}/admin/app-version`,
   FETCH_SETUP_DROPDOWNS_URL: `${API_BASE_URL}/admin/settings-dropdown`,
   UPDATE_COMPANY_SETUP_URL: `${API_BASE_URL}/admin/company/setup`,

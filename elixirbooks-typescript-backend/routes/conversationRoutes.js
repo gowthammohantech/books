@@ -10,7 +10,7 @@ router.post('/message', protect, async (req, res) => {
         // Tenant (company-owner) id so the AI assistant operates over the shared
         // workspace dataset — every admin can view/edit/delete its documents.
         // Falls back to the acting user only if tenant resolution was skipped.
-        const userId = req.tenantId || req.user;
+        const tenantId = req.tenantId || req.user;
 
         if (!message) {
             return res.status(400).json({
@@ -19,9 +19,9 @@ router.post('/message', protect, async (req, res) => {
             });
         }
 
-        console.log(`Processing conversation message for user ${userId}:`, message.substring(0, 50) + '...');
+        console.log(`Processing conversation message for user ${tenantId}:`, message.substring(0, 50) + '...');
 
-        const aiService = new ConversationalAIController(userId, sessionId);
+        const aiService = new ConversationalAIController(tenantId, sessionId);
         const response = await aiService.processMessage(message);
 
         res.status(200).json({
@@ -44,7 +44,7 @@ router.get('/history/:sessionId', protect, async (req, res) => {
         // Tenant (company-owner) id so the AI assistant operates over the shared
         // workspace dataset — every admin can view/edit/delete its documents.
         // Falls back to the acting user only if tenant resolution was skipped.
-        const userId = req.tenantId || req.user;
+        const tenantId = req.tenantId || req.user;
 
         if (!sessionId) {
             return res.status(400).json({
@@ -53,7 +53,7 @@ router.get('/history/:sessionId', protect, async (req, res) => {
             });
         }
 
-        const aiService = new ConversationalAIController(userId, sessionId);
+        const aiService = new ConversationalAIController(tenantId, sessionId);
         const history = await aiService.getConversationHistory();
 
         res.status(200).json({
@@ -76,7 +76,7 @@ router.post('/reset/:sessionId', protect, async (req, res) => {
         // Tenant (company-owner) id so the AI assistant operates over the shared
         // workspace dataset — every admin can view/edit/delete its documents.
         // Falls back to the acting user only if tenant resolution was skipped.
-        const userId = req.tenantId || req.user;
+        const tenantId = req.tenantId || req.user;
 
         if (!sessionId) {
             return res.status(400).json({
@@ -85,7 +85,7 @@ router.post('/reset/:sessionId', protect, async (req, res) => {
             });
         }
 
-        const aiService = new ConversationalAIController(userId, sessionId);
+        const aiService = new ConversationalAIController(tenantId, sessionId);
         const newSessionId = await aiService.resetConversation();
 
         res.status(200).json({
@@ -110,19 +110,19 @@ router.get('/:type/:id', protect, async (req, res) => {
         // Tenant (company-owner) id so the AI assistant operates over the shared
         // workspace dataset — every admin can view/edit/delete its documents.
         // Falls back to the acting user only if tenant resolution was skipped.
-        const userId = req.tenantId || req.user;
+        const tenantId = req.tenantId || req.user;
 
         let document;
-        // Scope all lookups by userId so cross-tenant access is impossible.
+        // Scope all lookups by tenantId so cross-tenant access is impossible.
         switch (type) {
             case 'invoice':
-                document = await prisma.invoice.findFirst({ where: { id, userId, isDeleted: false } });
+                document = await prisma.invoice.findFirst({ where: { id, tenantId, isDeleted: false } });
                 break;
             case 'quotation':
-                document = await prisma.quotation.findFirst({ where: { id, userId, isDeleted: false } });
+                document = await prisma.quotation.findFirst({ where: { id, tenantId, isDeleted: false } });
                 break;
             case 'expense':
-                document = await prisma.expense.findFirst({ where: { id, userId, isDeleted: false } });
+                document = await prisma.expense.findFirst({ where: { id, tenantId, isDeleted: false } });
                 break;
             default:
                 return res.status(400).json({ success: false, message: 'Invalid document type' });
@@ -145,30 +145,30 @@ router.delete('/:type/:id', protect, async (req, res) => {
         // Tenant (company-owner) id so the AI assistant operates over the shared
         // workspace dataset — every admin can view/edit/delete its documents.
         // Falls back to the acting user only if tenant resolution was skipped.
-        const userId = req.tenantId || req.user;
+        const tenantId = req.tenantId || req.user;
 
         let document;
-        // Use updateMany scoped to userId so a cross-tenant soft-delete is
-        // impossible (equivalent to Mongoose's findOneAndUpdate with userId
+        // Use updateMany scoped to tenantId so a cross-tenant soft-delete is
+        // impossible (equivalent to Mongoose's findOneAndUpdate with tenantId
         // in the filter). updateMany returns a count; we then re-fetch the
         // record to return the same shape as the previous implementation.
         switch (type) {
             case 'invoice': {
-                const result = await prisma.invoice.updateMany({ where: { id, userId }, data: { isDeleted: true } });
+                const result = await prisma.invoice.updateMany({ where: { id, tenantId }, data: { isDeleted: true } });
                 if (result.count === 0) { document = null; break; }
-                document = await prisma.invoice.findFirst({ where: { id, userId } });
+                document = await prisma.invoice.findFirst({ where: { id, tenantId } });
                 break;
             }
             case 'quotation': {
-                const result = await prisma.quotation.updateMany({ where: { id, userId }, data: { isDeleted: true } });
+                const result = await prisma.quotation.updateMany({ where: { id, tenantId }, data: { isDeleted: true } });
                 if (result.count === 0) { document = null; break; }
-                document = await prisma.quotation.findFirst({ where: { id, userId } });
+                document = await prisma.quotation.findFirst({ where: { id, tenantId } });
                 break;
             }
             case 'expense': {
-                const result = await prisma.expense.updateMany({ where: { id, userId }, data: { isDeleted: true } });
+                const result = await prisma.expense.updateMany({ where: { id, tenantId }, data: { isDeleted: true } });
                 if (result.count === 0) { document = null; break; }
-                document = await prisma.expense.findFirst({ where: { id, userId } });
+                document = await prisma.expense.findFirst({ where: { id, tenantId } });
                 break;
             }
             default:

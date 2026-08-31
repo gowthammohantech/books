@@ -2,14 +2,18 @@ import type { Request, Response } from 'express';
 import { Prisma, CustomFieldPlacement } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
+import { requireTenantId } from '../lib/tenantScope';
 
-// CustomField is a global lookup table tied to Module + FieldType — it has no
-// userId column, so tenantScope() does not apply here. Soft-deletion via
-// `deletedAt` is still respected.
+// CustomField is tenant-owned as of P4. Module and FieldType stay platform
+// reference data — every company sees the same modules and the same field
+// types — but the FIELDS a company defines on a module are its own, so the
+// `fieldSlug` uniqueness check below is per (tenant, module), not per module.
+// Soft-deletion via `deletedAt` is still respected.
 
 // Create custom field
 export async function createCustomField(req: Request, res: Response): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const {
       moduleId,
       labelName,
@@ -34,6 +38,7 @@ export async function createCustomField(req: Request, res: Response): Promise<vo
 
     const existing = await prisma.customField.findFirst({
       where: {
+        tenantId,
         moduleId: moduleId as string,
         fieldSlug: fieldSlug as string,
         deletedAt: null,
@@ -75,6 +80,7 @@ export async function createCustomField(req: Request, res: Response): Promise<vo
 
     const field = await prisma.customField.create({
       data: {
+        tenantId,
         moduleId: moduleId as string,
         labelName: labelName as string,
         fieldSlug: fieldSlug as string,
@@ -104,6 +110,7 @@ export async function createCustomField(req: Request, res: Response): Promise<vo
 // Update custom field
 export async function updateCustomField(req: Request, res: Response): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const {
@@ -130,7 +137,7 @@ export async function updateCustomField(req: Request, res: Response): Promise<vo
       placement?: string;
     };
 
-    const field = await prisma.customField.findUnique({ where: { id } });
+    const field = await prisma.customField.findFirst({ where: { id, tenantId } });
 
     if (!field) {
       res.status(404).json({
@@ -146,6 +153,7 @@ export async function updateCustomField(req: Request, res: Response): Promise<vo
     // check duplicate inside same module
     const existing = await prisma.customField.findFirst({
       where: {
+        tenantId,
         id: { not: id },
         moduleId: checkModuleId,
         fieldSlug: checkSlug,
@@ -223,7 +231,7 @@ export async function updateCustomField(req: Request, res: Response): Promise<vo
 export async function getCustomFields(req: Request, res: Response): Promise<void> {
   try {
     const fields = await prisma.customField.findMany({
-      where: { deletedAt: null },
+      where: { tenantId: requireTenantId(req), deletedAt: null },
       include: {
         fieldType: true,
         module: true,
@@ -255,6 +263,7 @@ export async function getModuleFields(req: Request, res: Response): Promise<void
     const { moduleId } = req.params as { moduleId: string };
 
     const where: Prisma.CustomFieldWhereInput = {
+      tenantId: requireTenantId(req),
       moduleId,
       deletedAt: null,
     };
@@ -307,6 +316,7 @@ export async function getModuleFieldsNew(req: Request, res: Response): Promise<v
 
     const fields = await prisma.customField.findMany({
       where: {
+        tenantId: requireTenantId(req),
         moduleId,
         deletedAt: null,
       },
@@ -332,7 +342,9 @@ export async function deleteCustomField(req: Request, res: Response): Promise<vo
   try {
     const { id } = req.params as { id: string };
 
-    const field = await prisma.customField.findUnique({ where: { id } });
+    const field = await prisma.customField.findFirst({
+      where: { id, tenantId: requireTenantId(req) },
+    });
 
     if (!field) {
       res.status(404).json({

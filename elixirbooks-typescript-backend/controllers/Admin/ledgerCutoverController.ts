@@ -1,14 +1,14 @@
 import type { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
-import { requireUserId } from '../../lib/tenantScope';
+import { requireTenantId } from '../../lib/tenantScope';
 import { previewCutover, commitCutover, type CutoverTx } from '../../lib/ledger/cutover';
 import { LedgerError } from '../../lib/ledger/buildLines';
 import { handleLedgerError } from '../../lib/httpErrors';
 
 export async function previewCutoverHandler(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const r = await prisma.$transaction((tx) => previewCutover(tx as unknown as CutoverTx, userId));
+    const tenantId = requireTenantId(req);
+    const r = await prisma.$transaction((tx) => previewCutover(tx as unknown as CutoverTx, tenantId));
     res.json({ success: true, data: r });
   } catch (err) {
     if (handleLedgerError(res, err)) return;
@@ -28,8 +28,8 @@ export async function previewCutoverHandler(req: Request, res: Response): Promis
 
 export async function commitCutoverHandler(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const r = await prisma.$transaction((tx) => commitCutover(tx as unknown as CutoverTx, userId));
+    const tenantId = requireTenantId(req);
+    const r = await prisma.$transaction((tx) => commitCutover(tx as unknown as CutoverTx, tenantId));
     res.json({
       success: true,
       message: 'Opening balances posted; ledger is now live',

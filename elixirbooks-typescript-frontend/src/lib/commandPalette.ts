@@ -212,7 +212,6 @@ const EXTRA_COMMANDS: ReadonlyArray<ExtraCommand> = [
  */
 export const buildCommands = (
     permissions: PermissionSet[],
-    user: unknown,
     items: NavItemType[] = navItems
 ): Command[] => {
     const out: Command[] = [];
@@ -231,7 +230,7 @@ export const buildCommands = (
     ) => {
         for (const node of nodes) {
             if (node.type === "header") continue;
-            if (!canView(node.slug, permissions, user)) continue;
+            if (!canView(node.slug, permissions)) continue;
 
             const icon = node.icon ?? inheritedIcon;
 
@@ -257,7 +256,7 @@ export const buildCommands = (
             if (
                 node.addPath &&
                 node.addPath !== node.to &&
-                canCreate(node.slug, permissions, user)
+                canCreate(node.slug, permissions)
             ) {
                 push({
                     id: `create:${node.addPath}`,
@@ -281,8 +280,8 @@ export const buildCommands = (
         }
         const allowed =
             command.kind === "create"
-                ? canCreate(slug, permissions, user)
-                : canView(slug, permissions, user);
+                ? canCreate(slug, permissions)
+                : canView(slug, permissions);
         if (allowed) push(command);
     }
 

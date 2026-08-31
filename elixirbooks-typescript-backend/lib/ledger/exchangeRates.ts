@@ -43,7 +43,7 @@ export interface RateTx {
   exchangeRate: {
     findMany: (args: {
       where: {
-        userId: string;
+        tenantId: string;
         fromCurrency: string;
         toCurrency: string;
         asOfDate: { lte: Date };
@@ -60,7 +60,7 @@ export interface RateTx {
  */
 export async function loadRate(
   tx: RateTx,
-  userId: string,
+  tenantId: string,
   from: string,
   to: string,
   asOf: Date,
@@ -68,7 +68,7 @@ export async function loadRate(
   if (from === to) return new Prisma.Decimal(1);
 
   const rows = await tx.exchangeRate.findMany({
-    where: { userId, fromCurrency: from, toCurrency: to, asOfDate: { lte: asOf } },
+    where: { tenantId, fromCurrency: from, toCurrency: to, asOfDate: { lte: asOf } },
     orderBy: { asOfDate: 'desc' },
     take: 1,
   });

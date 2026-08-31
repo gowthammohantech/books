@@ -47,7 +47,7 @@ const {
 vi.mock('../lib/prisma', () => {
   const tx = {
     debitNote: { update: mockTxDebitNoteUpdate },
-    product: { findUnique: mockTxProductFindUnique },
+    product: { findFirst: mockTxProductFindUnique },
   };
   return {
     prisma: {
@@ -97,7 +97,7 @@ function makeReqRes(overrides: { params?: Record<string, unknown>; body?: Record
 function baseDebitNote(status: string) {
   return {
     id: DN_ID,
-    userId: TENANT_ID,
+    tenantId: TENANT_ID,
     isDeleted: false,
     status,
     items: [{ productId: 'prod-1', quantity: 2, amount: 200 }],

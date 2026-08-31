@@ -26,12 +26,11 @@ const prisma = new PrismaClient();
 
 async function backfillLedgerInit(): Promise<void> {
   // All owners: users whose ownerId is null (i.e. they ARE the owner row).
-  const owners = await prisma.user.findMany({
-    where: { ownerId: null },
+  const owners = await prisma.tenant.findMany({
+    where: { deletedAt: null },
     select: {
       id: true,
-      firstName: true,
-      email: true,
+      name: true,
       companySettings: {
         select: {
           countryCode: true,
@@ -51,10 +50,10 @@ async function backfillLedgerInit(): Promise<void> {
     // Idempotency check: skip if mappings already exist (mapping count only —
     // do NOT use the ledgerInitialized flag for this decision).
     const existingCount = await prisma.ledgerAccountMapping.count({
-      where: { userId: owner.id },
+      where: { tenantId: owner.id },
     });
     if (existingCount > 0) {
-      console.log(`[SKIP] ${owner.email} (${owner.id}) — already has ${existingCount} ledger mapping(s)`);
+      console.log(`[SKIP] ${owner.name} (${owner.id}) — already has ${existingCount} ledger mapping(s)`);
       skipped += 1;
       continue;
     }
@@ -77,13 +76,13 @@ async function backfillLedgerInit(): Promise<void> {
         if (isPartialInit) {
           // Temporarily clear the flag so applyPack's guard does not throw.
           await tx.companySettings.update({
-            where: { userId: owner.id },
+            where: { tenantId: owner.id },
             data: { ledgerInitialized: false },
           });
         }
 
         await applyPack(tx as unknown as ApplyPackTx, {
-          userId: owner.id,
+          tenantId: owner.id,
           countryCode: packCode,
           memberCountryCode: memberIso2,
           goLiveDate: new Date(),
@@ -92,16 +91,16 @@ async function backfillLedgerInit(): Promise<void> {
         if (isPartialInit) {
           // Restore the flag now that applyPack has succeeded.
           await tx.companySettings.update({
-            where: { userId: owner.id },
+            where: { tenantId: owner.id },
             data: { ledgerInitialized: true },
           });
         }
       });
       const partialNote = isPartialInit ? ' (repaired partial init)' : '';
-      console.log(`[OK]   ledger initialized for ${owner.email} (${packCode})${partialNote}`);
+      console.log(`[OK]   ledger initialized for ${owner.name} (${packCode})${partialNote}`);
       initialized += 1;
     } catch (err) {
-      console.error(`[ERR]  ${owner.email} (${owner.id}): ${(err as Error).message}`);
+      console.error(`[ERR]  ${owner.name} (${owner.id}): ${(err as Error).message}`);
     }
   }
 

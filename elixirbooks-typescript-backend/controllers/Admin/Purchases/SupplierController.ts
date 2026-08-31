@@ -6,20 +6,12 @@ import type { Supplier, SupplierBalanceType } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../../../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../../../lib/tenantScope';
+import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
+import { requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 
 // -----------------------------------------------------------------------------
 // Helpers
 // -----------------------------------------------------------------------------
-
-// SC.1: resolve the company default currency code (ISO string).
-async function resolveDefaultCurrencyCode(): Promise<string | null> {
-  const defaultCurrency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return defaultCurrency?.code ?? null;
-}
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -63,9 +55,9 @@ function asNumber(value: unknown, fallback = 0): number {
 }
 
 // Per HARD RULE 14, supplier rows are scoped manually because the Supplier
-// model uses `user_id` (underscore) instead of the canonical `userId`.
-function supplierScope(req: Request): { user_id: string; isDeleted: false } {
-  return { user_id: requireUserId(req), isDeleted: false };
+// model uses `tenantId` (underscore) instead of the canonical `tenantId`.
+function supplierScope(req: Request): { tenantId: string; isDeleted: false } {
+  return { tenantId: requireTenantId(req), isDeleted: false };
 }
 
 // -----------------------------------------------------------------------------
@@ -74,7 +66,7 @@ function supplierScope(req: Request): { user_id: string; isDeleted: false } {
 
 export async function createSupplier(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const {
       supplier_name,
@@ -88,7 +80,7 @@ export async function createSupplier(req: Request, res: Response): Promise<void>
     } = req.body as Record<string, unknown>;
 
     // Sanity: the owning user must exist.
-    const owner = await prisma.user.findUnique({ where: { id: userId } });
+    const owner = await prisma.user.findUnique({ where: { id: tenantId } });
     if (!owner) {
       tryUnlink(req.file?.path);
       res.status(404).json({ success: false, message: 'User not found' });
@@ -104,11 +96,13 @@ export async function createSupplier(req: Request, res: Response): Promise<void>
     // SC.1: use caller-supplied currencyCode or fall back to the company default.
     const supplierCurrencyCode =
       (typeof rawCurrencyCode === 'string' && rawCurrencyCode ? rawCurrencyCode : null) ??
-      (await resolveDefaultCurrencyCode());
+      (await resolveDefaultCurrencyCode(requireTenantId(req)));
 
-    // Email uniqueness check (supplier_email is @unique in schema).
+    // Email uniqueness check. supplier_email is unique per (tenantId,
+    // supplier_email) since P4/M11 — two companies may both buy from the same
+    // supplier, and before the swap the second one got a 409.
     const emailClash = await prisma.supplier.findFirst({
-      where: { supplier_email: supplier_email as string },
+      where: { tenantId: requireTenantId(req), supplier_email: supplier_email as string },
     });
     if (emailClash) {
       tryUnlink(req.file?.path);
@@ -124,7 +118,7 @@ export async function createSupplier(req: Request, res: Response): Promise<void>
     const supplier = await prisma.$transaction(async (tx) => {
       return tx.supplier.create({
         data: {
-          user_id: userId,
+          tenantId: tenantId,
           supplier_name: supplier_name as string,
           supplier_email: supplier_email as string,
           supplier_phone: (supplier_phone as string) ?? '',
@@ -255,7 +249,7 @@ export async function updateSupplier(req: Request, res: Response): Promise<void>
     }
 
     // Strip restricted fields.
-    const restrictedFields = ['user_type', 'email', '_id', 'id', 'password', 'user_id'];
+    const restrictedFields = ['user_type', 'email', '_id', 'id', 'password', 'tenantId', 'tenantId'];
     for (const field of restrictedFields) {
       if (field in updates) delete updates[field];
     }

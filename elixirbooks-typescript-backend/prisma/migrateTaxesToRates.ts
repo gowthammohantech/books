@@ -28,7 +28,7 @@ const prisma = new PrismaClient();
 
 export interface GroupMember {
   id: string;
-  userId: string;
+  tenantId: string;
   name: string;
   rate: unknown;
   regime: string;
@@ -39,8 +39,8 @@ export interface GroupShape { id: string; tax_name: string; tax_rates: GroupMemb
 
 export type GroupResolution =
   | { kind: 'single'; taxRateId: string }
-  | { kind: 'summed'; userId: string; name: string; regime: string; rate: number }
-  | { kind: 'noTax'; userId: string }
+  | { kind: 'summed'; tenantId: string; name: string; regime: string; rate: number }
+  | { kind: 'noTax'; tenantId: string }
   | { kind: 'skip' };
 
 /** Pure: decide how one group collapses to a single rate. */
@@ -50,16 +50,16 @@ export function planGroupResolution(group: GroupShape): GroupResolution {
   if (group.tax_name === 'No Tax') {
     const none = members.find((r) => r.regime === 'NONE');
     if (none) return { kind: 'single', taxRateId: none.id };
-    return { kind: 'noTax', userId: members[0].userId };
+    return { kind: 'noTax', tenantId: members[0].tenantId };
   }
   if (members.length === 1) return { kind: 'single', taxRateId: members[0].id };
   // N>1 legacy compound: members of a real compound group are seeded
   // per-tenant, so scope to the first member's tenant, ignore stray rows.
-  const tenantMembers = members.filter((r) => r.userId === members[0].userId);
+  const tenantMembers = members.filter((r) => r.tenantId === members[0].tenantId);
   const rate = tenantMembers.reduce((sum, r) => sum + Number(r.rate), 0);
   const regime =
     tenantMembers.find((r) => r.regime && r.regime !== 'NONE')?.regime ?? tenantMembers[0].regime;
-  return { kind: 'summed', userId: members[0].userId, name: group.tax_name, regime, rate };
+  return { kind: 'summed', tenantId: members[0].tenantId, name: group.tax_name, regime, rate };
 }
 
 /** Prisma-like surface so the spec can drive the runner with a fake db. */
@@ -84,24 +84,24 @@ async function resolveGroupToRateId(
   if (plan.kind === 'single') return { rateId: plan.taxRateId, created: false };
   if (plan.kind === 'noTax') {
     const existing = await db.taxRate.findFirst({
-      where: { userId: plan.userId, regime: 'NONE', isDeleted: false },
+      where: { tenantId: plan.tenantId, regime: 'NONE', isDeleted: false },
       select: { id: true },
     });
     if (existing) return { rateId: existing.id, created: false };
     const created = await db.taxRate.create({
-      data: { userId: plan.userId, regime: 'NONE', name: 'No Tax 0%', rate: '0', isActive: true },
+      data: { tenantId: plan.tenantId, regime: 'NONE', name: 'No Tax 0%', rate: '0', isActive: true },
     });
     return { rateId: created.id, created: true };
   }
   // summed — find-or-create per tenant, never duplicated on re-run.
   const existing = await db.taxRate.findFirst({
-    where: { userId: plan.userId, name: plan.name, rate: plan.rate, isDeleted: false },
+    where: { tenantId: plan.tenantId, name: plan.name, rate: plan.rate, isDeleted: false },
     select: { id: true },
   });
   if (existing) return { rateId: existing.id, created: false };
   const created = await db.taxRate.create({
     data: {
-      userId: plan.userId,
+      tenantId: plan.tenantId,
       regime: plan.regime as never,
       taxKind: null,
       name: plan.name,
@@ -115,6 +115,10 @@ async function resolveGroupToRateId(
 export async function migrateTaxesToRates(
   db: MigrateDb = prisma as unknown as MigrateDb,
 ): Promise<{ updated: number; createdRates: number }> {
+  // Cross-tenant by design: this is a one-off backfill over every product on
+  // the install. It stays correct after P4 because a TaxGroup now belongs to
+  // exactly one tenant, so resolving a product's group can only ever reach
+  // that product's own tenant's rates.
   const products = await db.product.findMany({
     where: { taxGroupId: { not: null }, taxRateId: null },
     select: { id: true, taxGroupId: true },
@@ -131,7 +135,7 @@ export async function migrateTaxesToRates(
       id: true,
       tax_name: true,
       tax_rates: {
-        select: { id: true, userId: true, name: true, rate: true, regime: true, isActive: true, isDeleted: true },
+        select: { id: true, tenantId: true, name: true, rate: true, regime: true, isActive: true, isDeleted: true },
       },
     },
   });

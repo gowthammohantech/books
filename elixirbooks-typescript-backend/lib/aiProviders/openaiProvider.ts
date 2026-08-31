@@ -126,7 +126,7 @@ export class OpenAIProvider implements AiProvider {
   async *chatStream(
     messages: ChatMessage[],
     tools: ToolDef[],
-    _ctx: { userId: string },
+    _ctx: { tenantId: string },
   ): AsyncIterable<ChatStreamEvent> {
     const openaiMessages = toOpenAiMessages(messages);
     const openaiTools: OpenAI.Chat.Completions.ChatCompletionTool[] = tools.map((t) => ({
@@ -200,7 +200,7 @@ export class OpenAIProvider implements AiProvider {
   chatStreamContinue(
     messages: ChatMessage[],
     tools: ToolDef[],
-    ctx: { userId: string },
+    ctx: { tenantId: string },
   ): AsyncIterable<ChatStreamEvent> {
     return this.chatStream(messages, tools, ctx);
   }

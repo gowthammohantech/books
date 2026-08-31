@@ -5,8 +5,8 @@
  * with `findUnique({ where: { id } })` / listed with `{ isDeleted: false }`
  * only — no tenant filter anywhere, so any authenticated user could read,
  * edit or hard-delete another tenant's credit notes by id. Every handler is
- * now scoped by `userId` (`findFirst({ where: { id, userId } })`, 404 on
- * miss; list/count/numbering queries carry `userId`). These tests mock
+ * now scoped by `tenantId` (`findFirst({ where: { id, tenantId } })`, 404 on
+ * miss; list/count/numbering queries carry `tenantId`). These tests mock
  * prisma and assert the where objects passed to every creditNote-touching
  * call carry the tenant filter, and that a foreign-id lookup (mocked null)
  * yields a 404 without any write.
@@ -53,7 +53,7 @@ vi.mock('../lib/prisma', () => {
       // Task 2: recomputeInvoiceStatus reads applied CNs for the linked invoice.
       findMany: vi.fn().mockResolvedValue([]),
     },
-    product: { findUnique: vi.fn().mockResolvedValue(null) },
+    product: { findFirst: vi.fn().mockResolvedValue(null) },
     inventory: { findFirst: vi.fn().mockResolvedValue(null) },
     // Task 2: CN create/update/delete recompute the linked invoice's due/status.
     invoice: {
@@ -120,7 +120,7 @@ function makeReqRes(overrides: { params?: Record<string, unknown>; query?: Recor
   return { req, res };
 }
 
-/** Tripwire: fails if any where-object anywhere carries a null-userId OR
+/** Tripwire: fails if any where-object anywhere carries a null-tenantId OR
  * branch — the exact shape of a cross-tenant leak. Recurses into
  * arrays/objects since Prisma where clauses nest. */
 function assertNoNullUserIdBranch(value: unknown, path = 'where'): void {
@@ -130,8 +130,8 @@ function assertNoNullUserIdBranch(value: unknown, path = 'where'): void {
     return;
   }
   const obj = value as Record<string, unknown>;
-  if ('userId' in obj && obj.userId === null) {
-    throw new Error(`found userId: null at ${path} — cross-tenant leak`);
+  if ('tenantId' in obj && obj.tenantId === null) {
+    throw new Error(`found tenantId: null at ${path} — cross-tenant leak`);
   }
   for (const [key, val] of Object.entries(obj)) {
     assertNoNullUserIdBranch(val, `${path}.${key}`);
@@ -168,14 +168,14 @@ describe('creditNoteController — tenant scoping (P0-2b)', () => {
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(mockCreditNoteCount).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     expect(mockCreditNoteFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     // Next-number lookup must not read another tenant's numbering sequence.
     expect(mockCreditNoteFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     assertNoNullUserIdBranch(mockCreditNoteFindMany.mock.calls[0][0].where);
     assertNoNullUserIdBranch(mockCreditNoteCount.mock.calls[0][0].where);
@@ -189,7 +189,7 @@ describe('creditNoteController — tenant scoping (P0-2b)', () => {
 
     expect(mockCreditNoteFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ id: FOREIGN_CN_ID, userId: TENANT_ID }),
+        where: expect.objectContaining({ id: FOREIGN_CN_ID, tenantId: TENANT_ID }),
       }),
     );
     assertNoNullUserIdBranch(mockCreditNoteFindFirst.mock.calls[0][0].where);
@@ -206,7 +206,7 @@ describe('creditNoteController — tenant scoping (P0-2b)', () => {
 
     expect(mockCreditNoteFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ id: FOREIGN_CN_ID, userId: TENANT_ID }),
+        where: expect.objectContaining({ id: FOREIGN_CN_ID, tenantId: TENANT_ID }),
       }),
     );
     assertNoNullUserIdBranch(mockCreditNoteFindFirst.mock.calls[0][0].where);
@@ -221,7 +221,7 @@ describe('creditNoteController — tenant scoping (P0-2b)', () => {
 
     expect(mockCreditNoteFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ id: FOREIGN_CN_ID, userId: TENANT_ID }),
+        where: expect.objectContaining({ id: FOREIGN_CN_ID, tenantId: TENANT_ID }),
       }),
     );
     assertNoNullUserIdBranch(mockCreditNoteFindFirst.mock.calls[0][0].where);
@@ -238,7 +238,7 @@ describe('creditNoteController — tenant scoping (P0-2b)', () => {
 
     expect(mockInvoiceFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ id: 'inv-foreign', userId: TENANT_ID }),
+        where: expect.objectContaining({ id: 'inv-foreign', tenantId: TENANT_ID }),
       }),
     );
     assertNoNullUserIdBranch(mockInvoiceFindFirst.mock.calls[0][0].where);
@@ -257,28 +257,21 @@ describe('creditNoteController — tenant scoping (P0-2b)', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           creditNoteNumber: { not: null },
-          userId: TENANT_ID,
+          tenantId: TENANT_ID,
         }),
       }),
     );
     assertNoNullUserIdBranch(mockTxCreditNoteFindFirst.mock.calls[0][0].where);
     // Created row must be stamped with the tenant id.
     expect(mockCreditNoteCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ data: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
   });
 
-  it('createCreditNote numbering falls back to the install-wide highest + 1 when the tenant candidate clashes (creditNoteNumber is globally @unique)', async () => {
-    mockTxCreditNoteFindFirst.mockImplementation(
-      async (args: { where: Record<string, unknown> }) => {
-        // Tenant-scoped sequence lookup → fresh tenant, no rows yet.
-        if ('userId' in args.where) return null;
-        // Clash check: CN-000001 already held by another tenant.
-        if (args.where.creditNoteNumber === 'CN-000001') return { id: 'cn-other-tenant' };
-        // Install-wide highest lookup.
-        return { creditNoteNumber: 'CN-000099' };
-      },
-    );
+  it('createCreditNote starts a fresh tenant at CN-000001 even when another tenant holds that number', async () => {
+    // See the sibling assertion in debitNoteController.tenantScope: the
+    // install-wide fallback this replaced was deleted with M11.
+    mockTxCreditNoteFindFirst.mockResolvedValue(null);
     const { req, res } = makeReqRes({
       body: { contactId: 'contact-1', invoiceId: 'inv-1', billFrom: 'user-1', items: [] },
     });
@@ -286,7 +279,10 @@ describe('creditNoteController — tenant scoping (P0-2b)', () => {
 
     expect(res.status).toHaveBeenCalledWith(201);
     expect(mockCreditNoteCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ creditNoteNumber: 'CN-000100' }) }),
+      expect.objectContaining({ data: expect.objectContaining({ creditNoteNumber: 'CN-000001' }) }),
     );
+    for (const call of mockTxCreditNoteFindFirst.mock.calls) {
+      expect(call[0].where).toHaveProperty('tenantId', TENANT_ID);
+    }
   });
 });

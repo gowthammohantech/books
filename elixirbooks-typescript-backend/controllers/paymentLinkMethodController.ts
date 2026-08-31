@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -14,10 +14,10 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
 // GET /admin/payment-link-methods?enabledOnly=true
 export async function list(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const enabledOnly = req.query.enabledOnly === 'true';
     const rows = await prisma.paymentLinkMethod.findMany({
-      where: { userId, isDeleted: false, ...(enabledOnly ? { enabled: true } : {}) },
+      where: { tenantId, isDeleted: false, ...(enabledOnly ? { enabled: true } : {}) },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
     });
     res.json({ success: true, data: rows });
@@ -30,7 +30,7 @@ export async function list(req: Request, res: Response): Promise<void> {
 // POST /admin/payment-link-methods
 export async function create(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { name, defaultUrl, enabled, sortOrder } = req.body as {
       name?: string;
       defaultUrl?: string | null;
@@ -43,7 +43,7 @@ export async function create(req: Request, res: Response): Promise<void> {
     }
     const row = await prisma.paymentLinkMethod.create({
       data: {
-        userId,
+        tenantId,
         name: name.trim(),
         defaultUrl: defaultUrl?.trim() || null,
         enabled: enabled ?? true,
@@ -60,9 +60,9 @@ export async function create(req: Request, res: Response): Promise<void> {
 // PUT /admin/payment-link-methods/:id
 export async function update(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
-    const existing = await prisma.paymentLinkMethod.findFirst({ where: { id, userId, isDeleted: false } });
+    const existing = await prisma.paymentLinkMethod.findFirst({ where: { id, tenantId, isDeleted: false } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Payment method not found' });
       return;
@@ -92,9 +92,9 @@ export async function update(req: Request, res: Response): Promise<void> {
 // DELETE /admin/payment-link-methods/:id
 export async function remove(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
-    const existing = await prisma.paymentLinkMethod.findFirst({ where: { id, userId, isDeleted: false } });
+    const existing = await prisma.paymentLinkMethod.findFirst({ where: { id, tenantId, isDeleted: false } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Payment method not found' });
       return;

@@ -64,20 +64,20 @@ function bankCashLeg(
 }
 
 export async function gatedPost(
-  tx: PostingTx, userId: string, date: Date,
+  tx: PostingTx, tenantId: string, date: Date,
   sourceType: string, sourceId: string, event: string,
   instructions: LineInstruction[], description?: string,
   currencyCode = 'BASE', exchangeRate?: DecimalInput,
   costCenterId?: string | null, projectId?: string | null,
 ): Promise<void> {
-  const settings = await tx.companySettings.findFirst({ where: { userId } });
+  const settings = await tx.companySettings.findFirst({ where: { tenantId } });
   if (!shouldPost(settings, date)) return;
-  await post(tx, { userId, sourceType, sourceId, event, date, currencyCode, exchangeRate, instructions, description, costCenterId, projectId });
+  await post(tx, { tenantId, sourceType, sourceId, event, date, currencyCode, exchangeRate, instructions, description, costCenterId, projectId });
 }
 
 export async function postInvoiceIssued(
   tx: PostingTx,
-  p: { userId: string; invoiceId: string; date: Date; total: string; tax: string; currencyCode?: string; exchangeRate?: DecimalInput; costCenterId?: string | null; projectId?: string | null; revenueByCentre?: CentreNet[] },
+  p: { tenantId: string; invoiceId: string; date: Date; total: string; tax: string; currencyCode?: string; exchangeRate?: DecimalInput; costCenterId?: string | null; projectId?: string | null; revenueByCentre?: CentreNet[] },
 ): Promise<void> {
   const net = sub(p.total, p.tax);
   const lines: LineInstruction[] = [{ roleKey: 'AR', side: 'debit', amount: p.total }];
@@ -99,13 +99,13 @@ export async function postInvoiceIssued(
   // output-tax liability are balance-sheet items belonging to the entity, not
   // to a department; splitting them would need an allocation rule.
   if (isPos(p.tax)) lines.push({ roleKey: 'OUTPUT_TAX', side: 'credit', amount: p.tax, taxRoleKey: 'OUTPUT_TAX' });
-  await gatedPost(tx, p.userId, p.date, 'Invoice', p.invoiceId, 'issued', lines, undefined, p.currencyCode ?? 'BASE', p.exchangeRate, p.costCenterId, p.projectId);
+  await gatedPost(tx, p.tenantId, p.date, 'Invoice', p.invoiceId, 'issued', lines, undefined, p.currencyCode ?? 'BASE', p.exchangeRate, p.costCenterId, p.projectId);
 }
 
 export async function postInvoicePayment(
   tx: PostingTx,
   p: {
-    userId: string;
+    tenantId: string;
     invoiceId: string;
     paymentId: string;
     date: Date;
@@ -142,10 +142,10 @@ export async function postInvoicePayment(
       { roleKey: 'AR', side: 'credit', amount: p.amount, baseAmount: arBase },
       { roleKey: 'FX_GAIN_LOSS', side: fxSide, amount: '0', baseAmount: fxBase },
     ];
-    await gatedPost(tx, p.userId, p.date, 'InvoicePayment', p.paymentId, 'payment', lines, undefined, p.currencyCode!, payRate);
+    await gatedPost(tx, p.tenantId, p.date, 'InvoicePayment', p.paymentId, 'payment', lines, undefined, p.currencyCode!, payRate);
   } else {
     // Functional currency path or equal rates — no FX leg
-    await gatedPost(tx, p.userId, p.date, 'InvoicePayment', p.paymentId, 'payment', [
+    await gatedPost(tx, p.tenantId, p.date, 'InvoicePayment', p.paymentId, 'payment', [
       bankCashLeg(into, 'debit', p.amount, p.bankGlAccountId),
       { roleKey: 'AR', side: 'credit', amount: p.amount },
     ], undefined, p.currencyCode ?? 'BASE', p.paymentRate);
@@ -154,7 +154,7 @@ export async function postInvoicePayment(
 
 export async function postPurchaseReceived(
   tx: PostingTx,
-  p: { userId: string; purchaseId: string; date: Date; total: string; tax: string; inventoryNet: string; expenseNet: string; currencyCode?: string; exchangeRate?: DecimalInput; costCenterId?: string | null; projectId?: string | null; inventoryByCentre?: CentreNet[]; expenseByCentre?: CentreNet[] },
+  p: { tenantId: string; purchaseId: string; date: Date; total: string; tax: string; inventoryNet: string; expenseNet: string; currencyCode?: string; exchangeRate?: DecimalInput; costCenterId?: string | null; projectId?: string | null; inventoryByCentre?: CentreNet[]; expenseByCentre?: CentreNet[] },
 ): Promise<void> {
   assertSplit('purchase.received', p.total, [p.inventoryNet, p.expenseNet, p.tax]);
   const lines: LineInstruction[] = [];
@@ -181,13 +181,13 @@ export async function postPurchaseReceived(
   pushSplit('PURCHASES', p.expenseNet, p.expenseByCentre);
   if (isPos(p.tax)) lines.push({ roleKey: 'INPUT_TAX', side: 'debit', amount: p.tax, taxRoleKey: 'INPUT_TAX' });
   lines.push({ roleKey: 'AP', side: 'credit', amount: p.total });
-  await gatedPost(tx, p.userId, p.date, 'Purchase', p.purchaseId, 'received', lines, undefined, p.currencyCode ?? 'BASE', p.exchangeRate, p.costCenterId, p.projectId);
+  await gatedPost(tx, p.tenantId, p.date, 'Purchase', p.purchaseId, 'received', lines, undefined, p.currencyCode ?? 'BASE', p.exchangeRate, p.costCenterId, p.projectId);
 }
 
 export async function postSupplierPayment(
   tx: PostingTx,
   p: {
-    userId: string;
+    tenantId: string;
     purchaseId: string;
     paymentId: string;
     date: Date;
@@ -231,10 +231,10 @@ export async function postSupplierPayment(
       bankCashLeg(from, 'credit', p.amount, p.bankGlAccountId, cashBase),
       { roleKey: 'FX_GAIN_LOSS', side: fxSide, amount: '0', baseAmount: fxBase },
     ];
-    await gatedPost(tx, p.userId, p.date, 'SupplierPayment', p.paymentId, 'payment', lines, undefined, p.currencyCode!, payRate);
+    await gatedPost(tx, p.tenantId, p.date, 'SupplierPayment', p.paymentId, 'payment', lines, undefined, p.currencyCode!, payRate);
   } else {
     // Functional currency path or equal rates — no FX leg
-    await gatedPost(tx, p.userId, p.date, 'SupplierPayment', p.paymentId, 'payment', [
+    await gatedPost(tx, p.tenantId, p.date, 'SupplierPayment', p.paymentId, 'payment', [
       { roleKey: 'AP', side: 'debit', amount: p.amount },
       bankCashLeg(from, 'credit', p.amount, p.bankGlAccountId),
     ], undefined, p.currencyCode ?? 'BASE', p.paymentRate);
@@ -243,7 +243,7 @@ export async function postSupplierPayment(
 
 export async function postExpense(
   tx: PostingTx,
-  p: { userId: string; expenseId: string; date: Date; total: string; tax: string; expenseAccountId: string; sourceType?: string | null; paymentModeSlug?: string | null; bankGlAccountId?: string | null; employeePayableAccountId?: string; costCenterId?: string | null; projectId?: string | null; currencyCode?: string; exchangeRate?: DecimalInput },
+  p: { tenantId: string; expenseId: string; date: Date; total: string; tax: string; expenseAccountId: string; sourceType?: string | null; paymentModeSlug?: string | null; bankGlAccountId?: string | null; employeePayableAccountId?: string; costCenterId?: string | null; projectId?: string | null; currencyCode?: string; exchangeRate?: DecimalInput },
 ): Promise<void> {
   const net = sub(p.total, p.tax);
   const lines: LineInstruction[] = [{ accountId: p.expenseAccountId, side: 'debit', amount: net }];
@@ -260,17 +260,17 @@ export async function postExpense(
   }
   const effectiveCurrency = p.currencyCode && p.currencyCode !== 'BASE' ? p.currencyCode : 'BASE';
   const effectiveRate = effectiveCurrency !== 'BASE' ? p.exchangeRate : undefined;
-  await gatedPost(tx, p.userId, p.date, 'Expense', p.expenseId, 'recorded', lines, undefined, effectiveCurrency, effectiveRate, p.costCenterId, p.projectId);
+  await gatedPost(tx, p.tenantId, p.date, 'Expense', p.expenseId, 'recorded', lines, undefined, effectiveCurrency, effectiveRate, p.costCenterId, p.projectId);
 }
 
 export async function postCreditNoteIssued(
-  tx: PostingTx, p: { userId: string; creditNoteId: string; date: Date; total: string; tax: string; currencyCode?: string; exchangeRate?: DecimalInput },
+  tx: PostingTx, p: { tenantId: string; creditNoteId: string; date: Date; total: string; tax: string; currencyCode?: string; exchangeRate?: DecimalInput },
 ): Promise<void> {
   const net = sub(p.total, p.tax);
   const lines: LineInstruction[] = [{ roleKey: 'SALES_RETURNS', side: 'debit', amount: net }];
   if (isPos(p.tax)) lines.push({ roleKey: 'OUTPUT_TAX', side: 'debit', amount: p.tax, taxRoleKey: 'OUTPUT_TAX' });
   lines.push({ roleKey: 'AR', side: 'credit', amount: p.total });
-  await gatedPost(tx, p.userId, p.date, 'CreditNote', p.creditNoteId, 'issued', lines, undefined, p.currencyCode ?? 'BASE', p.exchangeRate);
+  await gatedPost(tx, p.tenantId, p.date, 'CreditNote', p.creditNoteId, 'issued', lines, undefined, p.currencyCode ?? 'BASE', p.exchangeRate);
 }
 
 /**
@@ -280,29 +280,29 @@ export async function postCreditNoteIssued(
  * (the unrefunded CN balance in AR is extinguished).
  */
 export async function postCreditNoteRefund(
-  tx: PostingTx, p: { userId: string; creditNoteId: string; date: Date; amount: string; currencyCode?: string; exchangeRate?: DecimalInput },
+  tx: PostingTx, p: { tenantId: string; creditNoteId: string; date: Date; amount: string; currencyCode?: string; exchangeRate?: DecimalInput },
 ): Promise<void> {
-  await gatedPost(tx, p.userId, p.date, 'CreditNote', p.creditNoteId, 'refund', [
+  await gatedPost(tx, p.tenantId, p.date, 'CreditNote', p.creditNoteId, 'refund', [
     { roleKey: 'AR', side: 'debit', amount: p.amount },
     { roleKey: 'BANK', side: 'credit', amount: p.amount },
   ], undefined, p.currencyCode ?? 'BASE', p.exchangeRate);
 }
 
 export async function postDebitNoteIssued(
-  tx: PostingTx, p: { userId: string; debitNoteId: string; date: Date; total: string; tax: string; inventoryNet: string; expenseNet: string },
+  tx: PostingTx, p: { tenantId: string; debitNoteId: string; date: Date; total: string; tax: string; inventoryNet: string; expenseNet: string },
 ): Promise<void> {
   assertSplit('debitNote.issued', p.total, [p.inventoryNet, p.expenseNet, p.tax]);
   const lines: LineInstruction[] = [{ roleKey: 'AP', side: 'debit', amount: p.total }];
   if (isPos(p.tax)) lines.push({ roleKey: 'INPUT_TAX', side: 'credit', amount: p.tax, taxRoleKey: 'INPUT_TAX' });
   if (isPos(p.inventoryNet)) lines.push({ roleKey: 'INVENTORY', side: 'credit', amount: p.inventoryNet });
   if (isPos(p.expenseNet)) lines.push({ roleKey: 'PURCHASES', side: 'credit', amount: p.expenseNet });
-  await gatedPost(tx, p.userId, p.date, 'DebitNote', p.debitNoteId, 'issued', lines);
+  await gatedPost(tx, p.tenantId, p.date, 'DebitNote', p.debitNoteId, 'issued', lines);
 }
 
 /** Recognize COGS on a sale: Dr COGS / Cr INVENTORY at cost. event 'cogs'. No-op if cost <= 0. */
 export async function postSaleCogs(
   tx: PostingTx,
-  p: { userId: string; invoiceId: string; date: Date; cost: string; costCenterId?: string | null; projectId?: string | null; cogsByCentre?: CentreNet[] },
+  p: { tenantId: string; invoiceId: string; date: Date; cost: string; costCenterId?: string | null; projectId?: string | null; cogsByCentre?: CentreNet[] },
 ): Promise<void> {
   if (!isPos(p.cost)) return;
 
@@ -321,15 +321,15 @@ export async function postSaleCogs(
   }
   lines.push({ roleKey: 'INVENTORY', side: 'credit', amount: p.cost });
 
-  await gatedPost(tx, p.userId, p.date, 'Invoice', p.invoiceId, 'cogs', lines, undefined, 'BASE', undefined, p.costCenterId, p.projectId);
+  await gatedPost(tx, p.tenantId, p.date, 'Invoice', p.invoiceId, 'cogs', lines, undefined, 'BASE', undefined, p.costCenterId, p.projectId);
 }
 
 /** Reverse a sales return's COGS (restock): Dr INVENTORY / Cr COGS. event 'cogs' on the CreditNote. */
 export async function postReturnCogs(
-  tx: PostingTx, p: { userId: string; creditNoteId: string; date: Date; cost: string },
+  tx: PostingTx, p: { tenantId: string; creditNoteId: string; date: Date; cost: string },
 ): Promise<void> {
   if (!isPos(p.cost)) return;
-  await gatedPost(tx, p.userId, p.date, 'CreditNote', p.creditNoteId, 'cogs', [
+  await gatedPost(tx, p.tenantId, p.date, 'CreditNote', p.creditNoteId, 'cogs', [
     { roleKey: 'INVENTORY', side: 'debit', amount: p.cost },
     { roleKey: 'COGS', side: 'credit', amount: p.cost },
   ]);
@@ -344,9 +344,9 @@ export async function postReturnCogs(
  */
 export async function postDepreciation(
   tx: PostingTx,
-  p: { userId: string; assetId: string; date: Date; amount: string; period: string },
+  p: { tenantId: string; assetId: string; date: Date; amount: string; period: string },
 ): Promise<void> {
-  await gatedPost(tx, p.userId, p.date, 'FixedAsset', p.assetId, `depr.${p.period}`, [
+  await gatedPost(tx, p.tenantId, p.date, 'FixedAsset', p.assetId, `depr.${p.period}`, [
     { roleKey: 'DEPRECIATION_EXPENSE', side: 'debit', amount: p.amount },
     { roleKey: 'ACCUMULATED_DEPRECIATION', side: 'credit', amount: p.amount },
   ]);
@@ -364,9 +364,9 @@ export async function postDepreciation(
  */
 export async function postAssetAcquisition(
   tx: PostingTx,
-  p: { userId: string; assetId: string; date: Date; cost: string },
+  p: { tenantId: string; assetId: string; date: Date; cost: string },
 ): Promise<void> {
-  await gatedPost(tx, p.userId, p.date, 'FixedAsset', p.assetId, 'acquisition', [
+  await gatedPost(tx, p.tenantId, p.date, 'FixedAsset', p.assetId, 'acquisition', [
     { roleKey: 'FIXED_ASSET', side: 'debit', amount: p.cost },
     { roleKey: 'BANK', side: 'credit', amount: p.cost },
   ]);
@@ -394,7 +394,7 @@ export async function postAssetAcquisition(
 export async function postAssetDisposal(
   tx: PostingTx,
   p: {
-    userId: string;
+    tenantId: string;
     assetId: string;
     date: Date;
     grossProceeds: DecimalInput;
@@ -431,7 +431,7 @@ export async function postAssetDisposal(
   // gl === 0: no gain/loss leg; entry still balances
 
   await gatedPost(
-    tx, p.userId, p.date,
+    tx, p.tenantId, p.date,
     'FixedAssetDisposal', p.assetId, 'disposal',
     lines, undefined, p.currencyCode ?? 'BASE',
   );
@@ -439,10 +439,10 @@ export async function postAssetDisposal(
 
 /** Reverse a previously-posted document entry (for edit/void). No-op if none. */
 export async function reverseDocument(
-  tx: PostingTx, p: { userId: string; sourceType: string; sourceId: string; event: string },
+  tx: PostingTx, p: { tenantId: string; sourceType: string; sourceId: string; event: string },
 ): Promise<void> {
   const existing = await tx.journalEntry.findFirst({
-    where: { userId: p.userId, sourceType: p.sourceType, sourceId: p.sourceId, event: p.event, isDeleted: false },
+    where: { tenantId: p.tenantId, sourceType: p.sourceType, sourceId: p.sourceId, event: p.event, isDeleted: false },
   });
   if (!existing) return;
   await reverse(tx, existing.id);
@@ -454,7 +454,7 @@ export async function reverseDocument(
  *
  * Why not `reverseDocument` here? `reverse()` mints a `.reversal` mirror but
  * leaves the original entry live, so a later `post()` on the SAME
- * (userId, sourceType, sourceId, event) triple is a no-op — the idempotency
+ * (tenantId, sourceType, sourceId, event) triple is a no-op — the idempotency
  * findFirst (`isDeleted:false`) returns the stale original and no fresh posting
  * is created. That is the re-explain no-op bug for sources whose sourceId is the
  * bank-txn id (BankTxnExplain behaviours, invoice_link, bill_link).
@@ -466,25 +466,25 @@ export async function reverseDocument(
  * WITHOUT leaving a lone reversal — the books stay balanced by removal, and the
  * audit row survives (soft-deleted, not hard-deleted).
  *
- * The DB unique constraint `@@unique([userId, sourceType, sourceId, event])` does
+ * The DB unique constraint `@@unique([tenantId, sourceType, sourceId, event])` does
  * NOT include `isDeleted`, so a soft-deleted row would still occupy the slot and
  * make a fresh `post()` throw P2002. We therefore also mangle the voided entry's
  * `event` to free the slot for a clean re-post.
  */
 export async function voidDocument(
-  tx: PostingTx, p: { userId: string; sourceType: string; sourceId: string; event: string },
+  tx: PostingTx, p: { tenantId: string; sourceType: string; sourceId: string; event: string },
 ): Promise<void> {
   const existing = (await tx.journalEntry.findFirst({
-    where: { userId: p.userId, sourceType: p.sourceType, sourceId: p.sourceId, event: p.event, isDeleted: false },
+    where: { tenantId: p.tenantId, sourceType: p.sourceType, sourceId: p.sourceId, event: p.event, isDeleted: false },
   })) as { id: string; entryDate: Date } | null;
   if (!existing) return;
 
   // Period lock — mirror post()/reverse(): a soft-delete of the forward JE mutates
   // the closed-period trial balance / P&L just as a fresh posting would, so it must
-  // be blocked identically. Keyed on the entry-being-voided's date + userId.
+  // be blocked identically. Keyed on the entry-being-voided's date + tenantId.
   const locked = await tx.accountingPeriod.findFirst({
     where: {
-      userId: p.userId, isLocked: true,
+      tenantId: p.tenantId, isLocked: true,
       startDate: { lte: existing.entryDate }, endDate: { gte: existing.entryDate },
     },
   });
@@ -494,7 +494,7 @@ export async function voidDocument(
 
   await tx.journalEntry.update({
     where: { id: existing.id },
-    // Free the (userId, sourceType, sourceId, event) idempotency slot so a later
+    // Free the (tenantId, sourceType, sourceId, event) idempotency slot so a later
     // re-post creates a FRESH entry instead of colliding on the unique index.
     data: { isDeleted: true, event: `${p.event}.voided.${existing.id}` },
   });

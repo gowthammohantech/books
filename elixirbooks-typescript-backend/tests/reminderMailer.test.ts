@@ -14,17 +14,25 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockReminderFindUnique, mockInvoiceFindUnique, mockInvoiceUpdate, mockSendMail } = vi.hoisted(() => ({
+const {
+  mockReminderFindUnique, mockInvoiceFindUnique, mockInvoiceUpdate, mockSendMail,
+  mockCompanySettingsFindUnique,
+} = vi.hoisted(() => ({
   mockReminderFindUnique: vi.fn(),
   mockInvoiceFindUnique: vi.fn(),
   mockInvoiceUpdate: vi.fn(),
   mockSendMail: vi.fn(),
+  mockCompanySettingsFindUnique: vi.fn(),
 }));
 
 vi.mock('../lib/prisma', () => ({
   prisma: {
     reminder: { findUnique: mockReminderFindUnique },
     invoice: { findUnique: mockInvoiceFindUnique, update: mockInvoiceUpdate },
+    // publicBaseUrl used to arrive via `reminder.company`. Reminder points at
+    // Tenant now, so the mailer reads CompanySettings directly (keyed by the
+    // tenant id, which CompanySettings.tenantId holds).
+    companySettings: { findUnique: mockCompanySettingsFindUnique },
   },
 }));
 
@@ -54,7 +62,7 @@ const BASE_REMINDER = {
   targetInvoiceRel: BASE_INVOICE,
   targetCustomerRel: null,
   targetContactRel: null,
-  company: { publicBaseUrl: null },
+  tenantId: 'tenant-1',
   emailConfig: {
     subject: 'Payment reminder for %InvoiceNumber%',
     body: '<p>Dear %CustomerName%, please pay %Total%. View: %InvoiceUrl%</p>',
@@ -87,6 +95,25 @@ describe('sendReminderEmail — happy path', () => {
 
     // Pure send helper: it must not mark anything sent itself.
     expect(mockInvoiceUpdate).not.toHaveBeenCalled();
+  });
+
+  it('resolves publicBaseUrl from the reminder tenant, not a global lookup', async () => {
+    // Reminder used to carry the setting in on a `company` relation pointing at
+    // CompanySettings. It points at Tenant now, so the base URL is read
+    // per-tenant -- getting this wrong would put one tenant's domain in another
+    // tenant's customer-facing email.
+    mockReminderFindUnique.mockResolvedValue(BASE_REMINDER);
+    mockCompanySettingsFindUnique.mockResolvedValue({ publicBaseUrl: 'https://acme.example' });
+    mockSendMail.mockResolvedValue(undefined);
+
+    const result = await sendReminderEmail({ reminderId: 'rem-1' });
+
+    expect(result).toEqual({ sent: true });
+    expect(mockCompanySettingsFindUnique).toHaveBeenCalledWith({
+      where: { tenantId: 'tenant-1' },
+      select: { publicBaseUrl: true },
+    });
+    expect(mockSendMail.mock.calls[0][0].html).toContain('https://acme.example/invoice/existing-token-abc');
   });
 });
 

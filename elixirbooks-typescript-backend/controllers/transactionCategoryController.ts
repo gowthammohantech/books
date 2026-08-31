@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import type { CategoryGroup, CategoryAppliesTo } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { sendPrismaError } from '../middleware/prismaError';
 
 // ---------------------------------------------------------------------------
@@ -24,7 +24,7 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
 
 export async function list(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const {
       page = '1',
@@ -43,7 +43,7 @@ export async function list(req: Request, res: Response): Promise<void> {
     const skip = (pageN - 1) * limitN;
 
     const where: Prisma.TransactionCategoryWhereInput = {
-      userId,
+      tenantId,
       isDeleted: false,
     };
 
@@ -98,7 +98,7 @@ export async function list(req: Request, res: Response): Promise<void> {
 
 export async function create(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const {
       code,
@@ -122,7 +122,7 @@ export async function create(req: Request, res: Response): Promise<void> {
 
     // Verify accountId belongs to this user (tenant)
     const account = await prisma.account.findFirst({
-      where: { id: accountId, userId, isDeleted: false },
+      where: { id: accountId, tenantId, isDeleted: false },
     });
     if (!account) {
       res.status(400).json({
@@ -134,7 +134,7 @@ export async function create(req: Request, res: Response): Promise<void> {
 
     const category = await prisma.transactionCategory.create({
       data: {
-        userId,
+        tenantId,
         code: code ?? '',
         name,
         group,
@@ -169,11 +169,11 @@ export async function create(req: Request, res: Response): Promise<void> {
 
 export async function update(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const existing = await prisma.transactionCategory.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Transaction category not found' });
@@ -203,7 +203,7 @@ export async function update(req: Request, res: Response): Promise<void> {
     // If accountId is being updated, verify it belongs to this user
     if (accountId !== undefined) {
       const account = await prisma.account.findFirst({
-        where: { id: accountId, userId, isDeleted: false },
+        where: { id: accountId, tenantId, isDeleted: false },
       });
       if (!account) {
         res.status(400).json({
@@ -255,7 +255,7 @@ export async function update(req: Request, res: Response): Promise<void> {
 
 export async function updateStatus(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const { status } = req.body as { status: unknown };
 
@@ -265,7 +265,7 @@ export async function updateStatus(req: Request, res: Response): Promise<void> {
     }
 
     const existing = await prisma.transactionCategory.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Transaction category not found' });
@@ -296,11 +296,11 @@ export async function updateStatus(req: Request, res: Response): Promise<void> {
 
 export async function remove(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const existing = await prisma.transactionCategory.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Transaction category not found' });

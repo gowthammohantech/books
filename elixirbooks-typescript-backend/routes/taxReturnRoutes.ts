@@ -5,7 +5,7 @@
 // pattern as exportRoutes.ts / timeTrackingRoutes.ts).
 //
 // Every route is gated by protect + requirePermission('accounting-reports',
-// 'view') and is tenant-scoped inside the controller (requireUserId =
+// 'view') and is tenant-scoped inside the controller (requireTenantId =
 // ownerId ?? id). Each return has a JSON endpoint plus a `.csv` variant; the
 // JSON endpoint also accepts `?format=csv` to stream the same CSV.
 

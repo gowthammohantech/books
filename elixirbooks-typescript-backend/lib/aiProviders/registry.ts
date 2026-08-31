@@ -19,10 +19,10 @@ import { AiDisabledError } from './types';
  * a key before flipping the toggle.
  */
 export async function getProviderForUser(
-  userId: string,
+  tenantId: string,
   opts: { requireEnabled?: boolean } = {},
 ): Promise<AiProvider> {
-  const config = await prisma.aiConfig.findUnique({ where: { userId } });
+  const config = await prisma.aiConfig.findUnique({ where: { tenantId } });
 
   if (opts.requireEnabled && (!config || !config.enabled)) {
     throw new AiDisabledError();
@@ -60,13 +60,13 @@ export async function getProviderForUser(
  * the loaded config (for budget checks, model overrides, etc.).
  */
 export async function getProviderAndConfig(
-  userId: string,
+  tenantId: string,
   opts: { requireEnabled?: boolean } = {},
 ): Promise<{ provider: AiProvider; config: Awaited<ReturnType<typeof prisma.aiConfig.findUnique>> }> {
-  const config = await prisma.aiConfig.findUnique({ where: { userId } });
+  const config = await prisma.aiConfig.findUnique({ where: { tenantId } });
   if (opts.requireEnabled && (!config || !config.enabled)) {
     throw new AiDisabledError();
   }
-  const provider = await getProviderForUser(userId, opts);
+  const provider = await getProviderForUser(tenantId, opts);
   return { provider, config };
 }

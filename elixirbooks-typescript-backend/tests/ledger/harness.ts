@@ -25,7 +25,7 @@ interface StoredLine {
 
 interface StoredEntry {
   id: string;
-  userId: string;
+  tenantId: string;
   entryDate: Date;
   sourceType: string | null;
   sourceId: string | null;
@@ -40,7 +40,7 @@ interface StoredEntry {
 // Harness factory
 // ---------------------------------------------------------------------------
 
-export function buildHarness(pack: CountryPack, userId = 'u-golden') {
+export function buildHarness(pack: CountryPack, tenantId = 'u-golden') {
   const entries: StoredEntry[] = [];
   let seq = 0;
 
@@ -69,7 +69,7 @@ export function buildHarness(pack: CountryPack, userId = 'u-golden') {
       return (
         entries.find((e) => {
           if ('id' in w && e.id !== w['id']) return false;
-          if ('userId' in w && e.userId !== w['userId']) return false;
+          if ('tenantId' in w && e.tenantId !== w['tenantId']) return false;
           if ('sourceType' in w && e.sourceType !== w['sourceType']) return false;
           if ('sourceId' in w && e.sourceId !== w['sourceId']) return false;
           if ('event' in w && e.event !== w['event']) return false;
@@ -81,7 +81,7 @@ export function buildHarness(pack: CountryPack, userId = 'u-golden') {
 
     async create(args: { data: unknown }): Promise<{ id: string }> {
       const d = args.data as {
-        userId: string;
+        tenantId: string;
         entryDate: Date;
         sourceType?: string | null;
         sourceId?: string | null;
@@ -92,7 +92,7 @@ export function buildHarness(pack: CountryPack, userId = 'u-golden') {
       const id = nextId();
       const entry: StoredEntry = {
         id,
-        userId: d.userId,
+        tenantId: d.tenantId,
         entryDate: d.entryDate,
         sourceType: d.sourceType ?? null,
         sourceId: d.sourceId ?? null,

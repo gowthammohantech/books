@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 const VALID_ACTIONS = new Set(['CREATE', 'UPDATE', 'DELETE']);
 
@@ -12,12 +12,12 @@ function toPositiveInt(value: unknown, fallback: number): number {
 
 export async function listActivityLogs(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const page = toPositiveInt(req.query.page, 1);
     const limit = toPositiveInt(req.query.limit, 10);
     const skip = (page - 1) * limit;
 
-    const where: Prisma.AuditLogWhereInput = { userId };
+    const where: Prisma.AuditLogWhereInput = { tenantId };
 
     const { entityType, entityId, action, dateFrom, dateTo, search } = req.query as Record<string, string>;
     if (entityType) where.entityType = entityType;

@@ -51,7 +51,7 @@ describe('resolveProductTaxRate — fallback chain (spec 2026-07-12 §4B)', () =
   });
 
   // Cross-task finding (final review 2026-07-12 §4B): the global "No Tax"
-  // TaxGroup (no userId) holds EVERY tenant's pack-seeded rates
+  // TaxGroup (no tenantId) holds EVERY tenant's pack-seeded rates
   // (ensureDefaultTaxGroup.ts + seedPackTaxRates.ts), so a naive N>1 sum
   // returns nonsense like {name:'No Tax', rate:63}. Mirror the migration
   // script's guard (prisma/migrateTaxesToRates.ts planGroupResolution).

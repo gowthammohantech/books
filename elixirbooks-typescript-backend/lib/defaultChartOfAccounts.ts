@@ -39,21 +39,21 @@ export const DEFAULT_ACCOUNTS: SeedAccount[] = [
   { code: '5200', name: 'Other Expenses', accountType: 'EXPENSE', parentCode: '5000' },
 ];
 
-export async function seedDefaultChart(prisma: import('@prisma/client').PrismaClient, userId: string): Promise<{ created: number; skipped: number }> {
+export async function seedDefaultChart(prisma: import('@prisma/client').PrismaClient, tenantId: string): Promise<{ created: number; skipped: number }> {
   let created = 0;
   let skipped = 0;
   const codeToId = new Map<string, string>();
 
   // First pass: create top-level (no parent)
   for (const acc of DEFAULT_ACCOUNTS.filter((a) => !a.parentCode)) {
-    const existing = await prisma.account.findUnique({ where: { userId_code: { userId, code: acc.code } } });
+    const existing = await prisma.account.findUnique({ where: { tenantId_code: { tenantId, code: acc.code } } });
     if (existing) {
       codeToId.set(acc.code, existing.id);
       skipped++;
       continue;
     }
     const row = await prisma.account.create({
-      data: { userId, code: acc.code, name: acc.name, accountType: acc.accountType },
+      data: { tenantId, code: acc.code, name: acc.name, accountType: acc.accountType },
     });
     codeToId.set(acc.code, row.id);
     created++;
@@ -61,7 +61,7 @@ export async function seedDefaultChart(prisma: import('@prisma/client').PrismaCl
 
   // Second pass: children
   for (const acc of DEFAULT_ACCOUNTS.filter((a) => !!a.parentCode)) {
-    const existing = await prisma.account.findUnique({ where: { userId_code: { userId, code: acc.code } } });
+    const existing = await prisma.account.findUnique({ where: { tenantId_code: { tenantId, code: acc.code } } });
     if (existing) {
       codeToId.set(acc.code, existing.id);
       skipped++;
@@ -69,7 +69,7 @@ export async function seedDefaultChart(prisma: import('@prisma/client').PrismaCl
     }
     const parentId = codeToId.get(acc.parentCode!);
     const row = await prisma.account.create({
-      data: { userId, code: acc.code, name: acc.name, accountType: acc.accountType, parentId: parentId ?? null },
+      data: { tenantId, code: acc.code, name: acc.name, accountType: acc.accountType, parentId: parentId ?? null },
     });
     codeToId.set(acc.code, row.id);
     created++;

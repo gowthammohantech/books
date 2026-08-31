@@ -11,12 +11,12 @@
 //
 // Period is `?from=&to=` (UTC date-only, inclusive). Every endpoint is gated by
 // protect + requirePermission('accounting-reports','view') (wired in the route)
-// and tenant-scoped via requireUserId (ownerId ?? id).
+// and tenant-scoped via requireTenantId (ownerId ?? id).
 
 import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import {
   loadTaxFigures,
   type TaxFigures,
@@ -255,9 +255,9 @@ const BOX_CSV_COLUMNS: CsvColumn[] = [
 // GET /tax-returns/uk-vat[.csv]?from=&to=
 export async function ukVatReturn(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const period = parsePeriod(req);
-    const figures = await loadTaxFigures(userId, period.from, period.to);
+    const figures = await loadTaxFigures(tenantId, period.from, period.to);
     const boxes = buildUkVatBoxes(figures);
 
     if (wantsCsv(req)) {
@@ -273,9 +273,9 @@ export async function ukVatReturn(req: Request, res: Response): Promise<void> {
 // GET /tax-returns/au-bas[.csv]?from=&to=
 export async function auBasReturn(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const period = parsePeriod(req);
-    const figures = await loadTaxFigures(userId, period.from, period.to);
+    const figures = await loadTaxFigures(tenantId, period.from, period.to);
     const boxes = buildAuBasBoxes(figures);
 
     if (wantsCsv(req)) {
@@ -291,9 +291,9 @@ export async function auBasReturn(req: Request, res: Response): Promise<void> {
 // GET /tax-returns/nz-gst[.csv]?from=&to=
 export async function nzGstReturn(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const period = parsePeriod(req);
-    const figures = await loadTaxFigures(userId, period.from, period.to);
+    const figures = await loadTaxFigures(tenantId, period.from, period.to);
     const boxes = buildNzGstBoxes(figures);
 
     if (wantsCsv(req)) {
@@ -309,9 +309,9 @@ export async function nzGstReturn(req: Request, res: Response): Promise<void> {
 // GET /tax-returns/eu-vat[.csv]?from=&to=
 export async function euVatReturn(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const period = parsePeriod(req);
-    const figures = await loadTaxFigures(userId, period.from, period.to);
+    const figures = await loadTaxFigures(tenantId, period.from, period.to);
     const summary = buildEuVatSummary(figures);
 
     if (wantsCsv(req)) {
@@ -441,13 +441,13 @@ const EC_SALES_CSV_COLUMNS: CsvColumn[] = [
  * ISO2 and delegate to the pure builder.
  */
 export async function loadEcSalesList(
-  userId: string,
+  tenantId: string,
   from: Date,
   to: Date,
 ): Promise<EcSalesList> {
   const invoices = await prisma.invoice.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       reverseCharge: true,
       invoiceDate: { gte: from, lte: to },
@@ -502,9 +502,9 @@ export async function loadEcSalesList(
 // GET /tax-returns/eu-ec-sales-list[.csv]?from=&to=
 export async function euEcSalesList(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const period = parsePeriod(req);
-    const list = await loadEcSalesList(userId, period.from, period.to);
+    const list = await loadEcSalesList(tenantId, period.from, period.to);
 
     if (wantsCsv(req)) {
       sendCsv(res, 'eu-ec-sales-list.csv', list.rows as unknown as Record<string, unknown>[], EC_SALES_CSV_COLUMNS);
@@ -619,15 +619,15 @@ const OSS_CSV_COLUMNS: CsvColumn[] = [
  * resolve the supplier (tenant) ISO-2 + each invoice's destination, then delegate
  * to the pure builder. Tenant-scoped.
  */
-export async function loadOssReturn(userId: string, from: Date, to: Date): Promise<OssReturn> {
+export async function loadOssReturn(tenantId: string, from: Date, to: Date): Promise<OssReturn> {
   const settings = await prisma.companySettings.findUnique({
-    where: { userId },
+    where: { tenantId },
     select: { countryCode: true, countryId: true, country: true },
   });
   const supplierCountry = await resolveOssSupplierCountry(prisma, settings);
 
   const invoices = (await prisma.invoice.findMany({
-    where: { userId, isDeleted: false, invoiceDate: { gte: from, lte: to } },
+    where: { tenantId, isDeleted: false, invoiceDate: { gte: from, lte: to } },
     select: {
       taxableAmount: true,
       reverseCharge: true,
@@ -643,9 +643,9 @@ export async function loadOssReturn(userId: string, from: Date, to: Date): Promi
 // GET /tax-returns/eu-oss[.csv]?from=&to=
 export async function euOssReturn(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const period = parsePeriod(req);
-    const oss = await loadOssReturn(userId, period.from, period.to);
+    const oss = await loadOssReturn(tenantId, period.from, period.to);
 
     if (wantsCsv(req)) {
       sendCsv(res, 'eu-oss-return.csv', oss.rows as unknown as Record<string, unknown>[], OSS_CSV_COLUMNS);
@@ -671,9 +671,9 @@ function parseYearParam(value: unknown): number {
 // GET /tax-returns/eu-oss/threshold?year=
 export async function euOssThreshold(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const year = parseYearParam(req.query.year);
-    const t = await loadOssThreshold(userId, year);
+    const t = await loadOssThreshold(tenantId, year);
     res.json({
       success: true,
       data: {

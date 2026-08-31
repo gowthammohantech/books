@@ -869,12 +869,21 @@ export const navItems: NavItemType[] = [
 ];
 
 // --- Permission Check Helpers ---
+//
+// These take permissions and nothing else. They used to short-circuit to true
+// for `user.user_type === 1`, which made the sidebar - and through
+// buildCommands the command palette and global search - show every module to
+// anyone who had signed up as an admin ANYWHERE, including inside a workspace
+// they had only been invited to. The permissions passed in are the ones the
+// server issued for the ACTIVE workspace, and they are now the only input.
+//
+// This costs an Owner nothing: provisioning grants the Owner role allowAll on
+// every module, which is the same reason the backend could drop its own copy
+// of this bypass (middleware/requirePermission.ts).
 export const canView = (
     slug: string,
-    permissions: PermissionSet[],
-    user: any
+    permissions: PermissionSet[]
 ): boolean => {
-    if (user && user.user_type === 1) return true; // Super admin can view all
     const perm = permissions.find((p) => p.moduleSlug === slug);
     // Fail-open: server-side permissions aren't enforced (client-gating only),
     // so a slug with no matching permission row should show, not silently vanish.
@@ -884,10 +893,8 @@ export const canView = (
 
 export const canCreate = (
     slug: string,
-    permissions: PermissionSet[],
-    user: any
+    permissions: PermissionSet[]
 ): boolean => {
-    if (user && user.user_type === 1) return true; // Super admin can create all
     const perm = permissions.find((p) => p.moduleSlug === slug);
     if (!perm) return false;
     return perm.allowAll || perm.create;

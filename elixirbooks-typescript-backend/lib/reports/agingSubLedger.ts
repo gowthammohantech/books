@@ -49,14 +49,14 @@ export interface SubLedgerData {
   docs: Map<string, SubLedgerDoc>;
 }
 
-async function controlAccountId(tx: AgingPrisma, userId: string, roleKey: 'AR' | 'AP'): Promise<string | null> {
-  const m = await tx.ledgerAccountMapping.findFirst({ where: { userId, roleKey }, select: { accountId: true } });
+async function controlAccountId(tx: AgingPrisma, tenantId: string, roleKey: 'AR' | 'AP'): Promise<string | null> {
+  const m = await tx.ledgerAccountMapping.findFirst({ where: { tenantId, roleKey }, select: { accountId: true } });
   return m?.accountId ?? null;
 }
 
-async function controlLines(tx: AgingPrisma, userId: string, accountId: string, asOf: Date) {
+async function controlLines(tx: AgingPrisma, tenantId: string, accountId: string, asOf: Date) {
   const rows = await tx.journalLine.findMany({
-    where: { accountId, journalEntry: { userId, isDeleted: false, entryDate: { lte: asOf } } },
+    where: { accountId, journalEntry: { tenantId, isDeleted: false, entryDate: { lte: asOf } } },
     select: {
       baseDebit: true,
       baseCredit: true,
@@ -76,11 +76,11 @@ async function controlLines(tx: AgingPrisma, userId: string, accountId: string, 
  * attributed to its source invoice (resolving payment/credit-note ids back to
  * the invoice they settle), plus per-invoice labels and due dates.
  */
-export async function loadArSubLedger(tx: AgingPrisma, userId: string, asOf: Date): Promise<SubLedgerData> {
-  const accountId = await controlAccountId(tx, userId, 'AR');
+export async function loadArSubLedger(tx: AgingPrisma, tenantId: string, asOf: Date): Promise<SubLedgerData> {
+  const accountId = await controlAccountId(tx, tenantId, 'AR');
   if (!accountId) return { available: false, lines: [], docs: new Map() };
 
-  const raw = await controlLines(tx, userId, accountId, asOf);
+  const raw = await controlLines(tx, tenantId, accountId, asOf);
 
   // Resolve the source ids that are NOT themselves invoice ids back to invoices.
   const paymentIds = raw.filter((l) => l.sourceType === 'InvoicePayment' && l.sourceId).map((l) => l.sourceId!);
@@ -141,11 +141,11 @@ export async function loadArSubLedger(tx: AgingPrisma, userId: string, asOf: Dat
  * attributed to its source purchase (resolving supplier-payment/debit-note ids
  * back to the purchase they settle), plus per-purchase labels and due dates.
  */
-export async function loadApSubLedger(tx: AgingPrisma, userId: string, asOf: Date): Promise<SubLedgerData> {
-  const accountId = await controlAccountId(tx, userId, 'AP');
+export async function loadApSubLedger(tx: AgingPrisma, tenantId: string, asOf: Date): Promise<SubLedgerData> {
+  const accountId = await controlAccountId(tx, tenantId, 'AP');
   if (!accountId) return { available: false, lines: [], docs: new Map() };
 
-  const raw = await controlLines(tx, userId, accountId, asOf);
+  const raw = await controlLines(tx, tenantId, accountId, asOf);
 
   const paymentIds = raw.filter((l) => l.sourceType === 'SupplierPayment' && l.sourceId).map((l) => l.sourceId!);
   const debitNoteIds = raw.filter((l) => l.sourceType === 'DebitNote' && l.sourceId).map((l) => l.sourceId!);

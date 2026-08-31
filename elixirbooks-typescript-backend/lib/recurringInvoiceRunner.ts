@@ -72,11 +72,13 @@ export async function runRecurringForInvoice(invoiceId: string): Promise<CloneRe
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const prefixSetting = await tx.generalSetting.findUnique({ where: { key: 'invoicePrefix' } });
+    const prefixSetting = await tx.generalSetting.findUnique({
+      where: { tenantId_key: { tenantId: source.tenantId, key: 'invoicePrefix' } },
+    });
     const prefix =
       prefixSetting && typeof prefixSetting.value === 'string' ? prefixSetting.value : 'INV-';
     const lastInvoice = await tx.invoice.findFirst({
-      where: { invoiceNumber: { not: null }, invoiceType: 'INVOICE' },
+      where: { tenantId: source.tenantId, invoiceNumber: { not: null }, invoiceType: 'INVOICE' },
       orderBy: { createdAt: 'desc' },
       select: { invoiceNumber: true },
     });
@@ -137,7 +139,7 @@ export async function runRecurringForInvoice(invoiceId: string): Promise<CloneRe
     // double-post. PROFORMA never posts AR (mirrors postInvoiceLedger).
     if (created.invoiceType !== 'PROFORMA') {
       await postInvoiceIssued(tx as unknown as PostingTx, {
-        userId: created.userId,
+        tenantId: created.tenantId,
         invoiceId: created.id,
         date: created.invoiceDate ?? today,
         total: String(created.TotalAmount),
@@ -159,19 +161,19 @@ export async function runRecurringForInvoice(invoiceId: string): Promise<CloneRe
         const productId = item.productId ?? item.id;
         const qty = item.qty != null ? Number(item.qty) : 0;
         if (!productId || !qty) continue;
-        const product = await tx.product.findUnique({
-          where: { id: productId },
+        const product = await tx.product.findFirst({
+          where: { id: productId, tenantId: created.tenantId },
           select: { item_type: true },
         });
         if (product?.item_type === 'Service') continue;
         const inv = await tx.inventory.findFirst({
-          where: { productId, userId: created.userId, isDeleted: false },
+          where: { productId, tenantId: created.tenantId, isDeleted: false },
         });
         if (!inv) continue;
         totalCogs = totalCogs.plus(inv.avgCost.times(new PrismaNS.Decimal(qty)));
       }
       await postSaleCogs(tx as unknown as PostingTx, {
-        userId: created.userId,
+        tenantId: created.tenantId,
         invoiceId: created.id,
         date: created.invoiceDate ?? today,
         cost: totalCogs.toString(),

@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import {
   tenantScope,
-  requireUserId,
+  requireTenantId,
   UnauthorizedError,
 } from '../lib/tenantScope';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
@@ -65,7 +65,7 @@ function sumInvoiceItems(items: Prisma.JsonValue | null | undefined): number {
 
 export async function getIncomeStats(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -96,7 +96,7 @@ export async function getIncomeStats(req: Request, res: Response): Promise<void>
 
     // ===== Filters =====
     // Voided payments never count toward received-income totals or the report list.
-    const baseFilter: Prisma.InvoicePaymentWhereInput = { isVoided: false, invoice: { userId } };
+    const baseFilter: Prisma.InvoicePaymentWhereInput = { isVoided: false, invoice: { tenantId } };
     const startD = parseDate(startDate);
     const endD = parseDate(endDate);
     if (startD && endD) {
@@ -293,7 +293,7 @@ export async function getIncomeStats(req: Request, res: Response): Promise<void>
 
 export async function getPurchaseReport(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       startDate,
       endDate,
@@ -331,7 +331,7 @@ export async function getPurchaseReport(req: Request, res: Response): Promise<vo
     const filters: Prisma.SupplierPaymentWhereInput = {
       isDeleted: false,
       isVoided: false,
-      purchase: { userId },
+      purchase: { tenantId },
     };
     const startD = parseDate(startDate);
     const endD = parseDate(endDate);
@@ -502,7 +502,7 @@ export async function getPurchaseReport(req: Request, res: Response): Promise<vo
 
 export async function getPaymentSummaryReport(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -538,7 +538,7 @@ export async function getPaymentSummaryReport(req: Request, res: Response): Prom
 
     // ---------- Filters ----------
     // Voided payments never count toward received-payment totals or the report list.
-    const filter: Prisma.InvoicePaymentWhereInput = { isVoided: false, invoice: { userId } };
+    const filter: Prisma.InvoicePaymentWhereInput = { isVoided: false, invoice: { tenantId } };
     const startD = parseDate(startDate);
     const endD = parseDate(endDate);
     if (startD && endD) {

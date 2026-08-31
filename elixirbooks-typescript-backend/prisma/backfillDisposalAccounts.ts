@@ -25,11 +25,11 @@ const DISPOSAL_ROLES: LedgerRole[] = ['GAIN_ON_DISPOSAL', 'LOSS_ON_DISPOSAL'];
 
 async function backfillDisposalAccounts(): Promise<void> {
   // All owners: users whose ownerId is null (i.e. they ARE the owner row).
-  const owners = await prisma.user.findMany({
-    where: { ownerId: null },
+  const owners = await prisma.tenant.findMany({
+    where: { deletedAt: null },
     select: {
       id: true,
-      email: true,
+      name: true,
       companySettings: {
         select: {
           countryCode: true,
@@ -49,10 +49,10 @@ async function backfillDisposalAccounts(): Promise<void> {
   for (const owner of owners) {
     // Only process owners that have an initialized ledger (>0 mappings).
     const existingCount = await prisma.ledgerAccountMapping.count({
-      where: { userId: owner.id },
+      where: { tenantId: owner.id },
     });
     if (existingCount === 0) {
-      console.log(`[SKIP] ${owner.email} (${owner.id}) — no ledger mappings yet; run backfillLedgerInit first`);
+      console.log(`[SKIP] ${owner.name} (${owner.id}) — no ledger mappings yet; run backfillLedgerInit first`);
       skipped += 1;
       continue;
     }
@@ -65,7 +65,7 @@ async function backfillDisposalAccounts(): Promise<void> {
 
     const pack = getPack(packCode);
     if (!pack) {
-      console.error(`[ERR]  ${owner.email} (${owner.id}) — could not resolve pack for code "${packCode}"`);
+      console.error(`[ERR]  ${owner.name} (${owner.id}) — could not resolve pack for code "${packCode}"`);
       errors += 1;
       continue;
     }
@@ -77,26 +77,26 @@ async function backfillDisposalAccounts(): Promise<void> {
       for (const roleKey of DISPOSAL_ROLES) {
         // Check if this role mapping already exists.
         const existingMapping = await prisma.ledgerAccountMapping.findUnique({
-          where: { userId_roleKey: { userId: owner.id, roleKey } },
+          where: { tenantId_roleKey: { tenantId: owner.id, roleKey } },
         });
         if (existingMapping) {
-          console.log(`[SKIP] ${owner.email} — role ${roleKey} already mapped`);
+          console.log(`[SKIP] ${owner.name} — role ${roleKey} already mapped`);
           continue;
         }
 
         // Find the pack account for this role.
         const packAccount = pack.accounts.find((a) => a.role === roleKey);
         if (!packAccount) {
-          console.error(`[ERR]  ${owner.email} — pack ${packCode} has no account for role ${roleKey}`);
+          console.error(`[ERR]  ${owner.name} — pack ${packCode} has no account for role ${roleKey}`);
           errors += 1;
           continue;
         }
 
         // Upsert the Account row (create if missing; no-op on update).
         const account = await prisma.account.upsert({
-          where: { userId_code: { userId: owner.id, code: packAccount.code } },
+          where: { tenantId_code: { tenantId: owner.id, code: packAccount.code } },
           create: {
-            userId: owner.id,
+            tenantId: owner.id,
             code: packAccount.code,
             name: packAccount.name,
             accountType: packAccount.accountType,
@@ -108,19 +108,19 @@ async function backfillDisposalAccounts(): Promise<void> {
 
         // Upsert the LedgerAccountMapping row.
         await prisma.ledgerAccountMapping.upsert({
-          where: { userId_roleKey: { userId: owner.id, roleKey } },
-          create: { userId: owner.id, roleKey, accountId: account.id },
+          where: { tenantId_roleKey: { tenantId: owner.id, roleKey } },
+          create: { tenantId: owner.id, roleKey, accountId: account.id },
           update: { accountId: account.id },
         });
 
-        console.log(`[OK]   ${owner.email} — added role ${roleKey} -> account ${packAccount.code} (${packAccount.name})`);
+        console.log(`[OK]   ${owner.name} — added role ${roleKey} -> account ${packAccount.code} (${packAccount.name})`);
         ownerBackfilled = true;
       }
 
       if (ownerBackfilled) backfilled += 1;
       else skipped += 1;
     } catch (err) {
-      console.error(`[ERR]  ${owner.email} (${owner.id}): ${(err as Error).message}`);
+      console.error(`[ERR]  ${owner.name} (${owner.id}): ${(err as Error).message}`);
       errors += 1;
     }
   }

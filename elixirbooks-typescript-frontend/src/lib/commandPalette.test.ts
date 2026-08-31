@@ -8,8 +8,9 @@ const perm = (slug: string, over: Partial<PermissionSet> = {}): PermissionSet =>
     view: true, create: true, edit: true, delete: true, allowAll: false, ...over,
 });
 
-/** A staff user, so permission rows are actually consulted (user_type 1 short-circuits). */
-const staff = { user_type: 2 };
+// No user fixture any more: gating is a pure function of the permission rows
+// the server issued for the active workspace. There is no longer a kind of
+// person the permission rows do not apply to.
 
 const tree: NavItemType[] = [
     { type: 'link', to: '/admin', title: 'Dashboard', slug: 'dashboard' },
@@ -31,7 +32,7 @@ const tree: NavItemType[] = [
 ];
 
 const allPerms = ['dashboard', 'sales', 'invoices', 'credit-notes', 'reports', 'accounting'].map((s) => perm(s));
-const build = (permissions = allPerms) => buildCommands(permissions, staff, tree);
+const build = (permissions = allPerms) => buildCommands(permissions, tree);
 const titles = (permissions = allPerms) => build(permissions).map((c) => c.title);
 
 describe('buildCommands', () => {
@@ -89,8 +90,10 @@ describe('buildCommands', () => {
 
 describe('coverage of the real sidebar tree', () => {
     // Guards against the palette silently drifting behind the menu: every
-    // top-level module a super admin can see must be reachable.
-    const superAdminCommands = buildCommands([], { user_type: 1 });
+    // top-level module must be reachable. Passing NO permission rows exercises
+    // canView's fail-open branch, which is what makes this a coverage check of
+    // the tree rather than of the gating.
+    const superAdminCommands = buildCommands([]);
 
     it.each([
         'Dashboard', 'Contacts', 'Invoices', 'Quotations', 'Purchases',

@@ -15,6 +15,7 @@
     "prisma:studio": "prisma studio",
     "prisma:format": "prisma format",
     "prisma:validate": "prisma validate",
+    "prisma:check:tenant": "ts-node prisma/checkTenantIntegrity.ts",
     "prisma:seed": "prisma db seed",
     "prisma:seed:modules": "ts-node prisma/seedModules.ts",
     "prisma:seed:field-types": "ts-node prisma/seedFieldTypes.ts",

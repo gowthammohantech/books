@@ -18,8 +18,10 @@ import NoRecords from '@components/admin/NoRecords';
  * backend runs in MOCK mode (deterministic data, no real filing) — surfaced
  * here with a clear banner.
  *
- * Config (PUT /mtd/config) is gated to the Owner/super-admin (user_type === 1),
- * matching the backup-button gate used elsewhere.
+ * Config (PUT /mtd/config) is gated to the workspace OWNER, read from the
+ * active membership rather than from the user record: ownership is a property
+ * of a membership now, so the same person can be an owner in one company and
+ * an ordinary member in another.
  */
 
 interface MtdConfig {
@@ -53,9 +55,9 @@ function currentYearRange(): { from: string; to: string } {
 
 export default function MtdPanel() {
   const token = useSelector((s: RootState) => s.auth.token);
-  const user = useSelector((s: RootState) => s.auth.user);
+  const activeTenant = useSelector((s: RootState) => s.auth.activeTenant);
   const { formatDate } = useDateFormatter();
-  const isOwner = user?.user_type === 1;
+  const isOwner = !!activeTenant?.isOwner;
 
   const authHeader = { headers: { Authorization: `Bearer ${token}` } };
 

@@ -116,7 +116,7 @@ describe('createSchedule', () => {
     expect(res.statusCode).toBe(201);
     expect(mockCreate).toHaveBeenCalledTimes(1);
     const data = mockCreate.mock.calls[0][0].data;
-    expect(data.userId).toBe('tenant-1');
+    expect(data.tenantId).toBe('tenant-1');
     expect(data.status).toBe('ACTIVE');
     expect(data.occurrencesCount).toBe(0);
     // nextRunDate is set equal to startOn
@@ -197,7 +197,7 @@ describe('listSchedules', () => {
     expect(row.TotalAmount).toBe('118.0000');
     expect(body.data.pagination.totalPages).toBe(1);
     // tenant scoping
-    expect(mockFindMany.mock.calls[0][0].where.userId).toBe('tenant-1');
+    expect(mockFindMany.mock.calls[0][0].where.tenantId).toBe('tenant-1');
   });
 });
 

@@ -16,13 +16,13 @@ import { nextDocumentNumber, type NumberingModel } from '../documentNumbering';
 
 export interface ApplyBillPaymentDb extends PostingTx {
   purchase: {
-    findFirst: (args: { where: { id: string; userId: string; isDeleted: boolean } }) => Promise<{
+    findFirst: (args: { where: { id: string; tenantId: string; isDeleted: boolean } }) => Promise<{
       id: string;
       totalAmount: unknown;
       paidAmount: unknown;
       balanceAmount: unknown;
       status: string;
-      userId: string;
+      tenantId: string;
       supplierId?: string | null;
       vendorId?: string | null;
       billTo?: string | null;
@@ -38,7 +38,7 @@ export interface ApplyBillPaymentDb extends PostingTx {
     findUnique: (args: { where: { id: string } }) => Promise<{ id: string; purchaseId: string; amount: unknown; isVoided: boolean } | null>;
     findFirst: (args: {
       where:
-        | { paymentId: { not: null }; purchase: { userId: string } }
+        | { paymentId: { not: null }; purchase: { tenantId: string } }
         | { paymentId: string }
         | { paymentId: { not: null } };
       orderBy?: { createdAt: 'desc' } | { paymentId: 'desc' };
@@ -52,7 +52,7 @@ export interface ApplyBillPaymentDb extends PostingTx {
 // ---------------------------------------------------------------------------
 
 export interface ApplyBillPaymentInput {
-  userId: string;
+  tenantId: string;
   purchaseId: string;       // the bill/purchase id
   amount: string;           // string Decimal (bank txn amount)
   date: Date;
@@ -83,12 +83,15 @@ export interface ApplyBillPaymentResult {
 // callers of explainAndPost) turns it into a 409 instead of a raw 500.
 // ---------------------------------------------------------------------------
 
-function generatePaymentId(db: ApplyBillPaymentDb, userId: string, prefix = 'PAY-'): Promise<string> {
+function generatePaymentId(db: ApplyBillPaymentDb, tenantId: string, prefix = 'PAY-'): Promise<string> {
   return nextDocumentNumber({
     model: db.supplierPayment as unknown as NumberingModel,
     field: 'paymentId',
     prefix,
-    tenantWhere: { purchase: { userId } },
+    // SupplierPayment carries its own tenantId since P2, so the numbering
+    // lookup no longer has to reach the tenant through the parent Purchase.
+    // It also lets the query use SupplierPayment_tenantId_paymentId_key.
+    tenantWhere: { tenantId },
   });
 }
 
@@ -100,10 +103,10 @@ export async function applyBillPayment(
   db: ApplyBillPaymentDb,
   input: ApplyBillPaymentInput,
 ): Promise<ApplyBillPaymentResult> {
-  const { userId, purchaseId, amount, date, bankAccountId, bankGlAccountId, paymentModeId, paymentModeSlug, currencyCode } = input;
+  const { tenantId, purchaseId, amount, date, bankAccountId, bankGlAccountId, paymentModeId, paymentModeSlug, currencyCode } = input;
 
-  // 1. Load purchase scoped to userId (not deleted).
-  const purchase = await db.purchase.findFirst({ where: { id: purchaseId, userId, isDeleted: false } });
+  // 1. Load purchase scoped to tenantId (not deleted).
+  const purchase = await db.purchase.findFirst({ where: { id: purchaseId, tenantId, isDeleted: false } });
   if (!purchase) throw new Error('BILL_NOT_FOUND');
 
   // 2. Already fully paid or cancelled?
@@ -129,7 +132,7 @@ export async function applyBillPayment(
   // supplierId MUST be a Supplier FK (or null). vendorId / billTo are User FKs —
   // using them here would cause a FK violation in production.
   const supplierId = purchase.supplierId ?? null;
-  const paymentIdVal = await generatePaymentId(db, userId);
+  const paymentIdVal = await generatePaymentId(db, tenantId);
   // NOTE: movedBankBalance is intentionally left at its default (false). The
   // explain flow sets sourceType='BANK' but NEVER moves bankDetail.currentBalance
   // (the pre-existing imported statement line owns the money), so the delete/void
@@ -145,7 +148,7 @@ export async function applyBillPayment(
     amount: toDecimal(amount),
     paidAmount: toDecimal(amount),
     dueAmount: toDecimal(0),
-    createdBy: userId,
+    createdBy: tenantId,
   };
   if (currencyCode) spData['currencyCode'] = currencyCode;
 
@@ -160,7 +163,7 @@ export async function applyBillPayment(
   const documentRate =
     isForeign && purchase.exchangeRate != null ? toDecimal(purchase.exchangeRate as string) : undefined;
   await postSupplierPayment(db, {
-    userId,
+    tenantId,
     purchaseId: purchase.id,
     paymentId: supplierPayment.id,
     date,

@@ -11,8 +11,8 @@ function fakeTx() {
     },
     taxRate: {
       findFirst: vi.fn(async (args: unknown) => {
-        const w = (args as { where: { userId: string; name: string } }).where;
-        const hit = rates.find((r) => r.userId === w.userId && r.name === w.name);
+        const w = (args as { where: { tenantId: string; name: string } }).where;
+        const hit = rates.find((r) => r.tenantId === w.tenantId && r.name === w.name);
         return hit ? { id: 'existing' } : null;
       }),
       create: vi.fn(async (args: { data: Record<string, unknown> }) => {

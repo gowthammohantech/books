@@ -13,7 +13,7 @@ import { Prisma } from '@prisma/client';
 import type { PurchaseStatus } from '@prisma/client';
 
 import { prisma } from '../../../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../../../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import { sendPrismaError } from '../../../middleware/prismaError';
 import {
   reverseSupplierPaymentEffects,
@@ -47,12 +47,12 @@ export async function listSupplierPaymentsForPurchase(
   res: Response,
 ): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     // Scope purchase to this tenant/user and confirm existence.
     const purchase = await prisma.purchase.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       select: { id: true, totalAmount: true, status: true },
     });
 
@@ -117,12 +117,12 @@ export async function purchaseActivity(
   res: Response,
 ): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     // Scope purchase to this tenant/user.
     const purchase = await prisma.purchase.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       select: { id: true },
     });
 
@@ -205,7 +205,7 @@ export async function voidSupplierPayment(
   res: Response,
 ): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { paymentId } = req.params as { paymentId: string };
     const reason =
       typeof (req.body as { reason?: unknown })?.reason === 'string'
@@ -215,7 +215,7 @@ export async function voidSupplierPayment(
     const result = await prisma.$transaction(async (tx) => {
       // 1. Load the payment scoped to the owning user via its purchase.
       const payment = await tx.supplierPayment.findFirst({
-        where: { id: paymentId, purchase: { userId, isDeleted: false } },
+        where: { id: paymentId, purchase: { tenantId, isDeleted: false } },
         include: { purchase: true, bank: true, paymentMode: true },
       });
 
@@ -232,7 +232,7 @@ export async function voidSupplierPayment(
       //      via the shared helper — the SAME effects deletePurchase and
       //      deleteSupplierPayment apply, so the paths cannot drift.
       await reverseSupplierPaymentEffects(tx as unknown as PaymentEffectsTx, {
-        userId,
+        tenantId,
         payment,
       });
 
@@ -241,7 +241,7 @@ export async function voidSupplierPayment(
         where: { id: payment.id },
         data: {
           isVoided: true,
-          voidedById: userId,
+          voidedById: tenantId,
           voidedAt: new Date(),
           voidReason: reason,
         },

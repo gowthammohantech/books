@@ -24,7 +24,7 @@ export interface CutoverTx {
   bankDetail: { findMany: (args: unknown) => Promise<{ id: string; openingBalance: unknown; currentBalance: unknown; accountType?: string | null }[]> };
   /** Latest running balance (balanceAfter) at/before asOf, per bank account. */
   bankTransaction: { findFirst: (args: unknown) => Promise<{ balanceAfter: unknown } | null> };
-  /** PettyCash is tenant-scoped by userId (added in Task 2). */
+  /** PettyCash is tenant-scoped by tenantId (added in Task 2). */
   pettyCash: { findFirst: (args: unknown) => Promise<{ id: string; openingBalance: unknown; currentBalance: unknown } | null> };
   pettyCashTransaction: { findFirst: (args: unknown) => Promise<{ balanceAfter: unknown } | null> };
   invoice: { findMany: (args: unknown) => Promise<{ TotalAmount: unknown; payments: { amount: unknown }[] }[]> };
@@ -80,8 +80,8 @@ const dec = (v: unknown): import('@prisma/client').Prisma.Decimal => toDecimal((
 
 function priorDay(d: Date): Date { return new Date(d.getTime() - 24 * 60 * 60 * 1000); }
 
-async function loadSettings(tx: CutoverTx, userId: string) {
-  const s = await tx.companySettings.findFirst({ where: { userId } });
+async function loadSettings(tx: CutoverTx, tenantId: string) {
+  const s = await tx.companySettings.findFirst({ where: { tenantId } });
   if (!s || !s.goLiveDate) throw new LedgerError('ledger not configured (run country setup first)');
   return s;
 }
@@ -109,10 +109,10 @@ async function loadSettings(tx: CutoverTx, userId: string) {
  * be reconstructed. Opening inventory therefore uses the CURRENT WAC value; it is
  * accurate only when cutover is committed on/near go-live. Documented as-of gap.
  */
-export async function computeOpeningSummary(tx: CutoverTx, userId: string, asOf: Date): Promise<OpeningSummary> {
+export async function computeOpeningSummary(tx: CutoverTx, tenantId: string, asOf: Date): Promise<OpeningSummary> {
   // --- Bank: as-of running balance per account -----------------------------
   const banks = await tx.bankDetail.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     select: { id: true, openingBalance: true, currentBalance: true },
   });
   let bank = ZERO;
@@ -125,9 +125,9 @@ export async function computeOpeningSummary(tx: CutoverTx, userId: string, asOf:
     bank = bank.plus(last ? dec(last.balanceAfter) : dec(b.openingBalance));
   }
 
-  // --- Petty cash: as-of running balance (tenant-scoped by userId) ----------
+  // --- Petty cash: as-of running balance (tenant-scoped by tenantId) ----------
   const petty = await tx.pettyCash.findFirst({
-    where: { userId },
+    where: { tenantId },
     select: { id: true, openingBalance: true, currentBalance: true },
   });
   let cash = ZERO;
@@ -142,7 +142,7 @@ export async function computeOpeningSummary(tx: CutoverTx, userId: string, asOf:
 
   // --- AR: open invoices at asOf, payments date-filtered to ≤ asOf ----------
   const invoices = await tx.invoice.findMany({
-    where: { userId, isDeleted: false, invoiceType: 'INVOICE', invoiceDate: { lte: asOf } },
+    where: { tenantId, isDeleted: false, invoiceType: 'INVOICE', invoiceDate: { lte: asOf } },
     select: { TotalAmount: true, payments: { where: { isVoided: false, received_on: { lte: asOf } }, select: { amount: true } } },
   });
   let grossAr = ZERO;
@@ -157,7 +157,7 @@ export async function computeOpeningSummary(tx: CutoverTx, userId: string, asOf:
   // Open credit notes (PENDING = credit still sitting against the customer),
   // dated ≤ asOf, reduce net AR. Refunded/cancelled CNs are excluded.
   const creditNotes = await tx.creditNote.findMany({
-    where: { userId, isDeleted: false, status: 'PENDING', creditNoteDate: { lte: asOf } },
+    where: { tenantId, isDeleted: false, status: 'PENDING', creditNoteDate: { lte: asOf } },
     select: { totalAmount: true },
   });
   const openCredits = creditNotes.reduce((a, c) => a.plus(dec(c.totalAmount)), ZERO);
@@ -167,7 +167,7 @@ export async function computeOpeningSummary(tx: CutoverTx, userId: string, asOf:
 
   // --- AP: open purchases at asOf, supplier payments date-filtered to ≤ asOf -
   const purchases = await tx.purchase.findMany({
-    where: { userId, isDeleted: false, purchaseDate: { lte: asOf } },
+    where: { tenantId, isDeleted: false, purchaseDate: { lte: asOf } },
     select: {
       totalAmount: true,
       supplierPayments: { where: { isVoided: false, isDeleted: false, paymentDate: { lte: asOf } }, select: { amount: true } },
@@ -181,7 +181,7 @@ export async function computeOpeningSummary(tx: CutoverTx, userId: string, asOf:
 
   // --- Inventory: CURRENT WAC value (as-of not reconstructable; see docstring)
   const inv = await tx.inventory.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     select: { quantityOnHand: true, avgCost: true },
   });
   const inventory = inv.reduce((a, r) => a.plus(dec(r.quantityOnHand).times(dec(r.avgCost))), ZERO);
@@ -199,10 +199,10 @@ export async function computeOpeningSummary(tx: CutoverTx, userId: string, asOf:
 // previewCutover
 // ---------------------------------------------------------------------------
 
-export async function previewCutover(tx: CutoverTx, userId: string): Promise<CutoverPreview> {
-  const s = await loadSettings(tx, userId);
+export async function previewCutover(tx: CutoverTx, tenantId: string): Promise<CutoverPreview> {
+  const s = await loadSettings(tx, tenantId);
   const asOf = priorDay(s.goLiveDate!);
-  const summary = await computeOpeningSummary(tx, userId, asOf);
+  const summary = await computeOpeningSummary(tx, tenantId, asOf);
   const lines = buildOpeningInstructions(summary);
   return { summary, lines, balanced: true, asOf: asOf.toISOString() };
 }
@@ -211,14 +211,14 @@ export async function previewCutover(tx: CutoverTx, userId: string): Promise<Cut
 // commitCutover
 // ---------------------------------------------------------------------------
 
-export async function commitCutover(tx: CutoverTx, userId: string): Promise<{ id: string } | null> {
-  const s = await loadSettings(tx, userId);
+export async function commitCutover(tx: CutoverTx, tenantId: string): Promise<{ id: string } | null> {
+  const s = await loadSettings(tx, tenantId);
 
   // Idempotency: one opening entry per tenant. Ensure ledgerInitialized is set
   // true on EVERY commit call (even the early-return path) so a prior partial
   // failure that left the flag false can be repaired by re-running commit.
   const existing = await tx.journalEntry.findFirst({
-    where: { userId, sourceType: 'Cutover', event: 'opening', isDeleted: false },
+    where: { tenantId, sourceType: 'Cutover', event: 'opening', isDeleted: false },
   });
   if (existing) {
     await tx.companySettings.update({ where: { id: s.id }, data: { ledgerInitialized: true } });
@@ -226,7 +226,7 @@ export async function commitCutover(tx: CutoverTx, userId: string): Promise<{ id
   }
 
   const asOf = priorDay(s.goLiveDate!);
-  const summary = await computeOpeningSummary(tx, userId, asOf);
+  const summary = await computeOpeningSummary(tx, tenantId, asOf);
   const instructions = buildOpeningInstructions(summary);
 
   let entry: { id: string } | null = null;
@@ -234,9 +234,9 @@ export async function commitCutover(tx: CutoverTx, userId: string): Promise<{ id
     // post() directly — bypasses the cutover gate intentionally (opening entry
     // predates go-live by design; the gate checks ledgerInitialized, not date).
     entry = await post(tx as never, {
-      userId,
+      tenantId,
       sourceType: 'Cutover',
-      sourceId: userId,
+      sourceId: tenantId,
       event: 'opening',
       date: asOf,
       currencyCode: s.functionalCurrency ?? 'BASE',

@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 /**
  * AI usage reporting controller (Cluster H, slice H.4).
@@ -34,7 +34,7 @@ function parseDate(value: unknown): Date | null {
 
 export async function getUsage(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const now = new Date();
     const to = parseDate(req.query.to) ?? now;
@@ -51,7 +51,7 @@ export async function getUsage(req: Request, res: Response): Promise<void> {
     toBound.setHours(23, 59, 59, 999);
 
     const rows = await prisma.aiUsageLog.findMany({
-      where: { userId, createdAt: { gte: fromBound, lte: toBound } },
+      where: { tenantId, createdAt: { gte: fromBound, lte: toBound } },
       select: { feature: true, costUsd: true, createdAt: true },
       orderBy: { createdAt: 'asc' },
     });
@@ -103,7 +103,7 @@ export async function getUsage(req: Request, res: Response): Promise<void> {
 
 export async function getUsageSummary(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const now = new Date();
     const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -111,13 +111,13 @@ export async function getUsageSummary(req: Request, res: Response): Promise<void
 
     const [callsLast24h, callsThisMonth, monthAgg] = await Promise.all([
       prisma.aiUsageLog.count({
-        where: { userId, createdAt: { gte: since24h } },
+        where: { tenantId, createdAt: { gte: since24h } },
       }),
       prisma.aiUsageLog.count({
-        where: { userId, createdAt: { gte: monthStart } },
+        where: { tenantId, createdAt: { gte: monthStart } },
       }),
       prisma.aiUsageLog.aggregate({
-        where: { userId, createdAt: { gte: monthStart } },
+        where: { tenantId, createdAt: { gte: monthStart } },
         _sum: { costUsd: true },
       }),
     ]);

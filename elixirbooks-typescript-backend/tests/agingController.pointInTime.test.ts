@@ -47,22 +47,22 @@ const ASOF = '2024-06-15';
 
 const INVOICES = [
   // E: dated before asOf; its only payment lands AFTER asOf → full 1000 open at asOf.
-  { id: 'inv-e', userId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'UNPAID',
+  { id: 'inv-e', tenantId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'UNPAID',
     invoiceNumber: 'INV-E', invoiceDate: D('2024-06-01'), dueDate: D('2024-06-10'), TotalAmount: 1000,
     customer: { name: 'Acme' },
     payments: [{ amount: 400, isVoided: false, received_on: D('2024-06-20') }] },
   // F: dated AFTER asOf → must be absent from a back-dated aging.
-  { id: 'inv-f', userId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'UNPAID',
+  { id: 'inv-f', tenantId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'UNPAID',
     invoiceNumber: 'INV-F', invoiceDate: D('2024-07-01'), dueDate: D('2024-07-10'), TotalAmount: 999,
     customer: { name: 'Beta' }, payments: [] },
   // G: now PAID, settled BEFORE asOf → zero outstanding at asOf → absent.
-  { id: 'inv-g', userId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'PAID',
+  { id: 'inv-g', tenantId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'PAID',
     invoiceNumber: 'INV-G', invoiceDate: D('2024-06-05'), dueDate: D('2024-06-12'), TotalAmount: 500,
     customer: { name: 'Gamma' },
     payments: [{ amount: 500, isVoided: false, received_on: D('2024-06-10') }] },
   // H: created via the unified-contact flow — legacy `customer` is null, only the
   // unified `contact` is set. Must resolve a non-blank name (not "Deleted User").
-  { id: 'inv-h', userId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'UNPAID',
+  { id: 'inv-h', tenantId: TENANT, isDeleted: false, invoiceType: 'INVOICE', status: 'UNPAID',
     invoiceNumber: 'INV-H', invoiceDate: D('2024-06-03'), dueDate: D('2024-06-13'), TotalAmount: 250,
     customer: null,
     contact: { id: 'contact-h', firstName: 'Cara', lastName: 'Contactly', organisation: null },
@@ -71,16 +71,16 @@ const INVOICES = [
 
 const PURCHASES = [
   // P1: now fully paid (balance 0) but the payment landed AFTER asOf → add back 800.
-  { id: 'pur-1', userId: TENANT, isDeleted: false, status: 'paid', purchaseId: 'PUR-1',
+  { id: 'pur-1', tenantId: TENANT, isDeleted: false, status: 'paid', purchaseId: 'PUR-1',
     purchaseDate: D('2024-06-01'), dueDate: D('2024-06-30'), balanceAmount: 0,
     contact: null, billFromUser: { firstName: 'Sup', lastName: 'One' },
     supplierPayments: [{ amount: 800, isVoided: false, paymentDate: D('2024-06-20') }] },
   // P2: entered AFTER asOf → absent.
-  { id: 'pur-2', userId: TENANT, isDeleted: false, status: 'pending', purchaseId: 'PUR-2',
+  { id: 'pur-2', tenantId: TENANT, isDeleted: false, status: 'pending', purchaseId: 'PUR-2',
     purchaseDate: D('2024-07-01'), dueDate: D('2024-07-30'), balanceAmount: 700,
     contact: null, billFromUser: { firstName: 'Sup', lastName: 'Two' }, supplierPayments: [] },
   // P3: open, no later payments → 300 at asOf.
-  { id: 'pur-3', userId: TENANT, isDeleted: false, status: 'pending', purchaseId: 'PUR-3',
+  { id: 'pur-3', tenantId: TENANT, isDeleted: false, status: 'pending', purchaseId: 'PUR-3',
     purchaseDate: D('2024-06-02'), dueDate: D('2024-06-28'), balanceAmount: 300,
     contact: null, billFromUser: { firstName: 'Sup', lastName: 'Three' }, supplierPayments: [] },
 ];
@@ -94,7 +94,7 @@ beforeEach(() => {
   mockCreditNoteFindMany.mockResolvedValue([]);
 
   mockInvoiceFindMany.mockImplementation(async ({ where, select }: any) => {
-    let list = INVOICES.filter((i) => i.userId === where.userId && !i.isDeleted && i.invoiceType === where.invoiceType);
+    let list = INVOICES.filter((i) => i.tenantId === where.tenantId && !i.isDeleted && i.invoiceType === where.invoiceType);
     if (where.status?.notIn) list = list.filter((i) => !where.status.notIn.includes(i.status));
     if (where.invoiceDate?.lte) list = list.filter((i) => le(i.invoiceDate, where.invoiceDate.lte));
     const pw = select?.payments?.where;
@@ -105,7 +105,7 @@ beforeEach(() => {
   });
 
   mockPurchaseFindMany.mockImplementation(async ({ where, select }: any) => {
-    let list = PURCHASES.filter((p) => p.userId === where.userId && !p.isDeleted);
+    let list = PURCHASES.filter((p) => p.tenantId === where.tenantId && !p.isDeleted);
     if (where.status?.not) list = list.filter((p) => p.status !== where.status.not);
     if (where.purchaseDate?.lte) list = list.filter((p) => le(p.purchaseDate, where.purchaseDate.lte));
     const sw = select?.supplierPayments?.where;

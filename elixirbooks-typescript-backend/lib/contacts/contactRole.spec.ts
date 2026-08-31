@@ -7,9 +7,9 @@ describe('deriveRole', () => {
 });
 
 describe('contactViewWhere', () => {
-  it('all-active filters userId + ACTIVE + not deleted', () => {
+  it('all-active filters tenantId + ACTIVE + not deleted', () => {
     const w = contactViewWhere('u1', 'all-active') as Record<string, unknown>;
-    expect(w).toMatchObject({ userId: 'u1', isDeleted: false, status: 'ACTIVE' });
+    expect(w).toMatchObject({ tenantId: 'u1', isDeleted: false, status: 'ACTIVE' });
   });
   it('clients requires a client-side relation', () => {
     const w = JSON.stringify(contactViewWhere('u1', 'clients'));

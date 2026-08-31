@@ -8,7 +8,7 @@
  * 9200-9240 are created, and parallels backfillDisposalAccounts.ts for the
  * role-based disposal accounts.
  *
- * Idempotent: account.upsert on (userId, code) is a no-op for owners that
+ * Idempotent: account.upsert on (tenantId, code) is a no-op for owners that
  * already have 9250.
  *
  * Run:  npx ts-node prisma/backfillEmployeePayableAccount.ts
@@ -22,9 +22,9 @@ const CODE = '9250';
 const NAME = 'Amounts Owed to Employees';
 
 async function backfillEmployeePayableAccount(): Promise<void> {
-  const owners = await prisma.user.findMany({
-    where: { ownerId: null },
-    select: { id: true, email: true, companySettings: { select: { functionalCurrency: true } } },
+  const owners = await prisma.tenant.findMany({
+    where: { deletedAt: null },
+    select: { id: true, name: true, companySettings: { select: { functionalCurrency: true } } },
   });
 
   let backfilled = 0;
@@ -32,22 +32,22 @@ async function backfillEmployeePayableAccount(): Promise<void> {
   let errors = 0;
 
   for (const owner of owners) {
-    const existingCount = await prisma.ledgerAccountMapping.count({ where: { userId: owner.id } });
+    const existingCount = await prisma.ledgerAccountMapping.count({ where: { tenantId: owner.id } });
     if (existingCount === 0) {
-      console.log(`[SKIP] ${owner.email} (${owner.id}) — no ledger mappings yet`);
+      console.log(`[SKIP] ${owner.name} (${owner.id}) — no ledger mappings yet`);
       skipped += 1;
       continue;
     }
 
     try {
       const before = await prisma.account.findUnique({
-        where: { userId_code: { userId: owner.id, code: CODE } },
+        where: { tenantId_code: { tenantId: owner.id, code: CODE } },
       });
       const currencyCode = owner.companySettings?.functionalCurrency ?? 'GBP';
       await prisma.account.upsert({
-        where: { userId_code: { userId: owner.id, code: CODE } },
+        where: { tenantId_code: { tenantId: owner.id, code: CODE } },
         create: {
-          userId: owner.id,
+          tenantId: owner.id,
           code: CODE,
           name: NAME,
           accountType: 'LIABILITY',
@@ -57,14 +57,14 @@ async function backfillEmployeePayableAccount(): Promise<void> {
         update: {},
       });
       if (before) {
-        console.log(`[SKIP] ${owner.email} — ${CODE} already present`);
+        console.log(`[SKIP] ${owner.name} — ${CODE} already present`);
         skipped += 1;
       } else {
-        console.log(`[OK]   ${owner.email} — created ${CODE} (${NAME})`);
+        console.log(`[OK]   ${owner.name} — created ${CODE} (${NAME})`);
         backfilled += 1;
       }
     } catch (err) {
-      console.error(`[ERR]  ${owner.email} (${owner.id}): ${(err as Error).message}`);
+      console.error(`[ERR]  ${owner.name} (${owner.id}): ${(err as Error).message}`);
       errors += 1;
     }
   }

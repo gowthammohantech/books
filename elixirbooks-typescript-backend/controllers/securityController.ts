@@ -4,7 +4,33 @@ import path from 'path';
 import type { Request, Response } from 'express';
 
 import { prisma } from '../lib/prisma';
+import { requireTenantId } from '../lib/tenantScope';
 import { hashPassword, comparePassword } from '../utils/password';
+
+/**
+ * Resolve a target user WITHIN the caller's workspace.
+ *
+ * User has no tenantId column — a person may belong to several workspaces — so
+ * lib/tenantGuard.ts cannot scope these queries and membership has to do it.
+ * Returning null for a user in another workspace makes every handler below
+ * answer 404, which is both correct and the same thing it answers for a user
+ * that does not exist: an admin should not be able to probe the install for
+ * other companies' user ids.
+ *
+ * NOTE ON THE PARAM NAME: the routes spell this `:tenantId`, but it has always
+ * carried a USER id — a leftover from when a tenant id and a user id were the
+ * same value. Renaming the route would break the frontend; the controller
+ * reads it for what it is.
+ */
+async function findUserInTenant(req: Request, userId: string) {
+  const tenantId = requireTenantId(req);
+  const membership = await prisma.tenantMembership.findUnique({
+    where: { userId_tenantId: { userId, tenantId } },
+    select: { id: true },
+  });
+  if (!membership) return null;
+  return prisma.user.findUnique({ where: { id: userId } });
+}
 
 export async function resetPassword(req: Request, res: Response): Promise<void> {
   try {
@@ -14,7 +40,7 @@ export async function resetPassword(req: Request, res: Response): Promise<void> 
       newPassword: string;
     };
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await findUserInTenant(req, userId);
     if (!user) {
       res.status(404).json({
         success: false,
@@ -57,7 +83,7 @@ export async function deleteAccount(req: Request, res: Response): Promise<void> 
   try {
     const { userId } = req.params as { userId: string };
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await findUserInTenant(req, userId);
     if (!user) {
       res.status(404).json({
         success: false,
@@ -103,6 +129,13 @@ export async function getLoginActivitiesByUser(
     const limit = Number(req.query.limit ?? 10);
 
     const skip = (page - 1) * limit;
+
+    // Login history is an ACTOR record (LoginActivity has no tenantId), so
+    // the tenancy check is on the PERSON: only someone in this workspace.
+    if (!(await findUserInTenant(req, userId))) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
 
     const total = await prisma.loginActivity.count({ where: { userId } });
 

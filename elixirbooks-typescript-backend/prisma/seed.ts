@@ -6,7 +6,11 @@
  *     /api/admin/app-version still reports `new_register: true`)
  *   - Countries / States / Cities (a handful — enough to demo)
  *   - Timezones / DateFormats / TimeFormats
- *   - Currencies (linked to the bootstrap user as createdBy)
+
+ * Units, Currencies and EmailTemplates moved OUT of this file in P4: they
+ * are tenant-owned now, and prisma/seedTenant.ts stocks them per workspace.
+ * What is left here is genuinely platform-wide reference data that every
+ * company on the install shares and none of them can edit.
  *
  * Does NOT create an admin user. The frontend will render /register on
  * first run so the customer goes through the onboarding flow.
@@ -29,9 +33,10 @@ import { PrismaClient } from '@prisma/client';
 import { seedModules } from './seedModules';
 import { seedFieldTypes } from './seedFieldTypes';
 import { seedNotifications } from './seedNotifications';
-import { seedEmailTemplates } from './seedEmailTemplates';
+import { seedAllTenantDefaults } from './seedTenant';
 import { seedRoles } from './seedRoles';
-import { seedUserOwner } from './seedUserOwner';
+import { runAsSystem } from '../lib/tenantContext';
+import { backfillTenantMemberships } from './backfillTenantMemberships';
 import { seedTransactionCategories } from './seedTransactionCategories';
 import { encryptLegacyEmailSecrets } from './encryptLegacyEmailSecrets';
 import { importGeoDataset } from './importGeoDataset';
@@ -44,6 +49,18 @@ import { importGeoDataset } from './importGeoDataset';
  * PrismaClient from lib/prisma.
  */
 export async function runBaselineSeed(): Promise<void> {
+  // EVERY sub-seeder and backfill below runs with the tenant guard bypassed.
+  // They are platform-level by definition — geo data, modules, notification
+  // types — and the per-tenant ones (seedAllTenantDefaults,
+  // seedTransactionCategories) name their tenant explicitly rather than
+  // inheriting one. Without this, boot fails on the first backfill that
+  // touches a tenant-scoped table through the shared client: with the guard
+  // enforcing, "no tenant in context" is an error, which is exactly what makes
+  // an unscoped query impossible to write by accident.
+  return runAsSystem(() => runBaselineSeedInner());
+}
+
+async function runBaselineSeedInner(): Promise<void> {
   // A fresh PrismaClient scoped to this call so we can cleanly disconnect
   // the direct writes here without affecting the application's shared instance.
   const prisma = new PrismaClient();
@@ -152,24 +169,8 @@ export async function runBaselineSeed(): Promise<void> {
       console.warn('[seed] full geo import skipped (non-fatal):', geoErr);
     }
 
-    // -------------------------------------------------------------------------
-    // Units (Pieces, Hours, ... ) — every install needs a base set so products
-    // can be created out of the box. Fixed ids keep this idempotent.
-    // -------------------------------------------------------------------------
-    const units = [
-      { id: 'u-pcs', unit_name: 'Pieces', short_name: 'pcs', status: true },
-      { id: 'u-hr', unit_name: 'Hours', short_name: 'hr', status: true },
-      { id: 'u-kg', unit_name: 'Kilograms', short_name: 'kg', status: true },
-      { id: 'u-box', unit_name: 'Box', short_name: 'box', status: true },
-      { id: 'u-ltr', unit_name: 'Litres', short_name: 'ltr', status: true },
-      { id: 'u-day', unit_name: 'Days', short_name: 'day', status: true },
-      { id: 'u-wk', unit_name: 'Weeks', short_name: 'wk', status: true },
-      { id: 'u-mo', unit_name: 'Months', short_name: 'mo', status: true },
-      { id: 'u-pkg', unit_name: 'Package', short_name: 'pkg', status: true },
-    ];
-    for (const u of units) {
-      await prisma.unit.upsert({ where: { id: u.id }, update: u, create: u });
-    }
+    // Units moved to prisma/seedTenant.ts (P4) — a Unit belongs to one
+    // workspace now, so there is no install-wide set to create here.
 
     // -------------------------------------------------------------------------
     // Timezones
@@ -219,32 +220,11 @@ export async function runBaselineSeed(): Promise<void> {
       await prisma.timeFormat.upsert({ where: { id: tf.id }, update: tf, create: tf });
     }
 
-    // -------------------------------------------------------------------------
-    // Currencies (createdBy = bootstrap user)
-    // -------------------------------------------------------------------------
-    const currencies = [
-      { id: 'cur-inr', name: 'Indian Rupee', code: 'INR', symbol: '₹', isDefault: true },
-      { id: 'cur-usd', name: 'US Dollar', code: 'USD', symbol: '$', isDefault: false },
-      { id: 'cur-eur', name: 'Euro', code: 'EUR', symbol: '€', isDefault: false },
-      { id: 'cur-gbp', name: 'British Pound', code: 'GBP', symbol: '£', isDefault: false },
-      { id: 'cur-aud', name: 'Australian Dollar', code: 'AUD', symbol: 'A$', isDefault: false },
-      { id: 'cur-cad', name: 'Canadian Dollar', code: 'CAD', symbol: 'C$', isDefault: false },
-      { id: 'cur-sgd', name: 'Singapore Dollar', code: 'SGD', symbol: 'S$', isDefault: false },
-      { id: 'cur-jpy', name: 'Japanese Yen', code: 'JPY', symbol: '¥', isDefault: false },
-      { id: 'cur-aed', name: 'UAE Dirham', code: 'AED', symbol: 'د.إ', isDefault: false },
-    ];
-    for (const cur of currencies) {
-      await prisma.currency.upsert({
-        where: { id: cur.id },
-        // Refresh display fields only. NEVER reset status/isDeleted/isDefault on
-        // update: the boot seed runs on every restart, and forcing those would
-        // resurrect user-deleted currencies, re-activate disabled ones, and
-        // override the tenant's chosen default currency back to the seed default.
-        // `create` still sets sensible defaults for brand-new currencies.
-        update: { name: cur.name, code: cur.code, symbol: cur.symbol },
-        create: { ...cur, status: true, isDeleted: false, createdBy: 'sys-bootstrap' },
-      });
-    }
+    // Currencies moved to prisma/seedTenant.ts (P4). They were seeded here
+    // with fixed ids and a `sys-bootstrap` createdBy because one install had
+    // exactly one currency list; each workspace owns its own list now, and
+    // that seeder carries the same do-not-resurrect-user-deletions rule the
+    // upsert here spelled out.
 
     // -------------------------------------------------------------------------
     // Payment modes — the dropdown on every "record payment" screen reads from
@@ -292,9 +272,18 @@ export async function runBaselineSeed(): Promise<void> {
   const notifs = await seedNotifications();
   console.log(`Notifications seeded (created ${notifs.types} types, ${notifs.tags} tags, ${notifs.links} links).`);
 
-  // Baseline email templates (global content library, ready to use by any company).
-  const tmpls = await seedEmailTemplates();
-  console.log(`Email templates seeded (created ${tmpls.created}, skipped ${tmpls.skipped}).`);
+  // Per-tenant defaults (Units, Currencies, EmailTemplates). This is the
+  // reconciliation half: it reaches workspaces that already exist, so a
+  // release adding a template or a unit does not only benefit companies
+  // that sign up afterwards. New workspaces get the same content at signup,
+  // inside the registration transaction. On a fresh install there are no
+  // tenants yet and this is a no-op.
+  const tenantDefaults = await seedAllTenantDefaults();
+  console.log(
+    `Tenant defaults seeded across ${tenantDefaults.tenants} tenant(s) ` +
+      `(${tenantDefaults.units} unit(s), ${tenantDefaults.currencies} currency(ies), ` +
+      `${tenantDefaults.emailTemplates} template(s)).`,
+  );
 
   // Default roles (Admin, Vendor, Staff, Maintainer, Supplier) + backfill
   // existing users that have no roleId.
@@ -303,15 +292,16 @@ export async function runBaselineSeed(): Promise<void> {
     `Roles seeded (created ${roles.created} new, backfilled ${roles.backfilled} users, granted Admin role ${roles.adminPermsGranted} module permissions, assigned Owner to ${roles.ownerAssigned} owner(s)).`,
   );
 
-  // Shared-workspace tenancy backfill: link every staff/admin user to the sole
-  // company owner so all of them resolve to one dataset (ownerId ?? id) and see
-  // each other's invoices/expenses. Idempotent — safe on every boot.
-  const owners = await seedUserOwner();
-  console.log(
-    owners.ownerId
-      ? `User owner backfill (linked ${owners.backfilled} user(s) to owner ${owners.ownerId}).`
-      : 'User owner backfill skipped (no owner registered yet).',
-  );
+  // Membership backfill: authMiddleware.protect resolves the workspace from
+  // TenantMembership and 401s without one, so a user who somehow lacks a
+  // membership cannot sign in. This heals that. Idempotent — safe on every
+  // boot, and it never guesses when the workspace is ambiguous.
+  const memberships = await backfillTenantMemberships();
+  if (memberships.created > 0 || memberships.skipped > 0) {
+    console.log(
+      `Tenant membership backfill (created ${memberships.created}, skipped ${memberships.skipped}).`,
+    );
+  }
 
   // Money In/Out category catalog (per ledger-initialized company) + legacy
   // ExpenseCategory migration. Idempotent — owners without a ledger mapping are

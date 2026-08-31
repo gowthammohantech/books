@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { body, validationResult, ValidationChain } from 'express-validator';
 
 import { prisma } from '../lib/prisma';
+import { requireTenantId } from '../lib/tenantScope';
 
 const handleValidationErrors: RequestHandler = (
   req: Request,
@@ -31,9 +32,10 @@ const createChains: ValidationChain[] = [
     .withMessage('Tax name is required')
     .isLength({ min: 2, max: 30 })
     .withMessage('Tax name must be between 2 and 30 characters')
-    .custom(async (value: string) => {
+    .custom(async (value: string, { req }) => {
+      const tenantId = requireTenantId(req as Request);
       const existing = await prisma.taxGroup.findFirst({
-        where: { tax_name: { equals: value, mode: 'insensitive' } },
+        where: { tenantId, tax_name: { equals: value, mode: 'insensitive' } },
       });
       if (existing) {
         throw new Error('Tax name already exists');
@@ -52,10 +54,12 @@ const updateChains: ValidationChain[] = [
     .isLength({ min: 2, max: 30 })
     .withMessage('Tax name must be between 2 and 30 characters')
     .custom(async (value: string | undefined, { req }) => {
+      const tenantId = requireTenantId(req as Request);
       if (!value) return true;
       const id = (req.params as { id?: string })?.id;
       const existing = await prisma.taxGroup.findFirst({
         where: {
+          tenantId,
           tax_name: { equals: value, mode: 'insensitive' },
           NOT: id ? { id } : undefined,
         },

@@ -1,37 +1,35 @@
 // lib/documentNumbering.ts
 //
-// Shared tenant-aware document numbering for series whose number column is a
-// GLOBAL `@unique` constraint (see the `// TODO 0.1c` comments in
-// prisma/schema.prisma — CreditNote.creditNoteNumber, DebitNote.debitNoteId,
-// Purchase.purchaseId, SupplierPayment.paymentId, ...). Numbering is counted
-// per-tenant (each tenant's first document is ...-000001) but the column is
-// unique across the whole install, so a young tenant's candidate can collide
-// with another tenant's already-issued number.
+// Shared per-tenant document numbering for the app-generated series
+// (INV-000001, PUR-000001, CN-000001, DN-000001, PAY-000001, ...).
 //
-// nextDocumentNumber() algorithm:
-//   1. tenant-scoped candidate = (highest number THIS tenant already has) + 1
-//   2. if that number is free install-wide, use it
-//   3. else fall back to (install-wide highest number) + 1 — a number no
-//      other tenant can already hold, under the same numbers-only-grow
-//      assumption the old single global sequence relied on
+// nextDocumentNumber() is now simply "this tenant's highest number + 1".
 //
-// This was previously duplicated byte-for-byte in 5 places (creditNote,
-// debitNote, purchase, supplierPayment controllers + applyBillPayment.ts).
-// This module is the single source of truth; all 5 now call it.
+// It used to be more than that. While the number columns were @unique ACROSS
+// THE INSTALL but counted PER TENANT, a young tenant's candidate could collide
+// with a number another tenant already held, so this module carried a
+// three-step algorithm with an install-wide fallback that silently skipped the
+// second tenant forward. P4 replaced those constraints with
+// @@unique([tenantId, <number>]) and the whole contradiction disappeared:
+// two tenants may now both hold INV-000001, which is what a user expects.
 //
-// RACE HARDENING: steps 1-3 above are plain reads — two concurrent creators
-// can compute the *same* fallback number, and only one `create()` wins under
-// the DB unique constraint. withDocumentNumberRetry() wraps the whole OWNING
-// `$transaction` (not just the `create`) in a bounded retry on a P2002 for the
-// number field. Retrying just the `create` in place is unsafe: once one
-// statement in an interactive transaction fails, Postgres poisons the rest of
-// that transaction and any further query on the same `tx` client also errors.
-// Re-running the entire transaction gets a fresh connection that recomputes
-// the number against the now-committed state — each loser's next attempt sees
-// one more committed row, so the collision cannot repeat forever. This
-// mirrors the retry-on-P2002 recovery in lib/ledger/postingEngine.ts's
-// post() and the retry-with-offset numbering in
-// lib/recurring/runner.ts's createInvoiceWithNumber().
+// This module is still the single source of truth for the five callers that
+// used to duplicate the logic byte-for-byte (creditNote, debitNote, purchase,
+// supplierPayment controllers + lib/ledger/applyBillPayment.ts).
+//
+// RACE HARDENING (unchanged, and still necessary). The lookup below is a plain
+// read, so two concurrent creators INSIDE THE SAME TENANT can compute the same
+// number and only one `create()` wins under the unique constraint.
+// withDocumentNumberRetry() wraps the whole OWNING `$transaction` (not just the
+// `create`) in a bounded retry on a P2002 for the number field. Retrying just
+// the `create` in place is unsafe: once one statement in an interactive
+// transaction fails, Postgres poisons the rest of that transaction and any
+// further query on the same `tx` client also errors. Re-running the entire
+// transaction gets a fresh connection that recomputes the number against the
+// now-committed state — each loser's next attempt sees one more committed row,
+// so the collision cannot repeat forever. This mirrors the retry-on-P2002
+// recovery in lib/ledger/postingEngine.ts's post() and the retry-with-offset
+// numbering in lib/recurring/runner.ts's createInvoiceWithNumber().
 //
 // Callers that do NOT own their transaction (lib/ledger/applyBillPayment.ts,
 // invoked from inside lib/moneyFlow/explainPosting.ts's single
@@ -73,9 +71,10 @@ export interface NextDocumentNumberOptions {
   /** Zero-pad width for the numeric suffix. Defaults to 6. */
   width?: number;
   /**
-   * Tenant filter merged into the "last row for this tenant" lookup. Pass
-   * `{ userId }` for models with a direct column, or a relation filter like
-   * `{ purchase: { userId } }` when the model has none (SupplierPayment).
+   * Tenant filter merged into the "last row for this tenant" lookup —
+   * `{ tenantId }`. Kept explicit rather than read from the ALS context
+   * because this runs inside `$transaction` and its correctness is
+   * load-bearing: get it wrong and one tenant continues another's series.
    */
   tenantWhere: Record<string, unknown>;
 }
@@ -87,8 +86,9 @@ function extractTrailingNumber(value: unknown): number {
 }
 
 /**
- * Compute the next tenant-scoped document number, falling back to the
- * install-wide max + 1 on a global clash. See file header for the algorithm.
+ * Compute the next document number for this tenant: its highest issued number
+ * plus one. Numbers are per tenant, so two companies both starting at
+ * INV-000001 is correct and expected.
  */
 export async function nextDocumentNumber(options: NextDocumentNumberOptions): Promise<string> {
   const { model, field, prefix, width = 6, tenantWhere } = options;
@@ -98,30 +98,18 @@ export async function nextDocumentNumber(options: NextDocumentNumberOptions): Pr
     orderBy: { createdAt: 'desc' },
     select: { [field]: true },
   });
-  const candidate = `${prefix}${String(extractTrailingNumber(last?.[field]) + 1).padStart(width, '0')}`;
-
-  // <field> is @unique across the whole install but the tenant-scoped lookup
-  // above only sees this tenant's rows, so the candidate may already be held
-  // by another tenant. On clash, fall back to the install-wide highest + 1.
-  const clash = await model.findFirst({
-    where: { [field]: candidate },
-    select: { id: true },
-  });
-  if (!clash) return candidate;
-
-  const globalLast = await model.findFirst({
-    where: { [field]: { not: null } },
-    orderBy: { [field]: 'desc' },
-    select: { [field]: true },
-  });
-  const globalNumber = extractTrailingNumber(globalLast?.[field]);
-  return `${prefix}${String(globalNumber + 1).padStart(width, '0')}`;
+  return `${prefix}${String(extractTrailingNumber(last?.[field]) + 1).padStart(width, '0')}`;
 }
 
 /**
  * True if `err` is a Prisma P2002 unique-violation naming `field` — or one
  * whose target we can't inspect, conservatively treated as a match since this
  * helper is only ever wrapped around number-generating creates/transactions.
+ *
+ * After P4 the target is the COMPOSITE `["tenantId", "invoiceNumber"]`
+ * rather than `["invoiceNumber"]`. The substring match below still finds
+ * the field name in that array, which is why this kept working through the
+ * constraint swap; documentNumbering.spec.ts asserts it explicitly.
  */
 export function isNumberFieldConflict(err: unknown, field: string): boolean {
   if (!err || typeof err !== 'object' || (err as { code?: string }).code !== 'P2002') return false;

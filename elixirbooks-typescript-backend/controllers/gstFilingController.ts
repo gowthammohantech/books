@@ -1,3 +1,7 @@
+/* @cross-tenant: no Prisma access at all. These two handlers re-serialise the
+ * output of the (tenant-scoped) GSTR-1 / GSTR-3B report handlers as CSV or
+ * JSON downloads; the scoping happens entirely in the handlers they delegate
+ * to. */
 import type { Request, Response } from 'express';
 
 import { gstr1 as gstr1Handler, gstr3b as gstr3bHandler } from './taxReportsController';

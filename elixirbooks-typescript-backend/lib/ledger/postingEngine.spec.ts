@@ -47,7 +47,7 @@ function fakeTx(opts: {
 }
 
 const input: PostingInput = {
-  userId: 'u1', sourceType: 'Invoice', sourceId: 'inv1', event: 'issued',
+  tenantId: 'u1', sourceType: 'Invoice', sourceId: 'inv1', event: 'issued',
   date: new Date('2026-06-06'), currencyCode: 'INR',
   instructions: [
     { roleKey: 'AR', side: 'debit', amount: '118' },
@@ -63,7 +63,7 @@ describe('postingEngine.post', () => {
     expect(tx.journalEntry.create).toHaveBeenCalledOnce();
     const data = (tx.journalEntry.create as ReturnType<typeof vi.fn>).mock.calls[0][0].data;
     expect(data).toMatchObject({
-      userId: 'u1', sourceType: 'Invoice', sourceId: 'inv1', event: 'issued',
+      tenantId: 'u1', sourceType: 'Invoice', sourceId: 'inv1', event: 'issued',
       isSystemGenerated: true,
     });
     expect(data.lines.create).toHaveLength(3);
@@ -236,7 +236,7 @@ function fakeTxForReverse(
 
 describe('postingEngine.reverse', () => {
   const original = {
-    id: 'je-1', userId: 'u1', entryDate: new Date('2026-06-06'),
+    id: 'je-1', tenantId: 'u1', entryDate: new Date('2026-06-06'),
     sourceType: 'Invoice', sourceId: 'inv1', event: 'issued',
     reversedById: null, reversals: [],
     lines: [

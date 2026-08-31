@@ -46,7 +46,7 @@ function levenshteinRatio(a: string, b: string): number {
 
 export async function matchSupplier(
   extracted: ExtractedVendor,
-  userId: string,
+  tenantId: string,
 ): Promise<SupplierMatch> {
   const vendorName = (extracted.vendorName ?? '').trim();
   // const vendorGstin = (extracted.vendorGstin ?? '').trim();
@@ -55,14 +55,14 @@ export async function matchSupplier(
   // intentionally a no-op until a future migration adds the column. The
   // matchType is still part of the contract so the frontend can branch.
   // When the column lands, swap to: prisma.supplier.findFirst({ where:
-  // { user_id: userId, supplier_gstin: vendorGstin } })
+  // { tenantId: tenantId, supplier_gstin: vendorGstin } })
 
   if (!vendorName) {
     return { matchType: 'none' };
   }
 
   const suppliers = await prisma.supplier.findMany({
-    where: { user_id: userId, isDeleted: false, status: true },
+    where: { tenantId: tenantId, isDeleted: false, status: true },
     select: { id: true, supplier_name: true },
   });
 

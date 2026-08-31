@@ -13,7 +13,7 @@
 import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
 import { sanitizeLineCustomFields } from '../lib/lineCustomFields';
 import {
@@ -118,7 +118,7 @@ function handleErr(res: Response, err: unknown, fallbackMsg: string): void {
 
 export async function createSchedule(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as Record<string, unknown>;
 
     const startOn = toDate(body.startOn);
@@ -148,7 +148,7 @@ export async function createSchedule(req: Request, res: Response): Promise<void>
 
     const created = await prisma.recurringInvoiceSchedule.create({
       data: {
-        userId,
+        tenantId,
         name: typeof body.name === 'string' ? body.name : null,
         contactId: typeof body.contactId === 'string' ? body.contactId : null,
         currencyCode: typeof body.currencyCode === 'string' ? body.currencyCode : null,
@@ -194,12 +194,12 @@ export async function createSchedule(req: Request, res: Response): Promise<void>
 
 export async function listSchedules(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const page = Math.max(1, parseInt((req.query.page as string) ?? '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt((req.query.limit as string) ?? '10', 10)));
     const search = ((req.query.search as string) ?? '').trim();
 
-    const where: Prisma.RecurringInvoiceScheduleWhereInput = { userId };
+    const where: Prisma.RecurringInvoiceScheduleWhereInput = { tenantId };
     if (search) {
       where.name = { contains: search, mode: 'insensitive' };
     }
@@ -253,11 +253,11 @@ export async function listSchedules(req: Request, res: Response): Promise<void> 
 
 export async function getSchedule(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const schedule = await prisma.recurringInvoiceSchedule.findFirst({
-      where: { id, userId },
+      where: { id, tenantId },
       include: {
         contact: {
           select: { id: true, firstName: true, lastName: true, organisation: true },
@@ -289,12 +289,12 @@ export async function getSchedule(req: Request, res: Response): Promise<void> {
 
 export async function updateSchedule(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = req.body as Record<string, unknown>;
 
     const existing = await prisma.recurringInvoiceSchedule.findFirst({
-      where: { id, userId },
+      where: { id, tenantId },
     });
     if (!existing) {
       fail(res, 404, 'Recurring schedule not found');
@@ -390,8 +390,8 @@ async function loadOwned(
   req: Request,
   id: string,
 ): Promise<Awaited<ReturnType<typeof prisma.recurringInvoiceSchedule.findFirst>>> {
-  const userId = requireUserId(req);
-  return prisma.recurringInvoiceSchedule.findFirst({ where: { id, userId } });
+  const tenantId = requireTenantId(req);
+  return prisma.recurringInvoiceSchedule.findFirst({ where: { id, tenantId } });
 }
 
 /** POST /recurring-schedules/:id/pause  (ACTIVE -> PAUSED) */
@@ -485,10 +485,10 @@ export async function endSchedule(req: Request, res: Response): Promise<void> {
 
 export async function runScheduleNow(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
-    const s = await prisma.recurringInvoiceSchedule.findFirst({ where: { id, userId } });
+    const s = await prisma.recurringInvoiceSchedule.findFirst({ where: { id, tenantId } });
     if (!s) {
       fail(res, 404, 'Recurring schedule not found');
       return;
@@ -554,11 +554,11 @@ export async function runScheduleNow(req: Request, res: Response): Promise<void>
 
 export async function listOccurrences(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const s = await prisma.recurringInvoiceSchedule.findFirst({
-      where: { id, userId },
+      where: { id, tenantId },
       select: { id: true },
     });
     if (!s) {
@@ -567,7 +567,7 @@ export async function listOccurrences(req: Request, res: Response): Promise<void
     }
 
     const rows = await prisma.invoice.findMany({
-      where: { recurringScheduleId: id, userId, isDeleted: false },
+      where: { recurringScheduleId: id, tenantId, isDeleted: false },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,

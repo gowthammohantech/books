@@ -22,7 +22,8 @@
 import type { PrismaClient, Prisma } from '@prisma/client';
 import { Prisma as PrismaNS } from '@prisma/client';
 
-import { prisma } from '../prisma';
+import { prisma, prismaUnscoped } from '../prisma';
+import { runAsTenant } from '../tenantContext';
 import {
   postInvoiceIssued,
   postSaleCogs,
@@ -56,19 +57,25 @@ export type RunnerTx = Pick<PrismaClient, 'invoice' | 'generalSetting' | 'produc
 const MAX_NUMBER_RETRIES = 8;
 
 /**
- * Compute the next sequential invoice number for the tenant-wide INVOICE series.
+ * Compute the next sequential invoice number for this tenant's INVOICE series.
  *
  * Mirrors the legacy prefix scheme (`generalSetting.invoicePrefix` || 'INV-' +
  * zero-padded counter) but is consumed inside a retry loop (see
  * `createInvoiceWithNumber`) so a unique-constraint collision is recovered from
  * rather than crashing — avoiding the legacy read-then-write race.
  */
-async function nextInvoiceNumber(tx: RunnerTx, offset: number): Promise<string> {
-  const prefixSetting = await tx.generalSetting.findUnique({ where: { key: 'invoicePrefix' } });
+async function nextInvoiceNumber(
+  tx: RunnerTx,
+  tenantId: string,
+  offset: number,
+): Promise<string> {
+  const prefixSetting = await tx.generalSetting.findUnique({
+    where: { tenantId_key: { tenantId, key: 'invoicePrefix' } },
+  });
   const prefix =
     prefixSetting && typeof prefixSetting.value === 'string' ? prefixSetting.value : 'INV-';
   const lastInvoice = await tx.invoice.findFirst({
-    where: { invoiceNumber: { not: null }, invoiceType: 'INVOICE' },
+    where: { tenantId, invoiceNumber: { not: null }, invoiceType: 'INVOICE' },
     orderBy: { createdAt: 'desc' },
     select: { invoiceNumber: true },
   });
@@ -86,7 +93,7 @@ async function nextInvoiceNumber(tx: RunnerTx, offset: number): Promise<string> 
  */
 export interface ScheduleTemplate {
   id: string;
-  userId: string;
+  tenantId: string;
   contactId: string | null;
   currencyCode: string | null;
   taxTreatment: string | null;
@@ -112,10 +119,10 @@ async function createInvoiceWithNumber(
   schedule: ScheduleTemplate,
   runDate: Date,
 ): Promise<{ id: string; invoiceNumber: string }> {
-  const billFrom = schedule.billFrom ?? schedule.userId;
+  const billFrom = schedule.billFrom ?? schedule.tenantId;
 
   for (let attempt = 0; attempt < MAX_NUMBER_RETRIES; attempt++) {
-    const invoiceNumber = await nextInvoiceNumber(tx, attempt);
+    const invoiceNumber = await nextInvoiceNumber(tx, schedule.tenantId, attempt);
     try {
       const created = await tx.invoice.create({
         data: {
@@ -123,7 +130,7 @@ async function createInvoiceWithNumber(
           invoiceType: 'INVOICE',
           status: 'UNPAID',
           invoiceDate: runDate,
-          userId: schedule.userId,
+          tenantId: schedule.tenantId,
           billFrom,
           ...(schedule.contactId ? { contactId: schedule.contactId } : {}),
           items: (schedule.items ?? null) as Prisma.InputJsonValue,
@@ -181,7 +188,7 @@ async function postGeneratedInvoice(
   const postingTx = tx as unknown as PostingTx;
 
   await postInvoiceIssued(postingTx, {
-    userId: schedule.userId,
+    tenantId: schedule.tenantId,
     invoiceId: invoice.id,
     date: runDate,
     total: String(schedule.TotalAmount),
@@ -199,15 +206,15 @@ async function postGeneratedInvoice(
     const qty = item.qty != null ? Number(item.qty) : 0;
     if (!productId || !qty) continue;
 
-    const product = await tx.product.findUnique({
-      where: { id: productId },
+    const product = await tx.product.findFirst({
+      where: { id: productId, tenantId: schedule.tenantId },
       select: { item_type: true },
     });
     // Never deduct stock or accrue COGS for Service products.
     if (product?.item_type === 'Service') continue;
 
     const inv = await tx.inventory.findFirst({
-      where: { productId, userId: schedule.userId, isDeleted: false },
+      where: { productId, tenantId: schedule.tenantId, isDeleted: false },
     });
     if (inv) {
       totalCogs = totalCogs.plus(inv.avgCost.times(new PrismaNS.Decimal(qty)));
@@ -216,7 +223,7 @@ async function postGeneratedInvoice(
     // Deduct inventory exactly like a normal invoice issue (stock_out).
     await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
       productId,
-      userId: schedule.userId,
+      tenantId: schedule.tenantId,
       qtyDelta: -qty,
       type: 'stock_out',
       referenceType: 'invoice',
@@ -224,13 +231,13 @@ async function postGeneratedInvoice(
       extra: {
         unitId: item.unit ?? null,
         notes: `Stock reduced due to recurring Invoice #${invoice.invoiceNumber}`,
-        createdBy: schedule.userId,
+        createdBy: schedule.tenantId,
       },
     });
   }
 
   await postSaleCogs(postingTx, {
-    userId: schedule.userId,
+    tenantId: schedule.tenantId,
     invoiceId: invoice.id,
     date: runDate,
     cost: totalCogs.toString(),
@@ -252,7 +259,7 @@ async function postGeneratedInvoice(
  * @param client a Prisma transaction client OR the PrismaClient
  * @param schedule the schedule template (already tenant-checked by caller)
  * @param runDate the effective date for the generated invoice
- * @param _userId tenant scope (kept for signature stability; schedule.userId is authoritative)
+ * @param _userId tenant scope (kept for signature stability; schedule.tenantId is authoritative)
  */
 export async function generateInvoiceFromSchedule(
   client: RunnerTx | PrismaClient,
@@ -286,7 +293,7 @@ export interface RunDueSummary {
 
 /**
  * System cron entrypoint. Tenant-agnostic SELECT of every ACTIVE schedule whose
- * nextRunDate has arrived; each is processed using its OWN userId for posting +
+ * nextRunDate has arrived; each is processed using its OWN tenantId for posting +
  * tenant scope.
  *
  * Per schedule, in a SINGLE transaction:
@@ -301,16 +308,25 @@ export async function runDueSchedules(
   today: Date = startOfToday(),
   db: Pick<PrismaClient, 'recurringInvoiceSchedule' | '$transaction'> = prisma,
 ): Promise<RunDueSummary> {
-  const due = await db.recurringInvoiceSchedule.findMany({
-    where: { status: 'ACTIVE', nextRunDate: { lte: today } },
-  });
+  // CROSS-TENANT BY DESIGN: the due set spans every workspace. `db` is the
+  // caller-supplied client (a test double, usually); the default path reads
+  // unscoped because there is no one tenant that owns "everything due today".
+  const due = db === prisma
+    ? await prismaUnscoped.recurringInvoiceSchedule.findMany({
+        where: { status: 'ACTIVE', nextRunDate: { lte: today } },
+      })
+    : await db.recurringInvoiceSchedule.findMany({
+        where: { status: 'ACTIVE', nextRunDate: { lte: today } },
+      });
 
   const successes: RunDueSummary['successes'] = [];
   const failures: RunDueSummary['failures'] = [];
 
   for (const schedule of due) {
     try {
-      const status = await db.$transaction(async (tx) => {
+      // The whole generation — invoice, GL posting, stock movement, schedule
+      // advance — runs as the schedule's own workspace.
+      const status = await runAsTenant(schedule.tenantId, () => db.$transaction(async (tx) => {
         const result = await generateInvoiceFromSchedule(
           tx as unknown as RunnerTx,
           schedule as unknown as ScheduleTemplate,
@@ -340,7 +356,7 @@ export async function runDueSchedules(
         });
 
         return { invoiceNumber: result.invoiceNumber, status: advance.status };
-      });
+      }));
 
       successes.push({
         scheduleId: schedule.id,

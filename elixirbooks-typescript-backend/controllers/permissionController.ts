@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import type { Module, Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
+import { requireTenantId } from '../lib/tenantScope';
 
 interface PermissionInput {
   moduleId?: string;
@@ -38,8 +39,11 @@ export async function createOrUpdatePermissions(
       return;
     }
 
-    // Validate role existence
-    const role = await prisma.role.findUnique({ where: { id: roleId } });
+    // Validate role existence WITHIN THIS TENANT. Scoping matters here: an
+    // unscoped lookup by id would let any tenant re-permission another
+    // tenant's role by guessing its uuid.
+    const tenantId = requireTenantId(req);
+    const role = await prisma.role.findFirst({ where: { id: roleId, tenantId } });
     if (!role) {
       res.status(404).json({
         success: false,
@@ -106,6 +110,8 @@ export async function createOrUpdatePermissions(
         } else {
           const created = await tx.permission.create({
             data: {
+              // Denormalized from the (already tenant-checked) Role above.
+              tenantId,
               roleId,
               moduleId: perm.moduleId,
               create: perm.create || false,

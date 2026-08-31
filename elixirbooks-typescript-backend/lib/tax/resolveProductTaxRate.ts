@@ -58,7 +58,7 @@ export function resolveProductTaxRate(source: ProductTaxSource): ResolvedProduct
   if (members.length === 1) {
     return { taxRateId: members[0].id, name: members[0].name, rate: Number(members[0].rate) };
   }
-  // The global "No Tax" group (no userId) holds EVERY tenant's pack-seeded
+  // The global "No Tax" group (no tenantId) holds EVERY tenant's pack-seeded
   // rates (ensureDefaultTaxGroup.ts + seedPackTaxRates.ts) — summing its
   // members produces nonsense like {name:'No Tax', rate:63}. Mirror the
   // migration script's guard (migrateTaxesToRates.ts planGroupResolution):

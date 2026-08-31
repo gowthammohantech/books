@@ -12,7 +12,7 @@ const isPos = (v: string): boolean => toDecimal(v).greaterThan(0);
 export async function postMoneyIn(
   tx: PostingTx,
   p: {
-    userId: string;
+    tenantId: string;
     sourceType: string;
     sourceId: string;
     event: string;
@@ -31,7 +31,7 @@ export async function postMoneyIn(
     projectId?: string | null;
   },
 ): Promise<void> {
-  const settings = await tx.companySettings.findFirst({ where: { userId: p.userId } });
+  const settings = await tx.companySettings.findFirst({ where: { tenantId: p.tenantId } });
   if (!shouldPost(settings, p.date)) return;
 
   const net = sub(p.total, p.tax);
@@ -56,7 +56,7 @@ export async function postMoneyIn(
   const effectiveRate = effectiveCurrency !== 'BASE' ? p.exchangeRate : undefined;
 
   await post(tx, {
-    userId: p.userId,
+    tenantId: p.tenantId,
     sourceType: p.sourceType,
     sourceId: p.sourceId,
     event: p.event,

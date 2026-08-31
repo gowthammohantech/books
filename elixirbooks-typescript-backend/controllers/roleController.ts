@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -19,7 +19,9 @@ export async function createRole(req: Request, res: Response): Promise<void> {
       status?: boolean;
       defaultRoute?: string;
     };
-    const userId = requireUserId(req);
+    // requireTenantId returns the TENANT id (see lib/tenantScope). Roles are
+    // per-tenant, so this is both the owning tenant and the audit actor here.
+    const tenantId = requireTenantId(req);
 
     // Collect validation errors
     const errors: Record<string, string> = {};
@@ -35,7 +37,7 @@ export async function createRole(req: Request, res: Response): Promise<void> {
     }
 
     // Validate user existence
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({ where: { id: tenantId } });
     if (!user) {
       res.status(422).json({
         message: 'Validation failed',
@@ -45,8 +47,13 @@ export async function createRole(req: Request, res: Response): Promise<void> {
     }
 
     if (!errors.roleName && roleName) {
+      // Scoped to this tenant: two workspaces may each have a "Sales" role.
+      // Note this check is `deletedAt: null` only — a soft-deleted role of the
+      // same name is not a collision, which is exactly why Role carries no DB
+      // unique constraint on (tenantId, roleName). See prisma/schema.prisma.
       const existingRole = await prisma.role.findFirst({
         where: {
+          tenantId,
           roleName: roleName.trim(),
           deletedAt: null,
         },
@@ -68,9 +75,10 @@ export async function createRole(req: Request, res: Response): Promise<void> {
     // Create new role
     const role = await prisma.role.create({
       data: {
+        tenantId,
         roleName: (roleName as string).trim(),
         status: Boolean(status),
-        createdBy: userId,
+        createdBy: tenantId,
         ...(defaultRoute !== undefined ? { defaultRoute: defaultRoute.trim() } : {}),
       },
     });

@@ -2,9 +2,10 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
+import { requireTenantId } from '../lib/tenantScope';
 import { insertCustomFieldValues, readCustomFieldValues } from '../lib/customFieldValues';
 
-// Category is a global lookup table — no userId column, so tenantScope()
+// Category is a global lookup table — no tenantId column, so tenantScope()
 // does not apply here.
 
 // Attach an absolute image URL the frontend can render directly. Stored value
@@ -32,11 +33,12 @@ export async function createCategory(req: Request, res: Response): Promise<void>
     const imageFile = req.file ?? filesArray.find((f) => f.fieldname === 'category_image');
     const category_image = imageFile ? imageFile.filename : null;
 
-    const userId = (req as Request & { user?: string }).user ?? 'system';
+    const tenantId = requireTenantId(req);
 
     const category = await prisma.$transaction(async (tx) => {
       const created = await tx.category.create({
         data: {
+          tenantId,
           category_name: category_name as string,
           slug: slug as string,
           category_image,
@@ -48,7 +50,7 @@ export async function createCategory(req: Request, res: Response): Promise<void>
         recordId: created.id,
         customFields: req.body.customFields,
         files: filesArray,
-        userId,
+        tenantId,
       });
       return created;
     });
@@ -69,7 +71,7 @@ export async function getAllCategories(req: Request, res: Response): Promise<voi
     // Original JS searched category_name and category_description. The
     // Prisma schema has no category_description column, so we only filter
     // on category_name when a search term is provided.
-    const where: Prisma.CategoryWhereInput = {};
+    const where: Prisma.CategoryWhereInput = { tenantId: requireTenantId(req) };
     if (search) {
       where.category_name = { contains: search, mode: 'insensitive' };
     }
@@ -108,13 +110,14 @@ export async function getAllCategories(req: Request, res: Response): Promise<voi
 export async function getCategoryById(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params as { id: string };
-    const category = await prisma.category.findUnique({ where: { id } });
+    const category = await prisma.category.findFirst({ where: { id, tenantId: requireTenantId(req) } });
     if (!category) {
       res.status(404).json({ error: 'Category not found' });
       return;
     }
     const customFields = await readCustomFieldValues(prisma, {
       module: 'category',
+      tenantId: requireTenantId(req),
       recordId: id,
       moduleSlug: 'categories',
     });
@@ -134,7 +137,7 @@ export async function updateCategory(req: Request, res: Response): Promise<void>
       status?: boolean | string;
     };
 
-    const existing = await prisma.category.findUnique({ where: { id } });
+    const existing = await prisma.category.findFirst({ where: { id, tenantId: requireTenantId(req) } });
     if (!existing) {
       res.status(404).json({ error: 'Category not found' });
       return;
@@ -144,7 +147,7 @@ export async function updateCategory(req: Request, res: Response): Promise<void>
     const filesArray = (req.files as Express.Multer.File[] | undefined) ?? [];
     const imageFile = req.file ?? filesArray.find((f) => f.fieldname === 'category_image');
 
-    const userId = (req as Request & { user?: string }).user ?? 'system';
+    const tenantId = requireTenantId(req);
 
     const data: Prisma.CategoryUpdateInput = {};
     if (category_name) data.category_name = category_name;
@@ -164,7 +167,7 @@ export async function updateCategory(req: Request, res: Response): Promise<void>
         recordId: updated.id,
         customFields: req.body.customFields,
         files: filesArray,
-        userId,
+        tenantId,
       });
       return updated;
     });
@@ -179,7 +182,7 @@ export async function updateCategory(req: Request, res: Response): Promise<void>
 export async function deleteCategory(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params as { id: string };
-    const existing = await prisma.category.findUnique({ where: { id } });
+    const existing = await prisma.category.findFirst({ where: { id, tenantId: requireTenantId(req) } });
     if (!existing) {
       res.status(404).json({ error: 'Category not found' });
       return;

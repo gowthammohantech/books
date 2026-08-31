@@ -9,7 +9,8 @@ import type {
 } from '@prisma/client';
 
 import { prisma } from '../../../lib/prisma';
-import { tenantScope, requireUserId, UnauthorizedError } from '../../../lib/tenantScope';
+import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
+import { tenantScope, requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 import { applyDocumentTreatment } from '../../../lib/tax/applyTreatment';
 import {
@@ -30,15 +31,6 @@ import { readCustomFieldValuesForRecords } from '../../../lib/customFieldValues'
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
 import { resolveProductTaxRate } from '../../../lib/tax/resolveProductTaxRate';
-
-// C.1: resolve the company default currency code (ISO string).
-async function resolveDefaultCurrencyCode(): Promise<string | null> {
-  const defaultCurrency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return defaultCurrency?.code ?? null;
-}
 
 // utils/mailer is still JS; static require is fine here.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -176,9 +168,17 @@ function normaliseItems(raw: unknown, headerCostCenterId?: string | null): Incom
   }));
 }
 
-async function generateNextPurchaseOrderId(tx: Tx, prefix = 'PO-'): Promise<string> {
+async function generateNextPurchaseOrderId(
+  tx: Tx,
+  tenantId: string,
+  prefix = 'PO-',
+): Promise<string> {
+  // This tenant's series. It read the INSTALL-WIDE last purchase order, so a
+  // second company's first PO would have continued the first company's
+  // numbering — the same defect P4 fixed in invoiceController, in the one
+  // place that spelled the query differently.
   const last = await tx.purchaseOrder.findFirst({
-    where: { purchaseOrderId: { not: null } },
+    where: { tenantId, purchaseOrderId: { not: null } },
     orderBy: { purchaseOrderId: 'desc' },
     select: { purchaseOrderId: true },
   });
@@ -193,7 +193,7 @@ async function generateNextPurchaseOrderId(tx: Tx, prefix = 'PO-'): Promise<stri
 async function insertCustomFieldValues(
   tx: Tx,
   recordId: string,
-  userId: string,
+  tenantId: string,
   customFieldsRaw: unknown,
   files: Express.Multer.File[],
 ): Promise<void> {
@@ -213,11 +213,12 @@ async function insertCustomFieldValues(
     const fileMatch = files.find((file) => file.fieldname === `customField_${f.fieldId}`);
     if (fileMatch) value = fileMatch.path;
     return {
+      tenantId,
       customFieldId: f.fieldId,
       module: 'purchaseOrder',
       recordId,
       value,
-      createdBy: userId,
+      createdBy: tenantId,
     };
   });
 
@@ -230,7 +231,7 @@ async function insertCustomFieldValues(
 
 export async function createPurchaseOrder(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as Record<string, unknown>;
     // Resolved before the items so each line can inherit the document centre.
     const docCostCenterId = typeof body.costCenterId === 'string' && body.costCenterId ? body.costCenterId : null;
@@ -240,7 +241,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
     // id on a line would reach the ledger unnoticed. One query covers the
     // header and every line.
     try {
-      await assertCostCentresExist(prisma, userId, collectCostCentreIds(docCostCenterId, items));
+      await assertCostCentresExist(prisma, tenantId, collectCostCentreIds(docCostCenterId, items));
     } catch (centreErr) {
       if (centreErr instanceof UnknownCostCentreError) {
         res.status(400).json({ success: false, message: centreErr.message, errors: { costCenterId: centreErr.message } });
@@ -251,7 +252,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
 
     const billFromId = body.billFrom as string;
     const legacySupplierId = ((body.supplierId ?? body.billTo) as string | undefined) ?? null;
-    const bodyUserId = (body.userId as string) ?? userId;
+    const bodyUserId = (body.tenantId as string) ?? tenantId;
     const incomingContactId = typeof body.contactId === 'string' && body.contactId ? body.contactId : null;
 
     if (!incomingContactId && !legacySupplierId) {
@@ -267,7 +268,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
     if (incomingContactId) {
       // New contact-based path: verify the contact belongs to the AUTHENTICATED tenant.
       const ownedContact = await (prisma as unknown as Record<string, Record<string, (a: unknown) => Promise<unknown>>>).contact.findFirst({
-        where: { id: incomingContactId, userId, isDeleted: false },
+        where: { id: incomingContactId, tenantId, isDeleted: false },
         select: { id: true, defaultTaxTreatment: true },
       } as never) as { id: string; defaultTaxTreatment: TaxTreatment | null } | null;
       if (!ownedContact) {
@@ -280,7 +281,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
       // Legacy path: keep supplierId, resolve contactId from legacySupplierId.
       resolvedSupplierId = legacySupplierId;
       const contactRow = await (prisma as unknown as Record<string, Record<string, (a: unknown) => Promise<unknown>>>).contact.findFirst({
-        where: { legacySupplierId, userId, isDeleted: false },
+        where: { legacySupplierId, tenantId, isDeleted: false },
         select: { id: true, defaultTaxTreatment: true },
       } as never) as { id: string; defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) {
@@ -336,7 +337,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
     // C.1: per-document currency — use caller-supplied code or fall back to company default.
     const docCurrencyCode =
       (typeof body.currencyCode === 'string' && body.currencyCode ? body.currencyCode : null) ??
-      (await resolveDefaultCurrencyCode());
+      (await resolveDefaultCurrencyCode(requireTenantId(req)));
 
     // C2: per-document tax treatment.
     const docTreatment: TaxTreatment =
@@ -345,7 +346,11 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
     // Server-authoritative totals: PO lines carry a flat `tax` amount +
     // tax_group_id (no per-line percent), so resolve the group's rate then
     // recompute tax on the discounted base. Client-sent totals are ignored.
-    const itemsWithRates = await resolveItemTaxRates(prisma as unknown as TaxGroupLookupDb, items as TotalsItem[]);
+    const itemsWithRates = await resolveItemTaxRates(
+      prisma as unknown as TaxGroupLookupDb,
+      items as TotalsItem[],
+      tenantId,
+    );
     const serverTotals = computeDocumentTotals(itemsWithRates);
     warnOnTotalsDivergence(
       'purchaseOrder',
@@ -371,7 +376,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
     const files = (req.files as Express.Multer.File[] | undefined) ?? [];
 
     const purchaseOrder = await prisma.$transaction(async (tx) => {
-      const purchaseOrderId = await generateNextPurchaseOrderId(tx);
+      const purchaseOrderId = await generateNextPurchaseOrderId(tx, tenantId);
       const created = await tx.purchaseOrder.create({
         data: {
           purchaseOrderId,
@@ -396,7 +401,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
           signatureId: signType === 'digitalSignature' ? ((body.signatureId as string) ?? null) : null,
           signatureImage: signType === 'eSignature' && req.file ? req.file.path : null,
           signatureName: signType === 'eSignature' ? ((body.signatureName as string) ?? null) : null,
-          userId: bodyUserId,
+          tenantId: bodyUserId,
           billFrom: billFromId,
           billTo: null,
           convert_type: convertType,
@@ -609,12 +614,13 @@ export async function getRecentProductsWithSearch(req: Request, res: Response): 
     }
 
     // Merge search + currency with AND semantics.
-    const where: Prisma.ProductWhereInput =
-      queryCur
-        ? { AND: [searchClause, currencyClause] }
-        : searchClause;
+    const tenantId = requireTenantId(req);
 
-    const tenantId = requireUserId(req);
+    // AND rather than a spread: a caller-supplied OR sitting beside the
+    // filter would re-widen it past this tenant.
+    const where: Prisma.ProductWhereInput = {
+      AND: queryCur ? [{ tenantId }, searchClause, currencyClause] : [{ tenantId }, searchClause],
+    };
 
     const products = await prisma.product.findMany({
       where,
@@ -637,7 +643,7 @@ export async function getRecentProductsWithSearch(req: Request, res: Response): 
     // mirroring ProductController.getAllProducts.
     const productIds = products.map((p) => p.id);
     const inventoryRows = await prisma.inventory.findMany({
-      where: { productId: { in: productIds }, userId: tenantId },
+      where: { productId: { in: productIds }, tenantId: tenantId },
       select: { productId: true, quantity: true },
     });
     const inventoryByProductId = new Map(inventoryRows.map((r) => [r.productId, r.quantity]));
@@ -645,6 +651,7 @@ export async function getRecentProductsWithSearch(req: Request, res: Response): 
     // Batch-fetch product custom-field values for this page (no N+1) so the
     // frontend can autofill line-item custom fields from the source product.
     const customFieldsByProductId = await readCustomFieldValuesForRecords(prisma, {
+      tenantId,
       module: CustomFieldValueModule.product,
       recordIds: productIds,
       moduleSlug: 'product-services',
@@ -751,16 +758,16 @@ export async function getRecentProductsWithSearch(req: Request, res: Response): 
 
 export async function listBankDetails(req: Request, res: Response): Promise<void> {
   try {
-    const { userId, status, search = '' } = req.query as {
-      userId?: string;
+    const { tenantId, status, search = '' } = req.query as {
+      tenantId?: string;
       status?: string;
       search?: string;
     };
 
     const where: Prisma.BankDetailWhereInput = { isDeleted: false };
 
-    if (userId) {
-      where.userId = userId;
+    if (tenantId) {
+      where.tenantId = tenantId;
     }
 
     if (status !== undefined) {
@@ -795,7 +802,7 @@ export async function listBankDetails(req: Request, res: Response): Promise<void
       currentBalance: detail.currentBalance ? parseFloat(detail.currentBalance.toString()) : 0,
       asOnDate: detail.asOnDate,
       status: detail.status,
-      userId: detail.userId,
+      tenantId: detail.tenantId,
       createdAt: detail.createdAt,
       updatedAt: detail.updatedAt,
     }));
@@ -822,11 +829,11 @@ export async function listBankDetails(req: Request, res: Response): Promise<void
 
 export async function getUserSignatures(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { search = '', status } = req.query as { search?: string; status?: string };
 
     const where: Prisma.SignatureWhereInput = {
-      userId,
+      tenantId,
       isDeleted: false,
     };
 
@@ -989,14 +996,14 @@ export async function listPurchaseOrders(req: Request, res: Response): Promise<v
     let tableFields: { id: string; fieldSlug: string; labelName: string }[] = [];
     if (purchaseOrderModule) {
       tableFields = await prisma.customField.findMany({
-        where: { moduleId: purchaseOrderModule.id, showInTable: true, deletedAt: null },
+        where: { tenantId: requireTenantId(req), moduleId: purchaseOrderModule.id, showInTable: true, deletedAt: null },
         select: { id: true, fieldSlug: true, labelName: true },
       });
     }
 
     const purchaseOrderIds = purchaseOrders.map((po) => po.id);
     const customValues = await prisma.customFieldValue.findMany({
-      where: { module: 'purchaseOrder', recordId: { in: purchaseOrderIds } },
+      where: { tenantId: requireTenantId(req), module: 'purchaseOrder', recordId: { in: purchaseOrderIds } },
     });
 
     const customValueMap: Record<string, Record<string, Prisma.JsonValue | null>> = {};
@@ -1005,9 +1012,10 @@ export async function listPurchaseOrders(req: Request, res: Response): Promise<v
       customValueMap[val.recordId][val.customFieldId] = val.value;
     });
 
-    // Next purchase order id
+    // Next purchase order id — this tenant's series, not the install's. The
+    // preview has to agree with what the create path will actually issue.
     const lastPurchaseOrder = await prisma.purchaseOrder.findFirst({
-      where: { purchaseOrderId: { not: null } },
+      where: { tenantId: requireTenantId(req), purchaseOrderId: { not: null } },
       orderBy: { purchaseOrderId: 'desc' },
       select: { purchaseOrderId: true },
     });
@@ -1295,12 +1303,12 @@ export async function getPurchaseOrderById(req: Request, res: Response): Promise
 
     if (purchaseOrderModule) {
       const fields = await prisma.customField.findMany({
-        where: { moduleId: purchaseOrderModule.id, deletedAt: null },
+        where: { tenantId: requireTenantId(req), moduleId: purchaseOrderModule.id, deletedAt: null },
         select: { id: true, fieldSlug: true, labelName: true },
       });
 
       const values = await prisma.customFieldValue.findMany({
-        where: { module: 'purchaseOrder', recordId: purchaseOrder.id },
+        where: { tenantId: requireTenantId(req), module: 'purchaseOrder', recordId: purchaseOrder.id },
       });
 
       const valueMap: Record<string, Prisma.JsonValue | null> = {};
@@ -1478,7 +1486,7 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
   try {
     const { id } = req.params as { id: string };
     const body = req.body as Record<string, unknown>;
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const existingOrder = await prisma.purchaseOrder.findUnique({ where: { id } });
     if (!existingOrder) {
@@ -1486,7 +1494,7 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
       return;
     }
 
-    const bodyUserId = (body.userId as string) ?? existingOrder.userId;
+    const bodyUserId = (body.tenantId as string) ?? existingOrder.tenantId;
     const user = await prisma.user.findUnique({ where: { id: bodyUserId } });
     if (!user) {
       res.status(422).json({ message: 'Invalid user ID' });
@@ -1530,7 +1538,7 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
     if (incomingPartyId) {
       partyProvided = true;
       const ownedContact = (await contactDb().contact.findFirst({
-        where: { id: incomingPartyId, userId, isDeleted: false },
+        where: { id: incomingPartyId, tenantId, isDeleted: false },
         select: { id: true },
       } as never)) as { id: string } | null;
       if (ownedContact) {
@@ -1599,7 +1607,11 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
       items = normaliseItems(body.items);
       // Server-authoritative totals (see createPurchaseOrder): resolve tax-group
       // rates, recompute on the discounted base, ignore client-sent totals.
-      const itemsWithRates = await resolveItemTaxRates(prisma as unknown as TaxGroupLookupDb, items as TotalsItem[]);
+      const itemsWithRates = await resolveItemTaxRates(
+      prisma as unknown as TaxGroupLookupDb,
+      items as TotalsItem[],
+      tenantId,
+    );
       const serverTotals = computeDocumentTotals(itemsWithRates);
       warnOnTotalsDivergence('purchaseOrder', id, asNumber(body.grandTotal, asNumber(body.TotalAmount, NaN)), serverTotals.grandTotal);
       taxableAmount = serverTotals.subTotal;
@@ -1614,7 +1626,7 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
     let poContactDefaultTreatment: TaxTreatment | null = null;
     if (poContactId) {
       const contactRow = (await cdbPO().contact.findFirst({
-        where: { id: poContactId, userId, isDeleted: false },
+        where: { id: poContactId, tenantId, isDeleted: false },
         select: { defaultTaxTreatment: true },
       } as never)) as { defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) poContactDefaultTreatment = contactRow.defaultTaxTreatment;
@@ -1678,8 +1690,8 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
       if (existingOrder.billTo) updateData.billToUser = { disconnect: true };
     }
 
-    if (body.userId) {
-      updateData.user = { connect: { id: bodyUserId } };
+    if (body.tenantId) {
+      updateData.tenant = { connect: { id: bodyUserId } };
     }
 
     if (body.bank !== undefined) {
@@ -1734,7 +1746,7 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
       }
       if (Array.isArray(customFields) && customFields.length > 0) {
         await tx.customFieldValue.deleteMany({
-          where: { module: 'purchaseOrder', recordId: id },
+          where: { tenantId, module: 'purchaseOrder', recordId: id },
         });
         await insertCustomFieldValues(tx, id, bodyUserId, customFields, files);
       }
@@ -1777,8 +1789,8 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
         },
       },
     });
-    // userId param is acknowledged but not used after permission check
-    void userId;
+    // tenantId param is acknowledged but not used after permission check
+    void tenantId;
   } catch (err) {
     if (handleUnauthorized(res, err)) return;
     console.error(err);
@@ -1796,10 +1808,10 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
 export async function deletePurchaseOrder(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params as { id: string };
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const purchaseOrder = await prisma.purchaseOrder.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
 
     if (!purchaseOrder) {
@@ -1857,7 +1869,7 @@ export async function getAllTaxGroupsDetails(req: Request, res: Response): Promi
   try {
     const { search } = req.query as { search?: string };
 
-    const where: Prisma.TaxGroupWhereInput = {};
+    const where: Prisma.TaxGroupWhereInput = { tenantId: requireTenantId(req) };
     if (search) {
       where.OR = [{ tax_name: { contains: search, mode: 'insensitive' } }];
     }

@@ -26,7 +26,7 @@ export interface LineInstruction {
 }
 
 export interface PostingInput {
-  userId: string;
+  tenantId: string;
   sourceType: string;   // e.g. 'Invoice'
   sourceId: string;     // document id
   event: string;        // e.g. 'issued', 'payment'

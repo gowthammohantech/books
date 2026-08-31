@@ -3,7 +3,7 @@ import type { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
 
-import { requireUserId, requireActingUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, requireActingUserId, UnauthorizedError } from '../lib/tenantScope';
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -15,7 +15,7 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
 
 export async function dashboard(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const userId = requireTenantId(req);
     const userData = await prisma.user.findUnique({ where: { id: userId } });
     res.json({
       message: 'Admin dashboard',

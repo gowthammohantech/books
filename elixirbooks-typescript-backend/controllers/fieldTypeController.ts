@@ -3,7 +3,7 @@ import type { FieldTypeStatus } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
 
-// FieldType is a global lookup table — no userId column, so tenantScope()
+// FieldType is a global lookup table — no tenantId column, so tenantScope()
 // does not apply.
 
 // Create field type

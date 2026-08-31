@@ -40,7 +40,7 @@ const mailerModule: { sendMail: (opts: Record<string, unknown>) => Promise<void>
 import { prisma } from '../../../lib/prisma';
 import {
   tenantScope,
-  requireUserId,
+  requireTenantId,
   UnauthorizedError,
 } from '../../../lib/tenantScope';
 import { handleLedgerError } from '../../../lib/httpErrors';
@@ -256,16 +256,17 @@ function normaliseItems(raw: unknown, headerCostCenterId?: string | null): Incom
 
 async function generateNextInvoiceNumber(
   tx: Tx,
+  tenantId: string,
   invoiceType: 'INVOICE' | 'PROFORMA' = 'INVOICE',
-  opts?: { userId?: string; costCenterId?: string | null },
+  opts?: { costCenterId?: string | null },
 ): Promise<string> {
   // Per-profit-centre series first: a centre with its own `numberPrefix` issues
   // SAL-000001 / ACAD-000001 from its own counter. Returns null when the
   // document has no centre, or its centre has no prefix — then we fall through
   // to the install-wide sequence below, unchanged.
-  if (opts?.userId && opts.costCenterId) {
+  if (opts?.costCenterId) {
     const centreNumber = await nextCentreDocumentNumber(tx as never, {
-      userId: opts.userId,
+      tenantId,
       costCenterId: opts.costCenterId,
       model: tx.invoice as never,
       field: 'invoiceNumber',
@@ -275,12 +276,14 @@ async function generateNextInvoiceNumber(
 
   const settingKey = invoiceType === 'PROFORMA' ? 'proformaPrefix' : 'invoicePrefix';
   const fallbackPrefix = invoiceType === 'PROFORMA' ? 'PRO-' : 'INV-';
-  const prefixSetting = await tx.generalSetting.findUnique({ where: { key: settingKey } });
+  const prefixSetting = await tx.generalSetting.findUnique({
+    where: { tenantId_key: { tenantId, key: settingKey } },
+  });
   let prefix = fallbackPrefix;
   if (prefixSetting && typeof prefixSetting.value === 'string') prefix = prefixSetting.value;
 
   const lastInvoice = await tx.invoice.findFirst({
-    where: { invoiceNumber: { not: null }, invoiceType },
+    where: { tenantId, invoiceNumber: { not: null }, invoiceType },
     orderBy: { createdAt: 'desc' },
     select: { invoiceNumber: true },
   });
@@ -299,7 +302,9 @@ async function generateNextInvoiceNumber(
   let configuredNext = 0;
   const isInvoice = invoiceType === 'INVOICE';
   if (isInvoice) {
-    const nextSetting = await tx.generalSetting.findUnique({ where: { key: 'nextInvoiceNo' } });
+    const nextSetting = await tx.generalSetting.findUnique({
+      where: { tenantId_key: { tenantId, key: 'nextInvoiceNo' } },
+    });
     if (nextSetting) {
       const raw = nextSetting.value;
       const digits =
@@ -314,9 +319,9 @@ async function generateNextInvoiceNumber(
   // increments on every successful invoice creation (mirrors the settings modal).
   if (isInvoice) {
     await tx.generalSetting.upsert({
-      where: { key: 'nextInvoiceNo' },
+      where: { tenantId_key: { tenantId, key: 'nextInvoiceNo' } },
       update: { value: String(next + 1) },
-      create: { key: 'nextInvoiceNo', value: String(next + 1), groupSlug: 'invoice' },
+      create: { tenantId, key: 'nextInvoiceNo', value: String(next + 1), groupSlug: 'invoice' },
     });
   }
 
@@ -326,7 +331,7 @@ async function generateNextInvoiceNumber(
 async function insertCustomFieldValues(
   tx: Tx,
   invoiceId: string,
-  userId: string,
+  tenantId: string,
   customFieldsRaw: unknown,
   files: Express.Multer.File[],
 ): Promise<void> {
@@ -346,11 +351,12 @@ async function insertCustomFieldValues(
     const fileMatch = files.find((file) => file.fieldname === `customField_${f.fieldId}`);
     if (fileMatch) value = fileMatch.path;
     return {
+      tenantId,
       customFieldId: f.fieldId,
       module: 'invoice',
       recordId: invoiceId,
       value,
-      createdBy: userId,
+      createdBy: tenantId,
     };
   });
 
@@ -464,7 +470,7 @@ function formatDateShort(d: Date | null | undefined): string | null {
 async function postInvoiceLedger(
   tx: Tx,
   invoice: { id: string; invoiceType: string; invoiceDate: Date | null; TotalAmount: Prisma.Decimal; vat: Prisma.Decimal | null; items: Prisma.JsonValue | null; currencyCode?: string | null; exchangeRate?: Prisma.Decimal | null; costCenterId?: string | null; projectId?: string | null },
-  userId: string,
+  tenantId: string,
   // Pass precomputed totalCogs when already computed by the create path;
   // on the approve path we recompute from the persisted items + current avgCost.
   precomputedCogs?: Prisma.Decimal,
@@ -509,13 +515,13 @@ async function postInvoiceLedger(
     for (const item of resolvedItems) {
       const productId = item.productId ?? item.id;
       if (!productId || !item.qty) continue;
-      const product = await tx.product.findUnique({
-        where: { id: productId },
+      const product = await tx.product.findFirst({
+        where: { id: productId, tenantId },
         select: { item_type: true },
       });
       if (product?.item_type === 'Service') continue;
       const inv = await tx.inventory.findFirst({
-        where: { productId, userId, isDeleted: false },
+        where: { productId, tenantId, isDeleted: false },
       });
       if (!inv) continue;
       // Re-read avgCost from current inventory state (same approach as updateInvoice)
@@ -544,7 +550,7 @@ async function postInvoiceLedger(
   // G: pass document currency/rate when present; omitting both falls back to functional path.
   // P3.3: pass dims if present on the document (null/undefined → no-op)
   await postInvoiceIssued(tx as unknown as PostingTx, {
-    userId,
+    tenantId,
     invoiceId: invoice.id,
     date: invoiceDate,
     total: String(invoice.TotalAmount),
@@ -559,7 +565,7 @@ async function postInvoiceLedger(
   // COGS carries the same dimensions as the revenue it offsets, or a tagged
   // department would report revenue with no cost against it.
   await postSaleCogs(tx as unknown as PostingTx, {
-    userId,
+    tenantId,
     invoiceId: invoice.id,
     date: invoiceDate,
     cost: totalCogs.toString(),
@@ -581,7 +587,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
   }
 
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as Record<string, unknown>;
     // Resolved BEFORE the items so each line can inherit the document's centre.
     const docCostCenterId = typeof body.costCenterId === 'string' && body.costCenterId ? body.costCenterId : null;
@@ -596,7 +602,9 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
     // Only applies to INVOICE (PROFORMA has its own prefix/sequence, not configurable here).
     let invoiceNumberType = 'auto';
     if (invoiceType === 'INVOICE') {
-      const typeSetting = await prisma.generalSetting.findUnique({ where: { key: 'invoiceNumberType' } });
+      const typeSetting = await prisma.generalSetting.findUnique({
+        where: { tenantId_key: { tenantId, key: 'invoiceNumberType' } },
+      });
       if (typeSetting?.value && typeof typeSetting.value === 'string') invoiceNumberType = typeSetting.value;
     }
     const manualMode = invoiceType === 'INVOICE' && invoiceNumberType === 'manual';
@@ -614,7 +622,13 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
     }
 
     if (incomingNumber) {
-      const dup = await prisma.invoice.findFirst({ where: { invoiceNumber: incomingNumber } });
+      // Scoped: invoiceNumber is unique per (tenantId, invoiceNumber) since
+      // P4/M11, so a number another company holds is free here. Without the
+      // filter a manual-mode user would get a spurious 400 for a number their
+      // own company has never issued.
+      const dup = await prisma.invoice.findFirst({
+        where: { tenantId, invoiceNumber: incomingNumber },
+      });
       if (dup) {
         res.status(400).json({
           success: false,
@@ -667,7 +681,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
     if (incomingContactId) {
       // New contact-based path: verify the contact belongs to this tenant.
       const ownedContact = (await cdb().contact.findFirst({
-        where: { id: incomingContactId, userId, isDeleted: false },
+        where: { id: incomingContactId, tenantId, isDeleted: false },
         select: { id: true, currencyCode: true, defaultTaxTreatment: true },
       } as never)) as { id: string; currencyCode: string | null; defaultTaxTreatment: TaxTreatment | null } | null;
       if (!ownedContact) {
@@ -682,7 +696,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
       // If a separate billToContactId was provided and differs, verify it too.
       if (incomingBillToContactId && incomingBillToContactId !== incomingContactId) {
         const ownedBillTo = (await cdb().contact.findFirst({
-          where: { id: incomingBillToContactId, userId, isDeleted: false },
+          where: { id: incomingBillToContactId, tenantId, isDeleted: false },
           select: { id: true },
         } as never)) as { id: string } | null;
         if (!ownedBillTo) {
@@ -695,7 +709,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
       resolvedCustomerId = legacyCustomerId;
       resolvedBillTo = legacyCustomerId;
       const contactRow = (await cdb().contact.findFirst({
-        where: { legacyCustomerId, userId, isDeleted: false },
+        where: { legacyCustomerId, tenantId, isDeleted: false },
         select: { id: true, currencyCode: true, defaultTaxTreatment: true },
       } as never)) as { id: string; currencyCode: string | null; defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) {
@@ -719,7 +733,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
         const contactPartyId = resolvedContactId ?? legacyCustomerId;
         if (contactPartyId) {
           const contactRow = (await cdb().contact.findFirst({
-            where: { OR: [{ id: contactPartyId }, { legacyCustomerId: contactPartyId }], userId, isDeleted: false },
+            where: { OR: [{ id: contactPartyId }, { legacyCustomerId: contactPartyId }], tenantId, isDeleted: false },
             select: { currencyCode: true },
           } as never)) as { currencyCode: string | null } | null;
           if (contactRow?.currencyCode) docCurrencyCode = contactRow.currencyCode;
@@ -770,7 +784,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
 
     const invoice = await prisma.$transaction(async (tx) => {
       // Approval gate + tax regime: read companySettings for this tenant.
-      const settings = await tx.companySettings.findFirst({ where: { userId } });
+      const settings = await tx.companySettings.findFirst({ where: { tenantId } });
       const approvalsEnabled = settings?.approvalsEnabled ?? false;
 
       // -----------------------------------------------------------------------
@@ -794,7 +808,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
         let customerCtx = { customerCountry: null as string | null, customerVatNumber: null as string | null };
         if (regime === 'VAT_EU' && resolvedContactId) {
           const custContact = (await cdb().contact.findFirst({
-            where: { id: resolvedContactId, userId, isDeleted: false },
+            where: { id: resolvedContactId, tenantId, isDeleted: false },
             select: { country: true, countryId: true, vatNumber: true, vatRegNumber: true },
           } as never)) as
             | { country: string | null; countryId: string | null; vatNumber: string | null; vatRegNumber: string | null }
@@ -823,13 +837,15 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
       // The items JSON has no foreign key, so nothing stops a typo'd or
       // cross-tenant centre id reaching a line and silently poisoning the
       // departmental P&L. One query covers the header and every line.
-      await assertCostCentresExist(tx, userId, collectCostCentreIds(docCostCenterId, items));
+      await assertCostCentresExist(tx, tenantId, collectCostCentreIds(docCostCenterId, items));
 
       const created = await tx.invoice.create({
         data: {
           invoiceNumber:
             incomingNumber ??
-            (await generateNextInvoiceNumber(tx, invoiceType, { userId, costCenterId: docCostCenterId })),
+            (await generateNextInvoiceNumber(tx, tenantId, invoiceType, {
+              costCenterId: docCostCenterId,
+            })),
           invoiceType,
           // Contact-aware party: write contactId (new path) or customerId (legacy).
           // When contactId is set, customerId/billTo are null (both nullable post-migration).
@@ -861,7 +877,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
           signatureId,
           billFrom: body.billFrom as string,
           billTo: resolvedBillTo,
-          userId,
+          tenantId,
           approvalStatus: initialApprovalStatus(approvalsEnabled),
           // G: persist document currency/rate (null when absent → functional currency)
           ...(docCurrencyCode ? { currencyCode: docCurrencyCode } : {}),
@@ -897,8 +913,8 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
           if (!productId || !item.qty) continue;
 
           // Belt-and-braces: even if an Inventory row exists, never deduct for Service products.
-          const product = await tx.product.findUnique({
-            where: { id: productId },
+          const product = await tx.product.findFirst({
+            where: { id: productId, tenantId },
             select: { item_type: true, valuationMethod: true },
           });
           if (product?.item_type === 'Service') continue;
@@ -906,7 +922,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
           // Compute COGS from pre-adjustment state (WAC only; FIFO avgCost=0 → cogs=0 as documented).
           if (product?.valuationMethod !== 'FIFO') {
             const invForCogs = await tx.inventory.findFirst({
-              where: { productId, userId, isDeleted: false },
+              where: { productId, tenantId, isDeleted: false },
             });
             if (invForCogs) {
               const issue = applyWacIssue(
@@ -921,7 +937,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
           // The helper removes the old silent-skip: rows are auto-created and stock can go to/below zero.
           await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
             productId,
-            userId: requireUserId(req),
+            tenantId: requireTenantId(req),
             qtyDelta: -item.qty,
             type: 'stock_out',
             referenceType: 'invoice',
@@ -929,7 +945,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
             extra: {
               unitId: item.unit ?? null,
               notes: `Stock reduced due to Invoice #${created.referenceNo || created.id}`,
-              createdBy: userId,
+              createdBy: tenantId,
             },
           });
         }
@@ -946,7 +962,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
         });
         const isCashAuto = pmAuto?.slug?.toLowerCase() === 'cash';
         const autoBank = !isCashAuto && body.bank
-          ? await tx.bankDetail.findFirst({ where: { id: body.bank as string, userId } })
+          ? await tx.bankDetail.findFirst({ where: { id: body.bank as string, tenantId } })
           : null;
 
         // Book the auto-payment at the SAME server total the invoice PERSISTED at
@@ -955,6 +971,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
         // residual balance (paid ≠ total).
         autoPayment = await tx.invoicePayment.create({
           data: {
+            tenantId: tenantId,
             invoiceId: created.id,
             amount: toDecimal(authTotal),
             paymentModeId: body.payment_method as string,
@@ -964,7 +981,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
             movedBankBalance: !!autoBank,
             received_on: safeDate(body.payment_date) ?? new Date(),
             notes: (body.payment_notes as string) ?? 'Full payment received upon invoice creation',
-            received_by: userId,
+            received_by: tenantId,
             // Persist the SAME rate the register-move below uses (docExchangeRate) so
             // reverseInvoicePaymentEffects' baseFor(amount, exchangeRate) refund on
             // delete/void is symmetric with the create-time toBaseAmount move. Base
@@ -986,6 +1003,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
           });
           await tx.bankTransaction.create({
             data: {
+              tenantId: tenantId,
               bankAccountId: autoBank.id,
               transactionDate: autoPayDate,
               type: 'TRANSFER_IN',
@@ -1001,7 +1019,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
                 postedSourceType: 'InvoicePayment',
                 postedSourceId: autoPayment.id,
                 posted: shouldPostOnCreate(approvalsEnabled),
-                approvedById: userId,
+                approvedById: tenantId,
                 approvedAt: new Date(),
               }),
             },
@@ -1012,7 +1030,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
       // GL posting — gated by approval status.
       // When approvals are enabled, posting is deferred until approveInvoice fires.
       if (shouldPostOnCreate(approvalsEnabled)) {
-        await postInvoiceLedger(tx, created, userId, totalCogs);
+        await postInvoiceLedger(tx, created, tenantId, totalCogs);
         if (autoPayment && invoiceType !== 'PROFORMA') {
           // Resolve payment mode slug to determine CASH vs BANK
           const pmDoc = await tx.paymentMode.findUnique({
@@ -1023,7 +1041,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
             ? await resolveBankGlAccountId(tx as never, body.bank as string)
             : null;
           await postInvoicePayment(tx as unknown as PostingTx, {
-            userId,
+            tenantId,
             invoiceId: created.id,
             paymentId: autoPayment.id,
             date: safeDate(body.payment_date) ?? new Date(),
@@ -1036,7 +1054,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
 
       // Custom fields
       const files = Array.isArray(req.files) ? (req.files as Express.Multer.File[]) : [];
-      await insertCustomFieldValues(tx, created.id, userId, body.customFields, files);
+      await insertCustomFieldValues(tx, created.id, tenantId, body.customFields, files);
 
       return created;
     });
@@ -1066,7 +1084,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
 
 export async function updateInvoiceStatus(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { invoiceId, status } = req.body as { invoiceId?: string; status?: string };
 
     if (!invoiceId || !status) {
@@ -1102,7 +1120,7 @@ export async function updateInvoiceStatus(req: Request, res: Response): Promise<
       return;
     }
 
-    const existing = await prisma.invoice.findFirst({ where: { id: invoiceId, userId } });
+    const existing = await prisma.invoice.findFirst({ where: { id: invoiceId, tenantId } });
     if (!existing) {
       res.status(404).json({ message: 'Invoice not found' });
       return;
@@ -1130,7 +1148,7 @@ export async function updateInvoiceStatus(req: Request, res: Response): Promise<
 
 export async function sendInvoiceEmail(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { invoiceId, to, cc, subject, htmlContent, sendAttachment = false } = req.body as {
       invoiceId?: string;
       to?: string;
@@ -1145,7 +1163,7 @@ export async function sendInvoiceEmail(req: Request, res: Response): Promise<voi
       return;
     }
 
-    const owned = await prisma.invoice.findFirst({ where: { id: invoiceId, userId } });
+    const owned = await prisma.invoice.findFirst({ where: { id: invoiceId, tenantId } });
     if (!owned) {
       res.status(404).json({ message: 'Invoice not found' });
       return;
@@ -1221,11 +1239,11 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
   }
 
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id: invoiceId } = req.params as { id: string };
     const body = req.body as Record<string, unknown>;
 
-    const existing = await prisma.invoice.findFirst({ where: { id: invoiceId, userId } });
+    const existing = await prisma.invoice.findFirst({ where: { id: invoiceId, tenantId } });
     if (!existing) {
       res.status(404).json({ message: 'Invoice not found' });
       return;
@@ -1282,7 +1300,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
     let contactDefaultTaxTreatment: TaxTreatment | null = null;
     if (effectiveContactId) {
       const contactRow = (await cdb().contact.findFirst({
-        where: { id: effectiveContactId, userId, isDeleted: false },
+        where: { id: effectiveContactId, tenantId, isDeleted: false },
         select: { defaultTaxTreatment: true },
       } as never)) as { defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) contactDefaultTaxTreatment = contactRow.defaultTaxTreatment;
@@ -1312,7 +1330,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
       (typeof body.customerId === 'string' && body.customerId ? body.customerId : null);
 
     // Scalar (unchecked) FK assignments for the Invoice party. The surrounding
-    // `data` block writes unchecked scalars (userId, billFrom, ...), so the party
+    // `data` block writes unchecked scalars (tenantId, billFrom, ...), so the party
     // must also be expressed as scalar FKs — but resolved to the CORRECT column:
     //   contactId / billToContactId  (new Contact party)  vs
     //   customerId / billTo          (legacy Customer party).
@@ -1329,7 +1347,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
     if (incomingContactId) {
       // New contact-based party: verify ownership, set Contact FKs, clear legacy.
       const ownedContact = (await cdb().contact.findFirst({
-        where: { id: incomingContactId, userId, isDeleted: false },
+        where: { id: incomingContactId, tenantId, isDeleted: false },
         select: { id: true },
       } as never)) as { id: string } | null;
       if (!ownedContact) {
@@ -1339,7 +1357,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
       const billToContactId = incomingBillToContactId ?? incomingContactId;
       if (incomingBillToContactId && incomingBillToContactId !== incomingContactId) {
         const ownedBillTo = (await cdb().contact.findFirst({
-          where: { id: incomingBillToContactId, userId, isDeleted: false },
+          where: { id: incomingBillToContactId, tenantId, isDeleted: false },
           select: { id: true },
         } as never)) as { id: string } | null;
         if (!ownedBillTo) {
@@ -1359,7 +1377,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
       // contactId into customerId/billTo violates the Customer FK → P2003 500).
       const contactRow = (await cdb().contact.findFirst({
         where: {
-          userId,
+          tenantId,
           isDeleted: false,
           OR: [
             { legacyCustomerId: incomingLegacyCustomerId },
@@ -1406,7 +1424,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
     } else if (signType === 'digitalSignature') {
       const sigId = body.signatureId as string | undefined;
       if (sigId) {
-        const sig = await prisma.signature.findFirst({ where: { id: sigId, userId } });
+        const sig = await prisma.signature.findFirst({ where: { id: sigId, tenantId } });
         if (!sig) {
           res.status(404).json({ message: 'Digital Signature not found' });
           return;
@@ -1426,7 +1444,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
       // updateInvoice is DRAFT-only (no GL posting here), but the persisted tax must
       // still be authoritative for the flat per-country regimes. Non-flat regimes
       // and suppressing treatments fall through to the existing values.
-      const settings = await tx.companySettings.findFirst({ where: { userId } });
+      const settings = await tx.companySettings.findFirst({ where: { tenantId } });
       let authVat = enforcedVat;
       let authTotal = enforcedTotal;
       let authReverseCharge: boolean | null = existing.reverseCharge ?? false;
@@ -1438,7 +1456,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
         let customerCtx = { customerCountry: null as string | null, customerVatNumber: null as string | null };
         if (regime === 'VAT_EU' && customerContactId) {
           const custContact = (await cdb().contact.findFirst({
-            where: { id: customerContactId, userId, isDeleted: false },
+            where: { id: customerContactId, tenantId, isDeleted: false },
             select: { country: true, countryId: true, vatNumber: true, vatRegNumber: true },
           } as never)) as
             | { country: string | null; countryId: string | null; vatNumber: string | null; vatRegNumber: string | null }
@@ -1463,7 +1481,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
         }
       }
 
-      await assertCostCentresExist(tx, userId, collectCostCentreIds(docCostCenterId, items));
+      await assertCostCentresExist(tx, tenantId, collectCostCentreIds(docCostCenterId, items));
 
       const updatedInvoice = await tx.invoice.update({
         where: { id: invoiceId },
@@ -1500,7 +1518,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
           // Party (contact-first) relations resolved above. Never write a Contact
           // id into the legacy `billTo`/`billToCustomer` Customer FK (-> P2003 500).
           ...partyUpdate,
-          userId,
+          tenantId,
           // C.1: persist updated currencyCode when provided and lock guard passed
           ...(incomingCurrencyCode !== undefined ? { currencyCode: incomingCurrencyCode } : {}),
           ...(body.paymentOptions !== undefined
@@ -1542,20 +1560,20 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
           if (!productId) continue;
           const qty = asNumber(item.qty, 0);
           if (!qty) continue;
-          const product = await tx.product.findUnique({
-            where: { id: productId },
+          const product = await tx.product.findFirst({
+            where: { id: productId, tenantId },
             select: { item_type: true },
           });
           if (product?.item_type === 'Service') continue;
           // Receive back at the current avgCost so reversing the issue leaves the
           // WAC average unchanged (a receipt at avg is a blend no-op).
           const invRow = await tx.inventory.findFirst({
-            where: { productId, userId, isDeleted: false },
+            where: { productId, tenantId, isDeleted: false },
           });
           const revertUnitCost = invRow ? Number(invRow.avgCost) : 0;
           await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
             productId,
-            userId,
+            tenantId,
             qtyDelta: qty,
             type: 'stock_in',
             referenceType: 'invoice',
@@ -1564,7 +1582,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
             extra: {
               unitId: item.unit ?? null,
               notes: `Stock reverted from invoice update ${existing.invoiceNumber ?? invoiceId}`,
-              createdBy: userId,
+              createdBy: tenantId,
             },
           });
         }
@@ -1575,14 +1593,14 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
           const productId = item.productId ?? item.id;
           if (!productId) continue;
           if (!item.qty) continue;
-          const product = await tx.product.findUnique({
-            where: { id: productId },
+          const product = await tx.product.findFirst({
+            where: { id: productId, tenantId },
             select: { item_type: true },
           });
           if (product?.item_type === 'Service') continue;
           await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
             productId,
-            userId,
+            tenantId,
             qtyDelta: -item.qty,
             type: 'stock_out',
             referenceType: 'invoice',
@@ -1590,7 +1608,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
             extra: {
               unitId: item.unit ?? null,
               notes: `Stock reduced due to Invoice #${existing.invoiceNumber ?? invoiceId}`,
-              createdBy: userId,
+              createdBy: tenantId,
             },
           });
         }
@@ -1616,22 +1634,22 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
         existing.approvalStatus === 'NOT_REQUIRED' || existing.approvalStatus === 'APPROVED';
       if (glWasPosted) {
         await voidDocument(tx as unknown as PostingTx, {
-          userId, sourceType: 'Invoice', sourceId: invoiceId, event: 'issued',
+          tenantId, sourceType: 'Invoice', sourceId: invoiceId, event: 'issued',
         });
         await voidDocument(tx as unknown as PostingTx, {
-          userId, sourceType: 'Invoice', sourceId: invoiceId, event: 'cogs',
+          tenantId, sourceType: 'Invoice', sourceId: invoiceId, event: 'cogs',
         });
         if (updatedInvoice.invoiceType !== 'PROFORMA') {
-          await postInvoiceLedger(tx, updatedInvoice, userId);
+          await postInvoiceLedger(tx, updatedInvoice, tenantId);
         }
       }
 
       // Custom fields: delete then reinsert
       await tx.customFieldValue.deleteMany({
-        where: { module: 'invoice', recordId: invoiceId },
+        where: { tenantId, module: 'invoice', recordId: invoiceId },
       });
       const files = Array.isArray(req.files) ? (req.files as Express.Multer.File[]) : [];
-      await insertCustomFieldValues(tx, invoiceId, userId, body.customFields, files);
+      await insertCustomFieldValues(tx, invoiceId, tenantId, body.customFields, files);
 
       return updatedInvoice;
     });
@@ -1659,11 +1677,11 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
 export async function getInvoice(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params as { id: string };
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const baseUrl = buildBaseUrl(req);
 
     const invoice = await prisma.invoice.findFirst({
-      where: { id, userId },
+      where: { id, tenantId },
       include: {
         contact: {
           select: { id: true, firstName: true, lastName: true, organisation: true, email: true, mobile: true, vatRegNumber: true, gstin: true, addressLine1: true, addressLine2: true, addressLine3: true, town: true, region: true, postcode: true, country: true },
@@ -1706,12 +1724,12 @@ export async function getInvoice(req: Request, res: Response): Promise<void> {
     let tableFields: { id: string; fieldSlug: string; labelName: string }[] = [];
     if (invoiceModule) {
       tableFields = await prisma.customField.findMany({
-        where: { moduleId: invoiceModule.id, deletedAt: null },
+        where: { tenantId, moduleId: invoiceModule.id, deletedAt: null },
         select: { id: true, fieldSlug: true, labelName: true },
       });
     }
     const customValues = await prisma.customFieldValue.findMany({
-      where: { module: 'invoice', recordId: invoice.id },
+      where: { tenantId, module: 'invoice', recordId: invoice.id },
     });
     const customValueMap: Record<string, Prisma.JsonValue> = {};
     customValues.forEach((v) => {
@@ -1930,12 +1948,12 @@ async function buildInvoiceList(
   let tableFields: { id: string; fieldSlug: string; labelName: string }[] = [];
   if (invoiceModule) {
     tableFields = await prisma.customField.findMany({
-      where: { moduleId: invoiceModule.id, showInTable: true, deletedAt: null },
+      where: { tenantId: scope.tenantId, moduleId: invoiceModule.id, showInTable: true, deletedAt: null },
       select: { id: true, fieldSlug: true, labelName: true },
     });
   }
   const customValues = await prisma.customFieldValue.findMany({
-    where: { module: 'invoice', recordId: { in: invoiceIds } },
+    where: { tenantId: scope.tenantId, module: 'invoice', recordId: { in: invoiceIds } },
   });
   const customValueMap: Record<string, Record<string, Prisma.JsonValue>> = {};
   for (const v of customValues) {
@@ -1969,15 +1987,15 @@ async function buildInvoiceList(
     invoiceIds.length > 0
       ? creditNoteTotalsByInvoice(
           await prisma.creditNote.findMany({
-            where: { userId: scope.userId, isDeleted: false, invoiceId: { in: invoiceIds } },
+            where: { tenantId: scope.tenantId, isDeleted: false, invoiceId: { in: invoiceIds } },
             select: { invoiceId: true, totalAmount: true },
           }),
         )
       : new Map<string, Prisma.Decimal>();
 
-  // Next invoice number
+  // Next invoice number — this tenant's series, not the install's.
   const lastInvoice = await prisma.invoice.findFirst({
-    where: { invoiceNumber: { not: null } },
+    where: { tenantId: scope.tenantId, invoiceNumber: { not: null } },
     orderBy: { createdAt: 'desc' },
     select: { invoiceNumber: true },
   });
@@ -2126,10 +2144,11 @@ export async function getChildInvoices(req: Request, res: Response): Promise<voi
 
 export async function getNextInvoiceNumber(_req: Request, res: Response): Promise<void> {
   try {
+    const tenantId = requireTenantId(_req);
     const [prefixSetting, typeSetting, nextSetting] = await Promise.all([
-      prisma.generalSetting.findUnique({ where: { key: 'invoicePrefix' } }),
-      prisma.generalSetting.findUnique({ where: { key: 'invoiceNumberType' } }),
-      prisma.generalSetting.findUnique({ where: { key: 'nextInvoiceNo' } }),
+      prisma.generalSetting.findUnique({ where: { tenantId_key: { tenantId, key: 'invoicePrefix' } } }),
+      prisma.generalSetting.findUnique({ where: { tenantId_key: { tenantId, key: 'invoiceNumberType' } } }),
+      prisma.generalSetting.findUnique({ where: { tenantId_key: { tenantId, key: 'nextInvoiceNo' } } }),
     ]);
 
     // #21: unify fallback prefix with the create path ('INV-', not 'INV_').
@@ -2149,9 +2168,8 @@ export async function getNextInvoiceNumber(_req: Request, res: Response): Promis
         ? _req.query.costCenterId
         : null;
     if (previewCostCenterId) {
-      const userId = requireUserId(_req);
       const centreNumber = await peekCentreDocumentNumber(prisma as never, {
-        userId,
+        tenantId,
         costCenterId: previewCostCenterId,
       });
       if (centreNumber) {
@@ -2164,7 +2182,7 @@ export async function getNextInvoiceNumber(_req: Request, res: Response): Promis
     }
 
     const lastInvoice = await prisma.invoice.findFirst({
-      where: { invoiceNumber: { not: null }, invoiceType: 'INVOICE' },
+      where: { tenantId, invoiceNumber: { not: null }, invoiceType: 'INVOICE' },
       orderBy: { createdAt: 'desc' },
       select: { invoiceNumber: true },
     });
@@ -2351,11 +2369,11 @@ export async function listInvoicesMinimalWithoutChallan(req: Request, res: Respo
 
 export async function getInvoicePaymentDetails(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const invoice = await prisma.invoice.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       select: {
         id: true,
         invoiceNumber: true,
@@ -2392,7 +2410,7 @@ export async function getInvoicePaymentDetails(req: Request, res: Response): Pro
     const creditNoted =
       creditNoteTotalsByInvoice(
         await prisma.creditNote.findMany({
-          where: { userId, isDeleted: false, invoiceId: id },
+          where: { tenantId, isDeleted: false, invoiceId: id },
           select: { invoiceId: true, totalAmount: true },
         }),
       ).get(id) ?? ZERO;
@@ -2455,9 +2473,9 @@ export async function getInvoicePaymentDetails(req: Request, res: Response): Pro
 
 export async function deleteInvoice(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
-    const existing = await prisma.invoice.findFirst({ where: { id, userId } });
+    const existing = await prisma.invoice.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ message: 'Invoice not found' });
       return;
@@ -2477,8 +2495,8 @@ export async function deleteInvoice(req: Request, res: Response): Promise<void> 
           const qty = asNumber(item.qty, 0);
           if (!qty) continue;
           // Skip Service products — they were never deducted on create.
-          const product = await tx.product.findUnique({
-            where: { id: productId },
+          const product = await tx.product.findFirst({
+            where: { id: productId, tenantId },
             select: { item_type: true },
           });
           if (product?.item_type === 'Service') continue;
@@ -2488,11 +2506,11 @@ export async function deleteInvoice(req: Request, res: Response): Promise<void> 
           // updateInvoice's draft edit.
           const restockUnitCost = await resolveRestockUnitCost(
             tx as unknown as Parameters<typeof resolveRestockUnitCost>[0],
-            { productId, userId },
+            { productId, tenantId },
           );
           await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
             productId,
-            userId,
+            tenantId,
             qtyDelta: qty,
             type: 'stock_in',
             referenceType: 'invoice',
@@ -2501,7 +2519,7 @@ export async function deleteInvoice(req: Request, res: Response): Promise<void> 
             extra: {
               unitId: item.unit ?? null,
               notes: `Stock restored from invoice delete ${existing.invoiceNumber ?? id}`,
-              createdBy: userId,
+              createdBy: tenantId,
             },
           });
         }
@@ -2521,7 +2539,7 @@ export async function deleteInvoice(req: Request, res: Response): Promise<void> 
         });
         for (const payment of payments) {
           await reverseInvoicePaymentEffects(tx as unknown as PaymentEffectsTx, {
-            userId,
+            tenantId,
             payment,
             remarks: `Void of invoice payment ${payment.id} (invoice deleted)`,
           });
@@ -2530,7 +2548,7 @@ export async function deleteInvoice(req: Request, res: Response): Promise<void> 
             where: { id: payment.id },
             data: {
               isVoided: true,
-              voidedById: userId,
+              voidedById: tenantId,
               voidedAt: paymentVoidedAt,
               voidReason: 'Invoice deleted',
             },
@@ -2540,21 +2558,21 @@ export async function deleteInvoice(req: Request, res: Response): Promise<void> 
           // credit balance permanently reduced. No-op for non-credit payments.
           await tx.accountCreditEntry.updateMany({
             where: { invoicePaymentId: payment.id, type: 'REDEMPTION', isVoided: false },
-            data: { isVoided: true, voidedById: userId, voidedAt: paymentVoidedAt },
+            data: { isVoided: true, voidedById: tenantId, voidedAt: paymentVoidedAt },
           });
         }
       }
 
       // GL: reverse any posted issued entry for this invoice (no-op if none / ledger off)
       await reverseDocument(tx as unknown as PostingTx, {
-        userId,
+        tenantId,
         sourceType: 'Invoice',
         sourceId: id,
         event: 'issued',
       });
       // B.4: reverse the COGS entry alongside the issued entry.
       await reverseDocument(tx as unknown as PostingTx, {
-        userId,
+        tenantId,
         sourceType: 'Invoice',
         sourceId: id,
         event: 'cogs',
@@ -2582,21 +2600,23 @@ export async function deleteInvoice(req: Request, res: Response): Promise<void> 
 
 export async function convertQuotationToInvoice(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { quotationId } = req.params as { quotationId: string };
 
     const invoice = await prisma.$transaction(async (tx) => {
-      const quotation = await tx.quotation.findFirst({ where: { id: quotationId, userId } });
+      const quotation = await tx.quotation.findFirst({ where: { id: quotationId, tenantId } });
       if (!quotation) throw new Error('Quotation not found');
       if (quotation.invoiceId) throw new Error('Quotation already converted to invoice');
 
-      const invoiceNumber = await generateNextInvoiceNumber(tx, 'INVOICE', { userId, costCenterId: quotation.costCenterId });
+      const invoiceNumber = await generateNextInvoiceNumber(tx, tenantId, 'INVOICE', {
+        costCenterId: quotation.costCenterId,
+      });
 
       // Ledger: DRAFT invoices are not posted to the GL until issued (see createInvoice gate).
       const created = await tx.invoice.create({
         data: {
           invoiceNumber,
-          customerId: quotation.customerId ?? quotation.userId,
+          customerId: quotation.customerId ?? quotation.tenantId,
           invoiceDate: new Date(),
           dueDate: quotation.expiryDate,
           referenceNo: quotation.referenceNo ?? '',
@@ -2620,7 +2640,7 @@ export async function convertQuotationToInvoice(req: Request, res: Response): Pr
           signatureId: quotation.sign_type === 'digitalSignature' ? quotation.signatureId : null,
           billFrom: quotation.billFrom,
           billTo: quotation.billTo,
-          userId: quotation.userId,
+          tenantId: quotation.tenantId,
         },
       });
 
@@ -2657,7 +2677,7 @@ export async function convertQuotationToInvoice(req: Request, res: Response): Pr
 
 export async function recordInvoicePayment(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { amount, payment_method, received_on, invoiceId, notes, bankId, reference } = req.body as {
       amount?: number;
       payment_method?: string;
@@ -2682,14 +2702,14 @@ export async function recordInvoicePayment(req: Request, res: Response): Promise
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      const invoice = await tx.invoice.findFirst({ where: { id: invoiceId, userId } });
+      const invoice = await tx.invoice.findFirst({ where: { id: invoiceId, tenantId } });
       if (!invoice) throw new Error('INVOICE_NOT_FOUND');
       if (invoice.status === 'PAID') throw new Error('INVOICE_ALREADY_PAID');
 
       // Outstanding nets BOTH non-voided payments AND applied credit notes, so a
       // fully credit-noted invoice rejects further payment (which would otherwise
       // drive the GL AR control negative). Same netting as AR aging → screens agree.
-      const { totalPaid: alreadyPaidDec, creditNoted } = await getInvoiceSettlement(tx, invoice.id, userId);
+      const { totalPaid: alreadyPaidDec, creditNoted } = await getInvoiceSettlement(tx, invoice.id, tenantId);
       const alreadyPaid = alreadyPaidDec.toNumber();
       const { outstanding } = deriveInvoiceStatus(invoice.TotalAmount, alreadyPaidDec, creditNoted, invoice.status);
       const remainingBalance = outstanding.toNumber();
@@ -2716,13 +2736,13 @@ export async function recordInvoicePayment(req: Request, res: Response): Promise
       // (same settings/date the postInvoicePayment → gatedPost call below uses).
       // The bank line is reconciled iff that JE truly posts.
       const paymentDate = safeDate(received_on) ?? new Date();
-      const ledgerSettings = await tx.companySettings.findFirst({ where: { userId } });
+      const ledgerSettings = await tx.companySettings.findFirst({ where: { tenantId } });
       const didPostPayment = shouldPost(ledgerSettings, paymentDate);
 
       let bank: Awaited<ReturnType<typeof tx.bankDetail.findFirst>> | null = null;
 
       if (!isCash && !isAccountCredit) {
-        bank = await tx.bankDetail.findFirst({ where: { id: bankId, userId } });
+        bank = await tx.bankDetail.findFirst({ where: { id: bankId, tenantId } });
         if (!bank) throw new Error('BANK_NOT_FOUND');
       }
 
@@ -2732,7 +2752,7 @@ export async function recordInvoicePayment(req: Request, res: Response): Promise
       // handled by the identical response-building path as PAYMENT_EXCEEDS).
       if (isAccountCredit) {
         if (!invoice.contactId) throw new Error('ACCOUNT_CREDIT_NO_CONTACT');
-        const availableCredit = await getAccountCreditBalance(tx as unknown as AccountCreditBalanceDb, { userId, contactId: invoice.contactId });
+        const availableCredit = await getAccountCreditBalance(tx as unknown as AccountCreditBalanceDb, { tenantId, contactId: invoice.contactId });
         const availableCreditDec = new Prisma.Decimal(availableCredit.toString());
         if (new Prisma.Decimal(amount).gt(availableCreditDec.add(OUTSTANDING_TOLERANCE))) {
           throw new Error(`ACCOUNT_CREDIT_EXCEEDS:${availableCreditDec.toNumber()}`);
@@ -2741,10 +2761,10 @@ export async function recordInvoicePayment(req: Request, res: Response): Promise
 
       // #40: surface manual (offline) receipts in the Payment Transactions
       // table by writing a tracking PaymentTransaction row in the same tx.
-      // Tenant-scoped via userId; additive only — no GL/bank/amount effect.
+      // Tenant-scoped via tenantId; additive only — no GL/bank/amount effect.
       const paymentTxn = await tx.paymentTransaction.create({
         data: {
-          userId,
+          tenantId,
           invoiceId: invoice.id,
           kind: 'OFFLINE',
           status: 'CAPTURED',
@@ -2762,6 +2782,7 @@ export async function recordInvoicePayment(req: Request, res: Response): Promise
       // Persist the payment. bankId is null for cash, the bank id otherwise.
       const payment = await tx.invoicePayment.create({
         data: {
+          tenantId: tenantId,
           invoiceId: invoice.id,
           amount: toDecimal(amount),
           paymentModeId: paymentModeDoc.id,
@@ -2772,7 +2793,7 @@ export async function recordInvoicePayment(req: Request, res: Response): Promise
           movedBankBalance: !!bank,
           received_on: safeDate(received_on) ?? new Date(),
           notes: notes ?? '',
-          received_by: userId,
+          received_by: tenantId,
           paymentTransactionId: paymentTxn.id,
           ...(reference ? { reference } : {}),
           // G: persist payment-date currency/rate
@@ -2793,8 +2814,8 @@ export async function recordInvoicePayment(req: Request, res: Response): Promise
             amount: toDecimal(amount),
             invoiceId: invoice.id,
             invoicePaymentId: payment.id,
-            userId,
-            createdById: userId,
+            tenantId,
+            createdById: tenantId,
             ...(pmtCurrencyCode ? { currencyCode: pmtCurrencyCode } : invoice.currencyCode ? { currencyCode: invoice.currencyCode } : {}),
           },
         });
@@ -2818,6 +2839,7 @@ export async function recordInvoicePayment(req: Request, res: Response): Promise
 
         bankTransaction = await tx.bankTransaction.create({
           data: {
+            tenantId: tenantId,
             bankAccountId: bank.id,
             transactionDate: paymentDate,
             type: 'TRANSFER_IN',
@@ -2835,7 +2857,7 @@ export async function recordInvoicePayment(req: Request, res: Response): Promise
               postedSourceType: 'InvoicePayment',
               postedSourceId: payment.id,
               posted: didPostPayment,
-              approvedById: userId,
+              approvedById: tenantId,
               approvedAt: new Date(),
             }),
           },
@@ -2850,7 +2872,7 @@ export async function recordInvoicePayment(req: Request, res: Response): Promise
 
       // GL: post the payment (Dr BANK/CASH, Cr AR) — FX-aware when foreign currency provided.
       await postInvoicePayment(tx as unknown as PostingTx, {
-        userId,
+        tenantId,
         invoiceId: invoice.id,
         paymentId: payment.id,
         date: safeDate(received_on) ?? new Date(),
@@ -2941,12 +2963,12 @@ export async function recordInvoicePayment(req: Request, res: Response): Promise
 
 export async function convertProformaToInvoice(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const newInvoice = await prisma.$transaction(async (tx) => {
       const source = await tx.invoice.findFirst({
-        where: { id, userId, isDeleted: false },
+        where: { id, tenantId, isDeleted: false },
       });
       if (!source) {
         throw new Error('NOT_FOUND');
@@ -2959,7 +2981,9 @@ export async function convertProformaToInvoice(req: Request, res: Response): Pro
       }
 
       // Clone the source into a new INVOICE row
-      const newNumber = await generateNextInvoiceNumber(tx, 'INVOICE', { userId, costCenterId: source.costCenterId });
+      const newNumber = await generateNextInvoiceNumber(tx, tenantId, 'INVOICE', {
+        costCenterId: source.costCenterId,
+      });
 
       // Strip fields that should NOT be cloned (id/timestamps/number)
       const {
@@ -2991,7 +3015,7 @@ export async function convertProformaToInvoice(req: Request, res: Response): Pro
 
       // GL: post the new real INVOICE to the general ledger
       await postInvoiceIssued(tx as unknown as PostingTx, {
-        userId,
+        tenantId,
         invoiceId: created.id,
         date: created.invoiceDate ?? new Date(),
         total: String(created.TotalAmount),
@@ -3005,15 +3029,15 @@ export async function convertProformaToInvoice(req: Request, res: Response): Pro
       for (const item of items) {
         const productId = item.productId ?? item.id;
         if (!productId || !item.qty) continue;
-        const product = await tx.product.findUnique({
-          where: { id: productId },
+        const product = await tx.product.findFirst({
+          where: { id: productId, tenantId },
           select: { item_type: true, valuationMethod: true },
         });
         if (product?.item_type === 'Service') continue;
         // Compute COGS from pre-adjustment state (WAC only; FIFO avgCost=0 → cogs=0).
         if (product?.valuationMethod !== 'FIFO') {
           const invForCogs = await tx.inventory.findFirst({
-            where: { productId, userId, isDeleted: false },
+            where: { productId, tenantId, isDeleted: false },
           });
           if (invForCogs) {
             const issue = applyIssue(
@@ -3026,17 +3050,17 @@ export async function convertProformaToInvoice(req: Request, res: Response): Pro
         // Delegate DB writes to helper (removes silent skip; allows stock to go to/below zero).
         await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
           productId,
-          userId,
+          tenantId,
           qtyDelta: -item.qty,
           type: 'stock_out',
           referenceType: 'invoice',
           referenceId: created.id,
-          extra: { unitId: item.unit ?? null, createdBy: userId },
+          extra: { unitId: item.unit ?? null, createdBy: tenantId },
         });
       }
       // B.4: post COGS for the converted invoice.
       await postSaleCogs(tx as unknown as PostingTx, {
-        userId,
+        tenantId,
         invoiceId: created.id,
         date: created.invoiceDate ?? new Date(),
         cost: convertCogs.toString(),
@@ -3084,13 +3108,13 @@ export async function convertProformaToInvoice(req: Request, res: Response): Pro
  */
 export async function getRecurringInvoices(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const page = Math.max(1, parseInt((req.query.page as string) ?? '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt((req.query.limit as string) ?? '10', 10)));
     const search = ((req.query.search as string) ?? '').trim();
 
     const where: Prisma.InvoiceWhereInput = {
-      userId,
+      tenantId,
       isDeleted: false,
       isRecurring: true,
       parentInvoice: null,
@@ -3158,11 +3182,11 @@ export async function getRecurringInvoices(req: Request, res: Response): Promise
  */
 export async function getInvoiceChildren(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const parent = await prisma.invoice.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       select: { id: true, isRecurring: true },
     });
     if (!parent) {
@@ -3205,11 +3229,11 @@ export async function getInvoiceChildren(req: Request, res: Response): Promise<v
  */
 export async function runRecurringNow(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const owned = await prisma.invoice.findFirst({
-      where: { id, userId, isDeleted: false, isRecurring: true, parentInvoice: null },
+      where: { id, tenantId, isDeleted: false, isRecurring: true, parentInvoice: null },
       select: { id: true, stopped: true },
     });
     if (!owned) {
@@ -3253,7 +3277,7 @@ export async function runRecurringNow(req: Request, res: Response): Promise<void
  */
 export async function setRecurringStatus(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = req.body as { stopped?: boolean };
     if (typeof body.stopped !== 'boolean') {
@@ -3262,7 +3286,7 @@ export async function setRecurringStatus(req: Request, res: Response): Promise<v
     }
 
     const existing = await prisma.invoice.findFirst({
-      where: { id, userId, isDeleted: false, isRecurring: true, parentInvoice: null },
+      where: { id, tenantId, isDeleted: false, isRecurring: true, parentInvoice: null },
       select: { id: true },
     });
     if (!existing) {
@@ -3297,11 +3321,11 @@ function generatePublicToken(): string {
  */
 export async function enablePublicLink(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const existing = await prisma.invoice.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       select: { id: true, publicViewToken: true, publicViewEnabled: true },
     });
     if (!existing) {
@@ -3328,11 +3352,11 @@ export async function enablePublicLink(req: Request, res: Response): Promise<voi
 
 export async function disablePublicLink(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const existing = await prisma.invoice.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       select: { id: true },
     });
     if (!existing) {
@@ -3358,11 +3382,11 @@ export async function disablePublicLink(req: Request, res: Response): Promise<vo
 
 export async function rotatePublicLink(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const existing = await prisma.invoice.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       select: { id: true },
     });
     if (!existing) {
@@ -3392,11 +3416,11 @@ export async function rotatePublicLink(req: Request, res: Response): Promise<voi
 
 export async function approveInvoice(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const existing = await prisma.invoice.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Invoice not found' });
@@ -3416,13 +3440,13 @@ export async function approveInvoice(req: Request, res: Response): Promise<void>
         where: { id },
         data: {
           approvalStatus: 'APPROVED',
-          approvedById: userId,
+          approvedById: tenantId,
           approvedAt: new Date(),
         },
       });
       // Post the ledger entries exactly as create would have (shared helper guarantees parity).
       // COGS is recomputed from persisted items + current avgCost (same as updateInvoice approach).
-      await postInvoiceLedger(tx, approved, userId);
+      await postInvoiceLedger(tx, approved, tenantId);
       return approved;
     });
 
@@ -3445,12 +3469,12 @@ export async function approveInvoice(req: Request, res: Response): Promise<void>
 
 export async function rejectInvoice(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const { reason } = req.body as { reason?: string };
 
     const existing = await prisma.invoice.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Invoice not found' });
@@ -3475,7 +3499,7 @@ export async function rejectInvoice(req: Request, res: Response): Promise<void> 
 
     // No GL effect on rejection. The invoice never posted (was PENDING), so no reversal needed.
     // Operational side-effects (stock deductions at create time) are NOT reversed in v1 — documented limitation.
-    void userId; // referenced for future audit-log use
+    void tenantId; // referenced for future audit-log use
 
     res.status(200).json({ success: true, message: 'Invoice rejected', data: updated });
   } catch (err) {
@@ -3497,9 +3521,9 @@ export async function rejectInvoice(req: Request, res: Response): Promise<void> 
 // =============================================================================
 export async function markInvoiceSent(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const id = req.params.id as string;
-    const existing = await prisma.invoice.findFirst({ where: { id, userId } });
+    const existing = await prisma.invoice.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Invoice not found' });
       return;

@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import type { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 import { mockEInvoiceProvider } from '../lib/einvoiceProviders/mockProvider';
 import type { EInvoiceProvider } from '../lib/einvoiceProvider';
@@ -22,10 +22,10 @@ interface InvoiceItem {
 
 export async function list(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const page = Math.max(1, parseInt((req.query.page as string) ?? '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt((req.query.limit as string) ?? '20', 10)));
-    const where: Prisma.EInvoiceRecordWhereInput = { userId };
+    const where: Prisma.EInvoiceRecordWhereInput = { tenantId };
     const status = req.query.status as string | undefined;
     if (status) where.status = status as Prisma.EInvoiceRecordWhereInput['status'];
 
@@ -69,11 +69,11 @@ export async function list(req: Request, res: Response): Promise<void> {
 
 export async function getByInvoice(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { invoiceId } = req.params as { invoiceId: string };
 
     const row = await prisma.eInvoiceRecord.findFirst({
-      where: { invoiceId, userId },
+      where: { invoiceId, tenantId },
       orderBy: { createdAt: 'desc' },
       include: { invoice: { select: { id: true, invoiceNumber: true } } },
     });
@@ -96,11 +96,11 @@ export async function getByInvoice(req: Request, res: Response): Promise<void> {
 
 export async function generate(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { invoiceId } = req.params as { invoiceId: string };
 
     const invoice = await prisma.invoice.findFirst({
-      where: { id: invoiceId, userId, isDeleted: false },
+      where: { id: invoiceId, tenantId, isDeleted: false },
       include: { billToCustomer: { select: { name: true, gstin: true } } },
     });
     if (!invoice) {
@@ -148,7 +148,7 @@ export async function generate(req: Request, res: Response): Promise<void> {
     } catch (e) {
       const record = await prisma.eInvoiceRecord.create({
         data: {
-          userId,
+          tenantId,
           invoiceId: invoice.id,
           provider: provider.name,
           status: 'FAILED',
@@ -161,7 +161,7 @@ export async function generate(req: Request, res: Response): Promise<void> {
 
     const created = await prisma.eInvoiceRecord.create({
       data: {
-        userId,
+        tenantId,
         invoiceId: invoice.id,
         provider: provider.name,
         status: 'GENERATED',
@@ -187,11 +187,11 @@ export async function generate(req: Request, res: Response): Promise<void> {
 
 export async function cancel(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = req.body as { reason?: string };
 
-    const record = await prisma.eInvoiceRecord.findFirst({ where: { id, userId } });
+    const record = await prisma.eInvoiceRecord.findFirst({ where: { id, tenantId } });
     if (!record) {
       res.status(404).json({ success: false, message: 'E-invoice record not found' });
       return;

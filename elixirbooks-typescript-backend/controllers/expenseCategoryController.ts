@@ -3,8 +3,9 @@ import type { ExpenseCategory } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
+import { requireTenantId } from '../lib/tenantScope';
 
-// ExpenseCategory is a global lookup table — it has no userId column, so the
+// ExpenseCategory is a global lookup table — it has no tenantId column, so the
 // usual tenantScope() helper does not apply here. Soft-deletion (isDeleted)
 // is still respected.
 
@@ -19,6 +20,7 @@ export async function createExpenseCategory(req: Request, res: Response): Promis
 
     const category = await prisma.expenseCategory.create({
       data: {
+        tenantId: requireTenantId(req),
         title: title as string,
         description: description ?? null,
         status,
@@ -54,7 +56,10 @@ export async function getAllExpenseCategories(req: Request, res: Response): Prom
     const search = ((req.query.search as string) ?? '').trim();
     const status = req.query.status as string | undefined;
 
-    const where: Prisma.ExpenseCategoryWhereInput = { isDeleted: false };
+    const where: Prisma.ExpenseCategoryWhereInput = {
+      tenantId: requireTenantId(req),
+      isDeleted: false,
+    };
 
     if (search) {
       where.title = { contains: search, mode: 'insensitive' };
@@ -112,7 +117,10 @@ export async function listExpenseCategories(req: Request, res: Response): Promis
     const limit = 10;
 
     // Build query
-    const where: Prisma.ExpenseCategoryWhereInput = { isDeleted: false };
+    const where: Prisma.ExpenseCategoryWhereInput = {
+      tenantId: requireTenantId(req),
+      isDeleted: false,
+    };
     if (search) {
       where.title = { contains: search, mode: 'insensitive' };
     }
@@ -154,7 +162,7 @@ export async function getExpenseCategoryById(req: Request, res: Response): Promi
   try {
     const { id } = req.params as { id: string };
     const category = await prisma.expenseCategory.findFirst({
-      where: { id, isDeleted: false },
+      where: { id, tenantId: requireTenantId(req), isDeleted: false },
     });
 
     if (!category) {
@@ -187,7 +195,7 @@ export async function updateExpenseCategory(req: Request, res: Response): Promis
     };
 
     const existing = await prisma.expenseCategory.findFirst({
-      where: { id, isDeleted: false },
+      where: { id, tenantId: requireTenantId(req), isDeleted: false },
     });
 
     if (!existing) {
@@ -227,7 +235,7 @@ export async function deleteExpenseCategory(req: Request, res: Response): Promis
     const { id } = req.params as { id: string };
 
     const existing = await prisma.expenseCategory.findFirst({
-      where: { id, isDeleted: false },
+      where: { id, tenantId: requireTenantId(req), isDeleted: false },
     });
 
     if (!existing) {

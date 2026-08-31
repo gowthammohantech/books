@@ -16,7 +16,7 @@ export type { ToolDef } from '../aiProviders/types';
  * user id so handlers can scope their Prisma queries to that tenant.
  */
 export interface ToolContext {
-  userId: string;
+  tenantId: string;
 }
 
 /**

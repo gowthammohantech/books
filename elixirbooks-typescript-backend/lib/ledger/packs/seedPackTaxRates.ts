@@ -14,8 +14,8 @@
  *
  * Every regime also keeps a "No Tax 0%" NONE row so exempt lines are selectable.
  *
- * Idempotent: rates are upserted by (userId, name) — re-applying a pack never
- * duplicates rows. Tenant-scoped to `userId`.
+ * Idempotent: rates are upserted by (tenantId, name) — re-applying a pack never
+ * duplicates rows. Tenant-scoped to `tenantId`.
  */
 
 import type { TaxRegime as PrismaTaxRegime, TaxKind } from '@prisma/client';
@@ -129,34 +129,40 @@ function ratesForPack(countryCode: string, prismaRegime: PrismaTaxRegime): RateS
  * Seed the tenant's default tax rates for an applied country pack.
  *
  * Idempotent + tenant-scoped: each rate is created only if no row with the same
- * (userId, name, isDeleted=false) already exists. The global "No Tax" TaxGroup
+ * (tenantId, name, isDeleted=false) already exists. The global "No Tax" TaxGroup
  * is reused (created once if absent) and every seeded rate is linked to it so
  * the rates are usable for Products immediately.
  */
 export async function seedPackTaxRates(
   tx: SeedTaxRatesTx,
-  userId: string,
+  tenantId: string,
   countryCode: string,
   packRegime: PackTaxRegime,
 ): Promise<void> {
   const prismaRegime = packRegimeToPrisma(packRegime);
   const specs = ratesForPack(countryCode, prismaRegime);
 
-  // Reuse the global "No Tax" TaxGroup (idempotent by name); create if missing.
-  let group = await tx.taxGroup.findFirst({ where: { tax_name: DEFAULT_TAX_GROUP_NAME } });
+  // This tenant's "No Tax" TaxGroup (idempotent by name WITHIN the tenant --
+  // TaxGroup stopped being install-global in P4, so reusing another company's
+  // group here would attach their rows to this pack).
+  let group = await tx.taxGroup.findFirst({
+    where: { tenantId, tax_name: DEFAULT_TAX_GROUP_NAME },
+  });
   if (!group) {
-    group = await tx.taxGroup.create({ data: { tax_name: DEFAULT_TAX_GROUP_NAME, status: true } });
+    group = await tx.taxGroup.create({
+      data: { tenantId, tax_name: DEFAULT_TAX_GROUP_NAME, status: true },
+    });
   }
 
   for (const spec of specs) {
     const existing = await tx.taxRate.findFirst({
-      where: { userId, name: spec.name, isDeleted: false },
+      where: { tenantId, name: spec.name, isDeleted: false },
     });
     if (existing) continue; // idempotent — never duplicate by name
 
     await tx.taxRate.create({
       data: {
-        userId,
+        tenantId,
         regime: spec.regime,
         ...(spec.taxKind ? { taxKind: spec.taxKind } : {}),
         name: spec.name,

@@ -20,10 +20,10 @@ export function makeResolver(rows: MappingRow[]): AccountResolver {
 /** Loads mapping rows for a tenant from a Prisma client/transaction. */
 export async function loadResolver(
   tx: { ledgerAccountMapping: { findMany: (args: unknown) => Promise<MappingRow[]> } },
-  userId: string,
+  tenantId: string,
 ): Promise<AccountResolver> {
   const rows = await tx.ledgerAccountMapping.findMany({
-    where: { userId },
+    where: { tenantId },
     select: { roleKey: true, accountId: true },
   });
   return makeResolver(rows);

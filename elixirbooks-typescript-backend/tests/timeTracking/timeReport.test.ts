@@ -38,7 +38,7 @@ import { getTimeSummaryReport } from '../../controllers/timeTracking/timeReportC
 // ---------------------------------------------------------------------------
 
 interface ActorOpts {
-  userId?: string;
+  tenantId?: string;
   isOwner?: boolean;
   roleName?: string | null;
   othersView?: boolean;
@@ -54,12 +54,12 @@ function makeReq(opts: {
   if (a.othersView) {
     perms.set('time-tracking-others', { view: true, edit: false, create: false, delete: false, allowAll: false });
   }
-  const userId = a.userId ?? 'actor-1';
+  const tenantId = a.tenantId ?? 'actor-1';
   return {
-    user: userId,
+    user: tenantId,
     tenantId: 'tenant-1',
     actor: {
-      userId,
+      userId: tenantId,
       tenantId: 'tenant-1',
       roleId: 'r1',
       roleName: a.roleName ?? null,
@@ -275,7 +275,7 @@ describe('GET /time-reports/summary — data-scope (non-privileged user)', () =>
   it('non-privileged user is clamped to own employeeUserId even if another is requested', async () => {
     m.timeEntryFindMany.mockResolvedValue([]);
     const req = makeReq({
-      actor: { userId: 'actor-1', isOwner: false, roleName: null },
+      actor: { tenantId: 'actor-1', isOwner: false, roleName: null },
       query: { ...BASE_QUERY, employeeUserId: 'emp-other' },
     });
     const res = makeRes();
@@ -289,7 +289,7 @@ describe('GET /time-reports/summary — data-scope (non-privileged user)', () =>
   it('non-privileged user with no employeeUserId filter is still clamped to own', async () => {
     m.timeEntryFindMany.mockResolvedValue([]);
     const req = makeReq({
-      actor: { userId: 'actor-1', isOwner: false, roleName: null },
+      actor: { tenantId: 'actor-1', isOwner: false, roleName: null },
       query: BASE_QUERY,
     });
     const res = makeRes();
@@ -302,7 +302,7 @@ describe('GET /time-reports/summary — data-scope (non-privileged user)', () =>
   it('admin can query without employeeUserId restriction', async () => {
     m.timeEntryFindMany.mockResolvedValue([]);
     const req = makeReq({
-      actor: { userId: 'actor-1', isOwner: false, roleName: 'Admin' },
+      actor: { tenantId: 'actor-1', isOwner: false, roleName: 'Admin' },
       query: BASE_QUERY,
     });
     const res = makeRes();
@@ -316,7 +316,7 @@ describe('GET /time-reports/summary — data-scope (non-privileged user)', () =>
   it('time-tracking-others,view holder can query all employees', async () => {
     m.timeEntryFindMany.mockResolvedValue([]);
     const req = makeReq({
-      actor: { userId: 'actor-1', isOwner: false, roleName: null, othersView: true },
+      actor: { tenantId: 'actor-1', isOwner: false, roleName: null, othersView: true },
       query: { ...BASE_QUERY, employeeUserId: 'emp-other' },
     });
     const res = makeRes();

@@ -42,7 +42,7 @@ vi.mock('../lib/prisma', () => {
     invoice: { findFirst: vi.fn().mockResolvedValue(null), create: mocks.invoiceCreate },
     contact: { findFirst: mocks.contactFindFirst },
     companySettings: { findFirst: mocks.companySettingsFindFirst },
-    product: { findUnique: vi.fn().mockResolvedValue(null) },
+    product: { findFirst: vi.fn().mockResolvedValue(null) },
     inventory: { findFirst: vi.fn().mockResolvedValue(null) },
     customFieldValue: { createMany: vi.fn() },
     paymentMode: { findUnique: mocks.paymentModeFindUnique },
@@ -181,7 +181,7 @@ describe('createInvoice — create-as-PAID auto-payment', () => {
       journalEntry: { findFirst: vi.fn().mockResolvedValue(null) },
     };
     await reverseInvoicePaymentEffects(voidTx as unknown as PaymentEffectsTx, {
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       payment: {
         id: 'ip-1',
         amount: captured.payment!.amount as never,

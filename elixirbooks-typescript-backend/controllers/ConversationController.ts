@@ -162,12 +162,12 @@ interface DocumentPreview {
 // ----- The class -----
 
 class ConversationalAIController {
-  userId: string;
+  tenantId: string;
   sessionId: string;
   conversation: ConversationModel | null;
 
-  constructor(userId: string, sessionId: string | null = null) {
-    this.userId = userId;
+  constructor(tenantId: string, sessionId: string | null = null) {
+    this.tenantId = tenantId;
     this.sessionId = sessionId || uuidv4();
     this.conversation = null;
   }
@@ -227,7 +227,7 @@ class ConversationalAIController {
   async initializeConversation(): Promise<ConversationModel> {
     let conv = await prisma.conversation.findFirst({
       where: {
-        userId: this.userId,
+        tenantId: this.tenantId,
         sessionId: this.sessionId,
         status: 'active',
       },
@@ -257,7 +257,7 @@ class ConversationalAIController {
       };
       conv = await prisma.conversation.create({
         data: {
-          userId: this.userId,
+          tenantId: this.tenantId,
           sessionId: this.sessionId,
           context: defaultContext as unknown as Prisma.InputJsonValue,
         },
@@ -534,7 +534,7 @@ class ConversationalAIController {
       { base: string[]; itemFields?: string[]; conditional?: Record<string, string[]>; optional?: string[] }
     > = {
       invoice: {
-        base: ['customerId', 'invoiceDate', 'items', 'userId', 'billFrom', 'billTo'],
+        base: ['customerId', 'invoiceDate', 'items', 'tenantId', 'billFrom', 'billTo'],
         itemFields: ['id', 'name', 'qty', 'rate', 'amount'],
         conditional: {
           bank: ['bankId', 'payment_method'],
@@ -551,12 +551,12 @@ class ConversationalAIController {
         ],
       },
       quotation: {
-        base: ['quotationDate', 'items', 'userId', 'billFrom', 'billTo'],
+        base: ['quotationDate', 'items', 'tenantId', 'billFrom', 'billTo'],
         itemFields: ['id', 'name', 'qty', 'rate', 'amount'],
         optional: ['expiryDate', 'referenceNo', 'notes', 'paymentTerms', 'totalDiscount', 'vat'],
       },
       expense: {
-        base: ['amount', 'expenseDate', 'paymentStatus', 'expenseCategoryId', 'sourceType', 'userId'],
+        base: ['amount', 'expenseDate', 'paymentStatus', 'expenseCategoryId', 'sourceType', 'tenantId'],
         conditional: { bank: ['bankId', 'paymentMode'] },
         optional: ['referenceNo', 'description', 'attachment'],
       },
@@ -1481,8 +1481,8 @@ class ConversationalAIController {
         vat: new Prisma.Decimal(0),
         notes: context.extractedData?.notes || '',
         status: 'DRAFT',
-        userId: this.userId,
-        billFrom: this.userId,
+        tenantId: this.tenantId,
+        billFrom: this.tenantId,
         billTo: customerId,
       },
     });
@@ -1522,8 +1522,8 @@ class ConversationalAIController {
         vat: new Prisma.Decimal(0),
         notes: context.extractedData?.notes || '',
         status: 'draft',
-        userId: this.userId,
-        billFrom: this.userId,
+        tenantId: this.tenantId,
+        billFrom: this.tenantId,
         billTo: customerId,
       },
     });
@@ -1546,7 +1546,7 @@ class ConversationalAIController {
         description: validationResults.description || '',
         expenseCategoryId: categoryId,
         sourceType: validationResults.sourceType as 'BANK' | 'PETTY_CASH',
-        userId: this.userId,
+        tenantId: this.tenantId,
       },
     });
 
@@ -1556,7 +1556,7 @@ class ConversationalAIController {
   async findCustomers(identifier: string): Promise<Array<Record<string, unknown>>> {
     return prisma.customer.findMany({
       where: {
-        userId: this.userId,
+        tenantId: this.tenantId,
         isDeleted: false,
         OR: [
           { email: { contains: identifier, mode: 'insensitive' } },
@@ -1570,6 +1570,7 @@ class ConversationalAIController {
   async findProducts(productName: string): Promise<Array<Record<string, unknown>>> {
     return prisma.product.findMany({
       where: {
+        tenantId: this.tenantId,
         OR: [
           { name: { contains: productName, mode: 'insensitive' } },
           { code: { contains: productName, mode: 'insensitive' } },
@@ -1584,6 +1585,7 @@ class ConversationalAIController {
   async findExpenseCategories(categoryName: string): Promise<Array<Record<string, unknown>>> {
     return prisma.expenseCategory.findMany({
       where: {
+        tenantId: this.tenantId,
         isDeleted: false,
         status: true,
         title: { contains: categoryName, mode: 'insensitive' },
@@ -1701,7 +1703,7 @@ class ConversationalAIController {
     switch (field) {
       case 'customer': {
         const customer = await prisma.customer.findFirst({
-          where: { name: { contains: String(value), mode: 'insensitive' }, userId: this.userId },
+          where: { name: { contains: String(value), mode: 'insensitive' }, tenantId: this.tenantId },
         });
         if (customer) {
           if (documentType === 'invoice') {
@@ -1969,7 +1971,7 @@ class ConversationalAIController {
       bankDetails: '🏦 Bank details',
       bank: '🏦 Bank information',
 
-      userId: '👤 User',
+      tenantId: '👤 User',
       status: '📊 Status',
       roundOff: '🔄 Round off',
     };
@@ -2073,7 +2075,7 @@ class ConversationalAIController {
             customerData.email ||
             `${customerData.name.replace(/\s+/g, '.').toLowerCase()}@temp.com`,
           phone: customerData.phone || '',
-          userId: this.userId,
+          tenantId: this.tenantId,
           status: 'Active',
         },
       });

@@ -13,7 +13,7 @@
 //   call refreshes the token (401 → refresh, in-memory only), this controller
 //   re-encrypts and persists the new tokens (see withTokenPersistence).
 //
-// All handlers are protect + tenant-scoped (requireUserId = ownerId ?? id) and
+// All handlers are protect + tenant-scoped (requireTenantId = ownerId ?? id) and
 // gated in the route by requirePermission('accounting-reports','edit'); mutations
 // (config save / connect) additionally require the Owner role (req.actor.isOwner).
 //
@@ -25,7 +25,7 @@ import type { Request, Response } from 'express';
 import { randomBytes } from 'crypto';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { encryptSecret, decryptSecret } from '../lib/emailSecret';
 import {
   buildAuthUrl,
@@ -116,7 +116,7 @@ function parseRange(source: Record<string, unknown>): {
 
 type MtdRow = {
   id: string;
-  userId: string;
+  tenantId: string;
   enabled: boolean;
   clientId: string | null;
   clientSecret: string | null;
@@ -131,8 +131,8 @@ type MtdRow = {
  * Load the tenant's MtdConfig and build a DECRYPTED MtdConfigLike for the lib.
  * Returns null when no row exists (treated as fully-disabled / mock).
  */
-async function loadDecryptedCfg(userId: string): Promise<{ row: MtdRow; cfg: MtdConfigLike } | null> {
-  const row = (await prisma.mtdConfig.findUnique({ where: { userId } })) as MtdRow | null;
+async function loadDecryptedCfg(tenantId: string): Promise<{ row: MtdRow; cfg: MtdConfigLike } | null> {
+  const row = (await prisma.mtdConfig.findUnique({ where: { tenantId } })) as MtdRow | null;
   if (!row) return null;
   const cfg: MtdConfigLike = {
     enabled: row.enabled,
@@ -148,9 +148,9 @@ async function loadDecryptedCfg(userId: string): Promise<{ row: MtdRow; cfg: Mtd
 }
 
 /** Re-encrypt + persist a fresh access/refresh token pair (+ new expiry). */
-async function persistTokens(userId: string, tokens: TokenResult): Promise<void> {
+async function persistTokens(tenantId: string, tokens: TokenResult): Promise<void> {
   await prisma.mtdConfig.update({
-    where: { userId },
+    where: { tenantId },
     data: {
       accessToken: encryptSecret(tokens.accessToken),
       refreshToken: encryptSecret(tokens.refreshToken),
@@ -171,7 +171,7 @@ async function persistTokens(userId: string, tokens: TokenResult): Promise<void>
  * cfgs without a refresh token are passed through untouched (no network).
  */
 async function withFreshTokens(
-  userId: string,
+  tenantId: string,
   loaded: { row: MtdRow; cfg: MtdConfigLike },
 ): Promise<MtdConfigLike> {
   const { row, cfg } = loaded;
@@ -186,7 +186,7 @@ async function withFreshTokens(
   // valid tokens AND the new tokens are saved (the lib's own 401-refresh would
   // not be persisted, so we pre-empt it here).
   const refreshed = await refreshAccessToken(cfg);
-  await persistTokens(userId, refreshed);
+  await persistTokens(tenantId, refreshed);
   cfg.accessToken = refreshed.accessToken;
   cfg.refreshToken = refreshed.refreshToken;
   cfg.tokenExpiresAt = refreshed.expiresAt;
@@ -194,7 +194,7 @@ async function withFreshTokens(
 }
 
 /** Build the HMRC fraud-prevention context from the request + tenant. */
-function fraudCtx(req: Request, userId: string): FraudContext {
+function fraudCtx(req: Request, tenantId: string): FraudContext {
   const fwd = req.headers['x-forwarded-for'];
   const publicIp =
     (typeof fwd === 'string' ? fwd.split(',')[0]?.trim() : Array.isArray(fwd) ? fwd[0] : undefined) ||
@@ -202,7 +202,7 @@ function fraudCtx(req: Request, userId: string): FraudContext {
     undefined;
   const ua = req.headers['user-agent'];
   return {
-    userId,
+    userId: tenantId,
     connectionMethod: 'OTHER_DIRECT',
     publicIp,
     userAgent: typeof ua === 'string' ? ua : undefined,
@@ -217,8 +217,8 @@ function fraudCtx(req: Request, userId: string): FraudContext {
  * NOT recomputed here — we map the box1..box9 string values from buildUkVatBoxes
  * to the numeric NineBox shape the MTD API expects.
  */
-export async function computeNineBox(userId: string, from: Date, to: Date): Promise<NineBox> {
-  const figures = await loadTaxFigures(userId, from, to);
+export async function computeNineBox(tenantId: string, from: Date, to: Date): Promise<NineBox> {
+  const figures = await loadTaxFigures(tenantId, from, to);
   const b = buildUkVatBoxes(figures);
   return {
     vatDueSales: Number(b.box1),
@@ -238,8 +238,8 @@ export async function computeNineBox(userId: string, from: Date, to: Date): Prom
 // GET /mtd/config — masked view (never returns secrets).
 export async function getConfig(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const row = (await prisma.mtdConfig.findUnique({ where: { userId } })) as MtdRow | null;
+    const tenantId = requireTenantId(req);
+    const row = (await prisma.mtdConfig.findUnique({ where: { tenantId } })) as MtdRow | null;
     res.json({
       success: true,
       data: {
@@ -259,7 +259,7 @@ export async function getConfig(req: Request, res: Response): Promise<void> {
 // PUT /mtd/config — upsert BYOK creds (clientSecret encrypted, blank-keeps-current).
 export async function putConfig(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as {
       enabled?: boolean;
       useSandbox?: boolean;
@@ -268,7 +268,7 @@ export async function putConfig(req: Request, res: Response): Promise<void> {
       clientSecret?: string | null;
     };
 
-    const existing = (await prisma.mtdConfig.findUnique({ where: { userId } })) as MtdRow | null;
+    const existing = (await prisma.mtdConfig.findUnique({ where: { tenantId } })) as MtdRow | null;
 
     // clientSecret: only overwrite when a non-blank value is supplied; otherwise
     // keep the previously stored (encrypted) value — "blank-keeps-current".
@@ -286,9 +286,9 @@ export async function putConfig(req: Request, res: Response): Promise<void> {
     };
 
     await prisma.mtdConfig.upsert({
-      where: { userId },
+      where: { tenantId },
       update: data,
-      create: { userId, ...data },
+      create: { tenantId, ...data },
     });
 
     res.json({
@@ -311,12 +311,12 @@ export async function putConfig(req: Request, res: Response): Promise<void> {
 // GET /mtd/auth-url?redirectUri= — OAuth authorize URL (or a mock note).
 export async function getAuthUrl(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const redirectUri = typeof req.query.redirectUri === 'string' ? req.query.redirectUri : '';
     if (!redirectUri) {
       throw new BadRequestError('Query param "redirectUri" is required');
     }
-    const loaded = await loadDecryptedCfg(userId);
+    const loaded = await loadDecryptedCfg(tenantId);
     const cfg = loaded?.cfg;
 
     // Not configured → mock note (no URL to hit, demo/self-host works as-is).
@@ -343,7 +343,7 @@ export async function getAuthUrl(req: Request, res: Response): Promise<void> {
 // GET|POST /mtd/callback?code=&state= — exchange code, persist tokens (encrypted).
 export async function callback(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const code =
       (typeof req.query.code === 'string' && req.query.code) ||
       (typeof (req.body as { code?: string })?.code === 'string' && (req.body as { code: string }).code) ||
@@ -354,21 +354,21 @@ export async function callback(req: Request, res: Response): Promise<void> {
         (req.body as { redirectUri: string }).redirectUri) ||
       '';
 
-    const loaded = await loadDecryptedCfg(userId);
+    const loaded = await loadDecryptedCfg(tenantId);
     const cfg = loaded?.cfg;
 
     // Mock mode: no real exchange — mark connected with deterministic mock tokens.
     if (!cfg || !cfg.enabled || !cfg.clientId) {
       const expiresAt = new Date(Date.now() + 4 * 60 * 60 * 1000);
       await prisma.mtdConfig.upsert({
-        where: { userId },
+        where: { tenantId },
         update: {
           accessToken: encryptSecret('mock-access-token'),
           refreshToken: encryptSecret('mock-refresh-token'),
           tokenExpiresAt: expiresAt,
         },
         create: {
-          userId,
+          tenantId,
           accessToken: encryptSecret('mock-access-token'),
           refreshToken: encryptSecret('mock-refresh-token'),
           tokenExpiresAt: expiresAt,
@@ -383,7 +383,7 @@ export async function callback(req: Request, res: Response): Promise<void> {
     }
 
     const tokens = await exchangeCode(cfg, code, redirectUri);
-    await persistTokens(userId, tokens);
+    await persistTokens(tenantId, tokens);
     res.json({ success: true, mode: 'live', message: 'Connected to HMRC', data: { connected: true } });
   } catch (err) {
     handleError(res, err, 'complete MTD OAuth');
@@ -393,19 +393,19 @@ export async function callback(req: Request, res: Response): Promise<void> {
 // GET /mtd/obligations?from=&to=[&status=]
 export async function obligations(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { fromStr, toStr } = parseRange(req.query as Record<string, unknown>);
     const statusRaw = req.query.status;
     const status =
       statusRaw === 'O' || statusRaw === 'F' ? (statusRaw as 'O' | 'F') : undefined;
 
-    const loaded = await loadDecryptedCfg(userId);
+    const loaded = await loadDecryptedCfg(tenantId);
     // No row → fully-disabled mock cfg.
     const cfg = loaded
-      ? await withFreshTokens(userId, loaded)
+      ? await withFreshTokens(tenantId, loaded)
       : ({ enabled: false } as MtdConfigLike);
 
-    const result = await getObligations(cfg, { from: fromStr, to: toStr, status }, fraudCtx(req, userId));
+    const result = await getObligations(cfg, { from: fromStr, to: toStr, status }, fraudCtx(req, tenantId));
     res.json({ success: true, data: result });
   } catch (err) {
     handleError(res, err, 'fetch MTD obligations');
@@ -415,7 +415,7 @@ export async function obligations(req: Request, res: Response): Promise<void> {
 // POST /mtd/submit { periodKey, from, to }
 export async function submit(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as { periodKey?: string; from?: string; to?: string };
     const periodKey = typeof body.periodKey === 'string' ? body.periodKey.trim() : '';
     if (!periodKey) {
@@ -423,9 +423,9 @@ export async function submit(req: Request, res: Response): Promise<void> {
     }
     const { fromStr, toStr, fromDate, toDate } = parseRange(body as Record<string, unknown>);
 
-    const loaded = await loadDecryptedCfg(userId);
+    const loaded = await loadDecryptedCfg(tenantId);
     const cfg = loaded
-      ? await withFreshTokens(userId, loaded)
+      ? await withFreshTokens(tenantId, loaded)
       : ({ enabled: false } as MtdConfigLike);
 
     // Live submission requires a VRN; refuse with 400 rather than calling HMRC
@@ -436,9 +436,9 @@ export async function submit(req: Request, res: Response): Promise<void> {
     }
 
     // Pull the 9-box from the SAME GL computation the on-screen UK VAT return uses.
-    const nineBox = await computeNineBox(userId, fromDate, toDate);
+    const nineBox = await computeNineBox(tenantId, fromDate, toDate);
 
-    const receipt = await submitVatReturn(cfg, periodKey, nineBox, fraudCtx(req, userId));
+    const receipt = await submitVatReturn(cfg, periodKey, nineBox, fraudCtx(req, tenantId));
     res.json({ success: true, data: { receipt, nineBox, period: { from: fromStr, to: toStr } } });
   } catch (err) {
     handleError(res, err, 'submit MTD VAT return');
@@ -448,15 +448,15 @@ export async function submit(req: Request, res: Response): Promise<void> {
 // GET /mtd/liabilities?from=&to=
 export async function liabilities(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { fromStr, toStr } = parseRange(req.query as Record<string, unknown>);
 
-    const loaded = await loadDecryptedCfg(userId);
+    const loaded = await loadDecryptedCfg(tenantId);
     const cfg = loaded
-      ? await withFreshTokens(userId, loaded)
+      ? await withFreshTokens(tenantId, loaded)
       : ({ enabled: false } as MtdConfigLike);
 
-    const result = await getLiabilities(cfg, { from: fromStr, to: toStr }, fraudCtx(req, userId));
+    const result = await getLiabilities(cfg, { from: fromStr, to: toStr }, fraudCtx(req, tenantId));
     res.json({ success: true, data: result });
   } catch (err) {
     handleError(res, err, 'fetch MTD liabilities');

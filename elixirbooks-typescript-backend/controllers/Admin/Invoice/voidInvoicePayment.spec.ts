@@ -24,7 +24,7 @@ interface StoredLine {
   taxRoleKey: string | null; description: string | null;
 }
 interface StoredEntry {
-  id: string; userId: string; entryDate: Date;
+  id: string; tenantId: string; entryDate: Date;
   sourceType: string | null; sourceId: string | null; event: string | null;
   isDeleted: boolean; reversedById: string | null; reversals: { id: string }[];
   lines: StoredLine[];
@@ -58,7 +58,7 @@ function buildFakePrisma() {
       const w = (args as { where?: Record<string, unknown> }).where ?? {};
       return entries.find((e) => {
         if ('id' in w && e.id !== w['id']) return false;
-        if ('userId' in w && e.userId !== w['userId']) return false;
+        if ('tenantId' in w && e.tenantId !== w['tenantId']) return false;
         if ('sourceType' in w && e.sourceType !== w['sourceType']) return false;
         if ('sourceId' in w && e.sourceId !== w['sourceId']) return false;
         if ('event' in w && e.event !== w['event']) return false;
@@ -68,12 +68,12 @@ function buildFakePrisma() {
     },
     async create(args: { data: unknown }): Promise<{ id: string }> {
       const d = args.data as {
-        userId: string; entryDate: Date;
+        tenantId: string; entryDate: Date;
         sourceType?: string | null; sourceId?: string | null; event?: string | null;
         reversedById?: string | null; lines?: { create: StoredLine[] };
       };
       const collision = entries.find(
-        (e) => e.userId === d.userId && e.sourceType === (d.sourceType ?? null)
+        (e) => e.tenantId === d.tenantId && e.sourceType === (d.sourceType ?? null)
           && e.sourceId === (d.sourceId ?? null) && e.event === (d.event ?? null),
       );
       if (collision) {
@@ -83,7 +83,7 @@ function buildFakePrisma() {
       }
       const id = nextId('je');
       const entry: StoredEntry = {
-        id, userId: d.userId, entryDate: d.entryDate,
+        id, tenantId: d.tenantId, entryDate: d.entryDate,
         sourceType: d.sourceType ?? null, sourceId: d.sourceId ?? null, event: d.event ?? null,
         isDeleted: false, reversedById: d.reversedById ?? null, reversals: [],
         lines: d.lines?.create ?? [],
@@ -159,7 +159,7 @@ function buildFakePrisma() {
       const row = Object.values(payments).find((r) => {
         // flat scalar matching
         if (!matchWhere(r, w)) return false;
-        // nested invoice scope: { invoice: { userId, isDeleted } }
+        // nested invoice scope: { invoice: { tenantId, isDeleted } }
         const invW = (w as { invoice?: Record<string, unknown> }).invoice;
         if (invW) {
           const inv = invoices[r.invoiceId as string];
@@ -245,11 +245,11 @@ function fakeRes() {
   return res;
 }
 
-function fakeReq(paymentId: string, userId: string | null, reason?: string) {
+function fakeReq(paymentId: string, tenantId: string | null, reason?: string) {
   return {
     params: { paymentId },
     body: reason != null ? { reason } : {},
-    user: userId ?? undefined,
+    user: tenantId ?? undefined,
   } as never;
 }
 
@@ -287,10 +287,10 @@ async function seed(opts: { total: number; payments: number[] }) {
 
   state.paymentModes['pm-bank'] = { id: 'pm-bank', slug: 'bank-transfer', name: 'Bank Transfer' };
 
-  state.banks['bank-1'] = { id: 'bank-1', userId: USER, currencyCode: 'GBP', currentBalance: '1000' };
+  state.banks['bank-1'] = { id: 'bank-1', tenantId: USER, currencyCode: 'GBP', currentBalance: '1000' };
 
   state.invoices['inv-1'] = {
-    id: 'inv-1', userId: USER, isDeleted: false,
+    id: 'inv-1', tenantId: USER, isDeleted: false,
     TotalAmount: String(opts.total), status: 'UNPAID', invoiceNumber: 'INV-001',
   };
 
@@ -310,7 +310,7 @@ async function seed(opts: { total: number; payments: number[] }) {
     };
     // post the forward payment GL: Dr BANK / Cr AR
     await post(tx, {
-      userId: USER, sourceType: 'InvoicePayment', sourceId: pid, event: 'payment',
+      tenantId: USER, sourceType: 'InvoicePayment', sourceId: pid, event: 'payment',
       date: new Date('2026-06-01'), currencyCode: 'BASE',
       instructions: [
         { roleKey: 'BANK', side: 'debit', amount: String(amount) },
@@ -433,7 +433,7 @@ describe('voidInvoicePayment', () => {
     const { built, ids } = await seed({ total: 200, payments: [100] });
     const { state } = built;
     state.creditNotes['cn-1'] = {
-      id: 'cn-1', userId: USER, isDeleted: false, invoiceId: 'inv-1',
+      id: 'cn-1', tenantId: USER, isDeleted: false, invoiceId: 'inv-1',
       totalAmount: '100', status: 'ISSUED',
     };
 
@@ -471,9 +471,9 @@ describe('voidInvoicePayment', () => {
     fake.current = built;
     const { state } = built;
     state.paymentModes['pm-cash'] = { id: 'pm-cash', slug: 'cash', name: 'Cash' };
-    state.banks['bank-1'] = { id: 'bank-1', userId: USER, currencyCode: 'GBP', currentBalance: '500' };
+    state.banks['bank-1'] = { id: 'bank-1', tenantId: USER, currencyCode: 'GBP', currentBalance: '500' };
     state.invoices['inv-1'] = {
-      id: 'inv-1', userId: USER, isDeleted: false,
+      id: 'inv-1', tenantId: USER, isDeleted: false,
       TotalAmount: '100', status: 'PAID', invoiceNumber: 'INV-002',
     };
     state.payments['pay-c'] = {
@@ -491,7 +491,7 @@ describe('voidInvoicePayment', () => {
       isDeleted: false,
     };
     await post(built.prisma as never, {
-      userId: USER, sourceType: 'InvoicePayment', sourceId: 'pay-c', event: 'payment',
+      tenantId: USER, sourceType: 'InvoicePayment', sourceId: 'pay-c', event: 'payment',
       date: new Date('2026-06-01'), currencyCode: 'BASE',
       instructions: [
         { roleKey: 'CASH', side: 'debit', amount: '100' },
@@ -528,9 +528,9 @@ describe('voidInvoicePayment', () => {
     const { state } = built;
     state.paymentModes['pm-bank'] = { id: 'pm-bank', slug: 'bank-transfer', name: 'Bank Transfer' };
     // currentBalance ALREADY includes the imported deposit — the money is here.
-    state.banks['bank-1'] = { id: 'bank-1', userId: USER, currencyCode: 'GBP', currentBalance: '1000' };
+    state.banks['bank-1'] = { id: 'bank-1', tenantId: USER, currencyCode: 'GBP', currentBalance: '1000' };
     state.invoices['inv-1'] = {
-      id: 'inv-1', userId: USER, isDeleted: false,
+      id: 'inv-1', tenantId: USER, isDeleted: false,
       TotalAmount: '100', status: 'PAID', invoiceNumber: 'INV-EXPLAIN',
     };
     // Explain-flow payment: bank + bankId set, but movedBankBalance FALSE.
@@ -552,7 +552,7 @@ describe('voidInvoicePayment', () => {
     };
     // Forward payment GL exists (Dr BANK / Cr AR) so we can prove the GL reverses.
     await post(built.prisma as never, {
-      userId: USER, sourceType: 'InvoicePayment', sourceId: 'pay-x', event: 'payment',
+      tenantId: USER, sourceType: 'InvoicePayment', sourceId: 'pay-x', event: 'payment',
       date: new Date('2026-06-01'), currencyCode: 'BASE',
       instructions: [
         { roleKey: 'BANK', side: 'debit', amount: '100' },

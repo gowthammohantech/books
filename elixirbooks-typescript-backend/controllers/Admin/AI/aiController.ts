@@ -8,7 +8,7 @@ import type {
 } from '@prisma/client';
 
 import { prisma } from '../../../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../../../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 
 // Legacy JS services — still JS, require via CommonJS shim.
@@ -33,7 +33,7 @@ const {
   loadContext,
   resolveEntities,
 } = require('../../../services/ai/entityResolver') as {
-  loadContext: (userId: string) => Promise<unknown>;
+  loadContext: (tenantId: string) => Promise<unknown>;
   resolveEntities: (
     data: Record<string, unknown>,
     documentType: AIDocumentType,
@@ -48,14 +48,14 @@ const { formatForController } = require('../../../services/ai/responseFormatter'
   formatForController: (
     documentType: AIDocumentType,
     resolved: Record<string, unknown>,
-    extras: { userId: string },
+    extras: { tenantId: string },
   ) => Record<string, unknown>;
 };
 const { checkDuplicates: checkDuplicatesService } = require('../../../services/ai/duplicateDetector') as {
   checkDuplicates: (
     documentType: string,
     payload: Record<string, unknown>,
-    userId: string,
+    tenantId: string,
   ) => Promise<{ hasDuplicates: boolean; duplicates: unknown[] } & Record<string, unknown>>;
 };
 const { processChatMessage } = require('../../../services/ai/chatService') as {
@@ -77,14 +77,14 @@ const {
   getFinancialData,
   generateInsightNarrative,
 } = require('../../../services/ai/insightsService') as {
-  getFinancialData: (userId: string) => Promise<Record<string, unknown>>;
+  getFinancialData: (tenantId: string) => Promise<Record<string, unknown>>;
   generateInsightNarrative: (data: Record<string, unknown>) => Promise<string | null>;
 };
 const {
   getOverdueInvoices: getOverdueInvoicesService,
   generateFollowupEmail,
 } = require('../../../services/ai/paymentFollowup') as {
-  getOverdueInvoices: (userId: string) => Promise<unknown[]>;
+  getOverdueInvoices: (tenantId: string) => Promise<unknown[]>;
   generateFollowupEmail: (
     invoiceData: Record<string, unknown>,
     companyName: string,
@@ -156,10 +156,10 @@ function enabledModuleFor(
   }
 }
 
-async function getOrCreateConfig(userId: string) {
-  let config = await prisma.aIConfiguration.findUnique({ where: { userId } });
+async function getOrCreateConfig(tenantId: string) {
+  let config = await prisma.aIConfiguration.findUnique({ where: { tenantId } });
   if (!config) {
-    config = await prisma.aIConfiguration.create({ data: { userId } });
+    config = await prisma.aIConfiguration.create({ data: { tenantId } });
   }
   return config;
 }
@@ -170,7 +170,7 @@ async function getOrCreateConfig(userId: string) {
  */
 export async function processAIPrompt(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { prompt } = req.body as { prompt?: string };
 
     if (!prompt || prompt.trim().length === 0) {
@@ -179,7 +179,7 @@ export async function processAIPrompt(req: Request, res: Response): Promise<void
     }
 
     // Check AI configuration and rate limits
-    const aiConfig = await getOrCreateConfig(userId);
+    const aiConfig = await getOrCreateConfig(tenantId);
 
     if (!aiConfig.aiEnabled) {
       res.status(403).json({
@@ -193,7 +193,7 @@ export async function processAIPrompt(req: Request, res: Response): Promise<void
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const dailyCount = await prisma.aIPromptLog.count({
-      where: { userId, createdAt: { gte: today } },
+      where: { tenantId, createdAt: { gte: today } },
     });
 
     if (dailyCount >= aiConfig.maxPromptsPerDay) {
@@ -205,7 +205,7 @@ export async function processAIPrompt(req: Request, res: Response): Promise<void
     }
 
     // Load context data for entity resolution
-    const context = await loadContext(userId);
+    const context = await loadContext(tenantId);
 
     // Process prompt with AI
     const aiResult = await processPrompt(prompt, context);
@@ -217,7 +217,7 @@ export async function processAIPrompt(req: Request, res: Response): Promise<void
           documentType: 'invoice',
           status: 'failed',
           errorMessage: 'AI processing failed',
-          userId,
+          tenantId,
           processingTimeMs: aiResult.processingTimeMs || 0,
           inputTokens: aiResult.tokensUsed?.inputTokens || 0,
           outputTokens: aiResult.tokensUsed?.outputTokens || 0,
@@ -384,7 +384,7 @@ export async function processAIPrompt(req: Request, res: Response): Promise<void
     }
 
     // Format for the target controller
-    const formattedPayload = formatForController(documentType, resolved, { userId });
+    const formattedPayload = formatForController(documentType, resolved, { tenantId });
 
     if (
       (['purchase_order', 'invoice', 'quotation'] as AIDocumentType[]).includes(documentType) &&
@@ -396,7 +396,7 @@ export async function processAIPrompt(req: Request, res: Response): Promise<void
           documentType,
           status: 'failed',
           errorMessage: 'No items provided',
-          userId,
+          tenantId,
           processingTimeMs: aiResult.processingTimeMs || 0,
           inputTokens: aiResult.tokensUsed?.inputTokens || 0,
           outputTokens: aiResult.tokensUsed?.outputTokens || 0,
@@ -429,7 +429,7 @@ export async function processAIPrompt(req: Request, res: Response): Promise<void
           formatted: formattedPayload,
         } as Prisma.InputJsonValue,
         status: 'processed',
-        userId,
+        tenantId,
         processingTimeMs: aiResult.processingTimeMs || 0,
         inputTokens: aiResult.tokensUsed?.inputTokens || 0,
         outputTokens: aiResult.tokensUsed?.outputTokens || 0,
@@ -468,7 +468,7 @@ export async function processAIPrompt(req: Request, res: Response): Promise<void
  */
 export async function confirmAIDocument(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { promptLogId, documentType, payload } = req.body as {
       promptLogId?: string;
       documentType?: AIDocumentType;
@@ -485,7 +485,7 @@ export async function confirmAIDocument(req: Request, res: Response): Promise<vo
 
     // Verify prompt log exists and belongs to user
     const promptLog = await prisma.aIPromptLog.findFirst({
-      where: { id: promptLogId, userId, status: 'processed' },
+      where: { id: promptLogId, tenantId, status: 'processed' },
     });
 
     if (!promptLog) {
@@ -510,14 +510,14 @@ export async function confirmAIDocument(req: Request, res: Response): Promise<vo
           }
           const customerId = (payload.customerId || payload.billTo) as string;
           const billTo = (payload.billTo || payload.customerId) as string;
-          const billFrom = (payload.billFrom || userId) as string;
+          const billFrom = (payload.billFrom || tenantId) as string;
 
           const invoiceData: Prisma.InvoiceUncheckedCreateInput = {
             ...(payload as unknown as Prisma.InvoiceUncheckedCreateInput),
             customerId,
             billTo,
             billFrom,
-            userId,
+            tenantId,
           };
           const invoice = await tx.invoice.create({ data: invoiceData });
 
@@ -541,7 +541,7 @@ export async function confirmAIDocument(req: Request, res: Response): Promise<vo
                 adjustment: -reduceBy,
                 referenceId: invoice.id,
                 referenceType: 'invoice',
-                createdBy: userId,
+                createdBy: tenantId,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
               };
@@ -574,14 +574,14 @@ export async function confirmAIDocument(req: Request, res: Response): Promise<vo
           if (!payload.items || (payload.items as unknown[]).length === 0) {
             throw new Error('Cannot create purchase order: at least one item is required.');
           }
-          const billTo = (payload.billTo || payload.vendorId || userId) as string;
-          const billFrom = (payload.billFrom || userId) as string;
+          const billTo = (payload.billTo || payload.vendorId || tenantId) as string;
+          const billFrom = (payload.billFrom || tenantId) as string;
 
           const poData: Prisma.PurchaseOrderUncheckedCreateInput = {
             ...(payload as unknown as Prisma.PurchaseOrderUncheckedCreateInput),
             billTo,
             billFrom,
-            userId,
+            tenantId,
           };
           const po = await tx.purchaseOrder.create({ data: poData });
           createdDocument = po as unknown as { id: string; [k: string]: unknown };
@@ -591,14 +591,14 @@ export async function confirmAIDocument(req: Request, res: Response): Promise<vo
         }
 
         case 'quotation': {
-          const billTo = (payload.billTo || payload.customerId || userId) as string;
-          const billFrom = (payload.billFrom || userId) as string;
+          const billTo = (payload.billTo || payload.customerId || tenantId) as string;
+          const billFrom = (payload.billFrom || tenantId) as string;
 
           const quotationData: Prisma.QuotationUncheckedCreateInput = {
             ...(payload as unknown as Prisma.QuotationUncheckedCreateInput),
             billTo,
             billFrom,
-            userId,
+            tenantId,
           };
           const quotation = await tx.quotation.create({ data: quotationData });
           createdDocument = quotation as unknown as { id: string; [k: string]: unknown };
@@ -610,7 +610,7 @@ export async function confirmAIDocument(req: Request, res: Response): Promise<vo
         case 'expense': {
           const expenseData: Prisma.ExpenseUncheckedCreateInput = {
             ...(payload as unknown as Prisma.ExpenseUncheckedCreateInput),
-            userId,
+            tenantId,
           };
           const expense = await tx.expense.create({ data: expenseData });
           createdDocument = expense as unknown as { id: string; [k: string]: unknown };
@@ -679,7 +679,7 @@ export async function confirmAIDocument(req: Request, res: Response): Promise<vo
  */
 export async function getAIHistory(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '20',
@@ -695,7 +695,7 @@ export async function getAIHistory(req: Request, res: Response): Promise<void> {
     const limitNum = Number(limit) || 20;
     const skip = (pageNum - 1) * limitNum;
 
-    const where: Prisma.AIPromptLogWhereInput = { userId, isDeleted: false };
+    const where: Prisma.AIPromptLogWhereInput = { tenantId, isDeleted: false };
     if (status) where.status = status;
     if (documentType) where.documentType = documentType;
 
@@ -750,10 +750,10 @@ export async function getAIHistory(req: Request, res: Response): Promise<void> {
  */
 export async function getAIPromptDetail(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
-    const log = await prisma.aIPromptLog.findFirst({ where: { id, userId } });
+    const log = await prisma.aIPromptLog.findFirst({ where: { id, tenantId } });
     if (!log) {
       res.status(404).json({ success: false, message: 'AI prompt log not found' });
       return;
@@ -781,8 +781,8 @@ export async function getAIPromptDetail(req: Request, res: Response): Promise<vo
  */
 export async function getAIConfig(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const config = await getOrCreateConfig(userId);
+    const tenantId = requireTenantId(req);
+    const config = await getOrCreateConfig(tenantId);
 
     res.status(200).json({
       success: true,
@@ -806,7 +806,7 @@ export async function getAIConfig(req: Request, res: Response): Promise<void> {
  */
 export async function updateAIConfig(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const updates = req.body as Record<string, unknown>;
 
     const filtered: Prisma.AIConfigurationUpdateInput = {};
@@ -832,8 +832,8 @@ export async function updateAIConfig(req: Request, res: Response): Promise<void>
       if (em.expense !== undefined) filtered.enabledModulesExpense = Boolean(em.expense);
     }
 
-    // upsert: create payload uses the unchecked variant so we can pass userId directly.
-    const createPayload: Prisma.AIConfigurationUncheckedCreateInput = { userId };
+    // upsert: create payload uses the unchecked variant so we can pass tenantId directly.
+    const createPayload: Prisma.AIConfigurationUncheckedCreateInput = { tenantId };
     if (filtered.aiEnabled !== undefined) createPayload.aiEnabled = filtered.aiEnabled as boolean;
     if (filtered.defaultCurrency !== undefined) createPayload.defaultCurrency = filtered.defaultCurrency as string;
     if (filtered.defaultTaxType !== undefined) createPayload.defaultTaxType = filtered.defaultTaxType as Prisma.AIConfigurationUncheckedCreateInput['defaultTaxType'];
@@ -846,7 +846,7 @@ export async function updateAIConfig(req: Request, res: Response): Promise<void>
     if (filtered.enabledModulesExpense !== undefined) createPayload.enabledModulesExpense = filtered.enabledModulesExpense as boolean;
 
     const config = await prisma.aIConfiguration.upsert({
-      where: { userId },
+      where: { tenantId },
       create: createPayload,
       update: filtered,
     });
@@ -873,10 +873,10 @@ export async function updateAIConfig(req: Request, res: Response): Promise<void>
  */
 export async function deleteAIPromptLog(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
-    const existing = await prisma.aIPromptLog.findFirst({ where: { id, userId } });
+    const existing = await prisma.aIPromptLog.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'AI prompt log not found' });
       return;
@@ -905,7 +905,7 @@ export async function deleteAIPromptLog(req: Request, res: Response): Promise<vo
  */
 export async function getAIStats(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -913,21 +913,21 @@ export async function getAIStats(req: Request, res: Response): Promise<void> {
 
     const [todayCount, monthCount, totalCount, byTypeRows, byStatusRows, recentLogs, config] =
       await Promise.all([
-        prisma.aIPromptLog.count({ where: { userId, createdAt: { gte: today } } }),
-        prisma.aIPromptLog.count({ where: { userId, createdAt: { gte: thisMonth } } }),
-        prisma.aIPromptLog.count({ where: { userId } }),
+        prisma.aIPromptLog.count({ where: { tenantId, createdAt: { gte: today } } }),
+        prisma.aIPromptLog.count({ where: { tenantId, createdAt: { gte: thisMonth } } }),
+        prisma.aIPromptLog.count({ where: { tenantId } }),
         prisma.aIPromptLog.groupBy({
           by: ['documentType'],
-          where: { userId },
+          where: { tenantId },
           _count: { _all: true },
         }),
         prisma.aIPromptLog.groupBy({
           by: ['status'],
-          where: { userId },
+          where: { tenantId },
           _count: { _all: true },
         }),
         prisma.aIPromptLog.findMany({
-          where: { userId, isDeleted: false },
+          where: { tenantId, isDeleted: false },
           select: {
             id: true,
             promptId: true,
@@ -939,7 +939,7 @@ export async function getAIStats(req: Request, res: Response): Promise<void> {
           orderBy: { createdAt: 'desc' },
           take: 5,
         }),
-        prisma.aIConfiguration.findUnique({ where: { userId } }),
+        prisma.aIConfiguration.findUnique({ where: { tenantId } }),
       ]);
 
     const byDocumentType = byTypeRows.reduce<Record<string, number>>((acc, row) => {
@@ -987,7 +987,7 @@ export async function getAIStats(req: Request, res: Response): Promise<void> {
  */
 export async function getSuggestions(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { q = '', type = 'all' } = req.query as { q?: string; type?: string };
 
     if (q.length < 2) {
@@ -1008,7 +1008,7 @@ export async function getSuggestions(req: Request, res: Response): Promise<void>
     if (type === 'all' || type === 'customer') {
       results.customers = await prisma.customer.findMany({
         where: {
-          userId,
+          tenantId,
           isDeleted: false,
           name: { contains: q, mode: 'insensitive' },
         },
@@ -1020,7 +1020,7 @@ export async function getSuggestions(req: Request, res: Response): Promise<void>
     if (type === 'all' || type === 'supplier') {
       results.suppliers = await prisma.supplier.findMany({
         where: {
-          user_id: userId,
+          tenantId: tenantId,
           isDeleted: false,
           supplier_name: { contains: q, mode: 'insensitive' },
         },
@@ -1032,6 +1032,7 @@ export async function getSuggestions(req: Request, res: Response): Promise<void>
     if (type === 'all' || type === 'product') {
       results.products = await prisma.product.findMany({
         where: {
+          tenantId,
           status: true,
           OR: [
             { name: { contains: q, mode: 'insensitive' } },
@@ -1046,6 +1047,7 @@ export async function getSuggestions(req: Request, res: Response): Promise<void>
     if (type === 'all' || type === 'category') {
       results.expenseCategories = await prisma.expenseCategory.findMany({
         where: {
+          tenantId,
           isDeleted: false,
           status: true,
           title: { contains: q, mode: 'insensitive' },
@@ -1073,7 +1075,7 @@ export async function getSuggestions(req: Request, res: Response): Promise<void>
  */
 export async function processBatch(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { prompts } = req.body as { prompts?: string[] };
 
     if (!Array.isArray(prompts) || prompts.length === 0) {
@@ -1086,12 +1088,12 @@ export async function processBatch(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const aiConfig = await getOrCreateConfig(userId);
+    const aiConfig = await getOrCreateConfig(tenantId);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const dailyCount = await prisma.aIPromptLog.count({
-      where: { userId, createdAt: { gte: today } },
+      where: { tenantId, createdAt: { gte: today } },
     });
 
     if (dailyCount + prompts.length > aiConfig.maxPromptsPerDay) {
@@ -1102,7 +1104,7 @@ export async function processBatch(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const context = await loadContext(userId);
+    const context = await loadContext(tenantId);
     const results: Array<Record<string, unknown>> = [];
 
     for (const promptText of prompts) {
@@ -1112,7 +1114,7 @@ export async function processBatch(req: Request, res: Response): Promise<void> {
         if (aiResult.success && aiResult.result) {
           const { documentType, data, confidence, summary } = aiResult.result;
           const { resolved, matchDetails } = resolveEntities(data, documentType, context);
-          const formattedPayload = formatForController(documentType, resolved, { userId });
+          const formattedPayload = formatForController(documentType, resolved, { tenantId });
 
           const promptLog = await prisma.aIPromptLog.create({
             data: {
@@ -1125,7 +1127,7 @@ export async function processBatch(req: Request, res: Response): Promise<void> {
                 formatted: formattedPayload,
               } as Prisma.InputJsonValue,
               status: 'processed',
-              userId,
+              tenantId,
               processingTimeMs: aiResult.processingTimeMs || 0,
               inputTokens: aiResult.tokensUsed?.inputTokens || 0,
               outputTokens: aiResult.tokensUsed?.outputTokens || 0,
@@ -1186,8 +1188,8 @@ export async function processBatch(req: Request, res: Response): Promise<void> {
  */
 export async function getInsights(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const financialData = await getFinancialData(userId);
+    const tenantId = requireTenantId(req);
+    const financialData = await getFinancialData(tenantId);
 
     let narrative: string | null = null;
     if (req.query.withNarrative === 'true') {
@@ -1236,9 +1238,9 @@ interface ChatMessage {
  */
 export async function startChatSession(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const session = await prisma.aIChatSession.create({
-      data: { userId, messages: [] as Prisma.InputJsonValue },
+      data: { tenantId, messages: [] as Prisma.InputJsonValue },
     });
 
     res.status(201).json({
@@ -1262,7 +1264,7 @@ export async function startChatSession(req: Request, res: Response): Promise<voi
  */
 export async function sendChatMessage(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { sessionId } = req.params as { sessionId: string };
     const { message } = req.body as { message?: string };
 
@@ -1272,7 +1274,7 @@ export async function sendChatMessage(req: Request, res: Response): Promise<void
     }
 
     const session = await prisma.aIChatSession.findFirst({
-      where: { id: sessionId, userId, status: 'active' },
+      where: { id: sessionId, tenantId, status: 'active' },
     });
 
     if (!session) {
@@ -1281,7 +1283,7 @@ export async function sendChatMessage(req: Request, res: Response): Promise<void
     }
 
     // Load context
-    const context = await loadContext(userId);
+    const context = await loadContext(tenantId);
 
     const existingMessages = Array.isArray(session.messages)
       ? (session.messages as unknown as ChatMessage[])
@@ -1374,7 +1376,7 @@ export async function sendChatMessage(req: Request, res: Response): Promise<void
           return;
         }
       }
-      preview = formatForController(docType, resolved, { userId });
+      preview = formatForController(docType, resolved, { tenantId });
     }
 
     res.status(200).json({
@@ -1408,11 +1410,11 @@ export async function sendChatMessage(req: Request, res: Response): Promise<void
  */
 export async function getChatSession(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { sessionId } = req.params as { sessionId: string };
 
     const session = await prisma.aIChatSession.findFirst({
-      where: { id: sessionId, userId },
+      where: { id: sessionId, tenantId },
     });
 
     if (!session) {
@@ -1433,15 +1435,15 @@ export async function getChatSession(req: Request, res: Response): Promise<void>
  */
 export async function listChatSessions(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { page = '1', limit = '10' } = req.query as { page?: string; limit?: string };
     const pageNum = Number(page) || 1;
     const limitNum = Number(limit) || 10;
 
     const [total, sessions] = await Promise.all([
-      prisma.aIChatSession.count({ where: { userId, isDeleted: false } }),
+      prisma.aIChatSession.count({ where: { tenantId, isDeleted: false } }),
       prisma.aIChatSession.findMany({
-        where: { userId, isDeleted: false },
+        where: { tenantId, isDeleted: false },
         select: {
           id: true,
           sessionId: true,
@@ -1499,7 +1501,7 @@ export async function listChatSessions(req: Request, res: Response): Promise<voi
  */
 export async function checkDuplicates(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { documentType, payload } = req.body as {
       documentType?: string;
       payload?: Record<string, unknown>;
@@ -1513,7 +1515,7 @@ export async function checkDuplicates(req: Request, res: Response): Promise<void
       return;
     }
 
-    const result = await checkDuplicatesService(documentType, payload, userId);
+    const result = await checkDuplicatesService(documentType, payload, tenantId);
 
     res.status(200).json({
       success: true,
@@ -1539,8 +1541,8 @@ export async function checkDuplicates(req: Request, res: Response): Promise<void
  */
 export async function getOverdueInvoices(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const invoices = await getOverdueInvoicesService(userId);
+    const tenantId = requireTenantId(req);
+    const invoices = await getOverdueInvoicesService(tenantId);
 
     res.status(200).json({
       success: true,
@@ -1560,7 +1562,7 @@ export async function getOverdueInvoices(req: Request, res: Response): Promise<v
  */
 export async function generateFollowup(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { invoiceId, tone = 'professional' } = req.body as {
       invoiceId?: string;
       tone?: string;
@@ -1572,7 +1574,7 @@ export async function generateFollowup(req: Request, res: Response): Promise<voi
     }
 
     const invoice = await prisma.invoice.findFirst({
-      where: { id: invoiceId, userId, isDeleted: false },
+      where: { id: invoiceId, tenantId, isDeleted: false },
       include: {
         customer: { select: { id: true, name: true, email: true, phone: true } },
         billToCustomer: { select: { id: true, name: true, email: true, phone: true } },
@@ -1710,7 +1712,7 @@ export async function sendFollowup(req: Request, res: Response): Promise<void> {
  */
 export async function createTemplate(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { name, prompt, documentType, category } = req.body as {
       name?: string;
       prompt?: string;
@@ -1732,7 +1734,7 @@ export async function createTemplate(req: Request, res: Response): Promise<void>
         prompt,
         documentType: documentType || 'any',
         category: category || 'General',
-        userId,
+        tenantId,
       },
     });
 
@@ -1754,13 +1756,13 @@ export async function createTemplate(req: Request, res: Response): Promise<void>
  */
 export async function getTemplates(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { documentType, search } = req.query as {
       documentType?: string;
       search?: string;
     };
 
-    const where: Prisma.AIPromptTemplateWhereInput = { userId, isDeleted: false };
+    const where: Prisma.AIPromptTemplateWhereInput = { tenantId, isDeleted: false };
     if (documentType && documentType !== 'all') {
       where.documentType = documentType as AIPromptTemplateDocumentType;
     }
@@ -1790,7 +1792,7 @@ export async function getTemplates(req: Request, res: Response): Promise<void> {
  */
 export async function updateTemplate(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const { name, prompt, documentType, category } = req.body as {
       name?: string;
@@ -1799,7 +1801,7 @@ export async function updateTemplate(req: Request, res: Response): Promise<void>
       category?: string;
     };
 
-    const existing = await prisma.aIPromptTemplate.findFirst({ where: { id, userId } });
+    const existing = await prisma.aIPromptTemplate.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Template not found' });
       return;
@@ -1830,10 +1832,10 @@ export async function updateTemplate(req: Request, res: Response): Promise<void>
  */
 export async function deleteTemplate(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
-    const existing = await prisma.aIPromptTemplate.findFirst({ where: { id, userId } });
+    const existing = await prisma.aIPromptTemplate.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Template not found' });
       return;
@@ -1854,10 +1856,10 @@ export async function deleteTemplate(req: Request, res: Response): Promise<void>
  */
 export async function useTemplate(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
-    const existing = await prisma.aIPromptTemplate.findFirst({ where: { id, userId } });
+    const existing = await prisma.aIPromptTemplate.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Template not found' });
       return;

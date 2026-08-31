@@ -34,7 +34,7 @@ function makeDb(opts: {
         id: 'inv-1',
         TotalAmount: opts.total,
         status: opts.status ?? 'UNPAID',
-        userId: TENANT_ID,
+        tenantId: TENANT_ID,
         exchangeRate: null,
       }),
       update: vi.fn().mockImplementation(async (arg: { data: { status?: string } }) => {
@@ -57,7 +57,7 @@ function makeDb(opts: {
 }
 
 const baseInput = {
-  userId: TENANT_ID,
+  tenantId: TENANT_ID,
   invoiceId: 'inv-1',
   date: new Date('2026-02-01'),
   bankAccountId: 'bank-1',

@@ -47,7 +47,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.spyOn(mailerModule, 'sendMail').mockResolvedValue(undefined);
   mockExistsSync.mockReturnValue(false);
-  mockPurchaseFindFirst.mockResolvedValue({ id: 'pur-1', userId: TENANT_ID });
+  mockPurchaseFindFirst.mockResolvedValue({ id: 'pur-1', tenantId: TENANT_ID });
 });
 
 describe('sendPurchaseEmail — phantom PDF attachment guard', () => {

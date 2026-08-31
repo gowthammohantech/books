@@ -15,6 +15,8 @@ declare global {
     interface Actor {
       userId: string;
       tenantId: string;
+      /** The TenantMembership binding userId to tenantId, verified by protect. */
+      membershipId: string;
       roleId: string | null;
       roleName: string | null;
       isOwner: boolean;
@@ -24,9 +26,9 @@ declare global {
       // The JWT subject: the individual logged-in user's id. Use for identity
       // / self-account ops only (see lib/tenantScope.requireActingUserId).
       user?: string;
-      // The company-owner id (`ownerId ?? id`) the user belongs to, resolved by
-      // authMiddleware.protect. Use this for data scoping so every staff/admin
-      // in a company shares one dataset (see lib/tenantScope.requireUserId).
+      // The workspace this request acts on, resolved by authMiddleware.protect
+      // from a VERIFIED TenantMembership. Use this for data scoping so every
+      // member of a company shares one dataset (see lib/tenantScope).
       tenantId?: string;
       // Resolved caller identity + role permissions. Set by protect() after
       // JWT verification. Use req.actor.perms for permission checks.

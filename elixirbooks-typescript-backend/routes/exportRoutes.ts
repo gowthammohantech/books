@@ -3,7 +3,7 @@
 // full-tenant backup zip. Mounted under /api/admin via routes/adminRoutes.js
 // (same pattern as routes/timeTrackingRoutes.ts).
 //
-// Every handler is tenant-scoped inside the controller (requireUserId =
+// Every handler is tenant-scoped inside the controller (requireTenantId =
 // ownerId ?? id), so a caller can only ever pull their own tenant's rows.
 
 import type { Request, Response, NextFunction } from 'express';

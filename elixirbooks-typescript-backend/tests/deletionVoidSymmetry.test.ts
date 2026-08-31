@@ -81,7 +81,7 @@ vi.mock('../lib/prisma', () => {
     bankTransaction: { create: m.bankTransactionCreate, update: m.bankTransactionUpdate, findFirst: m.bankTransactionFindFirst },
     pettyCash: { findFirst: m.pettyCashFindFirst, update: m.pettyCashUpdate },
     pettyCashTransaction: { create: m.pettyCashTransactionCreate, findFirst: m.pettyCashTransactionFindFirst },
-    product: { findUnique: m.productFindUnique },
+    product: { findFirst: m.productFindUnique },
     inventory: { findFirst: m.inventoryFindFirst },
     paymentMode: { findUnique: m.paymentModeFindUnique },
   };
@@ -165,7 +165,7 @@ beforeEach(() => {
 describe('deleteInvoice reverses recorded payments', () => {
   it('reverses the payment JE, decrements bank, writes reversing txn, marks payment voided', async () => {
     m.invoiceFindFirst.mockResolvedValue({
-      id: 'inv-1', userId: TENANT_ID, isDeleted: false, invoiceType: 'INVOICE',
+      id: 'inv-1', tenantId: TENANT_ID, isDeleted: false, invoiceType: 'INVOICE',
       invoiceNumber: 'INV-1', items: [{ productId: 'prod-1', qty: 2, unit: 'u1' }],
     });
     m.invoicePaymentFindMany.mockResolvedValue([
@@ -192,7 +192,7 @@ describe('deleteInvoice reverses recorded payments', () => {
   });
 
   it('does NOT reverse an already-voided payment', async () => {
-    m.invoiceFindFirst.mockResolvedValue({ id: 'inv-1', userId: TENANT_ID, isDeleted: false, invoiceType: 'PROFORMA', items: [] });
+    m.invoiceFindFirst.mockResolvedValue({ id: 'inv-1', tenantId: TENANT_ID, isDeleted: false, invoiceType: 'PROFORMA', items: [] });
     m.invoicePaymentFindMany.mockResolvedValue([]); // findMany filters isVoided:false → none
     const { req, res } = makeReqRes({ id: 'inv-1' });
     await deleteInvoice(req, res);
@@ -206,7 +206,7 @@ describe('deleteInvoice reverses recorded payments', () => {
 // ===========================================================================
 describe('deletePurchase reverses supplier payments', () => {
   it('reverses the payment JE, increments bank, writes reversing txn, marks payment voided', async () => {
-    m.purchaseFindFirst.mockResolvedValue({ id: 'pur-1', userId: TENANT_ID, isDeleted: false, status: 'received', purchaseId: 'PUR-1', items: [{ productId: 'prod-1', qty: 3, unit: 'u1' }] });
+    m.purchaseFindFirst.mockResolvedValue({ id: 'pur-1', tenantId: TENANT_ID, isDeleted: false, status: 'received', purchaseId: 'PUR-1', items: [{ productId: 'prod-1', qty: 3, unit: 'u1' }] });
     m.supplierPaymentFindMany.mockResolvedValue([
       { id: 'sp-1', paidAmount: 100, paymentModeId: 'pm-1', sourceType: 'BANK', bank: { id: 'bank-1', currentBalance: 50 }, movedBankBalance: true },
     ]);
@@ -271,7 +271,7 @@ describe('deleteSupplierPayment restores balance and recomputes status', () => {
 // ===========================================================================
 describe('deleteExpense refunds the cash source', () => {
   it('refunds a BANK expense: increments bank + writes reversing money-in txn', async () => {
-    m.expenseFindFirst.mockResolvedValue({ id: 'exp-1', userId: TENANT_ID, isDeleted: false, sourceType: 'BANK', bankId: 'bank-1', paymentModeId: 'pm-1', amount: '50.00', expenseId: 'EXP-1' });
+    m.expenseFindFirst.mockResolvedValue({ id: 'exp-1', tenantId: TENANT_ID, isDeleted: false, sourceType: 'BANK', bankId: 'bank-1', paymentModeId: 'pm-1', amount: '50.00', expenseId: 'EXP-1' });
     m.bankDetailFindFirst.mockResolvedValue({ id: 'bank-1', currentBalance: 200 });
     m.paymentModeFindUnique.mockResolvedValue({ slug: 'bank_transfer' });
 
@@ -286,7 +286,7 @@ describe('deleteExpense refunds the cash source', () => {
   });
 
   it('refunds a PETTY_CASH expense: increments petty + RETURN txn', async () => {
-    m.expenseFindFirst.mockResolvedValue({ id: 'exp-2', userId: TENANT_ID, isDeleted: false, sourceType: 'PETTY_CASH', bankId: null, paymentModeId: null, amount: '30.00', expenseId: 'EXP-2' });
+    m.expenseFindFirst.mockResolvedValue({ id: 'exp-2', tenantId: TENANT_ID, isDeleted: false, sourceType: 'PETTY_CASH', bankId: null, paymentModeId: null, amount: '30.00', expenseId: 'EXP-2' });
     m.pettyCashFindFirst.mockResolvedValue({ id: 'pc-1', currentBalance: 70 });
 
     const { req, res } = makeReqRes({ id: 'exp-2' });
@@ -297,7 +297,7 @@ describe('deleteExpense refunds the cash source', () => {
   });
 
   it('EMPLOYEE_PAID expense touches no bank/petty balance', async () => {
-    m.expenseFindFirst.mockResolvedValue({ id: 'exp-3', userId: TENANT_ID, isDeleted: false, sourceType: 'EMPLOYEE_PAID', bankId: null, paymentModeId: null, amount: '20.00', expenseId: 'EXP-3' });
+    m.expenseFindFirst.mockResolvedValue({ id: 'exp-3', tenantId: TENANT_ID, isDeleted: false, sourceType: 'EMPLOYEE_PAID', bankId: null, paymentModeId: null, amount: '20.00', expenseId: 'EXP-3' });
     const { req, res } = makeReqRes({ id: 'exp-3' });
     await deleteExpense(req, res);
     expect(m.bankDetailUpdate).not.toHaveBeenCalled();
@@ -311,7 +311,7 @@ describe('deleteExpense refunds the cash source', () => {
 // ===========================================================================
 describe('deleteCreditNote reverses the restock', () => {
   it('stock_outs the previously restocked qty for stockable items', async () => {
-    m.creditNoteFindFirst.mockResolvedValue({ id: 'cn-1', userId: TENANT_ID, items: [{ id: 'prod-1', qty: 2 }] });
+    m.creditNoteFindFirst.mockResolvedValue({ id: 'cn-1', tenantId: TENANT_ID, items: [{ id: 'prod-1', qty: 2 }] });
     m.productFindUnique.mockResolvedValue({ item_type: 'Product' });
     m.inventoryFindFirst.mockResolvedValue({ avgCost: new Prisma.Decimal(12) });
 
@@ -325,7 +325,7 @@ describe('deleteCreditNote reverses the restock', () => {
   });
 
   it('skips Service items (nothing was restocked)', async () => {
-    m.creditNoteFindFirst.mockResolvedValue({ id: 'cn-2', userId: TENANT_ID, items: [{ id: 'svc-1', qty: 5 }] });
+    m.creditNoteFindFirst.mockResolvedValue({ id: 'cn-2', tenantId: TENANT_ID, items: [{ id: 'svc-1', qty: 5 }] });
     m.productFindUnique.mockResolvedValue({ item_type: 'Service' });
     const { req, res } = makeReqRes({ id: 'cn-2' });
     await deleteCreditNote(req, res);

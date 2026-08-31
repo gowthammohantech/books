@@ -5,11 +5,11 @@
  * (getInventoryReport, getBestSellerReport, getLowStockReport,
  * getOutStockReport, getStockHistoryReport) previously queried the shared
  * Product catalog first and only ever filtered Inventory by productId — with
- * no userId anywhere (one comment even said "NOT tenant scoped" explicitly).
+ * no tenantId anywhere (one comment even said "NOT tenant scoped" explicitly).
  * Product itself has no tenant column in this schema (it's a shared catalog),
  * so scoping is done by inverting the query to Inventory-first (Inventory
- * DOES have userId) and reaching Product only via the include/relation.
- * These tests assert every prisma.inventory.* call carries userId.
+ * DOES have tenantId) and reaching Product only via the include/relation.
+ * These tests assert every prisma.inventory.* call carries tenantId.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
@@ -57,10 +57,10 @@ beforeEach(() => {
 function expectAllInventoryCallsScoped() {
   expect(mockInventoryFindMany.mock.calls.length).toBeGreaterThan(0);
   for (const call of mockInventoryFindMany.mock.calls) {
-    expect(call[0].where).toEqual(expect.objectContaining({ userId: TENANT_ID }));
+    expect(call[0].where).toEqual(expect.objectContaining({ tenantId: TENANT_ID }));
   }
   for (const call of mockInventoryCount.mock.calls) {
-    expect(call[0].where).toEqual(expect.objectContaining({ userId: TENANT_ID }));
+    expect(call[0].where).toEqual(expect.objectContaining({ tenantId: TENANT_ID }));
   }
 }
 

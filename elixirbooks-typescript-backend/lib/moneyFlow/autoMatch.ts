@@ -157,7 +157,7 @@ function partyMatches(payeeKey: string, partyName: string | null): boolean {
 export async function autoMatch(
   tx: AutoMatchDb,
   bankTxn: AutoMatchBankTxn,
-  userId: string,
+  tenantId: string,
 ): Promise<AutoMatchResult> {
   const amount = Number(bankTxn.amount);
   const date = bankTxn.transactionDate instanceof Date ? bankTxn.transactionDate : new Date();
@@ -166,7 +166,7 @@ export async function autoMatch(
   const inbound = isInbound(bankTxn.type);
 
   // 1. Learning store — consult the hint first.
-  const hint = await lookupHint(tx as never, userId, rawPayee(bankTxn));
+  const hint = await lookupHint(tx as never, tenantId, rawPayee(bankTxn));
 
   const candidates: ProposedExplanation[] = [];
 
@@ -175,7 +175,7 @@ export async function autoMatch(
     // OPEN invoices: unpaid / partially-paid, not deleted, tenant-scoped.
     const invoices = (await tx.invoice.findMany({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         status: { in: ['UNPAID', 'PARTIALLY_PAID', 'SENT', 'OVERDUE'] },
       },
@@ -205,7 +205,7 @@ export async function autoMatch(
     // OPEN bills/purchases: pending / partially-paid, not deleted, tenant-scoped.
     const purchases = (await tx.purchase.findMany({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         status: { in: ['pending', 'partially_paid', 'new'] },
       },

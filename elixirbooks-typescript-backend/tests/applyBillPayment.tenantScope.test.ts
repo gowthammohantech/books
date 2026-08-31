@@ -5,9 +5,9 @@
  * lookup (`generatePaymentId` → `db.supplierPayment.findFirst`) previously
  * scanned `{ paymentId: { not: null } }` with no tenant filter — a
  * cross-tenant sequence bleed (and, since it's the only ownership check on
- * the numbering path, worth pinning down explicitly). SupplierPayment has no
- * direct userId column, so scoping goes through the `purchase` relation:
- * `{ paymentId: { not: null }, purchase: { userId } }`.
+ * the numbering path, worth pinning down explicitly). It scoped through the
+ * `purchase` relation until P2 gave SupplierPayment its own tenantId column;
+ * the filter is the plain `{ paymentId: { not: null }, tenantId }` now.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { applyBillPayment, type ApplyBillPaymentDb } from '../lib/ledger/applyBillPayment';
@@ -23,7 +23,7 @@ function makeDb(overrides: Partial<ApplyBillPaymentDb> = {}): ApplyBillPaymentDb
         paidAmount: 0,
         balanceAmount: 1000,
         status: 'pending',
-        userId: TENANT_ID,
+        tenantId: TENANT_ID,
         supplierId: 'sup-1',
       }),
       update: vi.fn().mockResolvedValue({}),
@@ -52,11 +52,11 @@ beforeEach(() => {
 });
 
 describe('applyBillPayment — payment-numbering tenant scope', () => {
-  it('scopes generatePaymentId lookup by purchase.userId (via SupplierPayment.purchase relation)', async () => {
+  it('scopes generatePaymentId lookup by purchase.tenantId (via SupplierPayment.purchase relation)', async () => {
     const db = makeDb();
 
     await applyBillPayment(db, {
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       purchaseId: 'purch-1',
       amount: '100',
       date: new Date('2026-01-01'),
@@ -67,20 +67,20 @@ describe('applyBillPayment — payment-numbering tenant scope', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           paymentId: { not: null },
-          purchase: { userId: TENANT_ID },
+          tenantId: TENANT_ID,
         }),
       }),
     );
   });
 
-  it('also scopes the initial purchase load by userId (404-equivalent: throws BILL_NOT_FOUND on miss)', async () => {
+  it('also scopes the initial purchase load by tenantId (404-equivalent: throws BILL_NOT_FOUND on miss)', async () => {
     const db = makeDb({
       purchase: { findFirst: vi.fn().mockResolvedValue(null), update: vi.fn() },
     });
 
     await expect(
       applyBillPayment(db, {
-        userId: TENANT_ID,
+        tenantId: TENANT_ID,
         purchaseId: 'purch-foreign',
         amount: '100',
         date: new Date('2026-01-01'),
@@ -90,7 +90,7 @@ describe('applyBillPayment — payment-numbering tenant scope', () => {
 
     expect(db.purchase.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ id: 'purch-foreign', userId: TENANT_ID }),
+        where: expect.objectContaining({ id: 'purch-foreign', tenantId: TENANT_ID }),
       }),
     );
   });
@@ -101,7 +101,7 @@ describe('applyBillPayment — payment-numbering tenant scope', () => {
     (db.supplierPayment.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
     await applyBillPayment(db, {
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       purchaseId: 'purch-1',
       amount: '100',
       date: new Date('2026-01-01'),
@@ -127,7 +127,7 @@ describe('applyBillPayment — payment-numbering tenant scope', () => {
     );
 
     await applyBillPayment(db, {
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       purchaseId: 'purch-1',
       amount: '100',
       date: new Date('2026-01-01'),

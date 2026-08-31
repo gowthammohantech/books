@@ -2,11 +2,11 @@
  * tests/transactionReportController.tenantScope.test.ts
  *
  * P0-2a regression tripwire: every report in transactionReportController.ts
- * previously aggregated across ALL tenants (zero userId usage anywhere in
+ * previously aggregated across ALL tenants (zero tenantId usage anywhere in
  * the file). These tests mock prisma and assert that the `where` object
- * passed to every list/count/summary query carries the tenant's userId (or,
- * for InvoicePayment/SupplierPayment which have no own userId column, the
- * parent-relation `invoice: { userId }` / `purchase: { userId }` pattern).
+ * passed to every list/count/summary query carries the tenant's tenantId (or,
+ * for InvoicePayment/SupplierPayment which have no own tenantId column, the
+ * parent-relation `invoice: { tenantId }` / `purchase: { tenantId }` pattern).
  *
  * This is intentionally lightweight — it is not a full behavioural
  * simulation, just a guard against the tenant filter silently regressing.
@@ -138,18 +138,18 @@ describe('transactionReportController — tenant scoping', () => {
 
     expect(res.status).not.toHaveBeenCalledWith(401);
 
-    // Count + all three findMany calls (current/previous/paginated) must carry userId.
+    // Count + all three findMany calls (current/previous/paginated) must carry tenantId.
     expect(mockInvoiceCount).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     for (const call of mockInvoiceFindMany.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ userId: TENANT_ID }));
+      expect(call[0].where).toEqual(expect.objectContaining({ tenantId: TENANT_ID }));
     }
 
-    // InvoicePayment has no own userId — must scope via the parent invoice relation.
+    // InvoicePayment has no own tenantId — must scope via the parent invoice relation.
     expect(mockInvoicePaymentFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ invoice: { userId: TENANT_ID } }),
+        where: expect.objectContaining({ invoice: { tenantId: TENANT_ID } }),
       }),
     );
   });
@@ -159,10 +159,10 @@ describe('transactionReportController — tenant scoping', () => {
     await getCreditNoteSalesReport(req, res);
 
     expect(mockCreditNoteCount).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     for (const call of mockCreditNoteFindMany.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ userId: TENANT_ID }));
+      expect(call[0].where).toEqual(expect.objectContaining({ tenantId: TENANT_ID }));
     }
   });
 
@@ -171,15 +171,15 @@ describe('transactionReportController — tenant scoping', () => {
     await getPurchaseReport(req, res);
 
     expect(mockPurchaseCount).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     for (const call of mockPurchaseFindMany.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ userId: TENANT_ID }));
+      expect(call[0].where).toEqual(expect.objectContaining({ tenantId: TENANT_ID }));
     }
-    // SupplierPayment has no own userId — must scope via the parent purchase relation.
+    // SupplierPayment has no own tenantId — must scope via the parent purchase relation.
     expect(mockSupplierPaymentFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ purchase: { userId: TENANT_ID } }),
+        where: expect.objectContaining({ purchase: { tenantId: TENANT_ID } }),
       }),
     );
   });
@@ -189,10 +189,10 @@ describe('transactionReportController — tenant scoping', () => {
     await getPurchaseOrderReport(req, res);
 
     expect(mockPurchaseOrderCount).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     for (const call of mockPurchaseOrderFindMany.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ userId: TENANT_ID }));
+      expect(call[0].where).toEqual(expect.objectContaining({ tenantId: TENANT_ID }));
     }
   });
 
@@ -201,10 +201,10 @@ describe('transactionReportController — tenant scoping', () => {
     await getDebitNoteReport(req, res);
 
     expect(mockDebitNoteCount).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     for (const call of mockDebitNoteFindMany.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ userId: TENANT_ID }));
+      expect(call[0].where).toEqual(expect.objectContaining({ tenantId: TENANT_ID }));
     }
   });
 
@@ -213,10 +213,10 @@ describe('transactionReportController — tenant scoping', () => {
     await getQuotationSalesReport(req, res);
 
     expect(mockQuotationCount).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     for (const call of mockQuotationFindMany.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ userId: TENANT_ID }));
+      expect(call[0].where).toEqual(expect.objectContaining({ tenantId: TENANT_ID }));
     }
   });
 });

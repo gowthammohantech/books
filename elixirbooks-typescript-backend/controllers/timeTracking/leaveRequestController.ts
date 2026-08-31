@@ -1,7 +1,7 @@
 // controllers/timeTracking/leaveRequestController.ts
 // Time Tracking — Phase C (Task 4): leave requests + approval + balances (core).
 //
-// All routes `protect`, tenant-scoped via requireUserId(req) (tenant = ownerId ?? id).
+// All routes `protect`, tenant-scoped via requireTenantId(req) (tenant = ownerId ?? id).
 // Leave is NOT project-scoped, so "manage others" = admin/owner OR the
 // `time-tracking-others` permission (no project-manager scoping).
 //
@@ -17,7 +17,7 @@ import type { Request, Response } from 'express';
 import { LeaveStatus, Prisma } from '@prisma/client';
 
 import { prisma } from '../../lib/prisma';
-import { requireUserId, requireActingUserId, UnauthorizedError } from '../../lib/tenantScope';
+import { requireTenantId, requireActingUserId, UnauthorizedError } from '../../lib/tenantScope';
 import { buildLeaveDays, type LeavePortion } from '../../lib/timeTracking/leaveDays';
 import { computeLeaveBalances } from '../../lib/timeTracking/balance';
 
@@ -56,10 +56,11 @@ function canManageOthers(
   return isAdminOrOwner(actor) || hasOthers(req, action);
 }
 
-function resolveActor(req: Request): { userId: string; isOwner: boolean; roleName: string | null } {
+function resolveActor(req: Request): { userId: string; tenantId: string; isOwner: boolean; roleName: string | null } {
   const actor = req.actor;
   if (!actor) throw new UnauthorizedError();
-  return { userId: actor.userId, isOwner: actor.isOwner, roleName: actor.roleName };
+  // userId = the person (self checks, approvedById); tenantId = the workspace.
+  return { userId: actor.userId, tenantId: actor.tenantId, isOwner: actor.isOwner, roleName: actor.roleName };
 }
 
 /** Take the `yyyy-MM-dd` prefix of a date-only / ISO datetime string or Date. */
@@ -134,7 +135,7 @@ function employeeName(employee: { firstName: string; lastName: string | null; em
  */
 async function holidayKeysInRange(tenantId: string, start: Date, end: Date): Promise<Set<string>> {
   const holidays = await prisma.holiday.findMany({
-    where: { userId: tenantId },
+    where: { tenantId: tenantId },
     select: { date: true, recurringYearly: true },
   });
 
@@ -166,7 +167,7 @@ async function holidayKeysInRange(tenantId: string, start: Date, end: Date): Pro
 
 export async function createLeaveRequest(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actor = resolveActor(req);
     const employeeUserId = actor.userId; // own request = the acting user
 
@@ -198,7 +199,7 @@ export async function createLeaveRequest(req: Request, res: Response): Promise<v
 
     // Leave type must belong to this tenant (and be active).
     const leaveType = await prisma.leaveType.findFirst({
-      where: { id: leaveTypeId, userId: tenantId },
+      where: { id: leaveTypeId, tenantId: tenantId },
       select: { id: true, isActive: true },
     });
     if (!leaveType) {
@@ -230,7 +231,7 @@ export async function createLeaveRequest(req: Request, res: Response): Promise<v
     const dayDates = days.map((d) => keyToUtcDate(d.date));
     const overlap = await prisma.leaveRequest.findFirst({
       where: {
-        userId: tenantId,
+        tenantId: tenantId,
         employeeUserId,
         status: { not: LeaveStatus.CANCELLED },
         days: { some: { date: { in: dayDates } } },
@@ -248,7 +249,7 @@ export async function createLeaveRequest(req: Request, res: Response): Promise<v
     const created = await prisma.$transaction(async (tx) => {
       const request = await tx.leaveRequest.create({
         data: {
-          userId: tenantId,
+          tenantId: tenantId,
           employeeUserId,
           leaveTypeId,
           startDate: start,
@@ -260,6 +261,7 @@ export async function createLeaveRequest(req: Request, res: Response): Promise<v
       });
       await tx.leaveRequestDay.createMany({
         data: days.map((d) => ({
+          tenantId,
           leaveRequestId: request.id,
           date: keyToUtcDate(d.date),
           portion: d.portion,
@@ -286,7 +288,7 @@ export async function createLeaveRequest(req: Request, res: Response): Promise<v
 
 export async function listLeaveRequests(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actor = resolveActor(req);
     const actingUserId = requireActingUserId(req);
 
@@ -302,9 +304,9 @@ export async function listLeaveRequests(req: Request, res: Response): Promise<vo
           .json({ success: false, message: 'Not allowed to view pending leave requests' });
         return;
       }
-      where = { userId: tenantId, status: LeaveStatus.PENDING };
+      where = { tenantId: tenantId, status: LeaveStatus.PENDING };
     } else {
-      where = { userId: tenantId, employeeUserId: actingUserId };
+      where = { tenantId: tenantId, employeeUserId: actingUserId };
     }
 
     const [total, rows] = await Promise.all([
@@ -347,12 +349,12 @@ export async function listLeaveRequests(req: Request, res: Response): Promise<vo
 
 export async function getLeaveRequest(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actor = resolveActor(req);
     const id = String(req.params.id);
 
     const request = await prisma.leaveRequest.findFirst({
-      where: { id, userId: tenantId },
+      where: { id, tenantId: tenantId },
       include: {
         days: { orderBy: { date: 'asc' } },
         leaveType: { select: { id: true, name: true, paid: true } },
@@ -394,7 +396,7 @@ export async function getLeaveRequest(req: Request, res: Response): Promise<void
 
 export async function approveLeaveRequest(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actor = resolveActor(req);
     const id = String(req.params.id);
 
@@ -404,7 +406,7 @@ export async function approveLeaveRequest(req: Request, res: Response): Promise<
     }
 
     const request = await prisma.leaveRequest.findFirst({
-      where: { id, userId: tenantId },
+      where: { id, tenantId: tenantId },
       include: { leaveType: { select: { id: true, paid: true } } },
     });
     if (!request) {
@@ -424,14 +426,14 @@ export async function approveLeaveRequest(req: Request, res: Response): Promise<
       const year = request.startDate.getUTCFullYear();
 
       const allocations = await prisma.leaveAllocation.findMany({
-        where: { userId: tenantId, employeeUserId: request.employeeUserId, leaveTypeId: request.leaveTypeId, year },
+        where: { tenantId: tenantId, employeeUserId: request.employeeUserId, leaveTypeId: request.leaveTypeId, year },
         select: { leaveTypeId: true, allocatedDays: true, carriedOverDays: true },
       });
 
       // Approved leave days for this employee+type in the year (the used total).
       const approvedRequests = await prisma.leaveRequest.findMany({
         where: {
-          userId: tenantId,
+          tenantId: tenantId,
           employeeUserId: request.employeeUserId,
           leaveTypeId: request.leaveTypeId,
           status: LeaveStatus.APPROVED,
@@ -485,7 +487,7 @@ export async function approveLeaveRequest(req: Request, res: Response): Promise<
 
 export async function rejectLeaveRequest(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actor = resolveActor(req);
     const id = String(req.params.id);
 
@@ -494,7 +496,7 @@ export async function rejectLeaveRequest(req: Request, res: Response): Promise<v
       return;
     }
 
-    const request = await prisma.leaveRequest.findFirst({ where: { id, userId: tenantId } });
+    const request = await prisma.leaveRequest.findFirst({ where: { id, tenantId: tenantId } });
     if (!request) {
       res.status(404).json({ success: false, message: 'Leave request not found' });
       return;
@@ -531,11 +533,11 @@ export async function rejectLeaveRequest(req: Request, res: Response): Promise<v
 
 export async function cancelLeaveRequest(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actor = resolveActor(req);
     const id = String(req.params.id);
 
-    const request = await prisma.leaveRequest.findFirst({ where: { id, userId: tenantId } });
+    const request = await prisma.leaveRequest.findFirst({ where: { id, tenantId: tenantId } });
     if (!request) {
       res.status(404).json({ success: false, message: 'Leave request not found' });
       return;
@@ -581,7 +583,7 @@ export async function cancelLeaveRequest(req: Request, res: Response): Promise<v
 
 export async function getLeaveBalances(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actor = resolveActor(req);
 
     const canSeeOthers = canManageOthers(req, actor, 'view');
@@ -602,12 +604,12 @@ export async function getLeaveBalances(req: Request, res: Response): Promise<voi
     }
 
     const allocations = await prisma.leaveAllocation.findMany({
-      where: { userId: tenantId, employeeUserId, year },
+      where: { tenantId: tenantId, employeeUserId, year },
       include: { leaveType: { select: { id: true, name: true, paid: true } } },
     });
 
     const approvedRequests = await prisma.leaveRequest.findMany({
-      where: { userId: tenantId, employeeUserId, status: LeaveStatus.APPROVED },
+      where: { tenantId: tenantId, employeeUserId, status: LeaveStatus.APPROVED },
       select: { leaveTypeId: true, days: { select: { date: true, portionDays: true } } },
     });
     const approvedDays = approvedRequests.flatMap((r) =>

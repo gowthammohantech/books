@@ -29,7 +29,7 @@ import type { Request, Response } from 'express';
 import { TimesheetStatus } from '@prisma/client';
 
 import { prisma } from '../../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../../lib/tenantScope';
 import { resolveEntryRate } from '../../lib/timeTracking/rate';
 import { ForbiddenError } from '../../lib/timeTracking/scope';
 
@@ -72,7 +72,7 @@ function isAdminOrOwner(actor: { isOwner: boolean; roleName: string | null }): b
 
 export async function getTimeSummaryReport(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actor = req.actor;
     if (!actor) throw new UnauthorizedError();
 
@@ -126,14 +126,14 @@ export async function getTimeSummaryReport(req: Request, res: Response): Promise
         : undefined;
 
     // ---- Query TimeEntry rows ----
-    // Join through Timesheet to filter by status, tenant (Timesheet.userId), and
+    // Join through Timesheet to filter by status, tenant (Timesheet.tenantId), and
     // optional employee. Join to Project for name + billingRate.
     const entries = await prisma.timeEntry.findMany({
       where: {
         date: { gte: from, lte: toEndOfDay },
         ...(projectIdFilter ? { projectId: projectIdFilter } : {}),
         timesheet: {
-          userId: tenantId,
+          tenantId: tenantId,
           status,
           ...(employeeUserIdFilter ? { employeeUserId: employeeUserIdFilter } : {}),
         },
@@ -166,7 +166,7 @@ export async function getTimeSummaryReport(req: Request, res: Response): Promise
     if (pairs.length > 0) {
       const memberRows = await prisma.projectMember.findMany({
         where: {
-          userId: tenantId,
+          tenantId: tenantId,
           projectId: { in: [...new Set(pairs.map((p) => p.projectId))] },
           employeeUserId: { in: [...new Set(pairs.map((p) => p.employeeUserId))] },
         },

@@ -150,7 +150,7 @@ describe('resolveItemTaxRates', () => {
     const out = await resolveItemTaxRates(db as never, [
       { qty: 1, rate: 100, tax_group_id: 'g1', tax: 18 },
       { qty: 1, rate: 50 }, // no group → untouched
-    ] as TotalsItem[]);
+    ] as TotalsItem[], 't-1');
     expect(out[0].taxRate).toBe(18);
     expect(out[1].taxRate).toBeUndefined();
     const t = computeDocumentTotals(out);
@@ -160,13 +160,13 @@ describe('resolveItemTaxRates', () => {
   it('leaves lines that already carry taxes[] untouched (no lookup override)', async () => {
     const out = await resolveItemTaxRates(db as never, [
       { qty: 1, rate: 100, tax_group_id: 'g1', taxes: [{ percent: 5 }] },
-    ] as TotalsItem[]);
+    ] as TotalsItem[], 't-1');
     expect(out[0].taxRate).toBeUndefined();
   });
 
   it('is a no-op when there are no resolvable groups', async () => {
     const findMany = vi.fn();
-    const out = await resolveItemTaxRates({ taxGroup: { findMany } } as never, [{ qty: 1, rate: 100 }] as TotalsItem[]);
+    const out = await resolveItemTaxRates({ taxGroup: { findMany } } as never, [{ qty: 1, rate: 100 }] as TotalsItem[], 't-1');
     expect(findMany).not.toHaveBeenCalled();
     expect(out[0].taxRate).toBeUndefined();
   });
@@ -186,7 +186,7 @@ describe('resolveItemTaxRates — direct tax_rate_id (unified tax)', () => {
   it('attaches the rate percent for lines carrying tax_rate_id', async () => {
     const out = await resolveItemTaxRates(db as never, [
       { qty: 1, rate: 100, tax_rate_id: 'r18' },
-    ] as TotalsItem[]);
+    ] as TotalsItem[], 't-1');
     expect(out[0].taxRate).toBe(18);
     expect(computeDocumentTotals(out).totalTax).toBe(18);
   });
@@ -198,7 +198,7 @@ describe('resolveItemTaxRates — direct tax_rate_id (unified tax)', () => {
     };
     const out = await resolveItemTaxRates(bothDb as never, [
       { qty: 1, rate: 100, tax_rate_id: 'r18', tax_group_id: 'g1' },
-    ] as TotalsItem[]);
+    ] as TotalsItem[], 't-1');
     expect(out[0].taxRate).toBe(18);
     // The group was never even queried for this line.
     expect(bothDb.taxGroup.findMany).not.toHaveBeenCalled();
@@ -208,7 +208,7 @@ describe('resolveItemTaxRates — direct tax_rate_id (unified tax)', () => {
     const out = await resolveItemTaxRates(db as never, [
       { qty: 1, rate: 100, tax_rate_id: 'rdead' },
       { qty: 1, rate: 100, tax_rate_id: 'r18', taxes: [{ percent: 5 }] },
-    ] as TotalsItem[]);
+    ] as TotalsItem[], 't-1');
     expect(out[0].taxRate).toBeUndefined();
     expect(out[1].taxRate).toBeUndefined();
   });
@@ -221,7 +221,7 @@ describe('resolveItemTaxRates — direct tax_rate_id (unified tax)', () => {
     const out = await resolveItemTaxRates(mixedDb as never, [
       { qty: 1, rate: 100, tax_rate_id: 'deadRate', tax_group_id: 'g1' },
       { qty: 1, rate: 100, tax_group_id: 'g1' },
-    ] as TotalsItem[]);
+    ] as TotalsItem[], 't-1');
     expect(out[0].taxRate).toBeUndefined();
     expect(out[1].taxRate).toBe(5);
   });
@@ -230,7 +230,7 @@ describe('resolveItemTaxRates — direct tax_rate_id (unified tax)', () => {
     const legacyDb = { taxGroup: { findMany: vi.fn(async () => []) } };
     const out = await resolveItemTaxRates(legacyDb as never, [
       { qty: 1, rate: 100, tax_rate_id: 'r18' },
-    ] as TotalsItem[]);
+    ] as TotalsItem[], 't-1');
     expect(out[0].taxRate).toBeUndefined();
   });
 });

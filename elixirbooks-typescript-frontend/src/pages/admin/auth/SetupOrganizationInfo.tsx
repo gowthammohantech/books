@@ -48,7 +48,7 @@ const SetupOrganizationInfo: React.FC = () => {
     }
     const token = Cookies.get('authToken') ?? null;
     const dispatch: AppDispatch = useDispatch();
-    const { setStatus } = useSetupStatus();
+    const { setCompanySettingsComplete } = useSetupStatus();
     const [formData, setFormData] = useState<SetupFormData>(prepareInitialFormData());
     const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
     const [isSaving, setIsSaving] = useState(false);
@@ -227,10 +227,10 @@ const SetupOrganizationInfo: React.FC = () => {
                     'Content-Type': 'multipart/form-data'
                 }
             });
-            setStatus({
-                new_register: false,      // user just registered
-                company_settings: false,   // company setup done
-            });
+            // THIS workspace now has CompanySettings, which is what lifts the
+            // /setup gate. Per workspace, not per install: the other companies
+            // this person belongs to are unaffected either way.
+            setCompanySettingsComplete(true);
             if (token) dispatch(fetchSystemSettings(token));
             toast.success('Company info updated successfully.');
             //navigate with page refresh to trigger setup status change

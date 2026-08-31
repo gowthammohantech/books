@@ -4,7 +4,7 @@ const dayjs = require("dayjs");
  * Format AI-resolved data into the schema expected by existing Elixir Books controllers
  * @param {string} documentType - The document type to format for
  * @param {object} resolvedData - Entity-resolved data from the AI
- * @param {object} userContext - User info (userId, billFrom, etc.)
+ * @param {object} userContext - User info (tenantId, billFrom, etc.)
  * @returns {object} Formatted payload ready for the existing controller
  */
 function formatForController(documentType, resolvedData, userContext) {
@@ -34,7 +34,7 @@ function formatInvoice(data, userContext) {
       : dayjs().add(15, "day").toDate();
 
   const payload = {
-    customerId: data.customerId || userContext.userId,
+    customerId: data.customerId || userContext.tenantId,
     invoiceDate: new Date(),
     dueDate,
     referenceNo: "",
@@ -48,9 +48,9 @@ function formatInvoice(data, userContext) {
     notes: data.notes || "",
     termsAndCondition: "",
     sign_type: "none",
-    userId: userContext.userId,
-    billFrom: userContext.userId,
-    billTo: data.customerId || userContext.userId,
+    tenantId: userContext.tenantId,
+    billFrom: userContext.tenantId,
+    billTo: data.customerId || userContext.tenantId,
     isRecurring: data.recurring?.enabled || false,
     repeatEvery: data.recurring?.interval || "month",
   };
@@ -75,7 +75,7 @@ function formatPurchaseOrder(data, userContext) {
       : dayjs().add(30, "day").toDate();
 
   return {
-    vendorId: data.vendorId || userContext.userId,
+    vendorId: data.vendorId || userContext.tenantId,
     purchaseOrderDate: new Date(),
     dueDate,
     referenceNo: "",
@@ -89,9 +89,9 @@ function formatPurchaseOrder(data, userContext) {
     notes: data.notes || "",
     termsAndCondition: "",
     sign_type: "none",
-    userId: userContext.userId,
-    billFrom: userContext.userId,
-    billTo: data.vendorId || userContext.userId,
+    tenantId: userContext.tenantId,
+    billFrom: userContext.tenantId,
+    billTo: data.vendorId || userContext.tenantId,
   };
 }
 
@@ -107,7 +107,7 @@ function formatQuotation(data, userContext) {
       : dayjs().add(30, "day").toDate();
 
   return {
-    customerId: data.customerId || userContext.userId,
+    customerId: data.customerId || userContext.tenantId,
     quotationDate: new Date(),
     expiryDate,
     referenceNo: "",
@@ -121,9 +121,9 @@ function formatQuotation(data, userContext) {
     notes: data.notes || "",
     termsAndCondition: "",
     sign_type: "none",
-    userId: userContext.userId,
-    billFrom: userContext.userId,
-    billTo: data.customerId || userContext.userId,
+    tenantId: userContext.tenantId,
+    billFrom: userContext.tenantId,
+    billTo: data.customerId || userContext.tenantId,
   };
 }
 
@@ -167,7 +167,7 @@ function formatExpense(data, userContext) {
     paymentMode: data.paymentMode || null,   
     bankId: data.bankId || null,        
     vendorId: data.vendorId || null,
-    userId: userContext.userId,
+    tenantId: userContext.tenantId,
   };
 }
 

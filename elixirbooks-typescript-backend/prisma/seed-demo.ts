@@ -29,8 +29,22 @@ const DEMO_PASSWORD = 'Demo123$';
 const DEMO_USER_ID = 'demo-admin-1';
 const DEMO_ROLE_ID = 'seed-role-administrator';
 const DEMO_COMPANY_ID = 'demo-company-1';
+const DEMO_TENANT_ID = 'demo-tenant-1';
 
 async function main(): Promise<void> {
+  // The demo admin owns a real Tenant. Its id is pinned to DEMO_TENANT_ID so
+  // re-running the seed is idempotent and clear-demo.ts can target it.
+  const tenant = await prisma.tenant.upsert({
+    where: { id: DEMO_TENANT_ID },
+    update: { name: 'Elixir Books', status: 'ACTIVE' },
+    create: {
+      id: DEMO_TENANT_ID,
+      name: 'Elixir Books',
+      slug: 'demo',
+      status: 'ACTIVE',
+    },
+  });
+
   // Keep the legacy "Administrator" role for backward compatibility, but the
   // demo admin must hold the OWNER role so server-side RBAC grants full access
   // (the Owner role's full permissions are provisioned by the baseline seed /
@@ -38,9 +52,9 @@ async function main(): Promise<void> {
   await prisma.role.upsert({
     where: { id: DEMO_ROLE_ID },
     update: { roleName: 'Administrator', status: true },
-    create: { id: DEMO_ROLE_ID, roleName: 'Administrator', status: true },
+    create: { id: DEMO_ROLE_ID, tenantId: tenant.id, roleName: 'Administrator', status: true },
   });
-  const ownerRoleId = await ensureRole(OWNER_ROLE_NAME, prisma);
+  const ownerRoleId = await ensureRole(OWNER_ROLE_NAME, tenant.id, prisma);
 
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
 
@@ -67,8 +81,27 @@ async function main(): Promise<void> {
     },
   });
 
+  // Membership is what actually grants access — `protect` requires one from P5
+  // onward, so an owner without it would be locked out of their own workspace.
+  await prisma.tenantMembership.upsert({
+    where: { userId_tenantId: { userId: admin.id, tenantId: tenant.id } },
+    update: { roleId: ownerRoleId, status: 'ACTIVE', isOwner: true },
+    create: {
+      userId: admin.id,
+      tenantId: tenant.id,
+      roleId: ownerRoleId,
+      status: 'ACTIVE',
+      isOwner: true,
+      joinedAt: new Date(),
+    },
+  });
+  await prisma.user.update({
+    where: { id: admin.id },
+    data: { lastTenantId: tenant.id },
+  });
+
   await prisma.companySettings.upsert({
-    where: { userId: admin.id },
+    where: { tenantId: admin.id },
     update: {},
     create: {
       id: DEMO_COMPANY_ID,
@@ -80,7 +113,7 @@ async function main(): Promise<void> {
       state: 'Tamil Nadu',
       country: 'India',
       pincode: '600001',
-      userId: admin.id,
+      tenantId: admin.id,
     },
   });
 

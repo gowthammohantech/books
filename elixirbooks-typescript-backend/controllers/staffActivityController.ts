@@ -15,7 +15,7 @@ import type { Request, Response } from 'express';
 import type { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 class BadRequestError extends Error {}
 
@@ -87,7 +87,7 @@ interface Bucket {
 /** GET /admin/reports/staff-activity?from=<YYYY-MM-DD>&to=<YYYY-MM-DD> */
 export async function getStaffActivity(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const from = parseOptionalDate(req.query.from, 'from');
     const to = parseOptionalDate(req.query.to, 'to');

@@ -3,14 +3,14 @@ import { Prisma } from '@prisma/client';
 import type { ReminderStatus, ReminderType, ReminderTiming, ReminderEvent } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
 import { sendReminderEmail } from '../lib/reminderMailer';
 
 // invoiceReminderCron.ts is required extensionless (ts-node/register resolves
 // it, same as recurringInvoicesCron.ts elsewhere) so a static require is fine here.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const cronModule: { runReminderCron: (scopeUserId?: string) => Promise<unknown> } = require('../invoiceReminderCron');
+const cronModule: { runReminderCron: (scopeTenantId?: string) => Promise<unknown> } = require('../invoiceReminderCron');
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -98,7 +98,7 @@ const detailInclude = {
   targetCustomerRel: { select: { name: true, email: true, phone: true } },
   targetContactRel: { select: partyContactSelect },
   createdByUser: { select: { firstName: true, lastName: true, email: true } },
-  company: { select: { companyName: true } },
+  tenant: { select: { name: true } },
 } satisfies Prisma.ReminderInclude;
 
 const quotationCreateInclude = {
@@ -182,14 +182,17 @@ function synthesizeCustomerNameOnly(
 
 export async function getReminders(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { search = '', type = '', status = '' } = req.query as {
       search?: string;
       type?: string;
       status?: string;
     };
 
-    const where: Prisma.ReminderWhereInput = { createdBy: userId };
+    // Tenant-scoped, not createdBy-scoped: `requireTenantId` returns the TENANT
+    // id, so comparing it against the ACTOR column hid every reminder a staff
+    // member created from the rest of their own company.
+    const where: Prisma.ReminderWhereInput = { tenantId: tenantId };
     if (type) where.type = type as ReminderType;
     if (status) where.status = status as ReminderStatus;
 
@@ -265,7 +268,7 @@ export async function getReminderById(req: Request, res: Response): Promise<void
     }
 
     // Check if user has access to this reminder
-    if (reminder.createdBy !== requireUserId(req)) {
+    if (reminder.tenantId !== requireTenantId(req)) {
       res.status(403).json({
         success: false,
         message: 'Access denied',
@@ -310,7 +313,7 @@ export async function getReminderById(req: Request, res: Response): Promise<void
 
 export async function createReminder(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       name,
       type,
@@ -336,7 +339,7 @@ export async function createReminder(req: Request, res: Response): Promise<void>
     };
 
     // Validate user exists
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({ where: { id: tenantId } });
     if (!user) {
       res.status(404).json({
         success: false,
@@ -346,7 +349,7 @@ export async function createReminder(req: Request, res: Response): Promise<void>
     }
 
     // Get user's company
-    const company = await prisma.companySettings.findFirst({ where: { userId } });
+    const company = await prisma.companySettings.findFirst({ where: { tenantId } });
     if (!company) {
       res.status(404).json({
         success: false,
@@ -386,8 +389,8 @@ export async function createReminder(req: Request, res: Response): Promise<void>
       type: (type ?? 'automatic') as ReminderType,
       isEnabled: isEnabled ?? true,
       emailConfig: (emailConfig ?? {}) as Prisma.InputJsonValue,
-      createdByUser: { connect: { id: userId } },
-      company: { connect: { id: company.id } },
+      createdByUser: { connect: { id: tenantId } },
+      tenant: { connect: { id: tenantId } },
     };
 
     // Add type-specific fields
@@ -432,7 +435,7 @@ export async function createReminder(req: Request, res: Response): Promise<void>
 
 export async function createReminderQuotation(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       name,
       type,
@@ -459,13 +462,13 @@ export async function createReminderQuotation(req: Request, res: Response): Prom
       manualReminderData?: unknown;
     };
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({ where: { id: tenantId } });
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' });
       return;
     }
 
-    const company = await prisma.companySettings.findFirst({ where: { userId } });
+    const company = await prisma.companySettings.findFirst({ where: { tenantId } });
     if (!company) {
       res.status(404).json({ success: false, message: 'Company not found' });
       return;
@@ -504,8 +507,8 @@ export async function createReminderQuotation(req: Request, res: Response): Prom
       type: (type ?? 'automatic') as ReminderType,
       isEnabled: isEnabled ?? true,
       emailConfig: (emailConfig ?? {}) as Prisma.InputJsonValue,
-      createdByUser: { connect: { id: userId } },
-      company: { connect: { id: company.id } },
+      createdByUser: { connect: { id: tenantId } },
+      tenant: { connect: { id: tenantId } },
     };
 
     // Add specific fields
@@ -554,7 +557,7 @@ export async function createReminderQuotation(req: Request, res: Response): Prom
 
 export async function updateReminder(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id: reminderId } = req.params as { id: string };
     const updateBody = req.body as Record<string, unknown>;
 
@@ -569,7 +572,7 @@ export async function updateReminder(req: Request, res: Response): Promise<void>
     }
 
     // Check if user has access to this reminder
-    if (reminder.createdBy !== userId) {
+    if (reminder.tenantId !== tenantId) {
       res.status(403).json({
         success: false,
         message: 'Access denied',
@@ -645,7 +648,7 @@ export async function updateReminder(req: Request, res: Response): Promise<void>
 
 export async function updateReminderQuotation(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id: reminderId } = req.params as { id: string };
     const updateBody = req.body as Record<string, unknown>;
 
@@ -669,7 +672,7 @@ export async function updateReminderQuotation(req: Request, res: Response): Prom
     }
 
     // Verify user access
-    if (reminder.createdBy !== userId) {
+    if (reminder.tenantId !== tenantId) {
       res.status(403).json({
         success: false,
         message: 'Access denied',
@@ -806,7 +809,7 @@ export async function updateReminderQuotation(req: Request, res: Response): Prom
 
 export async function deleteReminder(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id: reminderId } = req.params as { id: string };
 
     // Find the reminder
@@ -820,7 +823,7 @@ export async function deleteReminder(req: Request, res: Response): Promise<void>
     }
 
     // Check if user has access to this reminder
-    if (reminder.createdBy !== userId) {
+    if (reminder.tenantId !== tenantId) {
       res.status(403).json({
         success: false,
         message: 'Access denied',
@@ -851,7 +854,7 @@ export async function deleteReminder(req: Request, res: Response): Promise<void>
 
 export async function toggleReminderStatus(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id: reminderId } = req.params as { id: string };
     const { isEnabled } = req.body as { isEnabled?: boolean };
 
@@ -866,7 +869,7 @@ export async function toggleReminderStatus(req: Request, res: Response): Promise
     }
 
     // Check if user has access to this reminder
-    if (reminder.createdBy !== userId) {
+    if (reminder.tenantId !== tenantId) {
       res.status(403).json({
         success: false,
         message: 'Access denied',
@@ -902,7 +905,7 @@ export async function toggleReminderStatus(req: Request, res: Response): Promise
 
 export async function sendManualReminder(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id: reminderId } = req.params as { id: string };
 
     // Find the reminder
@@ -920,7 +923,7 @@ export async function sendManualReminder(req: Request, res: Response): Promise<v
     }
 
     // Check if user has access to this reminder
-    if (reminder.createdBy !== userId) {
+    if (reminder.tenantId !== tenantId) {
       res.status(403).json({
         success: false,
         message: 'Access denied',
@@ -991,7 +994,7 @@ export async function sendManualReminder(req: Request, res: Response): Promise<v
 
 export async function getRemindersByType(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { type } = req.params as { type: string };
     const { page = '1', limit = '10', search = '' } = req.query as {
       page?: string;
@@ -1012,7 +1015,8 @@ export async function getRemindersByType(req: Request, res: Response): Promise<v
 
     // Build search query
     const where: Prisma.ReminderWhereInput = {
-      createdBy: userId,
+      createdBy: tenantId,
+      tenantId: tenantId,
       type: type as ReminderType,
       status: { not: 'archived' },
     };
@@ -1085,10 +1089,10 @@ export async function getRemindersByType(req: Request, res: Response): Promise<v
 
 export async function getReminderStats(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const reminders = await prisma.reminder.findMany({
-      where: { createdBy: userId },
+      where: { tenantId: tenantId },
       select: { type: true, status: true, isEnabled: true },
     });
 
@@ -1391,13 +1395,13 @@ export async function triggerReminderCron(req: Request, res: Response): Promise<
     // runReminderCron() unscoped, so any authenticated user could trigger a
     // GLOBAL reminder run (real emails, publicViewEnabled flips, lastSent
     // bumps for every tenant). Mirror the same ownership boundary
-    // sendManualReminder uses (`reminder.createdBy !== requireUserId(req)`)
+    // sendManualReminder uses (`reminder.tenantId !== requireTenantId(req)`)
     // by passing the caller's scope through to the cron.
-    const userId = requireUserId(req);
-    console.log(`Manual trigger of invoice reminder cron requested (scoped to user ${userId})`);
+    const tenantId = requireTenantId(req);
+    console.log(`Manual trigger of invoice reminder cron requested (scoped to user ${tenantId})`);
 
     // Run the cron job, scoped to the caller.
-    await cronModule.runReminderCron(userId);
+    await cronModule.runReminderCron(tenantId);
 
     res.status(200).json({
       success: true,

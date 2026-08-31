@@ -33,12 +33,10 @@ const NavItem = ({
     item,
     isSidebarOpen,
     permissions,
-    user,
 }: {
     item: NavLinkItem;
     isSidebarOpen: boolean;
     permissions: PermissionSet[];
-    user: any;
 }) => {
     const { pathname: rawPathname } = useLocation();
     const pathname = resolveSidebarPath(rawPathname);
@@ -62,7 +60,7 @@ const NavItem = ({
                     </span>
                 </div>
             </NavLink>
-            {isSidebarOpen && addPath && canCreate(slug, permissions, user) && (
+            {isSidebarOpen && addPath && canCreate(slug, permissions) && (
                 <Link
                     to={addPath}
                     aria-label={`Add new ${title}`}
@@ -78,11 +76,9 @@ const NavItem = ({
 const SubNavLinkItem = ({
     item,
     permissions,
-    user,
 }: {
     item: NavLinkItem;
     permissions: PermissionSet[];
-    user: any;
 }) => {
     const { to, title, slug, addPath, exact } = item;
 
@@ -92,7 +88,7 @@ const SubNavLinkItem = ({
                 <span>{title}</span>
             </NavLink>
 
-            {addPath && canCreate(slug, permissions, user) && (
+            {addPath && canCreate(slug, permissions) && (
                 <Link
                     to={addPath}
                     aria-label={`Add new ${title}`}
@@ -114,7 +110,6 @@ interface CollapsibleNavItemProps {
     onToggle: (id: string) => void;
     level: number;
     permissions: PermissionSet[];
-    user: any;
 }
 
 // This is the updated CollapsibleNavItem component
@@ -126,7 +121,6 @@ const CollapsibleNavItem = ({
     onToggle,
     level,
     permissions,
-    user,
 }: CollapsibleNavItemProps) => {
     const { id, icon, title, children, slug, addPath } = item;
     const isOpen = openMenus[id] || false;
@@ -163,7 +157,7 @@ const CollapsibleNavItem = ({
                 )}
             </button>
 
-            {isSidebarOpen && addPath && canCreate(slug, permissions, user) && (
+            {isSidebarOpen && addPath && canCreate(slug, permissions) && (
                 <Link
                     to={addPath}
                     aria-label={`Add new ${title}`}
@@ -191,7 +185,6 @@ const CollapsibleNavItem = ({
                                         key={subItem.to}
                                         item={subItem}
                                         permissions={permissions}
-                                        user={user}
                                     />
                                 );
                             case "collapsible":
@@ -205,7 +198,6 @@ const CollapsibleNavItem = ({
                                         onToggle={onToggle}
                                         level={level + 1}
                                         permissions={permissions}
-                                        user={user}
                                     />
                                 );
                             default:
@@ -285,7 +277,6 @@ const Sidebar = ({ isOpen }: { isOpen: boolean }) => {
     const { pathname } = useLocation();
     const navigate = useNavigate();
 
-    const { user } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector(
         (state: RootState) => state.systemSettings
     );
@@ -343,7 +334,7 @@ const Sidebar = ({ isOpen }: { isOpen: boolean }) => {
                         return item;
                     }
 
-                    if (!canView(item.slug, permissions, user)) {
+                    if (!canView(item.slug, permissions)) {
                         return null;
                     }
 
@@ -359,7 +350,7 @@ const Sidebar = ({ isOpen }: { isOpen: boolean }) => {
                 .filter(Boolean) as NavItemType[];
         }
         return filter(navItems);
-    }, [permissions, user]);
+    }, [permissions]);
 
     return (
         <aside
@@ -408,7 +399,6 @@ const Sidebar = ({ isOpen }: { isOpen: boolean }) => {
                                     item={item}
                                     isSidebarOpen={isOpen}
                                     permissions={permissions}
-                                    user={user}
                                 />
                             );
                         case "collapsible":
@@ -422,7 +412,6 @@ const Sidebar = ({ isOpen }: { isOpen: boolean }) => {
                                     onToggle={handleToggle}
                                     level={1}
                                     permissions={permissions}
-                                    user={user}
                                 />
                             );
                         default:

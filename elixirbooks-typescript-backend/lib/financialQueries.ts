@@ -6,7 +6,7 @@
  * tools ground their answers in. The existing report controllers
  * (`financialStatementsController`, `taxReportsController`) delegate their
  * core math here too, so a human report and an AI answer can never
- * diverge. Every function takes a `userId` and queries Prisma directly —
+ * diverge. Every function takes a `tenantId` and queries Prisma directly —
  * no internal HTTP, no Express coupling.
  *
  * All money is returned as plain `number` (Prisma `Decimal` → `Number`) so
@@ -75,7 +75,7 @@ export interface RevenueSummary {
  * (taxableRevenue / outputTax) and by the `get_revenue_summary` tool.
  */
 export async function getRevenueSummary(
-  userId: string,
+  tenantId: string,
   fromDate: Date,
   toDate: Date,
 ): Promise<RevenueSummary> {
@@ -84,7 +84,7 @@ export async function getRevenueSummary(
 
   const invoices = await prisma.invoice.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       invoiceType: 'INVOICE',
       invoiceDate: { gte: from, lte: to },
@@ -120,7 +120,7 @@ export async function getRevenueSummary(
     where: {
       isVoided: false,
       received_on: { gte: from, lte: to },
-      invoice: { userId, isDeleted: false, invoiceType: 'INVOICE' },
+      invoice: { tenantId, isDeleted: false, invoiceType: 'INVOICE' },
     },
     _sum: { amount: true },
   });
@@ -156,7 +156,7 @@ export interface ExpenseSummary {
  * Optional `categoryName` does a case-insensitive contains filter.
  */
 export async function getExpenseSummary(
-  userId: string,
+  tenantId: string,
   fromDate: Date,
   toDate: Date,
   categoryName?: string,
@@ -166,7 +166,7 @@ export async function getExpenseSummary(
 
   const expenses = await prisma.expense.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       expenseDate: { gte: from, lte: to },
       ...(categoryName
@@ -228,7 +228,7 @@ export interface GstSummary {
  * `taxReportsController.taxSummary` and the `get_gst_summary` tool.
  */
 export async function getGstSummary(
-  userId: string,
+  tenantId: string,
   fromDate: Date,
   toDate: Date,
 ): Promise<GstSummary> {
@@ -237,7 +237,7 @@ export async function getGstSummary(
 
   const invoices = await prisma.invoice.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       invoiceType: 'INVOICE',
       invoiceDate: { gte: from, lte: to },
@@ -254,7 +254,7 @@ export async function getGstSummary(
   // outward tax must subtract it or the filing over-states tax owed.
   const creditNotes = await prisma.creditNote.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       status: { not: 'CANCELLED' },
       creditNoteDate: { gte: from, lte: to },
@@ -264,7 +264,7 @@ export async function getGstSummary(
 
   const purchases = await prisma.purchase.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       purchaseDate: { gte: from, lte: to },
     },
@@ -319,7 +319,7 @@ export async function getGstSummary(
   // Reverse-charge visibility: count + taxable value (tax is already 0 on these docs)
   const rcAgg = await prisma.invoice.aggregate({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       invoiceType: 'INVOICE',
       taxTreatment: 'REVERSE_CHARGE',
@@ -367,14 +367,14 @@ export interface OutstandingInvoiceRow {
  * filtered by minimum days overdue and/or a customer-name contains match.
  */
 export async function getOutstandingInvoices(
-  userId: string,
+  tenantId: string,
   opts: { minDaysOverdue?: number; customerName?: string } = {},
 ): Promise<{ invoices: OutstandingInvoiceRow[]; totalOutstanding: number }> {
   const now = startOfDay(new Date());
 
   const invoices = await prisma.invoice.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       invoiceType: 'INVOICE',
       status: { in: [...OPEN_INVOICE_STATUSES] },
@@ -438,12 +438,12 @@ export interface DebtorRow {
 /**
  * Top N customers ranked by total outstanding receivable.
  */
-export async function getTopDebtors(userId: string, limit = 5): Promise<DebtorRow[]> {
+export async function getTopDebtors(tenantId: string, limit = 5): Promise<DebtorRow[]> {
   const now = startOfDay(new Date());
 
   const invoices = await prisma.invoice.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       invoiceType: 'INVOICE',
       status: { in: [...OPEN_INVOICE_STATUSES] },
@@ -506,7 +506,7 @@ export interface DashboardOverview {
 /**
  * The top-line numbers surfaced on the admin dashboard, scoped to one user.
  */
-export async function getDashboardOverview(userId: string): Promise<DashboardOverview> {
+export async function getDashboardOverview(tenantId: string): Promise<DashboardOverview> {
   const now = new Date();
   const monthStart = startOfMonth(now);
   const monthEnd = endOfDay(now);
@@ -514,7 +514,7 @@ export async function getDashboardOverview(userId: string): Promise<DashboardOve
   // Receivables: outstanding balance on all open invoices (any age).
   const openInvoices = await prisma.invoice.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       invoiceType: 'INVOICE',
       status: { in: [...OPEN_INVOICE_STATUSES] },
@@ -529,19 +529,19 @@ export async function getDashboardOverview(userId: string): Promise<DashboardOve
 
   // Payables: unpaid purchase balances.
   const openPurchases = await prisma.purchase.findMany({
-    where: { userId, isDeleted: false, status: { in: [...OPEN_PURCHASE_STATUSES] } },
+    where: { tenantId, isDeleted: false, status: { in: [...OPEN_PURCHASE_STATUSES] } },
     select: { balanceAmount: true },
   });
   const payables = openPurchases.reduce((s, p) => s + num(p.balanceAmount), 0);
 
   // Revenue & expenses month-to-date — reuse the shared rollups.
   const [revenue, expenses] = await Promise.all([
-    getRevenueSummary(userId, monthStart, monthEnd),
-    getExpenseSummary(userId, monthStart, monthEnd),
+    getRevenueSummary(tenantId, monthStart, monthEnd),
+    getExpenseSummary(tenantId, monthStart, monthEnd),
   ]);
 
   const banks = await prisma.bankDetail.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     select: { currentBalance: true },
   });
   const cashAndBank = banks.reduce((s, b) => s + num(b.currentBalance), 0);
@@ -573,14 +573,14 @@ export interface CustomerSearchRow {
  * Fuzzy-ish customer lookup (DB contains match on name/email/phone).
  */
 export async function searchCustomers(
-  userId: string,
+  tenantId: string,
   query: string,
   limit = 10,
 ): Promise<CustomerSearchRow[]> {
   const q = (query ?? '').trim();
   const rows = await prisma.customer.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       ...(q
         ? {
@@ -623,12 +623,12 @@ export interface CustomerSummary {
  * case-insensitive name match (first match wins).
  */
 export async function getCustomerSummary(
-  userId: string,
+  tenantId: string,
   customerName: string,
 ): Promise<CustomerSummary> {
   const customer = await prisma.customer.findFirst({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       name: { contains: (customerName ?? '').trim(), mode: 'insensitive' },
     },
@@ -649,7 +649,7 @@ export async function getCustomerSummary(
   }
 
   const invoices = await prisma.invoice.findMany({
-    where: { billTo: customer.id, userId, isDeleted: false, invoiceType: 'INVOICE' },
+    where: { billTo: customer.id, tenantId, isDeleted: false, invoiceType: 'INVOICE' },
     select: {
       id: true,
       invoiceNumber: true,

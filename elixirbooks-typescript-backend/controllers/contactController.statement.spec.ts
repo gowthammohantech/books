@@ -14,7 +14,7 @@ vi.mock('../lib/prisma', () => ({
     contact: {
       findFirst: vi.fn().mockResolvedValue({
         id: 'c1',
-        userId: 'u1',
+        tenantId: 'u1',
         isDeleted: false,
         currencyCode: 'USD',
         firstName: null,

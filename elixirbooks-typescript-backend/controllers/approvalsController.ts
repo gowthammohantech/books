@@ -3,7 +3,7 @@
 import type { Request, Response } from 'express';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -17,11 +17,11 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
 // Returns tenant-scoped PENDING invoices, expenses, and purchases (id, number, amount, date).
 export async function listPending(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const [invoices, expenses, purchases] = await Promise.all([
       prisma.invoice.findMany({
-        where: { userId, approvalStatus: 'PENDING', isDeleted: false },
+        where: { tenantId, approvalStatus: 'PENDING', isDeleted: false },
         select: {
           id: true,
           invoiceNumber: true,
@@ -31,7 +31,7 @@ export async function listPending(req: Request, res: Response): Promise<void> {
         orderBy: { createdAt: 'desc' },
       }),
       prisma.expense.findMany({
-        where: { userId, approvalStatus: 'PENDING', isDeleted: false },
+        where: { tenantId, approvalStatus: 'PENDING', isDeleted: false },
         select: {
           id: true,
           expenseId: true,
@@ -41,7 +41,7 @@ export async function listPending(req: Request, res: Response): Promise<void> {
         orderBy: { createdAt: 'desc' },
       }),
       prisma.purchase.findMany({
-        where: { userId, approvalStatus: 'PENDING', isDeleted: false },
+        where: { tenantId, approvalStatus: 'PENDING', isDeleted: false },
         select: {
           id: true,
           purchaseId: true,

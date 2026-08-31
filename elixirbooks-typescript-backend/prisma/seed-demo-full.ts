@@ -68,37 +68,37 @@ function record(k: string, n: number): void {
 // Phase 1: WIPE
 // ===========================================================================
 
-async function wipe(userId: string): Promise<void> {
-  console.log(`Phase 1: wiping existing demo data for userId=${userId}`);
+async function wipe(tenantId: string): Promise<void> {
+  console.log(`Phase 1: wiping existing demo data for tenantId=${tenantId}`);
 
   // --- Payments / refunds (deepest first) ---------------------------------
-  await prisma.refund.deleteMany({ where: { userId } });
+  await prisma.refund.deleteMany({ where: { tenantId } });
 
   // InvoicePayment references PaymentTransaction; null it before deleting txns
   await prisma.invoicePayment.updateMany({
-    where: { paymentTransactionId: { not: null }, invoice: { userId } },
+    where: { paymentTransactionId: { not: null }, invoice: { tenantId } },
     data: { paymentTransactionId: null },
   });
 
   // E-invoice records (must precede invoice deletion)
-  await prisma.eInvoiceRecord.deleteMany({ where: { userId } });
+  await prisma.eInvoiceRecord.deleteMany({ where: { tenantId } });
 
   // Invoice payments (FK to Invoice + BankDetail + User)
-  await prisma.invoicePayment.deleteMany({ where: { invoice: { userId } } });
+  await prisma.invoicePayment.deleteMany({ where: { invoice: { tenantId } } });
 
   // Payment transactions (after invoice payment FK is nulled)
-  await prisma.paymentTransaction.deleteMany({ where: { userId } });
+  await prisma.paymentTransaction.deleteMany({ where: { tenantId } });
 
   // --- Journal lines (cascade on delete) then entries ----------------------
-  await prisma.journalEntry.deleteMany({ where: { userId } });
+  await prisma.journalEntry.deleteMany({ where: { tenantId } });
 
-  // --- Bank transactions (no userId FK; scope via bankAccount.userId) -----
+  // --- Bank transactions (no tenantId FK; scope via bankAccount.tenantId) -----
   await prisma.bankTransaction.deleteMany({
-    where: { bankAccount: { userId } },
+    where: { bankAccount: { tenantId } },
   });
 
   // --- PettyCash transactions + PettyCash (global; wipe demo-prefixed rows) ---
-  // PettyCash has no userId FK. We scope by demo "remarks" prefix on transactions
+  // PettyCash has no tenantId FK. We scope by demo "remarks" prefix on transactions
   // (DEMO-PC-...) and by deleting any PettyCash row that has only demo transactions
   // attached. Simpler: nuke any PettyCash row whose transactions all start with
   // "DEMO-PC-" remarks. To stay safe across re-runs we also clear orphan rows
@@ -115,43 +115,43 @@ async function wipe(userId: string): Promise<void> {
 
   // --- Purchase chain ------------------------------------------------------
   await prisma.supplierPayment.deleteMany({
-    where: { purchase: { userId } },
+    where: { purchase: { tenantId } },
   });
-  await prisma.debitNote.deleteMany({ where: { userId } });
-  await prisma.purchase.deleteMany({ where: { userId } });
-  await prisma.purchaseOrder.deleteMany({ where: { userId } });
+  await prisma.debitNote.deleteMany({ where: { tenantId } });
+  await prisma.purchase.deleteMany({ where: { tenantId } });
+  await prisma.purchaseOrder.deleteMany({ where: { tenantId } });
 
   // --- Quotations / credit notes / delivery challans ----------------------
-  // Scope by userId OR by customer-owned-by-demo to catch strays
+  // Scope by tenantId OR by customer-owned-by-demo to catch strays
   await prisma.creditNote.deleteMany({
-    where: { OR: [{ userId }, { customer: { userId } }, { billToCustomer: { userId } }] },
+    where: { OR: [{ tenantId }, { customer: { tenantId } }, { billToCustomer: { tenantId } }] },
   });
   await prisma.deliveryChallan.deleteMany({
-    where: { OR: [{ userId }, { customer: { userId } }, { billToCustomer: { userId } }] },
+    where: { OR: [{ tenantId }, { customer: { tenantId } }, { billToCustomer: { tenantId } }] },
   });
   await prisma.quotation.deleteMany({
-    where: { OR: [{ userId }, { customer: { userId } }, { billToCustomer: { userId } }] },
+    where: { OR: [{ tenantId }, { customer: { tenantId } }, { billToCustomer: { tenantId } }] },
   });
   // Reminders link to customer/invoice/quotation but in practice we delete by user
   await prisma.reminder.deleteMany({
-    where: { OR: [{ createdBy: userId }, { targetCustomerRel: { userId } }] },
+    where: { OR: [{ createdBy: tenantId }, { targetCustomerRel: { tenantId } }] },
   });
 
   // --- Expenses: children first, then parents -----------------------------
   await prisma.expenseChangeLog.deleteMany({
-    where: { expense: { userId } },
+    where: { expense: { tenantId } },
   });
   await prisma.expense.deleteMany({
-    where: { userId, parentExpense: { not: null } },
+    where: { tenantId, parentExpense: { not: null } },
   });
-  await prisma.expense.deleteMany({ where: { userId } });
+  await prisma.expense.deleteMany({ where: { tenantId } });
 
   // --- Invoices: children & conversions first, then parents ---------------
   // Scope: anything owned by the demo admin OR referencing a customer owned
   // by them (catches stray invoices from prior test runs that lingered with
-  // a different userId but pointed at a demo-owned customer).
+  // a different tenantId but pointed at a demo-owned customer).
   const invoiceScope: Prisma.InvoiceWhereInput = {
-    OR: [{ userId }, { customer: { userId } }],
+    OR: [{ tenantId }, { customer: { tenantId } }],
   };
   // Null self-references first so deletes are unambiguous
   await prisma.invoice.updateMany({
@@ -171,62 +171,62 @@ async function wipe(userId: string): Promise<void> {
   await prisma.quotation.deleteMany({ where: { invoice: invoiceScope } });
   await prisma.invoice.deleteMany({ where: invoiceScope });
 
-  // --- Vehicles (scoped by userId OR by customer-owned-by-demo) ----------
+  // --- Vehicles (scoped by tenantId OR by customer-owned-by-demo) ----------
   await prisma.vehicle.deleteMany({
-    where: { OR: [{ userId }, { customer: { userId } }] },
+    where: { OR: [{ tenantId }, { customer: { tenantId } }] },
   });
 
   // --- Inventory + Products (Products are global by name unique; only delete user-scoped inventory) ---
-  await prisma.inventory.deleteMany({ where: { userId } });
-  // Products are global (no userId FK). We delete products we created with the
+  await prisma.inventory.deleteMany({ where: { tenantId } });
+  // Products are global (no tenantId FK). We delete products we created with the
   // "DEMO_" code prefix so re-runs don't trip the unique constraint. First drop
   // ANY inventory still referencing those products (possibly under other users
   // from prior test runs) so the product delete doesn't trip the FK.
   await prisma.inventory.deleteMany({ where: { product: { code: { startsWith: 'DEMO-' } } } });
-  await prisma.product.deleteMany({ where: { code: { startsWith: 'DEMO-' } } });
+  await prisma.product.deleteMany({ where: { tenantId, code: { startsWith: 'DEMO-' } } });
 
   // --- TaxRate (user-scoped) ----------------------------------------------
-  await prisma.taxRate.deleteMany({ where: { userId } });
+  await prisma.taxRate.deleteMany({ where: { tenantId } });
 
   // --- Contacts -----------------------------------------------------------
   // The app derives clients/suppliers from Contact rows that have transactions
   // (contactViewWhere). All documents above are deleted first, so their
   // contactId FKs are already gone; now wipe the demo owner's contacts so a
   // re-seed starts clean (also clears stale test contacts on the page).
-  await prisma.contact.deleteMany({ where: { userId } });
+  await prisma.contact.deleteMany({ where: { tenantId } });
 
   // --- Customer & Supplier ------------------------------------------------
-  await prisma.customer.deleteMany({ where: { userId } });
-  await prisma.supplier.deleteMany({ where: { user_id: userId } });
+  await prisma.customer.deleteMany({ where: { tenantId } });
+  await prisma.supplier.deleteMany({ where: { tenantId: tenantId } });
 
   // --- Bank details (user-scoped) -----------------------------------------
-  await prisma.bankDetail.deleteMany({ where: { userId } });
+  await prisma.bankDetail.deleteMany({ where: { tenantId } });
 
-  // --- ExpenseCategory (global table, no userId). Delete demo-prefixed ----
-  await prisma.expenseCategory.deleteMany({ where: { title: { startsWith: 'Demo ' } } });
+  // --- ExpenseCategory (global table, no tenantId). Delete demo-prefixed ----
+  await prisma.expenseCategory.deleteMany({ where: { tenantId, title: { startsWith: 'Demo ' } } });
 
   // --- Gateway / messaging / integration / period configs -----------------
-  await prisma.gatewayConfig.deleteMany({ where: { userId } });
-  await prisma.messagingConfig.deleteMany({ where: { userId } });
-  await prisma.accountingIntegration.deleteMany({ where: { userId } });
-  await prisma.accountingPeriod.deleteMany({ where: { userId } });
+  await prisma.gatewayConfig.deleteMany({ where: { tenantId } });
+  await prisma.messagingConfig.deleteMany({ where: { tenantId } });
+  await prisma.accountingIntegration.deleteMany({ where: { tenantId } });
+  await prisma.accountingPeriod.deleteMany({ where: { tenantId } });
 
   // --- Account FK dependents (must go before deleting accounts) ------------
   // JournalLine cascades with JournalEntry (deleted above); these three are
   // user-scoped, accountId-required, and otherwise block account.deleteMany.
-  await prisma.ledgerAccountMapping.deleteMany({ where: { userId } });
+  await prisma.ledgerAccountMapping.deleteMany({ where: { tenantId } });
   // Reset ledger init flag so a re-run's applyPack guard passes (the guard
   // throws when ledgerInitialized is true). goLiveDate is re-set by applyPack.
   await prisma.companySettings.updateMany({
-    where: { userId },
+    where: { tenantId },
     data: { ledgerInitialized: false },
   });
-  await prisma.budget.deleteMany({ where: { userId } });
-  await prisma.transactionCategory.deleteMany({ where: { userId } });
+  await prisma.budget.deleteMany({ where: { tenantId } });
+  await prisma.transactionCategory.deleteMany({ where: { tenantId } });
 
   // --- Chart of accounts: children first, then top-level -------------------
-  await prisma.account.deleteMany({ where: { userId, parentId: { not: null } } });
-  await prisma.account.deleteMany({ where: { userId } });
+  await prisma.account.deleteMany({ where: { tenantId, parentId: { not: null } } });
+  await prisma.account.deleteMany({ where: { tenantId } });
 
   // --- Time-tracking (Phase 1) + Leaves/Holidays (Phase C) -----------------
   // Children before parents (most FKs cascade, but explicit deletes keep the
@@ -234,31 +234,31 @@ async function wipe(userId: string): Promise<void> {
   // Timesheet, ProjectMember + TimeEntry cascade with Project, and
   // LeaveRequestDay cascades with LeaveRequest — we still delete each so a
   // partial/older dataset is fully cleared.
-  await prisma.timeEntry.deleteMany({ where: { timesheet: { userId } } });
-  await prisma.timesheet.deleteMany({ where: { userId } });
-  await prisma.projectMember.deleteMany({ where: { userId } });
-  await prisma.timeEntry.deleteMany({ where: { project: { userId } } });
-  await prisma.project.deleteMany({ where: { userId } });
-  await prisma.leaveRequestDay.deleteMany({ where: { leaveRequest: { userId } } });
-  await prisma.leaveRequest.deleteMany({ where: { userId } });
-  await prisma.leaveAllocation.deleteMany({ where: { userId } });
-  await prisma.leaveType.deleteMany({ where: { userId } });
-  await prisma.holiday.deleteMany({ where: { userId } });
+  await prisma.timeEntry.deleteMany({ where: { timesheet: { tenantId } } });
+  await prisma.timesheet.deleteMany({ where: { tenantId } });
+  await prisma.projectMember.deleteMany({ where: { tenantId } });
+  await prisma.timeEntry.deleteMany({ where: { project: { tenantId } } });
+  await prisma.project.deleteMany({ where: { tenantId } });
+  await prisma.leaveRequestDay.deleteMany({ where: { leaveRequest: { tenantId } } });
+  await prisma.leaveRequest.deleteMany({ where: { tenantId } });
+  await prisma.leaveAllocation.deleteMany({ where: { tenantId } });
+  await prisma.leaveType.deleteMany({ where: { tenantId } });
+  await prisma.holiday.deleteMany({ where: { tenantId } });
   // Demo staff users (employees) created by this script — `ownerId == owner`.
   // Deleted AFTER all rows that FK to them (project members, timesheets, leave
   // rows above) so the delete does not violate referential integrity.
   // LoginActivity FKs to User with no cascade, so clear those rows for the
   // staff first (they accumulate from logins) or the user delete violates the
   // LoginActivity_userId_fkey constraint.
-  await prisma.loginActivity.deleteMany({ where: { user: { ownerId: userId } } });
-  await prisma.user.deleteMany({ where: { ownerId: userId } });
+  await prisma.loginActivity.deleteMany({ where: { user: { ownerId: tenantId } } });
+  await prisma.user.deleteMany({ where: { ownerId: tenantId } });
 
   // --- AI feature data (cluster H, slice H.4) ------------------------------
   // Messages cascade-delete with their session, but we delete explicitly so
   // the wipe is order-independent. Extraction jobs and usage logs are owned
-  // by userId; the AiConfig is upserted (not deleted) in seedAll.
+  // by tenantId; the AiConfig is upserted (not deleted) in seedAll.
   const demoSessions = await prisma.aiChatSession.findMany({
-    where: { userId },
+    where: { tenantId },
     select: { id: true },
   });
   if (demoSessions.length) {
@@ -266,9 +266,9 @@ async function wipe(userId: string): Promise<void> {
       where: { sessionId: { in: demoSessions.map((s) => s.id) } },
     });
   }
-  await prisma.aiChatSession.deleteMany({ where: { userId } });
-  await prisma.aiExtractionJob.deleteMany({ where: { userId } });
-  await prisma.aiUsageLog.deleteMany({ where: { userId } });
+  await prisma.aiChatSession.deleteMany({ where: { tenantId } });
+  await prisma.aiExtractionJob.deleteMany({ where: { tenantId } });
+  await prisma.aiUsageLog.deleteMany({ where: { tenantId } });
 
   console.log('  ...wipe complete');
 }
@@ -284,43 +284,55 @@ async function ensurePaymentMode(name: string, slug: string): Promise<string> {
   return row.id;
 }
 
-async function ensureTaxGroup(name: string): Promise<string> {
-  const existing = await prisma.taxGroup.findFirst({ where: { tax_name: name } });
+async function ensureTaxGroup(tenantId: string, name: string): Promise<string> {
+  const existing = await prisma.taxGroup.findFirst({ where: { tenantId, tax_name: name } });
   if (existing) return existing.id;
-  const row = await prisma.taxGroup.create({ data: { tax_name: name, status: true } });
+  const row = await prisma.taxGroup.create({
+    data: { tenantId, tax_name: name, status: true },
+  });
   return row.id;
 }
 
-async function ensureUnit(unitName: string, shortName: string): Promise<string> {
-  const existing = await prisma.unit.findFirst({ where: { unit_name: unitName } });
+async function ensureUnit(tenantId: string, unitName: string, shortName: string): Promise<string> {
+  const existing = await prisma.unit.findFirst({ where: { tenantId, unit_name: unitName } });
   if (existing) return existing.id;
-  const row = await prisma.unit.create({ data: { unit_name: unitName, short_name: shortName, status: true } });
+  const row = await prisma.unit.create({
+    data: { tenantId, unit_name: unitName, short_name: shortName, status: true },
+  });
   return row.id;
 }
 
-async function ensureBrand(name: string): Promise<string> {
-  const existing = await prisma.brand.findUnique({ where: { brand_name: name } });
+async function ensureBrand(tenantId: string, name: string): Promise<string> {
+  const existing = await prisma.brand.findUnique({
+    where: { tenantId_brand_name: { tenantId, brand_name: name } },
+  });
   if (existing) return existing.id;
-  const row = await prisma.brand.create({ data: { brand_name: name, status: true } });
+  const row = await prisma.brand.create({
+    data: { tenantId, brand_name: name, status: true },
+  });
   return row.id;
 }
 
-async function ensureCategory(name: string, slug: string): Promise<string> {
-  const existing = await prisma.category.findUnique({ where: { category_name: name } });
+async function ensureCategory(tenantId: string, name: string, slug: string): Promise<string> {
+  const existing = await prisma.category.findUnique({
+    where: { tenantId_category_name: { tenantId, category_name: name } },
+  });
   if (existing) return existing.id;
-  const row = await prisma.category.create({ data: { category_name: name, slug, status: true } });
+  const row = await prisma.category.create({
+    data: { tenantId, category_name: name, slug, status: true },
+  });
   return row.id;
 }
 
 /**
- * Idempotent find-or-create for a Contact, keyed on (userId, organisation).
+ * Idempotent find-or-create for a Contact, keyed on (tenantId, organisation).
  * Mirrors the ensureCustomer/ensureSupplier pattern. The app's Contacts page
  * derives clients/suppliers from contacts that have transactions, so every
  * demo party (customer or supplier) gets a real Contact row whose id is then
  * threaded onto the documents via contactId/billToContactId.
  */
 async function ensureContact(
-  userId: string,
+  tenantId: string,
   data: {
     organisation: string;
     email?: string | null;
@@ -339,7 +351,7 @@ async function ensureContact(
   },
 ): Promise<string> {
   const existing = await prisma.contact.findFirst({
-    where: { userId, organisation: data.organisation },
+    where: { tenantId, organisation: data.organisation },
   });
   if (existing) {
     // Keep the existing row but ensure legacy links are populated on re-run.
@@ -359,7 +371,7 @@ async function ensureContact(
   }
   const row = await prisma.contact.create({
     data: {
-      userId,
+      tenantId,
       organisation: data.organisation,
       showNameOnInvoice: true,
       email: data.email ?? null,
@@ -382,7 +394,7 @@ async function ensureContact(
   return row.id;
 }
 
-async function seedAll(userId: string): Promise<void> {
+async function seedAll(tenantId: string): Promise<void> {
   console.log('Phase 2: seeding demo data');
 
   // The ledger engine + applyPack take a structural Prisma slice. Mirror the
@@ -391,10 +403,10 @@ async function seedAll(userId: string): Promise<void> {
   const ledgerTx = prisma as unknown as PostingTx & ApplyPackTx;
 
   // -------------------------------------------------------------------------
-  // CompanySettings — update or create (CompanySettings.userId is unique)
+  // CompanySettings — update or create (CompanySettings.tenantId is unique)
   // -------------------------------------------------------------------------
   await prisma.companySettings.upsert({
-    where: { userId },
+    where: { tenantId },
     update: {
       companyName: 'Demo Company',
       email: 'support@example.com',
@@ -424,7 +436,7 @@ async function seedAll(userId: string): Promise<void> {
       publicBaseUrl: 'http://localhost:8080',
       merchantUpiId: 'demo@upi',
       merchantName: 'Demo Company',
-      userId,
+      tenantId,
     },
   });
   record('companySettings', 1);
@@ -471,7 +483,7 @@ async function seedAll(userId: string): Promise<void> {
   for (const spec of taxRatesSpec) {
     const row = await prisma.taxRate.create({
       data: {
-        userId,
+        tenantId,
         regime: spec.regime,
         taxKind: spec.taxKind,
         name: spec.name,
@@ -486,11 +498,11 @@ async function seedAll(userId: string): Promise<void> {
   record('taxRates', taxRatesSpec.length);
 
   // -------------------------------------------------------------------------
-  // Brands (6), Categories (8), Units (5) — global (idempotent via ensure*)
+  // Brands (6), Categories (8), Units (5) — per tenant (idempotent via ensure*)
   // -------------------------------------------------------------------------
   const brandIds: string[] = [];
   for (const b of ['Apple', 'Dell', 'HP', 'Samsung', 'Lenovo', 'Microsoft']) {
-    brandIds.push(await ensureBrand(b));
+    brandIds.push(await ensureBrand(tenantId, b));
   }
   record('brands', brandIds.length);
 
@@ -506,7 +518,7 @@ async function seedAll(userId: string): Promise<void> {
   ] as const;
   const categoryIds: string[] = [];
   for (const [name, slug] of categorySpecs) {
-    categoryIds.push(await ensureCategory(name, slug));
+    categoryIds.push(await ensureCategory(tenantId, name, slug));
   }
   record('categories', categoryIds.length);
 
@@ -523,15 +535,15 @@ async function seedAll(userId: string): Promise<void> {
   ] as const;
   const unitIds: string[] = [];
   for (const [u, s] of unitSpecs) {
-    unitIds.push(await ensureUnit(u, s));
+    unitIds.push(await ensureUnit(tenantId, u, s));
   }
   record('units', unitIds.length);
 
   // TaxGroup used by Product (Product has required taxGroupId)
-  const taxGroupGst18 = await ensureTaxGroup('GST 18%');
+  const taxGroupGst18 = await ensureTaxGroup(tenantId, 'GST 18%');
 
   // -------------------------------------------------------------------------
-  // Products (10 + 5 services = 15) — global, demo-prefixed code
+  // Products (10 + 5 services = 15) — per tenant, demo-prefixed code
   // -------------------------------------------------------------------------
   const productSpecs = [
     { code: 'DEMO-LAPTOP-01', name: 'Demo Dell Latitude 5420 Laptop', type: 'Product', sell: 65000, buy: 55000, cat: 0, brand: 1, unit: 0 },
@@ -557,6 +569,7 @@ async function seedAll(userId: string): Promise<void> {
   for (const p of productSpecs) {
     const row = await prisma.product.create({
       data: {
+        tenantId,
         item_type: p.type as 'Product' | 'Service',
         name: p.name,
         code: p.code,
@@ -590,7 +603,7 @@ async function seedAll(userId: string): Promise<void> {
       data: {
         productId: p.id,
         quantity: 25,
-        userId,
+        tenantId,
         notes: 'Initial demo stock',
       },
     });
@@ -640,7 +653,7 @@ async function seedAll(userId: string): Promise<void> {
           pincode: '600001',
           stateId: c.stateId,
         },
-        userId,
+        tenantId,
       },
     });
     customers.push({ ...c, id: row.id });
@@ -662,7 +675,7 @@ async function seedAll(userId: string): Promise<void> {
   for (const s of supplierSpecs) {
     const row = await prisma.supplier.create({
       data: {
-        user_id: userId,
+        tenantId: tenantId,
         supplier_name: s.name,
         supplier_email: s.email,
         supplier_phone: s.phone,
@@ -687,7 +700,7 @@ async function seedAll(userId: string): Promise<void> {
   const customerContactIds: string[] = [];
   for (const c of customers) {
     const billing = (c as Cust & { billingAddress?: { line1?: string } }).billingAddress;
-    const contactId = await ensureContact(userId, {
+    const contactId = await ensureContact(tenantId, {
       organisation: c.name,
       email: c.email,
       mobile: c.phone,
@@ -705,7 +718,7 @@ async function seedAll(userId: string): Promise<void> {
   for (let i = 0; i < suppliers.length; i++) {
     const s = suppliers[i];
     const spec = supplierSpecs[i];
-    const contactId = await ensureContact(userId, {
+    const contactId = await ensureContact(tenantId, {
       organisation: s.name,
       email: spec.email,
       mobile: spec.phone,
@@ -729,7 +742,7 @@ async function seedAll(userId: string): Promise<void> {
     await prisma.vehicle.create({
       data: {
         customerId: customers[v.customerIdx].id,
-        userId,
+        tenantId,
         name: v.name,
         make: v.make,
         model: v.model,
@@ -789,7 +802,7 @@ async function seedAll(userId: string): Promise<void> {
         accountType: b.accountType,
         openingBalance: D(b.openingBalance),
         currentBalance: D(b.openingBalance),
-        userId,
+        tenantId,
         status: true,
       },
     });
@@ -809,13 +822,13 @@ async function seedAll(userId: string): Promise<void> {
   // passes on re-run.
   // -------------------------------------------------------------------------
   const goLiveDate = daysAgo(400);
-  await applyPack(ledgerTx, { userId, countryCode: 'IN', goLiveDate });
+  await applyPack(ledgerTx, { tenantId, countryCode: 'IN', goLiveDate });
   await prisma.companySettings.update({
-    where: { userId },
+    where: { tenantId },
     data: { ledgerInitialized: true },
   });
   const accountByCode: Record<string, string> = {};
-  for (const a of await prisma.account.findMany({ where: { userId } })) {
+  for (const a of await prisma.account.findMany({ where: { tenantId } })) {
     accountByCode[a.code] = a.id;
   }
   record('accounts', Object.keys(accountByCode).length);
@@ -827,7 +840,7 @@ async function seedAll(userId: string): Promise<void> {
   // total is lower than Σ currentBalance by exactly Σ openingBalance, which
   // causes bankAggregate.glVsCurrentTied = false.
   //
-  // Idempotent: post() deduplicates by (userId, sourceType, sourceId, event).
+  // Idempotent: post() deduplicates by (tenantId, sourceType, sourceId, event).
   // sourceId = `bank-opening-${bank.id}` is stable across re-runs because
   // bank.id is the Prisma-generated UUID (unchanged by wipe since banks were
   // just created above).
@@ -835,7 +848,7 @@ async function seedAll(userId: string): Promise<void> {
   for (const b of banks) {
     if (b.balance <= 0) continue; // nothing to post for zero-balance banks
     await post(ledgerTx as unknown as import('../lib/ledger/postingEngine').LedgerTx, {
-      userId,
+      tenantId,
       sourceType: 'OpeningBalance',
       sourceId: `bank-opening-${b.id}`,
       event: 'opening',
@@ -858,7 +871,7 @@ async function seedAll(userId: string): Promise<void> {
   const expCats: Record<string, string> = {};
   for (const name of expCatNames) {
     const row = await prisma.expenseCategory.create({
-      data: { title: name, status: true },
+      data: { tenantId, title: name, status: true },
     });
     expCats[name] = row.id;
   }
@@ -982,8 +995,8 @@ async function seedAll(userId: string): Promise<void> {
         taxableAmount: D(totalTaxable),
         TotalAmount: D(totalAmount),
         vat: D(totalTax),
-        userId,
-        billFrom: userId,
+        tenantId,
+        billFrom: tenantId,
         billTo: customer.id,
         invoiceType: spec.invoiceType ?? 'INVOICE',
         bankId: banks[0].id,
@@ -999,7 +1012,7 @@ async function seedAll(userId: string): Promise<void> {
     // sub-ledger, so posting it would break the AR tie).
     if ((spec.invoiceType ?? 'INVOICE') === 'INVOICE') {
       await postInvoiceIssued(ledgerTx, {
-        userId,
+        tenantId,
         invoiceId: inv.id,
         date: invDate,
         total: String(totalAmount),
@@ -1011,17 +1024,18 @@ async function seedAll(userId: string): Promise<void> {
     if (spec.status === 'PAID') {
       const pay = await prisma.invoicePayment.create({
         data: {
+          tenantId: tenantId,
           invoiceId: inv.id,
           amount: D(totalAmount),
           paymentModeId: pmBankId,
           bankId: banks[0].id,
           received_on: new Date(invDate.getTime() + 5 * 24 * 60 * 60 * 1000),
           notes: 'Full payment received via bank transfer.',
-          received_by: userId,
+          received_by: tenantId,
         },
       });
       await postInvoicePayment(ledgerTx, {
-        userId,
+        tenantId,
         invoiceId: inv.id,
         paymentId: pay.id,
         date: pay.received_on!,
@@ -1033,17 +1047,18 @@ async function seedAll(userId: string): Promise<void> {
       const half = round2(totalAmount * 0.5);
       const pay = await prisma.invoicePayment.create({
         data: {
+          tenantId: tenantId,
           invoiceId: inv.id,
           amount: D(half),
           paymentModeId: pmUpiId,
           bankId: banks[1].id,
           received_on: new Date(invDate.getTime() + 3 * 24 * 60 * 60 * 1000),
           notes: 'Partial payment (50%).',
-          received_by: userId,
+          received_by: tenantId,
         },
       });
       await postInvoicePayment(ledgerTx, {
-        userId,
+        tenantId,
         invoiceId: inv.id,
         paymentId: pay.id,
         date: pay.received_on!,
@@ -1074,8 +1089,8 @@ async function seedAll(userId: string): Promise<void> {
       taxableAmount: D(rpTaxable),
       TotalAmount: D(rpTotal),
       vat: D(rpTax),
-      userId,
-      billFrom: userId,
+      tenantId,
+      billFrom: tenantId,
       billTo: customers[3].id,
       bankId: banks[0].id,
       isRecurring: true,
@@ -1093,7 +1108,7 @@ async function seedAll(userId: string): Promise<void> {
   // it nets to zero in AR (the original seed left it unpaid in AR; we add the
   // matching payment row + GL).
   await postInvoiceIssued(ledgerTx, {
-    userId,
+    tenantId,
     invoiceId: recurringParent.id,
     date: parentStartOn,
     total: String(rpTotal),
@@ -1103,17 +1118,18 @@ async function seedAll(userId: string): Promise<void> {
     const rpPayDate = new Date(parentStartOn.getTime() + 5 * 24 * 60 * 60 * 1000);
     const rpPay = await prisma.invoicePayment.create({
       data: {
+        tenantId: tenantId,
         invoiceId: recurringParent.id,
         amount: D(rpTotal),
         paymentModeId: pmBankId,
         bankId: banks[0].id,
         received_on: rpPayDate,
         notes: 'Recurring parent — full payment.',
-        received_by: userId,
+        received_by: tenantId,
       },
     });
     await postInvoicePayment(ledgerTx, {
-      userId,
+      tenantId,
       invoiceId: recurringParent.id,
       paymentId: rpPay.id,
       date: rpPayDate,
@@ -1141,8 +1157,8 @@ async function seedAll(userId: string): Promise<void> {
         taxableAmount: D(rpTaxable),
         TotalAmount: D(rpTotal),
         vat: D(rpTax),
-        userId,
-        billFrom: userId,
+        tenantId,
+        billFrom: tenantId,
         billTo: customers[3].id,
         bankId: banks[0].id,
         parentInvoice: recurringParent.id,
@@ -1150,7 +1166,7 @@ async function seedAll(userId: string): Promise<void> {
       },
     });
     await postInvoiceIssued(ledgerTx, {
-      userId,
+      tenantId,
       invoiceId: child.id,
       date: childDate,
       total: String(rpTotal),
@@ -1159,17 +1175,18 @@ async function seedAll(userId: string): Promise<void> {
     const childPayDate = new Date(childDate.getTime() + 5 * 24 * 60 * 60 * 1000);
     const childPay = await prisma.invoicePayment.create({
       data: {
+        tenantId: tenantId,
         invoiceId: child.id,
         amount: D(rpTotal),
         paymentModeId: pmBankId,
         bankId: banks[0].id,
         received_on: childPayDate,
         notes: 'Recurring monthly payment.',
-        received_by: userId,
+        received_by: tenantId,
       },
     });
     await postInvoicePayment(ledgerTx, {
-      userId,
+      tenantId,
       invoiceId: child.id,
       paymentId: childPay.id,
       date: childPayDate,
@@ -1239,9 +1256,9 @@ async function seedAll(userId: string): Promise<void> {
         paidAmount: statuses[i] === 'paid' || statuses[i] === 'completed' ? D(total) : statuses[i] === 'partially_paid' ? D(round2(total / 2)) : D(0),
         balanceAmount: statuses[i] === 'paid' || statuses[i] === 'completed' ? D(0) : statuses[i] === 'partially_paid' ? D(round2(total / 2)) : D(total),
         bankId: banks[i % banks.length].id,
-        userId,
-        billFrom: userId,
-        billTo: userId,
+        tenantId,
+        billFrom: tenantId,
+        billTo: tenantId,
         notes: `Demo purchase from ${supplier.name}.`,
       },
     });
@@ -1258,7 +1275,7 @@ async function seedAll(userId: string): Promise<void> {
     // GL: post purchase received. inventoryNet=0 so net hits PURCHASES expense
     // (avoids inventory/COGS coupling); split must reconcile: 0+taxable+tax=total.
     await postPurchaseReceived(ledgerTx, {
-      userId,
+      tenantId,
       purchaseId: purchase.id,
       date: purDate,
       total: String(total),
@@ -1273,6 +1290,7 @@ async function seedAll(userId: string): Promise<void> {
       const payDate = new Date(purDate.getTime() + 7 * 24 * 60 * 60 * 1000);
       const sp = await prisma.supplierPayment.create({
         data: {
+          tenantId: tenantId,
           paymentId: `DEMO-PAY-${String(i + 1).padStart(5, '0')}`,
           purchaseId: purchase.id,
           supplierId: supplier.id,
@@ -1285,11 +1303,11 @@ async function seedAll(userId: string): Promise<void> {
           paidAmount: payAmount,
           dueAmount: statuses[i] === 'partially_paid' ? round2(total / 2) : 0,
           notes: `Payment to ${supplier.name}.`,
-          createdBy: userId,
+          createdBy: tenantId,
         },
       });
       await postSupplierPayment(ledgerTx, {
-        userId,
+        tenantId,
         purchaseId: purchase.id,
         paymentId: sp.id,
         date: payDate,
@@ -1328,7 +1346,7 @@ async function seedAll(userId: string): Promise<void> {
       expenseCategoryId: expCats['Demo Office Rent'],
       sourceType: 'BANK',
       bankId: banks[0].id,
-      userId,
+      tenantId,
       isRecurring: true,
       repeatEvery: 'month',
       startOn: daysAgo(90),
@@ -1340,7 +1358,7 @@ async function seedAll(userId: string): Promise<void> {
   });
   expenseCount++;
   await postExpense(ledgerTx, {
-    userId,
+    tenantId,
     expenseId: rentParent.id,
     date: rentParent.expenseDate ?? daysAgo(90),
     total: String(45000),
@@ -1364,7 +1382,7 @@ async function seedAll(userId: string): Promise<void> {
       bankId: banks[1].id,
       supplierId: suppliers[3].id,
       contactId: supplierContactIds[3],
-      userId,
+      tenantId,
       isRecurring: true,
       repeatEvery: 'month',
       startOn: daysAgo(85),
@@ -1376,7 +1394,7 @@ async function seedAll(userId: string): Promise<void> {
   });
   expenseCount++;
   await postExpense(ledgerTx, {
-    userId,
+    tenantId,
     expenseId: internetParent.id,
     date: internetParent.expenseDate ?? daysAgo(85),
     total: String(3500),
@@ -1400,12 +1418,12 @@ async function seedAll(userId: string): Promise<void> {
         expenseCategoryId: expCats['Demo Office Rent'],
         sourceType: 'BANK',
         bankId: banks[0].id,
-        userId,
+        tenantId,
         parentExpense: rentParent.id,
       },
     });
     await postExpense(ledgerTx, {
-      userId,
+      tenantId,
       expenseId: rentChild.id,
       date: childDate,
       total: String(45000),
@@ -1431,12 +1449,12 @@ async function seedAll(userId: string): Promise<void> {
       bankId: banks[1].id,
       supplierId: suppliers[3].id,
       contactId: supplierContactIds[3],
-      userId,
+      tenantId,
       parentExpense: internetParent.id,
     },
   });
   await postExpense(ledgerTx, {
-    userId,
+    tenantId,
     expenseId: internetChild.id,
     date: daysAgo(55),
     total: String(3500),
@@ -1472,14 +1490,14 @@ async function seedAll(userId: string): Promise<void> {
         bankId: banks[i % banks.length].id,
         supplierId: o.supp !== null ? suppliers[o.supp].id : null,
         contactId: o.supp !== null ? supplierContactIds[o.supp] : null,
-        userId,
+        tenantId,
       },
     });
     // GL: only PAID expenses are a real cash outflow (PENDING ones are not paid,
     // so crediting BANK would overstate the outflow and break the bank tie).
     if (o.status === 'PAID') {
       await postExpense(ledgerTx, {
-        userId,
+        tenantId,
         expenseId: oneOff.id,
         date: daysAgo(o.days),
         total: String(o.amt),
@@ -1535,8 +1553,8 @@ async function seedAll(userId: string): Promise<void> {
         taxableAmount: D(totalTaxable),
         TotalAmount: D(totalAmount),
         vat: D(totalTax),
-        userId,
-        billFrom: userId,
+        tenantId,
+        billFrom: tenantId,
         billTo: customer.id,
         bankId: banks[0].id,
         notes: 'Auto-generated by full demo seed.',
@@ -1593,8 +1611,8 @@ async function seedAll(userId: string): Promise<void> {
         vat: D(tax),
         bankId: banks[0].id,
         notes: 'Auto-generated by full demo seed.',
-        userId,
-        billFrom: userId,
+        tenantId,
+        billFrom: tenantId,
         billTo: inv.customerId,
         appliedToInvoice: inv.id,
         appliedDate: new Date(inv.date.getTime() + 15 * 24 * 60 * 60 * 1000),
@@ -1605,7 +1623,7 @@ async function seedAll(userId: string): Promise<void> {
     // Dr SALES_RETURNS (net) / Dr OUTPUT_TAX (tax) / Cr AR (total).
     if (cnStatuses[i] !== 'CANCELLED') {
       await postCreditNoteIssued(ledgerTx, {
-        userId,
+        tenantId,
         creditNoteId: cn.id,
         date: cnDate,
         total: String(total),
@@ -1656,8 +1674,8 @@ async function seedAll(userId: string): Promise<void> {
         bankId: banks[0].id,
         notes: 'Auto-generated by full demo seed.',
         termsAndCondition: 'Please verify goods at delivery.',
-        userId,
-        billFrom: userId,
+        tenantId,
+        billFrom: tenantId,
         billTo: inv.customerId,
         receivedBy: dcStatuses[i] === 'DELIVERED' ? 'Customer Representative' : '',
         receivedDate: dcStatuses[i] === 'DELIVERED' ? new Date(inv.date.getTime() + 2 * 24 * 60 * 60 * 1000) : null,
@@ -1709,9 +1727,9 @@ async function seedAll(userId: string): Promise<void> {
         vat: D(tax),
         TotalAmount: D(total),
         bankId: banks[i % banks.length].id,
-        userId,
-        billFrom: userId,
-        billTo: userId,
+        tenantId,
+        billFrom: tenantId,
+        billTo: tenantId,
         notes: `Demo PO for ${pProduct.name}.`,
         termsAndCondition: 'Delivery within 21 days.',
       },
@@ -1765,9 +1783,9 @@ async function seedAll(userId: string): Promise<void> {
         balanceAmount: dnStatuses[i] === 'paid' ? D(0) : D(total),
         bankId: banks[0].id,
         notes: `Debit note against ${pur.purchaseId}: ${pur.supplierName}.`,
-        userId,
-        createdBy: userId,
-        billFrom: userId,
+        tenantId,
+        createdBy: tenantId,
+        billFrom: tenantId,
       },
     });
     debitNoteCount++;
@@ -1811,6 +1829,7 @@ async function seedAll(userId: string): Promise<void> {
     const after = round2(t.type === 'SPEND' ? before - t.amount : before + t.amount);
     await prisma.pettyCashTransaction.create({
       data: {
+        tenantId: tenantId,
         pettyCashId: pcRow.id,
         transactionDate: daysAgo(t.days),
         transactionType: t.type,
@@ -1838,7 +1857,7 @@ async function seedAll(userId: string): Promise<void> {
   // -------------------------------------------------------------------------
   await prisma.journalEntry.create({
     data: {
-      userId,
+      tenantId,
       entryNumber: 'DEMO-JE-00001',
       entryDate: daysAgo(85),
       description: 'Owner contribution — initial capital',
@@ -1846,15 +1865,15 @@ async function seedAll(userId: string): Promise<void> {
       isPosted: true,
       lines: {
         create: [
-          { accountId: accountByCode['1001']!, debit: D(100000), credit: D(0), description: 'Cash deposit' },
-          { accountId: accountByCode['3050']!, debit: D(0), credit: D(100000), description: 'Owner equity' },
+          { tenantId: tenantId, accountId: accountByCode['1001']!, debit: D(100000), credit: D(0), description: 'Cash deposit' },
+          { tenantId: tenantId, accountId: accountByCode['3050']!, debit: D(0), credit: D(100000), description: 'Owner equity' },
         ],
       },
     },
   });
   await prisma.journalEntry.create({
     data: {
-      userId,
+      tenantId,
       entryNumber: 'DEMO-JE-00002',
       entryDate: daysAgo(60),
       description: 'Prepaid rent for Q2',
@@ -1862,15 +1881,15 @@ async function seedAll(userId: string): Promise<void> {
       isPosted: true,
       lines: {
         create: [
-          { accountId: accountByCode['5002']!, debit: D(45000), credit: D(0), description: 'Rent expense' },
-          { accountId: accountByCode['1001']!, debit: D(0), credit: D(45000), description: 'Paid from cash' },
+          { tenantId: tenantId, accountId: accountByCode['5002']!, debit: D(45000), credit: D(0), description: 'Rent expense' },
+          { tenantId: tenantId, accountId: accountByCode['1001']!, debit: D(0), credit: D(45000), description: 'Paid from cash' },
         ],
       },
     },
   });
   await prisma.journalEntry.create({
     data: {
-      userId,
+      tenantId,
       entryNumber: 'DEMO-JE-00003',
       entryDate: daysAgo(45),
       description: 'Cash deposit to bank',
@@ -1878,8 +1897,8 @@ async function seedAll(userId: string): Promise<void> {
       isPosted: true,
       lines: {
         create: [
-          { accountId: accountByCode['1002']!, debit: D(250000), credit: D(0), description: 'Bank account' },
-          { accountId: accountByCode['1001']!, debit: D(0), credit: D(250000), description: 'Cash on hand' },
+          { tenantId: tenantId, accountId: accountByCode['1002']!, debit: D(250000), credit: D(0), description: 'Bank account' },
+          { tenantId: tenantId, accountId: accountByCode['1001']!, debit: D(0), credit: D(250000), description: 'Cash on hand' },
         ],
       },
     },
@@ -1910,6 +1929,7 @@ async function seedAll(userId: string): Promise<void> {
       const after = round2(before + amount);
       await prisma.bankTransaction.create({
         data: {
+          tenantId: tenantId,
           bankAccountId: bankId,
           transactionDate: new Date(inv.date.getTime() + 5 * 24 * 60 * 60 * 1000),
           type: 'DEPOSIT',
@@ -1923,7 +1943,7 @@ async function seedAll(userId: string): Promise<void> {
           relatedId: inv.id,
           explainStatus: 'EXPLAINED',
           isReconciled: txIdx % 3 !== 0,
-          reconciledBy: txIdx % 3 !== 0 ? userId : null,
+          reconciledBy: txIdx % 3 !== 0 ? tenantId : null,
           reconciliationDate: txIdx % 3 !== 0 ? new Date(inv.date.getTime() + 6 * 24 * 60 * 60 * 1000) : null,
         },
       });
@@ -1943,6 +1963,7 @@ async function seedAll(userId: string): Promise<void> {
     const after = round2(before + rp.amount);
     await prisma.bankTransaction.create({
       data: {
+        tenantId: tenantId,
         bankAccountId: bankId,
         transactionDate: rp.date,
         type: 'DEPOSIT',
@@ -1956,7 +1977,7 @@ async function seedAll(userId: string): Promise<void> {
         relatedId: rp.paymentId,
         explainStatus: 'EXPLAINED',
         isReconciled: true,
-        reconciledBy: userId,
+        reconciledBy: tenantId,
       },
     });
     bankBalances[bankId] = after;
@@ -1965,7 +1986,7 @@ async function seedAll(userId: string): Promise<void> {
 
   // Withdrawals (for paid expenses)
   const paidExpenses = await prisma.expense.findMany({
-    where: { userId, paymentStatus: 'PAID' },
+    where: { tenantId, paymentStatus: 'PAID' },
     take: 12,
   });
   for (let i = 0; i < paidExpenses.length; i++) {
@@ -1976,6 +1997,7 @@ async function seedAll(userId: string): Promise<void> {
     const after = round2(before - amount);
     await prisma.bankTransaction.create({
       data: {
+        tenantId: tenantId,
         bankAccountId: bankId,
         transactionDate: e.expenseDate,
         type: 'WITHDRAWAL',
@@ -1989,7 +2011,7 @@ async function seedAll(userId: string): Promise<void> {
         relatedId: e.id,
         explainStatus: 'EXPLAINED',
         isReconciled: i % 2 === 0,
-        reconciledBy: i % 2 === 0 ? userId : null,
+        reconciledBy: i % 2 === 0 ? tenantId : null,
       },
     });
     bankBalances[bankId] = after;
@@ -2006,6 +2028,7 @@ async function seedAll(userId: string): Promise<void> {
     const after = round2(before - sp.amount);
     await prisma.bankTransaction.create({
       data: {
+        tenantId: tenantId,
         bankAccountId: sp.bankId,
         transactionDate: sp.date,
         type: 'WITHDRAWAL',
@@ -2038,6 +2061,7 @@ async function seedAll(userId: string): Promise<void> {
     const txnDate = daysAgo(80 - i * 5);
     await prisma.bankTransaction.create({
       data: {
+        tenantId: tenantId,
         bankAccountId: bankId,
         transactionDate: txnDate,
         type: isDeposit ? 'DEPOSIT' : 'WITHDRAWAL',
@@ -2050,7 +2074,7 @@ async function seedAll(userId: string): Promise<void> {
         relatedType: 'MANUAL',
         explainStatus: 'EXPLAINED',
         isReconciled: i < 4,
-        reconciledBy: i < 4 ? userId : null,
+        reconciledBy: i < 4 ? tenantId : null,
       },
     });
     bankBalances[bankId] = after;
@@ -2059,7 +2083,7 @@ async function seedAll(userId: string): Promise<void> {
     // Deposit  → Dr BANK / Cr OPENING_BALANCE_EQUITY (cash injected into bank).
     // Withdrawal → Dr OPENING_BALANCE_EQUITY / Cr BANK (cash withdrawn from bank).
     await post(ledgerTx as unknown as import('../lib/ledger/postingEngine').LedgerTx, {
-      userId,
+      tenantId,
       sourceType: 'BankTransaction',
       sourceId: `manual-${i}`,
       event: 'manual',
@@ -2096,7 +2120,7 @@ async function seedAll(userId: string): Promise<void> {
     const inv = paidInvoices[i];
     await prisma.paymentTransaction.create({
       data: {
-        userId,
+        tenantId,
         invoiceId: inv.id,
         kind: 'OFFLINE',
         status: 'CAPTURED',
@@ -2114,7 +2138,7 @@ async function seedAll(userId: string): Promise<void> {
   if (unpaidInvoice) {
     await prisma.paymentTransaction.create({
       data: {
-        userId,
+        tenantId,
         invoiceId: unpaidInvoice.id,
         kind: 'RAZORPAY',
         status: 'CREATED',
@@ -2138,7 +2162,7 @@ async function seedAll(userId: string): Promise<void> {
     const ackNo = String(Math.floor(Math.random() * 1e15)).padStart(15, '0');
     await prisma.eInvoiceRecord.create({
       data: {
-        userId,
+        tenantId,
         invoiceId: inv.id,
         irn,
         ackNo,
@@ -2162,10 +2186,10 @@ async function seedAll(userId: string): Promise<void> {
   const marStart = new Date('2026-03-01T00:00:00.000Z');
   const marEnd = new Date('2026-03-31T23:59:59.999Z');
   await prisma.accountingPeriod.create({
-    data: { userId, name: 'April 2026', startDate: aprStart, endDate: aprEnd, isLocked: false },
+    data: { tenantId, name: 'April 2026', startDate: aprStart, endDate: aprEnd, isLocked: false },
   });
   await prisma.accountingPeriod.create({
-    data: { userId, name: 'March 2026', startDate: marStart, endDate: marEnd, isLocked: true, lockedAt: daysAgo(20), lockedBy: userId },
+    data: { tenantId, name: 'March 2026', startDate: marStart, endDate: marEnd, isLocked: true, lockedAt: daysAgo(20), lockedBy: tenantId },
   });
   record('accountingPeriods', 2);
 
@@ -2187,7 +2211,7 @@ async function seedAll(userId: string): Promise<void> {
     if (!accountId) continue; // skip codes the IN pack doesn't define
     await prisma.budget.create({
       data: {
-        userId,
+        tenantId,
         accountId,
         periodStart: aprStart,
         periodEnd: aprEnd,
@@ -2203,7 +2227,7 @@ async function seedAll(userId: string): Promise<void> {
   // first two seeded purchases as PENDING so the approvals queue shows items.
   // -------------------------------------------------------------------------
   await prisma.companySettings.update({
-    where: { userId },
+    where: { tenantId },
     data: { approvalsEnabled: true },
   });
   const pendingPurchases = createdPurchases.slice(0, 2);
@@ -2219,10 +2243,10 @@ async function seedAll(userId: string): Promise<void> {
   // GatewayConfig (OFFLINE) + MessagingConfig
   // -------------------------------------------------------------------------
   await prisma.gatewayConfig.upsert({
-    where: { userId_kind: { userId, kind: 'OFFLINE' } },
+    where: { tenantId_kind: { tenantId, kind: 'OFFLINE' } },
     update: { enabled: true, config: { instructions: 'Bank transfer to account number on invoice.' } },
     create: {
-      userId,
+      tenantId,
       kind: 'OFFLINE',
       enabled: true,
       config: { instructions: 'Bank transfer to account number on invoice.' },
@@ -2232,13 +2256,13 @@ async function seedAll(userId: string): Promise<void> {
   record('gatewayConfigs', 1);
 
   await prisma.messagingConfig.upsert({
-    where: { userId },
+    where: { tenantId },
     update: {
       whatsappEnabled: false,
       defaultTemplate: 'Hi {{customer_name}}, your invoice {{invoice_number}} of {{amount}} is due on {{due_date}}.',
     },
     create: {
-      userId,
+      tenantId,
       whatsappEnabled: false,
       defaultTemplate: 'Hi {{customer_name}}, your invoice {{invoice_number}} of {{amount}} is due on {{due_date}}.',
     },
@@ -2254,7 +2278,7 @@ async function seedAll(userId: string): Promise<void> {
   //   - AiChatSession + AiChatMessage: two sample conversations
   // -------------------------------------------------------------------------
   await prisma.aiConfig.upsert({
-    where: { userId },
+    where: { tenantId },
     update: {
       provider: 'MOCK',
       enabled: true,
@@ -2263,7 +2287,7 @@ async function seedAll(userId: string): Promise<void> {
       monthlyBudgetUsd: D(25),
     },
     create: {
-      userId,
+      tenantId,
       provider: 'MOCK',
       enabled: true,
       extractionModel: 'mock-extract-v1',
@@ -2288,7 +2312,7 @@ async function seedAll(userId: string): Promise<void> {
   for (const u of usageSeed) {
     await prisma.aiUsageLog.create({
       data: {
-        userId,
+        tenantId,
         feature: u.feature,
         provider: 'MOCK',
         model: u.feature === 'extraction' ? 'mock-extract-v1' : 'mock-chat-v1',
@@ -2331,7 +2355,7 @@ async function seedAll(userId: string): Promise<void> {
   let aiJobCount = 0;
   await prisma.aiExtractionJob.create({
     data: {
-      userId,
+      tenantId,
       sourceFilePath: 'uploads/ai-jobs/demo-acme-bill.pdf',
       mimeType: 'application/pdf',
       status: 'CONFIRMED',
@@ -2367,7 +2391,7 @@ async function seedAll(userId: string): Promise<void> {
   };
   await prisma.aiExtractionJob.create({
     data: {
-      userId,
+      tenantId,
       sourceFilePath: 'uploads/ai-jobs/demo-stationery-bill.jpg',
       mimeType: 'image/jpeg',
       status: 'EXTRACTED',
@@ -2387,7 +2411,7 @@ async function seedAll(userId: string): Promise<void> {
 
   const session1 = await prisma.aiChatSession.create({
     data: {
-      userId,
+      tenantId,
       title: 'How much GST do I owe this quarter?',
       createdAt: daysAgo(6),
       updatedAt: daysAgo(6),
@@ -2396,12 +2420,14 @@ async function seedAll(userId: string): Promise<void> {
   aiSessionCount++;
   const s1Messages: Array<Prisma.AiChatMessageCreateManyInput> = [
     {
+      tenantId: tenantId,
       sessionId: session1.id,
       role: 'USER',
       content: 'How much GST do I owe this quarter?',
       createdAt: daysAgo(6),
     },
     {
+      tenantId: tenantId,
       sessionId: session1.id,
       role: 'ASSISTANT',
       content: '',
@@ -2410,6 +2436,7 @@ async function seedAll(userId: string): Promise<void> {
       createdAt: new Date(daysAgo(6).getTime() + 1000),
     },
     {
+      tenantId: tenantId,
       sessionId: session1.id,
       role: 'TOOL',
       content: '',
@@ -2418,6 +2445,7 @@ async function seedAll(userId: string): Promise<void> {
       createdAt: new Date(daysAgo(6).getTime() + 2000),
     },
     {
+      tenantId: tenantId,
       sessionId: session1.id,
       role: 'ASSISTANT',
       content:
@@ -2431,7 +2459,7 @@ async function seedAll(userId: string): Promise<void> {
 
   const session2 = await prisma.aiChatSession.create({
     data: {
-      userId,
+      tenantId,
       title: 'Who are my top 5 debtors?',
       createdAt: daysAgo(2),
       updatedAt: daysAgo(2),
@@ -2440,12 +2468,14 @@ async function seedAll(userId: string): Promise<void> {
   aiSessionCount++;
   const s2Messages: Array<Prisma.AiChatMessageCreateManyInput> = [
     {
+      tenantId: tenantId,
       sessionId: session2.id,
       role: 'USER',
       content: 'Who are my top 5 debtors?',
       createdAt: daysAgo(2),
     },
     {
+      tenantId: tenantId,
       sessionId: session2.id,
       role: 'ASSISTANT',
       content: '',
@@ -2454,6 +2484,7 @@ async function seedAll(userId: string): Promise<void> {
       createdAt: new Date(daysAgo(2).getTime() + 1000),
     },
     {
+      tenantId: tenantId,
       sessionId: session2.id,
       role: 'TOOL',
       content: '',
@@ -2470,6 +2501,7 @@ async function seedAll(userId: string): Promise<void> {
       createdAt: new Date(daysAgo(2).getTime() + 2000),
     },
     {
+      tenantId: tenantId,
       sessionId: session2.id,
       role: 'ASSISTANT',
       content:
@@ -2500,7 +2532,7 @@ async function seedAll(userId: string): Promise<void> {
   // --- Demo staff users (employees) ----------------------------------------
   // Tenant membership is resolved as `id == tenant OR ownerId == tenant` (see
   // projectMemberController.isTenantStaff), so each employee gets
-  // `ownerId = userId` (the owner) and `user_type = 2` (staff).
+  // `ownerId = tenantId` (the owner) and `user_type = 2` (staff).
   const staffPassword = await bcrypt.hash('Demo123$', 10);
   const employeeSpecs = [
     { id: 'demo-emp-1', firstName: 'Priya', lastName: 'Sharma', email: 'priya.sharma@demo.elixirbooks.local' },
@@ -2517,7 +2549,7 @@ async function seedAll(userId: string): Promise<void> {
         email: e.email,
         password: staffPassword,
         user_type: 2,
-        ownerId: userId,
+        ownerId: tenantId,
         isDeleted: false,
       },
     });
@@ -2550,7 +2582,7 @@ async function seedAll(userId: string): Promise<void> {
   for (const p of ttProjectSpecs) {
     const proj = await prisma.project.create({
       data: {
-        userId,
+        tenantId,
         code: p.code,
         name: p.name,
         status: 'active',
@@ -2571,13 +2603,13 @@ async function seedAll(userId: string): Promise<void> {
     // Website Redesign (PRJ-001)
     // The demo admin/owner is also a member+manager so their own My Timesheet
     // grid + Approvals are populated when logged in as admin@demo.
-    { userId, projectId: ttProjects[0].id, employeeUserId: userId, role: 'MANAGER', billingRate: D(150) },
-    { userId, projectId: ttProjects[0].id, employeeUserId: employeeIds[0], role: 'MANAGER', billingRate: D(140) },
-    { userId, projectId: ttProjects[0].id, employeeUserId: employeeIds[1], role: 'MEMBER', billingRate: D(110) },
-    { userId, projectId: ttProjects[0].id, employeeUserId: employeeIds[2], role: 'MEMBER', billingRate: D(95) },
+    { tenantId, projectId: ttProjects[0].id, employeeUserId: tenantId, role: 'MANAGER', billingRate: D(150) },
+    { tenantId, projectId: ttProjects[0].id, employeeUserId: employeeIds[0], role: 'MANAGER', billingRate: D(140) },
+    { tenantId, projectId: ttProjects[0].id, employeeUserId: employeeIds[1], role: 'MEMBER', billingRate: D(110) },
+    { tenantId, projectId: ttProjects[0].id, employeeUserId: employeeIds[2], role: 'MEMBER', billingRate: D(95) },
     // Mobile App Build (PRJ-002)
-    { userId, projectId: ttProjects[1].id, employeeUserId: employeeIds[0], role: 'MANAGER', billingRate: D(150) },
-    { userId, projectId: ttProjects[1].id, employeeUserId: employeeIds[1], role: 'MEMBER', billingRate: D(120) },
+    { tenantId, projectId: ttProjects[1].id, employeeUserId: employeeIds[0], role: 'MANAGER', billingRate: D(150) },
+    { tenantId, projectId: ttProjects[1].id, employeeUserId: employeeIds[1], role: 'MEMBER', billingRate: D(120) },
   ];
   await prisma.projectMember.createMany({ data: memberRows });
   record('projectMembers', memberRows.length);
@@ -2607,24 +2639,24 @@ async function seedAll(userId: string): Promise<void> {
   // mostly billable on both his projects.
   const ts1 = await prisma.timesheet.create({
     data: {
-      userId,
+      tenantId,
       employeeUserId: employeeIds[1],
       weekStartDate: mondayUTC,
       status: 'APPROVED',
       submittedAt: weekDay(5),
-      approvedById: userId,
+      approvedById: tenantId,
       approvedAt: weekDay(5),
     },
   });
   timesheetCount += 1;
   const ts1Entries: Prisma.TimeEntryCreateManyInput[] = [
-    { timesheetId: ts1.id, projectId: ttProjects[0].id, date: weekDay(0), hours: D(6), billable: true, note: 'Homepage layout' },
-    { timesheetId: ts1.id, projectId: ttProjects[1].id, date: weekDay(0), hours: D(2), billable: true, note: 'API scoping' },
-    { timesheetId: ts1.id, projectId: ttProjects[0].id, date: weekDay(1), hours: D(7.5), billable: true, note: 'Component build' },
-    { timesheetId: ts1.id, projectId: ttProjects[0].id, date: weekDay(2), hours: D(8), billable: true, note: 'Responsive pass' },
-    { timesheetId: ts1.id, projectId: ttProjects[1].id, date: weekDay(3), hours: D(6), billable: true, note: 'Auth flow' },
-    { timesheetId: ts1.id, projectId: ttProjects[0].id, date: weekDay(3), hours: D(2), billable: false, note: 'Team sync' },
-    { timesheetId: ts1.id, projectId: ttProjects[1].id, date: weekDay(4), hours: D(4), billable: true, note: 'Bug fixes' },
+    { tenantId: tenantId, timesheetId: ts1.id, projectId: ttProjects[0].id, date: weekDay(0), hours: D(6), billable: true, note: 'Homepage layout' },
+    { tenantId: tenantId, timesheetId: ts1.id, projectId: ttProjects[1].id, date: weekDay(0), hours: D(2), billable: true, note: 'API scoping' },
+    { tenantId: tenantId, timesheetId: ts1.id, projectId: ttProjects[0].id, date: weekDay(1), hours: D(7.5), billable: true, note: 'Component build' },
+    { tenantId: tenantId, timesheetId: ts1.id, projectId: ttProjects[0].id, date: weekDay(2), hours: D(8), billable: true, note: 'Responsive pass' },
+    { tenantId: tenantId, timesheetId: ts1.id, projectId: ttProjects[1].id, date: weekDay(3), hours: D(6), billable: true, note: 'Auth flow' },
+    { tenantId: tenantId, timesheetId: ts1.id, projectId: ttProjects[0].id, date: weekDay(3), hours: D(2), billable: false, note: 'Team sync' },
+    { tenantId: tenantId, timesheetId: ts1.id, projectId: ttProjects[1].id, date: weekDay(4), hours: D(4), billable: true, note: 'Bug fixes' },
   ];
   await prisma.timeEntry.createMany({ data: ts1Entries });
   timeEntryCount += ts1Entries.length;
@@ -2632,7 +2664,7 @@ async function seedAll(userId: string): Promise<void> {
   // Timesheet 2 — Priya, SUBMITTED (pending approval, non-empty review queue).
   const ts2 = await prisma.timesheet.create({
     data: {
-      userId,
+      tenantId,
       employeeUserId: employeeIds[0],
       weekStartDate: mondayUTC,
       status: 'SUBMITTED',
@@ -2641,10 +2673,10 @@ async function seedAll(userId: string): Promise<void> {
   });
   timesheetCount += 1;
   const ts2Entries: Prisma.TimeEntryCreateManyInput[] = [
-    { timesheetId: ts2.id, projectId: ttProjects[0].id, date: weekDay(0), hours: D(4), billable: true, note: 'Design review' },
-    { timesheetId: ts2.id, projectId: ttProjects[1].id, date: weekDay(1), hours: D(5), billable: true, note: 'Sprint planning' },
-    { timesheetId: ts2.id, projectId: ttProjects[0].id, date: weekDay(2), hours: D(3), billable: false, note: 'Mentoring' },
-    { timesheetId: ts2.id, projectId: ttProjects[1].id, date: weekDay(3), hours: D(5), billable: true, note: 'Client demo' },
+    { tenantId: tenantId, timesheetId: ts2.id, projectId: ttProjects[0].id, date: weekDay(0), hours: D(4), billable: true, note: 'Design review' },
+    { tenantId: tenantId, timesheetId: ts2.id, projectId: ttProjects[1].id, date: weekDay(1), hours: D(5), billable: true, note: 'Sprint planning' },
+    { tenantId: tenantId, timesheetId: ts2.id, projectId: ttProjects[0].id, date: weekDay(2), hours: D(3), billable: false, note: 'Mentoring' },
+    { tenantId: tenantId, timesheetId: ts2.id, projectId: ttProjects[1].id, date: weekDay(3), hours: D(5), billable: true, note: 'Client demo' },
   ];
   await prisma.timeEntry.createMany({ data: ts2Entries });
   timeEntryCount += ts2Entries.length;
@@ -2658,10 +2690,10 @@ async function seedAll(userId: string): Promise<void> {
   const yr = new Date().getUTCFullYear();
   const utcDate = (y: number, m: number, d: number): Date => new Date(Date.UTC(y, m - 1, d));
   const holidayRows: Prisma.HolidayCreateManyInput[] = [
-    { userId, name: "New Year's Day", date: utcDate(yr, 1, 1), recurringYearly: true },
-    { userId, name: 'Republic Day', date: utcDate(yr, 1, 26), recurringYearly: false },
-    { userId, name: 'Independence Day', date: utcDate(yr, 8, 15), recurringYearly: false },
-    { userId, name: 'Diwali', date: utcDate(yr, 11, 9), recurringYearly: false },
+    { tenantId, name: "New Year's Day", date: utcDate(yr, 1, 1), recurringYearly: true },
+    { tenantId, name: 'Republic Day', date: utcDate(yr, 1, 26), recurringYearly: false },
+    { tenantId, name: 'Independence Day', date: utcDate(yr, 8, 15), recurringYearly: false },
+    { tenantId, name: 'Diwali', date: utcDate(yr, 11, 9), recurringYearly: false },
   ];
   await prisma.holiday.createMany({ data: holidayRows });
   record('holidays', holidayRows.length);
@@ -2670,13 +2702,13 @@ async function seedAll(userId: string): Promise<void> {
 
   // --- Leave types ---------------------------------------------------------
   const annualLeave = await prisma.leaveType.create({
-    data: { userId, name: 'Annual Leave', paid: true, defaultAllocationDays: D(20) },
+    data: { tenantId, name: 'Annual Leave', paid: true, defaultAllocationDays: D(20) },
   });
   const sickLeave = await prisma.leaveType.create({
-    data: { userId, name: 'Sick Leave', paid: true, defaultAllocationDays: D(10) },
+    data: { tenantId, name: 'Sick Leave', paid: true, defaultAllocationDays: D(10) },
   });
   const unpaidLeave = await prisma.leaveType.create({
-    data: { userId, name: 'Unpaid Leave', paid: false, defaultAllocationDays: null },
+    data: { tenantId, name: 'Unpaid Leave', paid: false, defaultAllocationDays: null },
   });
   record('leaveTypes', 3);
 
@@ -2684,8 +2716,8 @@ async function seedAll(userId: string): Promise<void> {
   const allocRows: Prisma.LeaveAllocationCreateManyInput[] = [];
   for (const empId of [employeeIds[0], employeeIds[1], employeeIds[2]]) {
     allocRows.push(
-      { userId, employeeUserId: empId, leaveTypeId: annualLeave.id, year: yr, allocatedDays: D(20), carriedOverDays: D(2) },
-      { userId, employeeUserId: empId, leaveTypeId: sickLeave.id, year: yr, allocatedDays: D(10), carriedOverDays: D(0) },
+      { tenantId, employeeUserId: empId, leaveTypeId: annualLeave.id, year: yr, allocatedDays: D(20), carriedOverDays: D(2) },
+      { tenantId, employeeUserId: empId, leaveTypeId: sickLeave.id, year: yr, allocatedDays: D(10), carriedOverDays: D(0) },
     );
   }
   await prisma.leaveAllocation.createMany({ data: allocRows });
@@ -2704,7 +2736,7 @@ async function seedAll(userId: string): Promise<void> {
   const lr1 = buildLeaveDays(isoDate(lr1Start), isoDate(lr1End), { holidays: holidayKeys });
   const leaveReq1 = await prisma.leaveRequest.create({
     data: {
-      userId,
+      tenantId,
       employeeUserId: employeeIds[1],
       leaveTypeId: annualLeave.id,
       startDate: lr1Start,
@@ -2712,10 +2744,11 @@ async function seedAll(userId: string): Promise<void> {
       status: 'APPROVED',
       reason: 'Family vacation',
       totalDays: D(lr1.totalDays),
-      approvedById: userId,
+      approvedById: tenantId,
       approvedAt: weekDay(7),
       days: {
         create: lr1.days.map((d) => ({
+          tenantId: tenantId,
           date: utcDate(
             Number(d.date.slice(0, 4)),
             Number(d.date.slice(5, 7)),
@@ -2737,7 +2770,7 @@ async function seedAll(userId: string): Promise<void> {
   const lr2 = buildLeaveDays(isoDate(lr2Start), isoDate(lr2End), { holidays: holidayKeys });
   await prisma.leaveRequest.create({
     data: {
-      userId,
+      tenantId,
       employeeUserId: employeeIds[2],
       leaveTypeId: sickLeave.id,
       startDate: lr2Start,
@@ -2747,6 +2780,7 @@ async function seedAll(userId: string): Promise<void> {
       totalDays: D(lr2.totalDays),
       days: {
         create: lr2.days.map((d) => ({
+          tenantId: tenantId,
           date: utcDate(
             Number(d.date.slice(0, 4)),
             Number(d.date.slice(5, 7)),
@@ -2768,9 +2802,9 @@ async function seedAll(userId: string): Promise<void> {
   // -------------------------------------------------------------------------
   // Transaction-category catalog — seed INLINE for the demo tenant so banking
   // explain/reconcile dropdowns are populated without relying on a reboot.
-  // Runs AFTER applyPack (role mappings exist). Idempotent on (userId, code).
+  // Runs AFTER applyPack (role mappings exist). Idempotent on (tenantId, code).
   // -------------------------------------------------------------------------
-  const catResult = await seedTransactionCategoriesForUser(userId);
+  const catResult = await seedTransactionCategoriesForUser(tenantId);
   record('transactionCategories', catResult.created + catResult.migrated);
 
   console.log('  ...seed complete');
@@ -2788,12 +2822,12 @@ async function main(): Promise<void> {
     );
   }
 
-  const userId = adminUser.id;
-  console.log(`Full demo seed for userId=${userId} (${DEMO_EMAIL})`);
+  const tenantId = adminUser.id;
+  console.log(`Full demo seed for tenantId=${tenantId} (${DEMO_EMAIL})`);
   console.log('-'.repeat(60));
 
-  await wipe(userId);
-  await seedAll(userId);
+  await wipe(tenantId);
+  await seedAll(tenantId);
 
   console.log('-'.repeat(60));
   console.log('Demo data summary:');

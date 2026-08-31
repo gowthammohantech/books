@@ -10,7 +10,7 @@ interface PersistedLine {
   costCenterId: string | null; projectId: string | null;
 }
 interface JournalEntryWithLines {
-  id: string; userId: string; entryDate: Date;
+  id: string; tenantId: string; entryDate: Date;
   sourceType: string | null; sourceId: string | null; event: string | null;
   reversedById: string | null;
   reversals: { id: string }[];
@@ -34,7 +34,7 @@ export async function post(tx: LedgerTx, input: PostingInput): Promise<{ id: str
   // 1. Idempotency (common path)
   const existing = await tx.journalEntry.findFirst({
     where: {
-      userId: input.userId, sourceType: input.sourceType,
+      tenantId: input.tenantId, sourceType: input.sourceType,
       sourceId: input.sourceId, event: input.event, isDeleted: false,
     },
   });
@@ -43,7 +43,7 @@ export async function post(tx: LedgerTx, input: PostingInput): Promise<{ id: str
   // 2. Period lock
   const locked = await tx.accountingPeriod.findFirst({
     where: {
-      userId: input.userId, isLocked: true,
+      tenantId: input.tenantId, isLocked: true,
       startDate: { lte: input.date }, endDate: { gte: input.date },
     },
   });
@@ -52,7 +52,7 @@ export async function post(tx: LedgerTx, input: PostingInput): Promise<{ id: str
   }
 
   // 3. Build balanced lines
-  const resolve = await loadResolver(tx, input.userId);
+  const resolve = await loadResolver(tx, input.tenantId);
   const lines = buildLines(input, resolve);
 
   // 4. Persist entry + lines; handle DB-level unique-violation race gracefully
@@ -69,7 +69,7 @@ export async function post(tx: LedgerTx, input: PostingInput): Promise<{ id: str
   try {
     return await tx.journalEntry.create({
       data: {
-        userId: input.userId,
+        tenantId: input.tenantId,
         entryDate: input.date,
         postingDate: input.date,
         description: input.description ?? null,
@@ -87,7 +87,7 @@ export async function post(tx: LedgerTx, input: PostingInput): Promise<{ id: str
       // Another concurrent request won the race — return the now-existing entry
       const raced = await tx.journalEntry.findFirst({
         where: {
-          userId: input.userId, sourceType: input.sourceType,
+          tenantId: input.tenantId, sourceType: input.sourceType,
           sourceId: input.sourceId, event: input.event, isDeleted: false,
         },
       });
@@ -109,7 +109,7 @@ export async function reverse(tx: LedgerTx, entryId: string): Promise<{ id: stri
   // Period lock — check against the original entry's date
   const locked = await tx.accountingPeriod.findFirst({
     where: {
-      userId: original.userId, isLocked: true,
+      tenantId: original.tenantId, isLocked: true,
       startDate: { lte: original.entryDate }, endDate: { gte: original.entryDate },
     },
   });
@@ -130,7 +130,7 @@ export async function reverse(tx: LedgerTx, entryId: string): Promise<{ id: stri
 
   return tx.journalEntry.create({
     data: {
-      userId: original.userId,
+      tenantId: original.tenantId,
       entryDate: original.entryDate,
       postingDate: original.entryDate,
       description: `Reversal of ${entryId}`,

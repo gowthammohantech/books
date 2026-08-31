@@ -47,10 +47,10 @@ const createChains: ValidationChain[] = [
     .isLength({ min: 2, max: 50 })
     .withMessage('Name must be between 2 and 50 characters')
     .custom(async (value: string, { req }) => {
-      const userId = getUserId(req as Request);
-      if (!userId) throw new Error('Unauthorized');
+      const tenantId = getUserId(req as Request);
+      if (!tenantId) throw new Error('Unauthorized');
       const existing = await prisma.taxRate.findFirst({
-        where: { userId, isDeleted: false, name: { equals: value, mode: 'insensitive' } },
+        where: { tenantId, isDeleted: false, name: { equals: value, mode: 'insensitive' } },
         select: { id: true },
       });
       if (existing) throw new Error('A tax rate with this name already exists');
@@ -111,12 +111,12 @@ const updateChains: ValidationChain[] = [
     .isLength({ min: 2, max: 50 })
     .withMessage('Name must be between 2 and 50 characters')
     .custom(async (value: string, { req }) => {
-      const userId = getUserId(req as Request);
-      if (!userId) throw new Error('Unauthorized');
+      const tenantId = getUserId(req as Request);
+      if (!tenantId) throw new Error('Unauthorized');
       const id = (req.params as { id?: string })?.id;
       const existing = await prisma.taxRate.findFirst({
         where: {
-          userId,
+          tenantId,
           isDeleted: false,
           name: { equals: value, mode: 'insensitive' },
           NOT: id ? { id } : undefined,

@@ -58,7 +58,7 @@ export class MockProvider implements AiProvider {
   async *chatStream(
     _messages: ChatMessage[],
     _tools: ToolDef[],
-    _ctx: { userId: string },
+    _ctx: { tenantId: string },
   ): AsyncIterable<ChatStreamEvent> {
     // Deterministic sequence matching plan H.3 step 6: a tool_call, the
     // tool_result it would produce, a streamed token answer, then done.

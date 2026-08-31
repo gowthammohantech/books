@@ -48,7 +48,7 @@ vi.mock('../utils/mailer', () => ({ sendMail: vi.fn() }));
 
 vi.mock('../lib/prisma', () => {
   const tx: Record<string, unknown> = {
-    product: { findUnique: mocks.productFindUnique },
+    product: { findFirst: mocks.productFindUnique },
     supplierPayment: { aggregate: mocks.supplierPaymentAggregate },
     purchase: { update: mocks.purchaseUpdate },
     customFieldValue: { deleteMany: vi.fn(), createMany: vi.fn() },
@@ -67,7 +67,7 @@ import { updatePurchase } from '../controllers/Admin/Purchases/purchaseControlle
 
 const EXISTING = {
   id: 'pur-1',
-  userId: TENANT_ID,
+  tenantId: TENANT_ID,
   isDeleted: false,
   approvalStatus: 'APPROVED',
   status: 'pending',

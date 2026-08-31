@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import {
   tenantScope,
-  requireUserId,
+  requireTenantId,
   UnauthorizedError,
 } from '../lib/tenantScope';
 
@@ -50,7 +50,7 @@ function toHistoryArray(raw: Prisma.JsonValue | null | undefined): HistoryEntry[
 
 export async function getInventoryStockSummary(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       search = '',
       startDate,
@@ -66,12 +66,13 @@ export async function getInventoryStockSummary(req: Request, res: Response): Pro
     };
 
     // Base inventory filter, scoped to the tenant's own stock records.
-    const where: Prisma.InventoryWhereInput = { userId, isDeleted: false };
+    const where: Prisma.InventoryWhereInput = { tenantId, isDeleted: false };
 
     // Search by product name or sku/code
     if (search) {
       const matchingProducts = await prisma.product.findMany({
         where: {
+          tenantId,
           OR: [
             { name: { contains: search, mode: 'insensitive' } },
             { code: { contains: search, mode: 'insensitive' } },
@@ -237,7 +238,7 @@ export async function getInventoryStockSummary(req: Request, res: Response): Pro
 
 export async function getInventoryReport(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -272,7 +273,7 @@ export async function getInventoryReport(req: Request, res: Response): Promise<v
 
     // Tenant-scoped: only report on stock this tenant actually holds.
     const inventoryFilter: Prisma.InventoryWhereInput = {
-      userId,
+      tenantId,
       isDeleted: false,
       product: productFilter,
     };
@@ -385,7 +386,7 @@ export async function getInventoryReport(req: Request, res: Response): Promise<v
 
 export async function getBestSellerReport(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -430,7 +431,7 @@ export async function getBestSellerReport(req: Request, res: Response): Promise<
     // Tenant-scoped: only this tenant's inventory rows, joined to the shared
     // Product catalog via the product relation.
     const inventoryFilter: Prisma.InventoryWhereInput = {
-      userId,
+      tenantId,
       isDeleted: false,
       product: productFilter,
     };
@@ -598,7 +599,7 @@ export async function getBestSellerReport(req: Request, res: Response): Promise<
 
 export async function getLowStockReport(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -632,7 +633,7 @@ export async function getLowStockReport(req: Request, res: Response): Promise<vo
     // Tenant-scoped: only this tenant's inventory rows, joined to the shared
     // Product catalog via the product relation.
     const allInventoryRows = await prisma.inventory.findMany({
-      where: { userId, isDeleted: false, product: productFilter },
+      where: { tenantId, isDeleted: false, product: productFilter },
       include: {
         product: {
           include: {
@@ -723,7 +724,7 @@ export async function getLowStockReport(req: Request, res: Response): Promise<vo
 
 export async function getOutStockReport(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -757,7 +758,7 @@ export async function getOutStockReport(req: Request, res: Response): Promise<vo
     // Tenant-scoped: only this tenant's inventory rows, joined to the shared
     // Product catalog via the product relation.
     const allInventoryRows = await prisma.inventory.findMany({
-      where: { userId, isDeleted: false, product: productFilter },
+      where: { tenantId, isDeleted: false, product: productFilter },
       include: {
         product: {
           include: {
@@ -842,7 +843,7 @@ export async function getOutStockReport(req: Request, res: Response): Promise<vo
 
 export async function getStockHistoryReport(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -889,7 +890,7 @@ export async function getStockHistoryReport(req: Request, res: Response): Promis
       end: Date,
     ): Promise<{ stock_in: number; stock_out: number; adjustment: number }> => {
       const rows = await prisma.inventory.findMany({
-        where: { userId, isDeleted: false },
+        where: { tenantId, isDeleted: false },
         select: { inventory_history: true },
       });
       const totals: { stock_in: number; stock_out: number; adjustment: number } = {
@@ -932,7 +933,7 @@ export async function getStockHistoryReport(req: Request, res: Response): Promis
 
     // Build inventory list with per-product history sums (filtered by created date)
     const inventoryWhere: Prisma.InventoryWhereInput = {
-      userId,
+      tenantId,
       isDeleted: false,
       createdAt: { gte: startFilter, lte: endFilter },
     };

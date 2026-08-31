@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../../lib/prisma';
 import {
   tenantScope,
-  requireUserId,
+  requireTenantId,
   UnauthorizedError,
 } from '../../../lib/tenantScope';
 
@@ -70,6 +70,7 @@ export async function listInventory(req: Request, res: Response): Promise<void> 
     if (search) {
       const matchingProducts = await prisma.product.findMany({
         where: {
+          ...scope,
           OR: [
             { name: { contains: search, mode: 'insensitive' } },
             { code: { contains: search, mode: 'insensitive' } },
@@ -209,7 +210,7 @@ export async function getInventoryHistory(req: Request, res: Response): Promise<
         : Promise.resolve([] as { id: string; firstName: string; lastName: string | null; email: string }[]),
       unitIds.length > 0
         ? prisma.unit.findMany({
-            where: { id: { in: unitIds } },
+            where: { tenantId: requireTenantId(req), id: { in: unitIds } },
             select: { id: true, unit_name: true },
           })
         : Promise.resolve([] as { id: string; unit_name: string }[]),
@@ -294,7 +295,7 @@ export async function getInventoryHistory(req: Request, res: Response): Promise<
 
 export async function updateStock(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { productId, quantity, type, notes } = req.body as {
       productId?: string;
       quantity?: number;
@@ -320,13 +321,13 @@ export async function updateStock(req: Request, res: Response): Promise<void> {
     const stockType = type as StockUpdateType;
 
     const result = await prisma.$transaction(async (tx: Tx) => {
-      const product = await tx.product.findUnique({ where: { id: productId } });
+      const product = await tx.product.findFirst({ where: { id: productId, tenantId } });
       if (!product) {
         return { error: { status: 404, body: { success: false, message: 'Product not found' } } } as const;
       }
 
       const existing = await tx.inventory.findFirst({
-        where: { productId, userId, isDeleted: false },
+        where: { productId, tenantId, isDeleted: false },
       });
 
       const previousQuantity = existing?.quantity ?? 0;
@@ -364,7 +365,7 @@ export async function updateStock(req: Request, res: Response): Promise<void> {
         adjustment: adjustmentValue,
         referenceId: null,
         referenceType: 'adjustment',
-        createdBy: userId,
+        createdBy: tenantId,
         createdAt: nowIso,
         updatedAt: nowIso,
       };
@@ -378,7 +379,7 @@ export async function updateStock(req: Request, res: Response): Promise<void> {
           data: {
             productId,
             quantity: newQuantity,
-            userId,
+            tenantId,
             inventory_history: [historyEntry] as unknown as Prisma.InputJsonValue,
             notes: '',
           },

@@ -8,7 +8,8 @@
 import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
-import { requireUserId, requireActingUserId, UnauthorizedError } from '../lib/tenantScope';
+import { resolveDefaultCurrencyCode } from '../lib/defaultCurrency';
+import { requireTenantId, requireActingUserId, UnauthorizedError } from '../lib/tenantScope';
 import { handleLedgerError } from '../lib/httpErrors';
 import { post, type LedgerTx } from '../lib/ledger/postingEngine';
 import { voidDocument, type PostingTx } from '../lib/ledger/ledgerPosting';
@@ -24,17 +25,6 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
   return false;
 }
 
-// C.1: resolve the company default currency code (ISO string). Mirrors the
-// same helper already duplicated across every contact-scoped money controller
-// in this codebase (customerController, debitNoteController, etc.).
-async function resolveDefaultCurrencyCode(): Promise<string | null> {
-  const defaultCurrency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return defaultCurrency?.code ?? null;
-}
-
 interface GrantBody {
   amount?: unknown;
   reason?: unknown;
@@ -47,7 +37,7 @@ interface VoidBody {
 /** POST /admin/contacts/:id/credits — grant a positive credit to a contact. */
 export async function grantAccountCredit(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actingUserId = requireActingUserId(req);
     const contactId = req.params.id as string;
     const body = (req.body ?? {}) as GrantBody;
@@ -60,7 +50,7 @@ export async function grantAccountCredit(req: Request, res: Response): Promise<v
     const reason = typeof body.reason === 'string' && body.reason.trim() !== '' ? body.reason : null;
 
     const contact = await prisma.contact.findFirst({
-      where: { id: contactId, userId, isDeleted: false },
+      where: { id: contactId, tenantId, isDeleted: false },
       select: { id: true, currencyCode: true },
     });
     if (!contact) {
@@ -68,14 +58,14 @@ export async function grantAccountCredit(req: Request, res: Response): Promise<v
       return;
     }
 
-    const currencyCode = contact.currencyCode ?? (await resolveDefaultCurrencyCode());
+    const currencyCode = contact.currencyCode ?? (await resolveDefaultCurrencyCode(requireTenantId(req)));
     const amountDecimal = new Prisma.Decimal(amount);
     const now = new Date();
 
     const result = await prisma.$transaction(async (tx: Tx) => {
       const entry = await tx.accountCreditEntry.create({
         data: {
-          userId,
+          tenantId,
           contactId,
           type: 'GRANT',
           amount: amountDecimal,
@@ -86,7 +76,7 @@ export async function grantAccountCredit(req: Request, res: Response): Promise<v
       });
 
       await post(tx as unknown as LedgerTx, {
-        userId,
+        tenantId,
         sourceType: 'AccountCreditEntry',
         sourceId: entry.id,
         event: 'grant',
@@ -99,7 +89,7 @@ export async function grantAccountCredit(req: Request, res: Response): Promise<v
         ],
       });
 
-      const balance = await getAccountCreditBalance(tx as unknown as AccountCreditBalanceDb, { userId, contactId });
+      const balance = await getAccountCreditBalance(tx as unknown as AccountCreditBalanceDb, { tenantId, contactId });
       return { entry, balance };
     });
 
@@ -121,7 +111,7 @@ export async function grantAccountCredit(req: Request, res: Response): Promise<v
 /** DELETE /admin/contacts/:id/credits/:entryId — void an un-redeemed grant. */
 export async function voidAccountCredit(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actingUserId = requireActingUserId(req);
     const contactId = req.params.id as string;
     const entryId = req.params.entryId as string;
@@ -129,7 +119,7 @@ export async function voidAccountCredit(req: Request, res: Response): Promise<vo
     const voidReason = typeof body.reason === 'string' && body.reason.trim() !== '' ? body.reason : null;
 
     const entry = await prisma.accountCreditEntry.findFirst({
-      where: { id: entryId, userId, contactId },
+      where: { id: entryId, tenantId, contactId },
     });
     if (!entry || entry.type !== 'GRANT' || entry.isVoided) {
       res.status(404).json({ success: false, message: 'Account credit grant not found.' });
@@ -138,7 +128,7 @@ export async function voidAccountCredit(req: Request, res: Response): Promise<vo
 
     // Guard against negative balance: if more has already been redeemed than
     // would remain after removing this grant, refuse the void outright.
-    const currentBalance = await getAccountCreditBalance(prisma as unknown as AccountCreditBalanceDb, { userId, contactId });
+    const currentBalance = await getAccountCreditBalance(prisma as unknown as AccountCreditBalanceDb, { tenantId, contactId });
     const balanceAfterVoid = currentBalance.minus(entry.amount);
     if (balanceAfterVoid.lessThan(0)) {
       res.status(400).json({
@@ -149,12 +139,12 @@ export async function voidAccountCredit(req: Request, res: Response): Promise<vo
     }
 
     const result = await prisma.$transaction(async (tx: Tx) => {
-      await voidDocument(tx as unknown as PostingTx, { userId, sourceType: 'AccountCreditEntry', sourceId: entry.id, event: 'grant' });
+      await voidDocument(tx as unknown as PostingTx, { tenantId, sourceType: 'AccountCreditEntry', sourceId: entry.id, event: 'grant' });
       await tx.accountCreditEntry.update({
         where: { id: entry.id },
         data: { isVoided: true, voidedById: actingUserId, voidedAt: new Date(), voidReason },
       });
-      const balance = await getAccountCreditBalance(tx as unknown as AccountCreditBalanceDb, { userId, contactId });
+      const balance = await getAccountCreditBalance(tx as unknown as AccountCreditBalanceDb, { tenantId, contactId });
       return { balance };
     });
 

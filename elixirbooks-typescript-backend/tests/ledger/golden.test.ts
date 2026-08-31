@@ -47,7 +47,7 @@ async function runScenario(countryCode: string) {
 
   // Step 1: Receive inventory (cost 60, no tax)
   await postPurchaseReceived(tx, {
-    userId: USER,
+    tenantId: USER,
     purchaseId: `pu-${countryCode}`,
     date: DATE,
     total: '60',
@@ -58,7 +58,7 @@ async function runScenario(countryCode: string) {
 
   // Step 2: Pay supplier in full (Bank)
   await postSupplierPayment(tx, {
-    userId: USER,
+    tenantId: USER,
     purchaseId: `pu-${countryCode}`,
     paymentId: `sp-${countryCode}`,
     date: DATE,
@@ -68,7 +68,7 @@ async function runScenario(countryCode: string) {
 
   // Step 3: Issue invoice (revenue 100, tax 18, total 118)
   await postInvoiceIssued(tx, {
-    userId: USER,
+    tenantId: USER,
     invoiceId: `inv-${countryCode}`,
     date: DATE,
     total: '118',
@@ -77,7 +77,7 @@ async function runScenario(countryCode: string) {
 
   // Step 4: Recognize COGS at purchase cost
   await postSaleCogs(tx, {
-    userId: USER,
+    tenantId: USER,
     invoiceId: `inv-${countryCode}`,
     date: DATE,
     cost: '60',
@@ -85,7 +85,7 @@ async function runScenario(countryCode: string) {
 
   // Step 5: Collect payment in full (Bank)
   await postInvoicePayment(tx, {
-    userId: USER,
+    tenantId: USER,
     invoiceId: `inv-${countryCode}`,
     paymentId: `ip-${countryCode}`,
     date: DATE,
@@ -177,8 +177,8 @@ describe('golden — realized FX (foreign invoice paid at a higher rate)', () =>
   async function run() {
     const pack = getPack('IN')!; // functional INR
     const { tx, balances } = buildHarness(pack);
-    await postInvoiceIssued(tx, { userId: USER, invoiceId: 'fx1', date: DATE, total: '118', tax: '18', currencyCode: 'USD', exchangeRate: '80' });
-    await postInvoicePayment(tx, { userId: USER, invoiceId: 'fx1', paymentId: 'fxp1', date: new Date('2026-06-20'), amount: '118', currencyCode: 'USD', paymentRate: '82', documentRate: '80' });
+    await postInvoiceIssued(tx, { tenantId: USER, invoiceId: 'fx1', date: DATE, total: '118', tax: '18', currencyCode: 'USD', exchangeRate: '80' });
+    await postInvoicePayment(tx, { tenantId: USER, invoiceId: 'fx1', paymentId: 'fxp1', date: new Date('2026-06-20'), amount: '118', currencyCode: 'USD', paymentRate: '82', documentRate: '80' });
     return { tb: trialBalanceFrom(balances()), bs: balanceSheetFrom(balances()), b: balances() };
   }
 

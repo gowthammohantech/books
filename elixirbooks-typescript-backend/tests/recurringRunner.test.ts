@@ -42,7 +42,7 @@ import {
 function makeSchedule(over: Partial<ScheduleTemplate> = {}): ScheduleTemplate {
   return {
     id: 'sch-1',
-    userId: 'user-1',
+    tenantId: 'user-1',
     contactId: 'contact-1',
     currencyCode: 'INR',
     taxTreatment: null,
@@ -90,7 +90,7 @@ function makeTx(opts: TxOpts = {}) {
       }),
     },
     product: {
-      findUnique: vi.fn(async () => ({ item_type: opts.productType ?? 'Product' })),
+      findFirst: vi.fn(async () => ({ item_type: opts.productType ?? 'Product' })),
     },
     inventory: {
       findFirst: vi.fn(async () =>
@@ -151,7 +151,7 @@ describe('generateInvoiceFromSchedule', () => {
     expect(postSaleCogs.mock.calls[0][1]).toMatchObject({ cost: '0' });
   });
 
-  it('falls back to userId for billFrom when schedule.billFrom is null', async () => {
+  it('falls back to tenantId for billFrom when schedule.billFrom is null', async () => {
     const { tx, createdData } = makeTx();
     await generateInvoiceFromSchedule(tx, makeSchedule({ billFrom: null }), new Date());
     expect(createdData[0].billFrom).toBe('user-1');

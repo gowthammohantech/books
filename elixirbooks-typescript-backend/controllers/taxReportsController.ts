@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { getGstSummary } from '../lib/financialQueries';
 
 function defaultMonthRange(req: Request): { fromDate: Date; toDate: Date } {
@@ -75,10 +75,10 @@ interface CreditNoteGstTotals extends GstKindTotals {
  * credit note reverses the output GST originally charged, so the period's net
  * outward tax must subtract it or the filing over-states tax owed.
  */
-async function creditNoteGstTotals(userId: string, fromDate: Date, toDate: Date): Promise<CreditNoteGstTotals> {
+async function creditNoteGstTotals(tenantId: string, fromDate: Date, toDate: Date): Promise<CreditNoteGstTotals> {
   const creditNotes = await prisma.creditNote.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       status: { not: 'CANCELLED' },
       creditNoteDate: { gte: fromDate, lte: toDate },
@@ -102,12 +102,12 @@ async function creditNoteGstTotals(userId: string, fromDate: Date, toDate: Date)
  */
 export async function taxSummary(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { fromDate, toDate } = defaultMonthRange(req);
 
     // Shared with the AI co-pilot's get_gst_summary tool via
     // lib/financialQueries so the human report and the AI answer agree.
-    const gst = await getGstSummary(userId, fromDate, toDate);
+    const gst = await getGstSummary(tenantId, fromDate, toDate);
 
     res.json({
       success: true,
@@ -135,12 +135,12 @@ export async function taxSummary(req: Request, res: Response): Promise<void> {
  */
 export async function gstr1(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { fromDate, toDate } = defaultMonthRange(req);
 
     const invoices = await prisma.invoice.findMany({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         invoiceType: 'INVOICE',
         invoiceDate: { gte: fromDate, lte: toDate },
@@ -222,7 +222,7 @@ export async function gstr1(req: Request, res: Response): Promise<void> {
     // period's net output tax + taxable value are correct. The B2B/B2C rows
     // remain gross of credit notes (there is no CDNR line section in this
     // response shape); the summary is the filing-relevant net-of-CN figure.
-    const cn = await creditNoteGstTotals(userId, fromDate, toDate);
+    const cn = await creditNoteGstTotals(tenantId, fromDate, toDate);
     totalTaxableValue -= cn.taxableValue;
     totalCgst -= cn.cgst;
     totalSgst -= cn.sgst;
@@ -266,13 +266,13 @@ export async function gstr1(req: Request, res: Response): Promise<void> {
  */
 export async function gstr3b(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { fromDate, toDate } = defaultMonthRange(req);
 
     // Outward: from invoices
     const invoices = await prisma.invoice.findMany({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         invoiceType: 'INVOICE',
         invoiceDate: { gte: fromDate, lte: toDate },
@@ -303,7 +303,7 @@ export async function gstr3b(req: Request, res: Response): Promise<void> {
 
     // Net non-cancelled credit notes (CDNR) out of outward supplies, matching
     // GSTR-1's net-of-CN summary so the two filings reconcile.
-    const cn = await creditNoteGstTotals(userId, fromDate, toDate);
+    const cn = await creditNoteGstTotals(tenantId, fromDate, toDate);
     outwardTaxable -= cn.taxableValue;
     outwardCgst -= cn.cgst;
     outwardSgst -= cn.sgst;
@@ -312,7 +312,7 @@ export async function gstr3b(req: Request, res: Response): Promise<void> {
 
     // Inward (ITC eligible): from purchases
     const purchases = await prisma.purchase.findMany({
-      where: { userId, isDeleted: false, purchaseDate: { gte: fromDate, lte: toDate } },
+      where: { tenantId, isDeleted: false, purchaseDate: { gte: fromDate, lte: toDate } },
       select: { items: true, taxableAmount: true, totalTax: true },
     });
     let inwardTaxable = 0, inwardCgst = 0, inwardSgst = 0, inwardIgst = 0, inwardCess = 0;

@@ -35,7 +35,8 @@
 import cron from 'node-cron';
 import type { Reminder, ReminderEvent, ReminderTiming } from '@prisma/client';
 
-import { prisma } from './lib/prisma';
+import { prisma, prismaUnscoped } from './lib/prisma';
+import { runAsTenant } from './lib/tenantContext';
 import { sendReminderEmail } from './lib/reminderMailer';
 
 const ENABLED = (process.env.INVOICE_REMINDER_CRON_ENABLED ?? '1') !== '0';
@@ -87,27 +88,29 @@ interface RunSummary {
   failed: number;
 }
 
-export async function runReminderCron(scopeUserId?: string): Promise<RunSummary> {
+export async function runReminderCron(scopeTenantId?: string): Promise<RunSummary> {
   console.log(
     `[invoiceReminderCron] Tick at ${new Date().toISOString()}${
-      scopeUserId ? ` (scoped to user ${scopeUserId})` : ' (global)'
+      scopeTenantId ? ` (scoped to tenant ${scopeTenantId})` : ' (all tenants)'
     }`,
   );
   const summary: RunSummary = { reminders: 0, matched: 0, sent: 0, failed: 0 };
   const today = new Date();
 
   try {
-    const reminders = await prisma.reminder.findMany({
+    // CROSS-TENANT BY DESIGN: "every reminder due tonight" spans the whole
+    // install and belongs to no single workspace, so this one query runs
+    // unscoped. Everything downstream of it runs inside runAsTenant.
+    const reminders = await prismaUnscoped.reminder.findMany({
       where: {
         type: { in: ['automatic', 'automatic_Purchase'] },
         isEnabled: true,
         status: 'active',
-        // HTTP-triggered runs (Wave-1 final review, Important finding) must
-        // scope to the caller — same ownership boundary as sendManualReminder
-        // (reminder.createdBy === requireUserId(req)). Only the scheduled
-        // 9am tick below calls this with no argument, keeping that run
-        // global exactly as before.
-        ...(scopeUserId ? { createdBy: scopeUserId } : {}),
+        // An HTTP-triggered run scopes to the CALLER'S WORKSPACE. This used to
+        // filter `createdBy`, an ACTOR column, which meant an admin triggering
+        // the run only fired the reminders they had personally created and
+        // silently skipped their colleagues'.
+        ...(scopeTenantId ? { tenantId: scopeTenantId } : {}),
       },
     });
 
@@ -118,7 +121,10 @@ export async function runReminderCron(scopeUserId?: string): Promise<RunSummary>
     summary.reminders = reminders.length;
 
     for (const reminder of reminders) {
-      await processReminder(reminder, today, summary);
+      // Each reminder is processed AS ITS OWN TENANT: the invoice lookup, the
+      // mailer's company-settings read and the lastSent write all scope
+      // themselves from this context.
+      await runAsTenant(reminder.tenantId, () => processReminder(reminder, today, summary));
     }
 
     console.log(
@@ -143,7 +149,11 @@ async function processReminder(reminder: Reminder, today: Date, summary: RunSumm
 
     const invoices = await prisma.invoice.findMany({
       where: {
-        userId: reminder.createdBy,
+        // The reminder's own workspace. This read `reminder.createdBy` — an
+        // ACTOR column — so a reminder created by a staff member matched
+        // invoices belonging to a "tenant" that was really a person, and on a
+        // multi-tenant install would have matched nothing at all.
+        tenantId: reminder.tenantId,
         status: { in: [...DUE_INVOICE_STATUSES] },
         isDeleted: false,
       },

@@ -29,7 +29,7 @@ function makeInventoryRow(qty = 10, qoh = '10', avg = '5') {
   return {
     id: 'inv-1',
     productId: 'prod-1',
-    userId: 'user-1',
+    tenantId: 'user-1',
     quantity: qty,
     quantityOnHand: D(qoh),
     avgCost: D(avg),
@@ -53,7 +53,7 @@ function makeTx(opts: {
     createdRows,
     updatedRows,
     product: {
-      findUnique: vi.fn().mockResolvedValue(
+      findFirst: vi.fn().mockResolvedValue(
         opts.productValuationMethod !== undefined
           ? { valuationMethod: opts.productValuationMethod }
           : { valuationMethod: null },
@@ -102,7 +102,7 @@ describe('applyStockAdjustment — stock_in (positive delta)', () => {
 
     await applyStockAdjustment(tx as never, {
       productId: 'prod-1',
-      userId: 'user-1',
+      tenantId: 'user-1',
       qtyDelta: 5,
       type: 'stock_in',
       referenceType: 'purchase',
@@ -154,7 +154,7 @@ describe('applyStockAdjustment — stock_out (negative delta)', () => {
 
     await applyStockAdjustment(tx as never, {
       productId: 'prod-1',
-      userId: 'user-1',
+      tenantId: 'user-1',
       qtyDelta: -3,
       type: 'stock_out',
       referenceType: 'invoice',
@@ -197,7 +197,7 @@ describe('applyStockAdjustment — auto-create missing row', () => {
 
     await applyStockAdjustment(tx as never, {
       productId: 'prod-new',
-      userId: 'user-1',
+      tenantId: 'user-1',
       qtyDelta: 5,
       type: 'stock_in',
       referenceType: 'purchase',
@@ -211,7 +211,7 @@ describe('applyStockAdjustment — auto-create missing row', () => {
 
     const created = tx.createdRows[0] as Record<string, unknown>;
     expect(created['productId']).toBe('prod-new');
-    expect(created['userId']).toBe('user-1');
+    expect(created['tenantId']).toBe('user-1');
     expect(created['quantity']).toBe(5);
     const history = created['inventory_history'] as Array<Record<string, unknown>>;
     expect(history).toHaveLength(1);
@@ -228,7 +228,7 @@ describe('applyStockAdjustment — auto-create missing row', () => {
 
     await applyStockAdjustment(tx as never, {
       productId: 'prod-new',
-      userId: 'user-1',
+      tenantId: 'user-1',
       qtyDelta: -3,
       type: 'stock_out',
       referenceType: 'invoice',
@@ -255,7 +255,7 @@ describe('applyStockAdjustment — history entry shape', () => {
 
     await applyStockAdjustment(tx as never, {
       productId: 'prod-1',
-      userId: 'user-1',
+      tenantId: 'user-1',
       qtyDelta: 2,
       type: 'stock_in',
       referenceType: 'return_',
@@ -287,7 +287,7 @@ describe('applyStockAdjustment — history entry shape', () => {
 
     await applyStockAdjustment(tx as never, {
       productId: 'prod-1',
-      userId: 'user-1',
+      tenantId: 'user-1',
       qtyDelta: 3,
       type: 'stock_in',
       referenceType: 'purchase',
@@ -311,7 +311,7 @@ describe('applyStockAdjustment — history entry shape', () => {
 
     await applyStockAdjustment(tx as never, {
       productId: 'prod-1',
-      userId: 'user-1',
+      tenantId: 'user-1',
       qtyDelta: 5,
       type: 'stock_in',
       referenceType: 'purchase',
@@ -342,7 +342,7 @@ describe('applyStockAdjustment — adjustment type', () => {
 
     await applyStockAdjustment(tx as never, {
       productId: 'prod-1',
-      userId: 'user-1',
+      tenantId: 'user-1',
       qtyDelta: 3,
       type: 'adjustment',
       referenceType: 'adjustment',
@@ -369,7 +369,7 @@ describe('applyStockAdjustment — FIFO receipt', () => {
 
     await applyStockAdjustment(tx as never, {
       productId: 'prod-1',
-      userId: 'user-1',
+      tenantId: 'user-1',
       qtyDelta: 5,
       type: 'stock_in',
       referenceType: 'purchase',
@@ -403,7 +403,7 @@ describe('applyStockAdjustment — FIFO receipt', () => {
 
     await applyStockAdjustment(tx as never, {
       productId: 'prod-new',
-      userId: 'user-1',
+      tenantId: 'user-1',
       qtyDelta: 7,
       type: 'stock_in',
       referenceType: 'purchase',
@@ -433,7 +433,7 @@ describe('applyStockAdjustment — FIFO issue', () => {
 
     await applyStockAdjustment(tx as never, {
       productId: 'prod-1',
-      userId: 'user-1',
+      tenantId: 'user-1',
       qtyDelta: -3,
       type: 'stock_out',
       referenceType: 'invoice',
@@ -472,7 +472,7 @@ describe('applyStockAdjustment — return_ restock at book cost (WAC stable)', (
 
     await applyStockAdjustment(tx as never, {
       productId: 'prod-1',
-      userId: 'user-1',
+      tenantId: 'user-1',
       qtyDelta: 2,
       type: 'stock_in',
       referenceType: 'return_',

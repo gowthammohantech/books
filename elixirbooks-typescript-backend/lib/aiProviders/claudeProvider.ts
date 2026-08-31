@@ -142,7 +142,7 @@ export class ClaudeProvider implements AiProvider {
   async *chatStream(
     messages: ChatMessage[],
     tools: ToolDef[],
-    _ctx: { userId: string },
+    _ctx: { tenantId: string },
   ): AsyncIterable<ChatStreamEvent> {
     const anthropicMessages = toAnthropicMessages(messages);
     const anthropicTools: Anthropic.Tool[] = tools.map((t) => ({
@@ -215,7 +215,7 @@ export class ClaudeProvider implements AiProvider {
   chatStreamContinue(
     messages: ChatMessage[],
     tools: ToolDef[],
-    ctx: { userId: string },
+    ctx: { tenantId: string },
   ): AsyncIterable<ChatStreamEvent> {
     return this.chatStream(messages, tools, ctx);
   }

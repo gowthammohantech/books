@@ -10,7 +10,7 @@
  *           - SUM(amount WHERE type='REDEMPTION' AND isVoided=false)
  *
  * The balance is NEVER stored — always derived from AccountCreditEntry rows,
- * scoped to (userId, contactId). These tests mock the aggregate() calls
+ * scoped to (tenantId, contactId). These tests mock the aggregate() calls
  * directly (no real DB) and assert the arithmetic + voided-row exclusion via
  * the `where` clauses passed to aggregate().
  */
@@ -34,41 +34,41 @@ function makeDb(grantSum: number | null, redemptionSum: number | null) {
 describe('getAccountCreditBalance', () => {
   it('sums grants when there are no redemptions', async () => {
     const { db } = makeDb(500, null);
-    const balance = await getAccountCreditBalance(db, { userId: TENANT_ID, contactId: CONTACT_ID });
+    const balance = await getAccountCreditBalance(db, { tenantId: TENANT_ID, contactId: CONTACT_ID });
     expect(balance.toString()).toBe('500');
   });
 
   it('subtracts redemptions from grants', async () => {
     const { db } = makeDb(500, 200);
-    const balance = await getAccountCreditBalance(db, { userId: TENANT_ID, contactId: CONTACT_ID });
+    const balance = await getAccountCreditBalance(db, { tenantId: TENANT_ID, contactId: CONTACT_ID });
     expect(balance.toString()).toBe('300');
   });
 
   it('returns zero when there are no grants or redemptions at all', async () => {
     const { db } = makeDb(null, null);
-    const balance = await getAccountCreditBalance(db, { userId: TENANT_ID, contactId: CONTACT_ID });
+    const balance = await getAccountCreditBalance(db, { tenantId: TENANT_ID, contactId: CONTACT_ID });
     expect(balance.toString()).toBe('0');
   });
 
   it('fully redeemed credit nets to zero', async () => {
     const { db } = makeDb(500, 500);
-    const balance = await getAccountCreditBalance(db, { userId: TENANT_ID, contactId: CONTACT_ID });
+    const balance = await getAccountCreditBalance(db, { tenantId: TENANT_ID, contactId: CONTACT_ID });
     expect(balance.toString()).toBe('0');
   });
 
-  it('scopes both aggregate queries by userId, contactId, and isVoided:false (voided rows excluded)', async () => {
+  it('scopes both aggregate queries by tenantId, contactId, and isVoided:false (voided rows excluded)', async () => {
     const { db, aggregate } = makeDb(500, 100);
-    await getAccountCreditBalance(db, { userId: TENANT_ID, contactId: CONTACT_ID });
+    await getAccountCreditBalance(db, { tenantId: TENANT_ID, contactId: CONTACT_ID });
 
     expect(aggregate).toHaveBeenCalledTimes(2);
     expect(aggregate).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId: TENANT_ID, contactId: CONTACT_ID, type: 'GRANT', isVoided: false },
+        where: { tenantId: TENANT_ID, contactId: CONTACT_ID, type: 'GRANT', isVoided: false },
       }),
     );
     expect(aggregate).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId: TENANT_ID, contactId: CONTACT_ID, type: 'REDEMPTION', isVoided: false },
+        where: { tenantId: TENANT_ID, contactId: CONTACT_ID, type: 'REDEMPTION', isVoided: false },
       }),
     );
   });

@@ -126,7 +126,7 @@ describe('resolveExpenseFxRate — loadRate hit', () => {
     expect(db.findManySpy).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          userId: USER,
+          tenantId: USER,
           fromCurrency: 'EUR',
           toCurrency: 'INR',
         }),

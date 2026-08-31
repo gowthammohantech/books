@@ -69,12 +69,12 @@ type OutstandingDb = Pick<Prisma.TransactionClient, 'invoicePayment' | 'creditNo
 /**
  * Fetch an invoice's settled amounts: non-voided payments and non-deleted credit
  * notes. The credit-note query mirrors agingController EXACTLY
- * (`{ userId, isDeleted:false, invoiceId }`) so both screens net the same set.
+ * (`{ tenantId, isDeleted:false, invoiceId }`) so both screens net the same set.
  */
 export async function getInvoiceSettlement(
   db: OutstandingDb,
   invoiceId: string,
-  userId: string,
+  tenantId: string,
 ): Promise<{ totalPaid: Prisma.Decimal; creditNoted: Prisma.Decimal }> {
   const [paymentAgg, creditNotes] = await Promise.all([
     db.invoicePayment.aggregate({
@@ -82,7 +82,7 @@ export async function getInvoiceSettlement(
       _sum: { amount: true },
     }),
     db.creditNote.findMany({
-      where: { userId, isDeleted: false, invoiceId },
+      where: { tenantId, isDeleted: false, invoiceId },
       select: { invoiceId: true, totalAmount: true },
     }),
   ]);
@@ -101,16 +101,16 @@ export async function getInvoiceSettlement(
 export async function recomputeInvoiceStatus(
   db: OutstandingDb,
   invoiceId: string,
-  userId: string,
+  tenantId: string,
 ): Promise<InvoiceStatusResult | null> {
   const invoice = await db.invoice.findFirst({
-    where: { id: invoiceId, userId },
+    where: { id: invoiceId, tenantId },
     select: { id: true, TotalAmount: true, status: true },
   });
   if (!invoice) return null;
   if (invoice.status === 'CANCELLED') return null;
 
-  const { totalPaid, creditNoted } = await getInvoiceSettlement(db, invoiceId, userId);
+  const { totalPaid, creditNoted } = await getInvoiceSettlement(db, invoiceId, tenantId);
   const derived = deriveInvoiceStatus(invoice.TotalAmount, totalPaid, creditNoted, invoice.status);
   if (derived.status !== invoice.status) {
     await db.invoice.update({ where: { id: invoiceId }, data: { status: derived.status } });
