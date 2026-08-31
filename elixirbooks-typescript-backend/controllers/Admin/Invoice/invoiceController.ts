@@ -256,16 +256,17 @@ function normaliseItems(raw: unknown, headerCostCenterId?: string | null): Incom
 
 async function generateNextInvoiceNumber(
   tx: Tx,
+  tenantId: string,
   invoiceType: 'INVOICE' | 'PROFORMA' = 'INVOICE',
-  opts?: { tenantId?: string; costCenterId?: string | null },
+  opts?: { costCenterId?: string | null },
 ): Promise<string> {
   // Per-profit-centre series first: a centre with its own `numberPrefix` issues
   // SAL-000001 / ACAD-000001 from its own counter. Returns null when the
   // document has no centre, or its centre has no prefix — then we fall through
   // to the install-wide sequence below, unchanged.
-  if (opts?.tenantId && opts.costCenterId) {
+  if (opts?.costCenterId) {
     const centreNumber = await nextCentreDocumentNumber(tx as never, {
-      tenantId: opts.tenantId,
+      tenantId,
       costCenterId: opts.costCenterId,
       model: tx.invoice as never,
       field: 'invoiceNumber',
@@ -275,12 +276,14 @@ async function generateNextInvoiceNumber(
 
   const settingKey = invoiceType === 'PROFORMA' ? 'proformaPrefix' : 'invoicePrefix';
   const fallbackPrefix = invoiceType === 'PROFORMA' ? 'PRO-' : 'INV-';
-  const prefixSetting = await tx.generalSetting.findUnique({ where: { key: settingKey } });
+  const prefixSetting = await tx.generalSetting.findUnique({
+    where: { tenantId_key: { tenantId, key: settingKey } },
+  });
   let prefix = fallbackPrefix;
   if (prefixSetting && typeof prefixSetting.value === 'string') prefix = prefixSetting.value;
 
   const lastInvoice = await tx.invoice.findFirst({
-    where: { invoiceNumber: { not: null }, invoiceType },
+    where: { tenantId, invoiceNumber: { not: null }, invoiceType },
     orderBy: { createdAt: 'desc' },
     select: { invoiceNumber: true },
   });
@@ -299,7 +302,9 @@ async function generateNextInvoiceNumber(
   let configuredNext = 0;
   const isInvoice = invoiceType === 'INVOICE';
   if (isInvoice) {
-    const nextSetting = await tx.generalSetting.findUnique({ where: { key: 'nextInvoiceNo' } });
+    const nextSetting = await tx.generalSetting.findUnique({
+      where: { tenantId_key: { tenantId, key: 'nextInvoiceNo' } },
+    });
     if (nextSetting) {
       const raw = nextSetting.value;
       const digits =
@@ -314,9 +319,9 @@ async function generateNextInvoiceNumber(
   // increments on every successful invoice creation (mirrors the settings modal).
   if (isInvoice) {
     await tx.generalSetting.upsert({
-      where: { key: 'nextInvoiceNo' },
+      where: { tenantId_key: { tenantId, key: 'nextInvoiceNo' } },
       update: { value: String(next + 1) },
-      create: { key: 'nextInvoiceNo', value: String(next + 1), groupSlug: 'invoice' },
+      create: { tenantId, key: 'nextInvoiceNo', value: String(next + 1), groupSlug: 'invoice' },
     });
   }
 
@@ -346,6 +351,7 @@ async function insertCustomFieldValues(
     const fileMatch = files.find((file) => file.fieldname === `customField_${f.fieldId}`);
     if (fileMatch) value = fileMatch.path;
     return {
+      tenantId,
       customFieldId: f.fieldId,
       module: 'invoice',
       recordId: invoiceId,
@@ -509,8 +515,8 @@ async function postInvoiceLedger(
     for (const item of resolvedItems) {
       const productId = item.productId ?? item.id;
       if (!productId || !item.qty) continue;
-      const product = await tx.product.findUnique({
-        where: { id: productId },
+      const product = await tx.product.findFirst({
+        where: { id: productId, tenantId },
         select: { item_type: true },
       });
       if (product?.item_type === 'Service') continue;
@@ -596,7 +602,9 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
     // Only applies to INVOICE (PROFORMA has its own prefix/sequence, not configurable here).
     let invoiceNumberType = 'auto';
     if (invoiceType === 'INVOICE') {
-      const typeSetting = await prisma.generalSetting.findUnique({ where: { key: 'invoiceNumberType' } });
+      const typeSetting = await prisma.generalSetting.findUnique({
+        where: { tenantId_key: { tenantId, key: 'invoiceNumberType' } },
+      });
       if (typeSetting?.value && typeof typeSetting.value === 'string') invoiceNumberType = typeSetting.value;
     }
     const manualMode = invoiceType === 'INVOICE' && invoiceNumberType === 'manual';
@@ -614,7 +622,13 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
     }
 
     if (incomingNumber) {
-      const dup = await prisma.invoice.findFirst({ where: { invoiceNumber: incomingNumber } });
+      // Scoped: invoiceNumber is unique per (tenantId, invoiceNumber) since
+      // P4/M11, so a number another company holds is free here. Without the
+      // filter a manual-mode user would get a spurious 400 for a number their
+      // own company has never issued.
+      const dup = await prisma.invoice.findFirst({
+        where: { tenantId, invoiceNumber: incomingNumber },
+      });
       if (dup) {
         res.status(400).json({
           success: false,
@@ -829,7 +843,9 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
         data: {
           invoiceNumber:
             incomingNumber ??
-            (await generateNextInvoiceNumber(tx, invoiceType, { tenantId, costCenterId: docCostCenterId })),
+            (await generateNextInvoiceNumber(tx, tenantId, invoiceType, {
+              costCenterId: docCostCenterId,
+            })),
           invoiceType,
           // Contact-aware party: write contactId (new path) or customerId (legacy).
           // When contactId is set, customerId/billTo are null (both nullable post-migration).
@@ -897,8 +913,8 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
           if (!productId || !item.qty) continue;
 
           // Belt-and-braces: even if an Inventory row exists, never deduct for Service products.
-          const product = await tx.product.findUnique({
-            where: { id: productId },
+          const product = await tx.product.findFirst({
+            where: { id: productId, tenantId },
             select: { item_type: true, valuationMethod: true },
           });
           if (product?.item_type === 'Service') continue;
@@ -1544,8 +1560,8 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
           if (!productId) continue;
           const qty = asNumber(item.qty, 0);
           if (!qty) continue;
-          const product = await tx.product.findUnique({
-            where: { id: productId },
+          const product = await tx.product.findFirst({
+            where: { id: productId, tenantId },
             select: { item_type: true },
           });
           if (product?.item_type === 'Service') continue;
@@ -1577,8 +1593,8 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
           const productId = item.productId ?? item.id;
           if (!productId) continue;
           if (!item.qty) continue;
-          const product = await tx.product.findUnique({
-            where: { id: productId },
+          const product = await tx.product.findFirst({
+            where: { id: productId, tenantId },
             select: { item_type: true },
           });
           if (product?.item_type === 'Service') continue;
@@ -1630,7 +1646,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
 
       // Custom fields: delete then reinsert
       await tx.customFieldValue.deleteMany({
-        where: { module: 'invoice', recordId: invoiceId },
+        where: { tenantId, module: 'invoice', recordId: invoiceId },
       });
       const files = Array.isArray(req.files) ? (req.files as Express.Multer.File[]) : [];
       await insertCustomFieldValues(tx, invoiceId, tenantId, body.customFields, files);
@@ -1708,12 +1724,12 @@ export async function getInvoice(req: Request, res: Response): Promise<void> {
     let tableFields: { id: string; fieldSlug: string; labelName: string }[] = [];
     if (invoiceModule) {
       tableFields = await prisma.customField.findMany({
-        where: { moduleId: invoiceModule.id, deletedAt: null },
+        where: { tenantId, moduleId: invoiceModule.id, deletedAt: null },
         select: { id: true, fieldSlug: true, labelName: true },
       });
     }
     const customValues = await prisma.customFieldValue.findMany({
-      where: { module: 'invoice', recordId: invoice.id },
+      where: { tenantId, module: 'invoice', recordId: invoice.id },
     });
     const customValueMap: Record<string, Prisma.JsonValue> = {};
     customValues.forEach((v) => {
@@ -1932,12 +1948,12 @@ async function buildInvoiceList(
   let tableFields: { id: string; fieldSlug: string; labelName: string }[] = [];
   if (invoiceModule) {
     tableFields = await prisma.customField.findMany({
-      where: { moduleId: invoiceModule.id, showInTable: true, deletedAt: null },
+      where: { tenantId: scope.tenantId, moduleId: invoiceModule.id, showInTable: true, deletedAt: null },
       select: { id: true, fieldSlug: true, labelName: true },
     });
   }
   const customValues = await prisma.customFieldValue.findMany({
-    where: { module: 'invoice', recordId: { in: invoiceIds } },
+    where: { tenantId: scope.tenantId, module: 'invoice', recordId: { in: invoiceIds } },
   });
   const customValueMap: Record<string, Record<string, Prisma.JsonValue>> = {};
   for (const v of customValues) {
@@ -1977,9 +1993,9 @@ async function buildInvoiceList(
         )
       : new Map<string, Prisma.Decimal>();
 
-  // Next invoice number
+  // Next invoice number — this tenant's series, not the install's.
   const lastInvoice = await prisma.invoice.findFirst({
-    where: { invoiceNumber: { not: null } },
+    where: { tenantId: scope.tenantId, invoiceNumber: { not: null } },
     orderBy: { createdAt: 'desc' },
     select: { invoiceNumber: true },
   });
@@ -2128,10 +2144,11 @@ export async function getChildInvoices(req: Request, res: Response): Promise<voi
 
 export async function getNextInvoiceNumber(_req: Request, res: Response): Promise<void> {
   try {
+    const tenantId = requireTenantId(_req);
     const [prefixSetting, typeSetting, nextSetting] = await Promise.all([
-      prisma.generalSetting.findUnique({ where: { key: 'invoicePrefix' } }),
-      prisma.generalSetting.findUnique({ where: { key: 'invoiceNumberType' } }),
-      prisma.generalSetting.findUnique({ where: { key: 'nextInvoiceNo' } }),
+      prisma.generalSetting.findUnique({ where: { tenantId_key: { tenantId, key: 'invoicePrefix' } } }),
+      prisma.generalSetting.findUnique({ where: { tenantId_key: { tenantId, key: 'invoiceNumberType' } } }),
+      prisma.generalSetting.findUnique({ where: { tenantId_key: { tenantId, key: 'nextInvoiceNo' } } }),
     ]);
 
     // #21: unify fallback prefix with the create path ('INV-', not 'INV_').
@@ -2151,7 +2168,6 @@ export async function getNextInvoiceNumber(_req: Request, res: Response): Promis
         ? _req.query.costCenterId
         : null;
     if (previewCostCenterId) {
-      const tenantId = requireTenantId(_req);
       const centreNumber = await peekCentreDocumentNumber(prisma as never, {
         tenantId,
         costCenterId: previewCostCenterId,
@@ -2166,7 +2182,7 @@ export async function getNextInvoiceNumber(_req: Request, res: Response): Promis
     }
 
     const lastInvoice = await prisma.invoice.findFirst({
-      where: { invoiceNumber: { not: null }, invoiceType: 'INVOICE' },
+      where: { tenantId, invoiceNumber: { not: null }, invoiceType: 'INVOICE' },
       orderBy: { createdAt: 'desc' },
       select: { invoiceNumber: true },
     });
@@ -2479,8 +2495,8 @@ export async function deleteInvoice(req: Request, res: Response): Promise<void> 
           const qty = asNumber(item.qty, 0);
           if (!qty) continue;
           // Skip Service products — they were never deducted on create.
-          const product = await tx.product.findUnique({
-            where: { id: productId },
+          const product = await tx.product.findFirst({
+            where: { id: productId, tenantId },
             select: { item_type: true },
           });
           if (product?.item_type === 'Service') continue;
@@ -2592,7 +2608,9 @@ export async function convertQuotationToInvoice(req: Request, res: Response): Pr
       if (!quotation) throw new Error('Quotation not found');
       if (quotation.invoiceId) throw new Error('Quotation already converted to invoice');
 
-      const invoiceNumber = await generateNextInvoiceNumber(tx, 'INVOICE', { tenantId, costCenterId: quotation.costCenterId });
+      const invoiceNumber = await generateNextInvoiceNumber(tx, tenantId, 'INVOICE', {
+        costCenterId: quotation.costCenterId,
+      });
 
       // Ledger: DRAFT invoices are not posted to the GL until issued (see createInvoice gate).
       const created = await tx.invoice.create({
@@ -2963,7 +2981,9 @@ export async function convertProformaToInvoice(req: Request, res: Response): Pro
       }
 
       // Clone the source into a new INVOICE row
-      const newNumber = await generateNextInvoiceNumber(tx, 'INVOICE', { tenantId, costCenterId: source.costCenterId });
+      const newNumber = await generateNextInvoiceNumber(tx, tenantId, 'INVOICE', {
+        costCenterId: source.costCenterId,
+      });
 
       // Strip fields that should NOT be cloned (id/timestamps/number)
       const {
@@ -3009,8 +3029,8 @@ export async function convertProformaToInvoice(req: Request, res: Response): Pro
       for (const item of items) {
         const productId = item.productId ?? item.id;
         if (!productId || !item.qty) continue;
-        const product = await tx.product.findUnique({
-          where: { id: productId },
+        const product = await tx.product.findFirst({
+          where: { id: productId, tenantId },
           select: { item_type: true, valuationMethod: true },
         });
         if (product?.item_type === 'Service') continue;

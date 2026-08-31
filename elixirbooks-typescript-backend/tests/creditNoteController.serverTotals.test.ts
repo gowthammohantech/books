@@ -46,7 +46,7 @@ vi.mock('../lib/prisma', () => {
     user: { findUnique: m.userFindUnique },
     taxGroup: { findMany: m.taxGroupFindMany },
     creditNote: { findFirst: m.cnFindFirst, create: m.cnCreate, update: m.cnUpdate, findMany: m.cnFindMany },
-    product: { findUnique: m.productFindUnique },
+    product: { findFirst: m.productFindUnique },
     inventory: { findFirst: m.inventoryFindFirst },
     $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn(db)),
   };

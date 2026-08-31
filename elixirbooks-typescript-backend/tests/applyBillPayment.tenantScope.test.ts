@@ -5,9 +5,9 @@
  * lookup (`generatePaymentId` → `db.supplierPayment.findFirst`) previously
  * scanned `{ paymentId: { not: null } }` with no tenant filter — a
  * cross-tenant sequence bleed (and, since it's the only ownership check on
- * the numbering path, worth pinning down explicitly). SupplierPayment has no
- * direct tenantId column, so scoping goes through the `purchase` relation:
- * `{ paymentId: { not: null }, purchase: { tenantId } }`.
+ * the numbering path, worth pinning down explicitly). It scoped through the
+ * `purchase` relation until P2 gave SupplierPayment its own tenantId column;
+ * the filter is the plain `{ paymentId: { not: null }, tenantId }` now.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { applyBillPayment, type ApplyBillPaymentDb } from '../lib/ledger/applyBillPayment';
@@ -67,7 +67,7 @@ describe('applyBillPayment — payment-numbering tenant scope', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           paymentId: { not: null },
-          purchase: { tenantId: TENANT_ID },
+          tenantId: TENANT_ID,
         }),
       }),
     );

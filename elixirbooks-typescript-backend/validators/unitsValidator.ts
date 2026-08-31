@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { body, validationResult, ValidationChain } from 'express-validator';
 
 import { prisma } from '../lib/prisma';
+import { requireTenantId } from '../lib/tenantScope';
 
 const handleValidationResult: RequestHandler = (
   req: Request,
@@ -39,9 +40,10 @@ const createChains: ValidationChain[] = [
     .withMessage('Unit name must contain only letters and spaces')
     .isLength({ min: 2 })
     .withMessage('Unit name must be at least 2 characters')
-    .custom(async (value: string) => {
+    .custom(async (value: string, { req }) => {
+      const tenantId = requireTenantId(req as Request);
       const existing = await prisma.unit.findFirst({
-        where: { unit_name: { equals: value, mode: 'insensitive' } },
+        where: { tenantId, unit_name: { equals: value, mode: 'insensitive' } },
       });
       if (existing) {
         throw new Error('Unit name already exists');
@@ -75,13 +77,14 @@ const updateChains: ValidationChain[] = [
     .isLength({ min: 2 })
     .withMessage('Unit name must be at least 2 characters')
     .custom(async (value: string | undefined, { req }) => {
+      const tenantId = requireTenantId(req as Request);
       if (typeof value === 'undefined') return true;
 
       const unitId = (req.params as { id?: string })?.id;
       if (!unitId) throw new Error('Unit ID is required for update');
 
       const existing = await prisma.unit.findFirst({
-        where: { unit_name: { equals: value, mode: 'insensitive' } },
+        where: { tenantId, unit_name: { equals: value, mode: 'insensitive' } },
       });
 
       if (existing && existing.id !== unitId) {

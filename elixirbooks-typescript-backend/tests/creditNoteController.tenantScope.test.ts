@@ -53,7 +53,7 @@ vi.mock('../lib/prisma', () => {
       // Task 2: recomputeInvoiceStatus reads applied CNs for the linked invoice.
       findMany: vi.fn().mockResolvedValue([]),
     },
-    product: { findUnique: vi.fn().mockResolvedValue(null) },
+    product: { findFirst: vi.fn().mockResolvedValue(null) },
     inventory: { findFirst: vi.fn().mockResolvedValue(null) },
     // Task 2: CN create/update/delete recompute the linked invoice's due/status.
     invoice: {
@@ -268,17 +268,10 @@ describe('creditNoteController — tenant scoping (P0-2b)', () => {
     );
   });
 
-  it('createCreditNote numbering falls back to the install-wide highest + 1 when the tenant candidate clashes (creditNoteNumber is globally @unique)', async () => {
-    mockTxCreditNoteFindFirst.mockImplementation(
-      async (args: { where: Record<string, unknown> }) => {
-        // Tenant-scoped sequence lookup → fresh tenant, no rows yet.
-        if ('tenantId' in args.where) return null;
-        // Clash check: CN-000001 already held by another tenant.
-        if (args.where.creditNoteNumber === 'CN-000001') return { id: 'cn-other-tenant' };
-        // Install-wide highest lookup.
-        return { creditNoteNumber: 'CN-000099' };
-      },
-    );
+  it('createCreditNote starts a fresh tenant at CN-000001 even when another tenant holds that number', async () => {
+    // See the sibling assertion in debitNoteController.tenantScope: the
+    // install-wide fallback this replaced was deleted with M11.
+    mockTxCreditNoteFindFirst.mockResolvedValue(null);
     const { req, res } = makeReqRes({
       body: { contactId: 'contact-1', invoiceId: 'inv-1', billFrom: 'user-1', items: [] },
     });
@@ -286,7 +279,10 @@ describe('creditNoteController — tenant scoping (P0-2b)', () => {
 
     expect(res.status).toHaveBeenCalledWith(201);
     expect(mockCreditNoteCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ creditNoteNumber: 'CN-000100' }) }),
+      expect.objectContaining({ data: expect.objectContaining({ creditNoteNumber: 'CN-000001' }) }),
     );
+    for (const call of mockTxCreditNoteFindFirst.mock.calls) {
+      expect(call[0].where).toHaveProperty('tenantId', TENANT_ID);
+    }
   });
 });

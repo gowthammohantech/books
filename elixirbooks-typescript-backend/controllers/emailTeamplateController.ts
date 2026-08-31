@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import type { EmailTemplateStatus, NotificationTypeStatus } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
+import { requireTenantId } from '../lib/tenantScope';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
 
 // Same generation scheme as invoiceController.ts's enablePublicLink (64-char hex).
@@ -30,6 +31,7 @@ interface CreateEmailTemplateBody {
 
 export async function createEmailTemplate(req: Request, res: Response): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const body = req.body as CreateEmailTemplateBody;
     const {
       title,
@@ -62,6 +64,7 @@ export async function createEmailTemplate(req: Request, res: Response): Promise<
 
     const emailTemplate = await prisma.emailTemplate.create({
       data: {
+        tenantId,
         title,
         notificationTypeId,
         description,
@@ -76,7 +79,7 @@ export async function createEmailTemplate(req: Request, res: Response): Promise<
     // one is active, deactivate its siblings of the same type.
     if (emailTemplate.status === 'active') {
       await prisma.emailTemplate.updateMany({
-        where: { notificationTypeId, status: 'active', id: { not: emailTemplate.id } },
+        where: { tenantId, notificationTypeId, status: 'active', id: { not: emailTemplate.id } },
         data: { status: 'inactive' },
       });
     }
@@ -108,7 +111,7 @@ export async function listEmailTemplates(req: Request, res: Response): Promise<v
     const pageNum = Number(page);
     const limitNum = Number(limit);
 
-    const where: Prisma.EmailTemplateWhereInput = {};
+    const where: Prisma.EmailTemplateWhereInput = { tenantId: requireTenantId(req) };
 
     if (search) {
       where.OR = [
@@ -191,7 +194,9 @@ export async function updateEmailTemplate(req: Request, res: Response): Promise<
       updates.notificationTypeId = incomingNotificationTypeId;
     }
 
-    const existing = await prisma.emailTemplate.findUnique({ where: { id } });
+    const existing = await prisma.emailTemplate.findFirst({
+      where: { id, tenantId: requireTenantId(req) },
+    });
     if (!existing) {
       res.status(404).json({
         success: false,
@@ -210,6 +215,7 @@ export async function updateEmailTemplate(req: Request, res: Response): Promise<
     if (updatedTemplate.status === 'active') {
       await prisma.emailTemplate.updateMany({
         where: {
+          tenantId: updatedTemplate.tenantId,
           notificationTypeId: updatedTemplate.notificationTypeId,
           status: 'active',
           id: { not: updatedTemplate.id },
@@ -237,7 +243,9 @@ export async function deleteEmailTemplate(req: Request, res: Response): Promise<
   try {
     const { id } = req.params as { id: string };
 
-    const existing = await prisma.emailTemplate.findUnique({ where: { id } });
+    const existing = await prisma.emailTemplate.findFirst({
+      where: { id, tenantId: requireTenantId(req) },
+    });
     if (!existing) {
       res.status(404).json({
         success: false,
@@ -370,9 +378,9 @@ function resolvePublicBaseUrl(companyPublicBaseUrl?: string | null): string {
   return (companyPublicBaseUrl || appBaseUrl()).replace(/\/+$/, '');
 }
 
-async function activeTemplateForSlug(slug: string) {
+async function activeTemplateForSlug(tenantId: string, slug: string) {
   return prisma.emailTemplate.findFirst({
-    where: { status: 'active', notificationType: { slug } },
+    where: { tenantId, status: 'active', notificationType: { slug } },
     orderBy: { updatedAt: 'desc' },
   });
 }
@@ -539,7 +547,7 @@ export async function resolveDocumentTemplate(req: Request, res: Response): Prom
       return;
     }
 
-    const template = await activeTemplateForSlug(slug);
+    const template = await activeTemplateForSlug(requireTenantId(req), slug);
     if (!template) {
       res.status(200).json({ success: true, data: { hasTemplate: false, subject: '', html: '' } });
       return;

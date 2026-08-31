@@ -194,7 +194,11 @@ describe('updateDocumentDefaults', () => {
       create: { key: string; groupSlug: string; value: Record<string, unknown> };
       update: { value: Record<string, unknown> };
     };
-    expect(upsertArgs.where).toEqual({ key: 'document_defaults' });
+    // GeneralSetting.key is unique per tenant now, so the upsert addresses the
+    // composite key rather than the bare one.
+    expect(upsertArgs.where).toEqual({
+      tenantId_key: { tenantId: 'user-123', key: 'document_defaults' },
+    });
     expect(upsertArgs.create.groupSlug).toBe('documents');
     expect(upsertArgs.create.value).toMatchObject({
       defaultCurrencyCode: 'EUR',

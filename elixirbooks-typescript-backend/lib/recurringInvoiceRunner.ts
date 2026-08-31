@@ -72,11 +72,13 @@ export async function runRecurringForInvoice(invoiceId: string): Promise<CloneRe
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const prefixSetting = await tx.generalSetting.findUnique({ where: { key: 'invoicePrefix' } });
+    const prefixSetting = await tx.generalSetting.findUnique({
+      where: { tenantId_key: { tenantId: source.tenantId, key: 'invoicePrefix' } },
+    });
     const prefix =
       prefixSetting && typeof prefixSetting.value === 'string' ? prefixSetting.value : 'INV-';
     const lastInvoice = await tx.invoice.findFirst({
-      where: { invoiceNumber: { not: null }, invoiceType: 'INVOICE' },
+      where: { tenantId: source.tenantId, invoiceNumber: { not: null }, invoiceType: 'INVOICE' },
       orderBy: { createdAt: 'desc' },
       select: { invoiceNumber: true },
     });
@@ -159,8 +161,8 @@ export async function runRecurringForInvoice(invoiceId: string): Promise<CloneRe
         const productId = item.productId ?? item.id;
         const qty = item.qty != null ? Number(item.qty) : 0;
         if (!productId || !qty) continue;
-        const product = await tx.product.findUnique({
-          where: { id: productId },
+        const product = await tx.product.findFirst({
+          where: { id: productId, tenantId: created.tenantId },
           select: { item_type: true },
         });
         if (product?.item_type === 'Service') continue;

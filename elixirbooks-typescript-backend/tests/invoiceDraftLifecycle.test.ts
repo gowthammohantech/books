@@ -81,7 +81,7 @@ vi.mock('../lib/prisma', () => {
     contact: { findFirst: m.contactFindFirst },
     customer: { findFirst: m.customerFindFirst },
     companySettings: { findFirst: m.companySettingsFindFirst },
-    product: { findUnique: m.productFindUnique },
+    product: { findFirst: m.productFindUnique },
     inventory: { findFirst: m.inventoryFindFirst },
     customFieldValue: { createMany: m.customFieldValueCreateMany, deleteMany: m.customFieldValueDeleteMany },
     invoicePayment: { create: m.invoicePaymentCreate, findMany: m.invoicePaymentFindMany, update: m.invoicePaymentUpdate },

@@ -10,7 +10,7 @@
  * Salary & Payroll, Taxes) created on codes in the 9200+ range, deliberately
  * above every canonical country-pack code (which top out at 7000).
  *
- * It then migrates the legacy global `ExpenseCategory` table: for each
+ * It then migrates the tenant's legacy `ExpenseCategory` rows: for each
  * non-deleted category not already represented, a non-system
  * `TransactionCategory` is created (group ADMIN_EXPENSES → PURCHASES account).
  * `ExpenseCategory` is left untouched (read-only legacy table).
@@ -373,11 +373,13 @@ export async function seedTransactionCategoriesForUser(
     created += 1;
   }
 
-  // 4. Migrate legacy ExpenseCategory rows (global, non-deleted) for this
-  //    owner. Each becomes a non-system ADMIN_EXPENSES → PURCHASES category.
+  // 4. Migrate this tenant's legacy ExpenseCategory rows. Each becomes a
+  //    non-system ADMIN_EXPENSES → PURCHASES category. ExpenseCategory was
+  //    install-global until P4, so this read used to pull every company's
+  //    categories into every company's catalog.
   const purchasesAccountId = roleToAccount.get('PURCHASES')!;
   const legacy = await db.expenseCategory.findMany({
-    where: { isDeleted: false },
+    where: { tenantId, isDeleted: false },
     select: { title: true },
   });
   for (const cat of legacy) {

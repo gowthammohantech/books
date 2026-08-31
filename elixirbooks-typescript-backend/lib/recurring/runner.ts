@@ -56,19 +56,25 @@ export type RunnerTx = Pick<PrismaClient, 'invoice' | 'generalSetting' | 'produc
 const MAX_NUMBER_RETRIES = 8;
 
 /**
- * Compute the next sequential invoice number for the tenant-wide INVOICE series.
+ * Compute the next sequential invoice number for this tenant's INVOICE series.
  *
  * Mirrors the legacy prefix scheme (`generalSetting.invoicePrefix` || 'INV-' +
  * zero-padded counter) but is consumed inside a retry loop (see
  * `createInvoiceWithNumber`) so a unique-constraint collision is recovered from
  * rather than crashing — avoiding the legacy read-then-write race.
  */
-async function nextInvoiceNumber(tx: RunnerTx, offset: number): Promise<string> {
-  const prefixSetting = await tx.generalSetting.findUnique({ where: { key: 'invoicePrefix' } });
+async function nextInvoiceNumber(
+  tx: RunnerTx,
+  tenantId: string,
+  offset: number,
+): Promise<string> {
+  const prefixSetting = await tx.generalSetting.findUnique({
+    where: { tenantId_key: { tenantId, key: 'invoicePrefix' } },
+  });
   const prefix =
     prefixSetting && typeof prefixSetting.value === 'string' ? prefixSetting.value : 'INV-';
   const lastInvoice = await tx.invoice.findFirst({
-    where: { invoiceNumber: { not: null }, invoiceType: 'INVOICE' },
+    where: { tenantId, invoiceNumber: { not: null }, invoiceType: 'INVOICE' },
     orderBy: { createdAt: 'desc' },
     select: { invoiceNumber: true },
   });
@@ -115,7 +121,7 @@ async function createInvoiceWithNumber(
   const billFrom = schedule.billFrom ?? schedule.tenantId;
 
   for (let attempt = 0; attempt < MAX_NUMBER_RETRIES; attempt++) {
-    const invoiceNumber = await nextInvoiceNumber(tx, attempt);
+    const invoiceNumber = await nextInvoiceNumber(tx, schedule.tenantId, attempt);
     try {
       const created = await tx.invoice.create({
         data: {
@@ -199,8 +205,8 @@ async function postGeneratedInvoice(
     const qty = item.qty != null ? Number(item.qty) : 0;
     if (!productId || !qty) continue;
 
-    const product = await tx.product.findUnique({
-      where: { id: productId },
+    const product = await tx.product.findFirst({
+      where: { id: productId, tenantId: schedule.tenantId },
       select: { item_type: true },
     });
     // Never deduct stock or accrue COGS for Service products.

@@ -88,7 +88,10 @@ function generatePaymentId(db: ApplyBillPaymentDb, tenantId: string, prefix = 'P
     model: db.supplierPayment as unknown as NumberingModel,
     field: 'paymentId',
     prefix,
-    tenantWhere: { purchase: { tenantId } },
+    // SupplierPayment carries its own tenantId since P2, so the numbering
+    // lookup no longer has to reach the tenant through the parent Purchase.
+    // It also lets the query use SupplierPayment_tenantId_paymentId_key.
+    tenantWhere: { tenantId },
   });
 }
 

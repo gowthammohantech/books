@@ -2,10 +2,11 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
+import { requireTenantId } from '../lib/tenantScope';
 import { insertCustomFieldValues, readCustomFieldValues } from '../lib/customFieldValues';
 
-// Brand is a global lookup table — no tenantId column, so tenantScope() does
-// not apply here.
+// Brand is tenant-owned as of P4: two companies may each have a brand called
+// "Acme", so brand_name is unique per tenant rather than per install.
 
 // Attach an absolute image URL the frontend can render directly. Stored value
 // is just the filename; built from the request host (https behind trust proxy).
@@ -31,11 +32,12 @@ export async function createBrand(req: Request, res: Response): Promise<void> {
     const imageFile = req.file ?? filesArray.find((f) => f.fieldname === 'brand_image');
     const brand_image = imageFile ? imageFile.filename : null;
 
-    const tenantId = (req as Request & { user?: string }).user ?? 'system';
+    const tenantId = requireTenantId(req);
 
     const brand = await prisma.$transaction(async (tx) => {
       const created = await tx.brand.create({
         data: {
+          tenantId,
           brand_name: brand_name as string,
           brand_image,
           status: typeof status === 'string' ? status === 'true' : (status ?? true),
@@ -67,7 +69,7 @@ export async function getAllBrands(req: Request, res: Response): Promise<void> {
     // Build search query — original JS searched brand_name and
     // brand_description. The Prisma schema has no brand_description column,
     // so we only filter on brand_name when a search term is provided.
-    const where: Prisma.BrandWhereInput = {};
+    const where: Prisma.BrandWhereInput = { tenantId: requireTenantId(req) };
     if (search) {
       where.brand_name = { contains: search, mode: 'insensitive' };
     }
@@ -106,13 +108,14 @@ export async function getAllBrands(req: Request, res: Response): Promise<void> {
 export async function getBrandById(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params as { id: string };
-    const brand = await prisma.brand.findUnique({ where: { id } });
+    const brand = await prisma.brand.findFirst({ where: { id, tenantId: requireTenantId(req) } });
     if (!brand) {
       res.status(404).json({ error: 'Brand not found' });
       return;
     }
     const customFields = await readCustomFieldValues(prisma, {
       module: 'brand',
+      tenantId: requireTenantId(req),
       recordId: id,
       moduleSlug: 'brands',
     });
@@ -131,7 +134,7 @@ export async function updateBrand(req: Request, res: Response): Promise<void> {
       status?: boolean | string;
     };
 
-    const existing = await prisma.brand.findUnique({ where: { id } });
+    const existing = await prisma.brand.findFirst({ where: { id, tenantId: requireTenantId(req) } });
     if (!existing) {
       res.status(404).json({ error: 'Brand not found' });
       return;
@@ -141,7 +144,7 @@ export async function updateBrand(req: Request, res: Response): Promise<void> {
     const filesArray = (req.files as Express.Multer.File[] | undefined) ?? [];
     const imageFile = req.file ?? filesArray.find((f) => f.fieldname === 'brand_image');
 
-    const tenantId = (req as Request & { user?: string }).user ?? 'system';
+    const tenantId = requireTenantId(req);
 
     const data: Prisma.BrandUpdateInput = {};
     if (brand_name) data.brand_name = brand_name;
@@ -175,7 +178,7 @@ export async function updateBrand(req: Request, res: Response): Promise<void> {
 export async function deleteBrand(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params as { id: string };
-    const existing = await prisma.brand.findUnique({ where: { id } });
+    const existing = await prisma.brand.findFirst({ where: { id, tenantId: requireTenantId(req) } });
     if (!existing) {
       res.status(404).json({ error: 'Brand not found' });
       return;

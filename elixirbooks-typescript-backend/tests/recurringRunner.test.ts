@@ -90,7 +90,7 @@ function makeTx(opts: TxOpts = {}) {
       }),
     },
     product: {
-      findUnique: vi.fn(async () => ({ item_type: opts.productType ?? 'Product' })),
+      findFirst: vi.fn(async () => ({ item_type: opts.productType ?? 'Product' })),
     },
     inventory: {
       findFirst: vi.fn(async () =>

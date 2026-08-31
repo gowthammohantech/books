@@ -43,7 +43,7 @@ const {
 vi.mock('../lib/prisma', () => {
   const tx = {
     debitNote: { findFirst: mockTxDebitNoteFindFirst, create: mockDebitNoteCreate, update: mockDebitNoteUpdate },
-    product: { findUnique: vi.fn().mockResolvedValue(null) },
+    product: { findFirst: vi.fn().mockResolvedValue(null) },
   };
   return {
     prisma: {
@@ -225,17 +225,13 @@ describe('debitNoteController — tenant scoping (P0-2b)', () => {
     );
   });
 
-  it('createDebitNote numbering falls back to the install-wide highest + 1 when the tenant candidate clashes (debitNoteId is globally @unique)', async () => {
-    mockTxDebitNoteFindFirst.mockImplementation(
-      async (args: { where: Record<string, unknown> }) => {
-        // Tenant-scoped sequence lookup → fresh tenant, no rows yet.
-        if ('tenantId' in args.where) return null;
-        // Clash check: DN-000001 already held by another tenant.
-        if (args.where.debitNoteId === 'DN-000001') return { id: 'dn-other-tenant' };
-        // Install-wide highest lookup.
-        return { debitNoteId: 'DN-000042' };
-      },
-    );
+  it('createDebitNote starts a fresh tenant at DN-000001 even when another tenant holds that number', async () => {
+    // P4/M11 made debitNoteId unique per (tenantId, debitNoteId). Before it,
+    // this tenant was silently skipped forward to DN-000043 to dodge an
+    // install-wide constraint. The mock returns null for the ONLY query the
+    // helper still makes — the tenant-scoped one — and there is no second
+    // query that could observe the other tenant's row.
+    mockTxDebitNoteFindFirst.mockResolvedValue(null);
     const { req, res } = makeReqRes({
       body: { purchaseId: 'purchase-1', billFrom: 'user-1', items: [] },
     });
@@ -243,7 +239,11 @@ describe('debitNoteController — tenant scoping (P0-2b)', () => {
 
     expect(res.status).toHaveBeenCalledWith(201);
     expect(mockDebitNoteCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ debitNoteId: 'DN-000043' }) }),
+      expect.objectContaining({ data: expect.objectContaining({ debitNoteId: 'DN-000001' }) }),
     );
+    // Every numbering read named this tenant.
+    for (const call of mockTxDebitNoteFindFirst.mock.calls) {
+      expect(call[0].where).toHaveProperty('tenantId', TENANT_ID);
+    }
   });
 });

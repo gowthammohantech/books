@@ -142,11 +142,13 @@ export async function createOrUpdateGeneralSetting(req: Request, res: Response):
         continue;
       }
 
-      const existing = await prisma.generalSetting.findUnique({ where: { key } });
+      const existing = await prisma.generalSetting.findUnique({
+        where: { tenantId_key: { tenantId, key } },
+      });
 
       if (existing) {
         await prisma.generalSetting.update({
-          where: { key },
+          where: { tenantId_key: { tenantId, key } },
           data: {
             value: value as Prisma.InputJsonValue,
             groupSlug,
@@ -164,6 +166,7 @@ export async function createOrUpdateGeneralSetting(req: Request, res: Response):
       } else {
         await prisma.generalSetting.create({
           data: {
+            tenantId,
             key,
             value: value as Prisma.InputJsonValue,
             groupSlug,
@@ -202,7 +205,7 @@ export async function listGeneralSettings(req: Request, res: Response): Promise<
   try {
     const { groupSlug } = req.query as { groupSlug?: string };
 
-    const where: Prisma.GeneralSettingWhereInput = {};
+    const where: Prisma.GeneralSettingWhereInput = { tenantId: requireTenantId(req) };
     if (groupSlug) where.groupSlug = groupSlug;
 
     const settings = await prisma.generalSetting.findMany({
@@ -736,7 +739,7 @@ export async function getBasicDetails(req: Request, res: Response): Promise<void
       invoiceNumberTypeSetting,
     ] = await Promise.all([
       prisma.currency.findFirst({
-        where: { isDeleted: false, isDefault: true },
+        where: { tenantId, isDeleted: false, isDefault: true },
       }),
       prisma.companySettings.findUnique({ where: { tenantId } }),
       prisma.localization.findFirst({
@@ -759,8 +762,8 @@ export async function getBasicDetails(req: Request, res: Response): Promise<void
         where: { tenantId },
         orderBy: { createdAt: 'desc' },
       }),
-      prisma.generalSetting.findUnique({ where: { key: 'invoicePrefix' } }),
-      prisma.generalSetting.findUnique({ where: { key: 'invoiceNumberType' } }),
+      prisma.generalSetting.findUnique({ where: { tenantId_key: { tenantId, key: 'invoicePrefix' } } }),
+      prisma.generalSetting.findUnique({ where: { tenantId_key: { tenantId, key: 'invoiceNumberType' } } }),
     ]);
 
     const defaultValues = {
@@ -954,7 +957,7 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
 
     // Validate references (preserve original semantics; throw inside try block).
     const currency = currencyId
-      ? await prisma.currency.findUnique({ where: { id: currencyId } })
+      ? await prisma.currency.findFirst({ where: { id: currencyId, tenantId } })
       : null;
     const timezone = timezoneId
       ? await prisma.timezone.findUnique({ where: { id: timezoneId } })
@@ -1055,7 +1058,7 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
       // Update default currency if needed
       if (currencyId && currency) {
         await tx.currency.updateMany({
-          where: { isDefault: true },
+          where: { tenantId, isDefault: true },
           data: { isDefault: false },
         });
         await tx.currency.update({

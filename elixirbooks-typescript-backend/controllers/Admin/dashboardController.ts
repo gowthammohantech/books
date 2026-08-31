@@ -366,7 +366,7 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
     const productIds = sortedProducts.map(([id]) => id);
     const productRows = productIds.length
       ? await prisma.product.findMany({
-          where: { id: { in: productIds } },
+          where: { tenantId, id: { in: productIds } },
           select: { id: true, name: true },
         })
       : [];

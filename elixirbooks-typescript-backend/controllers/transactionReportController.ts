@@ -60,7 +60,10 @@ interface ProductLite {
   category: { category_name: string } | null;
 }
 
-async function fetchProductMap(items: RawItem[][]): Promise<Record<string, ProductLite>> {
+async function fetchProductMap(
+  items: RawItem[][],
+  tenantId: string,
+): Promise<Record<string, ProductLite>> {
   const ids = new Set<string>();
   for (const list of items) {
     for (const it of list) {
@@ -69,7 +72,7 @@ async function fetchProductMap(items: RawItem[][]): Promise<Record<string, Produ
   }
   if (ids.size === 0) return {};
   const products = await prisma.product.findMany({
-    where: { id: { in: Array.from(ids) } },
+    where: { tenantId, id: { in: Array.from(ids) } },
     select: {
       id: true,
       name: true,
@@ -225,7 +228,7 @@ export async function getInvoiceSalesReport(req: Request, res: Response): Promis
       ...currentInvoices.map((i) => normaliseItems(i.items)),
       ...previousInvoices.map((i) => normaliseItems(i.items)),
       ...allInvoices.map((i) => normaliseItems(i.items)),
-    ]);
+    ], tenantId);
 
     // Pre-fetch payments for all invoices we touch
     const allInvoiceIds = [
@@ -546,7 +549,7 @@ export async function getCreditNoteSalesReport(req: Request, res: Response): Pro
       ...currentNotes.map((n) => normaliseItems(n.items)),
       ...previousNotes.map((n) => normaliseItems(n.items)),
       ...allNotes.map((n) => normaliseItems(n.items)),
-    ]);
+    ], tenantId);
 
     interface CreditProductAgg {
       id: string;
@@ -813,7 +816,7 @@ export async function getPurchaseReport(req: Request, res: Response): Promise<vo
       ...currentPurchases.map((p) => normaliseItems(p.items)),
       ...previousPurchases.map((p) => normaliseItems(p.items)),
       ...allPurchases.map((p) => normaliseItems(p.items)),
-    ]);
+    ], tenantId);
 
     // Pre-fetch all supplier payments
     const purchaseIds = [
@@ -1063,7 +1066,7 @@ export async function getPurchaseOrderReport(req: Request, res: Response): Promi
       ...currentOrders.map((o) => normaliseItems(o.items)),
       ...previousOrders.map((o) => normaliseItems(o.items)),
       ...allOrders.map((o) => normaliseItems(o.items)),
-    ]);
+    ], tenantId);
 
     type OrderRow = (typeof currentOrders)[number];
 
@@ -1284,7 +1287,7 @@ export async function getDebitNoteReport(req: Request, res: Response): Promise<v
       ...currentNotes.map((n) => normaliseItems(n.items)),
       ...previousNotes.map((n) => normaliseItems(n.items)),
       ...allNotesPaginated.map((n) => normaliseItems(n.items)),
-    ]);
+    ], tenantId);
 
     interface DebitVendorAgg {
       id: string;
@@ -1578,7 +1581,7 @@ export async function getQuotationSalesReport(req: Request, res: Response): Prom
       ...currentQuotations.map((q) => normaliseItems(q.items)),
       ...previousQuotations.map((q) => normaliseItems(q.items)),
       ...allQuotations.map((q) => normaliseItems(q.items)),
-    ]);
+    ], tenantId);
 
     type QuotationRow = (typeof currentQuotations)[number];
 

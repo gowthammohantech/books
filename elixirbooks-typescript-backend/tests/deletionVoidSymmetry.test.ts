@@ -81,7 +81,7 @@ vi.mock('../lib/prisma', () => {
     bankTransaction: { create: m.bankTransactionCreate, update: m.bankTransactionUpdate, findFirst: m.bankTransactionFindFirst },
     pettyCash: { findFirst: m.pettyCashFindFirst, update: m.pettyCashUpdate },
     pettyCashTransaction: { create: m.pettyCashTransactionCreate, findFirst: m.pettyCashTransactionFindFirst },
-    product: { findUnique: m.productFindUnique },
+    product: { findFirst: m.productFindUnique },
     inventory: { findFirst: m.inventoryFindFirst },
     paymentMode: { findUnique: m.paymentModeFindUnique },
   };

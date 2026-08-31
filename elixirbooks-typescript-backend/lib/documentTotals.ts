@@ -266,14 +266,14 @@ export function warnOnTotalsDivergence(
 export interface TaxGroupLookupDb {
   taxGroup: {
     findMany: (args: {
-      where: { id: { in: string[] } };
+      where: { tenantId: string; id: { in: string[] } };
       select: { id: true; tax_rates: { select: { rate: true; isActive: true; isDeleted: true } } };
     }) => Promise<Array<{ id: string; tax_rates: Array<{ rate: unknown; isActive?: boolean; isDeleted?: boolean }> }>>;
   };
   /** Optional so legacy narrow test doubles keep working; the real prisma client has it. */
   taxRate?: {
     findMany: (args: {
-      where: { id: { in: string[] } };
+      where: { tenantId: string; id: { in: string[] } };
       select: { id: true; rate: true; isActive: true; isDeleted: true };
     }) => Promise<Array<{ id: string; rate: unknown; isActive?: boolean; isDeleted?: boolean }>>;
   };
@@ -292,6 +292,7 @@ export interface TaxGroupLookupDb {
 export async function resolveItemTaxRates<T extends TotalsItem>(
   db: TaxGroupLookupDb,
   items: T[],
+  tenantId: string,
 ): Promise<T[]> {
   const groupIds = new Set<string>();
   const rateIds = new Set<string>();
@@ -306,13 +307,13 @@ export async function resolveItemTaxRates<T extends TotalsItem>(
   const [groups, rates] = await Promise.all([
     groupIds.size > 0
       ? db.taxGroup.findMany({
-          where: { id: { in: [...groupIds] } },
+          where: { tenantId, id: { in: [...groupIds] } },
           select: { id: true, tax_rates: { select: { rate: true, isActive: true, isDeleted: true } } },
         })
       : Promise.resolve([]),
     rateIds.size > 0 && db.taxRate
       ? db.taxRate.findMany({
-          where: { id: { in: [...rateIds] } },
+          where: { tenantId, id: { in: [...rateIds] } },
           select: { id: true, rate: true, isActive: true, isDeleted: true },
         })
       : Promise.resolve([]),

@@ -42,7 +42,7 @@ vi.mock('../lib/prisma', () => {
     invoice: { findFirst: vi.fn().mockResolvedValue(null), create: mocks.invoiceCreate },
     contact: { findFirst: mocks.contactFindFirst },
     companySettings: { findFirst: mocks.companySettingsFindFirst },
-    product: { findUnique: vi.fn().mockResolvedValue(null) },
+    product: { findFirst: vi.fn().mockResolvedValue(null) },
     inventory: { findFirst: vi.fn().mockResolvedValue(null) },
     customFieldValue: { createMany: vi.fn() },
     paymentMode: { findUnique: mocks.paymentModeFindUnique },

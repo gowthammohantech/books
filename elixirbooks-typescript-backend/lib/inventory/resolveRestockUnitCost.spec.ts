@@ -12,7 +12,7 @@ function makeTx(opts: {
   layerUnitCost?: string | null;
 }) {
   const product = {
-    findUnique: vi.fn().mockResolvedValue({
+    findFirst: vi.fn().mockResolvedValue({
       valuationMethod: opts.valuationMethod ?? null,
       purchase_price: opts.purchasePrice != null ? D(opts.purchasePrice) : null,
     }),

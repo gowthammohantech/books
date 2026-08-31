@@ -13,6 +13,7 @@ import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
 import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
+import { resolveDefaultCurrencyCode } from '../lib/defaultCurrency';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,9 +47,9 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
  * Reads the stored value for key='document_defaults' and returns it as a plain
  * object, or null when the row doesn't exist / the value isn't an object.
  */
-async function fetchStoredDefaults(): Promise<Record<string, unknown> | null> {
+async function fetchStoredDefaults(tenantId: string): Promise<Record<string, unknown> | null> {
   const row = await prisma.generalSetting.findUnique({
-    where: { key: 'document_defaults' },
+    where: { tenantId_key: { tenantId, key: 'document_defaults' } },
     select: { value: true },
   });
   if (!row) return null;
@@ -60,24 +61,14 @@ async function fetchStoredDefaults(): Promise<Record<string, unknown> | null> {
 }
 
 /**
- * Fetches the company's default currency code (first active default currency).
- */
-async function fetchDefaultCurrencyCode(): Promise<string | null> {
-  const currency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return currency?.code ?? null;
-}
-
-/**
  * Merges a stored partial-defaults object with hard-coded fallbacks and the
  * company's default currency, producing the full DocumentDefaults shape.
  */
 async function buildResponse(
   stored: Record<string, unknown> | null,
+  tenantId: string,
 ): Promise<DocumentDefaults> {
-  const currencyFallback = await fetchDefaultCurrencyCode();
+  const currencyFallback = await resolveDefaultCurrencyCode(tenantId);
 
   const signTypeRaw = stored?.defaultSignType;
   const defaultSignType: SignType =
@@ -121,10 +112,10 @@ async function buildResponse(
 
 export async function getDocumentDefaults(req: Request, res: Response): Promise<void> {
   try {
-    requireTenantId(req); // auth check — throws UnauthorizedError if missing
+    const tenantId = requireTenantId(req);
 
-    const stored = await fetchStoredDefaults();
-    const data = await buildResponse(stored);
+    const stored = await fetchStoredDefaults(tenantId);
+    const data = await buildResponse(stored, tenantId);
 
     res.status(200).json({ success: true, data });
   } catch (err) {
@@ -179,7 +170,7 @@ export async function updateDocumentDefaults(req: Request, res: Response): Promi
     }
 
     // Load the existing stored value for merge
-    const existing = await fetchStoredDefaults();
+    const existing = await fetchStoredDefaults(tenantId);
     const merged: Record<string, unknown> = { ...(existing ?? {}) };
 
     // Apply incoming fields — only touch what the caller sent
@@ -203,8 +194,9 @@ export async function updateDocumentDefaults(req: Request, res: Response): Promi
 
     // Upsert into GeneralSetting
     await prisma.generalSetting.upsert({
-      where: { key: 'document_defaults' },
+      where: { tenantId_key: { tenantId, key: 'document_defaults' } },
       create: {
+        tenantId,
         key: 'document_defaults',
         groupSlug: 'documents',
         value: merged as Prisma.InputJsonValue,
@@ -219,7 +211,7 @@ export async function updateDocumentDefaults(req: Request, res: Response): Promi
     });
 
     // Build response from the merged data (same fallback logic for consumers)
-    const data = await buildResponse(merged);
+    const data = await buildResponse(merged, tenantId);
 
     res.status(200).json({ success: true, data });
   } catch (err) {

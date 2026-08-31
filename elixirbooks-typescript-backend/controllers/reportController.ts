@@ -72,6 +72,7 @@ export async function getInventoryStockSummary(req: Request, res: Response): Pro
     if (search) {
       const matchingProducts = await prisma.product.findMany({
         where: {
+          tenantId,
           OR: [
             { name: { contains: search, mode: 'insensitive' } },
             { code: { contains: search, mode: 'insensitive' } },

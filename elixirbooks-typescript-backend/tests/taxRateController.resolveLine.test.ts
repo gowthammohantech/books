@@ -14,7 +14,7 @@ vi.mock('../lib/prisma', () => ({
   prisma: {
     companySettings: { findUnique: mockCompanyFindUnique },
     taxRate: { findFirst: mockTaxRateFindFirst, findMany: mockTaxRateFindMany, create: mockTaxRateCreate },
-    taxGroup: { findUnique: mockTaxGroupFindUnique },
+    taxGroup: { findFirst: mockTaxGroupFindUnique },
     customer: { findFirst: mockCustomerFindFirst },
     supplier: { findFirst: mockSupplierFindFirst },
     state: { findUnique: mockStateFindUnique },

@@ -1032,6 +1032,7 @@ export async function getSuggestions(req: Request, res: Response): Promise<void>
     if (type === 'all' || type === 'product') {
       results.products = await prisma.product.findMany({
         where: {
+          tenantId,
           status: true,
           OR: [
             { name: { contains: q, mode: 'insensitive' } },
@@ -1046,6 +1047,7 @@ export async function getSuggestions(req: Request, res: Response): Promise<void>
     if (type === 'all' || type === 'category') {
       results.expenseCategories = await prisma.expenseCategory.findMany({
         where: {
+          tenantId,
           isDeleted: false,
           status: true,
           title: { contains: q, mode: 'insensitive' },

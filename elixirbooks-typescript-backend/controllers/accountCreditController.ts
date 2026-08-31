@@ -8,6 +8,7 @@
 import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import { resolveDefaultCurrencyCode } from '../lib/defaultCurrency';
 import { requireTenantId, requireActingUserId, UnauthorizedError } from '../lib/tenantScope';
 import { handleLedgerError } from '../lib/httpErrors';
 import { post, type LedgerTx } from '../lib/ledger/postingEngine';
@@ -22,17 +23,6 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
     return true;
   }
   return false;
-}
-
-// C.1: resolve the company default currency code (ISO string). Mirrors the
-// same helper already duplicated across every contact-scoped money controller
-// in this codebase (customerController, debitNoteController, etc.).
-async function resolveDefaultCurrencyCode(): Promise<string | null> {
-  const defaultCurrency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return defaultCurrency?.code ?? null;
 }
 
 interface GrantBody {
@@ -68,7 +58,7 @@ export async function grantAccountCredit(req: Request, res: Response): Promise<v
       return;
     }
 
-    const currencyCode = contact.currencyCode ?? (await resolveDefaultCurrencyCode());
+    const currencyCode = contact.currencyCode ?? (await resolveDefaultCurrencyCode(requireTenantId(req)));
     const amountDecimal = new Prisma.Decimal(amount);
     const now = new Date();
 

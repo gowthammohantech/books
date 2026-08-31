@@ -167,9 +167,9 @@ async function main(): Promise<void> {
       OR: [{ tenantId: { in: demoUserIds } }, { product: { code: { startsWith: 'DEMO-' } } }],
     },
   });
-  const cntProduct = await prisma.product.count({ where: { code: { startsWith: 'DEMO-' } } });
+  const cntProduct = await prisma.product.count({ where: { tenantId: { in: demoUserIds }, code: { startsWith: 'DEMO-' } } });
   const cntTaxRate = await prisma.taxRate.count({ where: { tenantId: { in: demoUserIds } } });
-  const cntExpenseCategory = await prisma.expenseCategory.count({ where: { title: { startsWith: 'Demo ' } } });
+  const cntExpenseCategory = await prisma.expenseCategory.count({ where: { tenantId: { in: demoUserIds }, title: { startsWith: 'Demo ' } } });
 
   // --- Step 10: Vehicles + Reminders + Customers + Suppliers ---
   const cntVehicle = await prisma.vehicle.count({ where: { tenantId: { in: demoUserIds } } });
@@ -457,9 +457,9 @@ async function main(): Promise<void> {
         'Inventory (demo-user)',
         await tx.inventory.deleteMany({ where: { tenantId: { in: demoUserIds } } }),
       );
-      track('Product (DEMO-)', await tx.product.deleteMany({ where: { code: { startsWith: 'DEMO-' } } }));
+      track('Product (DEMO-)', await tx.product.deleteMany({ where: { tenantId: { in: demoUserIds }, code: { startsWith: 'DEMO-' } } }));
       track('TaxRate', await tx.taxRate.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
-      track('ExpenseCategory (Demo )', await tx.expenseCategory.deleteMany({ where: { title: { startsWith: 'Demo ' } } }));
+      track('ExpenseCategory (Demo )', await tx.expenseCategory.deleteMany({ where: { tenantId: { in: demoUserIds }, title: { startsWith: 'Demo ' } } }));
 
       // -----------------------------------------------------------------------
       // Step 10 — Vehicles + Reminders + Customers + Suppliers

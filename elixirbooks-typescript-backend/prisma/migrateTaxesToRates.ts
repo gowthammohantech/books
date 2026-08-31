@@ -115,6 +115,10 @@ async function resolveGroupToRateId(
 export async function migrateTaxesToRates(
   db: MigrateDb = prisma as unknown as MigrateDb,
 ): Promise<{ updated: number; createdRates: number }> {
+  // Cross-tenant by design: this is a one-off backfill over every product on
+  // the install. It stays correct after P4 because a TaxGroup now belongs to
+  // exactly one tenant, so resolving a product's group can only ever reach
+  // that product's own tenant's rates.
   const products = await db.product.findMany({
     where: { taxGroupId: { not: null }, taxRateId: null },
     select: { id: true, taxGroupId: true },

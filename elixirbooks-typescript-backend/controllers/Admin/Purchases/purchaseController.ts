@@ -228,6 +228,7 @@ async function insertCustomFieldValues(
       );
       if (fileMatch) value = fileMatch.path;
       return {
+        tenantId,
         customFieldId: f.fieldId,
         module: 'purchase',
         recordId: purchaseId,
@@ -419,8 +420,8 @@ async function postPurchaseLedger(
   for (const item of items) {
     const productId = item.productId ?? item.id;
     if (!productId) continue;
-    const product = await tx.product.findUnique({
-      where: { id: productId },
+    const product = await tx.product.findFirst({
+      where: { id: productId, tenantId },
       select: { item_type: true },
     });
     const lineAmount = new Prisma.Decimal(asNumber(item.amount, 0));
@@ -1401,7 +1402,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
 
       // Custom field values - reset
       await tx.customFieldValue.deleteMany({
-        where: { module: 'purchase', recordId: upd.id },
+        where: { tenantId, module: 'purchase', recordId: upd.id },
       });
       const files = Array.isArray(req.files)
         ? (req.files as Express.Multer.File[])
@@ -1585,7 +1586,7 @@ export async function getAllPurchases(req: Request, res: Response): Promise<void
     let tableFields: { id: string; fieldSlug: string; labelName: string }[] = [];
     if (purchaseModule) {
       tableFields = await prisma.customField.findMany({
-        where: { moduleId: purchaseModule.id, showInTable: true, deletedAt: null },
+        where: { tenantId: requireTenantId(req), moduleId: purchaseModule.id, showInTable: true, deletedAt: null },
         select: { id: true, fieldSlug: true, labelName: true },
       });
     }
@@ -1593,7 +1594,7 @@ export async function getAllPurchases(req: Request, res: Response): Promise<void
     const customValues =
       purchaseIds.length > 0
         ? await prisma.customFieldValue.findMany({
-            where: { module: 'purchase', recordId: { in: purchaseIds } },
+            where: { tenantId: requireTenantId(req), module: 'purchase', recordId: { in: purchaseIds } },
           })
         : [];
     const customValueMap: Record<string, Record<string, Prisma.JsonValue>> = {};
@@ -2055,11 +2056,11 @@ export async function getPurchaseById(req: Request, res: Response): Promise<void
     const customFieldsObject: Record<string, Prisma.JsonValue | null> = {};
     if (purchaseModule) {
       const fields = await prisma.customField.findMany({
-        where: { moduleId: purchaseModule.id, deletedAt: null },
+        where: { tenantId: requireTenantId(req), moduleId: purchaseModule.id, deletedAt: null },
         select: { id: true, fieldSlug: true, labelName: true },
       });
       const values = await prisma.customFieldValue.findMany({
-        where: { module: 'purchase', recordId: purchase.id },
+        where: { tenantId: requireTenantId(req), module: 'purchase', recordId: purchase.id },
       });
       const valueMap: Record<string, Prisma.JsonValue> = {};
       values.forEach((v) => {
@@ -2084,7 +2085,7 @@ export async function getPurchaseById(req: Request, res: Response): Promise<void
     const taxGroups =
       taxGroupIds.length > 0
         ? await prisma.taxGroup.findMany({
-            where: { id: { in: taxGroupIds } },
+            where: { tenantId: requireTenantId(req), id: { in: taxGroupIds } },
             select: { id: true, tax_name: true },
           })
         : [];
@@ -2493,7 +2494,7 @@ export async function updatePurchaseStatus(req: Request, res: Response): Promise
     const products =
       productIds.length > 0
         ? await prisma.product.findMany({
-            where: { id: { in: productIds } },
+            where: { tenantId: requireTenantId(req), id: { in: productIds } },
             select: { id: true, name: true, code: true, description: true },
           })
         : [];

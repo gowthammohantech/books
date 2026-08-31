@@ -4,10 +4,14 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
-// Currency is a shared lookup table that records which user created each row
-// (Currency.createdBy → User). Reads are NOT scoped to the calling user — the
-// legacy controller served every non-deleted currency to anyone. Writes use
-// `requireTenantId(req)` to populate `createdBy`.
+// Currency became tenant-owned in P4. It is NOT a shared catalog with a
+// per-tenant enable list: this controller lets a company edit `name`, `code`
+// and `symbol` outright, which a shared row could not support without one
+// company's rename showing up in another's. Each tenant therefore owns its
+// own rows, stocked at signup by prisma/seedTenant.ts.
+//
+// `createdBy` remains an ACTOR column pointing at User; it is left as it was
+// (see the P3 note on actor/tenant conflation) and is not what scopes reads.
 //
 // Note: The legacy JS controller also mutated `User.defaultCurrency` whenever
 // the default currency changed. The Prisma `User` model has no such column
@@ -24,7 +28,8 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
 
 export async function createCurrency(req: Request, res: Response): Promise<void> {
   try {
-    const createdBy = requireTenantId(req);
+    const tenantId = requireTenantId(req);
+    const createdBy = tenantId;
 
     const { name, code, symbol, status = true, isDefault = false } = req.body as {
       name?: string;
@@ -35,7 +40,7 @@ export async function createCurrency(req: Request, res: Response): Promise<void>
     };
 
     const existingCode = await prisma.currency.findFirst({
-      where: { code: code as string, isDeleted: false },
+      where: { tenantId, code: code as string, isDeleted: false },
     });
     if (existingCode) {
       res.status(409).json({
@@ -46,7 +51,7 @@ export async function createCurrency(req: Request, res: Response): Promise<void>
     }
 
     const existingName = await prisma.currency.findFirst({
-      where: { name: name as string, isDeleted: false },
+      where: { tenantId, name: name as string, isDeleted: false },
     });
     if (existingName) {
       res.status(409).json({
@@ -58,6 +63,7 @@ export async function createCurrency(req: Request, res: Response): Promise<void>
 
     const currency = await prisma.currency.create({
       data: {
+        tenantId,
         name: name as string,
         code: code as string,
         symbol: symbol as string,
@@ -98,7 +104,10 @@ export async function getAllCurrencies(req: Request, res: Response): Promise<voi
     const search = ((req.query.search as string) ?? '').trim();
     const status = req.query.status as string | undefined;
 
-    const where: Prisma.CurrencyWhereInput = { isDeleted: false };
+    const where: Prisma.CurrencyWhereInput = {
+      tenantId: requireTenantId(req),
+      isDeleted: false,
+    };
 
     if (status !== undefined) {
       where.status = status === 'true';
@@ -167,6 +176,7 @@ export async function getAllCurrencies(req: Request, res: Response): Promise<voi
 
 export async function updateCurrency(req: Request, res: Response): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const { name, code, symbol, status, isDefault } = req.body as {
       name?: string;
@@ -197,7 +207,7 @@ export async function updateCurrency(req: Request, res: Response): Promise<void>
     }
 
     const currency = await prisma.currency.findFirst({
-      where: { id, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!currency) {
       res.status(404).json({
@@ -214,6 +224,7 @@ export async function updateCurrency(req: Request, res: Response): Promise<void>
     if (code && code !== currency.code) {
       const existingCode = await prisma.currency.findFirst({
         where: {
+          tenantId,
           code,
           isDeleted: false,
           NOT: { id },
@@ -228,6 +239,7 @@ export async function updateCurrency(req: Request, res: Response): Promise<void>
     if (name && name !== currency.name) {
       const existingName = await prisma.currency.findFirst({
         where: {
+          tenantId,
           name,
           isDeleted: false,
           NOT: { id },
@@ -285,10 +297,11 @@ export async function updateCurrency(req: Request, res: Response): Promise<void>
 
 export async function deleteCurrency(req: Request, res: Response): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const currency = await prisma.currency.findFirst({
-      where: { id, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!currency) {
       res.status(404).json({
@@ -309,6 +322,7 @@ export async function deleteCurrency(req: Request, res: Response): Promise<void>
       if (currency.isDefault) {
         const newDefault = await tx.currency.findFirst({
           where: {
+            tenantId,
             isDeleted: false,
             NOT: { id },
           },
@@ -340,6 +354,7 @@ export async function deleteCurrency(req: Request, res: Response): Promise<void>
 
 export async function updateCurrencyStatus(req: Request, res: Response): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const { status, isDefault } = req.body as {
       status?: boolean;
@@ -356,7 +371,7 @@ export async function updateCurrencyStatus(req: Request, res: Response): Promise
     }
 
     // Find the currency
-    const currency = await prisma.currency.findUnique({ where: { id } });
+    const currency = await prisma.currency.findFirst({ where: { id, tenantId } });
     if (!currency) {
       res.status(404).json({
         success: false,
@@ -380,6 +395,7 @@ export async function updateCurrencyStatus(req: Request, res: Response): Promise
       if (isDefault === true) {
         await tx.currency.updateMany({
           where: {
+            tenantId,
             isDeleted: false,
             NOT: { id },
           },

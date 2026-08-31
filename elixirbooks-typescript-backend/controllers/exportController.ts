@@ -285,10 +285,15 @@ async function buildInvoiceItems(tenantId: string): Promise<{ columns: CsvColumn
   return { columns, rows };
 }
 
-// Products are a GLOBAL catalogue (no tenantId column in the schema), so this is
-// the one export that is not tenant-scoped — every install shares the catalogue.
-async function buildProducts(): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
+// Products became tenant-owned in P4. Until then this was the one export that
+// legitimately was not tenant-scoped, because the catalogue genuinely was
+// shared; leaving it unscoped now would put every other company's product
+// list, costs and margins into this company's backup zip.
+async function buildProducts(
+  tenantId: string,
+): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const products = await prisma.product.findMany({
+    where: { tenantId },
     select: {
       code: true,
       name: true,
@@ -1008,8 +1013,8 @@ export async function exportInvoiceItems(req: Request, res: Response): Promise<v
 
 export async function exportProducts(req: Request, res: Response): Promise<void> {
   try {
-    requireTenantId(req); // auth gate (catalogue is global, but still require a valid session)
-    const { columns, rows } = await buildProducts();
+    const tenantId = requireTenantId(req);
+    const { columns, rows } = await buildProducts(tenantId);
     sendCsv(res, 'products.csv', toCsv(rows, columns));
   } catch (err) {
     handleError(res, err, 'products');
@@ -1119,7 +1124,7 @@ export async function exportBackupZip(req: Request, res: Response): Promise<void
     { name: 'debit-notes', build: () => buildDebitNotes(tenantId) },
     { name: 'purchases', build: () => buildPurchases(tenantId) },
     { name: 'expenses', build: () => buildExpenses(tenantId) },
-    { name: 'products', build: () => buildProducts() },
+    { name: 'products', build: () => buildProducts(tenantId) },
     { name: 'customers', build: () => buildCustomers(tenantId) },
     { name: 'contacts', build: () => buildContacts(tenantId) },
     { name: 'bank-transactions', build: () => buildBankTransactions(tenantId) },

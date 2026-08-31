@@ -4,6 +4,7 @@ import type { BankTransactionType, ExplainStatus } from '@prisma/client';
 import { parse } from 'csv-parse/sync';
 
 import { prisma } from '../lib/prisma';
+import { resolveDefaultCurrencyCode } from '../lib/defaultCurrency';
 import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 import { matchBankTransaction, type MatchCandidate } from '../lib/reconciliationMatcher';
@@ -52,14 +53,6 @@ function isDocumentLinked(relatedType: string | null, relatedId: string | null):
 
 function txnDirection(type: string): 'money_in' | 'money_out' {
   return MONEY_IN_TYPES.has(type) ? 'money_in' : 'money_out';
-}
-
-async function resolveDefaultCurrencyCode(): Promise<string | null> {
-  const defaultCurrency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return defaultCurrency?.code ?? null;
 }
 
 /**
@@ -641,7 +634,7 @@ export async function list(req: Request, res: Response): Promise<void> {
           take: limit,
         }),
         prisma.bankTransaction.count({ where }),
-        resolveDefaultCurrencyCode(),
+        resolveDefaultCurrencyCode(requireTenantId(req)),
         prisma.bankTransaction.count({ where: { ...baseWhere, explainStatus: 'UNEXPLAINED' } }),
         prisma.bankTransaction.count({ where: { ...baseWhere, explainStatus: 'FOR_APPROVAL' } }),
         prisma.bankTransaction.count({ where: baseWhere }),

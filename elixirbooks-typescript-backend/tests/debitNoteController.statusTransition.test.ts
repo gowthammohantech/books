@@ -47,7 +47,7 @@ const {
 vi.mock('../lib/prisma', () => {
   const tx = {
     debitNote: { update: mockTxDebitNoteUpdate },
-    product: { findUnique: mockTxProductFindUnique },
+    product: { findFirst: mockTxProductFindUnique },
   };
   return {
     prisma: {

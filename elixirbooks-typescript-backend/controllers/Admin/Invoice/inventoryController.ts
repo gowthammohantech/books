@@ -70,6 +70,7 @@ export async function listInventory(req: Request, res: Response): Promise<void> 
     if (search) {
       const matchingProducts = await prisma.product.findMany({
         where: {
+          ...scope,
           OR: [
             { name: { contains: search, mode: 'insensitive' } },
             { code: { contains: search, mode: 'insensitive' } },
@@ -209,7 +210,7 @@ export async function getInventoryHistory(req: Request, res: Response): Promise<
         : Promise.resolve([] as { id: string; firstName: string; lastName: string | null; email: string }[]),
       unitIds.length > 0
         ? prisma.unit.findMany({
-            where: { id: { in: unitIds } },
+            where: { tenantId: requireTenantId(req), id: { in: unitIds } },
             select: { id: true, unit_name: true },
           })
         : Promise.resolve([] as { id: string; unit_name: string }[]),
@@ -320,7 +321,7 @@ export async function updateStock(req: Request, res: Response): Promise<void> {
     const stockType = type as StockUpdateType;
 
     const result = await prisma.$transaction(async (tx: Tx) => {
-      const product = await tx.product.findUnique({ where: { id: productId } });
+      const product = await tx.product.findFirst({ where: { id: productId, tenantId } });
       if (!product) {
         return { error: { status: 404, body: { success: false, message: 'Product not found' } } } as const;
       }

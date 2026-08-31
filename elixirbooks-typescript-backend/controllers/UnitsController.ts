@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
+import { requireTenantId } from '../lib/tenantScope';
 import { insertCustomFieldValues, readCustomFieldValues } from '../lib/customFieldValues';
 
 // Unit is a global lookup table — no tenantId column, so tenantScope() does
@@ -17,7 +18,7 @@ export async function getUnits(req: Request, res: Response): Promise<void> {
     // Original JS searched unit_name, unit_code, and unit_description. The
     // Prisma schema has unit_name and short_name, so we filter against
     // those when a search term is provided.
-    const where: Prisma.UnitWhereInput = {};
+    const where: Prisma.UnitWhereInput = { tenantId: requireTenantId(req) };
     if (search) {
       where.OR = [
         { unit_name: { contains: search, mode: 'insensitive' } },
@@ -63,12 +64,13 @@ export async function createUnit(req: Request, res: Response): Promise<void> {
     status?: boolean | string;
   };
 
-  const tenantId = (req as Request & { user?: string }).user ?? 'system';
+  const tenantId = requireTenantId(req);
 
   try {
     const unit = await prisma.$transaction(async (tx) => {
       const created = await tx.unit.create({
         data: {
+          tenantId,
           unit_name: unit_name as string,
           short_name: short_name as string,
           status: typeof status === 'string' ? status === 'true' : (status ?? true),
@@ -93,7 +95,7 @@ export async function createUnit(req: Request, res: Response): Promise<void> {
 export async function getUnitById(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params as { id: string };
-    const unit = await prisma.unit.findUnique({ where: { id } });
+    const unit = await prisma.unit.findFirst({ where: { id, tenantId: requireTenantId(req) } });
 
     if (!unit) {
       res.status(404).json({ message: 'Unit not found' });
@@ -102,6 +104,7 @@ export async function getUnitById(req: Request, res: Response): Promise<void> {
 
     const customFields = await readCustomFieldValues(prisma, {
       module: 'unit',
+      tenantId: requireTenantId(req),
       recordId: id,
       moduleSlug: 'units',
     });
@@ -121,10 +124,10 @@ export async function updateUnit(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const tenantId = (req as Request & { user?: string }).user ?? 'system';
+  const tenantId = requireTenantId(req);
 
   try {
-    const existing = await prisma.unit.findUnique({ where: { id } });
+    const existing = await prisma.unit.findFirst({ where: { id, tenantId: requireTenantId(req) } });
     if (!existing) {
       res.status(404).json({ message: 'Unit not found' });
       return;
@@ -173,7 +176,7 @@ export async function deleteUnit(req: Request, res: Response): Promise<void> {
   const { id } = req.params as { id: string };
 
   try {
-    const existing = await prisma.unit.findUnique({ where: { id } });
+    const existing = await prisma.unit.findFirst({ where: { id, tenantId: requireTenantId(req) } });
     if (!existing) {
       res.status(404).json({ message: 'Unit not found' });
       return;

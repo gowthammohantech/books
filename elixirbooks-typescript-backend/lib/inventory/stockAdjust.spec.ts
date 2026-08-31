@@ -53,7 +53,7 @@ function makeTx(opts: {
     createdRows,
     updatedRows,
     product: {
-      findUnique: vi.fn().mockResolvedValue(
+      findFirst: vi.fn().mockResolvedValue(
         opts.productValuationMethod !== undefined
           ? { valuationMethod: opts.productValuationMethod }
           : { valuationMethod: null },

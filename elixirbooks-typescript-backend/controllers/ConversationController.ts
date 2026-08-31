@@ -1570,6 +1570,7 @@ class ConversationalAIController {
   async findProducts(productName: string): Promise<Array<Record<string, unknown>>> {
     return prisma.product.findMany({
       where: {
+        tenantId: this.tenantId,
         OR: [
           { name: { contains: productName, mode: 'insensitive' } },
           { code: { contains: productName, mode: 'insensitive' } },
@@ -1584,6 +1585,7 @@ class ConversationalAIController {
   async findExpenseCategories(categoryName: string): Promise<Array<Record<string, unknown>>> {
     return prisma.expenseCategory.findMany({
       where: {
+        tenantId: this.tenantId,
         isDeleted: false,
         status: true,
         title: { contains: categoryName, mode: 'insensitive' },

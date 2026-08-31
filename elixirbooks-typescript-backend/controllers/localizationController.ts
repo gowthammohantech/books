@@ -116,8 +116,12 @@ export async function getDropdownOptions(req: Request, res: Response): Promise<v
   }
 }
 
-export async function getSettingsDropdownList(_req: Request, res: Response): Promise<void> {
+export async function getSettingsDropdownList(req: Request, res: Response): Promise<void> {
   try {
+    // Timezone and DateFormat stay platform reference data; Currency does
+    // not -- each tenant owns and edits its own rows (P4), so this dropdown
+    // must not offer another company's currencies.
+    const tenantId = requireTenantId(req);
     const [timezones, dateFormats, currencies] = await Promise.all([
       prisma.timezone.findMany({
         select: { id: true, name: true, utc_offset: true },
@@ -129,7 +133,7 @@ export async function getSettingsDropdownList(_req: Request, res: Response): Pro
         orderBy: { title: 'asc' },
       }),
       prisma.currency.findMany({
-        where: { isDeleted: false, status: true },
+        where: { tenantId, isDeleted: false, status: true },
         select: { id: true, name: true, code: true, symbol: true, isDefault: true },
         orderBy: { name: 'asc' },
       }),

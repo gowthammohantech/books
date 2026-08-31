@@ -297,14 +297,17 @@ describe('supplierPaymentController — tenant scoping', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           paymentId: { not: null },
-          purchase: { tenantId: TENANT_ID },
+          tenantId: TENANT_ID,
         }),
       }),
     );
     expect(mockSupplierPaymentCreate).toHaveBeenCalled();
   });
 
-  it('createSupplierPayment numbering falls back to the install-wide highest + 1 when the tenant candidate clashes (paymentId is globally @unique)', async () => {
+  it('createSupplierPayment starts a fresh tenant at PAY-000001 even when another tenant holds that number', async () => {
+    // See lib/documentNumbering.spec.ts: M11 replaced the install-wide
+    // @unique with @@unique([tenantId, paymentId]), so the fallback that used
+    // to skip this tenant forward to PAY-000008 is gone.
     mockPurchaseFindFirst.mockResolvedValue({
       id: 'purchase-1',
       tenantId: TENANT_ID,
@@ -312,16 +315,7 @@ describe('supplierPaymentController — tenant scoping', () => {
       totalAmount: 1000,
     });
     mockBankDetailFindFirst.mockResolvedValue({ id: 'bank-1', currentBalance: 1000 });
-    mockSupplierPaymentFindFirst.mockImplementation(
-      async (args: { where: Record<string, unknown> }) => {
-        // Tenant-scoped sequence lookup → fresh tenant, no rows yet.
-        if ('purchase' in args.where) return null;
-        // Clash check: PAY-000001 already held by another tenant.
-        if (args.where.paymentId === 'PAY-000001') return { id: 'sp-other-tenant' };
-        // Install-wide highest lookup.
-        return { paymentId: 'PAY-000007' };
-      },
-    );
+    mockSupplierPaymentFindFirst.mockResolvedValue(null);
 
     const { req, res } = makeReqRes({
       purchaseId: 'purchase-1',
@@ -337,7 +331,7 @@ describe('supplierPaymentController — tenant scoping', () => {
 
     expect(res.status).toHaveBeenCalledWith(201);
     expect(mockSupplierPaymentCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ paymentId: 'PAY-000008' }) }),
+      expect.objectContaining({ data: expect.objectContaining({ paymentId: 'PAY-000001' }) }),
     );
   });
 

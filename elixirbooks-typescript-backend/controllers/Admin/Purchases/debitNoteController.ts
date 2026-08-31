@@ -5,6 +5,7 @@ import type { DebitNoteStatus, SignType } from '@prisma/client';
 import { validationResult } from 'express-validator';
 
 import { prisma } from '../../../lib/prisma';
+import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
 import { tenantScope, requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import {
   nextDocumentNumber,
@@ -31,14 +32,6 @@ import {
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
 
-// C.1: resolve the company default currency code (ISO string).
-async function resolveDefaultCurrencyCode(): Promise<string | null> {
-  const defaultCurrency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return defaultCurrency?.code ?? null;
-}
 import { handleLedgerError } from '../../../lib/httpErrors';
 import {
   postDebitNoteIssued,
@@ -377,7 +370,11 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
     // tax_group_id (no per-line percent), so resolve the group's rate then
     // recompute tax on the discounted base. Debit notes post to the GL from the
     // persisted totalAmount/totalTax, so client-sent totals are ignored here.
-    const itemsWithRates = await resolveItemTaxRates(prisma as unknown as TaxGroupLookupDb, items as unknown as TotalsItem[]);
+    const itemsWithRates = await resolveItemTaxRates(
+        prisma as unknown as TaxGroupLookupDb,
+        items as unknown as TotalsItem[],
+        tenantId,
+      );
     const serverTotals = computeDocumentTotals(itemsWithRates);
     const paidAmount = asNumber(body.paidAmount, 0);
 
@@ -390,7 +387,7 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
     // C.1: per-document currency — use caller-supplied code or fall back to company default.
     const docCurrencyCode =
       (typeof body.currencyCode === 'string' && body.currencyCode ? body.currencyCode : null) ??
-      (await resolveDefaultCurrencyCode());
+      (await resolveDefaultCurrencyCode(requireTenantId(req)));
 
     // C2: per-document tax treatment.
     const docTreatment: TaxTreatment =
@@ -464,8 +461,8 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
         for (const item of items) {
           const productId = item.productId;
           if (!productId || !item.quantity) continue;
-          const product = await tx.product.findUnique({
-            where: { id: productId },
+          const product = await tx.product.findFirst({
+            where: { id: productId, tenantId },
             select: { item_type: true },
           });
           if (product?.item_type === 'Service') continue;
@@ -491,8 +488,8 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
         for (const item of items) {
           const productId = item.productId;
           if (!productId) continue;
-          const product = await tx.product.findUnique({
-            where: { id: productId },
+          const product = await tx.product.findFirst({
+            where: { id: productId, tenantId },
             select: { item_type: true },
           });
           if (product && product.item_type !== 'Service') {
@@ -1069,8 +1066,8 @@ export async function updateDebitNoteStatus(req: Request, res: Response): Promis
         for (const item of dnItems) {
           const productId = item.productId;
           if (!productId || !item.quantity) continue;
-          const product = await tx.product.findUnique({
-            where: { id: productId },
+          const product = await tx.product.findFirst({
+            where: { id: productId, tenantId },
             select: { item_type: true },
           });
           if (product?.item_type === 'Service') continue;
@@ -1091,8 +1088,8 @@ export async function updateDebitNoteStatus(req: Request, res: Response): Promis
         for (const item of dnItems) {
           const productId = item.productId;
           if (!productId) continue;
-          const product = await tx.product.findUnique({
-            where: { id: productId },
+          const product = await tx.product.findFirst({
+            where: { id: productId, tenantId },
             select: { item_type: true },
           });
           if (product && product.item_type !== 'Service') {
@@ -1123,8 +1120,8 @@ export async function updateDebitNoteStatus(req: Request, res: Response): Promis
           const productId = item.productId;
           const qty = Number(item.quantity ?? 0);
           if (!productId || !qty) continue;
-          const product = await tx.product.findUnique({
-            where: { id: productId },
+          const product = await tx.product.findFirst({
+            where: { id: productId, tenantId },
             select: { item_type: true },
           });
           if (product?.item_type === 'Service') continue;
@@ -1228,8 +1225,8 @@ export async function deleteDebitNote(req: Request, res: Response): Promise<void
           const productId = item.productId;
           const qty = Number(item.quantity ?? 0);
           if (!productId || !qty) continue;
-          const product = await tx.product.findUnique({
-            where: { id: productId },
+          const product = await tx.product.findFirst({
+            where: { id: productId, tenantId },
             select: { item_type: true },
           });
           if (product?.item_type === 'Service') continue;

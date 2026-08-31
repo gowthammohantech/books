@@ -51,10 +51,16 @@ export async function ensureDefaultTaxGroup(
 
   let created = false;
 
-  // Global "No Tax" group (idempotent by name).
-  let group = await db.taxGroup.findFirst({ where: { tax_name: DEFAULT_TAX_GROUP_NAME } });
+  // This tenant's "No Tax" group (idempotent by name WITHIN the tenant --
+  // TaxGroup stopped being install-global in P4, so two companies may each
+  // hold a group of this name).
+  let group = await db.taxGroup.findFirst({
+    where: { tenantId, tax_name: DEFAULT_TAX_GROUP_NAME },
+  });
   if (!group) {
-    group = await db.taxGroup.create({ data: { tax_name: DEFAULT_TAX_GROUP_NAME, status: true } });
+    group = await db.taxGroup.create({
+      data: { tenantId, tax_name: DEFAULT_TAX_GROUP_NAME, status: true },
+    });
     created = true;
   }
 

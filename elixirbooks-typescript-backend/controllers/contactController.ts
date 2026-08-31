@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { parse } from 'csv-parse/sync';
 import { prisma } from '../lib/prisma';
+import { resolveDefaultCurrencyCode } from '../lib/defaultCurrency';
 import { requireTenantId } from '../lib/tenantScope';
 import { validateContactIdentity, resolveDisplayName } from '../lib/contacts/contactIdentity';
 import { parseVatNumber, isEuMember } from '../lib/euVat';
@@ -300,8 +301,7 @@ export async function getContactStatement(req: Request, res: Response): Promise<
     const contactCurrency = (c.currencyCode as string | null) ?? null;
 
     // Resolve company default currency for fallback
-    const defaultCurrencyRow = await prisma.currency.findFirst({ where: { isDefault: true, isDeleted: false }, select: { code: true } });
-    const companyDefault = defaultCurrencyRow?.code ?? null;
+    const companyDefault = await resolveDefaultCurrencyCode(tenantId);
     const effCur = (code: string | null | undefined): string => code ?? contactCurrency ?? companyDefault ?? 'UNKNOWN';
 
     // All invoices for this contact up to toDate

@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { body, param, validationResult, ValidationChain } from 'express-validator';
 
 import { prisma } from '../lib/prisma';
+import { requireTenantId } from '../lib/tenantScope';
 
 // Items unification (spec 2026-07-12 §4A): on CREATE, `name` is the ONLY
 // required field. item_type is optional (the controller derives it from
@@ -66,15 +67,17 @@ export const createProductValidator: (ValidationChain | RequestHandler)[] = [
   ...productValidationRules(),
   // No name-uniqueness rule: duplicate descriptions are allowed. code/barcode stay
   // unique but are only checked when a non-empty value is actually supplied.
-  body('code').custom(async (value) => {
+  body('code').custom(async (value, { req }) => {
     if (value === undefined || value === '') return true;
-    const existing = await prisma.product.findFirst({ where: { code: String(value) } });
+    const tenantId = requireTenantId(req as Request);
+    const existing = await prisma.product.findFirst({ where: { tenantId, code: String(value) } });
     if (existing) throw new Error('Product code already exists');
     return true;
   }),
-  body('barcode').custom(async (value) => {
+  body('barcode').custom(async (value, { req }) => {
     if (value === undefined || value === '') return true;
-    const existing = await prisma.product.findFirst({ where: { barcode: String(value) } });
+    const tenantId = requireTenantId(req as Request);
+    const existing = await prisma.product.findFirst({ where: { tenantId, barcode: String(value) } });
     if (existing) throw new Error('Barcode already exists');
     return true;
   }),
@@ -87,18 +90,20 @@ export const updateProductValidator: (ValidationChain | RequestHandler)[] = [
   // No name-uniqueness rule on update either. code/barcode still unique.
   body('code').custom(async (value, { req }) => {
     if (value === undefined || value === '') return true;
+    const tenantId = requireTenantId(req as Request);
     const id = req.params?.id as string | undefined;
     const existing = await prisma.product.findFirst({
-      where: { code: String(value), NOT: id ? { id } : undefined },
+      where: { tenantId, code: String(value), NOT: id ? { id } : undefined },
     });
     if (existing) throw new Error('Product code already exists');
     return true;
   }),
   body('barcode').custom(async (value, { req }) => {
     if (value === undefined || value === '') return true;
+    const tenantId = requireTenantId(req as Request);
     const id = req.params?.id as string | undefined;
     const existing = await prisma.product.findFirst({
-      where: { barcode: String(value), NOT: id ? { id } : undefined },
+      where: { tenantId, barcode: String(value), NOT: id ? { id } : undefined },
     });
     if (existing) throw new Error('Barcode already exists');
     return true;

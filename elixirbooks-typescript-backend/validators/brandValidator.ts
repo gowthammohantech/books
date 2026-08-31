@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { body, validationResult, ValidationChain } from 'express-validator';
 
 import { prisma } from '../lib/prisma';
+import { requireTenantId } from '../lib/tenantScope';
 
 function formatValidationErrors(errorsArr: unknown[]): Record<string, string> {
   const formatted: Record<string, string> = {};
@@ -22,9 +23,10 @@ const createChains: ValidationChain[] = [
     .withMessage('Brand name is required')
     .isLength({ min: 3 })
     .withMessage('Brand name must be at least 3 characters')
-    .custom(async (value: string) => {
+    .custom(async (value: string, { req }) => {
+      const tenantId = requireTenantId(req as Request);
       const existing = await prisma.brand.findFirst({
-        where: { brand_name: { equals: value, mode: 'insensitive' } },
+        where: { tenantId, brand_name: { equals: value, mode: 'insensitive' } },
       });
       if (existing) {
         throw new Error('Brand name already exists');
@@ -68,9 +70,11 @@ const updateChains: ValidationChain[] = [
     .isLength({ min: 3 })
     .withMessage('Brand name must be at least 3 characters')
     .custom(async (value: string, { req }) => {
+      const tenantId = requireTenantId(req as Request);
       const id = (req.params as { id?: string })?.id;
       const existing = await prisma.brand.findFirst({
         where: {
+          tenantId,
           brand_name: { equals: value, mode: 'insensitive' },
           NOT: id ? { id } : undefined,
         },

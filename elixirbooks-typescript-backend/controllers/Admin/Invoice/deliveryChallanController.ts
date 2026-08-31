@@ -4,6 +4,7 @@ import type { DeliveryChallanStatus } from '@prisma/client';
 import { validationResult } from 'express-validator';
 
 import { prisma } from '../../../lib/prisma';
+import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
 import { requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 import { applyDocumentTreatment } from '../../../lib/tax/applyTreatment';
@@ -16,15 +17,6 @@ import {
 } from '../../../lib/lineDimensions';
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
-
-// C.1: resolve the company default currency code (ISO string).
-async function resolveDefaultCurrencyCode(): Promise<string | null> {
-  const defaultCurrency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return defaultCurrency?.code ?? null;
-}
 
 type Tx = Prisma.TransactionClient;
 
@@ -216,7 +208,7 @@ export async function createDeliveryChallan(req: Request, res: Response): Promis
     // C.1: per-document currency — use caller-supplied code or fall back to company default.
     const docCurrencyCode =
       (typeof body.currencyCode === 'string' && body.currencyCode ? body.currencyCode : null) ??
-      (await resolveDefaultCurrencyCode());
+      (await resolveDefaultCurrencyCode(requireTenantId(req)));
 
     // C2: per-document tax treatment.
     const docTreatment: TaxTreatment =

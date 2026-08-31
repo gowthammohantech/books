@@ -26,7 +26,7 @@ vi.mock('../lib/prisma', () => {
     companySettings: { findFirst: mocks.companySettingsFindFirst },
     user: { findUnique: mocks.userFindUnique },
     supplier: { findFirst: vi.fn().mockResolvedValue(null) },
-    product: { findUnique: vi.fn().mockResolvedValue(null) },
+    product: { findFirst: vi.fn().mockResolvedValue(null) },
     purchase: { create: mocks.purchaseCreate },
     purchaseOrder: { updateMany: vi.fn() },
     supplierPayment: { create: vi.fn() },

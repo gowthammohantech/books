@@ -6,20 +6,12 @@ import type { Supplier, SupplierBalanceType } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../../../lib/prisma';
+import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
 import { requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 
 // -----------------------------------------------------------------------------
 // Helpers
 // -----------------------------------------------------------------------------
-
-// SC.1: resolve the company default currency code (ISO string).
-async function resolveDefaultCurrencyCode(): Promise<string | null> {
-  const defaultCurrency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return defaultCurrency?.code ?? null;
-}
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -104,11 +96,13 @@ export async function createSupplier(req: Request, res: Response): Promise<void>
     // SC.1: use caller-supplied currencyCode or fall back to the company default.
     const supplierCurrencyCode =
       (typeof rawCurrencyCode === 'string' && rawCurrencyCode ? rawCurrencyCode : null) ??
-      (await resolveDefaultCurrencyCode());
+      (await resolveDefaultCurrencyCode(requireTenantId(req)));
 
-    // Email uniqueness check (supplier_email is @unique in schema).
+    // Email uniqueness check. supplier_email is unique per (tenantId,
+    // supplier_email) since P4/M11 — two companies may both buy from the same
+    // supplier, and before the swap the second one got a 409.
     const emailClash = await prisma.supplier.findFirst({
-      where: { supplier_email: supplier_email as string },
+      where: { tenantId: requireTenantId(req), supplier_email: supplier_email as string },
     });
     if (emailClash) {
       tryUnlink(req.file?.path);

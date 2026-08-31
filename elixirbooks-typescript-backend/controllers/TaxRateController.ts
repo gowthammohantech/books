@@ -316,8 +316,8 @@ export async function resolveLine(req: Request, res: Response): Promise<void> {
     let regime: TaxRegime = company.taxRegime;
     let groupRateIds: string[] = [];
     if (!hasRateId) {
-      const taxGroup = await prisma.taxGroup.findUnique({
-        where: { id: body.taxGroupId as string },
+      const taxGroup = await prisma.taxGroup.findFirst({
+        where: { id: body.taxGroupId as string, tenantId },
         include: { tax_rates: true },
       });
       if (!taxGroup) {

@@ -8,6 +8,7 @@ import type {
 } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
+import { resolveDefaultCurrencyCode } from '../lib/defaultCurrency';
 import {
   tenantScope,
   requireTenantId,
@@ -105,15 +106,6 @@ async function getOrCreateBankPaymentMode(
   return { id: created.id };
 }
 
-// BC.1: resolve the company default currency code (ISO string).
-async function resolveDefaultCurrencyCode(): Promise<string | null> {
-  const defaultCurrency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return defaultCurrency?.code ?? null;
-}
-
 // =============================================================================
 // createBankDetail
 // =============================================================================
@@ -161,7 +153,7 @@ export async function createBankDetail(req: Request, res: Response): Promise<voi
     const resolvedCurrencyCode =
       currencyCode && String(currencyCode).trim() !== ''
         ? String(currencyCode).trim().toUpperCase()
-        : await resolveDefaultCurrencyCode();
+        : await resolveDefaultCurrencyCode(requireTenantId(req));
 
     const user = await prisma.user.findUnique({ where: { id: tenantId } });
     if (!user) {

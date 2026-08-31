@@ -610,6 +610,7 @@ export async function createExpense(
         }
 
         records.push({
+          tenantId,
           customFieldId: field.fieldId,
           module: 'expense',
           recordId: expense.id,
@@ -804,6 +805,7 @@ export async function getAllExpenses(
     if (expenseModule) {
       tableFields = await prisma.customField.findMany({
         where: {
+          tenantId: requireTenantId(req),
           moduleId: expenseModule.id,
           showInTable: true,
           deletedAt: null,
@@ -819,6 +821,7 @@ export async function getAllExpenses(
 
     const customValues = await prisma.customFieldValue.findMany({
       where: {
+        tenantId: requireTenantId(req),
         module: 'expense',
         recordId: { in: expenseIds },
       },
@@ -972,7 +975,7 @@ export async function getExpenseById(
 
     if (expenseModule) {
       customFields = await prisma.customField.findMany({
-        where: { moduleId: expenseModule.id, deletedAt: null },
+        where: { tenantId: requireTenantId(req), moduleId: expenseModule.id, deletedAt: null },
         select: {
           id: true,
           fieldSlug: true,
@@ -986,7 +989,7 @@ export async function getExpenseById(
        GET VALUES
     ======================================== */
     const values = await prisma.customFieldValue.findMany({
-      where: { module: 'expense', recordId: id },
+      where: { tenantId: requireTenantId(req), module: 'expense', recordId: id },
     });
 
     const valueMap: Record<string, unknown> = {};
@@ -1716,7 +1719,7 @@ export async function updateExpense(
          CUSTOM FIELDS UPDATE
       ===================================== */
       await tx.customFieldValue.deleteMany({
-        where: { module: 'expense', recordId: expense.id },
+        where: { tenantId, module: 'expense', recordId: expense.id },
       });
 
       const records: Prisma.CustomFieldValueCreateManyInput[] = [];
@@ -1731,6 +1734,7 @@ export async function updateExpense(
         }
 
         records.push({
+          tenantId,
           customFieldId: field.fieldId,
           module: 'expense',
           recordId: expense.id,

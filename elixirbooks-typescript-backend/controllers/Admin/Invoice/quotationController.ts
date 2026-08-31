@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import type { Quotation, QuotationStatus, Customer } from '@prisma/client';
 
 import { prisma } from '../../../lib/prisma';
+import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
 import { tenantScope, requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 import { applyDocumentTreatment } from '../../../lib/tax/applyTreatment';
@@ -23,16 +24,6 @@ import {
 } from '../../../lib/lineDimensions';
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
-
-// C.1: resolve the company default currency code (ISO string).
-// Returns null when no default currency is configured (no-op; column stays null).
-async function resolveDefaultCurrencyCode(): Promise<string | null> {
-  const defaultCurrency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return defaultCurrency?.code ?? null;
-}
 
 // utils/mailer is still JS; static require is fine here.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -243,7 +234,11 @@ export async function createQuotation(req: Request, res: Response): Promise<void
     // tax_group_id (no per-line percent), so resolve the group's rate then
     // recompute tax on the discounted base. Also fixes the legacy calcTotals bug
     // where the grand total dropped tax and discount (total = taxable only).
-    const itemsWithRates = await resolveItemTaxRates(prisma as unknown as TaxGroupLookupDb, items as TotalsItem[]);
+    const itemsWithRates = await resolveItemTaxRates(
+      prisma as unknown as TaxGroupLookupDb,
+      items as TotalsItem[],
+      tenantId,
+    );
     const serverTotals = computeDocumentTotals(itemsWithRates);
     warnOnTotalsDivergence(
       'quotation',
@@ -260,7 +255,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
     // C.1: per-document currency — use caller-supplied code or fall back to company default.
     const docCurrencyCode =
       (typeof body.currencyCode === 'string' && body.currencyCode ? body.currencyCode : null) ??
-      (await resolveDefaultCurrencyCode());
+      (await resolveDefaultCurrencyCode(requireTenantId(req)));
 
     // C2: per-document tax treatment.
     const docTreatment: TaxTreatment =
@@ -697,7 +692,11 @@ export async function updateQuotation(req: Request, res: Response): Promise<void
       const items = normaliseItems(body.items);
       // Server-authoritative totals (see createQuotation): resolve tax-group
       // rates, recompute on the discounted base, ignore client-sent totals.
-      const itemsWithRates = await resolveItemTaxRates(prisma as unknown as TaxGroupLookupDb, items as TotalsItem[]);
+      const itemsWithRates = await resolveItemTaxRates(
+      prisma as unknown as TaxGroupLookupDb,
+      items as TotalsItem[],
+      tenantId,
+    );
       const serverTotals = computeDocumentTotals(itemsWithRates);
       warnOnTotalsDivergence('quotation', id, asNumber(body.grandTotal, asNumber(body.TotalAmount, NaN)), serverTotals.grandTotal);
       const finalTaxable = serverTotals.subTotal;

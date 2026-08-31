@@ -18,7 +18,7 @@ import { loadRate, type RateTx } from './exchangeRates';
 export interface FxGuardDb extends RateTx {
   currency: {
     findFirst: (args: {
-      where: { isDefault: boolean; isDeleted: boolean };
+      where: { tenantId: string; isDefault: boolean; isDeleted: boolean };
       select: { code: boolean };
     }) => Promise<{ code: string } | null>;
   };
@@ -52,7 +52,7 @@ export async function resolveExpenseFxRate(
 
   // Resolve the company base currency (first active default currency row)
   const baseCurrencyRow = await db.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
+    where: { tenantId, isDefault: true, isDeleted: false },
     select: { code: true },
   });
   const baseCurrencyCode = baseCurrencyRow?.code ?? null;

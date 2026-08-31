@@ -6,16 +6,8 @@ import { validationResult } from 'express-validator';
 import { parse } from 'csv-parse/sync';
 
 import { prisma } from '../lib/prisma';
+import { resolveDefaultCurrencyCode } from '../lib/defaultCurrency';
 import { tenantScope, requireTenantId, UnauthorizedError } from '../lib/tenantScope';
-
-// CC.1: resolve the company default currency code (ISO string).
-async function resolveDefaultCurrencyCode(): Promise<string | null> {
-  const defaultCurrency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return defaultCurrency?.code ?? null;
-}
 
 interface CustomerResponse {
   id: string;
@@ -151,7 +143,7 @@ export async function createCustomer(req: Request, res: Response): Promise<void>
     // CC.1: use caller-supplied currencyCode or fall back to the company default.
     const customerCurrencyCode =
       (typeof rawCurrencyCode === 'string' && rawCurrencyCode ? rawCurrencyCode : null) ??
-      (await resolveDefaultCurrencyCode());
+      (await resolveDefaultCurrencyCode(requireTenantId(req)));
 
     const imagePath = profile_image_removed === 'true' ? '' : (req.file?.path ?? '');
 
@@ -236,7 +228,7 @@ export async function createMinimalCustomer(req: Request, res: Response): Promis
     // CC.1: use caller-supplied currencyCode or fall back to the company default.
     const customerCurrencyCode =
       (typeof rawCurrencyCode === 'string' && rawCurrencyCode ? rawCurrencyCode : null) ??
-      (await resolveDefaultCurrencyCode());
+      (await resolveDefaultCurrencyCode(requireTenantId(req)));
 
     // Normalise the optional billing address into the same JSON shape the full
     // customer create / invoice templates use (addressLine1, city, …). Only
@@ -582,7 +574,7 @@ export async function getStatement(req: Request, res: Response): Promise<void> {
     // With no FX conversion, mixing them into one balance is meaningless, so we
     // reconcile SEPARATELY per currency. An invoice/payment's effective currency
     // falls back to the customer's currency, then the company default.
-    const companyDefault = await resolveDefaultCurrencyCode();
+    const companyDefault = await resolveDefaultCurrencyCode(requireTenantId(req));
     const custCurrency = customer.currencyCode ?? companyDefault ?? null;
     const effCur = (c: string | null | undefined): string =>
       c ?? custCurrency ?? companyDefault ?? 'UNKNOWN';

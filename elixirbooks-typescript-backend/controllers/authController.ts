@@ -11,6 +11,7 @@ import { hashPassword, comparePassword } from '../utils/password';
 import { generateToken } from '../utils/generateToken';
 import { ensureRole, DEFAULT_ROLE_BY_USER_TYPE, OWNER_ROLE_NAME } from '../lib/defaultRoles';
 import { seedRolesForTenant } from '../prisma/seedRoles';
+import { seedTenantDefaults } from '../prisma/seedTenant';
 
 function badInput(res: Response, errors: ReturnType<typeof validationResult>): void {
   res.status(400).json({
@@ -102,12 +103,11 @@ export async function register(req: Request, res: Response): Promise<void> {
           },
         });
 
-        // INVARIANT (P1–P4): a tenant created here reuses its owner's User.id.
-        // Business tables still carry the tenant in a column named `userId`
-        // holding `ownerId ?? id`, and `protect` still resolves req.tenantId
-        // that way, so Tenant.id must equal that value or nothing would line
-        // up. P5 resolves the tenant from the membership instead and lifts
-        // this constraint for additional workspaces.
+        // INVARIANT (P1–P5): a tenant created here reuses its owner's User.id.
+        // `protect` still resolves req.tenantId as `ownerId ?? id`, so
+        // Tenant.id must equal that value or nothing would line up. P5
+        // resolves the tenant from the membership instead and lifts this
+        // constraint for additional workspaces.
         const t = await tx.tenant.create({
           data: {
             id: created.id,
@@ -142,6 +142,14 @@ export async function register(req: Request, res: Response): Promise<void> {
             joinedAt: new Date(),
           },
         });
+
+        // Stock the workspace: Units, Currencies and EmailTemplates. Before
+        // P4 these were install-global and every company shared one set;
+        // each workspace gets its own now, and it has to happen inside this
+        // transaction so a half-provisioned company can never exist. The
+        // owner is Currency.createdBy — a non-null FK, and the only real
+        // user in the workspace at this point.
+        await seedTenantDefaults(t.id, created.id, tx as unknown as PrismaClient);
 
         // User.roleId is mirrored while authMiddleware still reads it (P5
         // switches to TenantMembership.roleId).

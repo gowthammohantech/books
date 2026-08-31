@@ -37,7 +37,7 @@ export async function insertCustomFieldValues(
   }
 
   // Always delete existing rows for (module, recordId) to keep values fresh
-  await tx.customFieldValue.deleteMany({ where: { module, recordId } });
+  await tx.customFieldValue.deleteMany({ where: { tenantId, module, recordId } });
 
   if (parsed.length === 0) return;
 
@@ -46,6 +46,7 @@ export async function insertCustomFieldValues(
     const fileMatch = files.find((f) => f.fieldname === `customField_${entry.fieldId}`);
     if (fileMatch) value = fileMatch.path;
     return {
+      tenantId,
       customFieldId: entry.fieldId,
       module,
       recordId,
@@ -61,6 +62,7 @@ interface ReadCustomFieldValuesOptions {
   module: CustomFieldValueModule;
   recordId: string;
   moduleSlug: string;
+  tenantId: string;
 }
 
 /**
@@ -70,18 +72,18 @@ interface ReadCustomFieldValuesOptions {
  */
 export async function readCustomFieldValues(
   prisma: Prisma.TransactionClient,
-  { module, recordId, moduleSlug }: ReadCustomFieldValuesOptions,
+  { module, recordId, moduleSlug, tenantId }: ReadCustomFieldValuesOptions,
 ): Promise<Record<string, Prisma.JsonValue | null>> {
   const mod = await prisma.module.findFirst({ where: { moduleSlug } });
   if (!mod) return {};
 
   const fields = await prisma.customField.findMany({
-    where: { moduleId: mod.id, deletedAt: null },
+    where: { tenantId, moduleId: mod.id, deletedAt: null },
     select: { id: true, fieldSlug: true },
   });
 
   const customValues = await prisma.customFieldValue.findMany({
-    where: { module, recordId },
+    where: { tenantId, module, recordId },
   });
 
   const customValueMap: Record<string, Prisma.JsonValue> = {};
@@ -101,6 +103,7 @@ interface ReadCustomFieldValuesForRecordsOptions {
   module: CustomFieldValueModule;
   recordIds: string[];
   moduleSlug: string;
+  tenantId: string;
 }
 
 /**
@@ -109,20 +112,21 @@ interface ReadCustomFieldValuesForRecordsOptions {
  */
 export async function readCustomFieldValuesForRecords(
   prisma: Prisma.TransactionClient,
-  { module, recordIds, moduleSlug }: ReadCustomFieldValuesForRecordsOptions,
+  { module, recordIds, moduleSlug, tenantId }: ReadCustomFieldValuesForRecordsOptions,
 ): Promise<Record<string, Record<string, Prisma.JsonValue | null>>> {
   if (recordIds.length === 0) return {};
   const mod = await prisma.module.findFirst({ where: { moduleSlug } });
   if (!mod) return {};
 
   const fields = await prisma.customField.findMany({
-    where: { moduleId: mod.id, deletedAt: null },
+    where: { tenantId, moduleId: mod.id, deletedAt: null },
     select: { id: true, fieldSlug: true },
   });
   if (fields.length === 0) return {};
 
   const values = await prisma.customFieldValue.findMany({
     where: {
+      tenantId,
       module,
       recordId: { in: recordIds },
       customFieldId: { in: fields.map((f) => f.id) },

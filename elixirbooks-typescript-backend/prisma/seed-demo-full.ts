@@ -183,7 +183,7 @@ async function wipe(tenantId: string): Promise<void> {
   // ANY inventory still referencing those products (possibly under other users
   // from prior test runs) so the product delete doesn't trip the FK.
   await prisma.inventory.deleteMany({ where: { product: { code: { startsWith: 'DEMO-' } } } });
-  await prisma.product.deleteMany({ where: { code: { startsWith: 'DEMO-' } } });
+  await prisma.product.deleteMany({ where: { tenantId, code: { startsWith: 'DEMO-' } } });
 
   // --- TaxRate (user-scoped) ----------------------------------------------
   await prisma.taxRate.deleteMany({ where: { tenantId } });
@@ -203,7 +203,7 @@ async function wipe(tenantId: string): Promise<void> {
   await prisma.bankDetail.deleteMany({ where: { tenantId } });
 
   // --- ExpenseCategory (global table, no tenantId). Delete demo-prefixed ----
-  await prisma.expenseCategory.deleteMany({ where: { title: { startsWith: 'Demo ' } } });
+  await prisma.expenseCategory.deleteMany({ where: { tenantId, title: { startsWith: 'Demo ' } } });
 
   // --- Gateway / messaging / integration / period configs -----------------
   await prisma.gatewayConfig.deleteMany({ where: { tenantId } });
@@ -284,31 +284,43 @@ async function ensurePaymentMode(name: string, slug: string): Promise<string> {
   return row.id;
 }
 
-async function ensureTaxGroup(name: string): Promise<string> {
-  const existing = await prisma.taxGroup.findFirst({ where: { tax_name: name } });
+async function ensureTaxGroup(tenantId: string, name: string): Promise<string> {
+  const existing = await prisma.taxGroup.findFirst({ where: { tenantId, tax_name: name } });
   if (existing) return existing.id;
-  const row = await prisma.taxGroup.create({ data: { tax_name: name, status: true } });
+  const row = await prisma.taxGroup.create({
+    data: { tenantId, tax_name: name, status: true },
+  });
   return row.id;
 }
 
-async function ensureUnit(unitName: string, shortName: string): Promise<string> {
-  const existing = await prisma.unit.findFirst({ where: { unit_name: unitName } });
+async function ensureUnit(tenantId: string, unitName: string, shortName: string): Promise<string> {
+  const existing = await prisma.unit.findFirst({ where: { tenantId, unit_name: unitName } });
   if (existing) return existing.id;
-  const row = await prisma.unit.create({ data: { unit_name: unitName, short_name: shortName, status: true } });
+  const row = await prisma.unit.create({
+    data: { tenantId, unit_name: unitName, short_name: shortName, status: true },
+  });
   return row.id;
 }
 
-async function ensureBrand(name: string): Promise<string> {
-  const existing = await prisma.brand.findUnique({ where: { brand_name: name } });
+async function ensureBrand(tenantId: string, name: string): Promise<string> {
+  const existing = await prisma.brand.findUnique({
+    where: { tenantId_brand_name: { tenantId, brand_name: name } },
+  });
   if (existing) return existing.id;
-  const row = await prisma.brand.create({ data: { brand_name: name, status: true } });
+  const row = await prisma.brand.create({
+    data: { tenantId, brand_name: name, status: true },
+  });
   return row.id;
 }
 
-async function ensureCategory(name: string, slug: string): Promise<string> {
-  const existing = await prisma.category.findUnique({ where: { category_name: name } });
+async function ensureCategory(tenantId: string, name: string, slug: string): Promise<string> {
+  const existing = await prisma.category.findUnique({
+    where: { tenantId_category_name: { tenantId, category_name: name } },
+  });
   if (existing) return existing.id;
-  const row = await prisma.category.create({ data: { category_name: name, slug, status: true } });
+  const row = await prisma.category.create({
+    data: { tenantId, category_name: name, slug, status: true },
+  });
   return row.id;
 }
 
@@ -486,11 +498,11 @@ async function seedAll(tenantId: string): Promise<void> {
   record('taxRates', taxRatesSpec.length);
 
   // -------------------------------------------------------------------------
-  // Brands (6), Categories (8), Units (5) — global (idempotent via ensure*)
+  // Brands (6), Categories (8), Units (5) — per tenant (idempotent via ensure*)
   // -------------------------------------------------------------------------
   const brandIds: string[] = [];
   for (const b of ['Apple', 'Dell', 'HP', 'Samsung', 'Lenovo', 'Microsoft']) {
-    brandIds.push(await ensureBrand(b));
+    brandIds.push(await ensureBrand(tenantId, b));
   }
   record('brands', brandIds.length);
 
@@ -506,7 +518,7 @@ async function seedAll(tenantId: string): Promise<void> {
   ] as const;
   const categoryIds: string[] = [];
   for (const [name, slug] of categorySpecs) {
-    categoryIds.push(await ensureCategory(name, slug));
+    categoryIds.push(await ensureCategory(tenantId, name, slug));
   }
   record('categories', categoryIds.length);
 
@@ -523,15 +535,15 @@ async function seedAll(tenantId: string): Promise<void> {
   ] as const;
   const unitIds: string[] = [];
   for (const [u, s] of unitSpecs) {
-    unitIds.push(await ensureUnit(u, s));
+    unitIds.push(await ensureUnit(tenantId, u, s));
   }
   record('units', unitIds.length);
 
   // TaxGroup used by Product (Product has required taxGroupId)
-  const taxGroupGst18 = await ensureTaxGroup('GST 18%');
+  const taxGroupGst18 = await ensureTaxGroup(tenantId, 'GST 18%');
 
   // -------------------------------------------------------------------------
-  // Products (10 + 5 services = 15) — global, demo-prefixed code
+  // Products (10 + 5 services = 15) — per tenant, demo-prefixed code
   // -------------------------------------------------------------------------
   const productSpecs = [
     { code: 'DEMO-LAPTOP-01', name: 'Demo Dell Latitude 5420 Laptop', type: 'Product', sell: 65000, buy: 55000, cat: 0, brand: 1, unit: 0 },
@@ -557,6 +569,7 @@ async function seedAll(tenantId: string): Promise<void> {
   for (const p of productSpecs) {
     const row = await prisma.product.create({
       data: {
+        tenantId,
         item_type: p.type as 'Product' | 'Service',
         name: p.name,
         code: p.code,
@@ -858,7 +871,7 @@ async function seedAll(tenantId: string): Promise<void> {
   const expCats: Record<string, string> = {};
   for (const name of expCatNames) {
     const row = await prisma.expenseCategory.create({
-      data: { title: name, status: true },
+      data: { tenantId, title: name, status: true },
     });
     expCats[name] = row.id;
   }

@@ -142,10 +142,16 @@ export async function seedPackTaxRates(
   const prismaRegime = packRegimeToPrisma(packRegime);
   const specs = ratesForPack(countryCode, prismaRegime);
 
-  // Reuse the global "No Tax" TaxGroup (idempotent by name); create if missing.
-  let group = await tx.taxGroup.findFirst({ where: { tax_name: DEFAULT_TAX_GROUP_NAME } });
+  // This tenant's "No Tax" TaxGroup (idempotent by name WITHIN the tenant --
+  // TaxGroup stopped being install-global in P4, so reusing another company's
+  // group here would attach their rows to this pack).
+  let group = await tx.taxGroup.findFirst({
+    where: { tenantId, tax_name: DEFAULT_TAX_GROUP_NAME },
+  });
   if (!group) {
-    group = await tx.taxGroup.create({ data: { tax_name: DEFAULT_TAX_GROUP_NAME, status: true } });
+    group = await tx.taxGroup.create({
+      data: { tenantId, tax_name: DEFAULT_TAX_GROUP_NAME, status: true },
+    });
   }
 
   for (const spec of specs) {

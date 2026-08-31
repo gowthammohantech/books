@@ -65,8 +65,8 @@ export interface StockAdjustmentParams {
 // Typed narrowly so callers can pass the real Prisma.TransactionClient (or a test stub).
 type TxClient = {
   product: {
-    findUnique: (args: {
-      where: { id: string };
+    findFirst: (args: {
+      where: { id: string; tenantId: string };
       select: { valuationMethod: true };
     }) => Promise<{ valuationMethod: string | null } | null>;
   };
@@ -97,8 +97,8 @@ type TxClient = {
 // call sites; typed loosely here so callers can cast).
 type RestockCostTx = {
   product: {
-    findUnique: (args: {
-      where: { id: string };
+    findFirst: (args: {
+      where: { id: string; tenantId: string };
       select: { valuationMethod: true; purchase_price: true };
     }) => Promise<{ valuationMethod: string | null; purchase_price: Prisma.Decimal | null } | null>;
   };
@@ -144,8 +144,8 @@ export async function resolveRestockUnitCost(
   params: { productId: string; tenantId: string },
 ): Promise<number> {
   const { productId, tenantId } = params;
-  const product = await tx.product.findUnique({
-    where: { id: productId },
+  const product = await tx.product.findFirst({
+    where: { id: productId, tenantId },
     select: { valuationMethod: true, purchase_price: true },
   });
 
@@ -212,8 +212,8 @@ export async function applyStockAdjustment(
   const currentAvgCost = existing?.avgCost ?? new Prisma.Decimal(0);
 
   // 2. Look up product valuation method.
-  const product = await tx.product.findUnique({
-    where: { id: productId },
+  const product = await tx.product.findFirst({
+    where: { id: productId, tenantId },
     select: { valuationMethod: true },
   });
   const isFifo = product?.valuationMethod === 'FIFO';

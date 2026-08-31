@@ -135,6 +135,14 @@ vi.mock('../../prisma/seedRoles', () => ({
   })),
 }));
 
+// ...and stocks the workspace's Units/Currencies/EmailTemplates through
+// seedTenantDefaults (P4). Both run inside the registration transaction, so
+// a failure here would fail the whole signup — which is why they are mocked
+// out rather than left to hit the fake client.
+vi.mock('../../prisma/seedTenant', () => ({
+  seedTenantDefaults: vi.fn(async () => ({ units: 0, currencies: 0, emailTemplates: 0 })),
+}));
+
 // ---------------------------------------------------------------------------
 // Mock ../../lib/defaultRoles (ensureRole is called from authController)
 // ---------------------------------------------------------------------------

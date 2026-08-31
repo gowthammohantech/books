@@ -622,6 +622,20 @@ model Tenant {
   payRunLines           PayRunLine[]           @relation("TenantPayRunLines")
   reminders             Reminder[]             @relation("TenantReminders")
 
+  // Formerly install-global catalogs, tenant-scoped in P4.
+  products             Product[]             @relation("TenantProduct")
+  brands               Brand[]               @relation("TenantBrand")
+  categories           Category[]            @relation("TenantCategory")
+  units                Unit[]                @relation("TenantUnit")
+  taxGroups            TaxGroup[]            @relation("TenantTaxGroup")
+  expenseCategories    ExpenseCategory[]     @relation("TenantExpenseCategory")
+  customFields         CustomField[]         @relation("TenantCustomField")
+  customFieldValues    CustomFieldValue[]    @relation("TenantCustomFieldValue")
+  customFieldDataTypes CustomFieldDataType[] @relation("TenantCustomFieldDataType")
+  emailTemplates       EmailTemplate[]       @relation("TenantEmailTemplate")
+  generalSettings      GeneralSetting[]      @relation("TenantGeneralSetting")
+  currencies           Currency[]            @relation("TenantCurrency")
+
   @@index([status])
 }
 
@@ -957,25 +971,34 @@ model BankTransaction {
 
 model Brand {
   id          String   @id @default(uuid())
-  brand_name  String   @unique
+  tenantId    String
+  tenant      Tenant   @relation("TenantBrand", fields: [tenantId], references: [id])
+  brand_name  String
   brand_image String?
   status      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   products Product[] @relation("BrandProducts")
+
+  @@unique([tenantId, brand_name])
 }
 
 model Category {
   id             String   @id @default(uuid())
-  category_name  String   @unique
-  slug           String   @unique
+  tenantId       String
+  tenant         Tenant   @relation("TenantCategory", fields: [tenantId], references: [id])
+  category_name  String
+  slug           String
   category_image String?
   status         Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   products Product[] @relation("CategoryProducts")
+
+  @@unique([tenantId, category_name])
+  @@unique([tenantId, slug])
 }
 
 model Customer {
@@ -1035,9 +1058,11 @@ model Inventory {
 
 model Product {
   id               String          @id @default(uuid())
+  tenantId         String
+  tenant           Tenant          @relation("TenantProduct", fields: [tenantId], references: [id])
   item_type        ProductItemType
   name             String
-  code             String          @unique
+  code             String
   categoryId       String?
   category         Category?       @relation("CategoryProducts", fields: [categoryId], references: [id])
   brandId          String?
@@ -1054,7 +1079,7 @@ model Product {
   // deprecated legacy fallback, read only when taxRateId is null.
   taxRateId        String?
   taxRate          TaxRate?        @relation("TaxRateProducts", fields: [taxRateId], references: [id])
-  barcode          String?         @unique
+  barcode          String?
   alert_quantity   Int             @default(0)
   description      String?
   product_image    String?
@@ -1070,6 +1095,9 @@ model Product {
   updatedAt        DateTime        @updatedAt
 
   inventories Inventory[] @relation("ProductInventories")
+
+  @@unique([tenantId, code])
+  @@unique([tenantId, barcode])
 }
 
 model Signature {
@@ -1098,7 +1126,7 @@ model Supplier {
   tenantId       String
   tenant         Tenant               @relation("TenantSupplier", fields: [tenantId], references: [id], onDelete: Restrict)
   supplier_name  String
-  supplier_email String               @unique
+  supplier_email String
   supplier_phone String
   balance        Decimal?             @default(0) @db.Decimal(18, 4)
   balance_type   SupplierBalanceType?
@@ -1118,6 +1146,8 @@ model Supplier {
   supplierPayments   SupplierPayment[] @relation("SupplierPaymentSupplier")
   debitNotesAsVendor DebitNote[]       @relation("DebitNoteSupplier")
   debitNotesAsBillTo DebitNote[]       @relation("DebitNoteBillToSupplier")
+
+  @@unique([tenantId, supplier_email])
 }
 
 model SupplierPayment {
@@ -1128,7 +1158,7 @@ model SupplierPayment {
   // asserts it always matches the parent.
   tenantId         String
   tenant           Tenant                    @relation("TenantSupplierPayments", fields: [tenantId], references: [id], onDelete: Restrict)
-  paymentId        String?                   @unique // TODO 0.1c: app-generated PAY-NNNNNN sequence
+  paymentId        String? // TODO 0.1c: app-generated PAY-NNNNNN sequence
   purchaseId       String
   purchase         Purchase                  @relation("PurchaseSupplierPayments", fields: [purchaseId], references: [id])
   supplierId       String?
@@ -1168,6 +1198,7 @@ model SupplierPayment {
   createdAt        DateTime                  @default(now())
   updatedAt        DateTime                  @updatedAt
 
+  @@unique([tenantId, paymentId])
   @@index([tenantId])
 }
 
@@ -1183,7 +1214,7 @@ model Counter {
 
 model CreditNote {
   id                  String                 @id @default(uuid())
-  creditNoteNumber    String?                @unique // TODO 0.1c: app-generated CN-NNNNNN
+  creditNoteNumber    String? // TODO 0.1c: app-generated CN-NNNNNN
   invoiceId           String
   invoice             Invoice                @relation("CreditNoteInvoice", fields: [invoiceId], references: [id])
   customerId          String?
@@ -1229,11 +1260,13 @@ model CreditNote {
   updatedAt           DateTime               @updatedAt
   costCenterId        String?
   costCenter          CostCenter?            @relation("CostCenterCreditNotes", fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, creditNoteNumber])
 }
 
 model DebitNote {
   id                String           @id @default(uuid())
-  debitNoteId       String?          @unique // TODO 0.1c: app-generated DN-NNNNNN
+  debitNoteId       String? // TODO 0.1c: app-generated DN-NNNNNN
   purchaseId        String
   purchase          Purchase         @relation("DebitNotePurchase", fields: [purchaseId], references: [id])
   supplierId        String? // vendor sourced from the purchase's supplier (new path)
@@ -1282,11 +1315,13 @@ model DebitNote {
   updatedAt         DateTime         @updatedAt
   costCenterId      String?
   costCenter        CostCenter?      @relation("CostCenterDebitNotes", fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, debitNoteId])
 }
 
 model DeliveryChallan {
   id                String                @id @default(uuid())
-  challanNumber     String?               @unique // TODO 0.1c: app-generated DC-NNNNNN
+  challanNumber     String? // TODO 0.1c: app-generated DC-NNNNNN
   invoiceId         String?
   invoice           Invoice?              @relation("DeliveryChallanInvoice", fields: [invoiceId], references: [id])
   customerId        String?
@@ -1328,10 +1363,14 @@ model DeliveryChallan {
   updatedAt         DateTime              @updatedAt
   costCenterId      String?
   costCenter        CostCenter?           @relation("CostCenterDeliveryChallans", fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, challanNumber])
 }
 
 model EmailTemplate {
   id                   String              @id @default(uuid())
+  tenantId             String
+  tenant               Tenant              @relation("TenantEmailTemplate", fields: [tenantId], references: [id])
   title                String
   notificationTypeId   String
   notificationType     NotificationType    @relation("NotificationTypeEmailTemplates", fields: [notificationTypeId], references: [id])
@@ -1342,11 +1381,13 @@ model EmailTemplate {
   status               EmailTemplateStatus @default(active)
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
+
+  @@unique([tenantId, notificationTypeId, title])
 }
 
 model Invoice {
   id                   String                        @id @default(uuid())
-  invoiceNumber        String?                       @unique // TODO 0.1c: app-generated INV-NNNNNN
+  invoiceNumber        String? // TODO 0.1c: app-generated INV-NNNNNN
   customerId           String?
   customer             Customer?                     @relation("InvoiceCustomer", fields: [customerId], references: [id])
   contactId            String?
@@ -1437,6 +1478,8 @@ model Invoice {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, invoiceNumber])
 }
 
 // Recurring engine v2: a non-posting schedule that holds an invoice TEMPLATE + cadence + lifecycle.
@@ -1578,7 +1621,7 @@ model InvoiceTemplate {
 
 model Quotation {
   id                String               @id @default(uuid())
-  quotationId       String?              @unique // TODO 0.1c: app-generated QT-NNNNNN
+  quotationId       String? // TODO 0.1c: app-generated QT-NNNNNN
   customerId        String?
   customer          Customer?            @relation("QuotationCustomer", fields: [customerId], references: [id])
   contactId         String?
@@ -1629,6 +1672,8 @@ model Quotation {
   updatedAt    DateTime    @updatedAt
   costCenterId String?
   costCenter   CostCenter? @relation("CostCenterQuotations", fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, quotationId])
 }
 
 model Reminder {
@@ -1678,7 +1723,7 @@ model Reminder {
 
 model Expense {
   id                String               @id @default(uuid())
-  expenseId         String?              @unique // TODO 0.1c: app-generated EXP-NNNNNN
+  expenseId         String? // TODO 0.1c: app-generated EXP-NNNNNN
   referenceNo       String?              @default("")
   amount            Decimal              @db.Decimal(18, 4)
   expenseDate       DateTime             @default(now())
@@ -1734,10 +1779,14 @@ model Expense {
 
   paidByUserId String?
   paidByUser   User?   @relation("ExpensePaidBy", fields: [paidByUserId], references: [id])
+
+  @@unique([tenantId, expenseId])
 }
 
 model ExpenseCategory {
   id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation("TenantExpenseCategory", fields: [tenantId], references: [id])
   title       String
   description String?
   status      Boolean  @default(true)
@@ -1746,6 +1795,8 @@ model ExpenseCategory {
   updatedAt   DateTime @updatedAt
 
   expenses Expense[] @relation("ExpenseCategoryExpenses")
+
+  @@index([tenantId])
 }
 
 model ExpenseChangeLog {
@@ -1823,7 +1874,7 @@ model PettyCashTransaction {
 
 model Purchase {
   id                String           @id @default(uuid())
-  purchaseId        String?          @unique // TODO 0.1c: app-generated PUR-NNNNNN
+  purchaseId        String? // TODO 0.1c: app-generated PUR-NNNNNN
   purchaseOrderId   String?
   purchaseOrder     PurchaseOrder?   @relation("PurchaseFromOrder", fields: [purchaseOrderId], references: [id])
   supplierId        String?
@@ -1883,11 +1934,13 @@ model Purchase {
   debitNotes       DebitNote[]       @relation("DebitNotePurchase")
   // Cluster H — slice H.2 (purchase created from an AI extraction job)
   aiExtractionJob  AiExtractionJob?  @relation("PurchaseFromAi")
+
+  @@unique([tenantId, purchaseId])
 }
 
 model PurchaseOrder {
   id                String                    @id @default(uuid())
-  purchaseOrderId   String?                   @unique // TODO 0.1c: app-generated PO-NNNNNN
+  purchaseOrderId   String? // TODO 0.1c: app-generated PO-NNNNNN
   supplierId        String?
   supplier          Supplier?                 @relation("PurchaseOrderSupplier", fields: [supplierId], references: [id])
   contactId         String?
@@ -1928,6 +1981,8 @@ model PurchaseOrder {
   purchases    Purchase[]  @relation("PurchaseFromOrder")
   costCenterId String?
   costCenter   CostCenter? @relation("CostCenterPurchaseOrders", fields: [costCenterId], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, purchaseOrderId])
 }
 
 // =============================================================================
@@ -2049,6 +2104,8 @@ model CompanySettings {
 
 model Currency {
   id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation("TenantCurrency", fields: [tenantId], references: [id])
   name          String
   code          String
   symbol        String
@@ -2059,6 +2116,8 @@ model Currency {
   createdByUser User     @relation("CurrencyCreatedBy", fields: [createdBy], references: [id])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model DateFormat {
@@ -2112,7 +2171,9 @@ model EmailSettings {
 
 model GeneralSetting {
   id            String   @id @default(uuid())
-  key           String   @unique
+  tenantId      String
+  tenant        Tenant   @relation("TenantGeneralSetting", fields: [tenantId], references: [id])
+  key           String
   value         Json
   groupSlug     String?  @default("general")
   createdBy     String?
@@ -2122,6 +2183,7 @@ model GeneralSetting {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  @@unique([tenantId, key])
   @@index([key])
   @@index([groupSlug])
 }
@@ -2162,6 +2224,8 @@ model PaymentMode {
 
 model TaxGroup {
   id         String    @id @default(uuid())
+  tenantId   String
+  tenant     Tenant    @relation("TenantTaxGroup", fields: [tenantId], references: [id])
   tax_name   String
   status     Boolean?  @default(true)
   created_on DateTime? @default(now())
@@ -2170,6 +2234,8 @@ model TaxGroup {
 
   tax_rates TaxRate[] @relation("TaxGroupTaxRates")
   products  Product[] @relation("TaxGroupProducts")
+
+  @@index([tenantId])
 }
 
 model TaxRate {
@@ -2230,6 +2296,8 @@ model Timezone {
 
 model Unit {
   id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation("TenantUnit", fields: [tenantId], references: [id])
   unit_name  String
   short_name String
   status     Boolean? @default(true)
@@ -2237,6 +2305,8 @@ model Unit {
   updatedAt  DateTime @updatedAt
 
   products Product[] @relation("UnitProducts")
+
+  @@index([tenantId])
 }
 
 // =============================================================================
@@ -2245,6 +2315,8 @@ model Unit {
 
 model CustomField {
   id          String               @id @default(uuid())
+  tenantId    String
+  tenant      Tenant               @relation("TenantCustomField", fields: [tenantId], references: [id])
   moduleId    String
   module      Module               @relation("ModuleCustomFields", fields: [moduleId], references: [id])
   labelName   String
@@ -2264,11 +2336,14 @@ model CustomField {
   values CustomFieldValue[] @relation("CustomFieldValues")
 
   @@index([moduleId, fieldSlug])
+  @@index([tenantId])
 }
 
 model CustomFieldDataType {
   id            String                  @id @default(uuid())
-  type          CustomFieldDataTypeKind @unique
+  tenantId      String
+  tenant        Tenant                  @relation("TenantCustomFieldDataType", fields: [tenantId], references: [id])
+  type          CustomFieldDataTypeKind
   description   String?
   isActive      Boolean                 @default(true)
   createdBy     String
@@ -2276,12 +2351,15 @@ model CustomFieldDataType {
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
 
+  @@unique([tenantId, type])
   @@index([isActive])
   @@index([createdBy])
 }
 
 model CustomFieldValue {
   id            String                 @id @default(uuid())
+  tenantId      String
+  tenant        Tenant                 @relation("TenantCustomFieldValue", fields: [tenantId], references: [id])
   customFieldId String
   customField   CustomField            @relation("CustomFieldValues", fields: [customFieldId], references: [id])
   module        CustomFieldValueModule
@@ -2291,6 +2369,8 @@ model CustomFieldValue {
   createdByUser User?                  @relation("UserCustomFieldValues", fields: [createdBy], references: [id])
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
+
+  @@index([tenantId])
 }
 
 model FieldType {
@@ -2343,7 +2423,7 @@ model NotificationTypeTag {
 
 model AIChatSession {
   id                   String              @id @default(uuid())
-  sessionId            String?             @unique // TODO 0.1c: app-generated CHAT-NNNNNN
+  sessionId            String? // TODO 0.1c: app-generated CHAT-NNNNNN
   messages             Json?
   documentType         AIDocumentType?
   currentExtractedData Json?
@@ -2354,6 +2434,8 @@ model AIChatSession {
   isDeleted            Boolean             @default(false)
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
+
+  @@unique([tenantId, sessionId])
 }
 
 model AIConfiguration {
@@ -2376,7 +2458,7 @@ model AIConfiguration {
 
 model AIPromptLog {
   id                  String                          @id @default(uuid())
-  promptId            String?                         @unique // TODO 0.1c: app-generated AI-NNNNNN
+  promptId            String? // TODO 0.1c: app-generated AI-NNNNNN
   prompt              String
   documentType        AIDocumentType
   extractedData       Json?
@@ -2392,6 +2474,8 @@ model AIPromptLog {
   isDeleted           Boolean                         @default(false)
   createdAt           DateTime                        @default(now())
   updatedAt           DateTime                        @updatedAt
+
+  @@unique([tenantId, promptId])
 }
 
 model AIPromptTemplate {

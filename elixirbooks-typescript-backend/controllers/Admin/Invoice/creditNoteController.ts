@@ -6,6 +6,7 @@ import { validationResult } from 'express-validator';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 
 import { prisma } from '../../../lib/prisma';
+import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
 import { tenantScope, requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import {
   nextDocumentNumber,
@@ -17,14 +18,6 @@ import { applyDocumentTreatment } from '../../../lib/tax/applyTreatment';
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
 
-// C.1: resolve the company default currency code (ISO string).
-async function resolveDefaultCurrencyCode(): Promise<string | null> {
-  const defaultCurrency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return defaultCurrency?.code ?? null;
-}
 import { handleLedgerError } from '../../../lib/httpErrors';
 import {
   postCreditNoteIssued,
@@ -266,7 +259,7 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
     const docCurrencyCode =
       (typeof body.currencyCode === 'string' && body.currencyCode ? body.currencyCode : null) ??
       invoice.currencyCode ??
-      (await resolveDefaultCurrencyCode());
+      (await resolveDefaultCurrencyCode(requireTenantId(req)));
 
     // C2: per-document tax treatment.
     const docTreatment: TaxTreatment =
@@ -278,7 +271,11 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
     // notes POST GL (issued + COGS) and REDUCE AR from the persisted totals, so
     // client-sent subTotal/totalTax/grandTotal are ignored (compare + warn only)
     // — a spoofed grandTotal can no longer drive the GL/AR.
-    const itemsWithRates = await resolveItemTaxRates(prisma as unknown as TaxGroupLookupDb, items as unknown as TotalsItem[]);
+    const itemsWithRates = await resolveItemTaxRates(
+        prisma as unknown as TaxGroupLookupDb,
+        items as unknown as TotalsItem[],
+        tenantId,
+      );
     const serverTotals = computeDocumentTotals(itemsWithRates);
     warnOnTotalsDivergence('creditNote', 'new', asNumber(body.grandTotal, NaN), serverTotals.grandTotal);
     const finalTaxable = serverTotals.subTotal;
@@ -340,8 +337,8 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
       for (const item of items) {
         const productId = item.id;
         if (!productId || !item.qty) continue;
-        const product = await tx.product.findUnique({
-          where: { id: productId },
+        const product = await tx.product.findFirst({
+          where: { id: productId, tenantId },
           select: { item_type: true },
         });
         if (product?.item_type === 'Service') continue;
@@ -931,7 +928,11 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
     {
       const haveItems = body.items !== undefined;
       const items = haveItems ? normaliseItems(body.items) : normaliseItems(existing.items);
-      const itemsWithRates = await resolveItemTaxRates(prisma as unknown as TaxGroupLookupDb, items as unknown as TotalsItem[]);
+      const itemsWithRates = await resolveItemTaxRates(
+        prisma as unknown as TaxGroupLookupDb,
+        items as unknown as TotalsItem[],
+        tenantId,
+      );
       const serverTotals = computeDocumentTotals(itemsWithRates);
       warnOnTotalsDivergence('creditNote', id, asNumber(body.grandTotal, NaN), serverTotals.grandTotal);
 
@@ -1045,8 +1046,8 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
         for (const item of updatedItems) {
           const productId = item.id;
           if (!productId || !item.qty) continue;
-          const product = await tx.product.findUnique({
-            where: { id: productId },
+          const product = await tx.product.findFirst({
+            where: { id: productId, tenantId },
             select: { item_type: true },
           });
           if (product?.item_type === 'Service') continue;
@@ -1117,8 +1118,8 @@ export async function deleteCreditNote(req: Request, res: Response): Promise<voi
       for (const item of items) {
         const productId = item.id;
         if (!productId || !item.qty) continue;
-        const product = await tx.product.findUnique({
-          where: { id: productId },
+        const product = await tx.product.findFirst({
+          where: { id: productId, tenantId },
           select: { item_type: true },
         });
         if (product?.item_type === 'Service') continue;

@@ -9,6 +9,7 @@ import type {
 } from '@prisma/client';
 
 import { prisma } from '../../../lib/prisma';
+import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
 import { tenantScope, requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 import { applyDocumentTreatment } from '../../../lib/tax/applyTreatment';
@@ -30,15 +31,6 @@ import { readCustomFieldValuesForRecords } from '../../../lib/customFieldValues'
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
 import { resolveProductTaxRate } from '../../../lib/tax/resolveProductTaxRate';
-
-// C.1: resolve the company default currency code (ISO string).
-async function resolveDefaultCurrencyCode(): Promise<string | null> {
-  const defaultCurrency = await prisma.currency.findFirst({
-    where: { isDefault: true, isDeleted: false },
-    select: { code: true },
-  });
-  return defaultCurrency?.code ?? null;
-}
 
 // utils/mailer is still JS; static require is fine here.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -213,6 +205,7 @@ async function insertCustomFieldValues(
     const fileMatch = files.find((file) => file.fieldname === `customField_${f.fieldId}`);
     if (fileMatch) value = fileMatch.path;
     return {
+      tenantId,
       customFieldId: f.fieldId,
       module: 'purchaseOrder',
       recordId,
@@ -336,7 +329,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
     // C.1: per-document currency — use caller-supplied code or fall back to company default.
     const docCurrencyCode =
       (typeof body.currencyCode === 'string' && body.currencyCode ? body.currencyCode : null) ??
-      (await resolveDefaultCurrencyCode());
+      (await resolveDefaultCurrencyCode(requireTenantId(req)));
 
     // C2: per-document tax treatment.
     const docTreatment: TaxTreatment =
@@ -345,7 +338,11 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
     // Server-authoritative totals: PO lines carry a flat `tax` amount +
     // tax_group_id (no per-line percent), so resolve the group's rate then
     // recompute tax on the discounted base. Client-sent totals are ignored.
-    const itemsWithRates = await resolveItemTaxRates(prisma as unknown as TaxGroupLookupDb, items as TotalsItem[]);
+    const itemsWithRates = await resolveItemTaxRates(
+      prisma as unknown as TaxGroupLookupDb,
+      items as TotalsItem[],
+      tenantId,
+    );
     const serverTotals = computeDocumentTotals(itemsWithRates);
     warnOnTotalsDivergence(
       'purchaseOrder',
@@ -609,12 +606,13 @@ export async function getRecentProductsWithSearch(req: Request, res: Response): 
     }
 
     // Merge search + currency with AND semantics.
-    const where: Prisma.ProductWhereInput =
-      queryCur
-        ? { AND: [searchClause, currencyClause] }
-        : searchClause;
-
     const tenantId = requireTenantId(req);
+
+    // AND rather than a spread: a caller-supplied OR sitting beside the
+    // filter would re-widen it past this tenant.
+    const where: Prisma.ProductWhereInput = {
+      AND: queryCur ? [{ tenantId }, searchClause, currencyClause] : [{ tenantId }, searchClause],
+    };
 
     const products = await prisma.product.findMany({
       where,
@@ -645,6 +643,7 @@ export async function getRecentProductsWithSearch(req: Request, res: Response): 
     // Batch-fetch product custom-field values for this page (no N+1) so the
     // frontend can autofill line-item custom fields from the source product.
     const customFieldsByProductId = await readCustomFieldValuesForRecords(prisma, {
+      tenantId,
       module: CustomFieldValueModule.product,
       recordIds: productIds,
       moduleSlug: 'product-services',
@@ -989,14 +988,14 @@ export async function listPurchaseOrders(req: Request, res: Response): Promise<v
     let tableFields: { id: string; fieldSlug: string; labelName: string }[] = [];
     if (purchaseOrderModule) {
       tableFields = await prisma.customField.findMany({
-        where: { moduleId: purchaseOrderModule.id, showInTable: true, deletedAt: null },
+        where: { tenantId: requireTenantId(req), moduleId: purchaseOrderModule.id, showInTable: true, deletedAt: null },
         select: { id: true, fieldSlug: true, labelName: true },
       });
     }
 
     const purchaseOrderIds = purchaseOrders.map((po) => po.id);
     const customValues = await prisma.customFieldValue.findMany({
-      where: { module: 'purchaseOrder', recordId: { in: purchaseOrderIds } },
+      where: { tenantId: requireTenantId(req), module: 'purchaseOrder', recordId: { in: purchaseOrderIds } },
     });
 
     const customValueMap: Record<string, Record<string, Prisma.JsonValue | null>> = {};
@@ -1295,12 +1294,12 @@ export async function getPurchaseOrderById(req: Request, res: Response): Promise
 
     if (purchaseOrderModule) {
       const fields = await prisma.customField.findMany({
-        where: { moduleId: purchaseOrderModule.id, deletedAt: null },
+        where: { tenantId: requireTenantId(req), moduleId: purchaseOrderModule.id, deletedAt: null },
         select: { id: true, fieldSlug: true, labelName: true },
       });
 
       const values = await prisma.customFieldValue.findMany({
-        where: { module: 'purchaseOrder', recordId: purchaseOrder.id },
+        where: { tenantId: requireTenantId(req), module: 'purchaseOrder', recordId: purchaseOrder.id },
       });
 
       const valueMap: Record<string, Prisma.JsonValue | null> = {};
@@ -1599,7 +1598,11 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
       items = normaliseItems(body.items);
       // Server-authoritative totals (see createPurchaseOrder): resolve tax-group
       // rates, recompute on the discounted base, ignore client-sent totals.
-      const itemsWithRates = await resolveItemTaxRates(prisma as unknown as TaxGroupLookupDb, items as TotalsItem[]);
+      const itemsWithRates = await resolveItemTaxRates(
+      prisma as unknown as TaxGroupLookupDb,
+      items as TotalsItem[],
+      tenantId,
+    );
       const serverTotals = computeDocumentTotals(itemsWithRates);
       warnOnTotalsDivergence('purchaseOrder', id, asNumber(body.grandTotal, asNumber(body.TotalAmount, NaN)), serverTotals.grandTotal);
       taxableAmount = serverTotals.subTotal;
@@ -1734,7 +1737,7 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
       }
       if (Array.isArray(customFields) && customFields.length > 0) {
         await tx.customFieldValue.deleteMany({
-          where: { module: 'purchaseOrder', recordId: id },
+          where: { tenantId, module: 'purchaseOrder', recordId: id },
         });
         await insertCustomFieldValues(tx, id, bodyUserId, customFields, files);
       }
@@ -1857,7 +1860,7 @@ export async function getAllTaxGroupsDetails(req: Request, res: Response): Promi
   try {
     const { search } = req.query as { search?: string };
 
-    const where: Prisma.TaxGroupWhereInput = {};
+    const where: Prisma.TaxGroupWhereInput = { tenantId: requireTenantId(req) };
     if (search) {
       where.OR = [{ tax_name: { contains: search, mode: 'insensitive' } }];
     }
