@@ -527,6 +527,7 @@ export async function createExpense(
 
         await tx.bankTransaction.create({
           data: {
+            tenantId: userId,
             bankAccountId: bankId as string,
             transactionDate: new Date(),
             type: (paymentModeDetails.slug === 'cash'
@@ -579,6 +580,7 @@ export async function createExpense(
 
         await tx.pettyCashTransaction.create({
           data: {
+            tenantId: userId,
             pettyCashId: pettyCash.id,
             transactionDate: new Date(),
             transactionType: 'SPEND' as PettyCashTransactionType,
@@ -624,6 +626,7 @@ export async function createExpense(
       =========================== */
       await tx.expenseChangeLog.create({
         data: {
+          tenantId: userId,
           expenseId: expense.id,
           changedBy: userId,
           changes: [
@@ -1577,6 +1580,7 @@ export async function updateExpense(
 
           await tx.bankTransaction.create({
             data: {
+              tenantId: userId,
               bankAccountId: bankId as string,
               transactionDate: new Date(),
               type: 'PAYMENT' as BankTransactionType,
@@ -1616,6 +1620,7 @@ export async function updateExpense(
 
           await tx.pettyCashTransaction.create({
             data: {
+              tenantId: userId,
               pettyCashId: pettyCash.id,
               transactionDate: new Date(),
               transactionType: 'SPEND' as PettyCashTransactionType,
@@ -1648,6 +1653,7 @@ export async function updateExpense(
 
             await tx.bankTransaction.create({
               data: {
+                tenantId: userId,
                 bankAccountId: bankId,
                 transactionDate: new Date(),
                 type: (diff > 0
@@ -1687,6 +1693,7 @@ export async function updateExpense(
 
             await tx.pettyCashTransaction.create({
               data: {
+                tenantId: userId,
                 pettyCashId: pettyCash.id,
                 transactionDate: new Date(),
                 transactionType: (diff > 0
@@ -1741,6 +1748,7 @@ export async function updateExpense(
       if (changes.length > 0) {
         await tx.expenseChangeLog.create({
           data: {
+            tenantId: userId,
             expenseId: expense.id,
             changedBy: userId,
             changes: changes as unknown as Prisma.InputJsonValue,
@@ -1902,6 +1910,7 @@ export async function deleteExpense(
 
             await tx.bankTransaction.create({
               data: {
+                tenantId: userId,
                 bankAccountId: bank.id,
                 transactionDate: new Date(),
                 type: reversalType,
@@ -1934,6 +1943,7 @@ export async function deleteExpense(
 
             await tx.pettyCashTransaction.create({
               data: {
+                tenantId: userId,
                 pettyCashId: pettyCash.id,
                 transactionDate: new Date(),
                 transactionType: 'RETURN' as PettyCashTransactionType,

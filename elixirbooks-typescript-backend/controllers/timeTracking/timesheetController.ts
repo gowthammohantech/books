@@ -488,6 +488,7 @@ export async function replaceEntries(req: Request, res: Response): Promise<void>
         ? [
             prisma.timeEntry.createMany({
               data: normalized.map((n) => ({
+                tenantId,
                 timesheetId: id,
                 projectId: n.projectId,
                 date: n.date,

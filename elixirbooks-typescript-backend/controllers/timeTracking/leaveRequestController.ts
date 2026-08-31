@@ -260,6 +260,7 @@ export async function createLeaveRequest(req: Request, res: Response): Promise<v
       });
       await tx.leaveRequestDay.createMany({
         data: days.map((d) => ({
+          tenantId,
           leaveRequestId: request.id,
           date: keyToUtcDate(d.date),
           portion: d.portion,

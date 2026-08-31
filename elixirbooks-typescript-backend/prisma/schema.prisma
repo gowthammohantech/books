@@ -544,6 +544,19 @@ model Tenant {
   permissions Permission[]       @relation("TenantPermissions")
   users       User[]             @relation("UserLastTenant")
 
+  // Denormalized child tables (see the note on each model).
+  invoicePayments       InvoicePayment[]       @relation("TenantInvoicePayments")
+  supplierPayments      SupplierPayment[]      @relation("TenantSupplierPayments")
+  expenseChangeLogs     ExpenseChangeLog[]     @relation("TenantExpenseChangeLogs")
+  bankTransactions      BankTransaction[]      @relation("TenantBankTransactions")
+  pettyCashTransactions PettyCashTransaction[] @relation("TenantPettyCashTransactions")
+  journalLines          JournalLine[]          @relation("TenantJournalLines")
+  aiChatMessages        AiChatMessage[]        @relation("TenantAiChatMessages")
+  timeEntries           TimeEntry[]            @relation("TenantTimeEntries")
+  leaveRequestDays      LeaveRequestDay[]      @relation("TenantLeaveRequestDays")
+  payRunLines           PayRunLine[]           @relation("TenantPayRunLines")
+  reminders             Reminder[]             @relation("TenantReminders")
+
   @@index([status])
 }
 
@@ -858,6 +871,12 @@ model BankDetail {
 
 model BankTransaction {
   id                         String                      @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId                   String
+  tenant                     Tenant                      @relation("TenantBankTransactions", fields: [tenantId], references: [id], onDelete: Restrict)
   bankAccountId              String
   bankAccount                BankDetail                  @relation("BankDetailTransactions", fields: [bankAccountId], references: [id])
   transactionDate            DateTime                    @default(now())
@@ -916,6 +935,7 @@ model BankTransaction {
   @@index([transactionDate])
   @@index([relatedType, relatedId])
   @@index([isDeleted])
+  @@index([tenantId])
 }
 
 model Brand {
@@ -1085,6 +1105,12 @@ model Supplier {
 
 model SupplierPayment {
   id               String                    @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId         String
+  tenant           Tenant                    @relation("TenantSupplierPayments", fields: [tenantId], references: [id], onDelete: Restrict)
   paymentId        String?                   @unique // TODO 0.1c: app-generated PAY-NNNNNN sequence
   purchaseId       String
   purchase         Purchase                  @relation("PurchaseSupplierPayments", fields: [purchaseId], references: [id])
@@ -1124,6 +1150,8 @@ model SupplierPayment {
   voidReason       String?
   createdAt        DateTime                  @default(now())
   updatedAt        DateTime                  @updatedAt
+
+  @@index([tenantId])
 }
 
 // =============================================================================
@@ -1439,6 +1467,12 @@ model RecurringInvoiceSchedule {
 
 model InvoicePayment {
   id                   String              @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId             String
+  tenant               Tenant              @relation("TenantInvoicePayments", fields: [tenantId], references: [id], onDelete: Restrict)
   invoiceId            String
   invoice              Invoice             @relation("InvoicePaymentInvoice", fields: [invoiceId], references: [id])
   amount               Decimal             @db.Decimal(18, 4)
@@ -1473,6 +1507,8 @@ model InvoicePayment {
   updatedAt            DateTime            @updatedAt
 
   accountCreditEntries AccountCreditEntry[] @relation("AccountCreditEntryInvoicePayment")
+
+  @@index([tenantId])
 }
 
 // Per-contact "Account Credit": a running credit a business can manually grant a
@@ -1579,6 +1615,12 @@ model Quotation {
 
 model Reminder {
   id                 String          @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId           String
+  tenant             Tenant          @relation("TenantReminders", fields: [tenantId], references: [id], onDelete: Restrict)
   name               String
   type               ReminderType    @default(automatic)
   remindDays         Int?
@@ -1597,8 +1639,6 @@ model Reminder {
   manualReminderData Json?
   createdBy          String
   createdByUser      User            @relation("ReminderCreatedBy", fields: [createdBy], references: [id])
-  companyId          String
-  company            CompanySettings @relation("CompanySettingsReminders", fields: [companyId], references: [id])
   status             ReminderStatus  @default(active)
   lastSent           DateTime?
   nextSend           DateTime?
@@ -1607,7 +1647,7 @@ model Reminder {
 
   @@index([createdBy, status])
   @@index([type, status])
-  @@index([companyId, status])
+  @@index([tenantId, status])
   @@index([nextSend, isEnabled])
   @@index([targetInvoice])
   @@index([targetQuotation])
@@ -1692,6 +1732,12 @@ model ExpenseCategory {
 
 model ExpenseChangeLog {
   id            String   @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId      String
+  tenant        Tenant   @relation("TenantExpenseChangeLogs", fields: [tenantId], references: [id], onDelete: Restrict)
   expenseId     String
   expense       Expense  @relation("ExpenseChangeLogs", fields: [expenseId], references: [id])
   changedBy     String
@@ -1700,6 +1746,8 @@ model ExpenseChangeLog {
   changeDate    DateTime @default(now())
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model PettyCash {
@@ -1728,6 +1776,12 @@ model PettyCash {
 
 model PettyCashTransaction {
   id              String                          @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId        String
+  tenant          Tenant                          @relation("TenantPettyCashTransactions", fields: [tenantId], references: [id], onDelete: Restrict)
   pettyCashId     String
   pettyCash       PettyCash                       @relation("PettyCashTransactions", fields: [pettyCashId], references: [id])
   transactionDate DateTime                        @default(now())
@@ -1746,6 +1800,7 @@ model PettyCashTransaction {
   @@index([transactionDate])
   @@index([relatedType, relatedId])
   @@index([isDeleted])
+  @@index([tenantId])
 }
 
 model Purchase {
@@ -1972,8 +2027,6 @@ model CompanySettings {
   vatNumber   String? // UK / EU VAT registration number
   abn         String? // Australia Business Number
   nzGstNumber String? // New Zealand GST registration number
-
-  reminders Reminder[] @relation("CompanySettingsReminders")
 }
 
 model Currency {
@@ -2525,6 +2578,12 @@ model JournalEntry {
 
 model JournalLine {
   id             String       @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId       String
+  tenant         Tenant       @relation("TenantJournalLines", fields: [tenantId], references: [id], onDelete: Restrict)
   journalEntryId String
   journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
   accountId      String
@@ -2545,6 +2604,7 @@ model JournalLine {
   @@index([accountId])
   @@index([costCenterId])
   @@index([projectId])
+  @@index([tenantId])
 }
 
 model LedgerAccountMapping {
@@ -2717,6 +2777,12 @@ model AiChatSession {
 
 model AiChatMessage {
   id         String        @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId   String
+  tenant     Tenant        @relation("TenantAiChatMessages", fields: [tenantId], references: [id], onDelete: Restrict)
   sessionId  String
   session    AiChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   role       AiChatRole
@@ -2728,6 +2794,7 @@ model AiChatMessage {
   createdAt  DateTime      @default(now())
 
   @@index([sessionId, createdAt])
+  @@index([tenantId])
 }
 
 // Cluster H — slice H.4 (per-call usage logging for cost charts + rate limits)
@@ -2958,6 +3025,12 @@ model Timesheet {
 
 model TimeEntry {
   id          String   @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId    String
+  tenant      Tenant   @relation("TenantTimeEntries", fields: [tenantId], references: [id], onDelete: Restrict)
   timesheetId String
   projectId   String
   date        DateTime
@@ -2973,6 +3046,7 @@ model TimeEntry {
   @@index([timesheetId])
   @@index([projectId])
   @@index([date])
+  @@index([tenantId])
 }
 
 // =============================================================================
@@ -3066,6 +3140,12 @@ model LeaveRequest {
 
 model LeaveRequestDay {
   id             String       @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId       String
+  tenant         Tenant       @relation("TenantLeaveRequestDays", fields: [tenantId], references: [id], onDelete: Restrict)
   leaveRequestId String
   date           DateTime
   portion        LeavePortion @default(FULL)
@@ -3075,6 +3155,7 @@ model LeaveRequestDay {
 
   @@unique([leaveRequestId, date])
   @@index([date])
+  @@index([tenantId])
 }
 
 // =============================================================================
@@ -3207,6 +3288,12 @@ model PayRun {
 
 model PayRunLine {
   id             String   @id @default(uuid())
+  // Denormalized tenant. This table reaches its tenant only through a parent
+  // FK, but lib/tenantGuard.ts can inject a top-level `where` and nothing
+  // else, so the column has to live here. prisma/checkTenantIntegrity.ts
+  // asserts it always matches the parent.
+  tenantId       String
+  tenant         Tenant   @relation("TenantPayRunLines", fields: [tenantId], references: [id], onDelete: Restrict)
   payRunId       String
   payRun         PayRun   @relation("PayRunLines", fields: [payRunId], references: [id], onDelete: Cascade)
   employeeUserId String
@@ -3221,6 +3308,7 @@ model PayRunLine {
 
   @@index([payRunId])
   @@index([employeeUserId])
+  @@index([tenantId])
 }
 
 // =============================================================================

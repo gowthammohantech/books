@@ -252,6 +252,7 @@ export async function create(req: Request, res: Response): Promise<void> {
         reference: body.reference ?? null,
         lines: {
           create: baseLines.map((l) => ({
+            tenantId: userId,
             accountId: l.accountId,
             debit: new Prisma.Decimal(Number(l.debit ?? 0)),
             credit: new Prisma.Decimal(Number(l.credit ?? 0)),

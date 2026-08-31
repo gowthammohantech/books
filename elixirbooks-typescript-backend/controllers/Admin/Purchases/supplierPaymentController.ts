@@ -345,6 +345,7 @@ export async function createSupplierPayment(
 
       const savedPayment = await tx.supplierPayment.create({
         data: {
+          tenantId: userId,
           paymentId,
           purchaseId: purchaseId as string,
           contactId: resolvedContactId,
@@ -401,6 +402,7 @@ export async function createSupplierPayment(
 
         await tx.bankTransaction.create({
           data: {
+            tenantId: userId,
             bankAccountId: bank.id,
             transactionDate: new Date(),
             type: 'TRANSFER_OUT',
@@ -441,6 +443,7 @@ export async function createSupplierPayment(
 
         await tx.pettyCashTransaction.create({
           data: {
+            tenantId: userId,
             pettyCashId: pettyCash.id,
             transactionDate: new Date(),
             transactionType: 'SPEND',

@@ -73,7 +73,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
 
   // Persist the USER message up front.
   const userMessageRow = await prisma.aiChatMessage.create({
-    data: { sessionId: session.id, role: 'USER', content: message },
+    data: { tenantId: userId, sessionId: session.id, role: 'USER', content: message },
   });
 
   // Open the SSE stream.
@@ -192,6 +192,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
           const inline = inlineToolResults[i] ?? inlineToolResults.find((r) => r.name === call.name);
           await prisma.aiChatMessage.create({
             data: {
+              tenantId: userId,
               sessionId: session.id,
               role: 'ASSISTANT',
               content: '',
@@ -201,6 +202,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
           });
           await prisma.aiChatMessage.create({
             data: {
+              tenantId: userId,
               sessionId: session.id,
               role: 'TOOL',
               content: '',
@@ -236,6 +238,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
         // Persist the assistant tool_use and the tool result as two rows.
         const assistantToolRow = await prisma.aiChatMessage.create({
           data: {
+            tenantId: userId,
             sessionId: session.id,
             role: 'ASSISTANT',
             content: '',
@@ -245,6 +248,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
         });
         await prisma.aiChatMessage.create({
           data: {
+            tenantId: userId,
             sessionId: session.id,
             role: 'TOOL',
             content: '',
@@ -281,6 +285,7 @@ export async function streamChat(req: Request, res: Response): Promise<void> {
     // Persist the final ASSISTANT message.
     const assistantRow = await prisma.aiChatMessage.create({
       data: {
+        tenantId: userId,
         sessionId: session.id,
         role: 'ASSISTANT',
         content: finalAssistantText,

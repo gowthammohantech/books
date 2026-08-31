@@ -831,6 +831,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
       if (status === 'paid' || status === 'partially_paid') {
         await tx.supplierPayment.create({
           data: {
+            tenantId: authUserId,
             purchaseId: created.id,
             supplierId: resolvedSupplierId,
             referenceNumber: (body.sp_referenceNumber as string) ?? '',
@@ -2362,6 +2363,7 @@ export async function updatePurchaseStatus(req: Request, res: Response): Promise
         } else {
           await tx.supplierPayment.create({
             data: {
+              tenantId: authUserId,
               purchaseId: upd.id,
               supplierId: (upd.supplierId ?? upd.billTo) as string,
               referenceNumber: sp_referenceNumber ?? '',
@@ -2741,6 +2743,7 @@ export async function createSupplierPayment(req: Request, res: Response): Promis
           });
           bankTransaction = await tx.bankTransaction.create({
             data: {
+              tenantId: userId,
               bankAccountId: bank.id,
               transactionDate: safeDate(paymentDate) ?? new Date(),
               type: transactionType,
@@ -2768,6 +2771,7 @@ export async function createSupplierPayment(req: Request, res: Response): Promis
 
       const supplierPayment = await tx.supplierPayment.create({
         data: {
+          tenantId: userId,
           purchaseId: purchase.id,
           // Same-class fix as supplierPaymentController.createSupplierPayment:
           // inherit the party from the purchase so this path (currently unrouted,

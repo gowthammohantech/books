@@ -136,6 +136,7 @@ export async function createPettyCash(
       // Create bank transaction
       const bankTransaction = await tx.bankTransaction.create({
         data: {
+          tenantId: userId,
           bankAccountId: bankAccount.id,
           transactionDate: new Date(),
           type: bankTransactionType,
@@ -170,6 +171,7 @@ export async function createPettyCash(
       // Create petty cash transaction (ADD)
       const pettyTransaction = await tx.pettyCashTransaction.create({
         data: {
+          tenantId: userId,
           pettyCashId: pettyCash.id,
           transactionDate: new Date(),
           transactionType: 'ADD',
@@ -350,6 +352,7 @@ export async function returnPettyCash(
       // Create bank transaction FIRST to get its ID
       const bankTransaction = await tx.bankTransaction.create({
         data: {
+          tenantId: userId,
           bankAccountId: bankAccount.id,
           transactionDate: new Date(),
           type: bankTransactionType,
@@ -375,6 +378,7 @@ export async function returnPettyCash(
       // Create petty cash transaction (RETURN) with bankTransaction ID as relatedId
       const pettyTransaction = await tx.pettyCashTransaction.create({
         data: {
+          tenantId: userId,
           pettyCashId: pettyCash.id,
           transactionDate: new Date(),
           transactionType: 'RETURN',

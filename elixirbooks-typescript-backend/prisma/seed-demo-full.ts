@@ -1011,6 +1011,7 @@ async function seedAll(userId: string): Promise<void> {
     if (spec.status === 'PAID') {
       const pay = await prisma.invoicePayment.create({
         data: {
+          tenantId: userId,
           invoiceId: inv.id,
           amount: D(totalAmount),
           paymentModeId: pmBankId,
@@ -1033,6 +1034,7 @@ async function seedAll(userId: string): Promise<void> {
       const half = round2(totalAmount * 0.5);
       const pay = await prisma.invoicePayment.create({
         data: {
+          tenantId: userId,
           invoiceId: inv.id,
           amount: D(half),
           paymentModeId: pmUpiId,
@@ -1103,6 +1105,7 @@ async function seedAll(userId: string): Promise<void> {
     const rpPayDate = new Date(parentStartOn.getTime() + 5 * 24 * 60 * 60 * 1000);
     const rpPay = await prisma.invoicePayment.create({
       data: {
+        tenantId: userId,
         invoiceId: recurringParent.id,
         amount: D(rpTotal),
         paymentModeId: pmBankId,
@@ -1159,6 +1162,7 @@ async function seedAll(userId: string): Promise<void> {
     const childPayDate = new Date(childDate.getTime() + 5 * 24 * 60 * 60 * 1000);
     const childPay = await prisma.invoicePayment.create({
       data: {
+        tenantId: userId,
         invoiceId: child.id,
         amount: D(rpTotal),
         paymentModeId: pmBankId,
@@ -1273,6 +1277,7 @@ async function seedAll(userId: string): Promise<void> {
       const payDate = new Date(purDate.getTime() + 7 * 24 * 60 * 60 * 1000);
       const sp = await prisma.supplierPayment.create({
         data: {
+          tenantId: userId,
           paymentId: `DEMO-PAY-${String(i + 1).padStart(5, '0')}`,
           purchaseId: purchase.id,
           supplierId: supplier.id,
@@ -1811,6 +1816,7 @@ async function seedAll(userId: string): Promise<void> {
     const after = round2(t.type === 'SPEND' ? before - t.amount : before + t.amount);
     await prisma.pettyCashTransaction.create({
       data: {
+        tenantId: userId,
         pettyCashId: pcRow.id,
         transactionDate: daysAgo(t.days),
         transactionType: t.type,
@@ -1846,8 +1852,8 @@ async function seedAll(userId: string): Promise<void> {
       isPosted: true,
       lines: {
         create: [
-          { accountId: accountByCode['1001']!, debit: D(100000), credit: D(0), description: 'Cash deposit' },
-          { accountId: accountByCode['3050']!, debit: D(0), credit: D(100000), description: 'Owner equity' },
+          { tenantId: userId, accountId: accountByCode['1001']!, debit: D(100000), credit: D(0), description: 'Cash deposit' },
+          { tenantId: userId, accountId: accountByCode['3050']!, debit: D(0), credit: D(100000), description: 'Owner equity' },
         ],
       },
     },
@@ -1862,8 +1868,8 @@ async function seedAll(userId: string): Promise<void> {
       isPosted: true,
       lines: {
         create: [
-          { accountId: accountByCode['5002']!, debit: D(45000), credit: D(0), description: 'Rent expense' },
-          { accountId: accountByCode['1001']!, debit: D(0), credit: D(45000), description: 'Paid from cash' },
+          { tenantId: userId, accountId: accountByCode['5002']!, debit: D(45000), credit: D(0), description: 'Rent expense' },
+          { tenantId: userId, accountId: accountByCode['1001']!, debit: D(0), credit: D(45000), description: 'Paid from cash' },
         ],
       },
     },
@@ -1878,8 +1884,8 @@ async function seedAll(userId: string): Promise<void> {
       isPosted: true,
       lines: {
         create: [
-          { accountId: accountByCode['1002']!, debit: D(250000), credit: D(0), description: 'Bank account' },
-          { accountId: accountByCode['1001']!, debit: D(0), credit: D(250000), description: 'Cash on hand' },
+          { tenantId: userId, accountId: accountByCode['1002']!, debit: D(250000), credit: D(0), description: 'Bank account' },
+          { tenantId: userId, accountId: accountByCode['1001']!, debit: D(0), credit: D(250000), description: 'Cash on hand' },
         ],
       },
     },
@@ -1910,6 +1916,7 @@ async function seedAll(userId: string): Promise<void> {
       const after = round2(before + amount);
       await prisma.bankTransaction.create({
         data: {
+          tenantId: userId,
           bankAccountId: bankId,
           transactionDate: new Date(inv.date.getTime() + 5 * 24 * 60 * 60 * 1000),
           type: 'DEPOSIT',
@@ -1943,6 +1950,7 @@ async function seedAll(userId: string): Promise<void> {
     const after = round2(before + rp.amount);
     await prisma.bankTransaction.create({
       data: {
+        tenantId: userId,
         bankAccountId: bankId,
         transactionDate: rp.date,
         type: 'DEPOSIT',
@@ -1976,6 +1984,7 @@ async function seedAll(userId: string): Promise<void> {
     const after = round2(before - amount);
     await prisma.bankTransaction.create({
       data: {
+        tenantId: userId,
         bankAccountId: bankId,
         transactionDate: e.expenseDate,
         type: 'WITHDRAWAL',
@@ -2006,6 +2015,7 @@ async function seedAll(userId: string): Promise<void> {
     const after = round2(before - sp.amount);
     await prisma.bankTransaction.create({
       data: {
+        tenantId: userId,
         bankAccountId: sp.bankId,
         transactionDate: sp.date,
         type: 'WITHDRAWAL',
@@ -2038,6 +2048,7 @@ async function seedAll(userId: string): Promise<void> {
     const txnDate = daysAgo(80 - i * 5);
     await prisma.bankTransaction.create({
       data: {
+        tenantId: userId,
         bankAccountId: bankId,
         transactionDate: txnDate,
         type: isDeposit ? 'DEPOSIT' : 'WITHDRAWAL',
@@ -2396,12 +2407,14 @@ async function seedAll(userId: string): Promise<void> {
   aiSessionCount++;
   const s1Messages: Array<Prisma.AiChatMessageCreateManyInput> = [
     {
+      tenantId: userId,
       sessionId: session1.id,
       role: 'USER',
       content: 'How much GST do I owe this quarter?',
       createdAt: daysAgo(6),
     },
     {
+      tenantId: userId,
       sessionId: session1.id,
       role: 'ASSISTANT',
       content: '',
@@ -2410,6 +2423,7 @@ async function seedAll(userId: string): Promise<void> {
       createdAt: new Date(daysAgo(6).getTime() + 1000),
     },
     {
+      tenantId: userId,
       sessionId: session1.id,
       role: 'TOOL',
       content: '',
@@ -2418,6 +2432,7 @@ async function seedAll(userId: string): Promise<void> {
       createdAt: new Date(daysAgo(6).getTime() + 2000),
     },
     {
+      tenantId: userId,
       sessionId: session1.id,
       role: 'ASSISTANT',
       content:
@@ -2440,12 +2455,14 @@ async function seedAll(userId: string): Promise<void> {
   aiSessionCount++;
   const s2Messages: Array<Prisma.AiChatMessageCreateManyInput> = [
     {
+      tenantId: userId,
       sessionId: session2.id,
       role: 'USER',
       content: 'Who are my top 5 debtors?',
       createdAt: daysAgo(2),
     },
     {
+      tenantId: userId,
       sessionId: session2.id,
       role: 'ASSISTANT',
       content: '',
@@ -2454,6 +2471,7 @@ async function seedAll(userId: string): Promise<void> {
       createdAt: new Date(daysAgo(2).getTime() + 1000),
     },
     {
+      tenantId: userId,
       sessionId: session2.id,
       role: 'TOOL',
       content: '',
@@ -2470,6 +2488,7 @@ async function seedAll(userId: string): Promise<void> {
       createdAt: new Date(daysAgo(2).getTime() + 2000),
     },
     {
+      tenantId: userId,
       sessionId: session2.id,
       role: 'ASSISTANT',
       content:
@@ -2618,13 +2637,13 @@ async function seedAll(userId: string): Promise<void> {
   });
   timesheetCount += 1;
   const ts1Entries: Prisma.TimeEntryCreateManyInput[] = [
-    { timesheetId: ts1.id, projectId: ttProjects[0].id, date: weekDay(0), hours: D(6), billable: true, note: 'Homepage layout' },
-    { timesheetId: ts1.id, projectId: ttProjects[1].id, date: weekDay(0), hours: D(2), billable: true, note: 'API scoping' },
-    { timesheetId: ts1.id, projectId: ttProjects[0].id, date: weekDay(1), hours: D(7.5), billable: true, note: 'Component build' },
-    { timesheetId: ts1.id, projectId: ttProjects[0].id, date: weekDay(2), hours: D(8), billable: true, note: 'Responsive pass' },
-    { timesheetId: ts1.id, projectId: ttProjects[1].id, date: weekDay(3), hours: D(6), billable: true, note: 'Auth flow' },
-    { timesheetId: ts1.id, projectId: ttProjects[0].id, date: weekDay(3), hours: D(2), billable: false, note: 'Team sync' },
-    { timesheetId: ts1.id, projectId: ttProjects[1].id, date: weekDay(4), hours: D(4), billable: true, note: 'Bug fixes' },
+    { tenantId: userId, timesheetId: ts1.id, projectId: ttProjects[0].id, date: weekDay(0), hours: D(6), billable: true, note: 'Homepage layout' },
+    { tenantId: userId, timesheetId: ts1.id, projectId: ttProjects[1].id, date: weekDay(0), hours: D(2), billable: true, note: 'API scoping' },
+    { tenantId: userId, timesheetId: ts1.id, projectId: ttProjects[0].id, date: weekDay(1), hours: D(7.5), billable: true, note: 'Component build' },
+    { tenantId: userId, timesheetId: ts1.id, projectId: ttProjects[0].id, date: weekDay(2), hours: D(8), billable: true, note: 'Responsive pass' },
+    { tenantId: userId, timesheetId: ts1.id, projectId: ttProjects[1].id, date: weekDay(3), hours: D(6), billable: true, note: 'Auth flow' },
+    { tenantId: userId, timesheetId: ts1.id, projectId: ttProjects[0].id, date: weekDay(3), hours: D(2), billable: false, note: 'Team sync' },
+    { tenantId: userId, timesheetId: ts1.id, projectId: ttProjects[1].id, date: weekDay(4), hours: D(4), billable: true, note: 'Bug fixes' },
   ];
   await prisma.timeEntry.createMany({ data: ts1Entries });
   timeEntryCount += ts1Entries.length;
@@ -2641,10 +2660,10 @@ async function seedAll(userId: string): Promise<void> {
   });
   timesheetCount += 1;
   const ts2Entries: Prisma.TimeEntryCreateManyInput[] = [
-    { timesheetId: ts2.id, projectId: ttProjects[0].id, date: weekDay(0), hours: D(4), billable: true, note: 'Design review' },
-    { timesheetId: ts2.id, projectId: ttProjects[1].id, date: weekDay(1), hours: D(5), billable: true, note: 'Sprint planning' },
-    { timesheetId: ts2.id, projectId: ttProjects[0].id, date: weekDay(2), hours: D(3), billable: false, note: 'Mentoring' },
-    { timesheetId: ts2.id, projectId: ttProjects[1].id, date: weekDay(3), hours: D(5), billable: true, note: 'Client demo' },
+    { tenantId: userId, timesheetId: ts2.id, projectId: ttProjects[0].id, date: weekDay(0), hours: D(4), billable: true, note: 'Design review' },
+    { tenantId: userId, timesheetId: ts2.id, projectId: ttProjects[1].id, date: weekDay(1), hours: D(5), billable: true, note: 'Sprint planning' },
+    { tenantId: userId, timesheetId: ts2.id, projectId: ttProjects[0].id, date: weekDay(2), hours: D(3), billable: false, note: 'Mentoring' },
+    { tenantId: userId, timesheetId: ts2.id, projectId: ttProjects[1].id, date: weekDay(3), hours: D(5), billable: true, note: 'Client demo' },
   ];
   await prisma.timeEntry.createMany({ data: ts2Entries });
   timeEntryCount += ts2Entries.length;
@@ -2716,6 +2735,7 @@ async function seedAll(userId: string): Promise<void> {
       approvedAt: weekDay(7),
       days: {
         create: lr1.days.map((d) => ({
+          tenantId: userId,
           date: utcDate(
             Number(d.date.slice(0, 4)),
             Number(d.date.slice(5, 7)),
@@ -2747,6 +2767,7 @@ async function seedAll(userId: string): Promise<void> {
       totalDays: D(lr2.totalDays),
       days: {
         create: lr2.days.map((d) => ({
+          tenantId: userId,
           date: utcDate(
             Number(d.date.slice(0, 4)),
             Number(d.date.slice(5, 7)),

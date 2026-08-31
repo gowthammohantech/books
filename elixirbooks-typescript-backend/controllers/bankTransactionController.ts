@@ -875,6 +875,7 @@ export async function create(req: Request, res: Response): Promise<void> {
 
       const t = await tx.bankTransaction.create({
         data: {
+          tenantId: userId,
           bankAccountId: body.bankAccountId!,
           transactionDate: body.transactionDate ? new Date(body.transactionDate) : new Date(),
           type: body.type as BankTransactionType,
@@ -1184,6 +1185,7 @@ export async function importConfirm(req: Request, res: Response): Promise<void> 
 
         const t = await tx.bankTransaction.create({
           data: {
+            tenantId: userId,
             bankAccountId: body.bankAccountId!,
             transactionDate: new Date(row.date),
             type: row.type === 'WITHDRAWAL' ? 'WITHDRAWAL' : 'DEPOSIT',

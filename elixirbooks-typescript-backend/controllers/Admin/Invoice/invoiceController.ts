@@ -955,6 +955,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
         // residual balance (paid ≠ total).
         autoPayment = await tx.invoicePayment.create({
           data: {
+            tenantId: userId,
             invoiceId: created.id,
             amount: toDecimal(authTotal),
             paymentModeId: body.payment_method as string,
@@ -986,6 +987,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
           });
           await tx.bankTransaction.create({
             data: {
+              tenantId: userId,
               bankAccountId: autoBank.id,
               transactionDate: autoPayDate,
               type: 'TRANSFER_IN',
@@ -2762,6 +2764,7 @@ export async function recordInvoicePayment(req: Request, res: Response): Promise
       // Persist the payment. bankId is null for cash, the bank id otherwise.
       const payment = await tx.invoicePayment.create({
         data: {
+          tenantId: userId,
           invoiceId: invoice.id,
           amount: toDecimal(amount),
           paymentModeId: paymentModeDoc.id,
@@ -2818,6 +2821,7 @@ export async function recordInvoicePayment(req: Request, res: Response): Promise
 
         bankTransaction = await tx.bankTransaction.create({
           data: {
+            tenantId: userId,
             bankAccountId: bank.id,
             transactionDate: paymentDate,
             type: 'TRANSFER_IN',

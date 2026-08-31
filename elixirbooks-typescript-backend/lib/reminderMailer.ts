@@ -191,7 +191,6 @@ export async function sendReminderEmail(params: SendReminderParams): Promise<Sen
         targetContactRel: {
           select: { firstName: true, lastName: true, organisation: true, email: true },
         },
-        company: { select: { publicBaseUrl: true } },
       },
     });
 
@@ -236,7 +235,15 @@ export async function sendReminderEmail(params: SendReminderParams): Promise<Sen
 
     let viewLink = '';
     if (invoice) {
-      viewLink = await resolveInvoicePublicLink(invoice, reminder.company?.publicBaseUrl);
+      // publicBaseUrl used to ride in on `reminder.company`. Reminder now points
+      // at Tenant rather than CompanySettings, so read the setting directly.
+      // One extra query, only on the send path, which is already doing SMTP I/O.
+      // CompanySettings.userId holds the tenant id (see lib/tenantScope).
+      const settings = await prisma.companySettings.findUnique({
+        where: { userId: reminder.tenantId },
+        select: { publicBaseUrl: true },
+      });
+      viewLink = await resolveInvoicePublicLink(invoice, settings?.publicBaseUrl);
     }
 
     const totalPaid = (invoice?.payments ?? []).reduce((sum, p) => sum + Number(p.amount ?? 0), 0);

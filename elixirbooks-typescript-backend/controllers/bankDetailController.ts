@@ -197,6 +197,7 @@ export async function createBankDetail(req: Request, res: Response): Promise<voi
         const paymentMode = await getOrCreateBankPaymentMode(tx);
         await tx.bankTransaction.create({
           data: {
+            tenantId: userId,
             bankAccountId: bankDetail.id,
             transactionDate: new Date(),
             type: 'DEPOSIT',
