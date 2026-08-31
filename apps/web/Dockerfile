@@ -1,40 +1,47 @@
 # syntax=docker/dockerfile:1.7
+#
+# Build context is the REPOSITORY ROOT, not this directory — see
+# docker/docker-compose.yml. npm workspaces keep a single lockfile at the root,
+# so the context has to include it for `npm ci` to be reproducible.
 
 # --- Build stage -------------------------------------------------------------
 FROM node:20-alpine AS build
-WORKDIR /app
+WORKDIR /repo
 
-# Install deps (use install, not ci, because the lockfile is currently
-# out of sync with package.json -- regenerate the lockfile upstream and
-# switch this to `npm ci` later).
-COPY package.json package-lock.json* ./
-# --legacy-peer-deps because react-helmet-async (and a few others) haven't
-# updated their peer deps for React 19 yet. Safe in practice; replace once
-# upstream catches up.
-RUN npm install --no-audit --no-fund --loglevel=warn --legacy-peer-deps
+# Manifests first so a source-only change reuses the install layer.
+COPY package.json package-lock.json .npmrc ./
+COPY apps/web/package.json apps/web/
+COPY apps/api/package.json apps/api/
+# --legacy-peer-deps now comes from the root .npmrc (React 19 peer ranges),
+# and `npm ci` replaces `npm install` because there is one lockfile again.
+RUN npm ci --workspace=@elixirbooks/web --include-workspace-root \
+      --no-audit --no-fund --loglevel=warn
 
-# Copy source
-COPY . .
+COPY apps/web apps/web
+COPY tsconfig.base.json ./
 
-# Build args passed from docker-compose (or the shell env) override .env at build time.
-# Changing any ARG value busts this cache layer, so rebuilds always pick up config changes.
+# Build args passed from docker-compose (or the shell env) override .env at
+# build time. Changing any ARG busts this layer, so rebuilds pick up config.
+#
+# VITE_API_BASE_URL has NO default on purpose. It used to default to a specific
+# Azure App Service hostname, so a plain `docker build` silently baked that
+# third party's URL into the bundle. Empty means same-origin, which is what the
+# nginx /api proxy in front of this image serves.
 ARG VITE_DEMO_MODE=false
-ARG VITE_API_BASE_URL=https://elixirbooks-kanaku-api-cagqg6fng5dtazbc.southeastasia-01.azurewebsites.net
-RUN VITE_DEMO_MODE=$VITE_DEMO_MODE VITE_API_BASE_URL=$VITE_API_BASE_URL npm run build
+ARG VITE_API_BASE_URL=
+RUN VITE_DEMO_MODE=$VITE_DEMO_MODE VITE_API_BASE_URL=$VITE_API_BASE_URL \
+      npm run build --workspace=@elixirbooks/web
 
 # --- Serve stage -------------------------------------------------------------
 FROM nginx:1.27-alpine AS runner
 
-# Replace default nginx config with our SPA + /api proxy config
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# Copy built assets
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY apps/web/nginx.conf /etc/nginx/nginx.conf
+COPY --from=build /repo/apps/web/dist /usr/share/nginx/html
 
 EXPOSE 80
 
 HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \
   CMD wget -qO- http://127.0.0.1/healthz || exit 1
 
-# Use exec form so signals propagate
+# Exec form so signals propagate
 CMD ["nginx", "-g", "daemon off;"]

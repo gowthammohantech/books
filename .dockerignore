@@ -1,0 +1,41 @@
+# Single root .dockerignore. Both Dockerfiles now build from the repository
+# root so the one workspace lockfile is inside the build context; the old
+# per-app .dockerignore files were resolved relative to the app directory and
+# no longer applied, so they were removed rather than left to mislead.
+
+**/node_modules
+**/npm-debug.log
+.git
+.gitignore
+.github
+**/.env
+**/.env.*
+!**/.env.example
+**/*.tsbuildinfo
+**/coverage
+**/dist
+**/.turbo
+**/.vite
+**/.DS_Store
+
+# Runtime data, never baked into an image
+apps/api/uploads/*
+!apps/api/uploads/.gitkeep
+apps/api/ssl.key
+apps/api/ssl.crt
+
+# Dev-only. NOTE: apps/api/tsconfig.json IS still shipped — ts-node reads it at
+# runtime. Phase 4 compiles to dist/ and this can then be ignored too.
+apps/api/tests
+apps/api/tsconfig.test.json
+apps/api/vitest.config.ts
+apps/api/nodemon.json
+apps/api/eslint.config.mjs
+apps/web/eslint.config.js
+apps/web/vitest.config.ts
+
+# Docs and repo furniture — not needed by either build
+**/*.md
+documentation
+docker
+scripts

@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [pc-cc]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Three backend suites (moneyGuards.applyInvoiceReceipt, applyBillPayment.fx,
+  # applyBillPayment.tenantScope) reach lib/actor.ts unmocked and issue a real
+  # prisma.tenantMembership.findFirst(), so they need a reachable database.
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/elixirbooks_test
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: elixirbooks_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install workspace
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate --workspace=@elixirbooks/api
+
+      - name: Apply migrations
+        working-directory: apps/api
+        run: npx prisma migrate deploy
+
+      - name: Typecheck
+        run: npx turbo run typecheck
+
+      - name: Lint
+        run: npx turbo run lint
+
+      - name: Test
+        run: npx turbo run test
+
+      - name: Build
+        run: npx turbo run build
+
+      # No `prettier --check` gate yet: this repository has never been
+      # formatted, so it would be red on arrival. `npm run format` exists for
+      # when someone wants to do that as its own deliberate commit — it touches
+      # roughly every file and rewrites blame, so it should not ride along here.

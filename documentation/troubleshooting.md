@@ -241,7 +241,7 @@ is enabled.
 
 Uploaded files (logos, receipt attachments) are stored in the
 `elixirbooks_elixirbooks-uploads` Docker volume, mounted into the API container
-at `/app/uploads`. The API serves them at `/uploads/<filename>` (proxied
+at `/repo/apps/api/uploads`. The API serves them at `/uploads/<filename>` (proxied
 through nginx at the same path).
 
 To list the contents of the volume:
