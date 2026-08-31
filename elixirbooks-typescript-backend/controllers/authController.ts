@@ -1,3 +1,8 @@
+/* @cross-tenant: authentication necessarily precedes knowing the tenant. The
+ * identity reads (find a user by email, list every workspace they belong to)
+ * use prismaUnscoped because there is no workspace to scope by yet; the
+ * provisioning writes use runAsSystem for the same reason. Which workspace a
+ * session may act on is decided by TenantMembership, not by these queries. */
 import type { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import { UAParser } from 'ua-parser-js';

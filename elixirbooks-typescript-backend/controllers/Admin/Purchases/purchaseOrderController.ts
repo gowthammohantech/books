@@ -168,9 +168,17 @@ function normaliseItems(raw: unknown, headerCostCenterId?: string | null): Incom
   }));
 }
 
-async function generateNextPurchaseOrderId(tx: Tx, prefix = 'PO-'): Promise<string> {
+async function generateNextPurchaseOrderId(
+  tx: Tx,
+  tenantId: string,
+  prefix = 'PO-',
+): Promise<string> {
+  // This tenant's series. It read the INSTALL-WIDE last purchase order, so a
+  // second company's first PO would have continued the first company's
+  // numbering — the same defect P4 fixed in invoiceController, in the one
+  // place that spelled the query differently.
   const last = await tx.purchaseOrder.findFirst({
-    where: { purchaseOrderId: { not: null } },
+    where: { tenantId, purchaseOrderId: { not: null } },
     orderBy: { purchaseOrderId: 'desc' },
     select: { purchaseOrderId: true },
   });
@@ -368,7 +376,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
     const files = (req.files as Express.Multer.File[] | undefined) ?? [];
 
     const purchaseOrder = await prisma.$transaction(async (tx) => {
-      const purchaseOrderId = await generateNextPurchaseOrderId(tx);
+      const purchaseOrderId = await generateNextPurchaseOrderId(tx, tenantId);
       const created = await tx.purchaseOrder.create({
         data: {
           purchaseOrderId,
@@ -1004,9 +1012,10 @@ export async function listPurchaseOrders(req: Request, res: Response): Promise<v
       customValueMap[val.recordId][val.customFieldId] = val.value;
     });
 
-    // Next purchase order id
+    // Next purchase order id — this tenant's series, not the install's. The
+    // preview has to agree with what the create path will actually issue.
     const lastPurchaseOrder = await prisma.purchaseOrder.findFirst({
-      where: { purchaseOrderId: { not: null } },
+      where: { tenantId: requireTenantId(req), purchaseOrderId: { not: null } },
       orderBy: { purchaseOrderId: 'desc' },
       select: { purchaseOrderId: true },
     });

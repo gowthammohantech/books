@@ -1,3 +1,7 @@
+/* @cross-tenant: the unauthenticated boot probe. It answers platform-level
+ * questions only — build version, whether signup is open, whether the install
+ * is empty — and reads no tenant-owned data. Everything per-workspace moved to
+ * GET /api/auth/session, which is behind auth. */
 import type { Request, Response } from 'express';
 
 import { prismaUnscoped } from '../lib/prisma';

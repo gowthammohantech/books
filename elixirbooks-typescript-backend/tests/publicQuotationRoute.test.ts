@@ -25,12 +25,20 @@ const {
   mockCompanySettingsFindUnique: vi.fn(),
 }));
 
-vi.mock('../lib/prisma', () => ({
-  prisma: {
+// P7: the token lookup is deliberately UNSCOPED — the token is the
+// credential and which workspace it belongs to is what we are resolving.
+// Everything after it runs inside runAsTenant, so the company read is a
+// tenant-filtered findFirst rather than a findUnique on the 1:1 key.
+vi.mock('../lib/prisma', () => {
+  const client = {
     quotation: { findUnique: mockQuotationFindUnique },
-    companySettings: { findUnique: mockCompanySettingsFindUnique },
-  },
-}));
+    companySettings: {
+      findUnique: mockCompanySettingsFindUnique,
+      findFirst: mockCompanySettingsFindUnique,
+    },
+  };
+  return { prisma: client, prismaUnscoped: client };
+});
 
 const VALID_TOKEN = 'a'.repeat(64);
 

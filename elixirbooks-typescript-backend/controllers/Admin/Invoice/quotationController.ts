@@ -98,9 +98,16 @@ function normaliseItems(raw: unknown, headerCostCenterId?: string | null): Incom
   }));
 }
 
-async function generateNextQuotationId(tx: Tx, prefix = 'QT-'): Promise<string> {
+async function generateNextQuotationId(
+  tx: Tx,
+  tenantId: string,
+  prefix = 'QT-',
+): Promise<string> {
+  // This tenant's series. It read the INSTALL-WIDE last quotation, so a
+  // second company's first quotation would have continued the first
+  // company's numbering.
   const last = await tx.quotation.findFirst({
-    where: { quotationId: { not: null } },
+    where: { tenantId, quotationId: { not: null } },
     orderBy: { createdAt: 'desc' },
     select: { quotationId: true },
   });
@@ -276,7 +283,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
     const enforcedTotal = docTreatment === 'STANDARD' ? finalTotal : finalTaxable + enforcedVat - finalDiscount;
 
     const quotation = await prisma.$transaction(async (tx) => {
-      const quotationId = await generateNextQuotationId(tx);
+      const quotationId = await generateNextQuotationId(tx, tenantId);
       return tx.quotation.create({
         data: {
           quotationId,
@@ -833,9 +840,10 @@ export async function listQuotations(req: Request, res: Response): Promise<void>
       }),
     ]);
 
-    // Next quotationId
+    // Next quotationId — this tenant's series, so the preview agrees with
+    // what the create path will issue.
     const lastQuotation = await prisma.quotation.findFirst({
-      where: { quotationId: { not: null } },
+      where: { tenantId: scope.tenantId, quotationId: { not: null } },
       orderBy: { quotationId: 'desc' },
       select: { quotationId: true },
     });

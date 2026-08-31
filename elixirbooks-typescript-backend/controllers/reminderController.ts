@@ -10,7 +10,7 @@ import { sendReminderEmail } from '../lib/reminderMailer';
 // invoiceReminderCron.ts is required extensionless (ts-node/register resolves
 // it, same as recurringInvoicesCron.ts elsewhere) so a static require is fine here.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const cronModule: { runReminderCron: (scopeUserId?: string) => Promise<unknown> } = require('../invoiceReminderCron');
+const cronModule: { runReminderCron: (scopeTenantId?: string) => Promise<unknown> } = require('../invoiceReminderCron');
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {

@@ -7,12 +7,18 @@
  * reminder run (real emails to customers, publicViewEnabled flipped on
  * invoices, lastSent bumps that suppress the day's scheduled 9am run).
  *
- * Fix: runReminderCron(scopeUserId?) adds a `createdBy` filter to the
- * reminder query when a scope is passed. The HTTP-triggered path
- * (reminderController.triggerReminderCron) now passes the caller's id
- * (mirroring the `reminder.createdBy !== requireTenantId(req)` ownership
- * check used by sendManualReminder). The scheduled 9am tick must keep
- * calling this with NO argument so the daily run stays global.
+ * Fix: runReminderCron(scopeTenantId?) filters the reminder query when a scope
+ * is passed. The HTTP-triggered path (reminderController.triggerReminderCron)
+ * passes the caller's WORKSPACE; the scheduled 9am tick must keep calling this
+ * with NO argument so the daily run covers every workspace.
+ *
+ * P7 changed the filter column from `createdBy` to `tenantId`. `createdBy` is
+ * an ACTOR column, so a scoped run only fired the reminders the triggering
+ * admin had personally created and silently skipped their colleagues' — and on
+ * a multi-tenant install it would have matched nothing at all. The due-reminder
+ * SELECT also moved to prismaUnscoped, because "everything due tonight" spans
+ * the whole install and belongs to no single workspace; each reminder is then
+ * processed inside runAsTenant.
  *
  * node-cron is mocked so importing invoiceReminderCron.ts here doesn't
  * register a real interval, and so we can capture exactly what the
@@ -32,12 +38,13 @@ vi.mock('node-cron', () => ({
   schedule: mockCronSchedule,
 }));
 
-vi.mock('../lib/prisma', () => ({
-  prisma: {
+vi.mock('../lib/prisma', () => {
+  const client = {
     reminder: { findMany: mockReminderFindMany, update: mockReminderUpdate },
     invoice: { findMany: mockInvoiceFindMany },
-  },
-}));
+  };
+  return { prisma: client, prismaUnscoped: client };
+});
 
 vi.mock('../lib/reminderMailer', () => ({ sendReminderEmail: vi.fn() }));
 
@@ -58,37 +65,41 @@ beforeEach(() => {
 });
 
 describe('runReminderCron — tenant scoping (Wave-1 final review fix)', () => {
-  it('with a scopeUserId, queries reminders WITH a createdBy filter', async () => {
-    await runReminderCron('user-a');
+  it('with a scope, filters reminders by TENANT — not by who created them', async () => {
+    await runReminderCron('tenant-a');
 
     expect(mockReminderFindMany).toHaveBeenCalledTimes(1);
     const { where } = mockReminderFindMany.mock.calls[0][0];
-    expect(where).toMatchObject({ createdBy: 'user-a' });
+    expect(where).toMatchObject({ tenantId: 'tenant-a' });
+    expect(where).not.toHaveProperty('createdBy');
   });
 
-  it('with NO scopeUserId (the scheduled 9am path), queries reminders WITHOUT a createdBy filter', async () => {
+  it('with NO scope (the scheduled 9am path), covers every workspace', async () => {
     await runReminderCron();
 
     expect(mockReminderFindMany).toHaveBeenCalledTimes(1);
     const { where } = mockReminderFindMany.mock.calls[0][0];
-    expect(where).not.toHaveProperty('createdBy');
+    expect(where).not.toHaveProperty('tenantId');
   });
 
-  it('two reminders from different createdBy owners: scoped run only matches one of them', async () => {
+  it('a scoped run picks up a COLLEAGUE\'s reminder in the same workspace', async () => {
+    // The behaviour the createdBy filter got wrong: two reminders in one
+    // company, created by two different people. A scoped run must fire both.
     mockReminderFindMany.mockImplementation(async ({ where }: { where: Record<string, unknown> }) => {
       const all = [
-        { id: 'rem-a', createdBy: 'user-a' },
-        { id: 'rem-b', createdBy: 'user-b' },
+        { id: 'rem-a', tenantId: 'tenant-a', createdBy: 'user-a' },
+        { id: 'rem-b', tenantId: 'tenant-a', createdBy: 'user-b' },
+        { id: 'rem-c', tenantId: 'tenant-b', createdBy: 'user-c' },
       ];
-      if (where.createdBy) return all.filter((r) => r.createdBy === where.createdBy);
+      if (where.tenantId) return all.filter((r) => r.tenantId === where.tenantId);
       return all;
     });
 
-    const scoped = await runReminderCron('user-a');
-    expect(scoped.reminders).toBe(1);
+    const scoped = await runReminderCron('tenant-a');
+    expect(scoped.reminders).toBe(2);
 
-    const global = await runReminderCron();
-    expect(global.reminders).toBe(2);
+    const everyWorkspace = await runReminderCron();
+    expect(everyWorkspace.reminders).toBe(3);
   });
 
   it('the scheduled registration wraps runReminderCron so node-cron cannot forward its TaskContext as a scope', async () => {
@@ -104,6 +115,6 @@ describe('runReminderCron — tenant scoping (Wave-1 final review fix)', () => {
 
     await scheduledFn({ date: new Date(), dateLocalIso: '2026-07-10T09:00:00', triggeredAt: new Date() });
     const { where } = mockReminderFindMany.mock.calls[0][0];
-    expect(where).not.toHaveProperty('createdBy');
+    expect(where).not.toHaveProperty('tenantId');
   });
 });

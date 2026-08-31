@@ -114,6 +114,11 @@ function makeExpenseDelegate() {
 const expenseDelegate = makeExpenseDelegate();
 
 vi.mock('./prisma', () => ({
+  // The due-expense selection is cross-tenant by design (P7), so it reads
+  // through prismaUnscoped; the per-expense work then runs inside runAsTenant.
+  get prismaUnscoped() {
+    return { expense: expenseDelegate };
+  },
   prisma: {
     get expense() {
       return expenseDelegate;
