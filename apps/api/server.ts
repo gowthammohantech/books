@@ -1,35 +1,40 @@
-// ts-node/register MUST be first so subsequent require() of `.ts` modules
-// (auth layer in slice 0.1c, more conversions in 0.1d-e) is resolved by the
-// TypeScript loader. Once everything is TS and compiled to dist/ (slice 0.1f),
-// this can be removed in favour of running pre-built JS.
-require('ts-node/register');
-require('module-alias/register');
-require('dotenv').config();
-const fs = require('fs');
-const https = require('https');
-const { execSync } = require('child_process');
-const express = require('express');
-const cors = require('cors');
-const authRoutes = require('./routes/authRoutes');
-const adminRoutes = require('./routes/adminRoutes');
-const reminderRoutes = require('./routes/reminderRoutes');
-const conversationRoutes = require('./routes/conversationRoutes');
-const externalRoutes = require('./routes/externalRoutes');
-const publicRoutes = require('./routes/publicRoutes');
-const dimensionRoutes = require('./routes/dimensionRoutes');
-const { auditContextMiddleware } = require('./middleware/auditContext');
-const { runAsSystem } = require('./lib/tenantContext');
-const { blockSettingsWriteInDemo, isDemoMode } = require('./middleware/demoMode');
+import { execSync } from 'child_process';
+import fs from 'fs';
+import https from 'https';
+
+import cors from 'cors';
+import dotenv from 'dotenv';
+import express from 'express';
+import swaggerUi from 'swagger-ui-express';
+
+import { swaggerSpec } from './lib/swaggerConfig';
+import { mergeGeneratedPaths } from './lib/swaggerRoutes';
+import { runAsSystem } from './lib/tenantContext';
+import { auditContextMiddleware } from './middleware/auditContext';
+import { blockSettingsWriteInDemo, isDemoMode } from './middleware/demoMode';
+import { prismaErrorHandler } from './middleware/prismaError';
+import { handleUploadError } from './middleware/uploadError';
+import adminRoutes from './routes/adminRoutes';
+import authRoutes from './routes/authRoutes';
+import conversationRoutes from './routes/conversationRoutes';
+import dimensionRoutes from './routes/dimensionRoutes';
+import externalRoutes from './routes/externalRoutes';
+import publicRoutes from './routes/publicRoutes';
+import reminderRoutes from './routes/reminderRoutes';
+
+dotenv.config();
+
 const app = express();
 // Behind an HTTPS reverse proxy (TLS terminated upstream). Trust X-Forwarded-*
 // so req.protocol reflects the original scheme (https) — otherwise generated
 // upload/image URLs come out as http://.
 app.set('trust proxy', true);
 
-require('./invoiceReminderCron');
-require('./quotationReminderCron');
-require('./recurringInvoicesCron');
-require('./recurringExpensesCron');
+// Cron registration is a side effect of importing these modules.
+import './invoiceReminderCron';
+import './quotationReminderCron';
+import './recurringInvoicesCron';
+import './recurringExpensesCron';
 
 const configuredCorsOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '')
   .split(',')
@@ -39,20 +44,21 @@ const allowedCorsOrigins = new Set([
   'http://localhost:5173',
   'http://localhost:8080',
   'http://localhost:3000',
-  'https://stg-elixirbooks-kan-app-ui-g5ane6h7fgfmatam.southeastasia-01.azurewebsites.net',
   'https://lite.elixir-books.com',
   ...configuredCorsOrigins,
 ]);
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedCorsOrigins.has(origin.replace(/\/$/, ''))) {
-      return callback(null, true);
-    }
-    return callback(new Error('Origin is not allowed by CORS'));
-  },
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedCorsOrigins.has(origin.replace(/\/$/, ''))) {
+        return callback(null, true);
+      }
+      return callback(new Error('Origin is not allowed by CORS'));
+    },
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(auditContextMiddleware); // audit: carry actor context into Prisma writes
 app.use('/uploads', express.static('uploads'));
@@ -78,10 +84,7 @@ app.use('/api/public', publicRoutes);
 app.use('/api/admin', dimensionRoutes); // P3.3 cost-centers + projects + pnl reports
 
 // Swagger UI at /api/docs (slice G.4)
-const swaggerUi = require('swagger-ui-express');
-const { swaggerSpec } = require('./lib/swaggerConfig');
 // Auto-list every live route in the spec (hand-written @swagger docs win).
-const { mergeGeneratedPaths } = require('./lib/swaggerRoutes');
 try {
   const { added, total } = mergeGeneratedPaths(swaggerSpec, [
     { base: '/auth', router: authRoutes, secured: false, tag: 'Auth' },
@@ -96,10 +99,14 @@ try {
 } catch (e) {
   console.error('[swagger] route auto-documentation failed:', e);
 }
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customSiteTitle: 'Elixir Books API Docs',
-  swaggerOptions: { persistAuthorization: true },
-}));
+app.use(
+  '/api/docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'Elixir Books API Docs',
+    swaggerOptions: { persistAuthorization: true },
+  }),
+);
 app.get('/api/docs.json', (_req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(swaggerSpec);
@@ -107,15 +114,17 @@ app.get('/api/docs.json', (_req, res) => {
 
 // Global upload error handler (before the Prisma handler): maps multer file-type
 // rejections and limit breaches from ANY upload route to a 400 instead of 500.
-const { handleUploadError } = require('./middleware/uploadError');
 app.use(handleUploadError);
 
 // Global error handler (must be last, after all routes): translates uncaught
 // Prisma/validation errors into actionable HTTP responses instead of opaque 500s.
-const { prismaErrorHandler } = require('./middleware/prismaError');
 app.use(prismaErrorHandler);
 
 const PORT = process.env.PORT || 3001;
+
+/** Error message extraction matching the JS original's `err.message || err`. */
+const reason = (err: unknown): string =>
+  (err as { message?: string })?.message || String(err);
 
 // ---------------------------------------------------------------------------
 // Boot bootstrap — migrate + seed before accepting traffic.
@@ -139,13 +148,16 @@ const PORT = process.env.PORT || 3001;
 // against a database without the tenancy tables cannot produce a working
 // server, so there is no configuration under which skipping the check helps.
 // ---------------------------------------------------------------------------
-(async function bootstrap() {
+void (async function bootstrap(): Promise<void> {
   if (process.env.MIGRATE_ON_BOOT !== 'false') {
     try {
       execSync('npx prisma migrate deploy', { stdio: 'inherit' });
       console.log('[boot] migrations applied.');
     } catch (err) {
-      console.error('[boot] migrate deploy failed (non-fatal — schema may already be current):', err.message || err);
+      console.error(
+        '[boot] migrate deploy failed (non-fatal — schema may already be current):',
+        reason(err),
+      );
     }
   }
 
@@ -162,26 +174,30 @@ const PORT = process.env.PORT || 3001;
   // starts and serves errors looks healthy and takes the traffic.
   // -------------------------------------------------------------------------
   try {
-    const { prismaUnscoped } = require('./lib/prisma');
+    // Imported lazily, like every step below it: the whole point of this
+    // bootstrap is that nothing touches the database until `migrate deploy`
+    // above has had its chance to run.
+    const { prismaUnscoped } = await import('./lib/prisma');
     await prismaUnscoped.$queryRaw`SELECT 1 FROM "Tenant" LIMIT 1`;
   } catch (err) {
     console.error(
       '\n[boot] FATAL: the database is missing the multi-tenancy schema.\n' +
-      '       The Tenant table does not exist, so authentication and every\n' +
-      '       tenant-scoped route would fail on the first request.\n' +
-      '       Run `npx prisma migrate deploy` against this database, or unset\n' +
-      '       MIGRATE_ON_BOOT=false so boot applies migrations itself.\n' +
-      `       Underlying error: ${err.message || err}\n`,
+        '       The Tenant table does not exist, so authentication and every\n' +
+        '       tenant-scoped route would fail on the first request.\n' +
+        '       Run `npx prisma migrate deploy` against this database, or unset\n' +
+        '       MIGRATE_ON_BOOT=false so boot applies migrations itself.\n' +
+        `       Underlying error: ${reason(err)}\n`,
     );
     process.exit(1);
   }
 
   if (process.env.SEED_ON_BOOT !== 'false') {
     try {
-      await require('./prisma/seed').runBaselineSeed();
+      const { runBaselineSeed } = await import('./prisma/seed');
+      await runBaselineSeed();
       console.log('[boot] baseline seed complete.');
     } catch (err) {
-      console.error('[boot] seed failed (non-fatal):', err.message || err);
+      console.error('[boot] seed failed (non-fatal):', reason(err));
     }
   }
 
@@ -197,12 +213,14 @@ const PORT = process.env.PORT || 3001;
       // refuses the first tenant-scoped query they make — which is the point:
       // an unscoped backfill should have to say so.
       await runAsSystem(async () => {
-        await require('./prisma/migrateContacts').migrateContacts();
-        await require('./prisma/backfillContactFks').backfillContactFks();
+        const { migrateContacts } = await import('./prisma/migrateContacts');
+        const { backfillContactFks } = await import('./prisma/backfillContactFks');
+        await migrateContacts();
+        await backfillContactFks();
       });
       console.log('[boot] contact backfill complete.');
     } catch (err) {
-      console.error('[boot] contact backfill failed (non-fatal):', err.message || err);
+      console.error('[boot] contact backfill failed (non-fatal):', reason(err));
     }
 
     // Idempotent role backfill: adds the ACCOUNT_CREDIT / CUSTOMER_CREDIT_EXPENSE
@@ -211,11 +229,15 @@ const PORT = process.env.PORT || 3001;
     // no-op once every tenant is caught up.
     try {
       console.log('[boot] account-credit role backfill...');
-      await runAsSystem(() =>
-        require('./prisma/backfillAccountCreditRoles').backfillAccountCreditRoles());
+      await runAsSystem(async () => {
+        const { backfillAccountCreditRoles } = await import(
+          './prisma/backfillAccountCreditRoles'
+        );
+        return backfillAccountCreditRoles();
+      });
       console.log('[boot] account-credit role backfill complete.');
     } catch (err) {
-      console.error('[boot] account-credit role backfill failed (non-fatal):', err.message || err);
+      console.error('[boot] account-credit role backfill failed (non-fatal):', reason(err));
     }
   }
 
@@ -228,10 +250,13 @@ const PORT = process.env.PORT || 3001;
   if (process.env.GEO_ON_BOOT !== 'false') {
     try {
       console.log('[boot] geo dataset import...');
-      await runAsSystem(() => require('./prisma/importGeoDataset').importGeoDataset());
+      await runAsSystem(async () => {
+        const { importGeoDataset } = await import('./prisma/importGeoDataset');
+        return importGeoDataset();
+      });
       console.log('[boot] geo dataset import complete.');
     } catch (err) {
-      console.error('[boot] geo dataset import failed (non-fatal):', err.message || err);
+      console.error('[boot] geo dataset import failed (non-fatal):', reason(err));
     }
   }
 
@@ -253,3 +278,5 @@ const PORT = process.env.PORT || 3001;
     });
   }
 })();
+
+export default app;

@@ -68,4 +68,4 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=40s --retries=3 \
   CMD wget -qO- http://127.0.0.1:3001/api/healthz || exit 1
 
 ENTRYPOINT ["/repo/apps/api/docker-entrypoint.sh"]
-CMD ["node", "server.js"]
+CMD ["node", "-r", "ts-node/register", "server.ts"]

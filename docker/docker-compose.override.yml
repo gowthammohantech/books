@@ -21,7 +21,7 @@ services:
       # with --omit=dev.
       target: dev-deps
     working_dir: /repo/apps/api
-    command: ["npx", "nodemon", "server.js"]
+    command: ["npx", "nodemon"]
     volumes:
       # Source is bind-mounted so edits are picked up. nodemon.json sets
       # ext=ts,js,json, so .ts edits actually trigger a restart.

@@ -66,11 +66,11 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 cd apps/api
 npm install          # not `npm ci` — the lockfile is out of sync with package.json
 npm run prisma:generate
-npm run dev          # nodemon server.js → http://localhost:3001
+npm run dev          # nodemon → ts-node server.ts → http://localhost:3001
 ```
 
 First boot handles all schema and data setup itself. The bootstrap in
-`server.js` runs, in order:
+`server.ts` runs, in order:
 
 1. `prisma migrate deploy`
 2. baseline seed (currencies, date/time formats, timezones, module hierarchy, custom-field types)

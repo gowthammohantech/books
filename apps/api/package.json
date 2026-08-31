@@ -1,10 +1,10 @@
 {
   "name": "@elixirbooks/api",
   "version": "2.9.0",
-  "main": "server.js",
+  "main": "server.ts",
   "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js",
+    "dev": "nodemon --exec \"node -r ts-node/register\" server.ts",
+    "start": "node -r ts-node/register server.ts",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run",

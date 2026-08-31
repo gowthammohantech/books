@@ -8,7 +8,7 @@ server and it handles the rest.
 
 ### How it works
 
-On startup, `server.js` runs a boot bootstrap before accepting HTTP traffic:
+On startup, `server.ts` runs a boot bootstrap before accepting HTTP traffic:
 
 1. **`prisma migrate deploy`** — applies any pending schema migrations
    (idempotent; only runs pending ones).
@@ -56,11 +56,11 @@ npm run setup
 ### Docker
 
 The Docker entrypoint (`docker-entrypoint.sh`) waits for the database to be
-reachable and then hands control to `node server.js`. The app applies
+reachable and then hands control to the app process. The app applies
 migrations and seeds itself — no duplicate work in the entrypoint.
 
 ```bash
-docker compose up -d   # DB-ready wait → node server.js → migrate → seed → backfill → geo import → listen
+docker compose up -d   # DB-ready wait → node server.ts → migrate → seed → backfill → geo import → listen
 ```
 
 ### PM2
@@ -70,7 +70,7 @@ No special configuration needed. PM2 just needs to launch the server:
 ```bash
 pm2 start npm --name elixirbooks -- start
 # or
-pm2 start server.js --name elixirbooks
+pm2 start npm --name elixirbooks -- start
 ```
 
 The boot bootstrap runs automatically on each start/restart.
@@ -78,7 +78,7 @@ The boot bootstrap runs automatically on each start/restart.
 ### Bare node
 
 ```bash
-node server.js
+npm start
 ```
 
 Same auto-setup applies.
@@ -89,7 +89,7 @@ If you prefer to control the order explicitly (e.g., run migrations before
 deploying new app instances), disable the auto steps and run setup manually:
 
 ```bash
-MIGRATE_ON_BOOT=false SEED_ON_BOOT=false node server.js &
+MIGRATE_ON_BOOT=false SEED_ON_BOOT=false npm start &
 npm run setup   # prisma migrate deploy && prisma generate && prisma db seed
 ```
 

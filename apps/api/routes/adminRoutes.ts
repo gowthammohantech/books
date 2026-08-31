@@ -1,28 +1,143 @@
-const express = require('express');
-const router = express.Router();
-const adminController = require('../controllers/adminController');
-const UnitsController = require('../controllers/UnitsController');
-const BrandsController = require('../controllers/BrandsController');
-const CategoryController = require('../controllers/CategoryController');
-const TaxRateController = require('../controllers/TaxRateController');
-const TaxGroupController = require('../controllers/TaxGroupController');
-const ProductController = require('../controllers/ProductController');
-const SupplierController = require('@controllers/Admin/Purchases/SupplierController');
-const purchaseOrderController = require('@controllers/Admin/Purchases/purchaseOrderController');
-const debitNoteController = require('@controllers/Admin/Purchases/debitNoteController');
-const purchaseController = require('@controllers/Admin/Purchases/purchaseController');
-const supplierPaymentController = require('@controllers/Admin/Purchases/supplierPaymentController');
-const supplierPaymentReadController = require('@controllers/Admin/Purchases/supplierPaymentReadController');
-const SignatureController = require('../controllers/SignatureController');
-const apiKeyController = require('../controllers/apiKeyController');
-const currencyController = require('../controllers/currencyController');
-const BankDetailController = require('@controllers/bankDetailController');
-const CompanySettings = require('@controllers/CompanySettingsController');
-const appVersionController = require('@controllers/appVersionController');
-const dashboardController = require('@controllers/Admin/dashboardController');
-const { uploadCompanyFields, handleUploadError } = require('../middleware/uploadCompanyImages');
-const protect = require('../middleware/authMiddleware');
-const { requirePermission } = require('../middleware/requirePermission');
+// Admin API surface. Converted from adminRoutes.js: the require() calls it
+// used — including 55 that went through the module-alias '@controllers'
+// style — are now static imports, which is what lets the CommonJS interop
+// tails come off the controllers.
+import { Router } from 'express';
+import * as adminController from '../controllers/adminController';
+import * as UnitsController from '../controllers/UnitsController';
+import * as BrandsController from '../controllers/BrandsController';
+import * as CategoryController from '../controllers/CategoryController';
+import * as TaxRateController from '../controllers/TaxRateController';
+import * as TaxGroupController from '../controllers/TaxGroupController';
+import * as ProductController from '../controllers/ProductController';
+import * as SupplierController from '../controllers/Admin/Purchases/SupplierController';
+import * as purchaseOrderController from '../controllers/Admin/Purchases/purchaseOrderController';
+import * as debitNoteController from '../controllers/Admin/Purchases/debitNoteController';
+import * as purchaseController from '../controllers/Admin/Purchases/purchaseController';
+import * as supplierPaymentController from '../controllers/Admin/Purchases/supplierPaymentController';
+import * as supplierPaymentReadController from '../controllers/Admin/Purchases/supplierPaymentReadController';
+import * as SignatureController from '../controllers/SignatureController';
+import * as apiKeyController from '../controllers/apiKeyController';
+import * as currencyController from '../controllers/currencyController';
+import * as BankDetailController from '../controllers/bankDetailController';
+import * as CompanySettings from '../controllers/CompanySettingsController';
+import * as appVersionController from '../controllers/appVersionController';
+import * as dashboardController from '../controllers/Admin/dashboardController';
+import { uploadCompanyFields, handleUploadError } from '../middleware/uploadCompanyImages';
+import protect from '../middleware/authMiddleware';
+import { requirePermission, type PermCheck } from '../middleware/requirePermission';
+import upload from '../middleware/upload';
+import setup from '../middleware/setup';
+import { uploadProductFields } from '../middleware/uploadProductImages';
+import { createUnitValidator, updateUnitValidator } from '../validators/unitsValidator';
+import { createBrandValidator, updateBrandValidator } from '../validators/brandValidator';
+import { createCategoryValidator, updateCategoryValidator } from '../validators/categoryValidator';
+import { createTaxRateValidator, updateTaxRateValidator } from '../validators/taxRateValidator';
+import { createTaxGroupValidator, updateTaxGroupValidator } from '../validators/taxGroupValidator';
+import { createProductValidator, updateProductValidator } from '../validators/productValidator';
+import { updateProfileValidator } from '../validators/updateProfileValidator';
+import { createSupplierValidator } from '../validators/Admin/Purchases/SupplierVaidator';
+import { purchaseOrderValidator, updatePurchaseOrderValidator } from '../validators/Admin/Purchases/purchaseOrderValidator';
+import { supplierPaymentValidator } from '../validators/Admin/Purchases/supplierPaymentValidator';
+import { purchaseValidator } from '../validators/Admin/Purchases/purchaseValidator';
+import { debitNoteValidator } from '../validators/Admin/Purchases/debitNoteValidator';
+import { createSignatureValidator, updateSignatureValidator } from '../validators/signatureValidator';
+import { createCurrencyValidator } from '../validators/currencyValidator';
+import { createBankDetailValidator, updateBankDetailValidator, updateBankDetailStatusValidator } from '../validators/bankDetailValidator';
+import { updateCompanySettingsValidator } from '../validators/companySettingsValidator';
+import { createCustomerValidator } from '../validators/customerValidator';
+import * as customerController from '../controllers/customerController';
+import * as vehicleController from '../controllers/vehicleController';
+import { createVehicleValidator, updateVehicleValidator } from '../validators/vehicleValidator';
+import * as localizationController from '../controllers/localizationController';
+import multer from 'multer';
+import * as quotationController from '../controllers/Admin/Invoice/quotationController';
+import { quotationValidator, updateQuotationValidator } from '../validators/Admin/Invoice/quotationValidator';
+import * as invoiceTemplateController from '../controllers/invoiceTemplateController';
+import { createInvoiceValidator } from '../validators/Admin/Invoice/invoiceValidator';
+import { createCreditNoteValidator } from '../validators/Admin/Invoice/creditNoteValidator';
+import { createDeliveryChallanValidator } from '../validators/Admin/Invoice/deliveryChallanValidator';
+import * as invoiceController from '../controllers/Admin/Invoice/invoiceController';
+import * as recurringScheduleController from '../controllers/recurringScheduleController';
+import * as invoicePaymentController from '../controllers/Admin/Invoice/invoicePaymentController';
+import * as creditNoteController from '../controllers/Admin/Invoice/creditNoteController';
+import * as inventoryController from '../controllers/Admin/Invoice/inventoryController';
+import * as deliveryChallanController from '../controllers/Admin/Invoice/deliveryChallanController';
+import * as emailSettingsController from '../controllers/emailSettingsController';
+import * as emailTeamplateController from '../controllers/emailTeamplateController';
+import * as roleController from '../controllers/roleController';
+import * as permissionController from '../controllers/permissionController';
+import * as userController from '../controllers/userController';
+import * as reportController from '../controllers/reportController';
+import * as accountingReportController from '../controllers/accountingReportController';
+import * as transactionReportController from '../controllers/transactionReportController';
+import * as securityController from '../controllers/securityController';
+import * as activityLogController from '../controllers/activityLogController';
+import * as pettyCashController from '../controllers/pettyCashController';
+import { createStaffValidator } from '../validators/staffValidator';
+import { createRoleValidator } from '../validators/roleValidator';
+import * as expenseController from '../controllers/expenseController';
+import { createExpenseValidator } from '../validators/expenseValidator';
+import * as expenseCategoryController from '../controllers/expenseCategoryController';
+import { createCustomFieldValidator, updateCustomFieldValidator } from '../validators/customFieldValidator';
+import { saveLocalizationValidator } from '../validators/localizationValidator';
+import { createPettyCashValidator } from '../validators/pettyCashValidator';
+import { handleValidationResult } from '../middleware/handleValidationResult';
+import * as customFieldDataTypeController from '../controllers/customFieldDataTypeController';
+import { createCustomFieldDataTypeValidator, updateCustomFieldDataTypeValidator } from '../validators/customFieldDataTypeValidator';
+import * as fieldTypeController from '../controllers/fieldTypeController';
+import * as customFieldController from '../controllers/customFieldController';
+import * as aiController from '../controllers/Admin/AI/aiController';
+import { processPromptValidator, confirmDocumentValidator, updateConfigValidator } from '../validators/Admin/AI/aiValidator';
+import * as ledgerSetup from '../controllers/Admin/ledgerSetupController';
+import * as ledgerCutover from '../controllers/Admin/ledgerCutoverController';
+import * as gatewayConfigController from '../controllers/gatewayConfigController';
+import * as paymentLinkMethodController from '../controllers/paymentLinkMethodController';
+import * as paymentTransactionController from '../controllers/paymentTransactionController';
+import * as refundController from '../controllers/refundController';
+import * as razorpayController from '../controllers/razorpayController';
+import * as stripeController from '../controllers/stripeController';
+import * as accountController from '../controllers/accountController';
+import * as journalEntryController from '../controllers/journalEntryController';
+import * as financialStatementsController from '../controllers/financialStatementsController';
+import * as taxReportsController from '../controllers/taxReportsController';
+import * as accountingPeriodController from '../controllers/accountingPeriodController';
+import * as gstFilingController from '../controllers/gstFilingController';
+import * as eInvoiceController from '../controllers/eInvoiceController';
+import * as whatsappController from '../controllers/whatsappController';
+import * as accountingIntegrationController from '../controllers/accountingIntegrationController';
+import * as aiConfigController from '../controllers/aiConfigController';
+import * as aiExtractionController from '../controllers/aiExtractionController';
+import * as aiChatController from '../controllers/aiChatController';
+import * as aiUsageController from '../controllers/aiUsageController';
+import uploadAiJobs from '../middleware/uploadAiJobs';
+import { requireAiEnabled } from '../middleware/requireAiEnabled';
+import { aiRateLimit } from '../middleware/aiRateLimit';
+import * as agingController from '../controllers/agingController';
+import * as supplierBalancesController from '../controllers/supplierBalancesController';
+import * as budgetController from '../controllers/budgetController';
+import * as fixedAssetController from '../controllers/fixedAssetController';
+import * as documentDefaultsController from '../controllers/documentDefaultsController';
+import * as reconciliationController from '../controllers/reconciliationController';
+import * as staffActivityController from '../controllers/staffActivityController';
+import * as moneyFlowController from '../controllers/moneyFlowController';
+import * as transactionCategoryController from '../controllers/transactionCategoryController';
+import { createTransactionCategoryValidator, updateTransactionCategoryValidator } from '../validators/transactionCategoryValidator';
+import * as bankTransactionController from '../controllers/bankTransactionController';
+import * as contactController from '../controllers/contactController';
+import * as accountCreditController from '../controllers/accountCreditController';
+import * as dashboardPlanningController from '../controllers/Admin/dashboardPlanningController';
+import * as approvalsController from '../controllers/approvalsController';
+import * as exchangeRateController from '../controllers/Admin/exchangeRateController';
+import * as myMoneyController from '../controllers/myMoneyController';
+import * as payrollController from '../controllers/payrollController';
+import timeTrackingRoutes from './timeTrackingRoutes';
+import exportRoutes from './exportRoutes';
+import taxReturnRoutes from './taxReturnRoutes';
+import mtdRoutes from './mtdRoutes';
+
+const router = Router();
+
 // Any document-creation module whose page needs shared reference data (tax
 // groups, a "bill from" user picker, signatures) — gating those endpoints on
 // a single unrelated module (e.g. Settings) forced admins to grant broad
@@ -31,103 +146,9 @@ const DOCUMENT_MODULES = [
   'invoices', 'recurring-invoices', 'credit-notes', 'quotations', 'delivery-challans',
   'purchase-list', 'purchase-orders', 'debit-notes',
 ];
-const upload = require('../middleware/upload');
-const setup = require('../middleware/setup');
-const { uploadSingle, uploadMultiple, uploadProductFields } = require('../middleware/uploadProductImages');
-const { createUnitValidator, updateUnitValidator } = require('../validators/unitsValidator');
-const { createBrandValidator, updateBrandValidator } = require('../validators/brandValidator');
-const { createCategoryValidator, updateCategoryValidator } = require('../validators/categoryValidator');
-const { createTaxRateValidator, updateTaxRateValidator } = require('../validators/taxRateValidator');
-const { createTaxGroupValidator, updateTaxGroupValidator } = require('../validators/taxGroupValidator');
-const { createProductValidator, updateProductValidator } = require('../validators/productValidator');
-const { updateProfileValidator } = require('../validators/updateProfileValidator');
-const { createSupplierValidator } = require('../validators/Admin/Purchases/SupplierVaidator');
-const { purchaseOrderValidator, updatePurchaseOrderValidator } = require('../validators/Admin/Purchases/purchaseOrderValidator');
-const { supplierPaymentValidator } = require('../validators/Admin/Purchases/supplierPaymentValidator');
-const { purchaseValidator } = require('../validators/Admin/Purchases/purchaseValidator');
-const { debitNoteValidator } = require('../validators/Admin/Purchases/debitNoteValidator');
-const { createSignatureValidator, updateSignatureValidator } = require('../validators/signatureValidator');
-const { createCurrencyValidator } = require('../validators/currencyValidator');
-const { createBankDetailValidator, updateBankDetailValidator, updateBankDetailStatusValidator } = require('@validators/bankDetailValidator');
-const { updateCompanySettingsValidator } = require('@validators/companySettingsValidator');
-const { createCustomerValidator } = require('@validators/customerValidator');
-const customerController = require('@controllers/customerController');
-const vehicleController = require('../controllers/vehicleController');
-const { createVehicleValidator, updateVehicleValidator } = require('../validators/vehicleValidator');
-const localizationController = require('@controllers/localizationController');
-const multer = require('multer');
-const quotationController = require('@controllers/Admin/Invoice/quotationController');
-const { quotationValidator, updateQuotationValidator } = require('../validators/Admin/Invoice/quotationValidator');
-const invoiceTemplateController = require('@controllers/invoiceTemplateController');
-const { createInvoiceValidator } = require('../validators/Admin/Invoice/invoiceValidator');
-const { createCreditNoteValidator } = require('../validators/Admin/Invoice/creditNoteValidator');
-const { createDeliveryChallanValidator } = require('../validators/Admin/Invoice/deliveryChallanValidator');
-const invoiceController = require('@controllers/Admin/Invoice/invoiceController');
-const recurringScheduleController = require('@controllers/recurringScheduleController');
-const invoicePaymentController = require('@controllers/Admin/Invoice/invoicePaymentController');
-const creditNoteController = require('@controllers/Admin/Invoice/creditNoteController');
-const inventoryController = require('@controllers/Admin/Invoice/inventoryController');
-const deliveryChallanController = require('@controllers/Admin/Invoice/deliveryChallanController');
-const emailSettingsController = require('@controllers/emailSettingsController');
-const emailTeamplateController = require('@controllers/emailTeamplateController');
-const roleController = require('@controllers/roleController');
-const permissionController = require('@controllers/permissionController');
-const userController = require('@controllers/userController');
-const reportController = require('@controllers/reportController');
-const accountingReportController = require('@controllers/accountingReportController');
-const transactionReportController = require('@controllers/transactionReportController');
-const securityController = require('@controllers/securityController');
-const activityLogController = require('@controllers/activityLogController');
-const pettyCashController = require('@controllers/pettyCashController');
-const { createStaffValidator } = require('../validators/staffValidator');
-const { createRoleValidator } = require('../validators/roleValidator');
-const expenseController = require('@controllers/expenseController');
-const { createExpenseValidator } = require('../validators/expenseValidator');
-const expenseCategoryController = require('../controllers/expenseCategoryController');
-const { createCustomFieldValidator, updateCustomFieldValidator } = require('../validators/customFieldValidator');
-const { saveLocalizationValidator } = require('../validators/localizationValidator');
-const { createPettyCashValidator } = require('../validators/pettyCashValidator');
-const { handleValidationResult } = require('../middleware/handleValidationResult');
-const customFieldDataTypeController = require('../controllers/customFieldDataTypeController');
-const { createCustomFieldDataTypeValidator, updateCustomFieldDataTypeValidator } = require('../validators/customFieldDataTypeValidator');
 
-const fieldTypeController = require('@controllers/fieldTypeController');
-const customFieldController = require('@controllers/customFieldController');
-const aiController = require('@controllers/Admin/AI/aiController');
-const { processPromptValidator, confirmDocumentValidator, updateConfigValidator } = require('../validators/Admin/AI/aiValidator');
-const ledgerSetup = require('@controllers/Admin/ledgerSetupController');
-const ledgerCutover = require('@controllers/Admin/ledgerCutoverController');
 
-const gatewayConfigController = require('../controllers/gatewayConfigController');
-const paymentLinkMethodController = require('../controllers/paymentLinkMethodController');
-const paymentTransactionController = require('../controllers/paymentTransactionController');
-const refundController = require('../controllers/refundController');
-const razorpayController = require('../controllers/razorpayController');
-const stripeController = require('../controllers/stripeController');
 
-const accountController = require('../controllers/accountController');
-const journalEntryController = require('../controllers/journalEntryController');
-const financialStatementsController = require('../controllers/financialStatementsController');
-const taxReportsController = require('../controllers/taxReportsController');
-const accountingPeriodController = require('../controllers/accountingPeriodController');
-const gstFilingController = require('../controllers/gstFilingController');
-const eInvoiceController = require('../controllers/eInvoiceController');
-const whatsappController = require('../controllers/whatsappController');
-const accountingIntegrationController = require('../controllers/accountingIntegrationController');
-const aiConfigController = require('@controllers/aiConfigController');
-const aiExtractionController = require('@controllers/aiExtractionController');
-const aiChatController = require('@controllers/aiChatController');
-const aiUsageController = require('@controllers/aiUsageController');
-const uploadAiJobs = require('@middleware/uploadAiJobs');
-const requireAiEnabled = require('@middleware/requireAiEnabled');
-const aiRateLimit = require('@middleware/aiRateLimit');
-const agingController = require('../controllers/agingController');
-const supplierBalancesController = require('@controllers/supplierBalancesController');
-const budgetController = require('../controllers/budgetController');
-const fixedAssetController = require('../controllers/fixedAssetController');
-const documentDefaultsController = require('../controllers/documentDefaultsController');
-const reconciliationController = require('../controllers/reconciliationController');
-const staffActivityController = require('../controllers/staffActivityController');
 
 
 
@@ -170,9 +191,9 @@ router.put('/tax-rates/:id', protect, requirePermission('finance-settings', 'edi
 router.delete('/tax-rates/:id', protect, requirePermission('finance-settings', 'delete'), TaxRateController.deleteTaxRate);
 // Read-only line-tax computations: settings roles keep their create-level gate;
 // document roles (who can view/build documents) may compute line tax.
-const TAX_COMPUTE_CHECKS = [
+const TAX_COMPUTE_CHECKS: PermCheck[] = [
   { moduleSlug: 'finance-settings', action: 'create' },
-  ...DOCUMENT_MODULES.map((m) => ({ moduleSlug: m, action: 'view' })),
+  ...DOCUMENT_MODULES.map((m): PermCheck => ({ moduleSlug: m, action: 'view' })),
 ];
 router.post('/tax-engine/suggest-for-line', protect, requirePermission(TAX_COMPUTE_CHECKS), TaxRateController.suggestForLine);
 router.post('/tax-engine/resolve-line', protect, requirePermission(TAX_COMPUTE_CHECKS), TaxRateController.resolveLine);
@@ -280,12 +301,9 @@ router.get('/bank-transactions-reconcile', protect, requirePermission('banking',
 router.get('/bank-transactions-details/:id', protect, requirePermission('banking', 'view'), BankDetailController.getBankTransactionDetails);
 
 // Money flow — transaction type registry
-const moneyFlowController = require('@controllers/moneyFlowController');
 router.get('/transaction-types', protect, requirePermission('banking', 'view'), moneyFlowController.getTransactionTypes);
 
 // Transaction categories (Task 5) — CRUD
-const transactionCategoryController = require('@controllers/transactionCategoryController');
-const { createTransactionCategoryValidator, updateTransactionCategoryValidator } = require('../validators/transactionCategoryValidator');
 router.get('/transaction-categories', protect, requirePermission('banking', 'view'), transactionCategoryController.list);
 router.post('/transaction-categories', protect, requirePermission('banking', 'create'), createTransactionCategoryValidator, transactionCategoryController.create);
 router.put('/transaction-categories/:id', protect, requirePermission('banking', 'edit'), updateTransactionCategoryValidator, transactionCategoryController.update);
@@ -293,7 +311,6 @@ router.patch('/transaction-categories/:id/status', protect, requirePermission('b
 router.delete('/transaction-categories/:id', protect, requirePermission('banking', 'delete'), transactionCategoryController.remove);
 
 // Bank transactions (slice E.1) — list/get/create/delete + CSV import
-const bankTransactionController = require('@controllers/bankTransactionController');
 const csvUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 router.get('/bank-transactions', protect, requirePermission('banking', 'view'), bankTransactionController.list);
 router.get('/bank-transactions/:id', protect, requirePermission('banking', 'view'), bankTransactionController.getById);
@@ -337,7 +354,7 @@ router.patch('/company/setup', protect, requirePermission('website-settings', 'e
 // 'create' check still passes on its own, unchanged.
 router.post('/create-general-settings', protect, requirePermission([
   { moduleSlug: 'general-settings', action: 'create' },
-  ...DOCUMENT_MODULES.map((slug) => ({ moduleSlug: slug, action: 'edit' })),
+  ...DOCUMENT_MODULES.map((slug): PermCheck => ({ moduleSlug: slug, action: 'edit' })),
 ]), CompanySettings.createOrUpdateGeneralSetting);
 router.get('/general-settings-list', protect, requirePermission([...DOCUMENT_MODULES, 'general-settings'], 'view'), CompanySettings.listGeneralSettings);
 
@@ -400,7 +417,6 @@ router.post('/customers/import', protect, requirePermission('customers', 'create
 router.post('/customers/import/confirm', protect, requirePermission('customers', 'create'), customerController.customerImportConfirm);
 
 // Unified Contacts (Stage B — Task 2 CRUD + Task 3 analytics + Task 9 import/export)
-const contactController = require('../controllers/contactController');
 router.get('/contacts', protect, requirePermission(['contacts', 'customers', ...DOCUMENT_MODULES], 'view'), contactController.listContacts);
 router.post('/contacts', protect, requirePermission(['contacts', 'customers'], 'create'), contactController.createContact);
 // Static sub-paths must be declared before /:id to avoid route shadowing
@@ -417,7 +433,6 @@ router.put('/contacts/:id', protect, requirePermission(['contacts', 'customers']
 router.delete('/contacts/:id', protect, requirePermission(['contacts', 'customers'], 'delete'), contactController.deleteContact);
 
 // Account Credit — per-contact goodwill/promo credit (grant/void; redemption owned elsewhere)
-const accountCreditController = require('../controllers/accountCreditController');
 router.post('/contacts/:id/credits', protect, requirePermission(['contacts', 'customers'], 'edit'), accountCreditController.grantAccountCredit);
 router.delete('/contacts/:id/credits/:entryId', protect, requirePermission(['contacts', 'customers'], 'edit'), accountCreditController.voidAccountCredit);
 
@@ -650,7 +665,6 @@ router.get('/activity-logs', protect, requirePermission('activity-log', 'view'),
 
 //dashboard
 router.get('/dashboard', protect, requirePermission('dashboard', 'view'), dashboardController.getDashboard);
-const dashboardPlanningController = require('@controllers/Admin/dashboardPlanningController');
 router.get('/dashboard/accounts-planning', protect, requirePermission('dashboard', 'view'), dashboardPlanningController.accountsPlanning);
 
 //expense
@@ -899,7 +913,6 @@ router.get('/ai/usage', protect, requirePermission('ai', 'view'), aiUsageControl
 router.get('/ai/usage/summary', protect, requirePermission('ai', 'view'), aiUsageController.getUsageSummary);
 
 // Spec D — Approval workflows (maker-checker)
-const approvalsController = require('@controllers/approvalsController');
 router.get('/approvals/pending', protect, requirePermission('finance-settings', 'view'), approvalsController.listPending);
 router.post('/invoices/:id/approve', protect, requirePermission('invoices', 'edit'), invoiceController.approveInvoice);
 router.post('/invoices/:id/reject', protect, requirePermission('invoices', 'edit'), invoiceController.rejectInvoice);
@@ -909,7 +922,6 @@ router.post('/purchases/:id/approve', protect, requirePermission('purchase-list'
 router.post('/purchases/:id/reject', protect, requirePermission('purchase-list', 'edit'), purchaseController.rejectPurchase);
 
 // Spec G — Exchange-rate CRUD (manual rate table; BYOK rate-API is a future provider)
-const exchangeRateController = require('@controllers/Admin/exchangeRateController');
 router.get('/exchange-rates', protect, requirePermission('finance-settings', 'view'), exchangeRateController.listExchangeRates);
 router.post('/exchange-rates', protect, requirePermission('finance-settings', 'create'), exchangeRateController.createExchangeRate);
 router.delete('/exchange-rates/:id', protect, requirePermission('finance-settings', 'delete'), exchangeRateController.deleteExchangeRate);
@@ -962,7 +974,6 @@ router.delete('/fixed-assets/:id', protect, requirePermission('finance-settings'
 router.get('/inventory/cost-layers', protect, requirePermission('inventory', 'view'), ProductController.listCostLayers);
 
 // M2 — My Money: per-user tax-year consolidation (salary / dividend / director-loan / share-capital)
-const myMoneyController = require('@controllers/myMoneyController');
 // #36: gate My Money on its own 'my-money' module (the slug the UI uses),
 // not the unrelated 'banking' module that 403'd finance users.
 router.get('/my-money/:tenantId', protect, requirePermission('my-money', 'view'), myMoneyController.getMyMoney);
@@ -970,7 +981,6 @@ router.get('/my-money/:tenantId', protect, requirePermission('my-money', 'view')
 // M2 Phase 2 — Payroll Profiles CRUD (Task 6)
 // #36: gate on the dedicated 'payroll' module (matches the UI sidebar slug)
 // instead of 'banking' so payroll/finance users are no longer 403'd.
-const payrollController = require('../controllers/payrollController');
 router.get('/payroll/profiles', protect, requirePermission('payroll', 'view'), payrollController.listProfiles);
 router.post('/payroll/profiles', protect, requirePermission('payroll', 'create'), payrollController.createProfile);
 router.put('/payroll/profiles/:id', protect, requirePermission('payroll', 'edit'), payrollController.updateProfile);
@@ -987,26 +997,28 @@ router.post('/payroll/runs/:id/void', protect, requirePermission('payroll', 'edi
 // Time Tracking — Phase 1 (Task 4): project members + project billing settings.
 // Sub-router (TS) mounted here so its routes live under /api/admin alongside the
 // rest of the admin surface. It applies `protect` + `requirePermission` itself.
-const timeTrackingRoutes = require('./timeTrackingRoutes');
 router.use(timeTrackingRoutes);
 
 // Data export / backup — "own your data" CSV per-module exports + full-tenant
 // backup zip. Sub-router (TS) mounted here so its routes live under /api/admin.
 // It applies `protect` + `requirePermission` itself.
-const exportRoutes = require('./exportRoutes');
 router.use(exportRoutes);
 
 // Country tax-return summaries — UK VAT 9-box, AU BAS, NZ GST (Task 2). GL-
 // derived, on-screen + CSV. Sub-router (TS) mounted here so its routes live
 // under /api/admin. It applies `protect` + `requirePermission` itself.
-const taxReturnRoutes = require('./taxReturnRoutes');
 router.use(taxReturnRoutes);
 
 // HMRC Making Tax Digital (MTD) VAT e-filing — connect / obligations / submit /
 // liabilities (Task 3). BYOK + off-by-default + mock mode. Sub-router (TS) mounted
 // here so its routes live under /api/admin. It applies protect + requirePermission
 // (and an Owner gate on credential/connect mutations) itself.
-const mtdRoutes = require('./mtdRoutes');
 router.use(mtdRoutes);
 
 module.exports = router;
+
+export default router;
+
+// CommonJS interop: server.js still require()s this router.
+module.exports = router;
+module.exports.default = router;

@@ -1,5 +1,7 @@
 {
-  "watch": ["."],
+  "watch": [
+    "."
+  ],
   "ext": "ts,js,json",
   "ignore": [
     "dist/**",
@@ -10,5 +12,5 @@
     "**/*.test.ts",
     "node_modules/**"
   ],
-  "exec": "node server.js"
+  "exec": "node -r ts-node/register server.ts"
 }

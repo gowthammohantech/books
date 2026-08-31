@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 // admin route in either file must carry requirePermission(...) OR an explicit
 // /* self */ exemption marker (self/identity routes intentionally gated by
 // `protect` alone).
-const files = ['routes/adminRoutes.js', 'routes/dimensionRoutes.ts'];
+const files = ['routes/adminRoutes.ts', 'routes/dimensionRoutes.ts'];
 
 // Each router.<verb>('path', ...) statement must contain requirePermission( OR a /* self */ marker.
 const routeLine = /router\.(get|post|put|patch|delete)\(/i;
