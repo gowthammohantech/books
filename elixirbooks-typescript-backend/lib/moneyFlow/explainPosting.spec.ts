@@ -300,7 +300,17 @@ function buildFakePrisma(opts?: { goLiveDate?: Date }) {
     },
   };
 
+  // lib/actor.ts falls back to the workspace OWNER when there is no request
+  // context, which is the case in this spec. Actor columns are User foreign
+  // keys, so they can never be handed a tenant id.
+  const tenantMembership = {
+    async findFirst() {
+      return { userId: 'owner-user-1' };
+    },
+  };
+
   const client: Record<string, unknown> = {
+    tenantMembership,
     journalEntry, ledgerAccountMapping, accountingPeriod, companySettings,
     bankDetail, bankTransaction, transactionCategory, taxRate, expense, paymentMode, fixedAsset,
     invoice, invoicePayment, account, purchase, supplierPayment, creditNote,

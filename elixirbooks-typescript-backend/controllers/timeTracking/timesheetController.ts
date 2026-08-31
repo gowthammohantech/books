@@ -27,6 +27,7 @@ import {
   type ScopeActor,
   type ScopePrisma,
 } from '../../lib/timeTracking/scope';
+import { isTenantMember } from '../../lib/tenantMembers';
 
 // The scope guard is typed against a structural ScopePrisma (so it can be
 // stubbed in tests). The generated client satisfies it at runtime; narrow the
@@ -328,11 +329,8 @@ export async function getOrCreateWeek(req: Request, res: Response): Promise<void
       }
     }
 
-    // The target employee must be staff of this tenant.
-    const staff = await prisma.user.findFirst({
-      where: { id: employeeUserId, NOT: { user_type: 999 }, OR: [{ id: tenantId }, { ownerId: tenantId }] },
-      select: { id: true },
-    });
+    // The target employee must belong to this workspace.
+    const staff = (await isTenantMember(employeeUserId, tenantId)) ? { id: employeeUserId } : null;
     if (!staff) {
       res.status(400).json({ success: false, message: 'employeeUserId is not a staff user of this tenant' });
       return;

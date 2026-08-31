@@ -457,19 +457,26 @@ describe('register', () => {
     ensureRoleShouldThrow = false;
   });
 
-  it('creates user with Owner roleId when no admin exists', async () => {
+  it('gives the signup owner the Owner role, on their membership', async () => {
     const res = makeRes();
     await register(makeReq({
       body: { firstName: 'Leo', lastName: 'P', email: 'leo@test.com', password: 'Password1!' },
     }), res);
 
     expect(res.status).toHaveBeenCalledWith(201);
-    // Owner role must have been created (register now assigns the Owner role)
-    expect(db.roles.some((r) => r.roleName === 'Owner')).toBe(true);
-    // The created user should have a roleId
+    // Owner role must have been created (register provisions the role set)
+    const ownerRole = db.roles.find((r) => r.roleName === 'Owner');
+    expect(ownerRole).toBeDefined();
+
     const created = db.users.find((u) => u.email === 'leo@test.com');
-    expect(created?.roleId).toBeTruthy();
     expect(created?.user_type).toBe(1);
+
+    // The role is carried by the MEMBERSHIP. P9 dropped User.roleId, because a
+    // person holds a different role in each workspace they belong to.
+    const membership = db.memberships.find((m) => m.userId === created?.id);
+    expect(membership).toBeDefined();
+    expect(membership?.roleId).toBe(ownerRole?.id);
+    expect(membership?.isOwner).toBe(true);
   });
 
   it('provisions a workspace: tenant + owner membership, not just a user', async () => {

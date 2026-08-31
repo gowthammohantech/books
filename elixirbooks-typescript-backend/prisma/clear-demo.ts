@@ -80,9 +80,14 @@ async function main(): Promise<void> {
     return;
   }
 
-  // 2. Collect demo user ids (owner + staff with ownerId = owner.id)
+  // 2. Collect demo user ids (the owner, plus everyone holding a membership of
+  // the demo workspace). Membership replaced `ownerId` as the definition of
+  // "in this company", and it is what the app itself reads.
   const staffUsers = await prisma.user.findMany({
-    where: { ownerId: demoOwner.id },
+    where: {
+      id: { not: demoOwner.id },
+      memberships: { some: { tenantId: demoOwner.id } },
+    },
     select: { id: true },
   });
   const demoUserIds = [demoOwner.id, ...staffUsers.map((u) => u.id)];
@@ -257,7 +262,7 @@ async function main(): Promise<void> {
     ['Localization', cntLocalization],
     ['CompanySettings', cntCompanySettings],
     // Step 12 — Users (last)
-    ['User (staff, ownerId=demo)', cntStaffUsers],
+    ['User (staff, members of demo workspace)', cntStaffUsers],
     ['User (owner)', cntOwnerUser],
   ];
 
@@ -485,7 +490,9 @@ async function main(): Promise<void> {
       if (staffUsers.length) {
         track(
           'User (staff)',
-          await tx.user.deleteMany({ where: { ownerId: demoOwner.id } }),
+          await tx.user.deleteMany({
+            where: { id: { in: staffUsers.map((u) => u.id) } },
+          }),
         );
       }
       track('User (owner)', await tx.user.deleteMany({ where: { id: demoOwner.id } }));

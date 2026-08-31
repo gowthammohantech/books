@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError, requireActingUserId } from '../lib/tenantScope';
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -78,7 +78,7 @@ export async function createRole(req: Request, res: Response): Promise<void> {
         tenantId,
         roleName: (roleName as string).trim(),
         status: Boolean(status),
-        createdBy: tenantId,
+        createdBy: requireActingUserId(req),
         ...(defaultRoute !== undefined ? { defaultRoute: defaultRoute.trim() } : {}),
       },
     });
@@ -183,7 +183,13 @@ export async function listUsersByRole(req: Request, res: Response): Promise<void
       return;
     }
 
-    const where: Prisma.UserWhereInput = { roleId };
+    // Who holds this role? A role is held THROUGH a membership, so this is a
+    // filter on the membership rather than on the user. It is also inherently
+    // workspace-scoped: a Role belongs to exactly one tenant, so only that
+    // tenant's memberships can name it.
+    const where: Prisma.UserWhereInput = {
+      memberships: { some: { roleId } },
+    };
 
     if (search !== '') {
       where.OR = [
@@ -208,19 +214,32 @@ export async function listUsersByRole(req: Request, res: Response): Promise<void
         balance: true,
         balance_type: true,
         createdAt: true,
-        roleId: true,
-        role: { select: { roleName: true } },
+        // The role comes from the membership that matched above. `take` is
+        // applied to the users, so this select stays one row per user.
+        memberships: {
+          where: { roleId },
+          select: { roleId: true, role: { select: { roleName: true } } },
+          take: 1,
+        },
       },
     });
 
+    // Flatten back to the shape this endpoint has always returned, so the
+    // frontend's "users in this role" table does not need to change.
+    const data = users.map(({ memberships, ...u }) => ({
+      ...u,
+      roleId: memberships[0]?.roleId ?? null,
+      role: memberships[0]?.role ?? null,
+    }));
+
     res.status(200).json({
       success: true,
-      count: users.length,
+      count: data.length,
       role: {
         id: role.id,
         name: role.roleName,
       },
-      data: users,
+      data,
     });
   } catch (err) {
     console.error('Error listing users by role:', err);
@@ -392,7 +411,13 @@ export async function deleteRole(req: Request, res: Response): Promise<void> {
     // Guard: refuse to soft-delete a role that is still assigned to active
     // (non-deleted) users. Soft-deleted users are excluded so their stale
     // roleId FK doesn't block role cleanup.
-    const userCount = await prisma.user.count({ where: { roleId: id, isDeleted: false } });
+    //
+    // Counted over MEMBERSHIPS, which is where a role assignment now lives. The
+    // count is inherently scoped: a Role belongs to exactly one workspace, so
+    // only that workspace's memberships can reference it.
+    const userCount = await prisma.tenantMembership.count({
+      where: { roleId: id, user: { isDeleted: false } },
+    });
     if (userCount > 0) {
       res.status(409).json({
         success: false,

@@ -11,12 +11,16 @@ import type { Request, Response } from 'express';
 // referenced inside factory must also be hoisted via vi.hoisted)
 // ---------------------------------------------------------------------------
 
-const { mockFindUnique, mockFindFirst, mockUpsert, mockRequireUserId } = vi.hoisted(() => ({
-  mockFindUnique: vi.fn(),
-  mockFindFirst: vi.fn(),
-  mockUpsert: vi.fn(),
-  mockRequireUserId: vi.fn(),
-}));
+const { mockFindUnique, mockFindFirst, mockUpsert, mockRequireUserId, mockActingUserId } =
+  vi.hoisted(() => ({
+    mockFindUnique: vi.fn(),
+    mockFindFirst: vi.fn(),
+    mockUpsert: vi.fn(),
+    mockRequireUserId: vi.fn(),
+    // Deliberately a DIFFERENT id from the tenant: `createdBy`/`updatedBy` are
+    // foreign keys to User, and the bug this guards is handing them a tenant id.
+    mockActingUserId: vi.fn(),
+  }));
 
 vi.mock('../lib/prisma', () => ({
   prisma: {
@@ -32,6 +36,7 @@ vi.mock('../lib/prisma', () => ({
 
 vi.mock('../lib/tenantScope', () => ({
   requireTenantId: mockRequireUserId,
+  requireActingUserId: mockActingUserId,
   UnauthorizedError: class UnauthorizedError extends Error {
     status = 401;
     constructor(message = 'Not authorized') {
@@ -69,6 +74,7 @@ function makeReq(body: Record<string, unknown> = {}): Request {
 beforeEach(() => {
   vi.clearAllMocks();
   mockRequireUserId.mockReturnValue('user-123');
+  mockActingUserId.mockReturnValue('acting-user-9');
 });
 
 // ---------------------------------------------------------------------------

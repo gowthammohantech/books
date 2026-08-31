@@ -22,8 +22,7 @@ import {
 import {
   tenantScope,
   requireTenantId,
-  UnauthorizedError,
-} from '../lib/tenantScope';
+  UnauthorizedError, requireActingUserId } from '../lib/tenantScope';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
 import { handleLedgerError } from '../lib/httpErrors';
 import { runRecurringForExpense } from '../lib/recurringExpenseRunner';
@@ -39,6 +38,7 @@ import { initialApprovalStatus, shouldPostOnCreate } from '../lib/ledger/approva
 import { shouldPost } from '../lib/ledger/postingGate';
 import { resolveExpenseFxRate, type FxGuardDb } from '../lib/ledger/expenseFxGuard';
 import { toBaseAmount } from '../lib/ledger/money';
+import { isTenantMember } from '../lib/tenantMembers';
 
 type Tx = Prisma.TransactionClient;
 
@@ -297,11 +297,8 @@ export async function createExpense(
         });
         return;
       }
-      // Scope the person to this tenant (owner self or a staff member).
-      const person = await prisma.user.findFirst({
-        where: { id: paidByUserId, isDeleted: false, OR: [{ id: tenantId }, { ownerId: tenantId }] },
-        select: { id: true },
-      });
+      // Scope the person to this workspace, by membership.
+      const person = (await isTenantMember(paidByUserId, tenantId)) ? { id: paidByUserId } : null;
       if (!person) {
         res.status(400).json({
           success: false,
@@ -615,7 +612,7 @@ export async function createExpense(
           module: 'expense',
           recordId: expense.id,
           value: (value ?? null) as Prisma.InputJsonValue,
-          createdBy: tenantId,
+          createdBy: requireActingUserId(req),
         });
       }
 
@@ -630,7 +627,7 @@ export async function createExpense(
         data: {
           tenantId: tenantId,
           expenseId: expense.id,
-          changedBy: tenantId,
+          changedBy: requireActingUserId(req),
           changes: [
             {
               field: 'create',
@@ -1246,15 +1243,10 @@ export async function updateExpense(
         });
         return;
       }
-      // Scope the person to this tenant (owner self or a staff member).
-      const person = await prisma.user.findFirst({
-        where: {
-          id: finalPaidByUserId,
-          isDeleted: false,
-          OR: [{ id: tenantId }, { ownerId: tenantId }],
-        },
-        select: { id: true },
-      });
+      // Scope the person to this workspace, by membership.
+      const person = (await isTenantMember(finalPaidByUserId, tenantId))
+        ? { id: finalPaidByUserId }
+        : null;
       if (!person) {
         res.status(400).json({
           success: false,
@@ -1739,7 +1731,7 @@ export async function updateExpense(
           module: 'expense',
           recordId: expense.id,
           value: (value ?? null) as Prisma.InputJsonValue,
-          createdBy: tenantId,
+          createdBy: requireActingUserId(req),
         });
       }
 
@@ -1755,7 +1747,7 @@ export async function updateExpense(
           data: {
             tenantId: tenantId,
             expenseId: expense.id,
-            changedBy: tenantId,
+            changedBy: requireActingUserId(req),
             changes: changes as unknown as Prisma.InputJsonValue,
           },
         });

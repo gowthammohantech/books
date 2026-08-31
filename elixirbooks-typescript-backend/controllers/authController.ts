@@ -244,11 +244,12 @@ export async function register(req: Request, res: Response): Promise<void> {
           select: { id: true, roleId: true },
         });
 
-        // User.roleId is mirrored for one release while other code still reads
-        // it; TenantMembership.roleId is authoritative (P9 drops the column).
+        // Only `lastTenantId` now — which workspace to reopen on next login.
+        // The role lives on the membership, because a person can hold a
+        // different one in each workspace they belong to.
         const withRole = await tx.user.update({
           where: { id: created.id },
-          data: { roleId: ownerMembership?.roleId ?? null, lastTenantId: t.id },
+          data: { lastTenantId: t.id },
         });
 
         return { user: withRole, tenant: t, membershipId: ownerMembership?.id };

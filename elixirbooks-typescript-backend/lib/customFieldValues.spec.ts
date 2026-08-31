@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CustomFieldValueModule } from '@prisma/client';
 import { insertCustomFieldValues, readCustomFieldValuesForRecords } from './customFieldValues';
+import { runWithAuditContext } from './auditContext';
 
 function fakeTx() {
   const calls: any = { deleted: null, created: null };
@@ -16,18 +17,22 @@ function fakeTx() {
 describe('insertCustomFieldValues', () => {
   it('maps fieldId->customFieldId, sets module/recordId/value, deletes first', async () => {
     const tx = fakeTx();
-    await insertCustomFieldValues(tx as any, {
-      module: CustomFieldValueModule.product, recordId: 'p1', tenantId: 'u1', files: [],
-      customFields: [{ fieldId: 'cf1', value: 'red' }, { fieldId: 'cf2', value: '5' }],
-    });
+    // `createdBy` records the PERSON, which comes from the request-scoped
+    // context. It used to be handed the tenant id -- a foreign key to User
+    // holding a value that is not a User id once workspaces have their own.
+    await runWithAuditContext({ userId: 'actor-1', tenantId: 'u1' }, () =>
+      insertCustomFieldValues(tx as any, {
+        module: CustomFieldValueModule.product, recordId: 'p1', tenantId: 'u1', files: [],
+        customFields: [{ fieldId: 'cf1', value: 'red' }, { fieldId: 'cf2', value: '5' }],
+      }));
     // The delete is tenant-scoped too: without it, writing custom fields for
     // one company's record could clear another's rows for the same recordId.
     expect(tx.calls.deleted).toEqual({
       where: { tenantId: 'u1', module: CustomFieldValueModule.product, recordId: 'p1' },
     });
     expect(tx.calls.created.data).toEqual([
-      { tenantId: 'u1', customFieldId: 'cf1', module: CustomFieldValueModule.product, recordId: 'p1', value: 'red', createdBy: 'u1' },
-      { tenantId: 'u1', customFieldId: 'cf2', module: CustomFieldValueModule.product, recordId: 'p1', value: '5', createdBy: 'u1' },
+      { tenantId: 'u1', customFieldId: 'cf1', module: CustomFieldValueModule.product, recordId: 'p1', value: 'red', createdBy: 'actor-1' },
+      { tenantId: 'u1', customFieldId: 'cf2', module: CustomFieldValueModule.product, recordId: 'p1', value: '5', createdBy: 'actor-1' },
     ]);
   });
 

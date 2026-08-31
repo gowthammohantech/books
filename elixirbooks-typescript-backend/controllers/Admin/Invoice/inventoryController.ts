@@ -5,8 +5,7 @@ import { prisma } from '../../../lib/prisma';
 import {
   tenantScope,
   requireTenantId,
-  UnauthorizedError,
-} from '../../../lib/tenantScope';
+  UnauthorizedError, requireActingUserId } from '../../../lib/tenantScope';
 
 type Tx = Prisma.TransactionClient;
 
@@ -365,7 +364,7 @@ export async function updateStock(req: Request, res: Response): Promise<void> {
         adjustment: adjustmentValue,
         referenceId: null,
         referenceType: 'adjustment',
-        createdBy: tenantId,
+        createdBy: requireActingUserId(req),
         createdAt: nowIso,
         updatedAt: nowIso,
       };

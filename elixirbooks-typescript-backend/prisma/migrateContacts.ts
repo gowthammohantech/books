@@ -73,14 +73,22 @@ async function migrateForOwner(tenantId: string): Promise<{ created: number; mer
 }
 
 export async function migrateContacts(): Promise<void> {
-  const owners = await prisma.user.findMany({ where: { ownerId: null }, select: { id: true, email: true } });
+  // Iterate WORKSPACES, not users. `migrateForOwner` has always taken a tenant
+  // id; it was fed `User.ownerId IS NULL` ("the owners") back when a tenant id
+  // was a user id. That enumeration missed any workspace whose owner was not
+  // matched by it and, once ownerId is dropped, cannot be written at all.
+  const tenants = await prisma.tenant.findMany({
+    where: { deletedAt: null },
+    select: { id: true, name: true },
+    orderBy: { createdAt: 'asc' },
+  });
   let created = 0, merged = 0, near = 0;
-  for (const o of owners) {
-    const r = await migrateForOwner(o.id);
-    console.log(`[OK] ${o.email}: created ${r.created}, merged ${r.merged}, near-miss ${r.nearMisses}`);
+  for (const t of tenants) {
+    const r = await migrateForOwner(t.id);
+    console.log(`[OK] ${t.name}: created ${r.created}, merged ${r.merged}, near-miss ${r.nearMisses}`);
     created += r.created; merged += r.merged; near += r.nearMisses;
   }
-  console.log(`\nContacts migration complete: ${created} contacts created, ${merged} merges, ${near} near-misses across ${owners.length} owners.`);
+  console.log(`\nContacts migration complete: ${created} contacts created, ${merged} merges, ${near} near-misses across ${tenants.length} workspace(s).`);
 }
 
 // Only run main when invoked directly (not when imported by the spec)

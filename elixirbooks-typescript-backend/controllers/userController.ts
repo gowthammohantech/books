@@ -125,11 +125,6 @@ export async function createStaffUser(req: Request, res: Response): Promise<void
           cityId: city,
           postalCode,
           user_type: 3,
-          // User.roleId and User.ownerId are mirrored for one release while
-          // other code still reads them; the membership is authoritative and
-          // P9 drops both columns.
-          roleId,
-          ownerId: tenantId,
           lastTenantId: tenantId,
           profileImage: req.file ? req.file.path : null,
         },
@@ -388,9 +383,9 @@ export async function updateStaffUser(req: Request, res: Response): Promise<void
     if (city) {
       data.city = { connect: { id: city } };
     }
-    if (roleId) {
-      data.role = { connect: { id: roleId } };
-    }
+    // The role is NOT set here any more: it lives on the membership, and the
+    // membership update below is what applies it. Writing it in both places
+    // was how the two could disagree.
 
     // Update password if provided
     if (password) {
@@ -408,8 +403,8 @@ export async function updateStaffUser(req: Request, res: Response): Promise<void
     const updated = await prisma.$transaction(async (tx) => {
       const row = await tx.user.update({ where: { id }, data });
       if (roleId) {
-        // The membership carries the authoritative per-workspace role; User.roleId
-        // above is the mirror kept for one release.
+        // The membership is where a role assignment lives. The mirror onto
+        // User.roleId that used to accompany this went with the column (P9).
         await tx.tenantMembership.update({
           where: { id: membership.id },
           data: {

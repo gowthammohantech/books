@@ -184,21 +184,8 @@ export async function seedRolesForTenant(
   });
   const ownerAssigned = ownerAssign.count;
 
-  // Mirror onto User.roleId while authMiddleware still reads it. This mirror is
-  // removed in P5, once `protect` resolves the role from the membership.
-  const owners = await client.tenantMembership.findMany({
-    where: { tenantId, isOwner: true },
-    select: { userId: true },
-  });
-  if (owners.length > 0) {
-    await client.user.updateMany({
-      where: {
-        id: { in: owners.map((o: { userId: string }) => o.userId) },
-        NOT: { roleId: ownerRoleId },
-      },
-      data: { roleId: ownerRoleId },
-    });
-  }
+  // The mirror onto User.roleId that used to follow is gone with the column
+  // (P9). The membership update above is the whole assignment now.
 
   return { created, backfilled, adminPermsGranted, ownerAssigned, roleIds };
 }

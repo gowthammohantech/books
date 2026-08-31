@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../../../lib/prisma';
-import { requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
+import { requireTenantId, UnauthorizedError, requireActingUserId } from '../../../lib/tenantScope';
 import { sendPrismaError } from '../../../middleware/prismaError';
 import {
   reverseInvoicePaymentEffects,
@@ -225,7 +225,7 @@ export async function voidInvoicePayment(req: Request, res: Response): Promise<v
         where: { id: payment.id },
         data: {
           isVoided: true,
-          voidedById: tenantId,
+          voidedById: requireActingUserId(req),
           voidedAt,
           voidReason: reason,
         },
@@ -240,7 +240,7 @@ export async function voidInvoicePayment(req: Request, res: Response): Promise<v
       // for non-credit payments (updateMany matches zero rows).
       await tx.accountCreditEntry.updateMany({
         where: { invoicePaymentId: payment.id, type: 'REDEMPTION', isVoided: false },
-        data: { isVoided: true, voidedById: tenantId, voidedAt },
+        data: { isVoided: true, voidedById: requireActingUserId(req), voidedAt },
       });
 
       // 5. Recompute invoice status CN-aware (post-void). Every other P1-2 site

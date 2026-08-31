@@ -63,10 +63,12 @@ export default tseslint.config(
         },
       ],
 
-      // `requireUserId` is the pre-P3 name for `requireTenantId`. It returns a
-      // TENANT id and never returned the acting user's id — a mismatch that
-      // already caused real bugs (reminderController compared it against
-      // `createdBy`). The alias is removed in P9.
+      // `requireUserId` was the pre-P3 name for `requireTenantId`. It returned
+      // a TENANT id and never the acting user's id — a mismatch that caused
+      // real bugs (reminderController compared it against `createdBy`). P9
+      // deleted the alias; this rule stays so that re-adding it, or importing
+      // it from a stale branch, fails the build rather than compiling into the
+      // same ambiguity.
       'no-restricted-imports': [
         'error',
         {

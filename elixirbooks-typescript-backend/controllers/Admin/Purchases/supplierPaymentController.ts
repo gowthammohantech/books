@@ -10,8 +10,7 @@ import { prisma } from '../../../lib/prisma';
 import {
   tenantScope,
   requireTenantId,
-  UnauthorizedError,
-} from '../../../lib/tenantScope';
+  UnauthorizedError, requireActingUserId } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 import { handleLedgerError } from '../../../lib/httpErrors';
 import {
@@ -362,7 +361,7 @@ export async function createSupplierPayment(
           dueAmount: asNumber(dueAmount, 0),
           notes: notes ?? null,
           attachment,
-          createdBy: tenantId,
+          createdBy: requireActingUserId(req),
           sourceType: sourceType as SupplierPaymentSourceType,
           bankId: sourceType === 'BANK' ? (bankId as string) : null,
           // Record path: both the BANK and PETTY_CASH blocks below MOVE a cash

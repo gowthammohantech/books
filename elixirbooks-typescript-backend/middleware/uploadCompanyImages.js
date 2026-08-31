@@ -1,17 +1,12 @@
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
+const { destinationFor } = require('../lib/uploadPaths');
 
-// Ensure upload directory exists
-const uploadDir = path.join(__dirname, '../uploads/company');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
+// Per-workspace: uploads/t/<tenantId>/company/. The directory is created on
+// demand by destinationFor, so there is no startup mkdir here any more - a
+// fixed directory made at module load cannot depend on the request.
 const companyStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
+  destination: destinationFor('company'),
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname);
     const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9) + ext;

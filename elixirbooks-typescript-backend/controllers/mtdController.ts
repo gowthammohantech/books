@@ -25,7 +25,7 @@ import type { Request, Response } from 'express';
 import { randomBytes } from 'crypto';
 
 import { prisma } from '../lib/prisma';
-import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
+import { requireActingUserId, requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { encryptSecret, decryptSecret } from '../lib/emailSecret';
 import {
   buildAuthUrl,
@@ -193,8 +193,9 @@ async function withFreshTokens(
   return cfg;
 }
 
-/** Build the HMRC fraud-prevention context from the request + tenant. */
-function fraudCtx(req: Request, tenantId: string): FraudContext {
+/** Build the HMRC fraud-prevention context from the request. */
+function fraudCtx(req: Request): FraudContext {
+  const actingUserId = requireActingUserId(req);
   const fwd = req.headers['x-forwarded-for'];
   const publicIp =
     (typeof fwd === 'string' ? fwd.split(',')[0]?.trim() : Array.isArray(fwd) ? fwd[0] : undefined) ||
@@ -202,7 +203,9 @@ function fraudCtx(req: Request, tenantId: string): FraudContext {
     undefined;
   const ua = req.headers['user-agent'];
   return {
-    userId: tenantId,
+    // The person operating the software, which is what HMRC's
+    // Gov-Client-User-IDs header means. Not the workspace.
+    userId: actingUserId,
     connectionMethod: 'OTHER_DIRECT',
     publicIp,
     userAgent: typeof ua === 'string' ? ua : undefined,
@@ -405,7 +408,7 @@ export async function obligations(req: Request, res: Response): Promise<void> {
       ? await withFreshTokens(tenantId, loaded)
       : ({ enabled: false } as MtdConfigLike);
 
-    const result = await getObligations(cfg, { from: fromStr, to: toStr, status }, fraudCtx(req, tenantId));
+    const result = await getObligations(cfg, { from: fromStr, to: toStr, status }, fraudCtx(req));
     res.json({ success: true, data: result });
   } catch (err) {
     handleError(res, err, 'fetch MTD obligations');
@@ -438,7 +441,7 @@ export async function submit(req: Request, res: Response): Promise<void> {
     // Pull the 9-box from the SAME GL computation the on-screen UK VAT return uses.
     const nineBox = await computeNineBox(tenantId, fromDate, toDate);
 
-    const receipt = await submitVatReturn(cfg, periodKey, nineBox, fraudCtx(req, tenantId));
+    const receipt = await submitVatReturn(cfg, periodKey, nineBox, fraudCtx(req));
     res.json({ success: true, data: { receipt, nineBox, period: { from: fromStr, to: toStr } } });
   } catch (err) {
     handleError(res, err, 'submit MTD VAT return');
@@ -456,7 +459,7 @@ export async function liabilities(req: Request, res: Response): Promise<void> {
       ? await withFreshTokens(tenantId, loaded)
       : ({ enabled: false } as MtdConfigLike);
 
-    const result = await getLiabilities(cfg, { from: fromStr, to: toStr }, fraudCtx(req, tenantId));
+    const result = await getLiabilities(cfg, { from: fromStr, to: toStr }, fraudCtx(req));
     res.json({ success: true, data: result });
   } catch (err) {
     handleError(res, err, 'fetch MTD liabilities');

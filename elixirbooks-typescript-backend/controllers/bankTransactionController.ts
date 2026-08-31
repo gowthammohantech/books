@@ -5,7 +5,7 @@ import { parse } from 'csv-parse/sync';
 
 import { prisma } from '../lib/prisma';
 import { resolveDefaultCurrencyCode } from '../lib/defaultCurrency';
-import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError, requireActingUserId } from '../lib/tenantScope';
 
 import { matchBankTransaction, type MatchCandidate } from '../lib/reconciliationMatcher';
 import { applyAutoMatch, type ApplyProposalDb } from '../lib/moneyFlow/applyProposal';
@@ -1297,7 +1297,11 @@ export async function suggestMatches(req: Request, res: Response): Promise<void>
     } else {
       // Match against SupplierPayments (outgoing payments to vendors)
       const payments = await prisma.supplierPayment.findMany({
-        where: { createdBy: tenantId, isDeleted: false },
+        // Scoped to the WORKSPACE. This used to filter on `createdBy`, which
+        // held a tenant id and therefore matched only payments entered by the
+        // owner - a payment a colleague entered could never be offered as a
+        // reconciliation candidate.
+        where: { tenantId, isDeleted: false },
         include: {
           purchase: { select: { id: true, purchaseId: true } },
         },
@@ -1439,7 +1443,7 @@ export async function link(req: Request, res: Response): Promise<void> {
         relatedType: body.relatedType,
         relatedId: body.relatedId,
         isReconciled: true,
-        reconciledBy: tenantId,
+        reconciledBy: requireActingUserId(req),
         reconciliationDate: new Date(),
         reconciliationNote: body.note ?? null,
       },

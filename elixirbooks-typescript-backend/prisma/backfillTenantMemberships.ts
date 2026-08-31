@@ -48,7 +48,7 @@ export async function backfillTenantMemberships(): Promise<BackfillMembershipsRe
       user_type: { not: BOOTSTRAP_USER_TYPE },
       memberships: { none: {} },
     },
-    select: { id: true, email: true, ownerId: true, roleId: true, user_type: true },
+    select: { id: true, email: true, user_type: true },
   });
   if (orphans.length === 0) return { created: 0, skipped: 0 };
 
@@ -64,12 +64,17 @@ export async function backfillTenantMemberships(): Promise<BackfillMembershipsRe
 
   for (const u of orphans) {
     // Candidate workspaces, best first:
-    //  * the tenant named by ownerId (staff created under the old model);
     //  * the tenant whose id IS this user's id (an owner from P1's tenant #1,
-    //    where Tenant.id was deliberately set to the owner's User.id).
+    //    where Tenant.id was deliberately set to the owner's User.id);
+    //  * the only tenant, when there is exactly one.
+    //
+    // The `User.ownerId` branch that used to lead this list is gone with the
+    // column (P9). Losing it costs nothing an install can still act on: a
+    // database old enough to have had an ownerId went through migration
+    // 20260901000000_tenant_core, which generated memberships from that same
+    // column while it still existed.
     let tenantId: string | null = null;
-    if (u.ownerId && tenantIds.has(u.ownerId)) tenantId = u.ownerId;
-    else if (tenantIds.has(u.id)) tenantId = u.id;
+    if (tenantIds.has(u.id)) tenantId = u.id;
     else if (tenants.length === 1) tenantId = tenants[0].id;
 
     if (!tenantId) {
@@ -81,27 +86,23 @@ export async function backfillTenantMemberships(): Promise<BackfillMembershipsRe
       continue;
     }
 
-    // An owner is someone whose own id is the tenant's id (the P1 shape) or who
-    // has no ownerId at all. Everyone else joins as a member.
-    const isOwner = tenantId === u.id || (!u.ownerId && u.user_type === 1);
+    // An owner is someone whose own id is the tenant's id — the P1 shape, and
+    // the shape signup still produces for a person's FIRST workspace. Everyone
+    // else joins as an ordinary member; an owner who is wrongly demoted here is
+    // recoverable, whereas a member wrongly promoted is a privilege grant.
+    const isOwner = tenantId === u.id;
 
-    // The role must belong to THIS workspace: User.roleId may point at another
-    // tenant's row on a database that predates per-tenant roles.
+    // The role is resolved for THIS workspace from the user's signup intent.
+    // It used to prefer `User.roleId`, but that column was a single global
+    // value — on a database predating per-tenant roles it could name another
+    // company's row, which is why it was already being re-checked against the
+    // tenant before use.
     let roleId: string | null = null;
-    if (u.roleId) {
-      const role = await prisma.role.findFirst({
-        where: { id: u.roleId, tenantId, deletedAt: null },
-        select: { id: true },
-      });
-      roleId = role?.id ?? null;
-    }
-    if (!roleId) {
-      const roleName = isOwner
-        ? OWNER_ROLE_NAME
-        : DEFAULT_ROLE_BY_USER_TYPE[u.user_type as keyof typeof DEFAULT_ROLE_BY_USER_TYPE];
-      if (roleName) {
-        roleId = await ensureRole(roleName, tenantId, prisma).catch(() => null);
-      }
+    const roleName = isOwner
+      ? OWNER_ROLE_NAME
+      : DEFAULT_ROLE_BY_USER_TYPE[u.user_type as keyof typeof DEFAULT_ROLE_BY_USER_TYPE];
+    if (roleName) {
+      roleId = await ensureRole(roleName, tenantId, prisma).catch(() => null);
     }
 
     await prisma.tenantMembership.create({

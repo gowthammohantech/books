@@ -34,8 +34,7 @@ import { prisma } from '../../../lib/prisma';
 import {
   tenantScope,
   requireTenantId,
-  UnauthorizedError,
-} from '../../../lib/tenantScope';
+  UnauthorizedError, requireActingUserId } from '../../../lib/tenantScope';
 import { handleLedgerError } from '../../../lib/httpErrors';
 import {
   nextDocumentNumber,
@@ -57,6 +56,7 @@ import {
 import { explainedBankFields } from '../../../lib/moneyFlow/explainedBankFields';
 import { applyStockAdjustment } from '../../../lib/inventory/stockAdjust';
 import { initialApprovalStatus, shouldPostOnCreate } from '../../../lib/ledger/approvals';
+import { currentActorId } from '../../../lib/actor';
 
 type Tx = Prisma.TransactionClient;
 
@@ -233,7 +233,9 @@ async function insertCustomFieldValues(
         module: 'purchase',
         recordId: purchaseId,
         value,
-        createdBy: tenantId,
+        // No `req` here - this is a helper. The acting user comes from the
+        // request-scoped context, which holds the same person.
+        createdBy: currentActorId(),
       };
     },
   );
@@ -534,7 +536,7 @@ async function applyPurchaseReceiptEffects(
         extra: {
           unitId: item.unit ?? null,
           notes: `Stock in from purchase ${created.purchaseId ?? created.id}`,
-          createdBy: tenantId,
+          createdBy: currentActorId(),
         },
       });
     }
@@ -846,7 +848,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
             paidAmount: Math.min(asNumber(body.sp_amount, 0), enforcedGrandTotal),
             dueAmount: asNumber(body.sp_due_amount, 0),
             notes: (body.sp_notes as string) ?? '',
-            createdBy: tenantId,
+            createdBy: requireActingUserId(req),
           },
         });
       }
@@ -1265,7 +1267,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
             extra: {
               unitId: item.unit ?? null,
               notes: `Stock reverted from purchase update ${existingPurchase.purchaseId ?? existingPurchase.id}`,
-              createdBy: requireTenantId(req),
+              createdBy: requireActingUserId(req),
             },
           });
         }
@@ -1364,7 +1366,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
             extra: {
               unitId: item.unit ?? null,
               notes: `Stock in from updated purchase ${upd.purchaseId ?? upd.id}`,
-              createdBy: requireTenantId(req),
+              createdBy: requireActingUserId(req),
             },
           });
         }
@@ -2605,7 +2607,7 @@ export async function deletePurchase(req: Request, res: Response): Promise<void>
             extra: {
               unitId: item.unit ?? null,
               notes: `Stock reverted from purchase delete ${existing.purchaseId ?? id}`,
-              createdBy: tenantId,
+              createdBy: requireActingUserId(req),
             },
           });
         }
@@ -2633,7 +2635,7 @@ export async function deletePurchase(req: Request, res: Response): Promise<void>
             where: { id: payment.id },
             data: {
               isVoided: true,
-              voidedById: tenantId,
+              voidedById: requireActingUserId(req),
               voidedAt: new Date(),
               voidReason: 'Purchase deleted',
             },
@@ -2785,7 +2787,7 @@ export async function createSupplierPayment(req: Request, res: Response): Promis
           dueAmount: 0,
           referenceNumber: referenceNumber ?? null,
           notes: notes ?? null,
-          createdBy: tenantId,
+          createdBy: requireActingUserId(req),
         },
       });
 

@@ -41,8 +41,7 @@ import { prisma } from '../../../lib/prisma';
 import {
   tenantScope,
   requireTenantId,
-  UnauthorizedError,
-} from '../../../lib/tenantScope';
+  UnauthorizedError, requireActingUserId } from '../../../lib/tenantScope';
 import { handleLedgerError } from '../../../lib/httpErrors';
 import { runRecurringForInvoice } from '../../../lib/recurringInvoiceRunner';
 import {
@@ -71,6 +70,7 @@ import {
   OUTSTANDING_TOLERANCE,
 } from '../../../lib/invoiceOutstanding';
 import { creditNoteTotalsByInvoice, netInvoiceOutstanding } from '../../../lib/reports/aging';
+import { currentActorId } from '../../../lib/actor';
 
 type Tx = Prisma.TransactionClient;
 
@@ -356,7 +356,9 @@ async function insertCustomFieldValues(
       module: 'invoice',
       recordId: invoiceId,
       value,
-      createdBy: tenantId,
+      // No `req` here - this is a helper. The acting user comes from the
+      // request-scoped context, which holds the same person.
+      createdBy: currentActorId(),
     };
   });
 
@@ -945,7 +947,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
             extra: {
               unitId: item.unit ?? null,
               notes: `Stock reduced due to Invoice #${created.referenceNo || created.id}`,
-              createdBy: tenantId,
+              createdBy: requireActingUserId(req),
             },
           });
         }
@@ -981,7 +983,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
             movedBankBalance: !!autoBank,
             received_on: safeDate(body.payment_date) ?? new Date(),
             notes: (body.payment_notes as string) ?? 'Full payment received upon invoice creation',
-            received_by: tenantId,
+            received_by: requireActingUserId(req),
             // Persist the SAME rate the register-move below uses (docExchangeRate) so
             // reverseInvoicePaymentEffects' baseFor(amount, exchangeRate) refund on
             // delete/void is symmetric with the create-time toBaseAmount move. Base
@@ -1582,7 +1584,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
             extra: {
               unitId: item.unit ?? null,
               notes: `Stock reverted from invoice update ${existing.invoiceNumber ?? invoiceId}`,
-              createdBy: tenantId,
+              createdBy: requireActingUserId(req),
             },
           });
         }
@@ -1608,7 +1610,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
             extra: {
               unitId: item.unit ?? null,
               notes: `Stock reduced due to Invoice #${existing.invoiceNumber ?? invoiceId}`,
-              createdBy: tenantId,
+              createdBy: requireActingUserId(req),
             },
           });
         }
@@ -2519,7 +2521,7 @@ export async function deleteInvoice(req: Request, res: Response): Promise<void> 
             extra: {
               unitId: item.unit ?? null,
               notes: `Stock restored from invoice delete ${existing.invoiceNumber ?? id}`,
-              createdBy: tenantId,
+              createdBy: requireActingUserId(req),
             },
           });
         }
@@ -2548,7 +2550,7 @@ export async function deleteInvoice(req: Request, res: Response): Promise<void> 
             where: { id: payment.id },
             data: {
               isVoided: true,
-              voidedById: tenantId,
+              voidedById: requireActingUserId(req),
               voidedAt: paymentVoidedAt,
               voidReason: 'Invoice deleted',
             },
@@ -2558,7 +2560,7 @@ export async function deleteInvoice(req: Request, res: Response): Promise<void> 
           // credit balance permanently reduced. No-op for non-credit payments.
           await tx.accountCreditEntry.updateMany({
             where: { invoicePaymentId: payment.id, type: 'REDEMPTION', isVoided: false },
-            data: { isVoided: true, voidedById: tenantId, voidedAt: paymentVoidedAt },
+            data: { isVoided: true, voidedById: requireActingUserId(req), voidedAt: paymentVoidedAt },
           });
         }
       }
@@ -2793,7 +2795,7 @@ export async function recordInvoicePayment(req: Request, res: Response): Promise
           movedBankBalance: !!bank,
           received_on: safeDate(received_on) ?? new Date(),
           notes: notes ?? '',
-          received_by: tenantId,
+          received_by: requireActingUserId(req),
           paymentTransactionId: paymentTxn.id,
           ...(reference ? { reference } : {}),
           // G: persist payment-date currency/rate
@@ -3055,7 +3057,7 @@ export async function convertProformaToInvoice(req: Request, res: Response): Pro
           type: 'stock_out',
           referenceType: 'invoice',
           referenceId: created.id,
-          extra: { unitId: item.unit ?? null, createdBy: tenantId },
+          extra: { unitId: item.unit ?? null, createdBy: requireActingUserId(req) },
         });
       }
       // B.4: post COGS for the converted invoice.
