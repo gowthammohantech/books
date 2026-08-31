@@ -4,7 +4,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { depreciationDue } from '../lib/ledger/depreciation';
 import { postDepreciation, postAssetAcquisition, postAssetDisposal } from '../lib/ledger/ledgerPosting';
 
@@ -43,9 +43,9 @@ function periodKey(d: Date): string {
  */
 export async function listFixedAssets(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const assets = await prisma.fixedAsset.findMany({
-      where: { userId, isDeleted: false },
+      where: { tenantId, isDeleted: false },
       orderBy: [{ status: 'asc' }, { acquisitionDate: 'desc' }],
     });
     res.json({ success: true, data: assets });
@@ -68,7 +68,7 @@ export async function listFixedAssets(req: Request, res: Response): Promise<void
  */
 export async function createFixedAsset(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       name,
       cost,
@@ -101,7 +101,7 @@ export async function createFixedAsset(req: Request, res: Response): Promise<voi
     const asset = await prisma.$transaction(async (tx) => {
       const created = await tx.fixedAsset.create({
         data: {
-          userId,
+          tenantId,
           name,
           cost: new Prisma.Decimal(cost),
           salvageValue: salvageValue ? new Prisma.Decimal(salvageValue) : new Prisma.Decimal(0),
@@ -116,7 +116,7 @@ export async function createFixedAsset(req: Request, res: Response): Promise<voi
         // No-op when ledger not live (gated internally).
         await postAssetAcquisition(
           tx as never,
-          { userId, assetId: created.id, date: acqDate, cost },
+          { tenantId, assetId: created.id, date: acqDate, cost },
         );
       }
 
@@ -138,7 +138,7 @@ export async function createFixedAsset(req: Request, res: Response): Promise<voi
  */
 export async function updateFixedAsset(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const {
       name,
@@ -156,7 +156,7 @@ export async function updateFixedAsset(req: Request, res: Response): Promise<voi
       acquisitionDate?: string;
     };
 
-    const existing = await prisma.fixedAsset.findFirst({ where: { id, userId, isDeleted: false } });
+    const existing = await prisma.fixedAsset.findFirst({ where: { id, tenantId, isDeleted: false } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Fixed asset not found' });
       return;
@@ -194,10 +194,10 @@ export async function updateFixedAsset(req: Request, res: Response): Promise<voi
  */
 export async function deleteFixedAsset(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
-    const existing = await prisma.fixedAsset.findFirst({ where: { id, userId, isDeleted: false } });
+    const existing = await prisma.fixedAsset.findFirst({ where: { id, tenantId, isDeleted: false } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Fixed asset not found' });
       return;
@@ -227,11 +227,11 @@ export async function deleteFixedAsset(req: Request, res: Response): Promise<voi
  */
 export async function searchActiveFixedAssets(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const q = typeof req.query.q === 'string' ? req.query.q : '';
     const assets = await prisma.fixedAsset.findMany({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         status: { in: ['active', 'fully_depreciated'] },
         ...(q ? { name: { contains: q, mode: 'insensitive' } } : {}),
@@ -267,7 +267,7 @@ export async function searchActiveFixedAssets(req: Request, res: Response): Prom
  */
 export async function runDepreciation(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { asOf: asOfRaw } = req.body as { asOf?: string };
 
     if (!asOfRaw) {
@@ -284,7 +284,7 @@ export async function runDepreciation(req: Request, res: Response): Promise<void
     const period = periodKey(asOf);
 
     const assets = await prisma.fixedAsset.findMany({
-      where: { userId, status: 'active', isDeleted: false },
+      where: { tenantId, status: 'active', isDeleted: false },
     });
 
     const results: {
@@ -322,7 +322,7 @@ export async function runDepreciation(req: Request, res: Response): Promise<void
       await prisma.$transaction(async (tx) => {
         // Post to the GL (gated — no-op when ledger not live)
         await postDepreciation(tx as never, {
-          userId,
+          tenantId,
           assetId: asset.id,
           date: asOf,
           amount: due.amount,
@@ -367,7 +367,7 @@ export async function runDepreciation(req: Request, res: Response): Promise<void
  */
 export async function disposeFixedAsset(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const {
       proceeds: proceedsRaw,
@@ -399,7 +399,7 @@ export async function disposeFixedAsset(req: Request, res: Response): Promise<vo
     }
 
     // Load asset owner-scoped
-    const asset = await prisma.fixedAsset.findFirst({ where: { id, userId, isDeleted: false } });
+    const asset = await prisma.fixedAsset.findFirst({ where: { id, tenantId, isDeleted: false } });
     if (!asset) {
       res.status(404).json({ success: false, message: 'Fixed asset not found' });
       return;
@@ -414,7 +414,7 @@ export async function disposeFixedAsset(req: Request, res: Response): Promise<vo
     await prisma.$transaction(async (tx) => {
       // Post GL entry: Dr BANK, Dr ACCUMULATED_DEPRECIATION, Cr FIXED_ASSET, Cr/Dr GAIN/LOSS_ON_DISPOSAL
       await postAssetDisposal(tx as never, {
-        userId,
+        tenantId,
         assetId: id,
         date,
         grossProceeds: String(grossProceeds),
@@ -440,7 +440,7 @@ export async function disposeFixedAsset(req: Request, res: Response): Promise<vo
     });
 
     // Re-fetch the updated asset to return it
-    const updated = await prisma.fixedAsset.findFirst({ where: { id, userId } });
+    const updated = await prisma.fixedAsset.findFirst({ where: { id, tenantId } });
     res.json({ success: true, data: updated });
   } catch (err) {
     if (handleUnauthorized(res, err)) return;

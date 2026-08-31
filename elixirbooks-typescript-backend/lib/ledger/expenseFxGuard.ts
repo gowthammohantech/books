@@ -35,14 +35,14 @@ export interface FxResolution {
  * Resolves the effective exchange rate for an expense.
  *
  * @param db         - A Prisma tx/client that satisfies FxGuardDb.
- * @param userId     - Tenant user ID (used to scope ExchangeRate rows).
+ * @param tenantId     - Tenant user ID (used to scope ExchangeRate rows).
  * @param currencyCode - The expense's document currency (undefined / empty = base).
  * @param suppliedRate - Exchange rate explicitly provided in the request body.
  * @param date       - The expense date (used to pick the most recent rate ≤ date).
  */
 export async function resolveExpenseFxRate(
   db: FxGuardDb,
-  userId: string,
+  tenantId: string,
   currencyCode: string | undefined,
   suppliedRate: Prisma.Decimal | undefined,
   date: Date,
@@ -67,7 +67,7 @@ export async function resolveExpenseFxRate(
   // Rate direction: foreign → base. When base currency is unknown (unconfigured
   // tenant) we fall back to 'BASE' which matches the sentinel used in postExpense.
   const toCurrency = baseCurrencyCode ?? 'BASE';
-  const dbRate = await loadRate(db, userId, currencyCode, toCurrency, date);
+  const dbRate = await loadRate(db, tenantId, currencyCode, toCurrency, date);
   if (dbRate !== null) return { rate: dbRate };
 
   // No rate found → caller must reject

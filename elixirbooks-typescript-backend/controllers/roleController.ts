@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -19,10 +19,9 @@ export async function createRole(req: Request, res: Response): Promise<void> {
       status?: boolean;
       defaultRoute?: string;
     };
-    // requireUserId returns the TENANT id (see lib/tenantScope). Roles are
+    // requireTenantId returns the TENANT id (see lib/tenantScope). Roles are
     // per-tenant, so this is both the owning tenant and the audit actor here.
-    const tenantId = requireUserId(req);
-    const userId = tenantId;
+    const tenantId = requireTenantId(req);
 
     // Collect validation errors
     const errors: Record<string, string> = {};
@@ -38,7 +37,7 @@ export async function createRole(req: Request, res: Response): Promise<void> {
     }
 
     // Validate user existence
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({ where: { id: tenantId } });
     if (!user) {
       res.status(422).json({
         message: 'Validation failed',
@@ -79,7 +78,7 @@ export async function createRole(req: Request, res: Response): Promise<void> {
         tenantId,
         roleName: (roleName as string).trim(),
         status: Boolean(status),
-        createdBy: userId,
+        createdBy: tenantId,
         ...(defaultRoute !== undefined ? { defaultRoute: defaultRoute.trim() } : {}),
       },
     });

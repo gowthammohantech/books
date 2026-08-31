@@ -2,9 +2,9 @@ import type { Request, Response } from 'express';
 import { Prisma, LocalizationStartWeek } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
-// Localization is per-user (Localization.userId → User), but legacy routes
+// Localization is per-user (Localization.tenantId → User), but legacy routes
 // vary: `getDropdownOptions` reads the active row scoped to the calling
 // user, while `saveLocalization`/`getLocalization` operate on a single
 // global "isActive: true" row regardless of user. We preserve that mixed
@@ -28,11 +28,11 @@ function parseStartWeek(value: unknown): LocalizationStartWeek | undefined {
 
 export async function getDropdownOptions(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const [localization, dateFormats, timeFormats, timezones] = await Promise.all([
       prisma.localization.findFirst({
-        where: { userId, isActive: true },
+        where: { tenantId, isActive: true },
         include: {
           dateFormat: { select: { id: true, title: true, format: true } },
           timeFormat: { select: { id: true, name: true, format: true } },

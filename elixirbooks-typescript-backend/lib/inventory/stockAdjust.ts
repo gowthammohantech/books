@@ -24,7 +24,7 @@ export interface StockAdjustmentParams {
   /** The product to adjust. */
   productId: string;
   /** Tenant user id — row key alongside productId. */
-  userId: string;
+  tenantId: string;
   /**
    * Signed quantity change.
    *   > 0 → stock in / receipt
@@ -71,7 +71,7 @@ type TxClient = {
     }) => Promise<{ valuationMethod: string | null } | null>;
   };
   inventory: {
-    findFirst: (args: { where: { productId: string; userId: string } }) => Promise<{
+    findFirst: (args: { where: { productId: string; tenantId: string } }) => Promise<{
       id: string;
       quantity: number;
       quantityOnHand: Prisma.Decimal;
@@ -104,13 +104,13 @@ type RestockCostTx = {
   };
   inventory: {
     findFirst: (args: {
-      where: { productId: string; userId: string; isDeleted: boolean };
+      where: { productId: string; tenantId: string; isDeleted: boolean };
       select: { avgCost: true };
     }) => Promise<{ avgCost: Prisma.Decimal } | null>;
   };
   inventoryCostLayer: {
     findFirst: (args: {
-      where: { userId: string; productId: string };
+      where: { tenantId: string; productId: string };
       orderBy: { receivedAt: 'desc' };
       select: { unitCost: true };
     }) => Promise<{ unitCost: Prisma.Decimal } | null>;
@@ -141,9 +141,9 @@ type RestockCostTx = {
  */
 export async function resolveRestockUnitCost(
   tx: RestockCostTx,
-  params: { productId: string; userId: string },
+  params: { productId: string; tenantId: string },
 ): Promise<number> {
-  const { productId, userId } = params;
+  const { productId, tenantId } = params;
   const product = await tx.product.findUnique({
     where: { id: productId },
     select: { valuationMethod: true, purchase_price: true },
@@ -151,7 +151,7 @@ export async function resolveRestockUnitCost(
 
   if (product?.valuationMethod === 'FIFO') {
     const layer = await tx.inventoryCostLayer.findFirst({
-      where: { userId, productId },
+      where: { tenantId, productId },
       orderBy: { receivedAt: 'desc' },
       select: { unitCost: true },
     });
@@ -160,7 +160,7 @@ export async function resolveRestockUnitCost(
   }
 
   const inv = await tx.inventory.findFirst({
-    where: { productId, userId, isDeleted: false },
+    where: { productId, tenantId, isDeleted: false },
     select: { avgCost: true },
   });
   return inv ? Number(inv.avgCost) : 0;
@@ -171,7 +171,7 @@ export async function resolveRestockUnitCost(
 // ---------------------------------------------------------------------------
 
 /**
- * Apply a stock movement to the tenant Inventory row for `productId`/`userId`.
+ * Apply a stock movement to the tenant Inventory row for `productId`/`tenantId`.
  *
  * - Finds the row; if missing, auto-creates it at qty 0 baseline first.
  * - Applies `qtyDelta` to the legacy `quantity` Int.
@@ -192,7 +192,7 @@ export async function applyStockAdjustment(
 ): Promise<Prisma.Decimal> {
   const {
     productId,
-    userId,
+    tenantId,
     qtyDelta,
     type,
     referenceType,
@@ -202,9 +202,9 @@ export async function applyStockAdjustment(
     extra,
   } = params;
 
-  // 1. Find existing row (keyed by productId + userId, matching purchaseController).
+  // 1. Find existing row (keyed by productId + tenantId, matching purchaseController).
   const existing = await tx.inventory.findFirst({
-    where: { productId, userId },
+    where: { productId, tenantId },
   });
 
   const previousQuantity = existing?.quantity ?? 0;
@@ -231,7 +231,7 @@ export async function applyStockAdjustment(
       newQtyOnHand = await applyFifoReceipt(
         tx as unknown as Parameters<typeof applyFifoReceipt>[0],
         {
-          userId,
+          tenantId,
           productId,
           qty: absQty,
           landedUnitCost: unitCost,
@@ -257,7 +257,7 @@ export async function applyStockAdjustment(
       const fifoResult = await applyFifoIssue(
         tx as unknown as Parameters<typeof applyFifoIssue>[0],
         {
-          userId,
+          tenantId,
           productId,
           qty: absQty,
           currentQtyOnHand,
@@ -323,7 +323,7 @@ export async function applyStockAdjustment(
     await tx.inventory.create({
       data: {
         productId,
-        userId,
+        tenantId,
         ...inventoryData,
         inventory_history: [historyEntry] as unknown as Prisma.InputJsonValue,
       },

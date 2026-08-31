@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import type { AccountType, Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 import { seedDefaultChart } from '../lib/defaultChartOfAccounts';
 
@@ -10,9 +10,9 @@ const ACCOUNT_TYPES = ['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE'] as c
 
 export async function list(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const accountType = req.query.accountType as string | undefined;
-    const where: Prisma.AccountWhereInput = { userId, isDeleted: false };
+    const where: Prisma.AccountWhereInput = { tenantId, isDeleted: false };
     if (accountType && (ACCOUNT_TYPES as readonly string[]).includes(accountType)) {
       where.accountType = accountType as AccountType;
     }
@@ -47,10 +47,10 @@ export async function list(req: Request, res: Response): Promise<void> {
 
 export async function getById(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const row = await prisma.account.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       include: { parent: true, children: true },
     });
     if (!row) {
@@ -70,7 +70,7 @@ export async function getById(req: Request, res: Response): Promise<void> {
 
 export async function create(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as { code?: string; name?: string; accountType?: string; parentId?: string | null; description?: string };
 
     if (!body.code || !body.name || !body.accountType) {
@@ -82,7 +82,7 @@ export async function create(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const existing = await prisma.account.findUnique({ where: { userId_code: { userId, code: body.code } } });
+    const existing = await prisma.account.findUnique({ where: { tenantId_code: { tenantId, code: body.code } } });
     if (existing) {
       res.status(400).json({ success: false, message: 'Account code already in use' });
       return;
@@ -90,7 +90,7 @@ export async function create(req: Request, res: Response): Promise<void> {
 
     const created = await prisma.account.create({
       data: {
-        userId,
+        tenantId,
         code: body.code,
         name: body.name,
         accountType: body.accountType as AccountType,
@@ -112,11 +112,11 @@ export async function create(req: Request, res: Response): Promise<void> {
 
 export async function update(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = req.body as { name?: string; accountType?: string; parentId?: string | null; description?: string };
 
-    const existing = await prisma.account.findFirst({ where: { id, userId, isDeleted: false } });
+    const existing = await prisma.account.findFirst({ where: { id, tenantId, isDeleted: false } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Account not found' });
       return;
@@ -146,9 +146,9 @@ export async function update(req: Request, res: Response): Promise<void> {
 
 export async function remove(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
-    const existing = await prisma.account.findFirst({ where: { id, userId, isDeleted: false } });
+    const existing = await prisma.account.findFirst({ where: { id, tenantId, isDeleted: false } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Account not found' });
       return;
@@ -167,8 +167,8 @@ export async function remove(req: Request, res: Response): Promise<void> {
 
 export async function seedDefaults(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const result = await seedDefaultChart(prisma, userId);
+    const tenantId = requireTenantId(req);
+    const result = await seedDefaultChart(prisma, tenantId);
     res.status(201).json({ success: true, message: `Seeded ${result.created} accounts (${result.skipped} skipped)`, data: result });
   } catch (err) {
     if (err instanceof UnauthorizedError) {

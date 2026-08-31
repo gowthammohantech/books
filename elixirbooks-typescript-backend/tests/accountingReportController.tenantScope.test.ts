@@ -2,11 +2,11 @@
  * tests/accountingReportController.tenantScope.test.ts
  *
  * P0-2a regression tripwire: controllers/accountingReportController.ts called
- * requireUserId(req) but discarded the result, so getIncomeStats,
+ * requireTenantId(req) but discarded the result, so getIncomeStats,
  * getPurchaseReport, and getPaymentSummaryReport all aggregated payments
- * across every tenant. InvoicePayment/SupplierPayment have no own userId
- * column, so scoping goes via the parent relation (`invoice: { userId }` /
- * `purchase: { userId }`), matching the pattern in financialStatementsController.
+ * across every tenant. InvoicePayment/SupplierPayment have no own tenantId
+ * column, so scoping goes via the parent relation (`invoice: { tenantId }` /
+ * `purchase: { tenantId }`), matching the pattern in financialStatementsController.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
@@ -77,10 +77,10 @@ describe('accountingReportController — tenant scoping', () => {
 
     expect(res.status).not.toHaveBeenCalledWith(401);
     for (const call of mockInvoicePaymentFindMany.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ invoice: { userId: TENANT_ID } }));
+      expect(call[0].where).toEqual(expect.objectContaining({ invoice: { tenantId: TENANT_ID } }));
     }
     expect(mockInvoicePaymentCount).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ invoice: { userId: TENANT_ID } }) }),
+      expect.objectContaining({ where: expect.objectContaining({ invoice: { tenantId: TENANT_ID } }) }),
     );
   });
 
@@ -116,10 +116,10 @@ describe('accountingReportController — tenant scoping', () => {
     await getPurchaseReport(req, res);
 
     for (const call of mockSupplierPaymentFindMany.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ purchase: { userId: TENANT_ID } }));
+      expect(call[0].where).toEqual(expect.objectContaining({ purchase: { tenantId: TENANT_ID } }));
     }
     expect(mockSupplierPaymentCount).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ purchase: { userId: TENANT_ID } }) }),
+      expect.objectContaining({ where: expect.objectContaining({ purchase: { tenantId: TENANT_ID } }) }),
     );
   });
 
@@ -129,13 +129,13 @@ describe('accountingReportController — tenant scoping', () => {
 
     expect(mockInvoicePaymentGroupBy.mock.calls.length).toBeGreaterThan(0);
     for (const call of mockInvoicePaymentGroupBy.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ invoice: { userId: TENANT_ID } }));
+      expect(call[0].where).toEqual(expect.objectContaining({ invoice: { tenantId: TENANT_ID } }));
     }
     expect(mockInvoicePaymentFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ invoice: { userId: TENANT_ID } }) }),
+      expect.objectContaining({ where: expect.objectContaining({ invoice: { tenantId: TENANT_ID } }) }),
     );
     expect(mockInvoicePaymentCount).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ invoice: { userId: TENANT_ID } }) }),
+      expect.objectContaining({ where: expect.objectContaining({ invoice: { tenantId: TENANT_ID } }) }),
     );
   });
 });

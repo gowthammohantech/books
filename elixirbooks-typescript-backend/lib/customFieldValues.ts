@@ -12,7 +12,7 @@ interface InsertCustomFieldValuesOptions {
   recordId: string;
   customFields: CustomFieldEntry[] | string | unknown;
   files: Express.Multer.File[];
-  userId: string;
+  tenantId: string;
 }
 
 /**
@@ -22,7 +22,7 @@ interface InsertCustomFieldValuesOptions {
  */
 export async function insertCustomFieldValues(
   tx: Tx,
-  { module, recordId, customFields, files, userId }: InsertCustomFieldValuesOptions,
+  { module, recordId, customFields, files, tenantId }: InsertCustomFieldValuesOptions,
 ): Promise<void> {
   let parsed: CustomFieldEntry[] = [];
 
@@ -50,7 +50,7 @@ export async function insertCustomFieldValues(
       module,
       recordId,
       value,
-      createdBy: userId,
+      createdBy: tenantId,
     };
   });
 

@@ -52,7 +52,7 @@ export async function runRecurringForExpense(expenseId: string): Promise<CloneRe
         model: tx.expense as unknown as NumberingModel,
         field: 'expenseId',
         prefix: 'EXP-',
-        tenantWhere: { userId: source.userId },
+        tenantWhere: { tenantId: source.tenantId },
       });
 
       const {
@@ -93,7 +93,7 @@ export async function runRecurringForExpense(expenseId: string): Promise<CloneRe
     // is a no-op until the ledger is live and is idempotent per (Expense,
     // created.id, 'recorded') so a re-run cannot double-post.
     const mapping = await tx.ledgerAccountMapping.findFirst({
-      where: { userId: created.userId, roleKey: 'PURCHASES' },
+      where: { tenantId: created.tenantId, roleKey: 'PURCHASES' },
       select: { accountId: true },
     });
     if (mapping?.accountId) {
@@ -112,7 +112,7 @@ export async function runRecurringForExpense(expenseId: string): Promise<CloneRe
       let employeePayableAccountId: string | undefined;
       if ((created.sourceType as string) === 'EMPLOYEE_PAID') {
         const owed = await tx.account.findFirst({
-          where: { userId: created.userId, code: '9250', isDeleted: false },
+          where: { tenantId: created.tenantId, code: '9250', isDeleted: false },
           select: { id: true },
         });
         if (!owed?.id) {
@@ -129,7 +129,7 @@ export async function runRecurringForExpense(expenseId: string): Promise<CloneRe
           : null;
 
       await postExpense(tx as unknown as PostingTx, {
-        userId: created.userId,
+        tenantId: created.tenantId,
         expenseId: created.id,
         date: created.expenseDate,
         total: String(created.amount),

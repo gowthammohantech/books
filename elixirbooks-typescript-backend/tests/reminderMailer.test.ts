@@ -31,7 +31,7 @@ vi.mock('../lib/prisma', () => ({
     invoice: { findUnique: mockInvoiceFindUnique, update: mockInvoiceUpdate },
     // publicBaseUrl used to arrive via `reminder.company`. Reminder points at
     // Tenant now, so the mailer reads CompanySettings directly (keyed by the
-    // tenant id, which CompanySettings.userId holds).
+    // tenant id, which CompanySettings.tenantId holds).
     companySettings: { findUnique: mockCompanySettingsFindUnique },
   },
 }));
@@ -110,7 +110,7 @@ describe('sendReminderEmail — happy path', () => {
 
     expect(result).toEqual({ sent: true });
     expect(mockCompanySettingsFindUnique).toHaveBeenCalledWith({
-      where: { userId: 'tenant-1' },
+      where: { tenantId: 'tenant-1' },
       select: { publicBaseUrl: true },
     });
     expect(mockSendMail.mock.calls[0][0].html).toContain('https://acme.example/invoice/existing-token-abc');

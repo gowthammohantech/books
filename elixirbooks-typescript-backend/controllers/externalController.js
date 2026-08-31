@@ -3,7 +3,7 @@
 //                 by email, mint an Elixir Books session token. Called by the
 //                 Elixir Books frontend's /sso landing route.
 // - upsertCustomer: server-to-server push of a Contact from whatsappcrm.
-//                 Uses (externalSource, externalRef, userId) as the match key
+//                 Uses (externalSource, externalRef, tenantId) as the match key
 //                 (mapped to the @@unique index customer_external_upsert_idx),
 //                 falls back to email when present.
 //
@@ -218,20 +218,20 @@ exports.upsertCustomer = async (req, res) => {
   };
 
   try {
-    // Upsert on @@unique([externalSource, externalRef, userId]) —
+    // Upsert on @@unique([externalSource, externalRef, tenantId]) —
     // named customer_external_upsert_idx in schema.prisma.
     const customer = await prisma.customer.upsert({
       where: {
         customer_external_upsert_idx: {
           externalSource: 'whatsappcrm',
           externalRef: String(external_id),
-          userId: ownerId,
+          tenantId: ownerId,
         },
       },
       update: customerData,
       create: {
         ...customerData,
-        userId: ownerId,
+        tenantId: ownerId,
         externalSource: 'whatsappcrm',
         externalRef: String(external_id),
       },

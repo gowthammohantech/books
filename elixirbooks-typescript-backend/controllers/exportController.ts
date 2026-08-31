@@ -2,7 +2,7 @@
 //
 // "Own your data" — machine-readable CSV exports per accounting module plus a
 // one-click full-tenant backup zip. Every query is tenant-scoped via
-// requireUserId (= ownerId ?? id), so a caller can only ever pull their own
+// requireTenantId (= ownerId ?? id), so a caller can only ever pull their own
 // tenant's rows. All CSV passes through lib/export/csv.ts which is
 // CSV-injection-safe (leading = + - @ \t \r neutralised) and RFC-4180 quoted.
 
@@ -11,7 +11,7 @@ import { Prisma } from '@prisma/client';
 import archiver from 'archiver';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { toCsv, type CsvColumn } from '../lib/export/csv';
 import {
   profitLossFrom,
@@ -56,14 +56,14 @@ const dec = (v: unknown): string => (v == null ? '' : String(v));
 const iso = (d: Date | null | undefined): string => (d ? d.toISOString().slice(0, 10) : '');
 
 // Shared GL loader (mirrors financialStatementsController.loadAccountBalances).
-async function loadAccountBalances(userId: string, opts: { from?: Date; to: Date }): Promise<AccountBalance[]> {
+async function loadAccountBalances(tenantId: string, opts: { from?: Date; to: Date }): Promise<AccountBalance[]> {
   const accounts = await prisma.account.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     include: {
       journalLines: {
         where: {
           journalEntry: {
-            userId,
+            tenantId,
             isDeleted: false,
             entryDate: opts.from ? { gte: opts.from, lte: opts.to } : { lte: opts.to },
           },
@@ -90,8 +90,8 @@ async function loadAccountBalances(userId: string, opts: { from?: Date; to: Date
   });
 }
 
-async function ledgerLive(userId: string): Promise<boolean> {
-  const s = await prisma.companySettings.findFirst({ where: { userId }, select: { ledgerInitialized: true } });
+async function ledgerLive(tenantId: string): Promise<boolean> {
+  const s = await prisma.companySettings.findFirst({ where: { tenantId }, select: { ledgerInitialized: true } });
   return !!s?.ledgerInitialized;
 }
 
@@ -110,9 +110,9 @@ function dateRange(req: Request): { fromDate: Date; toDate: Date } {
 // the per-module endpoint and the backup zip.
 // ---------------------------------------------------------------------------
 
-async function buildJournalEntries(userId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
+async function buildJournalEntries(tenantId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const lines = await prisma.journalLine.findMany({
-    where: { journalEntry: { userId, isDeleted: false } },
+    where: { journalEntry: { tenantId, isDeleted: false } },
     select: {
       debit: true,
       credit: true,
@@ -155,9 +155,9 @@ async function buildJournalEntries(userId: string): Promise<{ columns: CsvColumn
   return { columns, rows };
 }
 
-async function buildChartOfAccounts(userId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
+async function buildChartOfAccounts(tenantId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const accounts = await prisma.account.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     select: {
       code: true,
       name: true,
@@ -186,9 +186,9 @@ async function buildChartOfAccounts(userId: string): Promise<{ columns: CsvColum
   return { columns, rows };
 }
 
-async function buildInvoices(userId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
+async function buildInvoices(tenantId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const invoices = await prisma.invoice.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     select: {
       invoiceNumber: true,
       invoiceDate: true,
@@ -247,9 +247,9 @@ async function buildInvoices(userId: string): Promise<{ columns: CsvColumn[]; ro
 
 // Invoice line items live in the Invoice.items JSON column (no separate table).
 // We flatten them, keyed by invoice number, so line detail is exportable.
-async function buildInvoiceItems(userId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
+async function buildInvoiceItems(tenantId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const invoices = await prisma.invoice.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     select: { invoiceNumber: true, invoiceDate: true, items: true },
     orderBy: { invoiceDate: 'asc' },
   });
@@ -285,7 +285,7 @@ async function buildInvoiceItems(userId: string): Promise<{ columns: CsvColumn[]
   return { columns, rows };
 }
 
-// Products are a GLOBAL catalogue (no userId column in the schema), so this is
+// Products are a GLOBAL catalogue (no tenantId column in the schema), so this is
 // the one export that is not tenant-scoped — every install shares the catalogue.
 async function buildProducts(): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const products = await prisma.product.findMany({
@@ -351,10 +351,10 @@ async function buildProducts(): Promise<{ columns: CsvColumn[]; rows: Record<str
   return { columns, rows };
 }
 
-// Bank transactions have no direct userId — scoped via bankAccount.userId.
-async function buildBankTransactions(userId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
+// Bank transactions have no direct tenantId — scoped via bankAccount.tenantId.
+async function buildBankTransactions(tenantId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const txns = await prisma.bankTransaction.findMany({
-    where: { isDeleted: false, bankAccount: { userId } },
+    where: { isDeleted: false, bankAccount: { tenantId } },
     select: {
       transactionDate: true,
       type: true,
@@ -401,9 +401,9 @@ async function buildBankTransactions(userId: string): Promise<{ columns: CsvColu
 // Customers — mirror the existing /contacts/export shape isn't possible 1:1
 // (Customer is a distinct model), but we expose the round-trippable fields the
 // customer CSV importer consumes.
-async function buildCustomers(userId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
+async function buildCustomers(tenantId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const customers = await prisma.customer.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     select: {
       name: true,
       email: true,
@@ -445,9 +445,9 @@ async function buildCustomers(userId: string): Promise<{ columns: CsvColumn[]; r
   return { columns, rows };
 }
 
-async function buildContacts(userId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
+async function buildContacts(tenantId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const contacts = await prisma.contact.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     select: {
       organisation: true, firstName: true, lastName: true, email: true, billingEmail: true,
       telephone: true, mobile: true, addressLine1: true, addressLine2: true, addressLine3: true,
@@ -472,9 +472,9 @@ async function buildContacts(userId: string): Promise<{ columns: CsvColumn[]; ro
   return { columns, rows };
 }
 
-async function buildPurchases(userId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
+async function buildPurchases(tenantId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const purchases = await prisma.purchase.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     select: {
       purchaseId: true, purchaseDate: true, dueDate: true, status: true, referenceNo: true,
       currencyCode: true, taxableAmount: true, totalTax: true, totalDiscount: true,
@@ -520,9 +520,9 @@ async function buildPurchases(userId: string): Promise<{ columns: CsvColumn[]; r
   return { columns, rows };
 }
 
-async function buildExpenses(userId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
+async function buildExpenses(tenantId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const expenses = await prisma.expense.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     select: {
       expenseId: true, expenseDate: true, amount: true, tax: true, paymentStatus: true,
       description: true, referenceNo: true, currencyCode: true,
@@ -562,9 +562,9 @@ async function buildExpenses(userId: string): Promise<{ columns: CsvColumn[]; ro
   return { columns, rows };
 }
 
-async function buildInvoicePayments(userId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
+async function buildInvoicePayments(tenantId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const payments = await prisma.invoicePayment.findMany({
-    where: { invoice: { userId, isDeleted: false }, isVoided: false },
+    where: { invoice: { tenantId, isDeleted: false }, isVoided: false },
     select: {
       amount: true, received_on: true, reference: true, notes: true, currencyCode: true,
       invoice: { select: { invoiceNumber: true } },
@@ -593,9 +593,9 @@ async function buildInvoicePayments(userId: string): Promise<{ columns: CsvColum
   return { columns, rows };
 }
 
-async function buildCreditNotes(userId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
+async function buildCreditNotes(tenantId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const notes = await prisma.creditNote.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     select: {
       creditNoteNumber: true, creditNoteDate: true, status: true, reason: true, currencyCode: true,
       taxableAmount: true, vat: true, totalAmount: true,
@@ -633,9 +633,9 @@ async function buildCreditNotes(userId: string): Promise<{ columns: CsvColumn[];
   return { columns, rows };
 }
 
-async function buildDebitNotes(userId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
+async function buildDebitNotes(tenantId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const notes = await prisma.debitNote.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     select: {
       debitNoteId: true, debitNoteDate: true, status: true, currencyCode: true,
       taxableAmount: true, totalTax: true, totalAmount: true,
@@ -671,9 +671,9 @@ async function buildDebitNotes(userId: string): Promise<{ columns: CsvColumn[]; 
   return { columns, rows };
 }
 
-async function buildProjects(userId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
+async function buildProjects(tenantId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const projects = await prisma.project.findMany({
-    where: { userId },
+    where: { tenantId },
     select: { code: true, name: true, status: true, billingRate: true, startDate: true, endDate: true, description: true },
     orderBy: { code: 'asc' },
   });
@@ -698,9 +698,9 @@ async function buildProjects(userId: string): Promise<{ columns: CsvColumn[]; ro
   return { columns, rows };
 }
 
-async function buildTimeEntries(userId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
+async function buildTimeEntries(tenantId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const entries = await prisma.timeEntry.findMany({
-    where: { timesheet: { userId } },
+    where: { timesheet: { tenantId } },
     select: {
       date: true, hours: true, billable: true, note: true,
       project: { select: { code: true, name: true } },
@@ -740,9 +740,9 @@ async function buildTimeEntries(userId: string): Promise<{ columns: CsvColumn[];
   return { columns, rows };
 }
 
-async function buildLeaveRequests(userId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
+async function buildLeaveRequests(tenantId: string): Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> {
   const requests = await prisma.leaveRequest.findMany({
-    where: { userId },
+    where: { tenantId },
     select: {
       startDate: true, endDate: true, status: true, totalDays: true, reason: true,
       leaveType: { select: { name: true } },
@@ -777,8 +777,8 @@ async function buildLeaveRequests(userId: string): Promise<{ columns: CsvColumn[
 // Report builders — reuse the same ledger libs the report controllers use.
 // ---------------------------------------------------------------------------
 
-async function buildTrialBalance(userId: string, asOf: Date) {
-  const balances = await loadAccountBalances(userId, { to: asOf });
+async function buildTrialBalance(tenantId: string, asOf: Date) {
+  const balances = await loadAccountBalances(tenantId, { to: asOf });
   const tb = trialBalanceFrom(balances);
   const rows = tb.accounts.map((a) => ({
     code: a.code,
@@ -800,8 +800,8 @@ async function buildTrialBalance(userId: string, asOf: Date) {
   return { columns, rows };
 }
 
-async function buildBalanceSheet(userId: string, asOf: Date) {
-  const balances = await loadAccountBalances(userId, { to: asOf });
+async function buildBalanceSheet(tenantId: string, asOf: Date) {
+  const balances = await loadAccountBalances(tenantId, { to: asOf });
   const bs = balanceSheetFrom(balances);
   const rows: Record<string, unknown>[] = [
     { section: 'Assets', line: 'Cash & Bank', amount: bs.assets.current.cashAndBank },
@@ -825,8 +825,8 @@ async function buildBalanceSheet(userId: string, asOf: Date) {
   return { columns, rows };
 }
 
-async function buildProfitAndLoss(userId: string, from: Date, to: Date) {
-  const balances = await loadAccountBalances(userId, { from, to });
+async function buildProfitAndLoss(tenantId: string, from: Date, to: Date) {
+  const balances = await loadAccountBalances(tenantId, { from, to });
   const pl = profitLossFrom(balances);
   const rows: Record<string, unknown>[] = [];
   rows.push({ section: 'Revenue', line: 'Total Revenue', amount: pl.revenue.total });
@@ -863,9 +863,9 @@ function agingRowsToCsv(result: AgingResult): { columns: CsvColumn[]; rows: Reco
   return { columns, rows };
 }
 
-async function buildArAging(userId: string, asOf: Date): Promise<AgingResult> {
-  if (await ledgerLive(userId)) {
-    const sub = await loadArSubLedger(prisma, userId, asOf);
+async function buildArAging(tenantId: string, asOf: Date): Promise<AgingResult> {
+  if (await ledgerLive(tenantId)) {
+    const sub = await loadArSubLedger(prisma, tenantId, asOf);
     if (sub.available) {
       return buildSubLedgerAging(sub.lines, asOf, {
         nature: 'debit',
@@ -877,7 +877,7 @@ async function buildArAging(userId: string, asOf: Date): Promise<AgingResult> {
   // Point-in-time as-of asOf (mirrors agingController.arAging legacy path).
   const invoices = await prisma.invoice.findMany({
     where: {
-      userId, isDeleted: false, invoiceType: 'INVOICE',
+      tenantId, isDeleted: false, invoiceType: 'INVOICE',
       status: { notIn: ['DRAFT', 'CANCELLED'] },
       invoiceDate: { lte: asOf },
     },
@@ -894,7 +894,7 @@ async function buildArAging(userId: string, asOf: Date): Promise<AgingResult> {
     invoiceIds.length > 0
       ? creditNoteTotalsByInvoice(
           await prisma.creditNote.findMany({
-            where: { userId, isDeleted: false, invoiceId: { in: invoiceIds }, creditNoteDate: { lte: asOf } },
+            where: { tenantId, isDeleted: false, invoiceId: { in: invoiceIds }, creditNoteDate: { lte: asOf } },
             select: { invoiceId: true, totalAmount: true },
           }),
         )
@@ -916,9 +916,9 @@ async function buildArAging(userId: string, asOf: Date): Promise<AgingResult> {
   return bucketAging(items, asOf);
 }
 
-async function buildApAging(userId: string, asOf: Date): Promise<AgingResult> {
-  if (await ledgerLive(userId)) {
-    const sub = await loadApSubLedger(prisma, userId, asOf);
+async function buildApAging(tenantId: string, asOf: Date): Promise<AgingResult> {
+  if (await ledgerLive(tenantId)) {
+    const sub = await loadApSubLedger(prisma, tenantId, asOf);
     if (sub.available) {
       return buildSubLedgerAging(sub.lines, asOf, {
         nature: 'credit',
@@ -931,7 +931,7 @@ async function buildApAging(userId: string, asOf: Date): Promise<AgingResult> {
   // balance-at-asOf = current balanceAmount + Σ supplier payments after asOf.
   const purchases = await prisma.purchase.findMany({
     where: {
-      userId, isDeleted: false,
+      tenantId, isDeleted: false,
       status: { not: 'cancelled' },
       purchaseDate: { lte: asOf },
     },
@@ -968,8 +968,8 @@ async function buildApAging(userId: string, asOf: Date): Promise<AgingResult> {
 
 export async function exportJournalEntries(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const { columns, rows } = await buildJournalEntries(userId);
+    const tenantId = requireTenantId(req);
+    const { columns, rows } = await buildJournalEntries(tenantId);
     sendCsv(res, 'journal-entries.csv', toCsv(rows, columns));
   } catch (err) {
     handleError(res, err, 'journal entries');
@@ -978,8 +978,8 @@ export async function exportJournalEntries(req: Request, res: Response): Promise
 
 export async function exportChartOfAccounts(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const { columns, rows } = await buildChartOfAccounts(userId);
+    const tenantId = requireTenantId(req);
+    const { columns, rows } = await buildChartOfAccounts(tenantId);
     sendCsv(res, 'chart-of-accounts.csv', toCsv(rows, columns));
   } catch (err) {
     handleError(res, err, 'chart of accounts');
@@ -988,8 +988,8 @@ export async function exportChartOfAccounts(req: Request, res: Response): Promis
 
 export async function exportInvoices(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const { columns, rows } = await buildInvoices(userId);
+    const tenantId = requireTenantId(req);
+    const { columns, rows } = await buildInvoices(tenantId);
     sendCsv(res, 'invoices.csv', toCsv(rows, columns));
   } catch (err) {
     handleError(res, err, 'invoices');
@@ -998,8 +998,8 @@ export async function exportInvoices(req: Request, res: Response): Promise<void>
 
 export async function exportInvoiceItems(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const { columns, rows } = await buildInvoiceItems(userId);
+    const tenantId = requireTenantId(req);
+    const { columns, rows } = await buildInvoiceItems(tenantId);
     sendCsv(res, 'invoice-items.csv', toCsv(rows, columns));
   } catch (err) {
     handleError(res, err, 'invoice items');
@@ -1008,7 +1008,7 @@ export async function exportInvoiceItems(req: Request, res: Response): Promise<v
 
 export async function exportProducts(req: Request, res: Response): Promise<void> {
   try {
-    requireUserId(req); // auth gate (catalogue is global, but still require a valid session)
+    requireTenantId(req); // auth gate (catalogue is global, but still require a valid session)
     const { columns, rows } = await buildProducts();
     sendCsv(res, 'products.csv', toCsv(rows, columns));
   } catch (err) {
@@ -1018,8 +1018,8 @@ export async function exportProducts(req: Request, res: Response): Promise<void>
 
 export async function exportBankTransactions(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const { columns, rows } = await buildBankTransactions(userId);
+    const tenantId = requireTenantId(req);
+    const { columns, rows } = await buildBankTransactions(tenantId);
     sendCsv(res, 'bank-transactions.csv', toCsv(rows, columns));
   } catch (err) {
     handleError(res, err, 'bank transactions');
@@ -1028,8 +1028,8 @@ export async function exportBankTransactions(req: Request, res: Response): Promi
 
 export async function exportCustomers(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const { columns, rows } = await buildCustomers(userId);
+    const tenantId = requireTenantId(req);
+    const { columns, rows } = await buildCustomers(tenantId);
     sendCsv(res, 'customers.csv', toCsv(rows, columns));
   } catch (err) {
     handleError(res, err, 'customers');
@@ -1038,9 +1038,9 @@ export async function exportCustomers(req: Request, res: Response): Promise<void
 
 export async function exportTrialBalance(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const asOf = parseAsOf(req.query.asOf);
-    const { columns, rows } = await buildTrialBalance(userId, asOf);
+    const { columns, rows } = await buildTrialBalance(tenantId, asOf);
     sendCsv(res, 'trial-balance.csv', toCsv(rows, columns));
   } catch (err) {
     handleError(res, err, 'trial balance');
@@ -1049,9 +1049,9 @@ export async function exportTrialBalance(req: Request, res: Response): Promise<v
 
 export async function exportBalanceSheet(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const asOf = parseAsOf(req.query.asOf);
-    const { columns, rows } = await buildBalanceSheet(userId, asOf);
+    const { columns, rows } = await buildBalanceSheet(tenantId, asOf);
     sendCsv(res, 'balance-sheet.csv', toCsv(rows, columns));
   } catch (err) {
     handleError(res, err, 'balance sheet');
@@ -1060,9 +1060,9 @@ export async function exportBalanceSheet(req: Request, res: Response): Promise<v
 
 export async function exportProfitAndLoss(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { fromDate, toDate } = dateRange(req);
-    const { columns, rows } = await buildProfitAndLoss(userId, fromDate, toDate);
+    const { columns, rows } = await buildProfitAndLoss(tenantId, fromDate, toDate);
     sendCsv(res, 'profit-and-loss.csv', toCsv(rows, columns));
   } catch (err) {
     handleError(res, err, 'profit and loss');
@@ -1071,9 +1071,9 @@ export async function exportProfitAndLoss(req: Request, res: Response): Promise<
 
 export async function exportArAging(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const asOf = parseAsOf(req.query.asOf);
-    const result = await buildArAging(userId, asOf);
+    const result = await buildArAging(tenantId, asOf);
     const { columns, rows } = agingRowsToCsv(result);
     sendCsv(res, 'ar-aging.csv', toCsv(rows, columns));
   } catch (err) {
@@ -1083,9 +1083,9 @@ export async function exportArAging(req: Request, res: Response): Promise<void> 
 
 export async function exportApAging(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const asOf = parseAsOf(req.query.asOf);
-    const result = await buildApAging(userId, asOf);
+    const result = await buildApAging(tenantId, asOf);
     const { columns, rows } = agingRowsToCsv(result);
     sendCsv(res, 'ap-aging.csv', toCsv(rows, columns));
   } catch (err) {
@@ -1098,9 +1098,9 @@ export async function exportApAging(req: Request, res: Response): Promise<void> 
 // ===========================================================================
 
 export async function exportBackupZip(req: Request, res: Response): Promise<void> {
-  let userId: string;
+  let tenantId: string;
   try {
-    userId = requireUserId(req);
+    tenantId = requireTenantId(req);
   } catch (err) {
     handleError(res, err, 'backup');
     return;
@@ -1110,22 +1110,22 @@ export async function exportBackupZip(req: Request, res: Response): Promise<void
   // manifest with its rowcount. Products is the only non-tenant-scoped table
   // (global catalogue) — included so an install's catalogue is captured too.
   const tables: { name: string; build: () => Promise<{ columns: CsvColumn[]; rows: Record<string, unknown>[] }> }[] = [
-    { name: 'chart-of-accounts', build: () => buildChartOfAccounts(userId) },
-    { name: 'journal-entries', build: () => buildJournalEntries(userId) },
-    { name: 'invoices', build: () => buildInvoices(userId) },
-    { name: 'invoice-items', build: () => buildInvoiceItems(userId) },
-    { name: 'invoice-payments', build: () => buildInvoicePayments(userId) },
-    { name: 'credit-notes', build: () => buildCreditNotes(userId) },
-    { name: 'debit-notes', build: () => buildDebitNotes(userId) },
-    { name: 'purchases', build: () => buildPurchases(userId) },
-    { name: 'expenses', build: () => buildExpenses(userId) },
+    { name: 'chart-of-accounts', build: () => buildChartOfAccounts(tenantId) },
+    { name: 'journal-entries', build: () => buildJournalEntries(tenantId) },
+    { name: 'invoices', build: () => buildInvoices(tenantId) },
+    { name: 'invoice-items', build: () => buildInvoiceItems(tenantId) },
+    { name: 'invoice-payments', build: () => buildInvoicePayments(tenantId) },
+    { name: 'credit-notes', build: () => buildCreditNotes(tenantId) },
+    { name: 'debit-notes', build: () => buildDebitNotes(tenantId) },
+    { name: 'purchases', build: () => buildPurchases(tenantId) },
+    { name: 'expenses', build: () => buildExpenses(tenantId) },
     { name: 'products', build: () => buildProducts() },
-    { name: 'customers', build: () => buildCustomers(userId) },
-    { name: 'contacts', build: () => buildContacts(userId) },
-    { name: 'bank-transactions', build: () => buildBankTransactions(userId) },
-    { name: 'projects', build: () => buildProjects(userId) },
-    { name: 'timesheets', build: () => buildTimeEntries(userId) },
-    { name: 'leave-requests', build: () => buildLeaveRequests(userId) },
+    { name: 'customers', build: () => buildCustomers(tenantId) },
+    { name: 'contacts', build: () => buildContacts(tenantId) },
+    { name: 'bank-transactions', build: () => buildBankTransactions(tenantId) },
+    { name: 'projects', build: () => buildProjects(tenantId) },
+    { name: 'timesheets', build: () => buildTimeEntries(tenantId) },
+    { name: 'leave-requests', build: () => buildLeaveRequests(tenantId) },
   ];
 
   const stamp = new Date().toISOString().slice(0, 10);
@@ -1145,7 +1145,7 @@ export async function exportBackupZip(req: Request, res: Response): Promise<void
     tenantId: string;
     appVersion: string;
     tables: Record<string, number>;
-  } = { exportedAt: new Date().toISOString(), tenantId: userId, appVersion: APP_VERSION, tables: {} };
+  } = { exportedAt: new Date().toISOString(), tenantId: tenantId, appVersion: APP_VERSION, tables: {} };
 
   try {
     for (const t of tables) {

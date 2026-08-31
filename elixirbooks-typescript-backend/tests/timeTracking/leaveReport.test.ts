@@ -29,7 +29,7 @@ import { getLeaveSummaryReport } from '../../controllers/timeTracking/leaveRepor
 // ---------------------------------------------------------------------------
 
 interface ActorOpts {
-  userId?: string;
+  tenantId?: string;
   isOwner?: boolean;
   roleName?: string | null;
   othersView?: boolean;
@@ -48,12 +48,12 @@ function makeReq(opts: { actor?: ActorOpts; query?: Record<string, unknown> } = 
       allowAll: false,
     });
   }
-  const userId = a.userId ?? 'actor-1';
+  const tenantId = a.tenantId ?? 'actor-1';
   return {
-    user: userId,
+    user: tenantId,
     tenantId: 'tenant-1',
     actor: {
-      userId,
+      userId: tenantId,
       tenantId: 'tenant-1',
       roleId: 'r1',
       roleName: a.roleName ?? null,
@@ -168,7 +168,7 @@ describe('GET /leave-reports/summary — aggregation', () => {
     await getLeaveSummaryReport(req, res);
     const arg = m.leaveRequestDayFindMany.mock.calls[0][0];
     expect(arg.where.leaveRequest.status).toBe('APPROVED');
-    expect(arg.where.leaveRequest.userId).toBe('tenant-1');
+    expect(arg.where.leaveRequest.tenantId).toBe('tenant-1');
   });
 });
 
@@ -176,7 +176,7 @@ describe('GET /leave-reports/summary — data-scope clamp', () => {
   it('non-privileged user is clamped to own employeeUserId regardless of param', async () => {
     m.leaveRequestDayFindMany.mockResolvedValue([]);
     const req = makeReq({
-      actor: { userId: 'actor-1' }, // no others,view, not admin/owner
+      actor: { tenantId: 'actor-1' }, // no others,view, not admin/owner
       query: { ...BASE_QUERY, employeeUserId: 'someone-else' },
     });
     const res = makeRes();
@@ -187,7 +187,7 @@ describe('GET /leave-reports/summary — data-scope clamp', () => {
 
   it('non-privileged user with no param is still clamped to own id', async () => {
     m.leaveRequestDayFindMany.mockResolvedValue([]);
-    const req = makeReq({ actor: { userId: 'actor-1' }, query: BASE_QUERY });
+    const req = makeReq({ actor: { tenantId: 'actor-1' }, query: BASE_QUERY });
     const res = makeRes();
     await getLeaveSummaryReport(req, res);
     const arg = m.leaveRequestDayFindMany.mock.calls[0][0];
@@ -209,7 +209,7 @@ describe('GET /leave-reports/summary — data-scope clamp', () => {
   it('time-tracking-others,view may query any employee (no clamp)', async () => {
     m.leaveRequestDayFindMany.mockResolvedValue([]);
     const req = makeReq({
-      actor: { userId: 'actor-1', othersView: true },
+      actor: { tenantId: 'actor-1', othersView: true },
       query: { ...BASE_QUERY, employeeUserId: 'emp-9' },
     });
     const res = makeRes();

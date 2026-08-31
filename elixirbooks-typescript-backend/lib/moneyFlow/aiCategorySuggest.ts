@@ -51,7 +51,7 @@ export interface SuggestResult {
 
 export async function suggestBankTxnCategory(
   txn: SuggestBankTxn,
-  userId: string,
+  tenantId: string,
 ): Promise<SuggestResult> {
   try {
     // Guard: never touch payment-born or already-handled rows.
@@ -66,7 +66,7 @@ export async function suggestBankTxnCategory(
 
     const cats = await prisma.transactionCategory.findMany({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         status: true,
         appliesTo: appliesTo as never,

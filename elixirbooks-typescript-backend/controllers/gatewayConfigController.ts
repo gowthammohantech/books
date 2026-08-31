@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import type { GatewayKind, Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { gatewaySecretKeys, maskConfig, mergeAndEncryptConfig } from '../lib/configSecret';
 
 const KINDS = ['RAZORPAY', 'STRIPE', 'OFFLINE'] as const;
@@ -23,8 +23,8 @@ function safeConfig(kind: string, config: unknown): unknown {
 
 export async function list(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const rows = await prisma.gatewayConfig.findMany({ where: { userId } });
+    const tenantId = requireTenantId(req);
+    const rows = await prisma.gatewayConfig.findMany({ where: { tenantId } });
     res.json({
       success: true,
       data: {
@@ -51,13 +51,13 @@ export async function list(req: Request, res: Response): Promise<void> {
 
 export async function get(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { kind } = req.params as { kind: string };
     if (!isKind(kind)) {
       res.status(400).json({ success: false, message: 'Invalid kind' });
       return;
     }
-    const row = await prisma.gatewayConfig.findUnique({ where: { userId_kind: { userId, kind: kind as GatewayKind } } });
+    const row = await prisma.gatewayConfig.findUnique({ where: { tenantId_kind: { tenantId, kind: kind as GatewayKind } } });
     if (!row) {
       res.status(404).json({ success: false, message: 'Gateway not configured' });
       return;
@@ -86,7 +86,7 @@ export async function get(req: Request, res: Response): Promise<void> {
 
 export async function upsert(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { kind } = req.params as { kind: string };
     if (!isKind(kind)) {
       res.status(400).json({ success: false, message: 'Invalid kind' });
@@ -98,7 +98,7 @@ export async function upsert(req: Request, res: Response): Promise<void> {
     // previously stored (encrypted) value, and encrypt secrets at rest. Never
     // persist plaintext secret keys.
     const existing = await prisma.gatewayConfig.findUnique({
-      where: { userId_kind: { userId, kind: kind as GatewayKind } },
+      where: { tenantId_kind: { tenantId, kind: kind as GatewayKind } },
     });
     const encryptedConfig = mergeAndEncryptConfig(
       body.config ?? {},
@@ -111,9 +111,9 @@ export async function upsert(req: Request, res: Response): Promise<void> {
       config: encryptedConfig as Prisma.InputJsonValue,
     };
     const updated = await prisma.gatewayConfig.upsert({
-      where: { userId_kind: { userId, kind: kind as GatewayKind } },
+      where: { tenantId_kind: { tenantId, kind: kind as GatewayKind } },
       update: data,
-      create: { userId, kind: kind as GatewayKind, ...data },
+      create: { tenantId, kind: kind as GatewayKind, ...data },
     });
     res.json({
       success: true,
@@ -132,13 +132,13 @@ export async function upsert(req: Request, res: Response): Promise<void> {
 
 export async function remove(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { kind } = req.params as { kind: string };
     if (!isKind(kind)) {
       res.status(400).json({ success: false, message: 'Invalid kind' });
       return;
     }
-    await prisma.gatewayConfig.deleteMany({ where: { userId, kind: kind as GatewayKind } });
+    await prisma.gatewayConfig.deleteMany({ where: { tenantId, kind: kind as GatewayKind } });
     res.json({ success: true, message: 'Gateway config removed' });
   } catch (err) {
     if (err instanceof UnauthorizedError) {

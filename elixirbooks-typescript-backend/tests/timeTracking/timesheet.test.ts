@@ -71,7 +71,7 @@ import {
 // ---------------------------------------------------------------------------
 
 interface ActorOpts {
-  userId?: string;
+  tenantId?: string;
   isOwner?: boolean;
   roleName?: string | null;
   others?: { view?: boolean; edit?: boolean };
@@ -95,12 +95,12 @@ function makeReq(opts: {
       allowAll: false,
     });
   }
-  const userId = a.userId ?? 'actor-1';
+  const tenantId = a.tenantId ?? 'actor-1';
   return {
-    user: userId,
+    user: tenantId,
     tenantId: 'tenant-1',
     actor: {
-      userId,
+      userId: tenantId,
       tenantId: 'tenant-1',
       roleId: 'r1',
       roleName: a.roleName ?? null,
@@ -149,7 +149,7 @@ describe('getOrCreateWeek', () => {
   it('returns the existing timesheet WITHOUT creating (idempotent)', async () => {
     const existing = {
       id: 'ts-1',
-      userId: 'tenant-1',
+      tenantId: 'tenant-1',
       employeeUserId: 'actor-1',
       weekStartDate: MONDAY,
       status: 'DRAFT',
@@ -181,7 +181,7 @@ describe('getOrCreateWeek', () => {
     m.timesheetFindUnique.mockResolvedValue(null);
     m.timesheetCreate.mockResolvedValue({
       id: 'ts-new',
-      userId: 'tenant-1',
+      tenantId: 'tenant-1',
       employeeUserId: 'actor-1',
       weekStartDate: MONDAY,
       status: 'DRAFT',
@@ -211,7 +211,7 @@ describe('getOrCreateWeek', () => {
   it('Phase C: keeps existing keys AND adds holidays + leaveDays markers', async () => {
     m.timesheetFindUnique.mockResolvedValue({
       id: 'ts-1',
-      userId: 'tenant-1',
+      tenantId: 'tenant-1',
       employeeUserId: 'actor-1',
       weekStartDate: MONDAY,
       status: 'DRAFT',
@@ -268,7 +268,7 @@ describe('replaceEntries', () => {
   it('409s when the timesheet is SUBMITTED', async () => {
     m.timesheetFindFirst.mockResolvedValue({
       id: 'ts-1',
-      userId: 'tenant-1',
+      tenantId: 'tenant-1',
       employeeUserId: 'actor-1',
       weekStartDate: MONDAY,
       status: 'SUBMITTED',
@@ -293,7 +293,7 @@ describe('replaceEntries', () => {
   it('400s when logging to a project the employee is not a member of', async () => {
     m.timesheetFindFirst.mockResolvedValue({
       id: 'ts-1',
-      userId: 'tenant-1',
+      tenantId: 'tenant-1',
       employeeUserId: 'actor-1',
       weekStartDate: MONDAY,
       status: 'DRAFT',
@@ -322,7 +322,7 @@ describe('replaceEntries', () => {
   it('replaces entries on a DRAFT (member project)', async () => {
     m.timesheetFindFirst.mockResolvedValue({
       id: 'ts-1',
-      userId: 'tenant-1',
+      tenantId: 'tenant-1',
       employeeUserId: 'actor-1',
       weekStartDate: MONDAY,
       status: 'DRAFT',
@@ -360,7 +360,7 @@ describe('submitTimesheet', () => {
   it('DRAFT -> SUBMITTED for the owner of the sheet', async () => {
     m.timesheetFindFirst.mockResolvedValue({
       id: 'ts-1',
-      userId: 'tenant-1',
+      tenantId: 'tenant-1',
       employeeUserId: 'actor-1',
       weekStartDate: MONDAY,
       status: 'DRAFT',
@@ -372,7 +372,7 @@ describe('submitTimesheet', () => {
     });
     m.timesheetUpdate.mockResolvedValue({
       id: 'ts-1',
-      userId: 'tenant-1',
+      tenantId: 'tenant-1',
       employeeUserId: 'actor-1',
       weekStartDate: MONDAY,
       status: 'SUBMITTED',
@@ -395,7 +395,7 @@ describe('submitTimesheet', () => {
 
   it('409s when the timesheet is already SUBMITTED', async () => {
     m.timesheetFindFirst.mockResolvedValue({
-      id: 'ts-1', userId: 'tenant-1', employeeUserId: 'actor-1', weekStartDate: MONDAY,
+      id: 'ts-1', tenantId: 'tenant-1', employeeUserId: 'actor-1', weekStartDate: MONDAY,
       status: 'SUBMITTED', submittedAt: new Date(), approvedById: null, approvedAt: null,
       rejectionNote: null, entries: [],
     });
@@ -409,12 +409,12 @@ describe('submitTimesheet', () => {
 describe('approveTimesheet', () => {
   it('SUBMITTED -> APPROVED for an admin', async () => {
     m.timesheetFindFirst.mockResolvedValue({
-      id: 'ts-1', userId: 'tenant-1', employeeUserId: 'emp-2', weekStartDate: MONDAY,
+      id: 'ts-1', tenantId: 'tenant-1', employeeUserId: 'emp-2', weekStartDate: MONDAY,
       status: 'SUBMITTED', submittedAt: new Date(), approvedById: null, approvedAt: null,
       rejectionNote: null, entries: [{ projectId: 'p1' }],
     });
     m.timesheetUpdate.mockResolvedValue({
-      id: 'ts-1', userId: 'tenant-1', employeeUserId: 'emp-2', weekStartDate: MONDAY,
+      id: 'ts-1', tenantId: 'tenant-1', employeeUserId: 'emp-2', weekStartDate: MONDAY,
       status: 'APPROVED', submittedAt: new Date(), approvedById: 'actor-1', approvedAt: new Date(),
       rejectionNote: null,
     });
@@ -433,7 +433,7 @@ describe('approveTimesheet', () => {
 
   it('403s when a non-manager tries to approve another employee', async () => {
     m.timesheetFindFirst.mockResolvedValue({
-      id: 'ts-1', userId: 'tenant-1', employeeUserId: 'emp-2', weekStartDate: MONDAY,
+      id: 'ts-1', tenantId: 'tenant-1', employeeUserId: 'emp-2', weekStartDate: MONDAY,
       status: 'SUBMITTED', submittedAt: new Date(), approvedById: null, approvedAt: null,
       rejectionNote: null, entries: [{ projectId: 'p1' }],
     });
@@ -453,7 +453,7 @@ describe('approveTimesheet', () => {
 
   it('403s when actor lacks time-tracking-others entirely', async () => {
     m.timesheetFindFirst.mockResolvedValue({
-      id: 'ts-1', userId: 'tenant-1', employeeUserId: 'emp-2', weekStartDate: MONDAY,
+      id: 'ts-1', tenantId: 'tenant-1', employeeUserId: 'emp-2', weekStartDate: MONDAY,
       status: 'SUBMITTED', submittedAt: new Date(), approvedById: null, approvedAt: null,
       rejectionNote: null, entries: [{ projectId: 'p1' }],
     });
@@ -465,7 +465,7 @@ describe('approveTimesheet', () => {
 
   it('409s when the timesheet is not SUBMITTED', async () => {
     m.timesheetFindFirst.mockResolvedValue({
-      id: 'ts-1', userId: 'tenant-1', employeeUserId: 'emp-2', weekStartDate: MONDAY,
+      id: 'ts-1', tenantId: 'tenant-1', employeeUserId: 'emp-2', weekStartDate: MONDAY,
       status: 'DRAFT', submittedAt: null, approvedById: null, approvedAt: null,
       rejectionNote: null, entries: [],
     });
@@ -482,12 +482,12 @@ describe('approveTimesheet', () => {
 describe('rejectTimesheet', () => {
   it('SUBMITTED -> REJECTED with note for an owner', async () => {
     m.timesheetFindFirst.mockResolvedValue({
-      id: 'ts-1', userId: 'tenant-1', employeeUserId: 'emp-2', weekStartDate: MONDAY,
+      id: 'ts-1', tenantId: 'tenant-1', employeeUserId: 'emp-2', weekStartDate: MONDAY,
       status: 'SUBMITTED', submittedAt: new Date(), approvedById: null, approvedAt: null,
       rejectionNote: null, entries: [{ projectId: 'p1' }],
     });
     m.timesheetUpdate.mockResolvedValue({
-      id: 'ts-1', userId: 'tenant-1', employeeUserId: 'emp-2', weekStartDate: MONDAY,
+      id: 'ts-1', tenantId: 'tenant-1', employeeUserId: 'emp-2', weekStartDate: MONDAY,
       status: 'REJECTED', submittedAt: new Date(), approvedById: null, approvedAt: null,
       rejectionNote: 'fix it',
     });

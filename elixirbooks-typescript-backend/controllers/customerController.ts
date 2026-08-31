@@ -6,7 +6,7 @@ import { validationResult } from 'express-validator';
 import { parse } from 'csv-parse/sync';
 
 import { prisma } from '../lib/prisma';
-import { tenantScope, requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { tenantScope, requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 // CC.1: resolve the company default currency code (ISO string).
 async function resolveDefaultCurrencyCode(): Promise<string | null> {
@@ -113,7 +113,7 @@ export async function createCustomer(req: Request, res: Response): Promise<void>
   }
 
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const {
       name,
@@ -129,7 +129,7 @@ export async function createCustomer(req: Request, res: Response): Promise<void>
       currencyCode: rawCurrencyCode,
     } = req.body as Record<string, unknown>;
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({ where: { id: tenantId } });
     if (!user) {
       tryUnlink(req.file?.path);
       res.status(404).json({ success: false, message: 'User not found' });
@@ -137,7 +137,7 @@ export async function createCustomer(req: Request, res: Response): Promise<void>
     }
 
     const existing = await prisma.customer.findFirst({
-      where: { userId, email: email as string },
+      where: { tenantId, email: email as string },
     });
     if (existing) {
       tryUnlink(req.file?.path);
@@ -167,7 +167,7 @@ export async function createCustomer(req: Request, res: Response): Promise<void>
         billingAddress: parseMaybeJson(billingAddress ?? {}),
         shippingAddress: parseMaybeJson(shippingAddress ?? {}),
         bankDetails: parseMaybeJson(bankDetails ?? {}),
-        userId,
+        tenantId,
         // CC.1: currency the customer transacts in
         ...(customerCurrencyCode ? { currencyCode: customerCurrencyCode } : {}),
       },
@@ -192,7 +192,7 @@ export async function createCustomer(req: Request, res: Response): Promise<void>
 
 export async function createMinimalCustomer(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       name,
       email,
@@ -215,14 +215,14 @@ export async function createMinimalCustomer(req: Request, res: Response): Promis
       return;
     }
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({ where: { id: tenantId } });
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' });
       return;
     }
 
     const existing = await prisma.customer.findFirst({
-      where: { userId, email },
+      where: { tenantId, email },
     });
     if (existing) {
       res.status(409).json({
@@ -266,7 +266,7 @@ export async function createMinimalCustomer(req: Request, res: Response): Promis
         name,
         email,
         phone: phone ?? '',
-        userId,
+        tenantId,
         // CC.1: currency the customer transacts in
         ...(customerCurrencyCode ? { currencyCode: customerCurrencyCode } : {}),
         ...(hasBillingAddress ? { billingAddress: normalizedBillingAddress } : {}),
@@ -444,7 +444,7 @@ export async function updateCustomer(req: Request, res: Response): Promise<void>
 
     if (email && email !== existing.email) {
       const clash = await prisma.customer.findFirst({
-        where: { userId: scope.userId, email: email as string },
+        where: { tenantId: scope.tenantId, email: email as string },
       });
       if (clash) {
         tryUnlink(req.file?.path);
@@ -557,7 +557,7 @@ export async function deleteCustomer(req: Request, res: Response): Promise<void>
 
 export async function getStatement(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const from = req.query.from as string | undefined;
     const to = req.query.to as string | undefined;
@@ -570,7 +570,7 @@ export async function getStatement(req: Request, res: Response): Promise<void> {
 
     // Verify customer ownership
     const customer = await prisma.customer.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       select: { id: true, name: true, email: true, phone: true, billingAddress: true, shippingAddress: true, currencyCode: true },
     });
     if (!customer) {
@@ -589,12 +589,12 @@ export async function getStatement(req: Request, res: Response): Promise<void> {
 
     // All invoices + payments up to toDate (split into opening vs in-period below).
     const allInvoices = await prisma.invoice.findMany({
-      where: { billTo: id, userId, isDeleted: false, invoiceType: 'INVOICE', invoiceDate: { lte: toDate } },
+      where: { billTo: id, tenantId, isDeleted: false, invoiceType: 'INVOICE', invoiceDate: { lte: toDate } },
       select: { id: true, invoiceNumber: true, invoiceDate: true, TotalAmount: true, status: true, currencyCode: true },
       orderBy: { invoiceDate: 'asc' },
     });
     const allPayments = await prisma.invoicePayment.findMany({
-      where: { invoice: { billTo: id, userId, isDeleted: false }, received_on: { lte: toDate }, isVoided: false },
+      where: { invoice: { billTo: id, tenantId, isDeleted: false }, received_on: { lte: toDate }, isVoided: false },
       select: {
         id: true,
         invoiceId: true,
@@ -712,7 +712,7 @@ interface CustomerImportPreviewRow {
 
 export async function customerImportPreview(req: Request, res: Response): Promise<void> {
   try {
-    requireUserId(req);
+    requireTenantId(req);
     const file = (req as Request & { file?: Express.Multer.File }).file;
     if (!file) {
       res.status(400).json({ success: false, message: 'CSV file required' });
@@ -776,7 +776,7 @@ export async function customerImportPreview(req: Request, res: Response): Promis
 
 export async function customerImportConfirm(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as {
       rows?: Array<{
         name: string;
@@ -802,7 +802,7 @@ export async function customerImportConfirm(req: Request, res: Response): Promis
       const row = body.rows[i];
       try {
         const existing = await prisma.customer.findFirst({
-          where: { userId, email: row.email, isDeleted: false },
+          where: { tenantId, email: row.email, isDeleted: false },
         });
         if (existing) {
           results.push({ rowIndex: i, status: 'SKIPPED', error: 'email already exists' });
@@ -810,7 +810,7 @@ export async function customerImportConfirm(req: Request, res: Response): Promis
         }
         const created = await prisma.customer.create({
           data: {
-            userId,
+            tenantId,
             name: row.name,
             email: row.email,
             phone: row.phone,

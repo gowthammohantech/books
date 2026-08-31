@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../../lib/prisma';
 import {
   tenantScope,
-  requireUserId,
+  requireTenantId,
   UnauthorizedError,
 } from '../../../lib/tenantScope';
 
@@ -294,7 +294,7 @@ export async function getInventoryHistory(req: Request, res: Response): Promise<
 
 export async function updateStock(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { productId, quantity, type, notes } = req.body as {
       productId?: string;
       quantity?: number;
@@ -326,7 +326,7 @@ export async function updateStock(req: Request, res: Response): Promise<void> {
       }
 
       const existing = await tx.inventory.findFirst({
-        where: { productId, userId, isDeleted: false },
+        where: { productId, tenantId, isDeleted: false },
       });
 
       const previousQuantity = existing?.quantity ?? 0;
@@ -364,7 +364,7 @@ export async function updateStock(req: Request, res: Response): Promise<void> {
         adjustment: adjustmentValue,
         referenceId: null,
         referenceType: 'adjustment',
-        createdBy: userId,
+        createdBy: tenantId,
         createdAt: nowIso,
         updatedAt: nowIso,
       };
@@ -378,7 +378,7 @@ export async function updateStock(req: Request, res: Response): Promise<void> {
           data: {
             productId,
             quantity: newQuantity,
-            userId,
+            tenantId,
             inventory_history: [historyEntry] as unknown as Prisma.InputJsonValue,
             notes: '',
           },

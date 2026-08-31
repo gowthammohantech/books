@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
 
-// ExpenseCategory is a global lookup table — it has no userId column, so the
+// ExpenseCategory is a global lookup table — it has no tenantId column, so the
 // usual tenantScope() helper does not apply here. Soft-deletion (isDeleted)
 // is still respected.
 

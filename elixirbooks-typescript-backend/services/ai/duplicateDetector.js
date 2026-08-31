@@ -7,10 +7,10 @@ const Expense = require("@models/Expense");
  * Check for potential duplicate documents
  * @param {string} documentType - Type of document to check
  * @param {object} payload - The document data to check against
- * @param {string} userId - The user's ID
+ * @param {string} tenantId - The user's ID
  * @returns {object} Duplicate detection result
  */
-async function checkDuplicates(documentType, payload, userId) {
+async function checkDuplicates(documentType, payload, tenantId) {
   const duplicates = [];
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -24,7 +24,7 @@ async function checkDuplicates(documentType, payload, userId) {
       const maxAmount = amount * (1 + amountTolerance);
 
       const query = {
-        userId,
+        tenantId,
         isDeleted: false,
         createdAt: { $gte: thirtyDaysAgo },
       };
@@ -66,7 +66,7 @@ async function checkDuplicates(documentType, payload, userId) {
       const maxAmount = amount * (1 + amountTolerance);
 
       const query = {
-        userId,
+        tenantId,
         isDeleted: false,
         createdAt: { $gte: thirtyDaysAgo },
         TotalAmount: { $gte: minAmount, $lte: maxAmount },
@@ -102,7 +102,7 @@ async function checkDuplicates(documentType, payload, userId) {
       const maxAmount = amount * (1 + amountTolerance);
 
       const query = {
-        userId,
+        tenantId,
         isDeleted: false,
         createdAt: { $gte: thirtyDaysAgo },
         TotalAmount: { $gte: minAmount, $lte: maxAmount },
@@ -138,7 +138,7 @@ async function checkDuplicates(documentType, payload, userId) {
       const maxAmount = amount * (1 + amountTolerance);
 
       const query = {
-        userId,
+        tenantId,
         isDeleted: false,
         createdAt: { $gte: thirtyDaysAgo },
         amount: { $gte: minAmount, $lte: maxAmount },

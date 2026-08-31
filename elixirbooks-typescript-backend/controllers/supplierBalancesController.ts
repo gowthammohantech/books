@@ -12,12 +12,12 @@
 // Only suppliers with ANY AP activity (a purchase OR supplier payment OR debit
 // note) are included. A TOTALS row is returned alongside the per-supplier rows.
 //
-// All figures are Decimal-safe (Prisma.Decimal). Tenant-scoped via requireUserId.
+// All figures are Decimal-safe (Prisma.Decimal). Tenant-scoped via requireTenantId.
 import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
 import { toCsv, type CsvColumn } from '../lib/export/csv';
 
@@ -45,7 +45,7 @@ interface SupplierBalanceRow {
  * Returns rows sorted by Balance Due (desc) plus a totals bucket.
  */
 async function buildSupplierBalances(
-  userId: string,
+  tenantId: string,
 ): Promise<{ rows: SupplierBalanceRow[]; totals: { bills: string; paymentsAndReturns: string; balance: string } }> {
   const buckets = new Map<string, Bucket>();
 
@@ -79,7 +79,7 @@ async function buildSupplierBalances(
   //    over-state payables versus the AP control account.
   const purchases = await prisma.purchase.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       status: { notIn: ['new', 'cancelled'] },
       approvalStatus: { in: ['NOT_REQUIRED', 'APPROVED'] },
@@ -97,14 +97,14 @@ async function buildSupplierBalances(
     b.bills = b.bills.plus(p.totalAmount ?? 0);
   }
 
-  // Debit — supplier payments. SupplierPayment has no userId column; it is
+  // Debit — supplier payments. SupplierPayment has no tenantId column; it is
   // tenant-scoped through its parent purchase. Void via isVoided / isDeleted.
   const payments = await prisma.supplierPayment.findMany({
     where: {
       isVoided: false,
       isDeleted: false,
       contactId: { not: null },
-      purchase: { is: { userId } },
+      purchase: { is: { tenantId } },
     },
     select: {
       contactId: true,
@@ -127,7 +127,7 @@ async function buildSupplierBalances(
   // so counting it here would under-state payables versus the AP control account.
   const debitNotes = await prisma.debitNote.findMany({
     where: {
-      userId,
+      tenantId,
       isDeleted: false,
       status: { notIn: ['new', 'cancelled'] },
       contactId: { not: null },
@@ -201,8 +201,8 @@ function sendCsv(res: Response, filename: string, csv: string): void {
  */
 export async function supplierBalances(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const { rows, totals } = await buildSupplierBalances(userId);
+    const tenantId = requireTenantId(req);
+    const { rows, totals } = await buildSupplierBalances(tenantId);
 
     const wantsCsv =
       req.query.format === 'csv' || /\.csv$/i.test(req.path) || /\.csv$/i.test(req.originalUrl.split('?')[0]);

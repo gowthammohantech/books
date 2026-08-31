@@ -2,13 +2,13 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { razorpayGateway } from '../lib/paymentGateways/razorpayGateway';
 import { decryptConfigSecrets, gatewaySecretKeys } from '../lib/configSecret';
 
-async function loadConfig(userId: string): Promise<unknown | null> {
+async function loadConfig(tenantId: string): Promise<unknown | null> {
   const row = await prisma.gatewayConfig.findUnique({
-    where: { userId_kind: { userId, kind: 'RAZORPAY' } },
+    where: { tenantId_kind: { tenantId, kind: 'RAZORPAY' } },
   });
   if (!row || !row.enabled) return null;
   // Decrypt secrets only here, at point-of-use, before calling the gateway.
@@ -17,11 +17,11 @@ async function loadConfig(userId: string): Promise<unknown | null> {
 
 export async function createOrder(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { invoiceId } = req.params as { invoiceId: string };
 
     const invoice = await prisma.invoice.findFirst({
-      where: { id: invoiceId, userId, isDeleted: false },
+      where: { id: invoiceId, tenantId, isDeleted: false },
       select: {
         id: true, invoiceNumber: true, TotalAmount: true, vat: true,
       },
@@ -31,7 +31,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const config = await loadConfig(userId);
+    const config = await loadConfig(tenantId);
     if (!config) {
       res.status(400).json({ success: false, message: 'Razorpay not configured' });
       return;
@@ -54,7 +54,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
 
     const txn = await prisma.paymentTransaction.create({
       data: {
-        userId,
+        tenantId,
         invoiceId: invoice.id,
         kind: 'RAZORPAY',
         status: 'CREATED',
@@ -87,7 +87,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
 
 export async function verifyPayment(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as { razorpay_order_id?: string; razorpay_payment_id?: string; razorpay_signature?: string };
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = body;
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
@@ -95,7 +95,7 @@ export async function verifyPayment(req: Request, res: Response): Promise<void> 
       return;
     }
 
-    const config = await loadConfig(userId);
+    const config = await loadConfig(tenantId);
     if (!config) {
       res.status(400).json({ success: false, message: 'Razorpay not configured' });
       return;
@@ -114,7 +114,7 @@ export async function verifyPayment(req: Request, res: Response): Promise<void> 
     }
 
     const txn = await prisma.paymentTransaction.findFirst({
-      where: { userId, gatewayOrderId: razorpay_order_id },
+      where: { tenantId, gatewayOrderId: razorpay_order_id },
     });
     if (!txn) {
       res.status(404).json({ success: false, message: 'Transaction not found' });
@@ -143,12 +143,12 @@ export async function verifyPayment(req: Request, res: Response): Promise<void> 
 
 export async function refund(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { paymentTransactionId } = req.params as { paymentTransactionId: string };
     const body = req.body as { amount?: number; reason?: string };
 
     const txn = await prisma.paymentTransaction.findFirst({
-      where: { id: paymentTransactionId, userId, kind: 'RAZORPAY' },
+      where: { id: paymentTransactionId, tenantId, kind: 'RAZORPAY' },
     });
     if (!txn || !txn.gatewayPaymentId) {
       res.status(404).json({ success: false, message: 'Razorpay transaction not found' });
@@ -159,7 +159,7 @@ export async function refund(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const config = await loadConfig(userId);
+    const config = await loadConfig(tenantId);
     if (!config) {
       res.status(400).json({ success: false, message: 'Razorpay not configured' });
       return;
@@ -180,7 +180,7 @@ export async function refund(req: Request, res: Response): Promise<void> {
 
     const refundRow = await prisma.refund.create({
       data: {
-        userId,
+        tenantId,
         paymentTransactionId: txn.id,
         amount: new Prisma.Decimal(amount),
         status: result.status === 'CAPTURED' ? 'CAPTURED' : 'PENDING',

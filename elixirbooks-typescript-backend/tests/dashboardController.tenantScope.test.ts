@@ -5,7 +5,7 @@
  * previously aggregated counts, KPIs, graphs, and aging/top-debtor data
  * across ALL tenants (only the supplier count was scoped). These tests mock
  * prisma and assert that the `where` object passed to every tenant-owned
- * model's query carries the tenant's userId (directly, or via the parent
+ * model's query carries the tenant's tenantId (directly, or via the parent
  * relation for InvoicePayment/SupplierPayment).
  *
  * Product is intentionally excluded — it is a shared catalog with no
@@ -112,17 +112,17 @@ describe('dashboardController.getDashboard — tenant scoping', () => {
 
     expect(res.status).not.toHaveBeenCalledWith(401);
 
-    // Every invoice.count / invoice.findMany / invoice.aggregate call must carry userId.
+    // Every invoice.count / invoice.findMany / invoice.aggregate call must carry tenantId.
     for (const call of mockInvoiceCount.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ userId: TENANT_ID }));
+      expect(call[0].where).toEqual(expect.objectContaining({ tenantId: TENANT_ID }));
     }
     expect(mockInvoiceFindMany.mock.calls.length).toBeGreaterThan(0);
     for (const call of mockInvoiceFindMany.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ userId: TENANT_ID }));
+      expect(call[0].where).toEqual(expect.objectContaining({ tenantId: TENANT_ID }));
     }
     expect(mockInvoiceAggregate.mock.calls.length).toBeGreaterThan(0);
     for (const call of mockInvoiceAggregate.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ userId: TENANT_ID }));
+      expect(call[0].where).toEqual(expect.objectContaining({ tenantId: TENANT_ID }));
     }
   });
 
@@ -131,10 +131,10 @@ describe('dashboardController.getDashboard — tenant scoping', () => {
     await getDashboard(req, res);
 
     expect(mockCustomerCount).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     expect(mockCustomerFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
   });
 
@@ -144,10 +144,10 @@ describe('dashboardController.getDashboard — tenant scoping', () => {
 
     expect(mockPurchaseFindMany.mock.calls.length).toBeGreaterThan(0);
     for (const call of mockPurchaseFindMany.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ userId: TENANT_ID }));
+      expect(call[0].where).toEqual(expect.objectContaining({ tenantId: TENANT_ID }));
     }
     for (const call of mockPurchaseAggregate.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ userId: TENANT_ID }));
+      expect(call[0].where).toEqual(expect.objectContaining({ tenantId: TENANT_ID }));
     }
   });
 
@@ -157,12 +157,12 @@ describe('dashboardController.getDashboard — tenant scoping', () => {
 
     expect(mockInvoicePaymentFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ invoice: { userId: TENANT_ID } }),
+        where: expect.objectContaining({ invoice: { tenantId: TENANT_ID } }),
       }),
     );
     expect(mockInvoicePaymentAggregate).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ invoice: { userId: TENANT_ID } }),
+        where: expect.objectContaining({ invoice: { tenantId: TENANT_ID } }),
       }),
     );
   });
@@ -173,7 +173,7 @@ describe('dashboardController.getDashboard — tenant scoping', () => {
 
     expect(mockSupplierPaymentAggregate).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ purchase: { userId: TENANT_ID } }),
+        where: expect.objectContaining({ purchase: { tenantId: TENANT_ID } }),
       }),
     );
   });
@@ -183,10 +183,10 @@ describe('dashboardController.getDashboard — tenant scoping', () => {
     await getDashboard(req, res);
 
     expect(mockQuotationCount).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     expect(mockDebitNoteCount).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
   });
 });

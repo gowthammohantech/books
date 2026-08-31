@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
-import { requireUserId } from '../../lib/tenantScope';
+import { requireTenantId } from '../../lib/tenantScope';
 import { COUNTRY_PACKS, COUNTRY_CODES } from '../../lib/ledger/packs';
 import { applyPack, type ApplyPackTx } from '../../lib/ledger/applyPack';
 import { LedgerError } from '../../lib/ledger/buildLines';
@@ -22,9 +22,9 @@ export async function listCountryPacks(_req: Request, res: Response): Promise<vo
 
 export async function ledgerStatus(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const s = await prisma.companySettings.findFirst({
-      where: { userId },
+      where: { tenantId },
       select: {
         countryCode: true,
         functionalCurrency: true,
@@ -57,7 +57,7 @@ export async function ledgerStatus(req: Request, res: Response): Promise<void> {
 
 export async function applyCountryPack(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { countryCode, functionalCurrency, fiscalYearStartMonth, goLiveDate } = req.body ?? {};
     if (!countryCode || !COUNTRY_CODES.includes(countryCode)) {
       res.status(400).json({ success: false, message: 'Invalid or unsupported countryCode' });
@@ -74,7 +74,7 @@ export async function applyCountryPack(req: Request, res: Response): Promise<voi
     }
     await prisma.$transaction((tx) =>
       applyPack(tx as unknown as ApplyPackTx, {
-        userId, countryCode,
+        tenantId, countryCode,
         functionalCurrency: functionalCurrency || undefined,
         fiscalYearStartMonth: fiscalYearStartMonth ? Number(fiscalYearStartMonth) : undefined,
         goLiveDate: goLive,
@@ -87,8 +87,8 @@ export async function applyCountryPack(req: Request, res: Response): Promise<voi
     // without waiting for the next deploy/boot. Both are idempotent and
     // best-effort: never let them fail the ledger-setup response.
     try {
-      await seedTransactionCategoriesForUser(userId);
-      await ensureDefaultTaxGroup(userId);
+      await seedTransactionCategoriesForUser(tenantId);
+      await ensureDefaultTaxGroup(tenantId);
     } catch (seedErr) {
       console.warn('post-applyPack seed skipped (non-fatal):', seedErr);
     }

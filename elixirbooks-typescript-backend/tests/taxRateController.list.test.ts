@@ -47,7 +47,7 @@ describe('getAllTaxRates — unified Taxes list', () => {
     await getAllTaxRates({ query: {}, tenantId: 'tenant-1', user: 'tenant-1' } as never, res as never);
     expect(mockFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ userId: 'tenant-1', isDeleted: false }),
+        where: expect.objectContaining({ tenantId: 'tenant-1', isDeleted: false }),
       }),
     );
   });

@@ -2,7 +2,7 @@
  * Lazy per-tenant provisioning of synthesized GST component rates
  * (spec 2026-07-12 §4B). Component `taxes[]` entries need REAL taxRateIds so
  * GSTR-style reporting by taxKind keeps working: for each synthesized
- * component we reuse an existing (userId, GST_INDIA, taxKind, rate) row —
+ * component we reuse an existing (tenantId, GST_INDIA, taxKind, rate) row —
  * e.g. a demo-seeded "CGST 9%" — or create one flagged `isSystemComponent`
  * (hidden from the user-facing Taxes list). Idempotent by construction.
  *
@@ -25,7 +25,7 @@ export interface ProvisionedComponent extends GstComponentSpec {
 
 export async function ensureGstComponentRates(
   db: ComponentRateDb,
-  userId: string,
+  tenantId: string,
   specs: GstComponentSpec[],
   countryId?: string | null,
 ): Promise<ProvisionedComponent[]> {
@@ -33,7 +33,7 @@ export async function ensureGstComponentRates(
   for (const spec of specs) {
     // eslint-disable-next-line no-await-in-loop
     const existing = await db.taxRate.findFirst({
-      where: { userId, regime: 'GST_INDIA', taxKind: spec.kind, rate: spec.percent, isDeleted: false },
+      where: { tenantId, regime: 'GST_INDIA', taxKind: spec.kind, rate: spec.percent, isDeleted: false },
       select: { id: true },
     });
     if (existing) {
@@ -43,7 +43,7 @@ export async function ensureGstComponentRates(
     // eslint-disable-next-line no-await-in-loop
     const created = await db.taxRate.create({
       data: {
-        userId,
+        tenantId,
         regime: 'GST_INDIA',
         taxKind: spec.kind,
         name: spec.name,

@@ -4,7 +4,7 @@ import type { BankTransactionType, ExplainStatus } from '@prisma/client';
 import { parse } from 'csv-parse/sync';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 import { matchBankTransaction, type MatchCandidate } from '../lib/reconciliationMatcher';
 import { applyAutoMatch, type ApplyProposalDb } from '../lib/moneyFlow/applyProposal';
@@ -152,7 +152,7 @@ function contactName(
  */
 async function buildExplanationMap(
   txns: LabelTxn[],
-  userId: string,
+  tenantId: string,
 ): Promise<Map<string, ExplanationLabel>> {
   const out = new Map<string, ExplanationLabel>();
 
@@ -227,7 +227,7 @@ async function buildExplanationMap(
   const [invoicePayments, supplierPayments, expenses] = await Promise.all([
     invoicePaymentIds.size
       ? prisma.invoicePayment.findMany({
-          where: { id: { in: [...invoicePaymentIds] }, invoice: { userId } },
+          where: { id: { in: [...invoicePaymentIds] }, invoice: { tenantId } },
           select: {
             id: true,
             invoice: {
@@ -243,7 +243,7 @@ async function buildExplanationMap(
       : Promise.resolve([]),
     supplierPaymentIds.size
       ? prisma.supplierPayment.findMany({
-          where: { id: { in: [...supplierPaymentIds] }, purchase: { userId } },
+          where: { id: { in: [...supplierPaymentIds] }, purchase: { tenantId } },
           select: {
             id: true,
             purchase: {
@@ -259,7 +259,7 @@ async function buildExplanationMap(
       : Promise.resolve([]),
     expenseIds.size
       ? prisma.expense.findMany({
-          where: { id: { in: [...expenseIds] }, userId },
+          where: { id: { in: [...expenseIds] }, tenantId },
           select: {
             id: true,
             description: true,
@@ -302,14 +302,14 @@ async function buildExplanationMap(
   const [catAccounts, journalEntries] = await Promise.all([
     categoryIds.size
       ? prisma.account.findMany({
-          where: { id: { in: [...categoryIds] }, userId },
+          where: { id: { in: [...categoryIds] }, tenantId },
           select: { id: true, code: true, name: true },
         })
       : Promise.resolve([]),
     jeSourceIds.size
       ? prisma.journalEntry.findMany({
           where: {
-            userId,
+            tenantId,
             isDeleted: false,
             sourceType: { in: [...jeSourceTypes] },
             sourceId: { in: [...jeSourceIds] },
@@ -473,7 +473,7 @@ function transactionTypeKind(key: string | null): string {
  * columns. Resolves the proposed invoice/purchase (tenant-scoped) for a
  * document-backed proposal, else falls back to the proposed category / type.
  */
-async function buildProposal(t: LabelTxn, userId: string): Promise<ProposalLabel | null> {
+async function buildProposal(t: LabelTxn, tenantId: string): Promise<ProposalLabel | null> {
   if (t.explainStatus !== 'FOR_APPROVAL') return null;
 
   const base = {
@@ -485,7 +485,7 @@ async function buildProposal(t: LabelTxn, userId: string): Promise<ProposalLabel
 
   if (t.proposedRelatedType === 'INVOICE' && t.proposedRelatedId) {
     const inv = await prisma.invoice.findFirst({
-      where: { id: t.proposedRelatedId, userId },
+      where: { id: t.proposedRelatedId, tenantId },
       select: {
         id: true,
         invoiceNumber: true,
@@ -509,7 +509,7 @@ async function buildProposal(t: LabelTxn, userId: string): Promise<ProposalLabel
     }
   } else if (t.proposedRelatedType === 'PURCHASE' && t.proposedRelatedId) {
     const pur = await prisma.purchase.findFirst({
-      where: { id: t.proposedRelatedId, userId },
+      where: { id: t.proposedRelatedId, tenantId },
       select: {
         id: true,
         purchaseId: true,
@@ -536,7 +536,7 @@ async function buildProposal(t: LabelTxn, userId: string): Promise<ProposalLabel
   // Payment / category-style proposal (hint-backed; no document).
   if (t.proposedCategoryId) {
     const cat = await prisma.transactionCategory.findFirst({
-      where: { id: t.proposedCategoryId, userId },
+      where: { id: t.proposedCategoryId, tenantId },
       select: { name: true },
     });
     if (cat) {
@@ -571,13 +571,13 @@ async function buildProposal(t: LabelTxn, userId: string): Promise<ProposalLabel
 
 export async function list(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const page = Math.max(1, parseInt((req.query.page as string) ?? '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt((req.query.limit as string) ?? '20', 10)));
 
     // Only see transactions on bank accounts owned by this user.
     const accounts = await prisma.bankDetail.findMany({
-      where: { userId, isDeleted: false },
+      where: { tenantId, isDeleted: false },
       select: { id: true },
     });
     const accountIds = accounts.map((a) => a.id);
@@ -671,13 +671,13 @@ export async function list(req: Request, res: Response): Promise<void> {
       matchConfidence: r.matchConfidence,
       matchScore: r.matchScore,
     }));
-    const explanationMap = await buildExplanationMap(labelTxns, userId);
+    const explanationMap = await buildExplanationMap(labelTxns, tenantId);
     const proposalMap = new Map<string, ProposalLabel>();
     await Promise.all(
       labelTxns
         .filter((t) => t.explainStatus === 'FOR_APPROVAL')
         .map(async (t) => {
-          const p = await buildProposal(t, userId);
+          const p = await buildProposal(t, tenantId);
           if (p) proposalMap.set(t.id, p);
         }),
     );
@@ -759,11 +759,11 @@ export async function list(req: Request, res: Response): Promise<void> {
 
 export async function getById(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const row = await prisma.bankTransaction.findFirst({
-      where: { id, bankAccount: { userId, isDeleted: false }, isDeleted: false },
+      where: { id, bankAccount: { tenantId, isDeleted: false }, isDeleted: false },
       include: {
         bankAccount: { select: { id: true, bankName: true, accountNumber: true } },
         paymentMode: { select: { id: true, name: true, slug: true } },
@@ -794,9 +794,9 @@ export async function getById(req: Request, res: Response): Promise<void> {
       matchConfidence: row.matchConfidence,
       matchScore: row.matchScore,
     };
-    const explanationMap = await buildExplanationMap([labelTxn], userId);
+    const explanationMap = await buildExplanationMap([labelTxn], tenantId);
     const proposal =
-      row.explainStatus === 'FOR_APPROVAL' ? await buildProposal(labelTxn, userId) : null;
+      row.explainStatus === 'FOR_APPROVAL' ? await buildProposal(labelTxn, tenantId) : null;
 
     res.json({
       success: true,
@@ -827,7 +827,7 @@ export async function getById(req: Request, res: Response): Promise<void> {
 
 export async function create(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as {
       bankAccountId?: string;
       transactionDate?: string;
@@ -847,7 +847,7 @@ export async function create(req: Request, res: Response): Promise<void> {
     }
 
     const account = await prisma.bankDetail.findFirst({
-      where: { id: body.bankAccountId, userId, isDeleted: false },
+      where: { id: body.bankAccountId, tenantId, isDeleted: false },
     });
     if (!account) {
       res.status(404).json({ success: false, message: 'Bank account not found' });
@@ -875,7 +875,7 @@ export async function create(req: Request, res: Response): Promise<void> {
 
       const t = await tx.bankTransaction.create({
         data: {
-          tenantId: userId,
+          tenantId: tenantId,
           bankAccountId: body.bankAccountId!,
           transactionDate: body.transactionDate ? new Date(body.transactionDate) : new Date(),
           type: body.type as BankTransactionType,
@@ -910,7 +910,7 @@ export async function create(req: Request, res: Response): Promise<void> {
             relatedType: t.relatedType,
             explainStatus: t.explainStatus,
           },
-          userId,
+          tenantId,
         );
         if (applied.autoPostEligible) autoPostEligibleIds.push(t.id);
       } catch (matchErr) {
@@ -922,7 +922,7 @@ export async function create(req: Request, res: Response): Promise<void> {
 
     // Post-commit AUTO-POST pass: safe (isolated tx), best-effort, gated on the
     // tenant toggle. A failure leaves the durable FOR_APPROVAL row untouched.
-    await runAutoPostPass(userId, autoPostEligibleIds);
+    await runAutoPostPass(tenantId, autoPostEligibleIds);
 
     res.status(201).json({
       success: true,
@@ -952,11 +952,11 @@ export async function create(req: Request, res: Response): Promise<void> {
 
 export async function remove(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const existing = await prisma.bankTransaction.findFirst({
-      where: { id, bankAccount: { userId, isDeleted: false }, isDeleted: false },
+      where: { id, bankAccount: { tenantId, isDeleted: false }, isDeleted: false },
     });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Bank transaction not found' });
@@ -991,7 +991,7 @@ export async function remove(req: Request, res: Response): Promise<void> {
         new Prisma.Decimal(existing.balanceBefore.toString()),
       );
       const account = await tx.bankDetail.findFirst({
-        where: { id: existing.bankAccountId, userId, isDeleted: false },
+        where: { id: existing.bankAccountId, tenantId, isDeleted: false },
         select: { id: true, currentBalance: true },
       });
       if (account) {
@@ -1064,7 +1064,7 @@ function extractReference(row: Record<string, string>): string {
 
 export async function importPreview(req: Request, res: Response): Promise<void> {
   try {
-    requireUserId(req);
+    requireTenantId(req);
     const file = (req as Request & { file?: Express.Multer.File }).file;
     if (!file) {
       res.status(400).json({ success: false, message: 'CSV file required' });
@@ -1139,7 +1139,7 @@ export async function importPreview(req: Request, res: Response): Promise<void> 
 
 export async function importConfirm(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as {
       bankAccountId?: string;
       rows?: Array<{
@@ -1160,7 +1160,7 @@ export async function importConfirm(req: Request, res: Response): Promise<void> 
     }
 
     const account = await prisma.bankDetail.findFirst({
-      where: { id: body.bankAccountId, userId, isDeleted: false },
+      where: { id: body.bankAccountId, tenantId, isDeleted: false },
     });
     if (!account) {
       res.status(404).json({ success: false, message: 'Bank account not found' });
@@ -1185,7 +1185,7 @@ export async function importConfirm(req: Request, res: Response): Promise<void> 
 
         const t = await tx.bankTransaction.create({
           data: {
-            tenantId: userId,
+            tenantId: tenantId,
             bankAccountId: body.bankAccountId!,
             transactionDate: new Date(row.date),
             type: row.type === 'WITHDRAWAL' ? 'WITHDRAWAL' : 'DEPOSIT',
@@ -1214,7 +1214,7 @@ export async function importConfirm(req: Request, res: Response): Promise<void> 
               relatedType: t.relatedType,
               explainStatus: t.explainStatus,
             },
-            userId,
+            tenantId,
           );
           if (applied.autoPostEligible) autoPostEligibleIds.push(t.id);
         } catch (matchErr) {
@@ -1233,7 +1233,7 @@ export async function importConfirm(req: Request, res: Response): Promise<void> 
     // Post-commit AUTO-POST pass over the eligible imported rows: safe (isolated
     // per-row tx), best-effort, gated on the tenant toggle. One row's post failure
     // leaves it FOR_APPROVAL and never affects the others.
-    await runAutoPostPass(userId, autoPostEligibleIds);
+    await runAutoPostPass(tenantId, autoPostEligibleIds);
 
     res.status(201).json({
       success: true,
@@ -1256,13 +1256,13 @@ export async function importConfirm(req: Request, res: Response): Promise<void> 
 
 export async function suggestMatches(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const txn = await prisma.bankTransaction.findFirst({
       where: {
         id,
-        bankAccount: { userId, isDeleted: false },
+        bankAccount: { tenantId, isDeleted: false },
         isDeleted: false,
         isReconciled: false,
       },
@@ -1284,7 +1284,7 @@ export async function suggestMatches(req: Request, res: Response): Promise<void>
       // Match against InvoicePayments (customer payments incoming)
       const payments = await prisma.invoicePayment.findMany({
         where: {
-          invoice: { userId, isDeleted: false },
+          invoice: { tenantId, isDeleted: false },
           paymentTransactionId: null, // not already linked to a gateway txn
         },
         include: {
@@ -1304,7 +1304,7 @@ export async function suggestMatches(req: Request, res: Response): Promise<void>
     } else {
       // Match against SupplierPayments (outgoing payments to vendors)
       const payments = await prisma.supplierPayment.findMany({
-        where: { createdBy: userId, isDeleted: false },
+        where: { createdBy: tenantId, isDeleted: false },
         include: {
           purchase: { select: { id: true, purchaseId: true } },
         },
@@ -1360,7 +1360,7 @@ export async function suggestMatches(req: Request, res: Response): Promise<void>
 
 export async function link(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = req.body as {
       relatedType?: 'INVOICE_PAYMENT' | 'SUPPLIER_PAYMENT';
@@ -1376,7 +1376,7 @@ export async function link(req: Request, res: Response): Promise<void> {
     }
 
     const txn = await prisma.bankTransaction.findFirst({
-      where: { id, bankAccount: { userId, isDeleted: false }, isDeleted: false },
+      where: { id, bankAccount: { tenantId, isDeleted: false }, isDeleted: false },
     });
     if (!txn) {
       res.status(404).json({ success: false, message: 'Bank transaction not found' });
@@ -1428,7 +1428,7 @@ export async function link(req: Request, res: Response): Promise<void> {
         isDeleted: false,
         relatedType: body.relatedType,
         relatedId: body.relatedId,
-        bankAccount: { userId, isDeleted: false },
+        bankAccount: { tenantId, isDeleted: false },
       },
       select: { id: true },
     });
@@ -1446,7 +1446,7 @@ export async function link(req: Request, res: Response): Promise<void> {
         relatedType: body.relatedType,
         relatedId: body.relatedId,
         isReconciled: true,
-        reconciledBy: userId,
+        reconciledBy: tenantId,
         reconciliationDate: new Date(),
         reconciliationNote: body.note ?? null,
       },
@@ -1473,11 +1473,11 @@ export async function link(req: Request, res: Response): Promise<void> {
 
 export async function unlink(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const txn = await prisma.bankTransaction.findFirst({
-      where: { id, bankAccount: { userId, isDeleted: false }, isDeleted: false },
+      where: { id, bankAccount: { tenantId, isDeleted: false }, isDeleted: false },
     });
     if (!txn) {
       res.status(404).json({ success: false, message: 'Bank transaction not found' });
@@ -1535,11 +1535,11 @@ export async function unlink(req: Request, res: Response): Promise<void> {
 
 export async function analyse(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const txn = await prisma.bankTransaction.findFirst({
-      where: { id, bankAccount: { userId, isDeleted: false }, isDeleted: false },
+      where: { id, bankAccount: { tenantId, isDeleted: false }, isDeleted: false },
     });
     if (!txn) {
       res.status(404).json({ success: false, message: 'Bank transaction not found' });
@@ -1558,11 +1558,11 @@ export async function analyse(req: Request, res: Response): Promise<void> {
         relatedType: txn.relatedType,
         explainStatus: txn.explainStatus,
       },
-      userId,
+      tenantId,
     );
 
     // On-demand analyse also honours the auto-post tier (same best-effort pass).
-    if (autoPostEligible) await runAutoPostPass(userId, [txn.id]);
+    if (autoPostEligible) await runAutoPostPass(tenantId, [txn.id]);
 
     // AI fallback: if the local matcher found nothing, ask the gateway to
     // classify the transaction into a category (best-effort, never throws).
@@ -1578,7 +1578,7 @@ export async function analyse(req: Request, res: Response): Promise<void> {
           relatedType: txn.relatedType,
           explainStatus: txn.explainStatus,
         },
-        userId,
+        tenantId,
       );
       effectiveStatus = ai.status;
     }
@@ -1602,11 +1602,11 @@ const ANALYSE_ALL_CAP = 500;
 
 export async function analyseAll(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const txns = await prisma.bankTransaction.findMany({
       where: {
-        bankAccount: { userId, isDeleted: false },
+        bankAccount: { tenantId, isDeleted: false },
         isDeleted: false,
         relatedType: 'MANUAL',
         explainStatus: 'UNEXPLAINED',
@@ -1633,7 +1633,7 @@ export async function analyseAll(req: Request, res: Response): Promise<void> {
             relatedType: txn.relatedType,
             explainStatus: txn.explainStatus,
           },
-          userId,
+          tenantId,
         );
         if (status === 'FOR_APPROVAL') queued += 1;
         if (autoPostEligible) autoPostEligibleIds.push(txn.id);
@@ -1643,7 +1643,7 @@ export async function analyseAll(req: Request, res: Response): Promise<void> {
     }
 
     // Post-pass auto-post over eligible rows (best-effort, tenant-gated).
-    const autoPosted = await runAutoPostPass(userId, autoPostEligibleIds);
+    const autoPosted = await runAutoPostPass(tenantId, autoPostEligibleIds);
 
     res.json({ success: true, data: { analysed, queued, autoPosted } });
   } catch (err) {
@@ -1711,12 +1711,12 @@ interface ProposalTxnRow {
  * autoPosted=true so the row is EXPLAINED + auto-posted atomically.
  */
 async function claimForApproval(
-  userId: string,
+  tenantId: string,
   id: string,
   opts?: { markAutoPosted?: boolean },
 ): Promise<boolean> {
   const res = await prisma.bankTransaction.updateMany({
-    where: { id, explainStatus: 'FOR_APPROVAL', bankAccount: { userId, isDeleted: false }, isDeleted: false },
+    where: { id, explainStatus: 'FOR_APPROVAL', bankAccount: { tenantId, isDeleted: false }, isDeleted: false },
     data: { explainStatus: 'EXPLAINED', ...(opts?.markAutoPosted ? { autoPosted: true } : {}) },
   });
   return res.count > 0;
@@ -1728,12 +1728,12 @@ async function claimForApproval(
  * auto-post path. Safe to call unconditionally on the failure branch.
  */
 async function releaseClaim(
-  userId: string,
+  tenantId: string,
   id: string,
   opts?: { markAutoPosted?: boolean },
 ): Promise<void> {
   await prisma.bankTransaction.updateMany({
-    where: { id, bankAccount: { userId, isDeleted: false }, isDeleted: false },
+    where: { id, bankAccount: { tenantId, isDeleted: false }, isDeleted: false },
     data: { explainStatus: 'FOR_APPROVAL', ...(opts?.markAutoPosted ? { autoPosted: false } : {}) },
   });
 }
@@ -1751,7 +1751,7 @@ async function releaseClaim(
  */
 function assembleProposalExplainInput(
   txn: ProposalTxnRow,
-  userId: string,
+  tenantId: string,
   body: Record<string, unknown>,
   opts?: { markAutoPosted?: boolean },
 ): ExplainInput | null {
@@ -1772,7 +1772,7 @@ function assembleProposalExplainInput(
 
   return {
     bankTxnId: txn.id,
-    userId,
+    tenantId,
     transactionTypeKey,
     categoryId,
     payToUserId,
@@ -1793,7 +1793,7 @@ function assembleProposalExplainInput(
     // $transaction, after the stamp, so it rolls back if posting fails.
     onPosted: async (tx) => {
       await recordHint(tx as never, {
-        userId,
+        tenantId,
         payee: txn.remarks || txn.referenceNo,
         transactionTypeKey,
         categoryId,
@@ -1839,7 +1839,7 @@ function assembleProposalExplainInput(
  * strict eligibility bar (autoMatch.autoPostEligible) + one-click unexplain undo are
  * the compensating controls (the FE toggle copy warns the user).
  */
-async function runAutoPostPass(userId: string, eligibleIds: string[]): Promise<number> {
+async function runAutoPostPass(tenantId: string, eligibleIds: string[]): Promise<number> {
   if (eligibleIds.length === 0) return 0;
 
   let posted = 0;
@@ -1849,7 +1849,7 @@ async function runAutoPostPass(userId: string, eligibleIds: string[]): Promise<n
   // duplicate the imported rows. Swallow + warn; the durable FOR_APPROVAL rows stand.
   try {
     const settings = await prisma.companySettings.findFirst({
-      where: { userId },
+      where: { tenantId },
       select: { bankAutoPostEnabled: true },
     });
     if (!settings?.bankAutoPostEnabled) return 0; // default OFF → preserve queue behaviour
@@ -1857,21 +1857,21 @@ async function runAutoPostPass(userId: string, eligibleIds: string[]): Promise<n
     for (const id of eligibleIds) {
       // Atomic claim: exactly one poster wins FOR_APPROVAL → EXPLAINED (+autoPosted).
       // A loser (already claimed by a concurrent pass/approve) gets false → skip.
-      const claimed = await claimForApproval(userId, id, { markAutoPosted: true });
+      const claimed = await claimForApproval(tenantId, id, { markAutoPosted: true });
       if (!claimed) continue;
 
       try {
         // Read AFTER claiming; proposal fields are still intact (explainAndPost's
         // onPosted clears them only on success).
         const txn = await prisma.bankTransaction.findFirst({
-          where: { id, bankAccount: { userId, isDeleted: false }, isDeleted: false },
+          where: { id, bankAccount: { tenantId, isDeleted: false }, isDeleted: false },
         });
         const input = txn
-          ? assembleProposalExplainInput(txn as unknown as ProposalTxnRow, userId, {}, { markAutoPosted: true })
+          ? assembleProposalExplainInput(txn as unknown as ProposalTxnRow, tenantId, {}, { markAutoPosted: true })
           : null;
         if (!input) {
           // Nothing to post from — undo the claim so the row returns to the queue.
-          await releaseClaim(userId, id, { markAutoPosted: true });
+          await releaseClaim(tenantId, id, { markAutoPosted: true });
           continue;
         }
 
@@ -1880,7 +1880,7 @@ async function runAutoPostPass(userId: string, eligibleIds: string[]): Promise<n
       } catch (err) {
         // PeriodLockedError or ANY posting error → roll the claim back to
         // FOR_APPROVAL (never lose the match), warn, and carry on with the rest.
-        await releaseClaim(userId, id, { markAutoPosted: true });
+        await releaseClaim(tenantId, id, { markAutoPosted: true });
         console.warn(
           `bank auto-post skipped for ${id}; left in FOR_APPROVAL queue:`,
           err instanceof Error ? err.message : err,
@@ -1898,12 +1898,12 @@ async function runAutoPostPass(userId: string, eligibleIds: string[]): Promise<n
 
 export async function approveBankTransaction(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = (req.body ?? {}) as Record<string, unknown>;
 
     const txn = await prisma.bankTransaction.findFirst({
-      where: { id, bankAccount: { userId, isDeleted: false }, isDeleted: false },
+      where: { id, bankAccount: { tenantId, isDeleted: false }, isDeleted: false },
     });
     if (!txn) {
       res.status(404).json({ success: false, message: 'Bank transaction not found' });
@@ -1920,7 +1920,7 @@ export async function approveBankTransaction(req: Request, res: Response): Promi
     // Build the explain input from the stored proposal, letting an optional body
     // override each field (edit-then-approve). Reuses the SAME assembler as the
     // auto-post pass so the two posting paths never diverge.
-    const input = assembleProposalExplainInput(txn as unknown as ProposalTxnRow, userId, body);
+    const input = assembleProposalExplainInput(txn as unknown as ProposalTxnRow, tenantId, body);
     if (!input) {
       res.status(400).json({
         success: false,
@@ -1932,7 +1932,7 @@ export async function approveBankTransaction(req: Request, res: Response): Promi
     // Atomic claim to close the double-post TOCTOU (shares the guard with the
     // auto-post pass): flips FOR_APPROVAL → EXPLAINED in one statement so an
     // auto-post pass or a second approve racing this one cannot also post.
-    const claimed = await claimForApproval(userId, id);
+    const claimed = await claimForApproval(tenantId, id);
     if (!claimed) {
       res.status(409).json({
         success: false,
@@ -1947,7 +1947,7 @@ export async function approveBankTransaction(req: Request, res: Response): Promi
     } catch (postErr) {
       // Post failed → roll the claim back to FOR_APPROVAL so it can be retried,
       // then let the outer catch map the error (ExplainError → status, etc.).
-      await releaseClaim(userId, id);
+      await releaseClaim(tenantId, id);
       throw postErr;
     }
 
@@ -1971,11 +1971,11 @@ export async function approveBankTransaction(req: Request, res: Response): Promi
 
 export async function rejectBankTransaction(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const txn = await prisma.bankTransaction.findFirst({
-      where: { id, bankAccount: { userId, isDeleted: false }, isDeleted: false },
+      where: { id, bankAccount: { tenantId, isDeleted: false }, isDeleted: false },
     });
     if (!txn) {
       res.status(404).json({ success: false, message: 'Bank transaction not found' });

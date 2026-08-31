@@ -122,15 +122,15 @@ export interface InvoicePaymentForVoid {
  */
 export async function reverseInvoicePaymentEffects(
   tx: PaymentEffectsTx,
-  params: { userId: string; payment: InvoicePaymentForVoid; remarks?: string },
+  params: { tenantId: string; payment: InvoicePaymentForVoid; remarks?: string },
 ): Promise<void> {
-  const { userId, payment } = params;
+  const { tenantId, payment } = params;
   // Base-currency register value — the receipt INCREMENTED the base register by
   // this on create, so the void DECREMENTS the same base amount.
   const amount = baseFor(payment.amount, payment.exchangeRate);
 
   await reverseDocument(tx as unknown as PostingTx, {
-    userId,
+    tenantId,
     sourceType: 'InvoicePayment',
     sourceId: payment.id,
     event: 'payment',
@@ -200,19 +200,19 @@ export interface SupplierPaymentForVoid {
  *   - reverse the GL posting (SupplierPayment / paymentId / 'payment'),
  *   - BANK: INCREMENT bank.currentBalance + reversing TRANSFER_IN bankTransaction,
  *   - PETTY_CASH: INCREMENT pettyCash.currentBalance + reversing RETURN
- *     pettyCashTransaction (tenant-scoped strictly by userId).
+ *     pettyCashTransaction (tenant-scoped strictly by tenantId).
  */
 export async function reverseSupplierPaymentEffects(
   tx: PaymentEffectsTx,
-  params: { userId: string; payment: SupplierPaymentForVoid; remarks?: string },
+  params: { tenantId: string; payment: SupplierPaymentForVoid; remarks?: string },
 ): Promise<void> {
-  const { userId, payment } = params;
+  const { tenantId, payment } = params;
   // Base-currency register value — the payment DECREMENTED the base register by
   // this on create, so the void INCREMENTS the same base amount.
   const amount = baseFor(payment.paidAmount, payment.exchangeRate);
 
   await reverseDocument(tx as unknown as PostingTx, {
-    userId,
+    tenantId,
     sourceType: 'SupplierPayment',
     sourceId: payment.id,
     event: 'payment',
@@ -260,7 +260,7 @@ export async function reverseSupplierPaymentEffects(
     payment.movedBankBalance === true
   ) {
     const pettyCash = (await tx.pettyCash.findFirst({
-      where: { userId, isDeleted: false },
+      where: { tenantId, isDeleted: false },
     })) as { id: string; currentBalance: Prisma.Decimal | number | null } | null;
     if (pettyCash) {
       const balanceBefore = Number(pettyCash.currentBalance ?? 0);

@@ -84,10 +84,10 @@ function makeExpense(amount: string, date = new Date('2025-08-15T00:00:00Z'), de
   return { expenseDate: date, amount, description, referenceNo: null };
 }
 
-function makeReqRes(userId: string, params: { userId: string }, query: Record<string, string> = {}) {
+function makeReqRes(tenantId: string, params: { tenantId: string }, query: Record<string, string> = {}) {
   const req = {
-    user: userId,
-    tenantId: userId,
+    user: tenantId,
+    tenantId: tenantId,
     params,
     query,
     body: {},
@@ -172,7 +172,7 @@ describe('My Money reconciliation — totals tie to banking user-payments', () =
 
     mockTxnFindMany.mockResolvedValue(inWindowTxns);
 
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: TAX_YEAR });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: TAX_YEAR });
     await getMyMoney(req, res as import('express').Response);
     const { status, data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     expect(status).toBe(200);
@@ -266,7 +266,7 @@ describe('My Money reconciliation — totals tie to banking user-payments', () =
 
     mockTxnFindMany.mockResolvedValue([...beforeTxns, ...inWindowTxns]);
 
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: TAX_YEAR });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: TAX_YEAR });
     await getMyMoney(req, res as import('express').Response);
     const { status, data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     expect(status).toBe(200);
@@ -322,7 +322,7 @@ describe('My Money reconciliation — totals tie to banking user-payments', () =
     mockTxnFindMany.mockResolvedValue(settlementTxns);
     mockExpenseFindMany.mockResolvedValue(expenseRows);
 
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: TAX_YEAR });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: TAX_YEAR });
     await getMyMoney(req, res as import('express').Response);
     const { status, data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     expect(status).toBe(200);
@@ -435,7 +435,7 @@ describe('My Money reconciliation — totals tie to banking user-payments', () =
     mockTxnFindMany.mockResolvedValue([...beforeTxns, ...inWindowTxns]);
     mockExpenseFindMany.mockResolvedValue(expenseRows);
 
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: TAX_YEAR });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: TAX_YEAR });
     await getMyMoney(req, res as import('express').Response);
     const { status, data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     expect(status).toBe(200);

@@ -6,7 +6,7 @@
  * with no ownership check — the same tenant-isolation gap already fixed for
  * bank lookups in supplierPaymentController/invoiceController. A caller could
  * supply another tenant's bankId and have their balance debited/credited.
- * Every `bankId`-from-request lookup is now `findFirst({ where: { id, userId } })`.
+ * Every `bankId`-from-request lookup is now `findFirst({ where: { id, tenantId } })`.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Prisma } from '@prisma/client';
@@ -106,7 +106,7 @@ describe('expenseController — BankDetail tenant scoping (createExpense)', () =
     await createExpense(req, res);
 
     expect(mockBankDetailFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ id: 'bank-1', userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ id: 'bank-1', tenantId: TENANT_ID }) }),
     );
     // Foreign/missing bank -> not a successful create.
     expect(res.status).not.toHaveBeenCalledWith(201);
@@ -126,7 +126,7 @@ describe('expenseController — BankDetail tenant scoping (createExpense)', () =
     await createExpense(req, res);
 
     for (const call of mockBankDetailFindFirst.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ id: 'bank-1', userId: TENANT_ID }));
+      expect(call[0].where).toEqual(expect.objectContaining({ id: 'bank-1', tenantId: TENANT_ID }));
     }
     expect(mockBankDetailFindFirst.mock.calls.length).toBeGreaterThanOrEqual(2);
   });

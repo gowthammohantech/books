@@ -38,7 +38,7 @@ function makeReqRes(id: string) {
 function baseQuotation(overrides: Record<string, unknown> = {}) {
   return {
     id: 'q-1',
-    userId: 'user-1',
+    tenantId: 'user-1',
     quotationId: 'QT-000001',
     salesPerson: null,
     contactId: null,

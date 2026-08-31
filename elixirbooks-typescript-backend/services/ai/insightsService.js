@@ -13,7 +13,7 @@ const client = new Anthropic({
 /**
  * Get aggregated financial data for AI analysis
  */
-async function getFinancialData(userId) {
+async function getFinancialData(tenantId) {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -21,7 +21,7 @@ async function getFinancialData(userId) {
   const startOfYear = new Date(now.getFullYear(), 0, 1);
   const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1);
 
-  const userObjId = new mongoose.Types.ObjectId(userId);
+  const userObjId = new mongoose.Types.ObjectId(tenantId);
 
   const [
     monthlyRevenue,
@@ -42,7 +42,7 @@ async function getFinancialData(userId) {
     Invoice.aggregate([
       {
         $match: {
-          userId: userObjId,
+          tenantId: userObjId,
           isDeleted: false,
           invoiceDate: { $gte: startOfMonth },
           status: { $in: ["PAID", "PARTIALLY_PAID", "SENT", "UNPAID"] },
@@ -55,7 +55,7 @@ async function getFinancialData(userId) {
     Invoice.aggregate([
       {
         $match: {
-          userId: userObjId,
+          tenantId: userObjId,
           isDeleted: false,
           invoiceDate: { $gte: startOfLastMonth, $lte: endOfLastMonth },
           status: { $in: ["PAID", "PARTIALLY_PAID", "SENT", "UNPAID"] },
@@ -68,7 +68,7 @@ async function getFinancialData(userId) {
     Invoice.aggregate([
       {
         $match: {
-          userId: userObjId,
+          tenantId: userObjId,
           isDeleted: false,
           invoiceDate: { $gte: startOfYear },
           status: { $in: ["PAID", "PARTIALLY_PAID", "SENT", "UNPAID"] },
@@ -81,7 +81,7 @@ async function getFinancialData(userId) {
     Invoice.aggregate([
       {
         $match: {
-          userId: userObjId,
+          tenantId: userObjId,
           isDeleted: false,
           invoiceDate: { $gte: startOfYear },
         },
@@ -117,7 +117,7 @@ async function getFinancialData(userId) {
     Invoice.aggregate([
       {
         $match: {
-          userId: userObjId,
+          tenantId: userObjId,
           isDeleted: false,
           status: { $in: ["SENT", "UNPAID", "OVERDUE", "PARTIALLY_PAID"] },
           dueDate: { $lt: now },
@@ -137,7 +137,7 @@ async function getFinancialData(userId) {
     Expense.aggregate([
       {
         $match: {
-          userId: userObjId,
+          tenantId: userObjId,
           isDeleted: false,
           expenseDate: { $gte: startOfMonth },
         },
@@ -149,7 +149,7 @@ async function getFinancialData(userId) {
     Expense.aggregate([
       {
         $match: {
-          userId: userObjId,
+          tenantId: userObjId,
           isDeleted: false,
           expenseDate: { $gte: startOfLastMonth, $lte: endOfLastMonth },
         },
@@ -161,7 +161,7 @@ async function getFinancialData(userId) {
     Invoice.aggregate([
       {
         $match: {
-          userId: userObjId,
+          tenantId: userObjId,
           isDeleted: false,
           invoiceDate: { $gte: sixMonthsAgo },
         },
@@ -183,7 +183,7 @@ async function getFinancialData(userId) {
     Expense.aggregate([
       {
         $match: {
-          userId: userObjId,
+          tenantId: userObjId,
           isDeleted: false,
           expenseDate: { $gte: sixMonthsAgo },
         },
@@ -205,7 +205,7 @@ async function getFinancialData(userId) {
     Expense.aggregate([
       {
         $match: {
-          userId: userObjId,
+          tenantId: userObjId,
           isDeleted: false,
           expenseDate: { $gte: startOfYear },
         },
@@ -241,7 +241,7 @@ async function getFinancialData(userId) {
     Quotation.aggregate([
       {
         $match: {
-          userId: userObjId,
+          tenantId: userObjId,
           isDeleted: false,
           createdAt: { $gte: startOfYear },
         },
@@ -258,7 +258,7 @@ async function getFinancialData(userId) {
     Invoice.aggregate([
       {
         $match: {
-          userId: userObjId,
+          tenantId: userObjId,
           isDeleted: false,
           invoiceDate: { $gte: startOfYear },
         },
@@ -273,7 +273,7 @@ async function getFinancialData(userId) {
     ]),
 
     // Recent 5 invoices
-    Invoice.find({ userId, isDeleted: false })
+    Invoice.find({ tenantId, isDeleted: false })
       .select("invoiceNumber TotalAmount status invoiceDate dueDate")
       .sort({ createdAt: -1 })
       .limit(5)

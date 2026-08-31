@@ -75,13 +75,13 @@ export async function backfillContactFks(): Promise<void> {
       console.log(`[backfill] vendorId column absent (dropped) — skipping vendor pass for ${t}`);
       continue;
     }
-    const rows = await prisma.$queryRawUnsafe<{ id: string; vendorId: string; userId: string }[]>(
-      `SELECT t.id, t."vendorId", t."userId" FROM "${t}" t WHERE t."vendorId" IS NOT NULL AND t."contactId" IS NULL`,
+    const rows = await prisma.$queryRawUnsafe<{ id: string; vendorId: string; tenantId: string }[]>(
+      `SELECT t.id, t."vendorId", t."tenantId" FROM "${t}" t WHERE t."vendorId" IS NOT NULL AND t."contactId" IS NULL`,
     );
     for (const r of rows) {
       const u = await prisma.user.findUnique({ where: { id: r.vendorId }, select: { firstName: true, lastName: true, email: true } });
       const organisation = resolveDisplayName({ firstName: u?.firstName, lastName: u?.lastName }) || (u?.email ?? 'Legacy vendor');
-      const contact = await (prisma as unknown as Record<string, any>).contact.create({ data: { userId: r.userId, organisation, email: u?.email ?? null } as never });
+      const contact = await (prisma as unknown as Record<string, any>).contact.create({ data: { tenantId: r.tenantId, organisation, email: u?.email ?? null } as never });
       await prisma.$executeRawUnsafe(`UPDATE "${t}" SET "contactId" = $1 WHERE id = $2`, contact.id, r.id);
       console.log(`[VENDOR->CONTACT] ${t} ${r.id}: created contact ${contact.id} from user ${r.vendorId}`);
     }

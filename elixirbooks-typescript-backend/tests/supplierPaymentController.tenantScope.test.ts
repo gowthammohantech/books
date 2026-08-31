@@ -6,9 +6,9 @@
  * with NO ownership check before creating a SupplierPayment against it,
  * updating that purchase's status, and posting GL entries — letting a caller
  * reference (and mutate) another tenant's Purchase/BankDetail. SupplierPayment
- * itself has no direct `userId` column, so ownership is checked via the
- * related Purchase's `userId`. PettyCash reads in this file are scoped with a
- * strict `{ userId }` match (no OR-null fallback) per the P0-2a PettyCash
+ * itself has no direct `tenantId` column, so ownership is checked via the
+ * related Purchase's `tenantId`. PettyCash reads in this file are scoped with a
+ * strict `{ tenantId }` match (no OR-null fallback) per the P0-2a PettyCash
  * tenant-scope work.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -145,8 +145,8 @@ function assertNoNullUserIdBranch(value: unknown, path = 'where'): void {
     return;
   }
   const obj = value as Record<string, unknown>;
-  if ('userId' in obj && obj.userId === null) {
-    throw new Error(`found userId: null at ${path} — cross-tenant leak`);
+  if ('tenantId' in obj && obj.tenantId === null) {
+    throw new Error(`found tenantId: null at ${path} — cross-tenant leak`);
   }
   for (const [key, val] of Object.entries(obj)) {
     assertNoNullUserIdBranch(val, `${path}.${key}`);
@@ -209,7 +209,7 @@ describe('supplierPaymentController — tenant scoping', () => {
 
     expect(mockPurchaseFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ id: 'foreign-purchase', userId: TENANT_ID }),
+        where: expect.objectContaining({ id: 'foreign-purchase', tenantId: TENANT_ID }),
       }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
@@ -219,7 +219,7 @@ describe('supplierPaymentController — tenant scoping', () => {
   it('createSupplierPayment 400s when bankId belongs to another tenant (purchase owned)', async () => {
     mockPurchaseFindFirst.mockResolvedValue({
       id: 'purchase-1',
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       exchangeRate: null,
       totalAmount: 1000,
     });
@@ -238,7 +238,7 @@ describe('supplierPaymentController — tenant scoping', () => {
     await createSupplierPayment(req, res);
 
     expect(mockBankDetailFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'foreign-bank', userId: TENANT_ID } }),
+      expect.objectContaining({ where: { id: 'foreign-bank', tenantId: TENANT_ID } }),
     );
     expect(res.status).toHaveBeenCalledWith(400);
     expect(mockSupplierPaymentCreate).not.toHaveBeenCalled();
@@ -247,7 +247,7 @@ describe('supplierPaymentController — tenant scoping', () => {
   it('createSupplierPayment scopes the PETTY_CASH balance check strictly by tenant', async () => {
     mockPurchaseFindFirst.mockResolvedValue({
       id: 'purchase-1',
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       exchangeRate: null,
       totalAmount: 1000,
     });
@@ -264,7 +264,7 @@ describe('supplierPaymentController — tenant scoping', () => {
     await createSupplierPayment(req, res);
 
     expect(mockPettyCashFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     assertNoNullUserIdBranch(mockPettyCashFindFirst.mock.calls[0][0].where);
     expect(res.status).toHaveBeenCalledWith(400);
@@ -273,7 +273,7 @@ describe('supplierPaymentController — tenant scoping', () => {
   it('createSupplierPayment scopes generateNextPaymentNumber via the purchase relation', async () => {
     mockPurchaseFindFirst.mockResolvedValue({
       id: 'purchase-1',
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       exchangeRate: null,
       totalAmount: 1000,
     });
@@ -297,7 +297,7 @@ describe('supplierPaymentController — tenant scoping', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           paymentId: { not: null },
-          purchase: { userId: TENANT_ID },
+          purchase: { tenantId: TENANT_ID },
         }),
       }),
     );
@@ -307,7 +307,7 @@ describe('supplierPaymentController — tenant scoping', () => {
   it('createSupplierPayment numbering falls back to the install-wide highest + 1 when the tenant candidate clashes (paymentId is globally @unique)', async () => {
     mockPurchaseFindFirst.mockResolvedValue({
       id: 'purchase-1',
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       exchangeRate: null,
       totalAmount: 1000,
     });
@@ -348,7 +348,7 @@ describe('supplierPaymentController — tenant scoping', () => {
     // it pays down carries a real party (e.g. "Pinnacle Distributors").
     mockPurchaseFindFirst.mockResolvedValue({
       id: 'purchase-1',
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       exchangeRate: null,
       totalAmount: 1000,
       contactId: 'contact-pinnacle',
@@ -440,7 +440,7 @@ describe('supplierPaymentController — tenant scoping', () => {
     expect(payload.data.payments[0].supplier?.name).toBe('Pinnacle Distributors');
   });
 
-  it('updateSupplierPayment scopes the existing-payment lookup by purchase.userId (404 on foreign id)', async () => {
+  it('updateSupplierPayment scopes the existing-payment lookup by purchase.tenantId (404 on foreign id)', async () => {
     mockSupplierPaymentFindFirst.mockResolvedValue(null); // foreign payment
     const { req, res } = makeReqRes({ paidAmount: 50, dueAmount: 50 }, { id: 'sp-foreign' });
 
@@ -448,7 +448,7 @@ describe('supplierPaymentController — tenant scoping', () => {
 
     expect(mockSupplierPaymentFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ id: 'sp-foreign', purchase: { userId: TENANT_ID } }),
+        where: expect.objectContaining({ id: 'sp-foreign', purchase: { tenantId: TENANT_ID } }),
       }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
@@ -479,14 +479,14 @@ describe('supplierPaymentController — tenant scoping', () => {
 
     expect(mockPurchaseFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ id: 'foreign-purchase', userId: TENANT_ID }),
+        where: expect.objectContaining({ id: 'foreign-purchase', tenantId: TENANT_ID }),
       }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
     expect(mockSupplierPaymentUpdate).not.toHaveBeenCalled();
   });
 
-  it('deleteSupplierPayment scopes the lookup by purchase.userId (404 on foreign id)', async () => {
+  it('deleteSupplierPayment scopes the lookup by purchase.tenantId (404 on foreign id)', async () => {
     mockSupplierPaymentFindFirst.mockResolvedValue(null);
     const { req, res } = makeReqRes({}, { id: 'sp-foreign' });
 
@@ -494,7 +494,7 @@ describe('supplierPaymentController — tenant scoping', () => {
 
     expect(mockSupplierPaymentFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ id: 'sp-foreign', purchase: { userId: TENANT_ID } }),
+        where: expect.objectContaining({ id: 'sp-foreign', purchase: { tenantId: TENANT_ID } }),
       }),
     );
     expect(res.status).toHaveBeenCalledWith(404);

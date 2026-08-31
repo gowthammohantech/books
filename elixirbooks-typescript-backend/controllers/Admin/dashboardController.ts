@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 
 import { prisma } from '../../lib/prisma';
 import { resolveDisplayName } from '../../lib/contacts/contactIdentity';
-import { requireUserId, UnauthorizedError } from '../../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../../lib/tenantScope';
 import { contactViewWhere } from '../../lib/contacts/contactRole';
 import { creditNoteTotalsByInvoice } from '../../lib/reports/aging';
 
@@ -45,26 +45,26 @@ function imageUrl(baseUrl: string, image: string | null | undefined): string {
 export async function getDashboard(req: Request, res: Response): Promise<void> {
   try {
     const baseUrl = process.env.BASE_URL || 'http://127.0.0.1:5000';
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     // ---------- COUNTS ----------
-    const supplierWhere = contactViewWhere(userId, 'suppliers');
+    const supplierWhere = contactViewWhere(tenantId, 'suppliers');
     const [
       totalInvoiceCount,
       totalProductCount,
       totalCustomerCount,
       totalSupplierCount,
     ] = await Promise.all([
-      prisma.invoice.count({ where: { userId, isDeleted: false } }),
+      prisma.invoice.count({ where: { tenantId, isDeleted: false } }),
       // Product is a shared catalog with no tenant column — count stays global.
       prisma.product.count(),
-      prisma.customer.count({ where: { userId, isDeleted: false } }),
+      prisma.customer.count({ where: { tenantId, isDeleted: false } }),
       (prisma as unknown as { contact: { count(a: unknown): Promise<number> } }).contact.count({ where: supplierWhere } as never),
     ]);
 
     // ---------- LAST 5 CUSTOMERS ----------
     const lastFiveCustomers = await prisma.customer.findMany({
-      where: { userId, isDeleted: false },
+      where: { tenantId, isDeleted: false },
       orderBy: { createdAt: 'desc' },
       take: 5,
       select: {
@@ -119,7 +119,7 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
 
     // ---------- LAST 5 INVOICES ----------
     const lastFiveInvoices = await prisma.invoice.findMany({
-      where: { userId, isDeleted: false },
+      where: { tenantId, isDeleted: false },
       orderBy: { createdAt: 'desc' },
       take: 5,
       select: {
@@ -166,7 +166,7 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
 
     // ---------- LAST 5 PURCHASES ----------
     const lastFivePurchases = await prisma.purchase.findMany({
-      where: { userId, isDeleted: false },
+      where: { tenantId, isDeleted: false },
       orderBy: { createdAt: 'desc' },
       take: 5,
       select: {
@@ -237,7 +237,7 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
 
     // ---------- LAST 5 PAYMENTS ----------
     const lastFivePayments = await prisma.invoicePayment.findMany({
-      where: { invoice: { userId } },
+      where: { invoice: { tenantId } },
       orderBy: { createdAt: 'desc' },
       take: 5,
       select: {
@@ -295,7 +295,7 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
     // a draft/proforma is not a booked sale and a cancelled invoice was reversed.
     const totalSalesAgg = await prisma.invoice.aggregate({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         invoiceType: 'INVOICE',
         status: { in: [...REAL_INVOICE_STATUSES] },
@@ -311,38 +311,38 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
     let totalDueAmount = 0;
 
     const receivedAgg = await prisma.invoicePayment.aggregate({
-      where: { isVoided: false, invoice: { userId } },
+      where: { isVoided: false, invoice: { tenantId } },
       _sum: { amount: true },
     });
     const receivedAmount = toNum(receivedAgg._sum.amount);
 
-    const quotationCount = await prisma.quotation.count({ where: { userId, isDeleted: false } });
+    const quotationCount = await prisma.quotation.count({ where: { tenantId, isDeleted: false } });
 
     // ---------- PURCHASE KPIs ----------
     const totalPurchasesAgg = await prisma.purchase.aggregate({
-      where: { userId, isDeleted: false },
+      where: { tenantId, isDeleted: false },
       _sum: { totalAmount: true },
     });
     const totalPurchasesAmount = toNum(totalPurchasesAgg._sum.totalAmount);
 
     const totalPaidPurchasesAgg = await prisma.supplierPayment.aggregate({
-      where: { isDeleted: false, isVoided: false, purchase: { userId } },
+      where: { isDeleted: false, isVoided: false, purchase: { tenantId } },
       _sum: { paidAmount: true },
     });
     const totalPaidPurchases = toNum(totalPaidPurchasesAgg._sum.paidAmount);
 
     const totalDuePurchasesAgg = await prisma.purchase.aggregate({
-      where: { userId, isDeleted: false },
+      where: { tenantId, isDeleted: false },
       _sum: { balanceAmount: true },
     });
     const totalDuePurchases = toNum(totalDuePurchasesAgg._sum.balanceAmount);
 
-    const debitNoteCount = await prisma.debitNote.count({ where: { userId, isDeleted: false } });
+    const debitNoteCount = await prisma.debitNote.count({ where: { tenantId, isDeleted: false } });
 
     // ---------- GRAPH 1: Top 5 Products by Sales ----------
     // Mongo $unwind pipeline → fetch items JSON + aggregate in JS, then attach product names.
     const invoicesForGraph = await prisma.invoice.findMany({
-      where: { userId, isDeleted: false },
+      where: { tenantId, isDeleted: false },
       select: { items: true },
     });
 
@@ -393,7 +393,7 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
 
     const allInvoices = await prisma.invoice.findMany({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         invoiceType: 'INVOICE',
         status: { in: [...REAL_INVOICE_STATUSES] },
@@ -403,7 +403,7 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
     });
     const allPurchases = await prisma.purchase.findMany({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         createdAt: { gte: graphYearStart, lte: graphYearEnd },
       },
@@ -436,14 +436,14 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
     const endOfYesterday = new Date(startOfToday.getTime() - 1);
 
     const todayAgg = await prisma.invoice.aggregate({
-      where: { userId, isDeleted: false, createdAt: { gte: startOfToday } },
+      where: { tenantId, isDeleted: false, createdAt: { gte: startOfToday } },
       _sum: { TotalAmount: true },
     });
     const todaySales = toNum(todayAgg._sum.TotalAmount);
 
     const yesterdayAgg = await prisma.invoice.aggregate({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         createdAt: { gte: startOfYesterday, lte: endOfYesterday },
       },
@@ -474,7 +474,7 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
     now.setHours(0, 0, 0, 0);
     const unpaidInvoices = await prisma.invoice.findMany({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         invoiceType: 'INVOICE',
         status: { in: ['UNPAID', 'OVERDUE', 'PARTIALLY_PAID', 'SENT'] },
@@ -497,7 +497,7 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
     const openInvoiceIds = unpaidInvoices.map((inv) => inv.id);
     const openCreditNotes = openInvoiceIds.length
       ? await prisma.creditNote.findMany({
-          where: { userId, isDeleted: false, invoiceId: { in: openInvoiceIds } },
+          where: { tenantId, isDeleted: false, invoiceId: { in: openInvoiceIds } },
           select: { invoiceId: true, totalAmount: true },
         })
       : [];

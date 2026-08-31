@@ -22,7 +22,7 @@ import {
 
 export interface ApplyDb extends PostingTx {
   invoice: {
-    findFirst: (args: { where: { id: string; userId: string; isDeleted: boolean } }) => Promise<{ id: string; TotalAmount: unknown; status: string; userId: string; exchangeRate?: unknown } | null>;
+    findFirst: (args: { where: { id: string; tenantId: string; isDeleted: boolean } }) => Promise<{ id: string; TotalAmount: unknown; status: string; tenantId: string; exchangeRate?: unknown } | null>;
     update: (args: { where: { id: string }; data: { status: InvoiceStatus } }) => Promise<unknown>;
   };
   invoicePayment: {
@@ -34,7 +34,7 @@ export interface ApplyDb extends PostingTx {
   // against the invoice, mirroring agingController's netting exactly.
   creditNote: {
     findMany: (args: {
-      where: { userId: string; isDeleted: boolean; invoiceId: string };
+      where: { tenantId: string; isDeleted: boolean; invoiceId: string };
       select: { invoiceId: true; totalAmount: true };
     }) => Promise<Array<{ invoiceId: string; totalAmount: unknown }>>;
   };
@@ -45,7 +45,7 @@ export interface ApplyDb extends PostingTx {
 // ---------------------------------------------------------------------------
 
 export interface ApplyInvoiceReceiptInput {
-  userId: string;
+  tenantId: string;
   invoiceId: string;
   amount: string;          // string Decimal (bank txn amount)
   date: Date;
@@ -72,10 +72,10 @@ export async function applyInvoiceReceipt(
   db: ApplyDb,
   input: ApplyInvoiceReceiptInput,
 ): Promise<ApplyInvoiceReceiptResult> {
-  const { userId, invoiceId, amount, date, bankAccountId, bankGlAccountId, paymentModeId, paymentModeSlug, sourceBankTxnId, currencyCode, paymentRate, documentRate } = input;
+  const { tenantId, invoiceId, amount, date, bankAccountId, bankGlAccountId, paymentModeId, paymentModeSlug, sourceBankTxnId, currencyCode, paymentRate, documentRate } = input;
 
-  // 1. Load invoice scoped to userId (not deleted).
-  const invoice = await db.invoice.findFirst({ where: { id: invoiceId, userId, isDeleted: false } });
+  // 1. Load invoice scoped to tenantId (not deleted).
+  const invoice = await db.invoice.findFirst({ where: { id: invoiceId, tenantId, isDeleted: false } });
   if (!invoice) throw new Error('INVOICE_NOT_FOUND');
 
   // 2. Already fully paid?
@@ -90,7 +90,7 @@ export async function applyInvoiceReceipt(
   const { totalPaid, creditNoted } = await getInvoiceSettlement(
     db as unknown as Parameters<typeof getInvoiceSettlement>[0],
     invoiceId,
-    userId,
+    tenantId,
   );
   const { outstanding } = deriveInvoiceStatus(
     invoice.TotalAmount as Prisma.Decimal,
@@ -124,7 +124,7 @@ export async function applyInvoiceReceipt(
     invoiceId,
     amount: toDecimal(amount),
     received_on: date,
-    received_by: userId,
+    received_by: tenantId,
     notes: '',
     paymentModeId,
     bankId: bankAccountId,
@@ -137,7 +137,7 @@ export async function applyInvoiceReceipt(
 
   // 7. Post the GL journal entry: Dr Bank / Cr AR.
   await postInvoicePayment(db, {
-    userId,
+    tenantId,
     invoiceId,
     paymentId: payment.id,
     date,

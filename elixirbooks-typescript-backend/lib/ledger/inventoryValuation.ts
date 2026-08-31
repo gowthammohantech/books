@@ -25,7 +25,7 @@ type TxClient = {
   inventoryCostLayer: {
     create: (args: {
       data: {
-        userId: string;
+        tenantId: string;
         productId: string;
         qtyRemaining: Prisma.Decimal;
         unitCost: Prisma.Decimal;
@@ -35,7 +35,7 @@ type TxClient = {
       };
     }) => Promise<{ id: string }>;
     findMany: (args: {
-      where: { userId: string; productId: string; isDeleted: boolean };
+      where: { tenantId: string; productId: string; isDeleted: boolean };
       orderBy: { receivedAt: 'asc' };
     }) => Promise<
       {
@@ -96,7 +96,7 @@ export function computeLandedAdditions(
 export async function applyFifoReceipt(
   tx: TxClient,
   params: {
-    userId: string;
+    tenantId: string;
     productId: string;
     qty: number;
     landedUnitCost: number;
@@ -105,11 +105,11 @@ export async function applyFifoReceipt(
     currentQtyOnHand: Prisma.Decimal;
   },
 ): Promise<Prisma.Decimal> {
-  const { userId, productId, qty, landedUnitCost, purchaseDate, purchaseId, currentQtyOnHand } = params;
+  const { tenantId, productId, qty, landedUnitCost, purchaseDate, purchaseId, currentQtyOnHand } = params;
 
   await tx.inventoryCostLayer.create({
     data: {
-      userId,
+      tenantId,
       productId,
       qtyRemaining: toDecimal(qty),
       unitCost: toDecimal(landedUnitCost),
@@ -148,17 +148,17 @@ export function applyWacReceipt(
 export async function applyFifoIssue(
   tx: TxClient,
   params: {
-    userId: string;
+    tenantId: string;
     productId: string;
     qty: number;
     currentQtyOnHand: Prisma.Decimal;
   },
 ): Promise<{ cogs: Prisma.Decimal; newQtyOnHand: Prisma.Decimal }> {
-  const { userId, productId, qty, currentQtyOnHand } = params;
+  const { tenantId, productId, qty, currentQtyOnHand } = params;
 
   // Load open layers oldest-first.
   const dbLayers = await tx.inventoryCostLayer.findMany({
-    where: { userId, productId, isDeleted: false },
+    where: { tenantId, productId, isDeleted: false },
     orderBy: { receivedAt: 'asc' },
   });
 

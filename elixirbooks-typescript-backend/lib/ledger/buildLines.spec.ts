@@ -12,7 +12,7 @@ const resolver = (role?: string, accountId?: string): string => {
 };
 
 const base: PostingInput = {
-  userId: 'u1', sourceType: 'Invoice', sourceId: 'inv1', event: 'issued',
+  tenantId: 'u1', sourceType: 'Invoice', sourceId: 'inv1', event: 'issued',
   date: new Date('2026-06-06'), currencyCode: 'INR', instructions: [],
 };
 

@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 import type { EmailSettingsProviderType } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { sendPrismaError } from '../middleware/prismaError';
 import { encryptSecret } from '../lib/emailSecret';
 
@@ -90,7 +90,7 @@ function updateEnvFile(newVars: Record<string, string | boolean | number | undef
 }
 
 interface EmailSettingsBody {
-  userId?: string;
+  tenantId?: string;
   provider_type?: EmailSettingsProviderType;
   nodeFromName?: string;
   nodeFromEmail?: string;
@@ -121,14 +121,14 @@ interface EmailSettingsBody {
 export async function createOrUpdateEmailSettings(req: Request, res: Response): Promise<void> {
   try {
     const body = req.body as EmailSettingsBody;
-    // Prefer the authenticated userId; fall back to body.userId to match the
-    // JS source which read from req.body.userId.
-    let userId: string;
+    // Prefer the authenticated tenantId; fall back to body.tenantId to match the
+    // JS source which read from req.body.tenantId.
+    let tenantId: string;
     try {
-      userId = requireUserId(req);
+      tenantId = requireTenantId(req);
     } catch (err) {
-      if (body.userId) {
-        userId = body.userId;
+      if (body.tenantId) {
+        tenantId = body.tenantId;
       } else {
         throw err;
       }
@@ -154,7 +154,7 @@ export async function createOrUpdateEmailSettings(req: Request, res: Response): 
       smtp_status: toOptionalBoolean(body.smtp_status),
       node_status: toOptionalBoolean(body.node_status),
       resend_status: toOptionalBoolean(body.resend_status),
-      userId,
+      tenantId,
     };
 
     // Secrets: encrypt when a new value is supplied; when blank/omitted, leave
@@ -171,10 +171,10 @@ export async function createOrUpdateEmailSettings(req: Request, res: Response): 
       }
     }
 
-    // Mongoose findOneAndUpdate({ userId }, ..., { upsert: true }) — there is no
-    // unique constraint on userId in the Prisma schema, so we replicate that
+    // Mongoose findOneAndUpdate({ tenantId }, ..., { upsert: true }) — there is no
+    // unique constraint on tenantId in the Prisma schema, so we replicate that
     // semantics with findFirst + update/create rather than upsert.
-    const existing = await prisma.emailSettings.findFirst({ where: { userId } });
+    const existing = await prisma.emailSettings.findFirst({ where: { tenantId } });
     const settings = existing
       ? await prisma.emailSettings.update({
           where: { id: existing.id },
@@ -229,17 +229,17 @@ export async function createOrUpdateEmailSettings(req: Request, res: Response): 
  */
 export async function getEmailSettings(req: Request, res: Response): Promise<void> {
   try {
-    let userId: string | undefined = (req.query.userId as string | undefined) ?? undefined;
-    if (!userId) {
+    let tenantId: string | undefined = (req.query.tenantId as string | undefined) ?? undefined;
+    if (!tenantId) {
       try {
-        userId = requireUserId(req);
+        tenantId = requireTenantId(req);
       } catch {
-        userId = undefined;
+        tenantId = undefined;
       }
     }
 
-    const settings = userId
-      ? await prisma.emailSettings.findFirst({ where: { userId } })
+    const settings = tenantId
+      ? await prisma.emailSettings.findFirst({ where: { tenantId } })
       : null;
 
     res.status(200).json({
@@ -263,16 +263,16 @@ export async function getEmailSettings(req: Request, res: Response): Promise<voi
  */
 export async function sendTestEmail(req: Request, res: Response): Promise<void> {
   try {
-    let userId: string | undefined;
+    let tenantId: string | undefined;
     try {
-      userId = requireUserId(req);
+      tenantId = requireTenantId(req);
     } catch {
-      userId = (req.body as { userId?: string }).userId;
+      tenantId = (req.body as { tenantId?: string }).tenantId;
     }
 
     let recipient = (req.body as { to?: string }).to?.trim();
-    if (!recipient && userId) {
-      const u = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+    if (!recipient && tenantId) {
+      const u = await prisma.user.findUnique({ where: { id: tenantId }, select: { email: true } });
       recipient = u?.email ?? undefined;
     }
     if (!recipient) {

@@ -31,7 +31,7 @@ vi.mock('../lib/prisma', () => ({
 }));
 
 vi.mock('../lib/tenantScope', () => ({
-  requireUserId: mockRequireUserId,
+  requireTenantId: mockRequireUserId,
   UnauthorizedError: class UnauthorizedError extends Error {
     status = 401;
     constructor(message = 'Not authorized') {

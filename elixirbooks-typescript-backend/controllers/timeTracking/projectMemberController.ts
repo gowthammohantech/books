@@ -1,7 +1,7 @@
 // controllers/timeTracking/projectMemberController.ts
 // Time Tracking — Phase 1 (Task 4)
 // Project members CRUD + project billing settings. All handlers are tenant-scoped
-// via requireUserId(req) (tenant = ownerId ?? id) and follow the existing
+// via requireTenantId(req) (tenant = ownerId ?? id) and follow the existing
 // dimensionReportController patterns (response envelope `{ success, data }`,
 // P2002 -> 409, UnauthorizedError -> handleUnauthorized).
 
@@ -9,7 +9,7 @@ import type { Request, Response } from 'express';
 import { Prisma, ProjectMemberRole } from '@prisma/client';
 
 import { prisma } from '../../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../../lib/tenantScope';
 
 // =============================================================================
 // Shared helpers
@@ -31,7 +31,7 @@ function parseDate(value: unknown): Date | undefined {
 
 /** Resolve a project that belongs to the tenant, or null. */
 async function findTenantProject(tenantId: string, projectId: string) {
-  return prisma.project.findFirst({ where: { id: projectId, userId: tenantId } });
+  return prisma.project.findFirst({ where: { id: projectId, tenantId: tenantId } });
 }
 
 /**
@@ -87,17 +87,17 @@ const MEMBER_INCLUDE = {
 /** GET /projects/:projectId/members */
 export async function listProjectMembers(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const projectId = String(req.params.projectId);
 
-    const project = await findTenantProject(userId, projectId);
+    const project = await findTenantProject(tenantId, projectId);
     if (!project) {
       res.status(404).json({ success: false, message: 'Project not found' });
       return;
     }
 
     const members = await prisma.projectMember.findMany({
-      where: { userId, projectId },
+      where: { tenantId, projectId },
       orderBy: { createdAt: 'asc' },
       include: MEMBER_INCLUDE,
     });
@@ -113,7 +113,7 @@ export async function listProjectMembers(req: Request, res: Response): Promise<v
 /** POST /projects/:projectId/members — { employeeUserId, role, billingRate? }; upsert on (project, employee). */
 export async function addProjectMember(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const projectId = String(req.params.projectId);
     const { employeeUserId, role, billingRate } = req.body as {
       employeeUserId?: string;
@@ -126,13 +126,13 @@ export async function addProjectMember(req: Request, res: Response): Promise<voi
       return;
     }
 
-    const project = await findTenantProject(userId, projectId);
+    const project = await findTenantProject(tenantId, projectId);
     if (!project) {
       res.status(404).json({ success: false, message: 'Project not found' });
       return;
     }
 
-    if (!(await isTenantStaff(userId, employeeUserId))) {
+    if (!(await isTenantStaff(tenantId, employeeUserId))) {
       res.status(400).json({ success: false, message: 'employeeUserId is not a staff user of this tenant' });
       return;
     }
@@ -145,7 +145,7 @@ export async function addProjectMember(req: Request, res: Response): Promise<voi
     const member = await prisma.projectMember.upsert({
       where: { projectId_employeeUserId: { projectId, employeeUserId } },
       create: {
-        userId,
+        tenantId,
         projectId,
         employeeUserId,
         role: resolvedRole,
@@ -175,12 +175,12 @@ export async function addProjectMember(req: Request, res: Response): Promise<voi
 /** PUT /projects/:projectId/members/:memberId — role/rate/isActive. */
 export async function updateProjectMember(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const projectId = String(req.params.projectId);
     const memberId = String(req.params.memberId);
 
     const existing = await prisma.projectMember.findFirst({
-      where: { id: memberId, projectId, userId },
+      where: { id: memberId, projectId, tenantId },
     });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Project member not found' });
@@ -222,12 +222,12 @@ export async function updateProjectMember(req: Request, res: Response): Promise<
 /** DELETE /projects/:projectId/members/:memberId */
 export async function deleteProjectMember(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const projectId = String(req.params.projectId);
     const memberId = String(req.params.memberId);
 
     const existing = await prisma.projectMember.findFirst({
-      where: { id: memberId, projectId, userId },
+      where: { id: memberId, projectId, tenantId },
     });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Project member not found' });
@@ -250,10 +250,10 @@ export async function deleteProjectMember(req: Request, res: Response): Promise<
 /** PUT /projects/:projectId/settings — { billingRate?, startDate?, endDate?, contactId? }. */
 export async function updateProjectSettings(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const projectId = String(req.params.projectId);
 
-    const project = await findTenantProject(userId, projectId);
+    const project = await findTenantProject(tenantId, projectId);
     if (!project) {
       res.status(404).json({ success: false, message: 'Project not found' });
       return;
@@ -279,7 +279,7 @@ export async function updateProjectSettings(req: Request, res: Response): Promis
     // Validate contactId belongs to this tenant.
     if (body.contactId != null && body.contactId !== '') {
       const contact = await prisma.contact.findFirst({
-        where: { id: body.contactId, userId, isDeleted: false },
+        where: { id: body.contactId, tenantId, isDeleted: false },
         select: { id: true },
       });
       if (!contact) {

@@ -35,9 +35,9 @@ const confirm =
 // ---------------------------------------------------------------------------
 
 async function countAiChatMessages(demoUserIds: string[]): Promise<number> {
-  // AiChatMessage has no userId; scoped via AiChatSession.userId
+  // AiChatMessage has no tenantId; scoped via AiChatSession.tenantId
   const sessions = await prisma.aiChatSession.findMany({
-    where: { userId: { in: demoUserIds } },
+    where: { tenantId: { in: demoUserIds } },
     select: { id: true },
   });
   if (!sessions.length) return 0;
@@ -49,7 +49,7 @@ async function countAiChatMessages(demoUserIds: string[]): Promise<number> {
 async function countJournalLines(demoUserIds: string[]): Promise<number> {
   // JournalLine cascades with JournalEntry; count for information
   const entries = await prisma.journalEntry.findMany({
-    where: { userId: { in: demoUserIds } },
+    where: { tenantId: { in: demoUserIds } },
     select: { id: true },
   });
   if (!entries.length) return 0;
@@ -96,44 +96,44 @@ async function main(): Promise<void> {
 
   // --- Step 1: AI features (deepest children first) ---
   const cntAiChatMessage = await countAiChatMessages(demoUserIds);
-  const cntAiChatSession = await prisma.aiChatSession.count({ where: { userId: { in: demoUserIds } } });
-  const cntAiExtractionJob = await prisma.aiExtractionJob.count({ where: { userId: { in: demoUserIds } } });
-  const cntAiUsageLog = await prisma.aiUsageLog.count({ where: { userId: { in: demoUserIds } } });
-  const cntRefund = await prisma.refund.count({ where: { userId: { in: demoUserIds } } });
+  const cntAiChatSession = await prisma.aiChatSession.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntAiExtractionJob = await prisma.aiExtractionJob.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntAiUsageLog = await prisma.aiUsageLog.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntRefund = await prisma.refund.count({ where: { tenantId: { in: demoUserIds } } });
 
   // --- Step 2: Payment infrastructure ---
-  const cntPaymentTransaction = await prisma.paymentTransaction.count({ where: { userId: { in: demoUserIds } } });
-  const cntPaymentLinkMethod = await prisma.paymentLinkMethod.count({ where: { userId: { in: demoUserIds } } });
-  const cntEInvoiceRecord = await prisma.eInvoiceRecord.count({ where: { userId: { in: demoUserIds } } });
+  const cntPaymentTransaction = await prisma.paymentTransaction.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntPaymentLinkMethod = await prisma.paymentLinkMethod.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntEInvoiceRecord = await prisma.eInvoiceRecord.count({ where: { tenantId: { in: demoUserIds } } });
 
   // --- Step 3: Invoice chain ---
   const cntInvoicePayment = await prisma.invoicePayment.count({
-    where: { invoice: { userId: { in: demoUserIds } } },
+    where: { invoice: { tenantId: { in: demoUserIds } } },
   });
-  const cntCreditNote = await prisma.creditNote.count({ where: { userId: { in: demoUserIds } } });
-  const cntDeliveryChallan = await prisma.deliveryChallan.count({ where: { userId: { in: demoUserIds } } });
-  const cntInvoice = await prisma.invoice.count({ where: { userId: { in: demoUserIds } } });
-  const cntQuotation = await prisma.quotation.count({ where: { userId: { in: demoUserIds } } });
+  const cntCreditNote = await prisma.creditNote.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntDeliveryChallan = await prisma.deliveryChallan.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntInvoice = await prisma.invoice.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntQuotation = await prisma.quotation.count({ where: { tenantId: { in: demoUserIds } } });
 
   // --- Step 4: Expense chain ---
   const cntExpenseChangeLog = await prisma.expenseChangeLog.count({
-    where: { expense: { userId: { in: demoUserIds } } },
+    where: { expense: { tenantId: { in: demoUserIds } } },
   });
-  const cntExpense = await prisma.expense.count({ where: { userId: { in: demoUserIds } } });
+  const cntExpense = await prisma.expense.count({ where: { tenantId: { in: demoUserIds } } });
 
   // --- Step 5: Purchase chain ---
   const cntSupplierPayment = await prisma.supplierPayment.count({
-    where: { purchase: { userId: { in: demoUserIds } } },
+    where: { purchase: { tenantId: { in: demoUserIds } } },
   });
-  const cntDebitNote = await prisma.debitNote.count({ where: { userId: { in: demoUserIds } } });
-  const cntPurchase = await prisma.purchase.count({ where: { userId: { in: demoUserIds } } });
-  const cntPurchaseOrder = await prisma.purchaseOrder.count({ where: { userId: { in: demoUserIds } } });
+  const cntDebitNote = await prisma.debitNote.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntPurchase = await prisma.purchase.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntPurchaseOrder = await prisma.purchaseOrder.count({ where: { tenantId: { in: demoUserIds } } });
 
   // --- Step 6: Bank + petty cash ---
   const cntBankTransaction = await prisma.bankTransaction.count({
-    where: { bankAccount: { userId: { in: demoUserIds } } },
+    where: { bankAccount: { tenantId: { in: demoUserIds } } },
   });
-  const cntBankDetail = await prisma.bankDetail.count({ where: { userId: { in: demoUserIds } } });
+  const cntBankDetail = await prisma.bankDetail.count({ where: { tenantId: { in: demoUserIds } } });
   const cntPettyCashTransaction = await prisma.pettyCashTransaction.count({
     where: { remarks: { startsWith: 'DEMO-PC' } },
   });
@@ -143,47 +143,47 @@ async function main(): Promise<void> {
   });
 
   // --- Step 7: Payroll (Phase 2) — reached via untyped delegate (stale-client safe) ---
-  const cntPayRunLine = await px['payRunLine']!.count({ where: { payRun: { userId: { in: demoUserIds } } } });
-  const cntPayRun = await px['payRun']!.count({ where: { userId: { in: demoUserIds } } });
-  const cntPayrollProfile = await px['payrollProfile']!.count({ where: { userId: { in: demoUserIds } } });
+  const cntPayRunLine = await px['payRunLine']!.count({ where: { payRun: { tenantId: { in: demoUserIds } } } });
+  const cntPayRun = await px['payRun']!.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntPayrollProfile = await px['payrollProfile']!.count({ where: { tenantId: { in: demoUserIds } } });
 
   // --- Step 8: Journal / ledger / accounts ---
   const cntJournalLine = await countJournalLines(demoUserIds);
-  const cntJournalEntry = await prisma.journalEntry.count({ where: { userId: { in: demoUserIds } } });
-  const cntLedgerAccountMapping = await prisma.ledgerAccountMapping.count({ where: { userId: { in: demoUserIds } } });
-  const cntAccountChild = await prisma.account.count({ where: { userId: { in: demoUserIds }, parentId: { not: null } } });
-  const cntAccountParent = await prisma.account.count({ where: { userId: { in: demoUserIds }, parentId: null } });
-  const cntAccountingPeriod = await prisma.accountingPeriod.count({ where: { userId: { in: demoUserIds } } });
-  const cntBudget = await prisma.budget.count({ where: { userId: { in: demoUserIds } } });
-  const cntFixedAsset = await prisma.fixedAsset.count({ where: { userId: { in: demoUserIds } } });
-  const cntExchangeRate = await prisma.exchangeRate.count({ where: { userId: { in: demoUserIds } } });
-  const cntCostCenter = await prisma.costCenter.count({ where: { userId: { in: demoUserIds } } });
-  const cntProject = await prisma.project.count({ where: { userId: { in: demoUserIds } } });
-  const cntTransactionCategory = await prisma.transactionCategory.count({ where: { userId: { in: demoUserIds } } });
+  const cntJournalEntry = await prisma.journalEntry.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntLedgerAccountMapping = await prisma.ledgerAccountMapping.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntAccountChild = await prisma.account.count({ where: { tenantId: { in: demoUserIds }, parentId: { not: null } } });
+  const cntAccountParent = await prisma.account.count({ where: { tenantId: { in: demoUserIds }, parentId: null } });
+  const cntAccountingPeriod = await prisma.accountingPeriod.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntBudget = await prisma.budget.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntFixedAsset = await prisma.fixedAsset.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntExchangeRate = await prisma.exchangeRate.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntCostCenter = await prisma.costCenter.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntProject = await prisma.project.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntTransactionCategory = await prisma.transactionCategory.count({ where: { tenantId: { in: demoUserIds } } });
 
   // --- Step 9: Inventory + Products + TaxRate + ExpenseCategory ---
   const cntInventory = await prisma.inventory.count({
     where: {
-      OR: [{ userId: { in: demoUserIds } }, { product: { code: { startsWith: 'DEMO-' } } }],
+      OR: [{ tenantId: { in: demoUserIds } }, { product: { code: { startsWith: 'DEMO-' } } }],
     },
   });
   const cntProduct = await prisma.product.count({ where: { code: { startsWith: 'DEMO-' } } });
-  const cntTaxRate = await prisma.taxRate.count({ where: { userId: { in: demoUserIds } } });
+  const cntTaxRate = await prisma.taxRate.count({ where: { tenantId: { in: demoUserIds } } });
   const cntExpenseCategory = await prisma.expenseCategory.count({ where: { title: { startsWith: 'Demo ' } } });
 
   // --- Step 10: Vehicles + Reminders + Customers + Suppliers ---
-  const cntVehicle = await prisma.vehicle.count({ where: { userId: { in: demoUserIds } } });
+  const cntVehicle = await prisma.vehicle.count({ where: { tenantId: { in: demoUserIds } } });
   const cntReminder = await prisma.reminder.count({ where: { createdBy: { in: demoUserIds } } });
-  const cntCustomer = await prisma.customer.count({ where: { userId: { in: demoUserIds } } });
-  const cntSupplier = await prisma.supplier.count({ where: { user_id: { in: demoUserIds } } });
+  const cntCustomer = await prisma.customer.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntSupplier = await prisma.supplier.count({ where: { tenantId: { in: demoUserIds } } });
 
   // --- Step 11: Config models + Localization + CompanySettings ---
-  const cntGatewayConfig = await prisma.gatewayConfig.count({ where: { userId: { in: demoUserIds } } });
-  const cntMessagingConfig = await prisma.messagingConfig.count({ where: { userId: { in: demoUserIds } } });
-  const cntAiConfig = await prisma.aiConfig.count({ where: { userId: { in: demoUserIds } } });
-  const cntAccountingIntegration = await prisma.accountingIntegration.count({ where: { userId: { in: demoUserIds } } });
-  const cntLocalization = await prisma.localization.count({ where: { userId: { in: demoUserIds } } });
-  const cntCompanySettings = await prisma.companySettings.count({ where: { userId: { in: demoUserIds } } });
+  const cntGatewayConfig = await prisma.gatewayConfig.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntMessagingConfig = await prisma.messagingConfig.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntAiConfig = await prisma.aiConfig.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntAccountingIntegration = await prisma.accountingIntegration.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntLocalization = await prisma.localization.count({ where: { tenantId: { in: demoUserIds } } });
+  const cntCompanySettings = await prisma.companySettings.count({ where: { tenantId: { in: demoUserIds } } });
 
   // --- Step 12: Users (last) ---
   const cntStaffUsers = staffUsers.length;
@@ -300,7 +300,7 @@ async function main(): Promise<void> {
       // -----------------------------------------------------------------------
       const sessionIds = (
         await tx.aiChatSession.findMany({
-          where: { userId: { in: demoUserIds } },
+          where: { tenantId: { in: demoUserIds } },
           select: { id: true },
         })
       ).map((s) => s.id);
@@ -311,16 +311,16 @@ async function main(): Promise<void> {
           await tx.aiChatMessage.deleteMany({ where: { sessionId: { in: sessionIds } } }),
         );
       }
-      track('AiChatSession', await tx.aiChatSession.deleteMany({ where: { userId: { in: demoUserIds } } }));
+      track('AiChatSession', await tx.aiChatSession.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
 
       // NULL resultingPurchaseId before deleting jobs (unique FK to Purchase)
       await tx.aiExtractionJob.updateMany({
-        where: { userId: { in: demoUserIds }, resultingPurchaseId: { not: null } },
+        where: { tenantId: { in: demoUserIds }, resultingPurchaseId: { not: null } },
         data: { resultingPurchaseId: null },
       });
-      track('AiExtractionJob', await tx.aiExtractionJob.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('AiUsageLog', await tx.aiUsageLog.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('Refund', await tx.refund.deleteMany({ where: { userId: { in: demoUserIds } } }));
+      track('AiExtractionJob', await tx.aiExtractionJob.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('AiUsageLog', await tx.aiUsageLog.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('Refund', await tx.refund.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
 
       // -----------------------------------------------------------------------
       // Step 2 — Payment infrastructure
@@ -329,66 +329,66 @@ async function main(): Promise<void> {
       await tx.invoicePayment.updateMany({
         where: {
           paymentTransactionId: { not: null },
-          invoice: { userId: { in: demoUserIds } },
+          invoice: { tenantId: { in: demoUserIds } },
         },
         data: { paymentTransactionId: null },
       });
-      track('PaymentTransaction', await tx.paymentTransaction.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('PaymentLinkMethod', await tx.paymentLinkMethod.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('EInvoiceRecord', await tx.eInvoiceRecord.deleteMany({ where: { userId: { in: demoUserIds } } }));
+      track('PaymentTransaction', await tx.paymentTransaction.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('PaymentLinkMethod', await tx.paymentLinkMethod.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('EInvoiceRecord', await tx.eInvoiceRecord.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
 
       // -----------------------------------------------------------------------
       // Step 3 — Invoice chain (NULL self-refs first)
       // -----------------------------------------------------------------------
       await tx.invoice.updateMany({
         where: {
-          userId: { in: demoUserIds },
+          tenantId: { in: demoUserIds },
           OR: [{ parentInvoice: { not: null } }, { convertedFromId: { not: null } }],
         },
         data: { parentInvoice: null, convertedFromId: null, convertedAt: null },
       });
       track(
         'InvoicePayment',
-        await tx.invoicePayment.deleteMany({ where: { invoice: { userId: { in: demoUserIds } } } }),
+        await tx.invoicePayment.deleteMany({ where: { invoice: { tenantId: { in: demoUserIds } } } }),
       );
-      track('CreditNote', await tx.creditNote.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('DeliveryChallan', await tx.deliveryChallan.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('Quotation', await tx.quotation.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('Invoice', await tx.invoice.deleteMany({ where: { userId: { in: demoUserIds } } }));
+      track('CreditNote', await tx.creditNote.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('DeliveryChallan', await tx.deliveryChallan.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('Quotation', await tx.quotation.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('Invoice', await tx.invoice.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
 
       // -----------------------------------------------------------------------
       // Step 4 — Expense chain (children before parents)
       // -----------------------------------------------------------------------
       track(
         'ExpenseChangeLog',
-        await tx.expenseChangeLog.deleteMany({ where: { expense: { userId: { in: demoUserIds } } } }),
+        await tx.expenseChangeLog.deleteMany({ where: { expense: { tenantId: { in: demoUserIds } } } }),
       );
       // child expenses first (parentExpense != null)
       track(
         'Expense (children)',
-        await tx.expense.deleteMany({ where: { userId: { in: demoUserIds }, parentExpense: { not: null } } }),
+        await tx.expense.deleteMany({ where: { tenantId: { in: demoUserIds }, parentExpense: { not: null } } }),
       );
-      track('Expense (parents)', await tx.expense.deleteMany({ where: { userId: { in: demoUserIds } } }));
+      track('Expense (parents)', await tx.expense.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
 
       // -----------------------------------------------------------------------
       // Step 5 — Purchase chain
       // -----------------------------------------------------------------------
       track(
         'SupplierPayment',
-        await tx.supplierPayment.deleteMany({ where: { purchase: { userId: { in: demoUserIds } } } }),
+        await tx.supplierPayment.deleteMany({ where: { purchase: { tenantId: { in: demoUserIds } } } }),
       );
-      track('DebitNote', await tx.debitNote.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('Purchase', await tx.purchase.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('PurchaseOrder', await tx.purchaseOrder.deleteMany({ where: { userId: { in: demoUserIds } } }));
+      track('DebitNote', await tx.debitNote.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('Purchase', await tx.purchase.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('PurchaseOrder', await tx.purchaseOrder.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
 
       // -----------------------------------------------------------------------
       // Step 6 — Bank + petty cash
       // -----------------------------------------------------------------------
       track(
         'BankTransaction',
-        await tx.bankTransaction.deleteMany({ where: { bankAccount: { userId: { in: demoUserIds } } } }),
+        await tx.bankTransaction.deleteMany({ where: { bankAccount: { tenantId: { in: demoUserIds } } } }),
       );
-      track('BankDetail', await tx.bankDetail.deleteMany({ where: { userId: { in: demoUserIds } } }));
+      track('BankDetail', await tx.bankDetail.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
       track(
         'PettyCashTransaction',
         await tx.pettyCashTransaction.deleteMany({ where: { remarks: { startsWith: 'DEMO-PC' } } }),
@@ -402,9 +402,9 @@ async function main(): Promise<void> {
       // demo users (Step 12). Reached via untyped delegate (stale-client safe).
       // -----------------------------------------------------------------------
       const ptx = tx as unknown as Record<string, { deleteMany: (a: unknown) => Promise<Prisma.BatchPayload> }>;
-      track('PayRunLine', await ptx['payRunLine']!.deleteMany({ where: { payRun: { userId: { in: demoUserIds } } } }));
-      track('PayRun', await ptx['payRun']!.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('PayrollProfile', await ptx['payrollProfile']!.deleteMany({ where: { userId: { in: demoUserIds } } }));
+      track('PayRunLine', await ptx['payRunLine']!.deleteMany({ where: { payRun: { tenantId: { in: demoUserIds } } } }));
+      track('PayRun', await ptx['payRun']!.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('PayrollProfile', await ptx['payrollProfile']!.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
 
 
       // -----------------------------------------------------------------------
@@ -413,7 +413,7 @@ async function main(): Promise<void> {
       // We delete explicitly first so the counts are accurate.
       // -----------------------------------------------------------------------
       const journalEntryIds = (
-        await tx.journalEntry.findMany({ where: { userId: { in: demoUserIds } }, select: { id: true } })
+        await tx.journalEntry.findMany({ where: { tenantId: { in: demoUserIds } }, select: { id: true } })
       ).map((e) => e.id);
       if (journalEntryIds.length) {
         track(
@@ -423,26 +423,26 @@ async function main(): Promise<void> {
       }
       // JournalEntry has a self-ref (reversedById). NULL it first.
       await tx.journalEntry.updateMany({
-        where: { userId: { in: demoUserIds }, reversedById: { not: null } },
+        where: { tenantId: { in: demoUserIds }, reversedById: { not: null } },
         data: { reversedById: null },
       });
-      track('JournalEntry', await tx.journalEntry.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('LedgerAccountMapping', await tx.ledgerAccountMapping.deleteMany({ where: { userId: { in: demoUserIds } } }));
+      track('JournalEntry', await tx.journalEntry.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('LedgerAccountMapping', await tx.ledgerAccountMapping.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
       // TransactionCategory references Account; delete before Account
-      track('TransactionCategory', await tx.transactionCategory.deleteMany({ where: { userId: { in: demoUserIds } } }));
+      track('TransactionCategory', await tx.transactionCategory.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
       // Budget references Account; delete before Account
-      track('Budget', await tx.budget.deleteMany({ where: { userId: { in: demoUserIds } } }));
+      track('Budget', await tx.budget.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
       // Account children (parentId != null) before parents
       track(
         'Account (children)',
-        await tx.account.deleteMany({ where: { userId: { in: demoUserIds }, parentId: { not: null } } }),
+        await tx.account.deleteMany({ where: { tenantId: { in: demoUserIds }, parentId: { not: null } } }),
       );
-      track('Account (parents)', await tx.account.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('AccountingPeriod', await tx.accountingPeriod.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('FixedAsset', await tx.fixedAsset.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('ExchangeRate', await tx.exchangeRate.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('CostCenter', await tx.costCenter.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('Project', await tx.project.deleteMany({ where: { userId: { in: demoUserIds } } }));
+      track('Account (parents)', await tx.account.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('AccountingPeriod', await tx.accountingPeriod.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('FixedAsset', await tx.fixedAsset.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('ExchangeRate', await tx.exchangeRate.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('CostCenter', await tx.costCenter.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('Project', await tx.project.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
 
       // -----------------------------------------------------------------------
       // Step 9 — Inventory + Products + TaxRate + ExpenseCategory
@@ -455,29 +455,29 @@ async function main(): Promise<void> {
       // Inventory owned by demo users (any product)
       track(
         'Inventory (demo-user)',
-        await tx.inventory.deleteMany({ where: { userId: { in: demoUserIds } } }),
+        await tx.inventory.deleteMany({ where: { tenantId: { in: demoUserIds } } }),
       );
       track('Product (DEMO-)', await tx.product.deleteMany({ where: { code: { startsWith: 'DEMO-' } } }));
-      track('TaxRate', await tx.taxRate.deleteMany({ where: { userId: { in: demoUserIds } } }));
+      track('TaxRate', await tx.taxRate.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
       track('ExpenseCategory (Demo )', await tx.expenseCategory.deleteMany({ where: { title: { startsWith: 'Demo ' } } }));
 
       // -----------------------------------------------------------------------
       // Step 10 — Vehicles + Reminders + Customers + Suppliers
       // -----------------------------------------------------------------------
-      track('Vehicle', await tx.vehicle.deleteMany({ where: { userId: { in: demoUserIds } } }));
+      track('Vehicle', await tx.vehicle.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
       track('Reminder', await tx.reminder.deleteMany({ where: { createdBy: { in: demoUserIds } } }));
-      track('Customer', await tx.customer.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('Supplier', await tx.supplier.deleteMany({ where: { user_id: { in: demoUserIds } } }));
+      track('Customer', await tx.customer.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('Supplier', await tx.supplier.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
 
       // -----------------------------------------------------------------------
       // Step 11 — Config models + AccountingIntegration + Localization + CompanySettings
       // -----------------------------------------------------------------------
-      track('GatewayConfig', await tx.gatewayConfig.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('MessagingConfig', await tx.messagingConfig.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('AiConfig', await tx.aiConfig.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('AccountingIntegration', await tx.accountingIntegration.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('Localization', await tx.localization.deleteMany({ where: { userId: { in: demoUserIds } } }));
-      track('CompanySettings', await tx.companySettings.deleteMany({ where: { userId: { in: demoUserIds } } }));
+      track('GatewayConfig', await tx.gatewayConfig.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('MessagingConfig', await tx.messagingConfig.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('AiConfig', await tx.aiConfig.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('AccountingIntegration', await tx.accountingIntegration.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('Localization', await tx.localization.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
+      track('CompanySettings', await tx.companySettings.deleteMany({ where: { tenantId: { in: demoUserIds } } }));
 
       // -----------------------------------------------------------------------
       // Step 12 — Users (last — owner must be deleted after staff)
@@ -502,10 +502,10 @@ async function main(): Promise<void> {
 
 // ---------------------------------------------------------------------------
 // Skipped models (not in schema or not demo-scoped — left intentionally):
-//   - InvoiceTemplate        : userId FK exists but no demo data seeded; skipped
-//   - InventoryCostLayer      : userId plain scalar, no Prisma relation; no demo data
-//   - Signature               : userId FK exists but no demo data seeded; skipped
-//   - Conversation            : userId FK exists but no demo data seeded; skipped
+//   - InvoiceTemplate        : tenantId FK exists but no demo data seeded; skipped
+//   - InventoryCostLayer      : tenantId plain scalar, no Prisma relation; no demo data
+//   - Signature               : tenantId FK exists but no demo data seeded; skipped
+//   - Conversation            : tenantId FK exists but no demo data seeded; skipped
 //   - AIChatSession (legacy)  : older model (line 1923); no demo data; skipped
 //   - AIConfiguration (legacy): older model; no demo data; skipped
 //   - AIPromptLog (legacy)    : older model; no demo data; skipped

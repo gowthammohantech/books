@@ -7,7 +7,7 @@
  * 0% group exists so product creation has a default available immediately
  * after onboarding.
  *
- * Note on scoping: `TaxGroup` is GLOBAL (no userId column) while `TaxRate` is
+ * Note on scoping: `TaxGroup` is GLOBAL (no tenantId column) while `TaxRate` is
  * user-scoped. We therefore:
  *   - upsert/find a global "No Tax" TaxGroup by name (idempotent), and
  *   - create a per-tenant 0% NONE TaxRate if the tenant has none in that group,
@@ -35,14 +35,14 @@ export interface EnsureDefaultTaxGroupResult {
 }
 
 export async function ensureDefaultTaxGroup(
-  userId: string,
+  tenantId: string,
   db: DefaultTaxDb = prisma,
 ): Promise<EnsureDefaultTaxGroupResult> {
   // Short-circuit: if this tenant already has ANY TaxGroup it can use for a
   // Product (i.e. a non-deleted TaxRate they own that belongs to a group),
   // we don't need a default. Use the first such group.
   const existingRate = await db.taxRate.findFirst({
-    where: { userId, isDeleted: false, tax_groups: { some: {} } },
+    where: { tenantId, isDeleted: false, tax_groups: { some: {} } },
     select: { tax_groups: { select: { id: true }, take: 1 } },
   });
   if (existingRate && existingRate.tax_groups.length > 0) {
@@ -58,14 +58,14 @@ export async function ensureDefaultTaxGroup(
     created = true;
   }
 
-  // Per-tenant 0% rate inside that group (idempotent on (userId, name)).
+  // Per-tenant 0% rate inside that group (idempotent on (tenantId, name)).
   const rate = await db.taxRate.findFirst({
-    where: { userId, name: DEFAULT_TAX_RATE_NAME, isDeleted: false },
+    where: { tenantId, name: DEFAULT_TAX_RATE_NAME, isDeleted: false },
   });
   if (!rate) {
     await db.taxRate.create({
       data: {
-        userId,
+        tenantId,
         regime: 'NONE',
         name: DEFAULT_TAX_RATE_NAME,
         rate: '0',

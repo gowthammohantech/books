@@ -8,7 +8,7 @@ vi.mock('../lib/prisma', () => ({
   },
 }));
 vi.mock('../lib/tenantScope', () => ({
-  requireUserId: () => 'tenant1',
+  requireTenantId: () => 'tenant1',
   requireActingUserId: () => 'tenant1',
   UnauthorizedError: class extends Error {},
 }));

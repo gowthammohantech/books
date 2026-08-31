@@ -4,10 +4,10 @@ import { body, validationResult, ValidationChain } from 'express-validator';
 import { prisma } from '../lib/prisma';
 
 async function assertCustomerOwnedByUser(value: string, req: Request): Promise<true> {
-  const userId = (req as unknown as { user?: string }).user;
-  if (!userId) throw new Error('Unauthorized');
+  const tenantId = (req as unknown as { user?: string }).user;
+  if (!tenantId) throw new Error('Unauthorized');
   const exists = await prisma.customer.findFirst({
-    where: { id: value, userId, isDeleted: false },
+    where: { id: value, tenantId, isDeleted: false },
     select: { id: true },
   });
   if (!exists) throw new Error('Customer not found for current user');

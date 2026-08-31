@@ -35,7 +35,7 @@ describe('postMoneyIn', () => {
   it('posts Dr Bank total, Cr income net, Cr output tax when tax > 0', async () => {
     const tx = fakeTx();
     await postMoneyIn(tx as never, {
-      userId: 'u1',
+      tenantId: 'u1',
       sourceType: 'BankTxnExplain',
       sourceId: 'b1',
       event: 'explained',
@@ -62,7 +62,7 @@ describe('postMoneyIn', () => {
   it('omits the OUTPUT_TAX leg when tax is 0', async () => {
     const tx = fakeTx();
     await postMoneyIn(tx as never, {
-      userId: 'u1',
+      tenantId: 'u1',
       sourceType: 'BankTxnExplain',
       sourceId: 'b2',
       event: 'explained',
@@ -84,7 +84,7 @@ describe('postMoneyIn', () => {
   it('uses CASH role when paymentModeSlug contains "cash"', async () => {
     const tx = fakeTx();
     await postMoneyIn(tx as never, {
-      userId: 'u1',
+      tenantId: 'u1',
       sourceType: 'BankTxnExplain',
       sourceId: 'b3',
       event: 'explained',
@@ -104,7 +104,7 @@ describe('postMoneyIn', () => {
   it('no-ops when ledger not initialized', async () => {
     const tx = fakeTx({ initialized: false });
     await postMoneyIn(tx as never, {
-      userId: 'u1',
+      tenantId: 'u1',
       sourceType: 'BankTxnExplain',
       sourceId: 'b4',
       event: 'explained',

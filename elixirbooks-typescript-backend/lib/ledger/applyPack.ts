@@ -23,7 +23,7 @@ export interface ApplyPackTx {
 }
 
 export interface ApplyPackInput {
-  userId: string;
+  tenantId: string;
   /**
    * Pack-registry code to apply (e.g. 'GB', 'EU', 'AU'). EU member states share
    * the single generic 'EU' pack — pass 'EU' here for any member.
@@ -51,7 +51,7 @@ export async function applyPack(tx: ApplyPackTx, input: ApplyPackInput): Promise
   const storedCountryCode =
     pack.countryCode === 'EU' && isEuMember(memberIso2) ? memberIso2 : pack.countryCode;
 
-  const settings = await tx.companySettings.findFirst({ where: { userId: input.userId } });
+  const settings = await tx.companySettings.findFirst({ where: { tenantId: input.tenantId } });
   if (settings?.ledgerInitialized) {
     throw new LedgerError('ledger already initialized; country/setup is immutable');
   }
@@ -62,7 +62,7 @@ export async function applyPack(tx: ApplyPackTx, input: ApplyPackInput): Promise
   const roleByCode = new Map(pack.accounts.filter((a) => a.role).map((a) => [a.code, a.role!]));
 
   for (const acc of ordered) {
-    const existing = await tx.account.findUnique({ where: { userId_code: { userId: input.userId, code: acc.code } } });
+    const existing = await tx.account.findUnique({ where: { tenantId_code: { tenantId: input.tenantId, code: acc.code } } });
     if (existing) {
       codeToId.set(acc.code, existing.id);
       if (roleByCode.has(acc.code)) {
@@ -73,7 +73,7 @@ export async function applyPack(tx: ApplyPackTx, input: ApplyPackInput): Promise
     const parentId = acc.parentCode ? codeToId.get(acc.parentCode) ?? null : null;
     const row = await tx.account.create({
       data: {
-        userId: input.userId, code: acc.code, name: acc.name, accountType: acc.accountType,
+        tenantId: input.tenantId, code: acc.code, name: acc.name, accountType: acc.accountType,
         parentId, currencyCode: input.functionalCurrency ?? pack.defaultFunctionalCurrency,
         roleProtected: roleByCode.has(acc.code),
       },
@@ -87,8 +87,8 @@ export async function applyPack(tx: ApplyPackTx, input: ApplyPackInput): Promise
     const accountId = codeToId.get(code);
     if (!accountId) throw new LedgerError(`pack ${pack.countryCode} role ${role} -> missing account ${code}`);
     await tx.ledgerAccountMapping.upsert({
-      where: { userId_roleKey: { userId: input.userId, roleKey: role } },
-      create: { userId: input.userId, roleKey: role, accountId },
+      where: { tenantId_roleKey: { tenantId: input.tenantId, roleKey: role } },
+      create: { tenantId: input.tenantId, roleKey: role, accountId },
       update: { accountId },
     });
   }
@@ -98,9 +98,9 @@ export async function applyPack(tx: ApplyPackTx, input: ApplyPackInput): Promise
   // taxRegime is set from the pack so the tenant's tax engine matches the country.
   const taxRegime = packRegimeToPrisma(pack.taxRegime);
   await tx.companySettings.upsert({
-    where: { userId: input.userId },
+    where: { tenantId: input.tenantId },
     create: {
-      userId: input.userId,
+      tenantId: input.tenantId,
       // Required String fields — populated with empty strings as placeholder defaults.
       // The tenant will complete these via the company-settings onboarding step.
       companyName: '',
@@ -133,7 +133,7 @@ export async function applyPack(tx: ApplyPackTx, input: ApplyPackInput): Promise
   if (tx.taxGroup && tx.taxRate) {
     await seedPackTaxRates(
       { taxGroup: tx.taxGroup, taxRate: tx.taxRate },
-      input.userId,
+      input.tenantId,
       // Seed the REAL member rate (euStandardRate('DE')=19), not generic EU.
       storedCountryCode,
       pack.taxRegime,

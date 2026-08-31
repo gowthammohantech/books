@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import type { Module, Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId } from '../lib/tenantScope';
+import { requireTenantId } from '../lib/tenantScope';
 
 interface PermissionInput {
   moduleId?: string;
@@ -42,7 +42,7 @@ export async function createOrUpdatePermissions(
     // Validate role existence WITHIN THIS TENANT. Scoping matters here: an
     // unscoped lookup by id would let any tenant re-permission another
     // tenant's role by guessing its uuid.
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const role = await prisma.role.findFirst({ where: { id: roleId, tenantId } });
     if (!role) {
       res.status(404).json({

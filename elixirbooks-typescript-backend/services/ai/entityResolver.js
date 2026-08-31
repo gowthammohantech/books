@@ -11,18 +11,18 @@ const userSupplier = require("@models/User");
 
 /**
  * Load context data from the database for AI prompt processing
- * @param {string} userId - The authenticated user's ID
+ * @param {string} tenantId - The authenticated user's ID
  * @returns {object} Context data for the AI prompt
  */
-async function loadContext(userId) {
+async function loadContext(tenantId) {
   const [customers, suppliers, products, taxGroups, expenseCategories,banks,paymentModes,userSuppliers] =
     await Promise.all([
-      Customer.find({ isDeleted: false, userId })
+      Customer.find({ isDeleted: false, tenantId })
         .select("name email phone _id")
         .sort({ name: 1 })
         .limit(200)
         .lean(),
-      Supplier.find({ isDeleted: false, user_id: userId })
+      Supplier.find({ isDeleted: false, tenantId: tenantId })
         .select("supplier_name supplier_email _id")
         .sort({ supplier_name: 1 })
         .limit(200)
@@ -39,7 +39,7 @@ async function loadContext(userId) {
       ExpenseCategory.find({ isDeleted: false, status: true })
         .select("title _id")
         .lean(),
-      BankDetail.find({ isDeleted: false, status: true, userId }).select("bankName accountHoldername accountNumber accountType _id").lean(),
+      BankDetail.find({ isDeleted: false, status: true, tenantId }).select("bankName accountHoldername accountNumber accountType _id").lean(),
       PaymentMode.find({ status: true }).select("name slug _id").lean(),
       userSupplier.find({ user_type: 2 }).select("firstName lastName email phone _id").lean(),
     ]);

@@ -314,12 +314,12 @@ router.post('/bank-transactions/:id/unexplain', protect, requirePermission('bank
 
 
 //company
-router.put('/company-details/:userId', protect, requirePermission('website-settings', 'edit'), uploadCompanyFields, handleUploadError, updateCompanySettingsValidator, CompanySettings.updateCompanySettings);
+router.put('/company-details/:tenantId', protect, requirePermission('website-settings', 'edit'), uploadCompanyFields, handleUploadError, updateCompanySettingsValidator, CompanySettings.updateCompanySettings);
 // Read-only: also used by the invoice/purchase "Bill From" picker to load a
 // company's currency/address — widen so staff creating documents don't need
 // Settings view access just to populate that dropdown. Only the PUT above
 // (actually editing company settings) stays Settings-gated.
-router.get('/company-details/:userId', protect, requirePermission([...DOCUMENT_MODULES, 'website-settings'], 'view'), CompanySettings.getCompanySettings);
+router.get('/company-details/:tenantId', protect, requirePermission([...DOCUMENT_MODULES, 'website-settings'], 'view'), CompanySettings.getCompanySettings);
 router.get('/system-settings', protect, CompanySettings.getBasicDetails); /* self */
 router.patch('/company/setup', protect, requirePermission('website-settings', 'edit'), setup.single('siteLogo'), CompanySettings.updateCompanySetup);
 // Also powers per-document numbering config (e.g. the invoice/quotation
@@ -633,9 +633,9 @@ router.get('/report/debit-note', protect, requirePermission('transaction-reports
 router.get('/report/quotation', protect, requirePermission('transaction-reports', 'view'), transactionReportController.getQuotationSalesReport);
 
 //security Settings
-router.put('/security/reset-password/:userId', protect, requirePermission('roles-permissions', 'edit'), securityController.resetPassword);
-router.delete('/security/delete-account/:userId', protect, requirePermission('roles-permissions', 'delete'), securityController.deleteAccount);
-router.get('/security/login-activities/:userId', protect, requirePermission('roles-permissions', 'view'), securityController.getLoginActivitiesByUser);
+router.put('/security/reset-password/:tenantId', protect, requirePermission('roles-permissions', 'edit'), securityController.resetPassword);
+router.delete('/security/delete-account/:tenantId', protect, requirePermission('roles-permissions', 'delete'), securityController.deleteAccount);
+router.get('/security/login-activities/:tenantId', protect, requirePermission('roles-permissions', 'view'), securityController.getLoginActivitiesByUser);
 
 //activity log (audit trail)
 router.get('/activity-logs', protect, requirePermission('activity-log', 'view'), activityLogController.listActivityLogs);
@@ -957,7 +957,7 @@ router.get('/inventory/cost-layers', protect, requirePermission('inventory', 'vi
 const myMoneyController = require('@controllers/myMoneyController');
 // #36: gate My Money on its own 'my-money' module (the slug the UI uses),
 // not the unrelated 'banking' module that 403'd finance users.
-router.get('/my-money/:userId', protect, requirePermission('my-money', 'view'), myMoneyController.getMyMoney);
+router.get('/my-money/:tenantId', protect, requirePermission('my-money', 'view'), myMoneyController.getMyMoney);
 
 // M2 Phase 2 — Payroll Profiles CRUD (Task 6)
 // #36: gate on the dedicated 'payroll' module (matches the UI sidebar slug)

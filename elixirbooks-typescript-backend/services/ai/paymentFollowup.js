@@ -9,11 +9,11 @@ const client = new Anthropic({
 /**
  * Get overdue invoices for a user
  */
-async function getOverdueInvoices(userId) {
+async function getOverdueInvoices(tenantId) {
   const now = new Date();
 
   const invoices = await Invoice.find({
-    userId,
+    tenantId,
     isDeleted: false,
     status: { $in: ["SENT", "UNPAID", "OVERDUE", "PARTIALLY_PAID"] },
     dueDate: { $lt: now },

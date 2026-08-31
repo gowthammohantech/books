@@ -18,7 +18,7 @@ function fakeTx(opts: { initialized?: boolean; noSettings?: boolean } = {}) {
       upsert: vi.fn().mockResolvedValue({}),
     },
     account: {
-      findUnique: vi.fn().mockImplementation(async ({ where }: any) => accounts.get(where.userId_code.code) ?? null),
+      findUnique: vi.fn().mockImplementation(async ({ where }: any) => accounts.get(where.tenantId_code.code) ?? null),
       create: vi.fn().mockImplementation(async ({ data }: any) => { const row = { id: `acc${n++}`, code: data.code }; accounts.set(data.code, row); return row; }),
       update: vi.fn().mockResolvedValue({}),
     },
@@ -36,7 +36,7 @@ function fakeTx(opts: { initialized?: boolean; noSettings?: boolean } = {}) {
   };
 }
 
-const input = { userId: 'u1', countryCode: 'IN', functionalCurrency: 'INR', fiscalYearStartMonth: 4, goLiveDate: new Date('2026-04-01') };
+const input = { tenantId: 'u1', countryCode: 'IN', functionalCurrency: 'INR', fiscalYearStartMonth: 4, goLiveDate: new Date('2026-04-01') };
 
 describe('applyPack', () => {
   it('seeds accounts, maps every role, and writes settings', async () => {
@@ -115,11 +115,11 @@ describe('applyPack', () => {
     // Must call upsert — NOT a bare update with an empty id
     expect(tx.companySettings.upsert).toHaveBeenCalledTimes(1);
     const call = (tx.companySettings.upsert as any).mock.calls[0][0];
-    // where clause targets userId, not a potentially-empty id
-    expect(call.where).toEqual({ userId: input.userId });
+    // where clause targets tenantId, not a potentially-empty id
+    expect(call.where).toEqual({ tenantId: input.tenantId });
     // create branch carries all required fields plus ledger fields
     expect(call.create).toMatchObject({
-      userId: input.userId,
+      tenantId: input.tenantId,
       countryCode: 'IN',
       functionalCurrency: 'INR',
       fiscalYearStartMonth: 4,

@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { TRANSACTION_TYPES, USER_PAYMENT_REASONS } from '../lib/moneyFlow/types';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { sendPrismaError } from '../middleware/prismaError';
 import { handleLedgerError } from '../lib/httpErrors';
 import { explainAndPost, unexplain, ExplainError } from '../lib/moneyFlow/explainPosting';
@@ -11,12 +11,12 @@ export async function getTransactionTypes(_req: Request, res: Response): Promise
 
 export async function explain(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = req.body as Record<string, unknown>;
     const out = await explainAndPost({
       bankTxnId: id,
-      userId,
+      tenantId,
       transactionTypeKey: body.transactionTypeKey as string,
       categoryId: body.categoryId as string | undefined,
       payToUserId: body.payToUserId as string | undefined,
@@ -51,9 +51,9 @@ export async function explain(req: Request, res: Response): Promise<void> {
 
 export async function unexplainTxn(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
-    await unexplain({ bankTxnId: id, userId });
+    await unexplain({ bankTxnId: id, tenantId });
     res.status(200).json({ success: true, message: 'Transaction un-explained' });
   } catch (err) {
     if (err instanceof ExplainError) {

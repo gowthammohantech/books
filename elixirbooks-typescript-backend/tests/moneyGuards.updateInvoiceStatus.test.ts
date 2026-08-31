@@ -35,7 +35,7 @@ function makeReqRes(body: Record<string, unknown>) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockInvoiceFindFirst.mockResolvedValue({ id: 'inv-1', userId: TENANT_ID, status: 'UNPAID' });
+  mockInvoiceFindFirst.mockResolvedValue({ id: 'inv-1', tenantId: TENANT_ID, status: 'UNPAID' });
   mockInvoiceUpdate.mockResolvedValue({ id: 'inv-1', status: 'SENT' });
 });
 

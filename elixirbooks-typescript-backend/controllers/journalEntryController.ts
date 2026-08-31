@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import {
   collectCostCentreIds,
   assertCostCentresExist,
@@ -69,11 +69,11 @@ async function generateEntryNumber(): Promise<string> {
 
 export async function list(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const page = Math.max(1, parseInt((req.query.page as string) ?? '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt((req.query.limit as string) ?? '20', 10)));
 
-    const where: Prisma.JournalEntryWhereInput = { userId, isDeleted: false };
+    const where: Prisma.JournalEntryWhereInput = { tenantId, isDeleted: false };
     const from = req.query.from as string | undefined;
     const to = req.query.to as string | undefined;
     // Report drill-down (Trial Balance / Budget Variance): show only entries that
@@ -130,10 +130,10 @@ export async function list(req: Request, res: Response): Promise<void> {
 
 export async function getById(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const row = await prisma.journalEntry.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       include: { lines: { include: { account: { select: { id: true, code: true, name: true, accountType: true } } } } },
     });
     if (!row) {
@@ -153,7 +153,7 @@ export async function getById(req: Request, res: Response): Promise<void> {
 
 export async function create(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as {
       entryDate?: string;
       description?: string;
@@ -219,7 +219,7 @@ export async function create(req: Request, res: Response): Promise<void> {
 
     // Verify all accounts belong to user
     const accountIds = body.lines.map((l) => l.accountId);
-    const accounts = await prisma.account.findMany({ where: { id: { in: accountIds }, userId, isDeleted: false } });
+    const accounts = await prisma.account.findMany({ where: { id: { in: accountIds }, tenantId, isDeleted: false } });
     if (accounts.length !== new Set(accountIds).size) {
       res.status(400).json({ success: false, message: 'One or more accounts not found' });
       return;
@@ -231,7 +231,7 @@ export async function create(req: Request, res: Response): Promise<void> {
     try {
       await assertCostCentresExist(
         prisma,
-        userId,
+        tenantId,
         collectCostCentreIds(null, body.lines.map((l) => ({ costCenterId: l.costCenterId }))),
       );
     } catch (centreErr) {
@@ -245,14 +245,14 @@ export async function create(req: Request, res: Response): Promise<void> {
     const entryNumber = await generateEntryNumber();
     const created = await prisma.journalEntry.create({
       data: {
-        userId,
+        tenantId,
         entryNumber,
         entryDate: body.entryDate ? new Date(body.entryDate) : new Date(),
         description: body.description ?? null,
         reference: body.reference ?? null,
         lines: {
           create: baseLines.map((l) => ({
-            tenantId: userId,
+            tenantId: tenantId,
             accountId: l.accountId,
             debit: new Prisma.Decimal(Number(l.debit ?? 0)),
             credit: new Prisma.Decimal(Number(l.credit ?? 0)),
@@ -284,9 +284,9 @@ export async function create(req: Request, res: Response): Promise<void> {
 
 export async function remove(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
-    const existing = await prisma.journalEntry.findFirst({ where: { id, userId, isDeleted: false } });
+    const existing = await prisma.journalEntry.findFirst({ where: { id, tenantId, isDeleted: false } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Journal entry not found' });
       return;

@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import type { Prisma, InvoiceStatus } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../../lib/tenantScope';
 import { resolveDisplayName } from '../../lib/contacts/contactIdentity';
 
 const num = (d: Prisma.Decimal | number | string | null | undefined): number =>
@@ -31,7 +31,7 @@ const partyName = (i: InvoiceParty): string =>
  */
 export async function accountsPlanning(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const now = new Date();
     const MONTHS = 6;
 
@@ -41,13 +41,13 @@ export async function accountsPlanning(req: Request, res: Response): Promise<voi
     const [histInvoices, histExpenses] = await Promise.all([
       prisma.invoice.findMany({
         where: {
-          userId, isDeleted: false, invoiceType: 'INVOICE',
+          tenantId, isDeleted: false, invoiceType: 'INVOICE',
           invoiceDate: { gte: seriesStart, lte: seriesEnd },
         },
         select: { invoiceDate: true, TotalAmount: true },
       }),
       prisma.expense.findMany({
-        where: { userId, isDeleted: false, expenseDate: { gte: seriesStart, lte: seriesEnd } },
+        where: { tenantId, isDeleted: false, expenseDate: { gte: seriesStart, lte: seriesEnd } },
         select: { expenseDate: true, amount: true },
       }),
     ]);
@@ -74,7 +74,7 @@ export async function accountsPlanning(req: Request, res: Response): Promise<voi
 
     const [recInvoices, dueInvoices, recExpenses] = await Promise.all([
       prisma.invoice.findMany({
-        where: { userId, isDeleted: false, isRecurring: true, nextRecurringDate: { gte: nextStart, lte: nextEnd } },
+        where: { tenantId, isDeleted: false, isRecurring: true, nextRecurringDate: { gte: nextStart, lte: nextEnd } },
         // Unified-contact-linked invoices leave the legacy `customer` null, so
         // the party must resolve contact-first (see mapping below) — otherwise
         // this customer-facing planning widget showed a blank/"Deleted User" label.
@@ -92,7 +92,7 @@ export async function accountsPlanning(req: Request, res: Response): Promise<voi
       }),
       prisma.invoice.findMany({
         where: {
-          userId, isDeleted: false, invoiceType: 'INVOICE',
+          tenantId, isDeleted: false, invoiceType: 'INVOICE',
           status: { in: OPEN_INVOICE_STATUSES as unknown as InvoiceStatus[] },
           dueDate: { gte: nextStart, lte: nextEnd },
         },
@@ -110,7 +110,7 @@ export async function accountsPlanning(req: Request, res: Response): Promise<voi
         orderBy: { dueDate: 'asc' },
       }),
       prisma.expense.findMany({
-        where: { userId, isDeleted: false, isRecurring: true, nextRecurringDate: { gte: nextStart, lte: nextEnd } },
+        where: { tenantId, isDeleted: false, isRecurring: true, nextRecurringDate: { gte: nextStart, lte: nextEnd } },
         select: { id: true, expenseId: true, description: true, amount: true, nextRecurringDate: true, repeatEvery: true, expenseCategory: { select: { title: true } } },
         orderBy: { nextRecurringDate: 'asc' },
       }),

@@ -9,7 +9,7 @@ import type {
 } from '@prisma/client';
 
 import { prisma } from '../../../lib/prisma';
-import { tenantScope, requireUserId, UnauthorizedError } from '../../../lib/tenantScope';
+import { tenantScope, requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 import { applyDocumentTreatment } from '../../../lib/tax/applyTreatment';
 import {
@@ -193,7 +193,7 @@ async function generateNextPurchaseOrderId(tx: Tx, prefix = 'PO-'): Promise<stri
 async function insertCustomFieldValues(
   tx: Tx,
   recordId: string,
-  userId: string,
+  tenantId: string,
   customFieldsRaw: unknown,
   files: Express.Multer.File[],
 ): Promise<void> {
@@ -217,7 +217,7 @@ async function insertCustomFieldValues(
       module: 'purchaseOrder',
       recordId,
       value,
-      createdBy: userId,
+      createdBy: tenantId,
     };
   });
 
@@ -230,7 +230,7 @@ async function insertCustomFieldValues(
 
 export async function createPurchaseOrder(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as Record<string, unknown>;
     // Resolved before the items so each line can inherit the document centre.
     const docCostCenterId = typeof body.costCenterId === 'string' && body.costCenterId ? body.costCenterId : null;
@@ -240,7 +240,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
     // id on a line would reach the ledger unnoticed. One query covers the
     // header and every line.
     try {
-      await assertCostCentresExist(prisma, userId, collectCostCentreIds(docCostCenterId, items));
+      await assertCostCentresExist(prisma, tenantId, collectCostCentreIds(docCostCenterId, items));
     } catch (centreErr) {
       if (centreErr instanceof UnknownCostCentreError) {
         res.status(400).json({ success: false, message: centreErr.message, errors: { costCenterId: centreErr.message } });
@@ -251,7 +251,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
 
     const billFromId = body.billFrom as string;
     const legacySupplierId = ((body.supplierId ?? body.billTo) as string | undefined) ?? null;
-    const bodyUserId = (body.userId as string) ?? userId;
+    const bodyUserId = (body.tenantId as string) ?? tenantId;
     const incomingContactId = typeof body.contactId === 'string' && body.contactId ? body.contactId : null;
 
     if (!incomingContactId && !legacySupplierId) {
@@ -267,7 +267,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
     if (incomingContactId) {
       // New contact-based path: verify the contact belongs to the AUTHENTICATED tenant.
       const ownedContact = await (prisma as unknown as Record<string, Record<string, (a: unknown) => Promise<unknown>>>).contact.findFirst({
-        where: { id: incomingContactId, userId, isDeleted: false },
+        where: { id: incomingContactId, tenantId, isDeleted: false },
         select: { id: true, defaultTaxTreatment: true },
       } as never) as { id: string; defaultTaxTreatment: TaxTreatment | null } | null;
       if (!ownedContact) {
@@ -280,7 +280,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
       // Legacy path: keep supplierId, resolve contactId from legacySupplierId.
       resolvedSupplierId = legacySupplierId;
       const contactRow = await (prisma as unknown as Record<string, Record<string, (a: unknown) => Promise<unknown>>>).contact.findFirst({
-        where: { legacySupplierId, userId, isDeleted: false },
+        where: { legacySupplierId, tenantId, isDeleted: false },
         select: { id: true, defaultTaxTreatment: true },
       } as never) as { id: string; defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) {
@@ -396,7 +396,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
           signatureId: signType === 'digitalSignature' ? ((body.signatureId as string) ?? null) : null,
           signatureImage: signType === 'eSignature' && req.file ? req.file.path : null,
           signatureName: signType === 'eSignature' ? ((body.signatureName as string) ?? null) : null,
-          userId: bodyUserId,
+          tenantId: bodyUserId,
           billFrom: billFromId,
           billTo: null,
           convert_type: convertType,
@@ -614,7 +614,7 @@ export async function getRecentProductsWithSearch(req: Request, res: Response): 
         ? { AND: [searchClause, currencyClause] }
         : searchClause;
 
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const products = await prisma.product.findMany({
       where,
@@ -637,7 +637,7 @@ export async function getRecentProductsWithSearch(req: Request, res: Response): 
     // mirroring ProductController.getAllProducts.
     const productIds = products.map((p) => p.id);
     const inventoryRows = await prisma.inventory.findMany({
-      where: { productId: { in: productIds }, userId: tenantId },
+      where: { productId: { in: productIds }, tenantId: tenantId },
       select: { productId: true, quantity: true },
     });
     const inventoryByProductId = new Map(inventoryRows.map((r) => [r.productId, r.quantity]));
@@ -751,16 +751,16 @@ export async function getRecentProductsWithSearch(req: Request, res: Response): 
 
 export async function listBankDetails(req: Request, res: Response): Promise<void> {
   try {
-    const { userId, status, search = '' } = req.query as {
-      userId?: string;
+    const { tenantId, status, search = '' } = req.query as {
+      tenantId?: string;
       status?: string;
       search?: string;
     };
 
     const where: Prisma.BankDetailWhereInput = { isDeleted: false };
 
-    if (userId) {
-      where.userId = userId;
+    if (tenantId) {
+      where.tenantId = tenantId;
     }
 
     if (status !== undefined) {
@@ -795,7 +795,7 @@ export async function listBankDetails(req: Request, res: Response): Promise<void
       currentBalance: detail.currentBalance ? parseFloat(detail.currentBalance.toString()) : 0,
       asOnDate: detail.asOnDate,
       status: detail.status,
-      userId: detail.userId,
+      tenantId: detail.tenantId,
       createdAt: detail.createdAt,
       updatedAt: detail.updatedAt,
     }));
@@ -822,11 +822,11 @@ export async function listBankDetails(req: Request, res: Response): Promise<void
 
 export async function getUserSignatures(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { search = '', status } = req.query as { search?: string; status?: string };
 
     const where: Prisma.SignatureWhereInput = {
-      userId,
+      tenantId,
       isDeleted: false,
     };
 
@@ -1478,7 +1478,7 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
   try {
     const { id } = req.params as { id: string };
     const body = req.body as Record<string, unknown>;
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const existingOrder = await prisma.purchaseOrder.findUnique({ where: { id } });
     if (!existingOrder) {
@@ -1486,7 +1486,7 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
       return;
     }
 
-    const bodyUserId = (body.userId as string) ?? existingOrder.userId;
+    const bodyUserId = (body.tenantId as string) ?? existingOrder.tenantId;
     const user = await prisma.user.findUnique({ where: { id: bodyUserId } });
     if (!user) {
       res.status(422).json({ message: 'Invalid user ID' });
@@ -1530,7 +1530,7 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
     if (incomingPartyId) {
       partyProvided = true;
       const ownedContact = (await contactDb().contact.findFirst({
-        where: { id: incomingPartyId, userId, isDeleted: false },
+        where: { id: incomingPartyId, tenantId, isDeleted: false },
         select: { id: true },
       } as never)) as { id: string } | null;
       if (ownedContact) {
@@ -1614,7 +1614,7 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
     let poContactDefaultTreatment: TaxTreatment | null = null;
     if (poContactId) {
       const contactRow = (await cdbPO().contact.findFirst({
-        where: { id: poContactId, userId, isDeleted: false },
+        where: { id: poContactId, tenantId, isDeleted: false },
         select: { defaultTaxTreatment: true },
       } as never)) as { defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) poContactDefaultTreatment = contactRow.defaultTaxTreatment;
@@ -1678,8 +1678,8 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
       if (existingOrder.billTo) updateData.billToUser = { disconnect: true };
     }
 
-    if (body.userId) {
-      updateData.user = { connect: { id: bodyUserId } };
+    if (body.tenantId) {
+      updateData.tenant = { connect: { id: bodyUserId } };
     }
 
     if (body.bank !== undefined) {
@@ -1777,8 +1777,8 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
         },
       },
     });
-    // userId param is acknowledged but not used after permission check
-    void userId;
+    // tenantId param is acknowledged but not used after permission check
+    void tenantId;
   } catch (err) {
     if (handleUnauthorized(res, err)) return;
     console.error(err);
@@ -1796,10 +1796,10 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
 export async function deletePurchaseOrder(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params as { id: string };
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const purchaseOrder = await prisma.purchaseOrder.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
 
     if (!purchaseOrder) {

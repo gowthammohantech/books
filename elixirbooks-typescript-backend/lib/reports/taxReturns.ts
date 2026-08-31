@@ -11,8 +11,8 @@
 // which emits exactly one OUTPUT_TAX account (code 2100, LIABILITY) and one
 // INPUT_TAX account (code 1300; ASSET, or EXPENSE for US sales tax where
 // inputTaxIsExpense). The stable identifier is NOT the code or name — it is the
-// LEDGER ROLE, persisted per tenant in LedgerAccountMapping(userId, roleKey →
-// accountId, @@unique[userId, roleKey]). The posting engine credits OUTPUT_TAX
+// LEDGER ROLE, persisted per tenant in LedgerAccountMapping(tenantId, roleKey →
+// accountId, @@unique[tenantId, roleKey]). The posting engine credits OUTPUT_TAX
 // on a sale and debits INPUT_TAX on a purchase via these same role mappings
 // (lib/ledger/ledgerPosting.ts). So resolveTaxAccounts reads the role mapping —
 // pack-agnostic, identical for IN/GB/EU/AU/NZ/US.
@@ -21,7 +21,7 @@
 // Mirrors controllers/financialStatementsController.ts#loadAccountBalances and
 // lib/reports/agingSubLedger.ts: sum JournalLine.baseDebit/baseCredit over lines
 // whose parent JournalEntry is in [from, to] (inclusive, on entryDate),
-// tenant-scoped (journalEntry.userId === tenant), excluding soft-deleted
+// tenant-scoped (journalEntry.tenantId === tenant), excluding soft-deleted
 // entries. Money stays in Prisma.Decimal throughout.
 //
 //   outputTax       = Σ (baseCredit − baseDebit) on OUTPUT_TAX account(s)
@@ -65,11 +65,11 @@ export interface TaxFigures {
  * (e.g. India CGST/SGST/IGST) — today each role maps to a single account.
  */
 export async function resolveTaxAccounts(
-  userId: string,
+  tenantId: string,
   client: TaxReturnsPrisma = defaultPrisma,
 ): Promise<ResolvedTaxAccounts> {
   const maps = await client.ledgerAccountMapping.findMany({
-    where: { userId, roleKey: { in: ['OUTPUT_TAX', 'INPUT_TAX'] } },
+    where: { tenantId, roleKey: { in: ['OUTPUT_TAX', 'INPUT_TAX'] } },
     select: { roleKey: true, accountId: true },
   });
   const outputAccountIds = maps.filter((m) => m.roleKey === 'OUTPUT_TAX').map((m) => m.accountId);
@@ -85,25 +85,25 @@ export async function resolveTaxAccounts(
  * same arithmetic the statements lib uses — so a return ties out to the GL.
  */
 export async function loadTaxFigures(
-  userId: string,
+  tenantId: string,
   from: Date,
   to: Date,
   client: TaxReturnsPrisma = defaultPrisma,
 ): Promise<TaxFigures> {
-  const { outputAccountIds, inputAccountIds } = await resolveTaxAccounts(userId, client);
+  const { outputAccountIds, inputAccountIds } = await resolveTaxAccounts(tenantId, client);
 
   // Load every account for the tenant with its period journal-line movement.
   // Identical loader shape to financialStatementsController#loadAccountBalances:
   // sum baseDebit/baseCredit over lines whose entry is in-period, tenant-scoped,
   // not soft-deleted.
   const accounts = await client.account.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     select: {
       id: true,
       accountType: true,
       journalLines: {
         where: {
-          journalEntry: { userId, isDeleted: false, entryDate: { gte: from, lte: to } },
+          journalEntry: { tenantId, isDeleted: false, entryDate: { gte: from, lte: to } },
         },
         select: { baseDebit: true, baseCredit: true },
       },
@@ -297,12 +297,12 @@ export type OssThresholdPrisma = Pick<PrismaClient, 'companySettings' | 'invoice
  * as the OSS return so the threshold and the return always agree.
  */
 export async function loadOssThreshold(
-  userId: string,
+  tenantId: string,
   year: number,
   client: OssThresholdPrisma = defaultPrisma,
 ): Promise<OssThreshold> {
   const settings = await client.companySettings.findUnique({
-    where: { userId },
+    where: { tenantId },
     select: { countryCode: true, countryId: true, country: true },
   });
   const supplierCountry = await resolveOssSupplierCountry(client, settings);
@@ -311,7 +311,7 @@ export async function loadOssThreshold(
   const to = new Date(Date.UTC(year, 11, 31, 23, 59, 59, 999));
 
   const invoices = (await client.invoice.findMany({
-    where: { userId, isDeleted: false, invoiceDate: { gte: from, lte: to } },
+    where: { tenantId, isDeleted: false, invoiceDate: { gte: from, lte: to } },
     select: {
       taxableAmount: true,
       reverseCharge: true,

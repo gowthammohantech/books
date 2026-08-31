@@ -5,7 +5,7 @@ import type { DebitNoteStatus, SignType } from '@prisma/client';
 import { validationResult } from 'express-validator';
 
 import { prisma } from '../../../lib/prisma';
-import { tenantScope, requireUserId, UnauthorizedError } from '../../../lib/tenantScope';
+import { tenantScope, requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import {
   nextDocumentNumber,
   withDocumentNumberRetry,
@@ -186,12 +186,12 @@ export function validateReturnQuantities(
   return { ok: true };
 }
 
-function generateNextDebitNoteNumber(tx: Tx, userId: string): Promise<string> {
+function generateNextDebitNoteNumber(tx: Tx, tenantId: string): Promise<string> {
   return nextDocumentNumber({
     model: tx.debitNote as unknown as NumberingModel,
     field: 'debitNoteId',
     prefix: 'DN-',
-    tenantWhere: { userId },
+    tenantWhere: { tenantId },
   });
 }
 
@@ -207,7 +207,7 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
   }
 
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as Record<string, unknown>;
 
     const purchaseId = body.purchaseId as string;
@@ -215,11 +215,11 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
     // billTo can be a contactId (new path) or a supplierId (legacy path)
     const billToId = body.billTo as string | undefined;
     const incomingBillToContactId = typeof body.billToContactId === 'string' && body.billToContactId ? body.billToContactId : null;
-    const createdById = (body.createdBy as string) || userId;
+    const createdById = (body.createdBy as string) || tenantId;
 
     // Validate purchase exists and is tenant-owned (include contact + supplier for vendor resolution)
     const purchase = await prisma.purchase.findFirst({
-      where: { id: purchaseId, userId },
+      where: { id: purchaseId, tenantId },
       select: { id: true, supplierId: true, contactId: true, items: true },
     });
     if (!purchase) {
@@ -253,7 +253,7 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
       // New path: purchase is contact-based; resolve vendor contact and its defaultTaxTreatment.
       resolvedVendorContactId = purchase.contactId;
       const contactRow = await (prisma as unknown as Record<string, Record<string, (a: unknown) => Promise<unknown>>>).contact.findFirst({
-        where: { id: purchase.contactId, userId, isDeleted: false },
+        where: { id: purchase.contactId, tenantId, isDeleted: false },
         select: { defaultTaxTreatment: true },
       } as never) as { defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) {
@@ -270,7 +270,7 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
       }
       supplierConnect = { connect: { id: purchase.supplierId } };
       const contactRow = await (prisma as unknown as Record<string, Record<string, (a: unknown) => Promise<unknown>>>).contact.findFirst({
-        where: { legacySupplierId: purchase.supplierId, userId, isDeleted: false },
+        where: { legacySupplierId: purchase.supplierId, tenantId, isDeleted: false },
         select: { id: true, defaultTaxTreatment: true },
       } as never) as { id: string; defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) {
@@ -297,7 +297,7 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
     if (incomingBillToContactId) {
       // New contact-based bill-to: verify ownership.
       const ownedContact = await (prisma as unknown as Record<string, Record<string, (a: unknown) => Promise<unknown>>>).contact.findFirst({
-        where: { id: incomingBillToContactId, userId, isDeleted: false },
+        where: { id: incomingBillToContactId, tenantId, isDeleted: false },
         select: { id: true },
       } as never) as { id: string } | null;
       if (!ownedContact) {
@@ -316,7 +316,7 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
       }
       // Back-resolve contactId for billTo
       const contactRow = await (prisma as unknown as Record<string, Record<string, (a: unknown) => Promise<unknown>>>).contact.findFirst({
-        where: { legacySupplierId: billToId, userId, isDeleted: false },
+        where: { legacySupplierId: billToId, tenantId, isDeleted: false },
         select: { id: true },
       } as never) as { id: string } | null;
       if (contactRow) {
@@ -357,7 +357,7 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
     // id on a line would reach the ledger unnoticed. One query covers the
     // header and every line.
     try {
-      await assertCostCentresExist(prisma, userId, collectCostCentreIds(docCostCenterId, items));
+      await assertCostCentresExist(prisma, tenantId, collectCostCentreIds(docCostCenterId, items));
     } catch (centreErr) {
       if (centreErr instanceof UnknownCostCentreError) {
         res.status(400).json({ success: false, message: centreErr.message, errors: { costCenterId: centreErr.message } });
@@ -410,7 +410,7 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
     const signatureId = (body.signatureId as string) || null;
 
     const debitNote = await withDocumentNumberRetry('debitNoteId', () => prisma.$transaction(async (tx) => {
-      const debitNoteNumber = await generateNextDebitNoteNumber(tx, userId);
+      const debitNoteNumber = await generateNextDebitNoteNumber(tx, tenantId);
       const debitNoteDate = safeDate(body.debitNoteDate) ?? new Date();
       const created = await tx.debitNote.create({
         data: {
@@ -443,7 +443,7 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
           signatureImage,
           signatureName,
           checkNumber: (body.checkNumber as string) || null,
-          user: { connect: { id: userId } },
+          tenant: { connect: { id: tenantId } },
           createdByUser: { connect: { id: createdById } },
           billFromUser: { connect: { id: billFromId } },
           ...(resolvedBillToSupplierId ? { billToSupplier: { connect: { id: resolvedBillToSupplierId } } } : {}),
@@ -471,7 +471,7 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
           if (product?.item_type === 'Service') continue;
           await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
             productId,
-            userId: requireUserId(req),
+            tenantId: requireTenantId(req),
             qtyDelta: -item.quantity,
             type: 'stock_out',
             referenceType: 'purchase_return',
@@ -505,7 +505,7 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
         const clampedInv = inventoryNet.greaterThan(maxNet) ? maxNet : inventoryNet;
         const expenseNet = maxNet.minus(clampedInv);
         await postDebitNoteIssued(tx as unknown as PostingTx, {
-          userId,
+          tenantId,
           debitNoteId: created.id,
           date: created.debitNoteDate ?? new Date(),
           total,
@@ -571,7 +571,7 @@ interface ListQuery {
 
 export async function getAllDebitNotes(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -585,7 +585,7 @@ export async function getAllDebitNotes(req: Request, res: Response): Promise<voi
     const limitN = Number(limit);
     const skip = (pageN - 1) * limitN;
 
-    const where: Prisma.DebitNoteWhereInput = { userId, isDeleted: false };
+    const where: Prisma.DebitNoteWhereInput = { tenantId, isDeleted: false };
     if (status && VALID_STATUSES.has(status as DebitNoteStatus)) {
       where.status = status as DebitNoteStatus;
     }
@@ -749,11 +749,11 @@ export async function getAllDebitNotes(req: Request, res: Response): Promise<voi
 
 export async function getDebitNoteById(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const debitNote = await prisma.debitNote.findFirst({
-      where: { id, userId },
+      where: { id, tenantId },
       include: {
         supplier: {
           select: {
@@ -940,11 +940,11 @@ export async function updateDebitNoteStatus(req: Request, res: Response): Promis
   }
 
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = req.body as Record<string, unknown>;
 
-    const existing = await prisma.debitNote.findFirst({ where: { id, userId } });
+    const existing = await prisma.debitNote.findFirst({ where: { id, tenantId } });
     if (!existing || existing.isDeleted) {
       res.status(404).json({ success: false, message: 'Debit note not found' });
       return;
@@ -976,7 +976,7 @@ export async function updateDebitNoteStatus(req: Request, res: Response): Promis
     // Validate approver if requested
     let approvedByConnect: string | undefined;
     if (body.approvedBy || status === ('approved' as unknown as DebitNoteStatus)) {
-      const approverId = (body.approvedBy as string) || userId;
+      const approverId = (body.approvedBy as string) || tenantId;
       const approver = await prisma.user.findUnique({ where: { id: approverId } });
       if (!approver) {
         res.status(422).json({ success: false, message: 'Invalid approved by user ID' });
@@ -1002,7 +1002,7 @@ export async function updateDebitNoteStatus(req: Request, res: Response): Promis
       let dnContactDefaultTreatment: TaxTreatment | null = null;
       if (dnContactId) {
         const contactRow = (await cdbDN().contact.findFirst({
-          where: { id: dnContactId, userId, isDeleted: false },
+          where: { id: dnContactId, tenantId, isDeleted: false },
           select: { defaultTaxTreatment: true },
         } as never)) as { defaultTaxTreatment: TaxTreatment | null } | null;
         if (contactRow) dnContactDefaultTreatment = contactRow.defaultTaxTreatment;
@@ -1022,7 +1022,7 @@ export async function updateDebitNoteStatus(req: Request, res: Response): Promis
       let dnContactDefaultTreatment: TaxTreatment | null = null;
       if (dnContactId) {
         const contactRow = (await cdbDN().contact.findFirst({
-          where: { id: dnContactId, userId, isDeleted: false },
+          where: { id: dnContactId, tenantId, isDeleted: false },
           select: { defaultTaxTreatment: true },
         } as never)) as { defaultTaxTreatment: TaxTreatment | null } | null;
         if (contactRow) dnContactDefaultTreatment = contactRow.defaultTaxTreatment;
@@ -1076,7 +1076,7 @@ export async function updateDebitNoteStatus(req: Request, res: Response): Promis
           if (product?.item_type === 'Service') continue;
           await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
             productId,
-            userId,
+            tenantId,
             qtyDelta: -item.quantity,
             type: 'stock_out',
             referenceType: 'purchase_return',
@@ -1102,12 +1102,12 @@ export async function updateDebitNoteStatus(req: Request, res: Response): Promis
         const maxNet = totalDec.minus(taxDec);
         const clampedInv = inventoryNet.greaterThan(maxNet) ? maxNet : inventoryNet;
         const expenseNet = maxNet.minus(clampedInv);
-        // postDebitNoteIssued/gatedPost is idempotent per (userId, sourceType,
+        // postDebitNoteIssued/gatedPost is idempotent per (tenantId, sourceType,
         // sourceId, event) — a harmless no-op if a live JE already exists, and a
         // fresh post on a cancelled-origin reactivation after voidDocument freed
         // the slot.
         await postDebitNoteIssued(tx as unknown as PostingTx, {
-          userId,
+          tenantId,
           debitNoteId: id,
           date: existing.debitNoteDate ?? new Date(),
           total: String(existing.totalAmount ?? 0),
@@ -1130,11 +1130,11 @@ export async function updateDebitNoteStatus(req: Request, res: Response): Promis
           if (product?.item_type === 'Service') continue;
           const restockUnitCost = await resolveRestockUnitCost(
             tx as unknown as Parameters<typeof resolveRestockUnitCost>[0],
-            { productId, userId },
+            { productId, tenantId },
           );
           await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
             productId,
-            userId,
+            tenantId,
             qtyDelta: qty,
             type: 'stock_in',
             referenceType: 'purchase_return',
@@ -1143,7 +1143,7 @@ export async function updateDebitNoteStatus(req: Request, res: Response): Promis
           });
         }
         await voidDocument(tx as unknown as PostingTx, {
-          userId,
+          tenantId,
           sourceType: 'DebitNote',
           sourceId: id,
           event: 'issued',
@@ -1197,11 +1197,11 @@ export async function updateDebitNoteStatus(req: Request, res: Response): Promis
 
 export async function deleteDebitNote(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const existing = await prisma.debitNote.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
 
     if (!existing) {
@@ -1235,11 +1235,11 @@ export async function deleteDebitNote(req: Request, res: Response): Promise<void
           if (product?.item_type === 'Service') continue;
           const restockUnitCost = await resolveRestockUnitCost(
             tx as unknown as Parameters<typeof resolveRestockUnitCost>[0],
-            { productId, userId },
+            { productId, tenantId },
           );
           await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
             productId,
-            userId,
+            tenantId,
             qtyDelta: qty,
             type: 'stock_in',
             referenceType: 'purchase_return',
@@ -1251,7 +1251,7 @@ export async function deleteDebitNote(req: Request, res: Response): Promise<void
 
       // GL: reverse the posted issued entry before soft-deleting
       await reverseDocument(tx as unknown as PostingTx, {
-        userId,
+        tenantId,
         sourceType: 'DebitNote',
         sourceId: id,
         event: 'issued',

@@ -1,11 +1,12 @@
 import type { Request, Response } from 'express';
+import { tenantOwnerInclude, tenantOwner } from '../../../lib/tenantOwner';
 import { Prisma } from '@prisma/client';
 import type { CreditNoteStatus, CreditNoteRefundMethod, CreditNoteReason } from '@prisma/client';
 import { validationResult } from 'express-validator';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 
 import { prisma } from '../../../lib/prisma';
-import { tenantScope, requireUserId, UnauthorizedError } from '../../../lib/tenantScope';
+import { tenantScope, requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import {
   nextDocumentNumber,
   withDocumentNumberRetry,
@@ -130,12 +131,12 @@ function normaliseItems(raw: unknown, headerCostCenterId?: string | null): Incom
   }));
 }
 
-function generateNextCreditNoteNumber(tx: Tx, userId: string): Promise<string> {
+function generateNextCreditNoteNumber(tx: Tx, tenantId: string): Promise<string> {
   return nextDocumentNumber({
     model: tx.creditNote as unknown as NumberingModel,
     field: 'creditNoteNumber',
     prefix: 'CN-',
-    tenantWhere: { userId },
+    tenantWhere: { tenantId },
   });
 }
 
@@ -151,7 +152,7 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
   }
 
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as Record<string, unknown>;
     // Resolved before the items so each line can inherit the document centre.
     const docCostCenterId = typeof body.costCenterId === 'string' && body.costCenterId ? body.costCenterId : null;
@@ -161,7 +162,7 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
     // id on a line would reach the ledger unnoticed. One query covers the
     // header and every line.
     try {
-      await assertCostCentresExist(prisma, userId, collectCostCentreIds(docCostCenterId, items));
+      await assertCostCentresExist(prisma, tenantId, collectCostCentreIds(docCostCenterId, items));
     } catch (centreErr) {
       if (centreErr instanceof UnknownCostCentreError) {
         res.status(400).json({ success: false, message: centreErr.message, errors: { costCenterId: centreErr.message } });
@@ -198,7 +199,7 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
     if (incomingContactId) {
       // New contact-based path: verify the contact belongs to this tenant
       const ownedContact = (await cdb().contact.findFirst({
-        where: { id: incomingContactId, userId, isDeleted: false },
+        where: { id: incomingContactId, tenantId, isDeleted: false },
         select: { id: true, defaultTaxTreatment: true },
       } as never)) as { id: string; defaultTaxTreatment: TaxTreatment | null } | null;
       if (!ownedContact) {
@@ -209,7 +210,7 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
       // Leave resolvedCustomerId / resolvedBillTo as null (new path)
     } else if (legacyBillToId) {
       // Legacy path: validate the customer exists and keep legacy ids
-      const legacyCustomer = await prisma.customer.findFirst({ where: { id: legacyBillToId, userId } });
+      const legacyCustomer = await prisma.customer.findFirst({ where: { id: legacyBillToId, tenantId } });
       if (!legacyCustomer) {
         res.status(404).json({ message: 'Bill To customer not found' });
         return;
@@ -219,7 +220,7 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
       resolvedBillTo = legacyBillToId;
       // Back-resolve contactId from legacyCustomerId
       const contactRow = (await cdb().contact.findFirst({
-        where: { legacyCustomerId: legacyBillToId, userId, isDeleted: false },
+        where: { legacyCustomerId: legacyBillToId, tenantId, isDeleted: false },
         select: { id: true, defaultTaxTreatment: true },
       } as never)) as { id: string; defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) {
@@ -232,11 +233,11 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
       }
     }
 
-    // Tenant scope: findFirst with { id, userId } (findUnique can't carry extra
+    // Tenant scope: findFirst with { id, tenantId } (findUnique can't carry extra
     // filters). Guard the falsy id explicitly — an undefined id in findFirst
     // would silently drop the filter and match an arbitrary tenant invoice.
     const [invoice, billFromUser] = await Promise.all([
-      invoiceId ? prisma.invoice.findFirst({ where: { id: invoiceId, userId } }) : Promise.resolve(null),
+      invoiceId ? prisma.invoice.findFirst({ where: { id: invoiceId, tenantId } }) : Promise.resolve(null),
       prisma.user.findUnique({ where: { id: billFromId } }),
     ]);
 
@@ -293,7 +294,7 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
     const enforcedTotal = docTreatment === 'STANDARD' ? serverTotals.grandTotal : finalTaxable + enforcedVat - finalDiscount;
 
     const creditNote = await withDocumentNumberRetry('creditNoteNumber', () => prisma.$transaction(async (tx) => {
-      const creditNoteNumber = await generateNextCreditNoteNumber(tx, userId);
+      const creditNoteNumber = await generateNextCreditNoteNumber(tx, tenantId);
       const created = await tx.creditNote.create({
         data: {
           creditNoteNumber,
@@ -323,7 +324,7 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
           signatureId,
           billFrom: billFromId,
           billTo: resolvedBillTo,
-          userId,
+          tenantId,
           taxTreatment: docTreatment,
           // C.1: persist document currency
           ...(docCurrencyCode ? { currencyCode: docCurrencyCode } : {}),
@@ -347,7 +348,7 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
         // Compute return COGS from pre-adjustment avgCost (GL unchanged). For FIFO
         // products avgCost is not maintained (0), so return COGS stays 0 — matching
         // the documented v1 limitation that FIFO sales book COGS = 0 at the GL.
-        const inv = await tx.inventory.findFirst({ where: { productId, userId, isDeleted: false } });
+        const inv = await tx.inventory.findFirst({ where: { productId, tenantId, isDeleted: false } });
         if (inv) {
           const returnCost = inv.avgCost.times(new Prisma.Decimal(item.qty));
           totalReturnCost = totalReturnCost.plus(returnCost);
@@ -360,11 +361,11 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
         // + history. Helper auto-creates the row if absent.
         const restockUnitCost = await resolveRestockUnitCost(
           tx as unknown as Parameters<typeof resolveRestockUnitCost>[0],
-          { productId, userId },
+          { productId, tenantId },
         );
         await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
           productId,
-          userId: requireUserId(req),
+          tenantId: requireTenantId(req),
           qtyDelta: item.qty,
           type: 'stock_in',
           referenceType: 'sales_return',
@@ -383,7 +384,7 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
           ? invoice.exchangeRate ?? undefined
           : undefined;
       await postCreditNoteIssued(tx as unknown as PostingTx, {
-        userId,
+        tenantId,
         creditNoteId: created.id,
         date: created.creditNoteDate ?? new Date(),
         total: String(created.totalAmount),
@@ -393,14 +394,14 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
       });
       // B.4: reverse COGS for returned inventory items (Dr INVENTORY / Cr COGS).
       await postReturnCogs(tx as unknown as PostingTx, {
-        userId,
+        tenantId,
         creditNoteId: created.id,
         date: created.creditNoteDate ?? new Date(),
         cost: totalReturnCost.toString(),
       });
 
       // Task 2: reflect the new credit note in the linked invoice's due/status.
-      await recomputeInvoiceStatus(tx, invoiceId, userId);
+      await recomputeInvoiceStatus(tx, invoiceId, tenantId);
 
       return created;
     }));
@@ -453,14 +454,14 @@ interface ListQuery {
 
 export async function getAllCreditNotes(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { page = '1', limit = '10', status, search = '', customerId, invoiceId, startDate, endDate, refund_method } =
       req.query as ListQuery;
     const pageN = Number(page);
     const limitN = Number(limit);
     const skip = (pageN - 1) * limitN;
 
-    const where: Prisma.CreditNoteWhereInput = { userId, isDeleted: false };
+    const where: Prisma.CreditNoteWhereInput = { tenantId, isDeleted: false };
     if (status && VALID_STATUSES.has(status as CreditNoteStatus)) where.status = status as CreditNoteStatus;
     if (customerId) where.customerId = customerId;
     if (invoiceId) where.invoiceId = invoiceId;
@@ -504,7 +505,7 @@ export async function getAllCreditNotes(req: Request, res: Response): Promise<vo
 
     // Next credit note number (tenant-scoped — numbering must not leak across tenants)
     const last = await prisma.creditNote.findFirst({
-      where: { creditNoteNumber: { not: null }, userId },
+      where: { creditNoteNumber: { not: null }, tenantId },
       orderBy: { creditNoteNumber: 'desc' },
       select: { creditNoteNumber: true },
     });
@@ -668,12 +669,12 @@ export async function getAllCreditNotes(req: Request, res: Response): Promise<vo
 
 export async function getCreditNoteById(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const baseUrl = buildBaseUrl(req);
 
     const note = await prisma.creditNote.findFirst({
-      where: { id, userId },
+      where: { id, tenantId },
       include: {
         invoice: {
           select: {
@@ -697,7 +698,7 @@ export async function getCreditNoteById(req: Request, res: Response): Promise<vo
         appliedToInvoiceRel: { select: { id: true, invoiceNumber: true, invoiceDate: true, TotalAmount: true } },
         bank: { select: { id: true, accountHoldername: true, bankName: true, branchName: true, accountNumber: true, IFSCCode: true } },
         signature: { select: { id: true, signatureName: true, signatureImage: true, createdAt: true } },
-        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        tenant: tenantOwnerInclude,
       },
     });
 
@@ -775,7 +776,7 @@ export async function getCreditNoteById(req: Request, res: Response): Promise<vo
       signature,
       currencyCode: note.currencyCode ?? null, // C.1
       taxTreatment: note.taxTreatment ?? null, // C.2
-      createdBy: note.user,
+      createdBy: tenantOwner(note.tenant),
       createdAt: note.createdAt,
       updatedAt: note.updatedAt,
     };
@@ -804,11 +805,11 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
   }
 
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = req.body as Record<string, unknown>;
 
-    const existing = await prisma.creditNote.findFirst({ where: { id, userId } });
+    const existing = await prisma.creditNote.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ message: 'Credit Note not found' });
       return;
@@ -820,7 +821,7 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
     let cnContactDefaultTreatment: TaxTreatment | null = null;
     if (cnContactId) {
       const contactRow = (await cdbCN().contact.findFirst({
-        where: { id: cnContactId, userId, isDeleted: false },
+        where: { id: cnContactId, tenantId, isDeleted: false },
         select: { defaultTaxTreatment: true },
       } as never)) as { defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) cnContactDefaultTreatment = contactRow.defaultTaxTreatment;
@@ -860,7 +861,7 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
 
       if (incomingContactId) {
         const ownedContact = (await cdbCN().contact.findFirst({
-          where: { id: incomingContactId, userId, isDeleted: false },
+          where: { id: incomingContactId, tenantId, isDeleted: false },
           select: { id: true },
         } as never)) as { id: string } | null;
         if (!ownedContact) {
@@ -870,7 +871,7 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
         const billToContactId = incomingBillToContactId ?? incomingContactId;
         if (incomingBillToContactId && incomingBillToContactId !== incomingContactId) {
           const ownedBillTo = (await cdbCN().contact.findFirst({
-            where: { id: incomingBillToContactId, userId, isDeleted: false },
+            where: { id: incomingBillToContactId, tenantId, isDeleted: false },
             select: { id: true },
           } as never)) as { id: string } | null;
           if (!ownedBillTo) {
@@ -885,7 +886,7 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
       } else if (incomingLegacyCustomerId) {
         const contactRow = (await cdbCN().contact.findFirst({
           where: {
-            userId,
+            tenantId,
             isDeleted: false,
             OR: [
               { legacyCustomerId: incomingLegacyCustomerId },
@@ -901,7 +902,7 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
           partyUpdate.billTo = null;
         } else {
           const ownedCustomer = (await cdbCN().customer.findFirst({
-            where: { id: incomingLegacyCustomerId, userId },
+            where: { id: incomingLegacyCustomerId, tenantId },
             select: { id: true },
           } as never)) as { id: string } | null;
           if (!ownedCustomer) {
@@ -916,7 +917,7 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
       }
     }
 
-    const data: Prisma.CreditNoteUpdateInput = { user: { connect: { id: userId } } };
+    const data: Prisma.CreditNoteUpdateInput = { tenant: { connect: { id: tenantId } } };
 
     if (body.creditNoteDate !== undefined) data.creditNoteDate = safeDate(body.creditNoteDate) ?? existing.creditNoteDate;
     if (body.referenceNo !== undefined) data.referenceNo = (body.referenceNo as string) ?? existing.referenceNo;
@@ -1007,14 +1008,14 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
 
       // GL: void the prior issued entry then re-post with updated amounts
       await voidDocument(tx as unknown as PostingTx, {
-        userId,
+        tenantId,
         sourceType: 'CreditNote',
         sourceId: id,
         event: 'issued',
       });
       // FX: re-post AR relief at the linked invoice's document rate (mirrors create).
       const linkedInvoice = await tx.invoice.findFirst({
-        where: { id: existing.invoiceId, userId },
+        where: { id: existing.invoiceId, tenantId },
         select: { currencyCode: true, exchangeRate: true },
       });
       const updExchangeRate =
@@ -1022,7 +1023,7 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
           ? linkedInvoice.exchangeRate ?? undefined
           : undefined;
       await postCreditNoteIssued(tx as unknown as PostingTx, {
-        userId,
+        tenantId,
         creditNoteId: id,
         date: upd.creditNoteDate ?? new Date(),
         total: String(upd.totalAmount),
@@ -1032,7 +1033,7 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
       });
       // B.4: void the prior COGS entry alongside the issued void.
       await voidDocument(tx as unknown as PostingTx, {
-        userId,
+        tenantId,
         sourceType: 'CreditNote',
         sourceId: id,
         event: 'cogs',
@@ -1049,12 +1050,12 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
             select: { item_type: true },
           });
           if (product?.item_type === 'Service') continue;
-          const inv = await tx.inventory.findFirst({ where: { productId, userId, isDeleted: false } });
+          const inv = await tx.inventory.findFirst({ where: { productId, tenantId, isDeleted: false } });
           if (!inv) continue;
           returnCost = returnCost.plus(inv.avgCost.times(new Prisma.Decimal(item.qty)));
         }
         await postReturnCogs(tx as unknown as PostingTx, {
-          userId,
+          tenantId,
           creditNoteId: id,
           date: upd.creditNoteDate ?? new Date(),
           cost: returnCost.toString(),
@@ -1062,7 +1063,7 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
       }
 
       // Task 2: the edit may change the CN total (or status) → re-derive invoice due.
-      await recomputeInvoiceStatus(tx, existing.invoiceId, userId);
+      await recomputeInvoiceStatus(tx, existing.invoiceId, tenantId);
 
       return upd;
     });
@@ -1084,9 +1085,9 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
 
 export async function deleteCreditNote(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
-    const existing = await prisma.creditNote.findFirst({ where: { id, userId } });
+    const existing = await prisma.creditNote.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ message: 'Credit Note not found' });
       return;
@@ -1094,14 +1095,14 @@ export async function deleteCreditNote(req: Request, res: Response): Promise<voi
     await prisma.$transaction(async (tx) => {
       // GL: reverse the posted issued entry before hard-deleting
       await reverseDocument(tx as unknown as PostingTx, {
-        userId,
+        tenantId,
         sourceType: 'CreditNote',
         sourceId: id,
         event: 'issued',
       });
       // B.4: reverse the COGS entry alongside the issued reversal.
       await reverseDocument(tx as unknown as PostingTx, {
-        userId,
+        tenantId,
         sourceType: 'CreditNote',
         sourceId: id,
         event: 'cogs',
@@ -1122,11 +1123,11 @@ export async function deleteCreditNote(req: Request, res: Response): Promise<voi
         });
         if (product?.item_type === 'Service') continue;
         const inv = await tx.inventory.findFirst({
-          where: { productId, userId, isDeleted: false },
+          where: { productId, tenantId, isDeleted: false },
         });
         await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
           productId,
-          userId,
+          tenantId,
           qtyDelta: -item.qty,
           type: 'stock_out',
           referenceType: 'sales_return',
@@ -1139,7 +1140,7 @@ export async function deleteCreditNote(req: Request, res: Response): Promise<voi
 
       // Task 2: the CN no longer reduces AR → recompute the linked invoice's due.
       // The row is hard-deleted, so getInvoiceSettlement naturally stops netting it.
-      await recomputeInvoiceStatus(tx, existing.invoiceId, userId);
+      await recomputeInvoiceStatus(tx, existing.invoiceId, tenantId);
     });
     res.status(200).json({ message: 'Credit note deleted successfully', id });
   } catch (err) {

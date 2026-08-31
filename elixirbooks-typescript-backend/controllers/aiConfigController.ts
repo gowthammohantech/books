@@ -14,7 +14,7 @@ import {
   OPENAI_DEFAULT_EXTRACTION_MODEL,
 } from '../lib/aiProviders/openaiProvider';
 import { MockProvider } from '../lib/aiProviders/mockProvider';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import type { AiProvider } from '../lib/aiProviders/types';
 
 const PROVIDERS: readonly AiProviderKind[] = ['CLAUDE', 'OPENAI', 'MOCK'] as const;
@@ -54,8 +54,8 @@ function toPublic(config: AiConfig | null): PublicAiConfig {
 
 export async function getAiConfig(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const config = await prisma.aiConfig.findUnique({ where: { userId } });
+    const tenantId = requireTenantId(req);
+    const config = await prisma.aiConfig.findUnique({ where: { tenantId } });
     res.json({ success: true, data: { config: toPublic(config) } });
   } catch (err) {
     if (err instanceof UnauthorizedError) {
@@ -94,7 +94,7 @@ function defaultModelsFor(provider: AiProviderKind): { extractionModel: string; 
 
 export async function updateAiConfig(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = (req.body ?? {}) as UpdateBody;
 
     if (body.provider !== undefined && !PROVIDERS.includes(body.provider as AiProviderKind)) {
@@ -102,7 +102,7 @@ export async function updateAiConfig(req: Request, res: Response): Promise<void>
       return;
     }
 
-    const existing = await prisma.aiConfig.findUnique({ where: { userId } });
+    const existing = await prisma.aiConfig.findUnique({ where: { tenantId } });
     const providerForDefaults = (body.provider as AiProviderKind) ?? existing?.provider ?? 'MOCK';
     const defaults = defaultModelsFor(providerForDefaults);
 
@@ -110,7 +110,7 @@ export async function updateAiConfig(req: Request, res: Response): Promise<void>
     // narrow: only re-encrypt + replace if the caller explicitly sent a
     // new `apiKey` string. Passing null clears it.
     const baseData: Prisma.AiConfigUncheckedCreateInput = {
-      userId,
+      tenantId,
       provider: providerForDefaults,
       enabled: body.enabled ?? existing?.enabled ?? false,
       extractionModel:
@@ -136,7 +136,7 @@ export async function updateAiConfig(req: Request, res: Response): Promise<void>
     }
 
     const saved = await prisma.aiConfig.upsert({
-      where: { userId },
+      where: { tenantId },
       create: baseData,
       update: {
         provider: baseData.provider,
@@ -166,8 +166,8 @@ export async function updateAiConfig(req: Request, res: Response): Promise<void>
 
 export async function testAiConfig(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const config = await prisma.aiConfig.findUnique({ where: { userId } });
+    const tenantId = requireTenantId(req);
+    const config = await prisma.aiConfig.findUnique({ where: { tenantId } });
     if (!config) {
       res.json({ success: true, data: { ok: false, error: 'No AI configuration saved yet.' } });
       return;
@@ -188,7 +188,7 @@ export async function testAiConfig(req: Request, res: Response): Promise<void> {
         // so an error during decrypt surfaces as a clean test failure
         // rather than a 500.
         const { getProviderForUser } = await import('../lib/aiProviders/registry');
-        provider = await getProviderForUser(userId);
+        provider = await getProviderForUser(tenantId);
       }
     } catch (decryptErr) {
       res.json({
@@ -216,14 +216,14 @@ export async function testAiConfig(req: Request, res: Response): Promise<void> {
 
 export async function deleteAiConfig(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const existing = await prisma.aiConfig.findUnique({ where: { userId } });
+    const tenantId = requireTenantId(req);
+    const existing = await prisma.aiConfig.findUnique({ where: { tenantId } });
     if (!existing) {
       res.json({ success: true, message: 'No AI configuration to disable', data: { config: toPublic(null) } });
       return;
     }
     const updated = await prisma.aiConfig.update({
-      where: { userId },
+      where: { tenantId },
       data: { enabled: false, encryptedApiKey: null, apiKeyHint: null },
     });
     res.json({

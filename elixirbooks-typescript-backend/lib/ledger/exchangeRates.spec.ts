@@ -93,14 +93,14 @@ describe('loadRate (DB-backed)', () => {
     expect(result?.toString()).toBe('83.25');
   });
 
-  it('passes correct query args (userId, pair, lte asOf, take 1)', async () => {
+  it('passes correct query args (tenantId, pair, lte asOf, take 1)', async () => {
     const tx = fakeTx([row('USD', 'INR', '83', '2026-06-01')]);
     const asOf = new Date('2026-06-07');
     await loadRate(tx, 'user-42', 'USD', 'INR', asOf);
     const spy = tx.exchangeRate.findMany as ReturnType<typeof vi.fn>;
     expect(spy).toHaveBeenCalledWith({
       where: {
-        userId: 'user-42',
+        tenantId: 'user-42',
         fromCurrency: 'USD',
         toCurrency: 'INR',
         asOfDate: { lte: asOf },

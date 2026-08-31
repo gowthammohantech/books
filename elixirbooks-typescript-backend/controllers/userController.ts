@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
 import { hashPassword } from '../utils/password';
-import { requireUserId } from '../lib/tenantScope';
+import { requireTenantId } from '../lib/tenantScope';
 import { OWNER_ROLE_NAME } from '../lib/defaultRoles';
 
 /** True when the target user holds the Owner role AND is the only user that does.
@@ -94,7 +94,7 @@ export async function createStaffUser(req: Request, res: Response): Promise<void
     // Stamp the new staff/admin with the creating user's tenant (company-owner)
     // id so they join the same shared workspace and see all of its data. The
     // creator's tenant resolves to the sole owner via req.tenantId.
-    const ownerId = requireUserId(req);
+    const ownerId = requireTenantId(req);
 
     const newUser = await prisma.user.create({
       data: {
@@ -161,7 +161,7 @@ export async function listStaffUsers(req: Request, res: Response): Promise<void>
     // whose ownerId == tenant). This matches payrollController.assertTenantEmployee
     // so the payroll Employee dropdown (which calls this endpoint with
     // ?user_type=3) never offers a user the create guard will then reject (#36).
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     // Exclude sys-bootstrap (type 999). Optionally narrow to a specific type.
     // The tenant scope lives in AND[] so it composes with the search OR[] below

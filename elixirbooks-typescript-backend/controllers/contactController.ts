@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { parse } from 'csv-parse/sync';
 import { prisma } from '../lib/prisma';
-import { requireUserId } from '../lib/tenantScope';
+import { requireTenantId } from '../lib/tenantScope';
 import { validateContactIdentity, resolveDisplayName } from '../lib/contacts/contactIdentity';
 import { parseVatNumber, isEuMember } from '../lib/euVat';
 import { validateVatOnline } from '../lib/vies';
@@ -41,13 +41,13 @@ const VALID_VIEWS: ContactView[] = ['all-active', 'clients', 'suppliers', 'clien
 
 export async function listContacts(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const view = (req.query.view as ContactView) || 'all-active';
     const safeView = VALID_VIEWS.includes(view) ? view : 'all-active';
     const page = Math.max(1, Number(req.query.page) || 1);
     const pageSize = Math.min(100, Number(req.query.pageSize) || 20);
     const q = (req.query.q as string | undefined)?.trim();
-    const where: Record<string, unknown> = contactViewWhere(userId, safeView);
+    const where: Record<string, unknown> = contactViewWhere(tenantId, safeView);
     if (q) {
       const searchOr = [
         { organisation: { contains: q, mode: 'insensitive' } },
@@ -79,8 +79,8 @@ export async function listContacts(req: Request, res: Response): Promise<void> {
 
 export async function getContact(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const c = (await cdb().contact.findFirst({ where: { id: req.params.id, userId, isDeleted: false } } as never)) as Record<string, unknown> | null;
+    const tenantId = requireTenantId(req);
+    const c = (await cdb().contact.findFirst({ where: { id: req.params.id, tenantId, isDeleted: false } } as never)) as Record<string, unknown> | null;
     if (!c) { res.status(404).json({ success: false, message: 'Contact not found.' }); return; }
     res.json({ success: true, data: { ...c, displayName: resolveDisplayName(c as never) } });
   } catch (err) {
@@ -89,9 +89,9 @@ export async function getContact(req: Request, res: Response): Promise<void> {
   }
 }
 
-function dataFromBody(userId: string, b: ContactBody): Record<string, unknown> {
+function dataFromBody(tenantId: string, b: ContactBody): Record<string, unknown> {
   return {
-    userId,
+    tenantId,
     firstName: b.firstName ?? null, lastName: b.lastName ?? null, organisation: b.organisation ?? null,
     showNameOnInvoice: b.showNameOnInvoice ?? false,
     email: b.email ?? null, billingEmail: b.billingEmail ?? null, telephone: b.telephone ?? null, mobile: b.mobile ?? null,
@@ -121,7 +121,7 @@ function dataFromBody(userId: string, b: ContactBody): Record<string, unknown> {
  * Mutates and returns `data`. Never throws.
  */
 async function applyViesValidation(
-  userId: string,
+  tenantId: string,
   vatNumber: string | null | undefined,
   data: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
@@ -134,7 +134,7 @@ async function applyViesValidation(
 
   // OFF BY DEFAULT: the outbound VIES call only fires when this tenant opted in.
   const settings = await prisma.companySettings.findFirst({
-    where: { userId },
+    where: { tenantId },
     select: { viesValidationEnabled: true },
   });
   if (!settings?.viesValidationEnabled) return data;
@@ -151,11 +151,11 @@ async function applyViesValidation(
 
 export async function createContact(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const b = req.body as ContactBody;
     const v = validateContactBody(b);
     if (!v.ok) { res.status(400).json({ success: false, message: 'Validation failed.', errors: v.errors }); return; }
-    const data = await applyViesValidation(userId, b.vatNumber, dataFromBody(userId, b));
+    const data = await applyViesValidation(tenantId, b.vatNumber, dataFromBody(tenantId, b));
     const c = await cdb().contact.create({ data } as never);
     res.status(201).json({ success: true, data: c });
   } catch (err) {
@@ -166,11 +166,11 @@ export async function createContact(req: Request, res: Response): Promise<void> 
 
 export async function createMinimalContact(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const b = req.body as ContactBody;
     const v = validateContactBody(b);
     if (!v.ok) { res.status(400).json({ success: false, message: 'Validation failed.', errors: v.errors }); return; }
-    const data = await applyViesValidation(userId, b.vatNumber, dataFromBody(userId, b));
+    const data = await applyViesValidation(tenantId, b.vatNumber, dataFromBody(tenantId, b));
     const c = await cdb().contact.create({ data } as never);
     res.status(201).json({ success: true, data: c });
   } catch (err) {
@@ -181,13 +181,13 @@ export async function createMinimalContact(req: Request, res: Response): Promise
 
 export async function updateContact(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const existing = (await cdb().contact.findFirst({ where: { id: req.params.id, userId, isDeleted: false } } as never)) as { id: string } | null;
+    const tenantId = requireTenantId(req);
+    const existing = (await cdb().contact.findFirst({ where: { id: req.params.id, tenantId, isDeleted: false } } as never)) as { id: string } | null;
     if (!existing) { res.status(404).json({ success: false, message: 'Contact not found.' }); return; }
     const b = req.body as ContactBody;
     const v = validateContactBody(b);
     if (!v.ok) { res.status(400).json({ success: false, message: 'Validation failed.', errors: v.errors }); return; }
-    const data = await applyViesValidation(userId, b.vatNumber, dataFromBody(userId, b));
+    const data = await applyViesValidation(tenantId, b.vatNumber, dataFromBody(tenantId, b));
     const c = await cdb().contact.update({ where: { id: req.params.id }, data } as never);
     res.json({ success: true, data: c });
   } catch (err) {
@@ -198,8 +198,8 @@ export async function updateContact(req: Request, res: Response): Promise<void> 
 
 export async function deleteContact(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const existing = (await cdb().contact.findFirst({ where: { id: req.params.id, userId, isDeleted: false } } as never)) as { id: string } | null;
+    const tenantId = requireTenantId(req);
+    const existing = (await cdb().contact.findFirst({ where: { id: req.params.id, tenantId, isDeleted: false } } as never)) as { id: string } | null;
     if (!existing) { res.status(404).json({ success: false, message: 'Contact not found.' }); return; }
     await cdb().contact.update({ where: { id: req.params.id }, data: { isDeleted: true } } as never);
     res.json({ success: true, message: 'Contact deleted successfully.' });
@@ -215,9 +215,9 @@ export async function deleteContact(req: Request, res: Response): Promise<void> 
 
 export async function getContactSummary(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const id = req.params.id;
-    const c = (await cdb().contact.findFirst({ where: { id, userId, isDeleted: false } } as never)) as Record<string, unknown> | null;
+    const c = (await cdb().contact.findFirst({ where: { id, tenantId, isDeleted: false } } as never)) as Record<string, unknown> | null;
     if (!c) { res.status(404).json({ success: false, message: 'Contact not found.' }); return; }
 
     // InvoicePayment date field is `received_on`; link to contact via invoice.contactId.
@@ -273,7 +273,7 @@ export async function getContactSummary(req: Request, res: Response): Promise<vo
 
     // Per-contact Account Credit: always derived (never stored), see
     // lib/contacts/accountCreditBalance.ts.
-    const accountCreditBalance = Number(await getAccountCreditBalance(prisma as unknown as AccountCreditBalanceDb, { userId, contactId: id as string }));
+    const accountCreditBalance = Number(await getAccountCreditBalance(prisma as unknown as AccountCreditBalanceDb, { tenantId, contactId: id as string }));
 
     res.json({ success: true, data: { contact: { ...c, displayName: resolveDisplayName(c as never) }, ...summary, accountCreditBalance } });
   } catch (err) {
@@ -284,12 +284,12 @@ export async function getContactSummary(req: Request, res: Response): Promise<vo
 
 export async function getContactStatement(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const id = req.params.id;
     const from = req.query.from as string | undefined;
     const to = req.query.to as string | undefined;
 
-    const c = (await cdb().contact.findFirst({ where: { id, userId, isDeleted: false } } as never)) as Record<string, unknown> | null;
+    const c = (await cdb().contact.findFirst({ where: { id, tenantId, isDeleted: false } } as never)) as Record<string, unknown> | null;
     if (!c) { res.status(404).json({ success: false, message: 'Contact not found.' }); return; }
 
     const toDate = to ? new Date(to) : new Date();
@@ -306,14 +306,14 @@ export async function getContactStatement(req: Request, res: Response): Promise<
 
     // All invoices for this contact up to toDate
     const allInvoices = await prisma.invoice.findMany({
-      where: { contactId: id, userId, isDeleted: false, invoiceType: 'INVOICE' as never, invoiceDate: { lte: toDate } },
+      where: { contactId: id, tenantId, isDeleted: false, invoiceType: 'INVOICE' as never, invoiceDate: { lte: toDate } },
       select: { id: true, invoiceNumber: true, invoiceDate: true, TotalAmount: true, status: true, currencyCode: true },
       orderBy: { invoiceDate: 'asc' },
     } as never) as { id: string; invoiceNumber: string | null; invoiceDate: Date; TotalAmount: unknown; status: string; currencyCode: string | null }[];
 
     // All payments on those invoices up to toDate
     const allPayments = (await prisma.invoicePayment.findMany({
-      where: { invoice: { contactId: id, userId, isDeleted: false } as never, received_on: { lte: toDate }, isVoided: false },
+      where: { invoice: { contactId: id, tenantId, isDeleted: false } as never, received_on: { lte: toDate }, isVoided: false },
       select: {
         id: true, invoiceId: true, amount: true, received_on: true, notes: true,
         invoice: { select: { invoiceNumber: true, currencyCode: true } },
@@ -327,15 +327,15 @@ export async function getContactStatement(req: Request, res: Response): Promise<
     // Bills (purchases) up to toDate for this contact — exclude draft/cancelled
     // to match how bills are counted elsewhere (supplierBalancesController).
     const allPurchases = await prisma.purchase.findMany({
-      where: { contactId: id, userId, isDeleted: false, status: { notIn: ['new', 'cancelled'] }, purchaseDate: { lte: toDate } },
+      where: { contactId: id, tenantId, isDeleted: false, status: { notIn: ['new', 'cancelled'] }, purchaseDate: { lte: toDate } },
       select: { id: true, purchaseId: true, purchaseDate: true, totalAmount: true, status: true, currencyCode: true },
       orderBy: { purchaseDate: 'asc' },
     } as never) as { id: string; purchaseId: string | null; purchaseDate: Date; totalAmount: unknown; status: string; currencyCode: string | null }[];
 
     // Supplier payments against those purchases up to toDate. SupplierPayment
-    // has no userId column; tenant scope comes through the parent purchase.
+    // has no tenantId column; tenant scope comes through the parent purchase.
     const allSupplierPayments = (await prisma.supplierPayment.findMany({
-      where: { purchase: { contactId: id, userId, isDeleted: false } as never, isVoided: false, isDeleted: false, paymentDate: { lte: toDate } },
+      where: { purchase: { contactId: id, tenantId, isDeleted: false } as never, isVoided: false, isDeleted: false, paymentDate: { lte: toDate } },
       select: {
         id: true, purchaseId: true, paidAmount: true, paymentDate: true, notes: true, referenceNumber: true,
         purchase: { select: { purchaseId: true, currencyCode: true } },
@@ -346,7 +346,7 @@ export async function getContactStatement(req: Request, res: Response): Promise<
     // Purchase debit notes (returns) up to toDate — reduce what we owe. Same
     // posted-gate as bills so the statement agrees with the AP control account.
     const allPurchaseDebitNotes = await prisma.debitNote.findMany({
-      where: { contactId: id, userId, isDeleted: false, status: { notIn: ['new', 'cancelled'] }, debitNoteDate: { lte: toDate } },
+      where: { contactId: id, tenantId, isDeleted: false, status: { notIn: ['new', 'cancelled'] }, debitNoteDate: { lte: toDate } },
       select: { id: true, debitNoteId: true, debitNoteDate: true, totalAmount: true, status: true, currencyCode: true },
       orderBy: { debitNoteDate: 'asc' },
     } as never) as { id: string; debitNoteId: string | null; debitNoteDate: Date; totalAmount: unknown; status: string | null; currencyCode: string | null }[];
@@ -437,30 +437,30 @@ export async function getContactStatement(req: Request, res: Response): Promise<
 
 export async function getContactHistory(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const id = req.params.id;
-    const c = (await cdb().contact.findFirst({ where: { id, userId, isDeleted: false } } as never)) as Record<string, unknown> | null;
+    const c = (await cdb().contact.findFirst({ where: { id, tenantId, isDeleted: false } } as never)) as Record<string, unknown> | null;
     if (!c) { res.status(404).json({ success: false, message: 'Contact not found.' }); return; }
 
     // Gather documents linked to this contact via contactId
     const [invoices, quotations, purchases, debitNotes] = await Promise.all([
       prisma.invoice.findMany({
-        where: { contactId: id, userId, isDeleted: false },
+        where: { contactId: id, tenantId, isDeleted: false },
         select: { id: true, invoiceNumber: true, invoiceDate: true, TotalAmount: true, isRecurring: true, referenceNo: true, notes: true, currencyCode: true, status: true },
         orderBy: { invoiceDate: 'desc' },
       } as never) as Promise<{ id: string; invoiceNumber: string | null; invoiceDate: Date; TotalAmount: unknown; isRecurring: boolean; referenceNo: string | null; notes: string | null; currencyCode: string | null; status: string }[]>,
       prisma.quotation.findMany({
-        where: { contactId: id, userId, isDeleted: false },
+        where: { contactId: id, tenantId, isDeleted: false },
         select: { id: true, quotationId: true, quotationDate: true, TotalAmount: true, referenceNo: true, notes: true, currencyCode: true, status: true },
         orderBy: { quotationDate: 'desc' },
       } as never) as Promise<{ id: string; quotationId: string | null; quotationDate: Date; TotalAmount: unknown; referenceNo: string | null; notes: string | null; currencyCode: string | null; status: string }[]>,
       prisma.purchase.findMany({
-        where: { contactId: id, userId, isDeleted: false },
+        where: { contactId: id, tenantId, isDeleted: false },
         select: { id: true, purchaseId: true, purchaseDate: true, totalAmount: true, referenceNo: true, notes: true, currencyCode: true, status: true },
         orderBy: { purchaseDate: 'desc' },
       } as never) as Promise<{ id: string; purchaseId: string | null; purchaseDate: Date; totalAmount: unknown; referenceNo: string | null; notes: string | null; currencyCode: string | null; status: string }[]>,
       prisma.debitNote.findMany({
-        where: { contactId: id, userId, isDeleted: false },
+        where: { contactId: id, tenantId, isDeleted: false },
         select: { id: true, debitNoteId: true, debitNoteDate: true, totalAmount: true, referenceNo: true, notes: true, currencyCode: true, status: true },
         orderBy: { debitNoteDate: 'desc' },
       } as never) as Promise<{ id: string; debitNoteId: string | null; debitNoteDate: Date; totalAmount: unknown; referenceNo: string | null; notes: string | null; currencyCode: string | null; status: string | null }[]>,
@@ -533,9 +533,9 @@ export async function getContactHistory(req: Request, res: Response): Promise<vo
 
 export async function getContactVCard(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const id = req.params.id;
-    const c = (await cdb().contact.findFirst({ where: { id, userId, isDeleted: false } } as never)) as Record<string, unknown> | null;
+    const c = (await cdb().contact.findFirst({ where: { id, tenantId, isDeleted: false } } as never)) as Record<string, unknown> | null;
     if (!c) { res.status(404).json({ success: false, message: 'Contact not found.' }); return; }
 
     const displayName = resolveDisplayName(c as never);
@@ -592,7 +592,7 @@ interface ContactImportPreviewRow {
 
 export async function contactImportPreview(req: Request, res: Response): Promise<void> {
   try {
-    requireUserId(req);
+    requireTenantId(req);
     const file = (req as Request & { file?: Express.Multer.File }).file;
     if (!file) {
       res.status(400).json({ success: false, message: 'CSV file required' });
@@ -662,7 +662,7 @@ export async function contactImportPreview(req: Request, res: Response): Promise
 
 export async function contactImportConfirm(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as {
       rows?: Array<{
         organisation?: string;
@@ -703,7 +703,7 @@ export async function contactImportConfirm(req: Request, res: Response): Promise
       try {
         const c = (await cdb().contact.create({
           data: {
-            userId,
+            tenantId,
             organisation: row.organisation ?? null,
             firstName: row.firstName ?? null,
             lastName: row.lastName ?? null,
@@ -743,9 +743,9 @@ export async function contactImportConfirm(req: Request, res: Response): Promise
 
 export async function getContactsExport(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const rows = (await cdb().contact.findMany({
-      where: { userId, isDeleted: false },
+      where: { tenantId, isDeleted: false },
       orderBy: { organisation: 'asc' },
       select: {
         id: true,

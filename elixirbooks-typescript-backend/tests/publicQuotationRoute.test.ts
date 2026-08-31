@@ -37,7 +37,7 @@ const VALID_TOKEN = 'a'.repeat(64);
 function baseQuotation(overrides: Record<string, unknown> = {}) {
   return {
     id: 'q-1',
-    userId: 'user-1',
+    tenantId: 'user-1',
     quotationId: 'QT-000001',
     quotationDate: new Date('2026-07-01T00:00:00.000Z'),
     expiryDate: new Date('2026-07-31T00:00:00.000Z'),
@@ -153,14 +153,14 @@ describe('GET /api/public/quotations/:token', () => {
       expect.objectContaining({ companyName: 'Acme Sellers Inc' }),
     );
 
-    // Sanitization: no internal/audit fields (id, userId, isDeleted, token itself) leak.
+    // Sanitization: no internal/audit fields (id, tenantId, isDeleted, token itself) leak.
     expect(quotation).not.toHaveProperty('id');
-    expect(quotation).not.toHaveProperty('userId');
+    expect(quotation).not.toHaveProperty('tenantId');
     expect(quotation).not.toHaveProperty('isDeleted');
     expect(quotation).not.toHaveProperty('publicViewToken');
 
     expect(mockCompanySettingsFindUnique).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { userId: 'user-1' } }),
+      expect.objectContaining({ where: { tenantId: 'user-1' } }),
     );
   });
 

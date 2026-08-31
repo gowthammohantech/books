@@ -62,7 +62,7 @@ describe('voidPaymentEffects — FX base-currency reversal (record path, movedBa
   it('reverseInvoicePaymentEffects DECREMENTS bank by the base amount (100 USD @ 83 = 8300)', async () => {
     const tx = fakeTx();
     await reverseInvoicePaymentEffects(tx as unknown as PaymentEffectsTx, {
-      userId: 'u1',
+      tenantId: 'u1',
       payment: {
         id: 'ip1', amount: '100', exchangeRate: '83', paymentModeId: 'pm1',
         bank: { id: 'b1', currentBalance: 10000 }, paymentMode: { slug: 'bank' },
@@ -76,7 +76,7 @@ describe('voidPaymentEffects — FX base-currency reversal (record path, movedBa
   it('reverseSupplierPaymentEffects INCREMENTS bank by the base amount (100 USD @ 83 = 8300)', async () => {
     const tx = fakeTx();
     await reverseSupplierPaymentEffects(tx as unknown as PaymentEffectsTx, {
-      userId: 'u1',
+      tenantId: 'u1',
       payment: {
         id: 'sp1', paidAmount: '100', exchangeRate: '83', paymentModeId: 'pm1',
         sourceType: 'BANK', bank: { id: 'b1', currentBalance: 0 },
@@ -90,7 +90,7 @@ describe('voidPaymentEffects — FX base-currency reversal (record path, movedBa
   it('base-currency payment (no rate) reverses the raw amount unchanged', async () => {
     const tx = fakeTx();
     await reverseInvoicePaymentEffects(tx as unknown as PaymentEffectsTx, {
-      userId: 'u1',
+      tenantId: 'u1',
       payment: {
         id: 'ip2', amount: '250.50', paymentModeId: 'pm1',
         bank: { id: 'b1', currentBalance: 1000 }, paymentMode: { slug: 'bank' },
@@ -111,7 +111,7 @@ describe('voidPaymentEffects — Prisma.Decimal money inputs (reproduces the liv
   it('reverseInvoicePaymentEffects moves the FULL Decimal amount, not 0 (record path)', async () => {
     const tx = fakeTx();
     await reverseInvoicePaymentEffects(tx as unknown as PaymentEffectsTx, {
-      userId: 'u1',
+      tenantId: 'u1',
       payment: {
         id: 'ip-dec', amount: new Prisma.Decimal('1000'), paymentModeId: 'pm1',
         bank: { id: 'b1', currentBalance: new Prisma.Decimal('290047.5') },
@@ -128,7 +128,7 @@ describe('voidPaymentEffects — Prisma.Decimal money inputs (reproduces the liv
   it('reverseSupplierPaymentEffects moves the FULL Decimal paidAmount, not 0 (record path)', async () => {
     const tx = fakeTx();
     await reverseSupplierPaymentEffects(tx as unknown as PaymentEffectsTx, {
-      userId: 'u1',
+      tenantId: 'u1',
       payment: {
         id: 'sp-dec', paidAmount: new Prisma.Decimal('1000'), paymentModeId: 'pm1',
         sourceType: 'BANK', bank: { id: 'b1', currentBalance: new Prisma.Decimal('290047.5') },
@@ -142,7 +142,7 @@ describe('voidPaymentEffects — Prisma.Decimal money inputs (reproduces the liv
   it('reverseSupplierPaymentEffects (PETTY_CASH) restores the FULL Decimal paidAmount', async () => {
     const tx = fakeTx();
     await reverseSupplierPaymentEffects(tx as unknown as PaymentEffectsTx, {
-      userId: 'u1',
+      tenantId: 'u1',
       payment: {
         id: 'sp-petty-dec', paidAmount: new Prisma.Decimal('30'), paymentModeId: null,
         sourceType: 'PETTY_CASH', bank: null,
@@ -156,7 +156,7 @@ describe('voidPaymentEffects — Prisma.Decimal money inputs (reproduces the liv
   it('FX: Decimal amount × Decimal rate reverses amount×rate in base', async () => {
     const tx = fakeTx();
     await reverseInvoicePaymentEffects(tx as unknown as PaymentEffectsTx, {
-      userId: 'u1',
+      tenantId: 'u1',
       payment: {
         id: 'ip-dec-fx', amount: new Prisma.Decimal('100'),
         exchangeRate: new Prisma.Decimal('83'), paymentModeId: 'pm1',
@@ -174,7 +174,7 @@ describe('voidPaymentEffects — finding 1 REFIX: gate on movedBankBalance, NOT 
   it('reverseInvoicePaymentEffects skips the register for an explain-flow receipt (movedBankBalance=false)', async () => {
     const tx = fakeTx();
     await reverseInvoicePaymentEffects(tx as unknown as PaymentEffectsTx, {
-      userId: 'u1',
+      tenantId: 'u1',
       payment: {
         id: 'ip-explain', amount: '100', exchangeRate: '83', paymentModeId: 'pm1',
         bank: { id: 'b1', currentBalance: 10000 }, paymentMode: { slug: 'bank' },
@@ -193,7 +193,7 @@ describe('voidPaymentEffects — finding 1 REFIX: gate on movedBankBalance, NOT 
   it('reverseInvoicePaymentEffects treats a missing flag as "did not move" (undefined → skip)', async () => {
     const tx = fakeTx();
     await reverseInvoicePaymentEffects(tx as unknown as PaymentEffectsTx, {
-      userId: 'u1',
+      tenantId: 'u1',
       payment: {
         id: 'ip-none', amount: '100', paymentModeId: 'pm1',
         bank: { id: 'b1', currentBalance: 10000 }, paymentMode: { slug: 'bank' },
@@ -206,7 +206,7 @@ describe('voidPaymentEffects — finding 1 REFIX: gate on movedBankBalance, NOT 
   it('reverseSupplierPaymentEffects (BANK) skips the register for an explain-flow bill payment', async () => {
     const tx = fakeTx();
     await reverseSupplierPaymentEffects(tx as unknown as PaymentEffectsTx, {
-      userId: 'u1',
+      tenantId: 'u1',
       payment: {
         id: 'sp-explain', paidAmount: '500', paymentModeId: 'pm1',
         sourceType: 'BANK', bank: { id: 'b1', currentBalance: 2000 },
@@ -221,7 +221,7 @@ describe('voidPaymentEffects — finding 1 REFIX: gate on movedBankBalance, NOT 
   it('reverseSupplierPaymentEffects (BANK) still moves the register for a record-path payment', async () => {
     const tx = fakeTx();
     await reverseSupplierPaymentEffects(tx as unknown as PaymentEffectsTx, {
-      userId: 'u1',
+      tenantId: 'u1',
       payment: {
         id: 'sp-record', paidAmount: '500', paymentModeId: 'pm1',
         sourceType: 'BANK', bank: { id: 'b1', currentBalance: 2000 },
@@ -235,7 +235,7 @@ describe('voidPaymentEffects — finding 1 REFIX: gate on movedBankBalance, NOT 
   it('reverseSupplierPaymentEffects (PETTY_CASH) skips when the payment did not move the register', async () => {
     const tx = fakeTx();
     await reverseSupplierPaymentEffects(tx as unknown as PaymentEffectsTx, {
-      userId: 'u1',
+      tenantId: 'u1',
       payment: {
         id: 'sp-petty-explain', paidAmount: '30', paymentModeId: null,
         sourceType: 'PETTY_CASH', bank: null,
@@ -249,7 +249,7 @@ describe('voidPaymentEffects — finding 1 REFIX: gate on movedBankBalance, NOT 
   it('reverseSupplierPaymentEffects (PETTY_CASH) moves the register for a record-path petty payment', async () => {
     const tx = fakeTx();
     await reverseSupplierPaymentEffects(tx as unknown as PaymentEffectsTx, {
-      userId: 'u1',
+      tenantId: 'u1',
       payment: {
         id: 'sp-petty-record', paidAmount: '30', paymentModeId: null,
         sourceType: 'PETTY_CASH', bank: null,

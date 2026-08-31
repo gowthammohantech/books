@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { insertCustomFieldValues, readCustomFieldValues } from '../lib/customFieldValues';
 
-// Category is a global lookup table — no userId column, so tenantScope()
+// Category is a global lookup table — no tenantId column, so tenantScope()
 // does not apply here.
 
 // Attach an absolute image URL the frontend can render directly. Stored value
@@ -32,7 +32,7 @@ export async function createCategory(req: Request, res: Response): Promise<void>
     const imageFile = req.file ?? filesArray.find((f) => f.fieldname === 'category_image');
     const category_image = imageFile ? imageFile.filename : null;
 
-    const userId = (req as Request & { user?: string }).user ?? 'system';
+    const tenantId = (req as Request & { user?: string }).user ?? 'system';
 
     const category = await prisma.$transaction(async (tx) => {
       const created = await tx.category.create({
@@ -48,7 +48,7 @@ export async function createCategory(req: Request, res: Response): Promise<void>
         recordId: created.id,
         customFields: req.body.customFields,
         files: filesArray,
-        userId,
+        tenantId,
       });
       return created;
     });
@@ -144,7 +144,7 @@ export async function updateCategory(req: Request, res: Response): Promise<void>
     const filesArray = (req.files as Express.Multer.File[] | undefined) ?? [];
     const imageFile = req.file ?? filesArray.find((f) => f.fieldname === 'category_image');
 
-    const userId = (req as Request & { user?: string }).user ?? 'system';
+    const tenantId = (req as Request & { user?: string }).user ?? 'system';
 
     const data: Prisma.CategoryUpdateInput = {};
     if (category_name) data.category_name = category_name;
@@ -164,7 +164,7 @@ export async function updateCategory(req: Request, res: Response): Promise<void>
         recordId: updated.id,
         customFields: req.body.customFields,
         files: filesArray,
-        userId,
+        tenantId,
       });
       return updated;
     });

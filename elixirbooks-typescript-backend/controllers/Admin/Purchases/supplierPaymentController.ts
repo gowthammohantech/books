@@ -9,7 +9,7 @@ import { validationResult } from 'express-validator';
 import { prisma } from '../../../lib/prisma';
 import {
   tenantScope,
-  requireUserId,
+  requireTenantId,
   UnauthorizedError,
 } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
@@ -103,14 +103,14 @@ function formatDateShort(d: Date | null | undefined): string | null {
 
 function generateNextPaymentNumber(
   tx: Tx,
-  userId: string,
+  tenantId: string,
   prefix = 'PAY-',
 ): Promise<string> {
   return nextDocumentNumber({
     model: tx.supplierPayment as unknown as NumberingModel,
     field: 'paymentId',
     prefix,
-    tenantWhere: { purchase: { userId } },
+    tenantWhere: { purchase: { tenantId } },
   });
 }
 
@@ -133,7 +133,7 @@ export async function createSupplierPayment(
   }
 
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       purchaseId,
       contactId,
@@ -162,7 +162,7 @@ export async function createSupplierPayment(
 
     // Verify the purchase is tenant-owned before referencing it anywhere below.
     const purchase = await prisma.purchase.findFirst({
-      where: { id: purchaseId, userId, isDeleted: false },
+      where: { id: purchaseId, tenantId, isDeleted: false },
     });
     if (!purchase) {
       res.status(404).json({ success: false, message: 'Purchase not found' });
@@ -195,7 +195,7 @@ export async function createSupplierPayment(
     let resolvedContactName: string | null = null;
     if (contactId) {
       const contact = await prisma.contact.findFirst({
-        where: { id: contactId, userId, isDeleted: false },
+        where: { id: contactId, tenantId, isDeleted: false },
         select: { id: true, firstName: true, lastName: true, organisation: true },
       });
       if (!contact) {
@@ -273,7 +273,7 @@ export async function createSupplierPayment(
         return;
       }
 
-      const bank = await prisma.bankDetail.findFirst({ where: { id: bankId, userId } });
+      const bank = await prisma.bankDetail.findFirst({ where: { id: bankId, tenantId } });
       if (!bank) {
         res.status(400).json({
           success: false,
@@ -299,7 +299,7 @@ export async function createSupplierPayment(
     // PETTY_CASH balance check
     if (sourceType === 'PETTY_CASH') {
       const pettyCash = await prisma.pettyCash.findFirst({
-        where: { userId, isDeleted: false },
+        where: { tenantId, isDeleted: false },
       });
       if (!pettyCash) {
         res.status(400).json({
@@ -341,11 +341,11 @@ export async function createSupplierPayment(
         );
       }
 
-      const paymentId = await generateNextPaymentNumber(tx, userId);
+      const paymentId = await generateNextPaymentNumber(tx, tenantId);
 
       const savedPayment = await tx.supplierPayment.create({
         data: {
-          tenantId: userId,
+          tenantId: tenantId,
           paymentId,
           purchaseId: purchaseId as string,
           contactId: resolvedContactId,
@@ -359,7 +359,7 @@ export async function createSupplierPayment(
           dueAmount: asNumber(dueAmount, 0),
           notes: notes ?? null,
           attachment,
-          createdBy: userId,
+          createdBy: tenantId,
           sourceType: sourceType as SupplierPaymentSourceType,
           bankId: sourceType === 'BANK' ? (bankId as string) : null,
           // Record path: both the BANK and PETTY_CASH blocks below MOVE a cash
@@ -378,7 +378,7 @@ export async function createSupplierPayment(
       // Whether the SupplierPayment JE actually posts under the go-live gate
       // (same settings/date the postSupplierPayment → gatedPost call below uses).
       // The bank line is reconciled iff that JE truly posts.
-      const ledgerSettings = await tx.companySettings.findFirst({ where: { userId } });
+      const ledgerSettings = await tx.companySettings.findFirst({ where: { tenantId } });
       const didPostPayment = shouldPost(
         ledgerSettings,
         savedPayment.paymentDate ?? new Date(),
@@ -386,7 +386,7 @@ export async function createSupplierPayment(
 
       if (sourceType === 'BANK') {
         const bank = await tx.bankDetail.findFirst({
-          where: { id: bankId as string, userId },
+          where: { id: bankId as string, tenantId },
         });
         if (!bank) throw new Error('BANK_NOT_FOUND');
 
@@ -402,7 +402,7 @@ export async function createSupplierPayment(
 
         await tx.bankTransaction.create({
           data: {
-            tenantId: userId,
+            tenantId: tenantId,
             bankAccountId: bank.id,
             transactionDate: new Date(),
             type: 'TRANSFER_OUT',
@@ -420,14 +420,14 @@ export async function createSupplierPayment(
               postedSourceType: 'SupplierPayment',
               postedSourceId: savedPayment.id,
               posted: didPostPayment,
-              approvedById: userId,
+              approvedById: tenantId,
               approvedAt: new Date(),
             }),
           },
         });
       } else if (sourceType === 'PETTY_CASH') {
         const pettyCash = await tx.pettyCash.findFirst({
-          where: { userId, isDeleted: false },
+          where: { tenantId, isDeleted: false },
         });
         if (!pettyCash) throw new Error('PETTY_CASH_NOT_FOUND');
 
@@ -443,7 +443,7 @@ export async function createSupplierPayment(
 
         await tx.pettyCashTransaction.create({
           data: {
-            tenantId: userId,
+            tenantId: tenantId,
             pettyCashId: pettyCash.id,
             transactionDate: new Date(),
             transactionType: 'SPEND',
@@ -501,7 +501,7 @@ export async function createSupplierPayment(
           ? await resolveBankGlAccountId(tx as never, bankId as string)
           : null;
         await postSupplierPayment(tx as unknown as PostingTx, {
-          userId,
+          tenantId,
           purchaseId: purchaseId as string,
           paymentId: savedPayment.id,
           date: savedPayment.paymentDate ?? new Date(),
@@ -553,7 +553,7 @@ export async function listSupplierPayments(
   res: Response,
 ): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -580,7 +580,7 @@ export async function listSupplierPayments(
 
     const where: Prisma.SupplierPaymentWhereInput = {
       isDeleted: false,
-      purchase: { userId },
+      purchase: { tenantId },
     };
 
     if (contactIdFilter) {
@@ -801,7 +801,7 @@ export async function updateSupplierPayment(
   }
 
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const {
       purchaseId,
@@ -826,7 +826,7 @@ export async function updateSupplierPayment(
     };
 
     const existingPayment = await prisma.supplierPayment.findFirst({
-      where: { id, isDeleted: false, purchase: { userId } },
+      where: { id, isDeleted: false, purchase: { tenantId } },
     });
     if (!existingPayment) {
       res.status(404).json({
@@ -839,7 +839,7 @@ export async function updateSupplierPayment(
     // Validate tenant ownership of purchaseId when the caller is re-pointing the payment.
     if (purchaseId && purchaseId !== existingPayment.purchaseId) {
       const targetPurchase = await prisma.purchase.findFirst({
-        where: { id: purchaseId, userId, isDeleted: false },
+        where: { id: purchaseId, tenantId, isDeleted: false },
       });
       if (!targetPurchase) {
         res.status(404).json({ success: false, message: 'Purchase not found' });
@@ -850,7 +850,7 @@ export async function updateSupplierPayment(
     // Validate tenant ownership of contactId when provided
     if (contactId) {
       const contact = await prisma.contact.findFirst({
-        where: { id: contactId, userId, isDeleted: false },
+        where: { id: contactId, tenantId, isDeleted: false },
         select: { id: true },
       });
       if (!contact) {
@@ -877,7 +877,7 @@ export async function updateSupplierPayment(
       // with the write below — closes the TOCTOU window where two concurrent
       // updates could both read the same pre-write sum and jointly overpay.
       const effPurchase = await tx.purchase.findFirst({
-        where: { id: effectivePurchaseId, userId, isDeleted: false },
+        where: { id: effectivePurchaseId, tenantId, isDeleted: false },
         select: { totalAmount: true, contactId: true, supplierId: true },
       });
       const effTotalDec = new Prisma.Decimal(String(effPurchase?.totalAmount ?? 0));
@@ -940,7 +940,7 @@ export async function updateSupplierPayment(
 
       // GL: void old payment entry and re-post with updated amount
       await voidDocument(tx as unknown as PostingTx, {
-        userId,
+        tenantId,
         sourceType: 'SupplierPayment',
         sourceId: id,
         event: 'payment',
@@ -959,7 +959,7 @@ export async function updateSupplierPayment(
           ? await resolveBankGlAccountId(tx as never, upd.bankId ?? null)
           : null;
         await postSupplierPayment(tx as unknown as PostingTx, {
-          userId,
+          tenantId,
           purchaseId: upd.purchaseId ?? existingPayment.purchaseId,
           paymentId: upd.id,
           date: upd.paymentDate ?? new Date(),
@@ -1016,11 +1016,11 @@ export async function deleteSupplierPayment(
   res: Response,
 ): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const existing = await prisma.supplierPayment.findFirst({
-      where: { id, isDeleted: false, purchase: { userId } },
+      where: { id, isDeleted: false, purchase: { tenantId } },
       select: { id: true, purchaseId: true },
     });
     if (!existing) {
@@ -1032,7 +1032,7 @@ export async function deleteSupplierPayment(
       // Reload the payment (scoped via its purchase) WITH the bank relation so
       // the shared reversal can restore the correct cash source.
       const payment = await tx.supplierPayment.findFirst({
-        where: { id, isDeleted: false, purchase: { userId } },
+        where: { id, isDeleted: false, purchase: { tenantId } },
         include: { bank: true, purchase: true },
       });
       if (!payment) return; // vanished under us — nothing to reverse
@@ -1042,7 +1042,7 @@ export async function deleteSupplierPayment(
       // Previously the delete reversed the GL only, so the bank/petty balance
       // stayed reduced and the reversing txn was never written.
       await reverseSupplierPaymentEffects(tx as unknown as PaymentEffectsTx, {
-        userId,
+        tenantId,
         payment,
         remarks: `Reversal of deleted supplier payment ${payment.id}`,
       });

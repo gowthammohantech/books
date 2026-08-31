@@ -1,7 +1,7 @@
 // controllers/timeTracking/timesheetController.ts
 // Time Tracking — Phase 1 (Task 5): the timesheet core.
 //
-// Endpoints (all `protect`, tenant-scoped via requireUserId(req) where tenant =
+// Endpoints (all `protect`, tenant-scoped via requireTenantId(req) where tenant =
 // ownerId ?? id; route-level requirePermission gates ability, the controller
 // narrows for-others actions to the specific employee/projects):
 //   GET  /timesheets/week?employeeUserId=&weekStart=   get-or-create the week
@@ -20,7 +20,7 @@ import type { Request, Response } from 'express';
 import { Prisma, TimesheetStatus } from '@prisma/client';
 
 import { prisma } from '../../lib/prisma';
-import { requireUserId, requireActingUserId, UnauthorizedError } from '../../lib/tenantScope';
+import { requireTenantId, requireActingUserId, UnauthorizedError } from '../../lib/tenantScope';
 import {
   assertActorCanManageEmployee,
   ForbiddenError,
@@ -131,7 +131,7 @@ async function holidaysForWeek(
   const weekEnd = weekDates[6];
 
   const rows = await prisma.holiday.findMany({
-    where: { userId: tenantId },
+    where: { tenantId: tenantId },
     select: { date: true, name: true, recurringYearly: true },
     orderBy: { date: 'asc' },
   });
@@ -181,7 +181,7 @@ async function leaveDaysForWeek(
     where: {
       date: { gte: weekStart, lte: weekEnd },
       leaveRequest: {
-        userId: tenantId,
+        tenantId: tenantId,
         employeeUserId,
         status: 'APPROVED',
       },
@@ -204,7 +204,7 @@ async function leaveDaysForWeek(
 /** The employee's active member projects (for the week response + log validation). */
 async function activeMemberProjects(tenantId: string, employeeUserId: string) {
   const members = await prisma.projectMember.findMany({
-    where: { userId: tenantId, employeeUserId, isActive: true },
+    where: { tenantId: tenantId, employeeUserId, isActive: true },
     include: { project: { select: { id: true, name: true, billingRate: true } } },
     orderBy: { createdAt: 'asc' },
   });
@@ -241,7 +241,7 @@ function serializeEntry(e: {
 
 function serializeTimesheet(t: {
   id: string;
-  userId: string;
+  tenantId: string;
   employeeUserId: string;
   weekStartDate: Date;
   status: TimesheetStatus;
@@ -268,7 +268,7 @@ function serializeTimesheet(t: {
  */
 async function findTenantTimesheet(tenantId: string, id: string) {
   return prisma.timesheet.findFirst({
-    where: { id, userId: tenantId },
+    where: { id, tenantId: tenantId },
     include: { entries: true },
   });
 }
@@ -300,7 +300,7 @@ async function authorizeForEmployee(
 
 export async function getOrCreateWeek(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actor = resolveActor(req);
 
     const employeeUserId = String(req.query.employeeUserId ?? actor.userId) || actor.userId;
@@ -346,7 +346,7 @@ export async function getOrCreateWeek(req: Request, res: Response): Promise<void
     if (!timesheet) {
       try {
         timesheet = await prisma.timesheet.create({
-          data: { userId: tenantId, employeeUserId, weekStartDate: weekStart, status: TimesheetStatus.DRAFT },
+          data: { tenantId: tenantId, employeeUserId, weekStartDate: weekStart, status: TimesheetStatus.DRAFT },
           include: { entries: true },
         });
       } catch (e) {
@@ -402,7 +402,7 @@ interface EntryInput {
 
 export async function replaceEntries(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actor = resolveActor(req);
     const id = String(req.params.id);
 
@@ -517,7 +517,7 @@ export async function replaceEntries(req: Request, res: Response): Promise<void>
 
 export async function submitTimesheet(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actor = resolveActor(req);
     const id = String(req.params.id);
 
@@ -568,7 +568,7 @@ export async function submitTimesheet(req: Request, res: Response): Promise<void
 
 export async function approveTimesheet(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actor = resolveActor(req);
     const id = String(req.params.id);
 
@@ -629,7 +629,7 @@ export async function approveTimesheet(req: Request, res: Response): Promise<voi
 
 export async function rejectTimesheet(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actor = resolveActor(req);
     const id = String(req.params.id);
 
@@ -691,7 +691,7 @@ export async function rejectTimesheet(req: Request, res: Response): Promise<void
 
 export async function listTimesheets(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actor = resolveActor(req);
     const actingUserId = requireActingUserId(req);
 
@@ -708,11 +708,11 @@ export async function listTimesheets(req: Request, res: Response): Promise<void>
         return;
       }
       if (isAdminOrOwner(actor)) {
-        where = { userId: tenantId, status: TimesheetStatus.SUBMITTED };
+        where = { tenantId: tenantId, status: TimesheetStatus.SUBMITTED };
       } else {
         // Projects the actor actively MANAGES; pending sheets that touch them.
         const managed = await prisma.projectMember.findMany({
-          where: { userId: tenantId, employeeUserId: actor.userId, role: 'MANAGER', isActive: true },
+          where: { tenantId: tenantId, employeeUserId: actor.userId, role: 'MANAGER', isActive: true },
           select: { projectId: true },
         });
         const managedIds = managed.map((m) => m.projectId);
@@ -724,14 +724,14 @@ export async function listTimesheets(req: Request, res: Response): Promise<void>
           return;
         }
         where = {
-          userId: tenantId,
+          tenantId: tenantId,
           status: TimesheetStatus.SUBMITTED,
           entries: { some: { projectId: { in: managedIds } } },
         };
       }
     } else {
       // 'mine' — the acting user's own timesheets (identity, not tenant-wide).
-      where = { userId: tenantId, employeeUserId: actingUserId };
+      where = { tenantId: tenantId, employeeUserId: actingUserId };
     }
 
     const [total, rows] = await Promise.all([
@@ -775,19 +775,19 @@ export async function listTimesheets(req: Request, res: Response): Promise<void>
 
 export async function listAvailableProjects(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actingUserId = requireActingUserId(req);
 
     // Projects the acting user is already an active member of (to exclude).
     const memberships = await prisma.projectMember.findMany({
-      where: { userId: tenantId, employeeUserId: actingUserId, isActive: true },
+      where: { tenantId: tenantId, employeeUserId: actingUserId, isActive: true },
       select: { projectId: true },
     });
     const memberProjectIds = memberships.map((m) => m.projectId);
 
     const projects = await prisma.project.findMany({
       where: {
-        userId: tenantId,
+        tenantId: tenantId,
         status: 'active',
         ...(memberProjectIds.length ? { id: { notIn: memberProjectIds } } : {}),
       },
@@ -809,7 +809,7 @@ export async function listAvailableProjects(req: Request, res: Response): Promis
 
 export async function joinProject(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actingUserId = requireActingUserId(req);
 
     const projectId = String(req.body?.projectId ?? '');
@@ -820,7 +820,7 @@ export async function joinProject(req: Request, res: Response): Promise<void> {
 
     // Verify the project belongs to the tenant (404 else).
     const project = await prisma.project.findFirst({
-      where: { id: projectId, userId: tenantId },
+      where: { id: projectId, tenantId: tenantId },
       select: { id: true },
     });
     if (!project) {
@@ -835,7 +835,7 @@ export async function joinProject(req: Request, res: Response): Promise<void> {
       where: { projectId_employeeUserId: { projectId, employeeUserId: actingUserId } },
       update: { isActive: true },
       create: {
-        userId: tenantId,
+        tenantId: tenantId,
         projectId,
         employeeUserId: actingUserId,
         role: 'MEMBER',
@@ -862,7 +862,7 @@ export async function joinProject(req: Request, res: Response): Promise<void> {
 
 export async function leaveProject(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actingUserId = requireActingUserId(req);
 
     const projectId = String(req.params.projectId ?? '');
@@ -873,7 +873,7 @@ export async function leaveProject(req: Request, res: Response): Promise<void> {
 
     // Verify the project belongs to the tenant (404 else).
     const project = await prisma.project.findFirst({
-      where: { id: projectId, userId: tenantId },
+      where: { id: projectId, tenantId: tenantId },
       select: { id: true },
     });
     if (!project) {
@@ -885,7 +885,7 @@ export async function leaveProject(req: Request, res: Response): Promise<void> {
     // only clear entries that aren't part of submitted/approved history.
     const editableTimesheets = await prisma.timesheet.findMany({
       where: {
-        userId: tenantId,
+        tenantId: tenantId,
         employeeUserId: actingUserId,
         status: { in: [TimesheetStatus.DRAFT, TimesheetStatus.REJECTED] },
       },
@@ -902,7 +902,7 @@ export async function leaveProject(req: Request, res: Response): Promise<void> {
         },
       }),
       prisma.projectMember.deleteMany({
-        where: { userId: tenantId, projectId, employeeUserId: actingUserId },
+        where: { tenantId: tenantId, projectId, employeeUserId: actingUserId },
       }),
     ]);
 

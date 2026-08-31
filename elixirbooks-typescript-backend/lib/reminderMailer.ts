@@ -238,9 +238,9 @@ export async function sendReminderEmail(params: SendReminderParams): Promise<Sen
       // publicBaseUrl used to ride in on `reminder.company`. Reminder now points
       // at Tenant rather than CompanySettings, so read the setting directly.
       // One extra query, only on the send path, which is already doing SMTP I/O.
-      // CompanySettings.userId holds the tenant id (see lib/tenantScope).
+      // CompanySettings.tenantId holds the tenant id (see lib/tenantScope).
       const settings = await prisma.companySettings.findUnique({
-        where: { userId: reminder.tenantId },
+        where: { tenantId: reminder.tenantId },
         select: { publicBaseUrl: true },
       });
       viewLink = await resolveInvoicePublicLink(invoice, settings?.publicBaseUrl);

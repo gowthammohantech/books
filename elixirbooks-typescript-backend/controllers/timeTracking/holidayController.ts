@@ -1,7 +1,7 @@
 // controllers/timeTracking/holidayController.ts
 // Time Tracking — Phase C (Task 3): company holiday calendar.
 //
-// Endpoints (all tenant-scoped via requireUserId; tenant = ownerId ?? id):
+// Endpoints (all tenant-scoped via requireTenantId; tenant = ownerId ?? id):
 //   GET    /holidays            time-tracking,view
 //   POST   /holidays            time-tracking-others,create   { name, date, recurringYearly? }
 //   PUT    /holidays/:id        time-tracking-others,edit
@@ -15,7 +15,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../../lib/tenantScope';
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -36,9 +36,9 @@ function parseUtcDate(value: unknown): Date | undefined {
 /** GET /holidays */
 export async function listHolidays(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const holidays = await prisma.holiday.findMany({
-      where: { userId },
+      where: { tenantId },
       orderBy: { date: 'asc' },
     });
     res.json({ success: true, data: { holidays } });
@@ -52,7 +52,7 @@ export async function listHolidays(req: Request, res: Response): Promise<void> {
 /** POST /holidays — { name, date, recurringYearly? } */
 export async function createHoliday(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { name, date, recurringYearly } = req.body as {
       name?: string;
       date?: string;
@@ -67,7 +67,7 @@ export async function createHoliday(req: Request, res: Response): Promise<void> 
 
     const holiday = await prisma.holiday.create({
       data: {
-        userId,
+        tenantId,
         name,
         date: parsedDate,
         recurringYearly: recurringYearly ?? false,
@@ -89,10 +89,10 @@ export async function createHoliday(req: Request, res: Response): Promise<void> 
 /** PUT /holidays/:id — { name?, date?, recurringYearly? } */
 export async function updateHoliday(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const id = String(req.params.id);
 
-    const existing = await prisma.holiday.findFirst({ where: { id, userId } });
+    const existing = await prisma.holiday.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Holiday not found' });
       return;
@@ -139,10 +139,10 @@ export async function updateHoliday(req: Request, res: Response): Promise<void> 
 /** DELETE /holidays/:id */
 export async function deleteHoliday(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const id = String(req.params.id);
 
-    const existing = await prisma.holiday.findFirst({ where: { id, userId } });
+    const existing = await prisma.holiday.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Holiday not found' });
       return;

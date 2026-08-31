@@ -3,14 +3,14 @@
  *
  * P0-2b regression tripwire: several by-id handlers in
  * controllers/Admin/Invoice/invoiceController.ts loaded Invoice/Quotation
- * rows with no `userId` filter at all (`findUnique({ where: { id } })`),
+ * rows with no `tenantId` filter at all (`findUnique({ where: { id } })`),
  * letting any authenticated tenant read/mutate another tenant's invoices by
  * guessing/observing an id. `markInvoiceSent` didn't even require
  * authentication. `approveInvoice`/`rejectInvoice` (maker-checker) and
  * `convertQuotationToInvoice` had the same unscoped-lookup gap.
  *
  * These tests mock prisma and assert every fixed handler's lookup carries
- * `userId` (the authenticated tenant) and 404s when the mocked lookup
+ * `tenantId` (the authenticated tenant) and 404s when the mocked lookup
  * returns null (simulating a foreign-tenant id).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -99,7 +99,7 @@ describe('invoiceController — tenant scoping (404 on foreign-tenant id)', () =
     await updateInvoiceStatus(req, res);
 
     expect(mockInvoiceFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'inv-1', userId: TENANT_ID } }),
+      expect.objectContaining({ where: { id: 'inv-1', tenantId: TENANT_ID } }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
@@ -111,7 +111,7 @@ describe('invoiceController — tenant scoping (404 on foreign-tenant id)', () =
     await sendInvoiceEmail(req, res);
 
     expect(mockInvoiceFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'inv-1', userId: TENANT_ID } }),
+      expect.objectContaining({ where: { id: 'inv-1', tenantId: TENANT_ID } }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
@@ -121,7 +121,7 @@ describe('invoiceController — tenant scoping (404 on foreign-tenant id)', () =
     await deleteInvoice(req, res);
 
     expect(mockInvoiceFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'inv-1', userId: TENANT_ID } }),
+      expect.objectContaining({ where: { id: 'inv-1', tenantId: TENANT_ID } }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
@@ -131,7 +131,7 @@ describe('invoiceController — tenant scoping (404 on foreign-tenant id)', () =
     await recordInvoicePayment(req, res);
 
     expect(mockInvoiceFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'inv-1', userId: TENANT_ID } }),
+      expect.objectContaining({ where: { id: 'inv-1', tenantId: TENANT_ID } }),
     );
     expect(res.status).toHaveBeenCalledWith(400);
   });
@@ -141,7 +141,7 @@ describe('invoiceController — tenant scoping (404 on foreign-tenant id)', () =
     await markInvoiceSent(req, res);
 
     expect(mockInvoiceFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'inv-1', userId: TENANT_ID } }),
+      expect.objectContaining({ where: { id: 'inv-1', tenantId: TENANT_ID } }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
@@ -151,7 +151,7 @@ describe('invoiceController — tenant scoping (404 on foreign-tenant id)', () =
     await approveInvoice(req, res);
 
     expect(mockInvoiceFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ id: 'inv-1', userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ id: 'inv-1', tenantId: TENANT_ID }) }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
@@ -161,7 +161,7 @@ describe('invoiceController — tenant scoping (404 on foreign-tenant id)', () =
     await rejectInvoice(req, res);
 
     expect(mockInvoiceFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ id: 'inv-1', userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ id: 'inv-1', tenantId: TENANT_ID }) }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
@@ -171,7 +171,7 @@ describe('invoiceController — tenant scoping (404 on foreign-tenant id)', () =
     await convertQuotationToInvoice(req, res);
 
     expect(mockQuotationFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'quo-1', userId: TENANT_ID } }),
+      expect.objectContaining({ where: { id: 'quo-1', tenantId: TENANT_ID } }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });

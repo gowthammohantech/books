@@ -2,9 +2,9 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function migrateForOwner(userId: string): Promise<{ created: number; merged: number; nearMisses: number }> {
-  const customers = await prisma.customer.findMany({ where: { userId, isDeleted: false } });
-  const suppliers = await prisma.supplier.findMany({ where: { user_id: userId, isDeleted: false } });
+async function migrateForOwner(tenantId: string): Promise<{ created: number; merged: number; nearMisses: number }> {
+  const customers = await prisma.customer.findMany({ where: { tenantId, isDeleted: false } });
+  const suppliers = await prisma.supplier.findMany({ where: { tenantId: tenantId, isDeleted: false } });
   const plan = planMerges(
     customers.map((c) => ({ id: c.id, email: c.email, name: c.name })),
     suppliers.map((s) => ({ id: s.id, email: s.supplier_email, name: s.supplier_name })),
@@ -21,7 +21,7 @@ async function migrateForOwner(userId: string): Promise<{ created: number; merge
     if (existing) continue;
     await contactDelegate.create({
       data: {
-        userId,
+        tenantId,
         legacySupplierId: s.id,
         organisation: s.supplier_name,
         email: s.supplier_email,
@@ -44,7 +44,7 @@ async function migrateForOwner(userId: string): Promise<{ created: number; merge
     const addr = (c.billingAddress as Record<string, unknown> | null) ?? {};
     await contactDelegate.create({
       data: {
-        userId,
+        tenantId,
         legacyCustomerId: c.id,
         legacySupplierId: mergeSupplierId,
         organisation: c.name,
@@ -67,8 +67,8 @@ async function migrateForOwner(userId: string): Promise<{ created: number; merge
     created += 1;
   }
 
-  for (const m of plan.merges) console.log(`[MERGE] owner=${userId} customer=${m.customerId} + supplier=${m.supplierId}`);
-  for (const n of plan.nearMisses) console.log(`[NEAR-MISS] owner=${userId} org="${n.organisation}" customer=${n.customerId} supplier=${n.supplierId} — review for manual merge`);
+  for (const m of plan.merges) console.log(`[MERGE] owner=${tenantId} customer=${m.customerId} + supplier=${m.supplierId}`);
+  for (const n of plan.nearMisses) console.log(`[NEAR-MISS] owner=${tenantId} org="${n.organisation}" customer=${n.customerId} supplier=${n.supplierId} — review for manual merge`);
   return { created, merged: plan.merges.length, nearMisses: plan.nearMisses.length };
 }
 

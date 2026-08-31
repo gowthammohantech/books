@@ -10,7 +10,7 @@ import dayjs from 'dayjs';
 import { prisma } from '../lib/prisma';
 import {
   tenantScope,
-  requireUserId,
+  requireTenantId,
   UnauthorizedError,
 } from '../lib/tenantScope';
 import { explainedBankFields } from '../lib/moneyFlow/explainedBankFields';
@@ -50,7 +50,7 @@ export async function createPettyCash(
   res: Response,
 ): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const {
       bankAccountId,
@@ -107,7 +107,7 @@ export async function createPettyCash(
 
       // Check if this tenant's petty cash account exists (strictly scoped —
       // one per tenant, never a shared/legacy row from another tenant).
-      let pettyCash = await tx.pettyCash.findFirst({ where: { userId } });
+      let pettyCash = await tx.pettyCash.findFirst({ where: { tenantId } });
 
       const pettyBalanceBefore = pettyCash ? Number(pettyCash.currentBalance ?? 0) : 0;
       const pettyBalanceAfter = pettyBalanceBefore + amount;
@@ -115,7 +115,7 @@ export async function createPettyCash(
       if (!pettyCash) {
         pettyCash = await tx.pettyCash.create({
           data: {
-            userId,
+            tenantId,
             openingBalance: toDecimal(amount),
             currentBalance: toDecimal(amount),
             asOnDate: new Date(),
@@ -136,7 +136,7 @@ export async function createPettyCash(
       // Create bank transaction
       const bankTransaction = await tx.bankTransaction.create({
         data: {
-          tenantId: userId,
+          tenantId: tenantId,
           bankAccountId: bankAccount.id,
           transactionDate: new Date(),
           type: bankTransactionType,
@@ -153,7 +153,7 @@ export async function createPettyCash(
             postedSourceType: 'PettyCash',
             postedSourceId: pettyCash.id,
             posted: false,
-            approvedById: userId,
+            approvedById: tenantId,
             approvedAt: new Date(),
           }),
         },
@@ -171,7 +171,7 @@ export async function createPettyCash(
       // Create petty cash transaction (ADD)
       const pettyTransaction = await tx.pettyCashTransaction.create({
         data: {
-          tenantId: userId,
+          tenantId: tenantId,
           pettyCashId: pettyCash.id,
           transactionDate: new Date(),
           transactionType: 'ADD',
@@ -223,11 +223,11 @@ export async function listPettyCash(
   res: Response,
 ): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     // Fetch this tenant's petty cash record.
     const pettyCash = await prisma.pettyCash.findFirst({
-      where: { isDeleted: false, userId },
+      where: { isDeleted: false, tenantId },
     });
     if (!pettyCash) {
       res.status(200).json({
@@ -275,7 +275,7 @@ export async function returnPettyCash(
   res: Response,
 ): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const {
       bankAccountId,
@@ -307,7 +307,7 @@ export async function returnPettyCash(
       }
 
       // Fetch this tenant's petty cash record.
-      const pettyCash = await tx.pettyCash.findFirst({ where: { userId } });
+      const pettyCash = await tx.pettyCash.findFirst({ where: { tenantId } });
       if (!pettyCash) {
         return { status: 404, body: { success: false, message: 'Petty cash not found' } };
       }
@@ -352,7 +352,7 @@ export async function returnPettyCash(
       // Create bank transaction FIRST to get its ID
       const bankTransaction = await tx.bankTransaction.create({
         data: {
-          tenantId: userId,
+          tenantId: tenantId,
           bankAccountId: bankAccount.id,
           transactionDate: new Date(),
           type: bankTransactionType,
@@ -369,7 +369,7 @@ export async function returnPettyCash(
             postedSourceType: 'PettyCash',
             postedSourceId: pettyCash.id,
             posted: false,
-            approvedById: userId,
+            approvedById: tenantId,
             approvedAt: new Date(),
           }),
         },
@@ -378,7 +378,7 @@ export async function returnPettyCash(
       // Create petty cash transaction (RETURN) with bankTransaction ID as relatedId
       const pettyTransaction = await tx.pettyCashTransaction.create({
         data: {
-          tenantId: userId,
+          tenantId: tenantId,
           pettyCashId: pettyCash.id,
           transactionDate: new Date(),
           transactionType: 'RETURN',
@@ -449,7 +449,7 @@ export async function listPettyCashTransactions(
   res: Response,
 ): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const {
       page = '1',
@@ -476,7 +476,7 @@ export async function listPettyCashTransactions(
     // Base where query — strictly scoped to this tenant's petty cash account.
     const where: Prisma.PettyCashTransactionWhereInput = {
       isDeleted: false,
-      pettyCash: { userId },
+      pettyCash: { tenantId },
     };
 
     if (
@@ -650,15 +650,15 @@ export async function getFinancialSummary(
   res: Response,
 ): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     // 1) Get total current balances
     const bankAggregate = await prisma.bankDetail.aggregate({
-      where: { userId, isDeleted: false, status: true },
+      where: { tenantId, isDeleted: false, status: true },
       _sum: { currentBalance: true },
     });
     const pettyAggregate = await prisma.pettyCash.aggregate({
-      where: { isDeleted: false, userId },
+      where: { isDeleted: false, tenantId },
       _sum: { currentBalance: true },
     });
 
@@ -672,12 +672,12 @@ export async function getFinancialSummary(
     const start30 = today.subtract(29, 'day').startOf('day').toDate();
 
     const bankTx30Raw = await prisma.bankTransaction.findMany({
-      where: { isDeleted: false, transactionDate: { gte: start30 }, bankAccount: { userId } },
+      where: { isDeleted: false, transactionDate: { gte: start30 }, bankAccount: { tenantId } },
       orderBy: { transactionDate: 'asc' },
       select: { transactionDate: true, balanceAfter: true },
     });
     const pettyTx30Raw = await prisma.pettyCashTransaction.findMany({
-      where: { isDeleted: false, transactionDate: { gte: start30 }, pettyCash: { userId } },
+      where: { isDeleted: false, transactionDate: { gte: start30 }, pettyCash: { tenantId } },
       orderBy: { transactionDate: 'asc' },
       select: { transactionDate: true, balanceAfter: true },
     });
@@ -716,12 +716,12 @@ export async function getFinancialSummary(
     const start12 = today.subtract(11, 'month').startOf('month').toDate();
 
     const bankTx12Raw = await prisma.bankTransaction.findMany({
-      where: { isDeleted: false, transactionDate: { gte: start12 }, bankAccount: { userId } },
+      where: { isDeleted: false, transactionDate: { gte: start12 }, bankAccount: { tenantId } },
       orderBy: { transactionDate: 'asc' },
       select: { transactionDate: true, balanceAfter: true },
     });
     const pettyTx12Raw = await prisma.pettyCashTransaction.findMany({
-      where: { isDeleted: false, transactionDate: { gte: start12 }, pettyCash: { userId } },
+      where: { isDeleted: false, transactionDate: { gte: start12 }, pettyCash: { tenantId } },
       orderBy: { transactionDate: 'asc' },
       select: { transactionDate: true, balanceAfter: true },
     });

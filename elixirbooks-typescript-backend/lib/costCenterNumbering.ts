@@ -7,9 +7,9 @@
 // -------------------------------------------
 // The obvious home would be GeneralSetting, alongside the existing
 // `nextInvoiceNo`. It cannot go there: `GeneralSetting.key` is `@unique`
-// GLOBALLY with no `userId` column (prisma/schema.prisma), so those settings are
+// GLOBALLY with no `tenantId` column (prisma/schema.prisma), so those settings are
 // install-wide and already shared across every tenant. A per-centre key would
-// inherit that defect. `CostCenter` carries `userId`, so a counter on the row is
+// inherit that defect. `CostCenter` carries `tenantId`, so a counter on the row is
 // tenant-scoped by construction — and Prisma's atomic `increment` gives a true
 // reservation that also row-locks for the rest of the owning transaction.
 //
@@ -47,7 +47,7 @@ export interface NumberingTx {
 }
 
 export interface CentreNumberOptions {
-  userId: string;
+  tenantId: string;
   costCenterId: string | null | undefined;
   /** Model delegate to probe for an install-wide clash, e.g. `tx.invoice`. */
   model: NumberingProbe;
@@ -83,7 +83,7 @@ export async function nextCentreDocumentNumber(
   tx: NumberingTx,
   opts: CentreNumberOptions,
 ): Promise<string | null> {
-  const { userId, costCenterId, model, field, width = 6 } = opts;
+  const { tenantId, costCenterId, model, field, width = 6 } = opts;
   const maxAttempts = opts.maxAttempts ?? MAX_CENTRE_NUMBER_ATTEMPTS;
 
   if (!costCenterId) return null;
@@ -91,7 +91,7 @@ export async function nextCentreDocumentNumber(
   // Read first: a centre with no prefix must NOT have its counter advanced,
   // and an in-transaction increment cannot be selectively rolled back.
   const centre = await tx.costCenter.findFirst({
-    where: { id: costCenterId, userId, isDeleted: false },
+    where: { id: costCenterId, tenantId, isDeleted: false },
     select: { numberPrefix: true, nextNumber: true },
   });
   if (!centre?.numberPrefix) return null;
@@ -132,13 +132,13 @@ export async function nextCentreDocumentNumber(
  */
 export async function peekCentreDocumentNumber(
   tx: NumberingTx,
-  opts: Pick<CentreNumberOptions, 'userId' | 'costCenterId' | 'width'>,
+  opts: Pick<CentreNumberOptions, 'tenantId' | 'costCenterId' | 'width'>,
 ): Promise<string | null> {
-  const { userId, costCenterId, width = 6 } = opts;
+  const { tenantId, costCenterId, width = 6 } = opts;
   if (!costCenterId) return null;
 
   const centre = await tx.costCenter.findFirst({
-    where: { id: costCenterId, userId, isDeleted: false },
+    where: { id: costCenterId, tenantId, isDeleted: false },
     select: { numberPrefix: true, nextNumber: true },
   });
   if (!centre?.numberPrefix) return null;

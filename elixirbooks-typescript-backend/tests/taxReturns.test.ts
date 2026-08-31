@@ -5,7 +5,7 @@
 // These tests drive resolveTaxAccounts + loadTaxFigures against an in-memory
 // prisma stub shaped like the slice the lib consumes (TaxReturnsPrisma). The
 // stub holds a tiny fixture of LedgerAccountMapping + Account + JournalLine rows
-// keyed by tenant (userId on the parent JournalEntry / Account) so we can assert:
+// keyed by tenant (tenantId on the parent JournalEntry / Account) so we can assert:
 //   - known output/input postings → correct figures
 //   - empty period → all zeros
 //   - another tenant's postings are excluded (tenant isolation)
@@ -25,29 +25,29 @@ const D = (v: number | string) => new Prisma.Decimal(v);
 // ---------------------------------------------------------------------------
 // Fixture types (mirror the prisma rows the lib reads).
 // ---------------------------------------------------------------------------
-interface MapRow { userId: string; roleKey: string; accountId: string }
-interface AcctRow { id: string; userId: string; code: string; name: string; accountType: string }
+interface MapRow { tenantId: string; roleKey: string; accountId: string }
+interface AcctRow { id: string; tenantId: string; code: string; name: string; accountType: string }
 interface LineRow {
   accountId: string;
   baseDebit: Prisma.Decimal;
   baseCredit: Prisma.Decimal;
   // parent entry attrs used for filtering:
-  userId: string;
+  tenantId: string;
   entryDate: Date;
   isDeleted?: boolean;
 }
 
 // A minimal prisma stub: only the delegates/queries the lib uses, honouring the
-// where-clauses the lib actually passes (userId + roleKey; account.userId;
-// journalEntry.userId + isDeleted + entryDate range).
+// where-clauses the lib actually passes (tenantId + roleKey; account.tenantId;
+// journalEntry.tenantId + isDeleted + entryDate range).
 function makeStub(data: { maps: MapRow[]; accounts: AcctRow[]; lines: LineRow[] }): TaxReturnsPrisma {
   return {
     ledgerAccountMapping: {
       findMany: async (args: any) => {
-        const { userId, roleKey } = args.where;
+        const { tenantId, roleKey } = args.where;
         const keys: string[] = roleKey?.in ?? [roleKey];
         return data.maps
-          .filter((m) => m.userId === userId && keys.includes(m.roleKey))
+          .filter((m) => m.tenantId === tenantId && keys.includes(m.roleKey))
           .map((m) => ({ roleKey: m.roleKey, accountId: m.accountId }));
       },
     },
@@ -56,7 +56,7 @@ function makeStub(data: { maps: MapRow[]; accounts: AcctRow[]; lines: LineRow[] 
         const where = args.where ?? {};
         return data.accounts
           .filter((a) => {
-            if (where.userId && a.userId !== where.userId) return false;
+            if (where.tenantId && a.tenantId !== where.tenantId) return false;
             if (where.isDeleted === false) { /* fixture has no deleted accounts */ }
             return true;
           })
@@ -67,7 +67,7 @@ function makeStub(data: { maps: MapRow[]; accounts: AcctRow[]; lines: LineRow[] 
             const to: Date | undefined = w.entryDate?.lte;
             const lines = data.lines.filter((l) => {
               if (l.accountId !== a.id) return false;
-              if (w.userId && l.userId !== w.userId) return false;
+              if (w.tenantId && l.tenantId !== w.tenantId) return false;
               if (w.isDeleted === false && l.isDeleted) return false;
               if (from && l.entryDate < from) return false;
               if (to && l.entryDate > to) return false;
@@ -93,14 +93,14 @@ const beforePeriod = new Date('2026-03-01T00:00:00.000Z');
 // Standard-pack tax accounts: OUTPUT_TAX (2100, LIABILITY), INPUT_TAX (1300, ASSET).
 function baseFixture() {
   const maps: MapRow[] = [
-    { userId: TENANT, roleKey: 'OUTPUT_TAX', accountId: 'out-1' },
-    { userId: TENANT, roleKey: 'INPUT_TAX', accountId: 'in-1' },
+    { tenantId: TENANT, roleKey: 'OUTPUT_TAX', accountId: 'out-1' },
+    { tenantId: TENANT, roleKey: 'INPUT_TAX', accountId: 'in-1' },
   ];
   const accounts: AcctRow[] = [
-    { id: 'out-1', userId: TENANT, code: '2100', name: 'GST Payable (Output)', accountType: 'LIABILITY' },
-    { id: 'in-1', userId: TENANT, code: '1300', name: 'GST Receivable (Input)', accountType: 'ASSET' },
-    { id: 'rev-1', userId: TENANT, code: '4001', name: 'Sales Revenue', accountType: 'INCOME' },
-    { id: 'exp-1', userId: TENANT, code: '5002', name: 'Purchases', accountType: 'EXPENSE' },
+    { id: 'out-1', tenantId: TENANT, code: '2100', name: 'GST Payable (Output)', accountType: 'LIABILITY' },
+    { id: 'in-1', tenantId: TENANT, code: '1300', name: 'GST Receivable (Input)', accountType: 'ASSET' },
+    { id: 'rev-1', tenantId: TENANT, code: '4001', name: 'Sales Revenue', accountType: 'INCOME' },
+    { id: 'exp-1', tenantId: TENANT, code: '5002', name: 'Purchases', accountType: 'EXPENSE' },
   ];
   return { maps, accounts };
 }
@@ -116,9 +116,9 @@ describe('resolveTaxAccounts', () => {
 
   it('excludes another tenant\'s mappings', async () => {
     const maps: MapRow[] = [
-      { userId: TENANT, roleKey: 'OUTPUT_TAX', accountId: 'out-1' },
-      { userId: OTHER, roleKey: 'OUTPUT_TAX', accountId: 'out-2' },
-      { userId: OTHER, roleKey: 'INPUT_TAX', accountId: 'in-2' },
+      { tenantId: TENANT, roleKey: 'OUTPUT_TAX', accountId: 'out-1' },
+      { tenantId: OTHER, roleKey: 'OUTPUT_TAX', accountId: 'out-2' },
+      { tenantId: OTHER, roleKey: 'INPUT_TAX', accountId: 'in-2' },
     ];
     const stub = makeStub({ maps, accounts: [], lines: [] });
     const res = await resolveTaxAccounts(TENANT, stub);
@@ -141,13 +141,13 @@ describe('loadTaxFigures', () => {
     // A purchase: Dr Purchases 500 / Dr INPUT_TAX 50 / Cr AP 550  (input tax = 50)
     const lines: LineRow[] = [
       // sale output tax
-      { accountId: 'out-1', baseDebit: D(0), baseCredit: D(100), userId: TENANT, entryDate: inPeriod },
+      { accountId: 'out-1', baseDebit: D(0), baseCredit: D(100), tenantId: TENANT, entryDate: inPeriod },
       // sale revenue (income, credit-normal)
-      { accountId: 'rev-1', baseDebit: D(0), baseCredit: D(1000), userId: TENANT, entryDate: inPeriod },
+      { accountId: 'rev-1', baseDebit: D(0), baseCredit: D(1000), tenantId: TENANT, entryDate: inPeriod },
       // purchase input tax
-      { accountId: 'in-1', baseDebit: D(50), baseCredit: D(0), userId: TENANT, entryDate: inPeriod },
+      { accountId: 'in-1', baseDebit: D(50), baseCredit: D(0), tenantId: TENANT, entryDate: inPeriod },
       // purchase expense (expense, debit-normal)
-      { accountId: 'exp-1', baseDebit: D(500), baseCredit: D(0), userId: TENANT, entryDate: inPeriod },
+      { accountId: 'exp-1', baseDebit: D(500), baseCredit: D(0), tenantId: TENANT, entryDate: inPeriod },
     ];
     const stub = makeStub({ maps, accounts, lines });
     const f = await loadTaxFigures(TENANT, FROM, TO, stub);
@@ -163,10 +163,10 @@ describe('loadTaxFigures', () => {
   it('nets credit notes / refunds via signed sums on the tax accounts', async () => {
     const { maps, accounts } = baseFixture();
     const lines: LineRow[] = [
-      { accountId: 'out-1', baseDebit: D(0), baseCredit: D(200), userId: TENANT, entryDate: inPeriod }, // sale
-      { accountId: 'out-1', baseDebit: D(30), baseCredit: D(0), userId: TENANT, entryDate: inPeriod },  // credit note reverses output tax
-      { accountId: 'in-1', baseDebit: D(40), baseCredit: D(0), userId: TENANT, entryDate: inPeriod },   // purchase
-      { accountId: 'in-1', baseDebit: D(0), baseCredit: D(10), userId: TENANT, entryDate: inPeriod },   // debit note reverses input tax
+      { accountId: 'out-1', baseDebit: D(0), baseCredit: D(200), tenantId: TENANT, entryDate: inPeriod }, // sale
+      { accountId: 'out-1', baseDebit: D(30), baseCredit: D(0), tenantId: TENANT, entryDate: inPeriod },  // credit note reverses output tax
+      { accountId: 'in-1', baseDebit: D(40), baseCredit: D(0), tenantId: TENANT, entryDate: inPeriod },   // purchase
+      { accountId: 'in-1', baseDebit: D(0), baseCredit: D(10), tenantId: TENANT, entryDate: inPeriod },   // debit note reverses input tax
     ];
     const stub = makeStub({ maps, accounts, lines });
     const f = await loadTaxFigures(TENANT, FROM, TO, stub);
@@ -178,10 +178,10 @@ describe('loadTaxFigures', () => {
     const { maps, accounts } = baseFixture();
     // All postings fall BEFORE the period.
     const lines: LineRow[] = [
-      { accountId: 'out-1', baseDebit: D(0), baseCredit: D(999), userId: TENANT, entryDate: beforePeriod },
-      { accountId: 'in-1', baseDebit: D(999), baseCredit: D(0), userId: TENANT, entryDate: beforePeriod },
-      { accountId: 'rev-1', baseDebit: D(0), baseCredit: D(999), userId: TENANT, entryDate: beforePeriod },
-      { accountId: 'exp-1', baseDebit: D(999), baseCredit: D(0), userId: TENANT, entryDate: beforePeriod },
+      { accountId: 'out-1', baseDebit: D(0), baseCredit: D(999), tenantId: TENANT, entryDate: beforePeriod },
+      { accountId: 'in-1', baseDebit: D(999), baseCredit: D(0), tenantId: TENANT, entryDate: beforePeriod },
+      { accountId: 'rev-1', baseDebit: D(0), baseCredit: D(999), tenantId: TENANT, entryDate: beforePeriod },
+      { accountId: 'exp-1', baseDebit: D(999), baseCredit: D(0), tenantId: TENANT, entryDate: beforePeriod },
     ];
     const stub = makeStub({ maps, accounts, lines });
     const f = await loadTaxFigures(TENANT, FROM, TO, stub);
@@ -196,18 +196,18 @@ describe('loadTaxFigures', () => {
   it('excludes another tenant\'s postings (tenant isolation)', async () => {
     const { maps, accounts } = baseFixture();
     // Add the other tenant's accounts + mapping + postings; they must not leak.
-    maps.push({ userId: OTHER, roleKey: 'OUTPUT_TAX', accountId: 'out-2' });
-    maps.push({ userId: OTHER, roleKey: 'INPUT_TAX', accountId: 'in-2' });
-    accounts.push({ id: 'out-2', userId: OTHER, code: '2100', name: 'GST Payable', accountType: 'LIABILITY' });
-    accounts.push({ id: 'in-2', userId: OTHER, code: '1300', name: 'GST Receivable', accountType: 'ASSET' });
+    maps.push({ tenantId: OTHER, roleKey: 'OUTPUT_TAX', accountId: 'out-2' });
+    maps.push({ tenantId: OTHER, roleKey: 'INPUT_TAX', accountId: 'in-2' });
+    accounts.push({ id: 'out-2', tenantId: OTHER, code: '2100', name: 'GST Payable', accountType: 'LIABILITY' });
+    accounts.push({ id: 'in-2', tenantId: OTHER, code: '1300', name: 'GST Receivable', accountType: 'ASSET' });
 
     const lines: LineRow[] = [
       // tenant-1 real postings
-      { accountId: 'out-1', baseDebit: D(0), baseCredit: D(70), userId: TENANT, entryDate: inPeriod },
-      { accountId: 'in-1', baseDebit: D(20), baseCredit: D(0), userId: TENANT, entryDate: inPeriod },
+      { accountId: 'out-1', baseDebit: D(0), baseCredit: D(70), tenantId: TENANT, entryDate: inPeriod },
+      { accountId: 'in-1', baseDebit: D(20), baseCredit: D(0), tenantId: TENANT, entryDate: inPeriod },
       // tenant-2 postings in the same period — must be excluded
-      { accountId: 'out-2', baseDebit: D(0), baseCredit: D(5000), userId: OTHER, entryDate: inPeriod },
-      { accountId: 'in-2', baseDebit: D(4000), baseCredit: D(0), userId: OTHER, entryDate: inPeriod },
+      { accountId: 'out-2', baseDebit: D(0), baseCredit: D(5000), tenantId: OTHER, entryDate: inPeriod },
+      { accountId: 'in-2', baseDebit: D(4000), baseCredit: D(0), tenantId: OTHER, entryDate: inPeriod },
     ];
     const stub = makeStub({ maps, accounts, lines });
     const f = await loadTaxFigures(TENANT, FROM, TO, stub);
@@ -220,18 +220,18 @@ describe('loadTaxFigures', () => {
     // must exclude the input-tax account so it is not counted in both inputTax
     // and purchasesExTax.
     const maps: MapRow[] = [
-      { userId: TENANT, roleKey: 'OUTPUT_TAX', accountId: 'out-1' },
-      { userId: TENANT, roleKey: 'INPUT_TAX', accountId: 'in-exp' },
+      { tenantId: TENANT, roleKey: 'OUTPUT_TAX', accountId: 'out-1' },
+      { tenantId: TENANT, roleKey: 'INPUT_TAX', accountId: 'in-exp' },
     ];
     const accounts: AcctRow[] = [
-      { id: 'out-1', userId: TENANT, code: '2100', name: 'Sales Tax Payable', accountType: 'LIABILITY' },
-      { id: 'in-exp', userId: TENANT, code: '1300', name: 'Sales Tax Paid', accountType: 'EXPENSE' },
-      { id: 'exp-1', userId: TENANT, code: '5002', name: 'Purchases', accountType: 'EXPENSE' },
+      { id: 'out-1', tenantId: TENANT, code: '2100', name: 'Sales Tax Payable', accountType: 'LIABILITY' },
+      { id: 'in-exp', tenantId: TENANT, code: '1300', name: 'Sales Tax Paid', accountType: 'EXPENSE' },
+      { id: 'exp-1', tenantId: TENANT, code: '5002', name: 'Purchases', accountType: 'EXPENSE' },
     ];
     const lines: LineRow[] = [
-      { accountId: 'out-1', baseDebit: D(0), baseCredit: D(80), userId: TENANT, entryDate: inPeriod },
-      { accountId: 'in-exp', baseDebit: D(25), baseCredit: D(0), userId: TENANT, entryDate: inPeriod },
-      { accountId: 'exp-1', baseDebit: D(300), baseCredit: D(0), userId: TENANT, entryDate: inPeriod },
+      { accountId: 'out-1', baseDebit: D(0), baseCredit: D(80), tenantId: TENANT, entryDate: inPeriod },
+      { accountId: 'in-exp', baseDebit: D(25), baseCredit: D(0), tenantId: TENANT, entryDate: inPeriod },
+      { accountId: 'exp-1', baseDebit: D(300), baseCredit: D(0), tenantId: TENANT, entryDate: inPeriod },
     ];
     const stub = makeStub({ maps, accounts, lines });
     const f = await loadTaxFigures(TENANT, FROM, TO, stub);

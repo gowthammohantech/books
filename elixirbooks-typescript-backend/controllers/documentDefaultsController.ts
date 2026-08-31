@@ -12,7 +12,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -121,7 +121,7 @@ async function buildResponse(
 
 export async function getDocumentDefaults(req: Request, res: Response): Promise<void> {
   try {
-    requireUserId(req); // auth check — throws UnauthorizedError if missing
+    requireTenantId(req); // auth check — throws UnauthorizedError if missing
 
     const stored = await fetchStoredDefaults();
     const data = await buildResponse(stored);
@@ -144,7 +144,7 @@ export async function getDocumentDefaults(req: Request, res: Response): Promise<
 
 export async function updateDocumentDefaults(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const body = req.body as Record<string, unknown>;
 
@@ -208,13 +208,13 @@ export async function updateDocumentDefaults(req: Request, res: Response): Promi
         key: 'document_defaults',
         groupSlug: 'documents',
         value: merged as Prisma.InputJsonValue,
-        createdBy: userId,
-        updatedBy: userId,
+        createdBy: tenantId,
+        updatedBy: tenantId,
       },
       update: {
         groupSlug: 'documents',
         value: merged as Prisma.InputJsonValue,
-        updatedBy: userId,
+        updatedBy: tenantId,
       },
     });
 

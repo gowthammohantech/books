@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { planGroupResolution, migrateTaxesToRates, type GroupShape, type MigrateDb } from './migrateTaxesToRates';
 
-const member = (id: string, userId: string, name: string, rate: number, regime = 'GST_INDIA', extras: Record<string, unknown> = {}) =>
-  ({ id, userId, name, rate, regime, isActive: true, isDeleted: false, ...extras });
+const member = (id: string, tenantId: string, name: string, rate: number, regime = 'GST_INDIA', extras: Record<string, unknown> = {}) =>
+  ({ id, tenantId, name, rate, regime, isActive: true, isDeleted: false, ...extras });
 
 describe('planGroupResolution', () => {
   it('1-member group → that member', () => {
@@ -15,7 +15,7 @@ describe('planGroupResolution', () => {
       id: 'g', tax_name: 'GST 18%',
       tax_rates: [member('c', 'u1', 'CGST 9%', 9), member('s', 'u1', 'SGST 9%', 9)],
     };
-    expect(planGroupResolution(g)).toEqual({ kind: 'summed', userId: 'u1', name: 'GST 18%', regime: 'GST_INDIA', rate: 18 });
+    expect(planGroupResolution(g)).toEqual({ kind: 'summed', tenantId: 'u1', name: 'GST 18%', regime: 'GST_INDIA', rate: 18 });
   });
 
   it('"No Tax" group resolves to a NONE member, never a sum of pack rates', () => {
@@ -31,7 +31,7 @@ describe('planGroupResolution', () => {
       id: 'g', tax_name: 'No Tax',
       tax_rates: [member('vat', 'u1', 'VAT Standard 20%', 20, 'VAT_UK')],
     };
-    expect(planGroupResolution(g)).toEqual({ kind: 'noTax', userId: 'u1' });
+    expect(planGroupResolution(g)).toEqual({ kind: 'noTax', tenantId: 'u1' });
   });
 
   it('empty / fully-deleted group → skip', () => {
@@ -62,7 +62,7 @@ function fakeDb(
       findFirst: vi.fn(async (args: unknown) => {
         const w = (args as { where: Record<string, unknown> }).where;
         const hit = createdRates.find(
-          (r) => r.userId === w.userId
+          (r) => r.tenantId === w.tenantId
             && (w.name === undefined || r.name === w.name)
             && (w.rate === undefined || Number(r.rate) === Number(w.rate))
             && (w.regime === undefined || r.regime === w.regime),
@@ -96,7 +96,7 @@ describe('migrateTaxesToRates — runner', () => {
     const first = await migrateTaxesToRates(db);
     expect(first).toEqual({ updated: 2, createdRates: 1 });
     expect(createdRates).toHaveLength(1);
-    expect(createdRates[0]).toMatchObject({ userId: 'u1', name: 'GST 18%', regime: 'GST_INDIA', rate: '18' });
+    expect(createdRates[0]).toMatchObject({ tenantId: 'u1', name: 'GST 18%', regime: 'GST_INDIA', rate: '18' });
     expect(products[0].taxRateId).toBe(createdRates[0].id);
     expect(products[1].taxRateId).toBe(createdRates[0].id);
 

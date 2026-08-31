@@ -1,7 +1,7 @@
 /**
  * controllers/myMoneyController.ts
  *
- * GET /admin/my-money/:userId?taxYear=2026/27
+ * GET /admin/my-money/:tenantId?taxYear=2026/27
  *
  * Per-user "My Money" consolidation — aggregates, per UK tax year, what the
  * company has PAID to / RECEIVED from a person via posted bank user-payments.
@@ -13,7 +13,7 @@
 import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { currentTaxYear, taxYearByLabel } from '../lib/payroll/taxYear';
 import { buildSalaryOwed } from '../lib/payroll/salaryOwed';
 
@@ -131,8 +131,8 @@ export function buildExpensesOwed(
 
 export async function getMyMoney(req: Request, res: Response): Promise<void> {
   try {
-    const tenantUserId = requireUserId(req);
-    const targetUserId = req.params.userId as string;
+    const tenantUserId = requireTenantId(req);
+    const targetUserId = req.params.tenantId as string;
     const taxYearParam = req.query.taxYear as string | undefined;
 
     // Resolve tax year
@@ -166,7 +166,7 @@ export async function getMyMoney(req: Request, res: Response): Promise<void> {
     // director-loan broughtForward.
     //
     // Tenant scoping: bank accounts belong to users in this tenant.
-    // We join via bankAccount.userId (the account owner).
+    // We join via bankAccount.tenantId (the account owner).
     // Note: `userPaymentReason` was added to the schema after the last `prisma generate`
     // in this local environment. The field exists in the DB and at runtime; we use a
     // cast through `unknown` so the local stale types don't block compilation.
@@ -178,7 +178,7 @@ export async function getMyMoney(req: Request, res: Response): Promise<void> {
         bankAccount: {
           isDeleted: false,
           OR: [
-            { userId: tenantUserId },
+            { tenantId: tenantUserId },
             { user: { ownerId: tenantUserId } },
           ],
         },
@@ -269,7 +269,7 @@ export async function getMyMoney(req: Request, res: Response): Promise<void> {
         sourceType: 'EMPLOYEE_PAID',
         paidByUserId: targetUserId,
         expenseDate: { gte: taxYear.start, lte: taxYear.end },
-        OR: [{ userId: tenantUserId }, { user: { ownerId: tenantUserId } }],
+        OR: [{ tenantId: tenantUserId }, { user: { ownerId: tenantUserId } }],
       },
       select: { expenseDate: true, amount: true, description: true, referenceNo: true },
     });
@@ -299,7 +299,7 @@ export async function getMyMoney(req: Request, res: Response): Promise<void> {
     const runLineRowsRaw = await ((prisma as unknown as { payRunLine: { findMany: (args: unknown) => Promise<unknown[]> } }).payRunLine.findMany)({
       where: {
         employeeUserId: targetUserId,
-        payRun: { is: { userId: tenantUserId, status: 'FINALIZED', isDeleted: false } },
+        payRun: { is: { tenantId: tenantUserId, status: 'FINALIZED', isDeleted: false } },
       },
       select: {
         net: true,

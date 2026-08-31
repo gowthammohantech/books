@@ -312,7 +312,7 @@ describe('externalController — upsertCustomer', () => {
     expect(upsertCall.where.customer_external_upsert_idx).toEqual({
       externalSource: 'whatsappcrm',
       externalRef: 'ext-42',
-      userId: 'admin-uuid',
+      tenantId: 'admin-uuid',
     });
 
     const body = res.json.mock.calls[0][0];

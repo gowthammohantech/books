@@ -82,13 +82,13 @@ export interface CostCentreLookupTx {
  */
 export async function assertCostCentresExist(
   tx: CostCentreLookupTx,
-  userId: string,
+  tenantId: string,
   ids: string[],
 ): Promise<void> {
   if (!ids.length) return;
 
   const found = await tx.costCenter.findMany({
-    where: { id: { in: ids }, userId, isDeleted: false },
+    where: { id: { in: ids }, tenantId, isDeleted: false },
     select: { id: true },
   });
 

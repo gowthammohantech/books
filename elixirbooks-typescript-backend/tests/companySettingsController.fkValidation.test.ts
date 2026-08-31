@@ -98,7 +98,7 @@ describe('updateCompanySettings — country/state FK validation', () => {
 
   it('succeeds when no country/state ids are provided', async () => {
     mockCompanySettingsUpsert.mockResolvedValue({
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       companyName: 'Acme',
       siteLogo: null,
       favicon: null,
@@ -120,7 +120,7 @@ describe('updateCompanySettings — country/state FK validation', () => {
     mockCountryFindUnique.mockResolvedValue({ id: 'c-india', iso2: 'IN' });
     mockStateFindUnique.mockResolvedValue({ id: 's-tn', name: 'Tamil Nadu' });
     mockCompanySettingsUpsert.mockResolvedValue({
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       companyName: 'Acme',
       countryId: 'c-india',
       stateId: 's-tn',

@@ -2,7 +2,7 @@
 //
 // P0-1: edit flows must void the prior forward entry (not reverseDocument it)
 // before re-posting, or the re-post's idempotency check on the same
-// (userId, sourceType, sourceId, event) triple silently no-ops — net GL for
+// (tenantId, sourceType, sourceId, event) triple silently no-ops — net GL for
 // the document goes to zero and any further edit/delete throws "journal
 // entry <id> already reversed". See lib/ledger/ledgerPosting.ts voidDocument
 // docstring for the full bug-class writeup.
@@ -44,7 +44,7 @@ function statefulFakeTx() {
         return (
           entries.find(
             (e) =>
-              e.userId === where.userId &&
+              e.tenantId === where.tenantId &&
               e.sourceType === where.sourceType &&
               e.sourceId === where.sourceId &&
               e.event === where.event &&
@@ -68,14 +68,14 @@ function statefulFakeTx() {
   };
 }
 
-const expenseKey = { userId: 'u1', sourceType: 'Expense', sourceId: 'exp1', event: 'recorded' };
+const expenseKey = { tenantId: 'u1', sourceType: 'Expense', sourceId: 'exp1', event: 'recorded' };
 
 describe('editRepost: void -> post cycle (P0-1 regression)', () => {
   it('posting, then voidDocument, then post again creates a NEW live JE with the edited amounts; the old one is soft-deleted with a mangled event', async () => {
     const tx = statefulFakeTx();
 
     await postExpense(tx as never, {
-      userId: 'u1', expenseId: 'exp1', date: new Date('2026-06-01'),
+      tenantId: 'u1', expenseId: 'exp1', date: new Date('2026-06-01'),
       total: '100', tax: '0', expenseAccountId: 'a-rent', sourceType: 'BANK',
     });
     expect(tx.entries).toHaveLength(1);
@@ -88,7 +88,7 @@ describe('editRepost: void -> post cycle (P0-1 regression)', () => {
 
     // Edited amount on re-post.
     await postExpense(tx as never, {
-      userId: 'u1', expenseId: 'exp1', date: new Date('2026-06-02'),
+      tenantId: 'u1', expenseId: 'exp1', date: new Date('2026-06-02'),
       total: '250', tax: '0', expenseAccountId: 'a-rent', sourceType: 'BANK',
     });
 
@@ -104,14 +104,14 @@ describe('editRepost: void -> post cycle (P0-1 regression)', () => {
     const tx = statefulFakeTx();
 
     await postExpense(tx as never, {
-      userId: 'u1', expenseId: 'exp1', date: new Date('2026-06-01'),
+      tenantId: 'u1', expenseId: 'exp1', date: new Date('2026-06-01'),
       total: '100', tax: '0', expenseAccountId: 'a-rent', sourceType: 'BANK',
     });
 
     // Cycle 1
     await voidDocument(tx as never, expenseKey);
     await postExpense(tx as never, {
-      userId: 'u1', expenseId: 'exp1', date: new Date('2026-06-02'),
+      tenantId: 'u1', expenseId: 'exp1', date: new Date('2026-06-02'),
       total: '150', tax: '0', expenseAccountId: 'a-rent', sourceType: 'BANK',
     });
 
@@ -120,7 +120,7 @@ describe('editRepost: void -> post cycle (P0-1 regression)', () => {
     // must keep freeing the idempotency slot indefinitely.
     await voidDocument(tx as never, expenseKey);
     await postExpense(tx as never, {
-      userId: 'u1', expenseId: 'exp1', date: new Date('2026-06-03'),
+      tenantId: 'u1', expenseId: 'exp1', date: new Date('2026-06-03'),
       total: '175', tax: '0', expenseAccountId: 'a-rent', sourceType: 'BANK',
     });
 
@@ -145,7 +145,7 @@ describe('voidDocument: period-lock enforcement', () => {
     const tx = statefulFakeTx();
 
     await postExpense(tx as never, {
-      userId: 'u1', expenseId: 'exp1', date: new Date('2026-03-15'),
+      tenantId: 'u1', expenseId: 'exp1', date: new Date('2026-03-15'),
       total: '100', tax: '0', expenseAccountId: 'a-rent', sourceType: 'BANK',
     });
     const je = tx.entries[0];
@@ -164,7 +164,7 @@ describe('voidDocument: period-lock enforcement', () => {
   it('proceeds normally when the entry date is NOT in any locked period', async () => {
     const tx = statefulFakeTx();
     await postExpense(tx as never, {
-      userId: 'u1', expenseId: 'exp1', date: new Date('2026-03-15'),
+      tenantId: 'u1', expenseId: 'exp1', date: new Date('2026-03-15'),
       total: '100', tax: '0', expenseAccountId: 'a-rent', sourceType: 'BANK',
     });
     // accountingPeriod.findFirst defaults to null (no lock) → void succeeds.

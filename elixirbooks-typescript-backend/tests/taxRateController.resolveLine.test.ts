@@ -37,7 +37,7 @@ const makeReq = (body: Record<string, unknown>) =>
   ({ body, tenantId: 'tenant-1', user: 'tenant-1' }) as never;
 
 const GST18 = {
-  id: 'rate-gst18', userId: 'tenant-1', regime: 'GST_INDIA', taxKind: null,
+  id: 'rate-gst18', tenantId: 'tenant-1', regime: 'GST_INDIA', taxKind: null,
   name: 'GST 18%', rate: 18, countryId: 'c-in', stateId: null,
   isActive: true, isDeleted: false, isSystemComponent: false,
   createdAt: new Date(), updatedAt: new Date(),
@@ -46,7 +46,7 @@ const GST18 = {
 beforeEach(() => {
   vi.clearAllMocks();
   mockCompanyFindUnique.mockResolvedValue({
-    userId: 'tenant-1', taxRegime: 'GST_INDIA', countryId: 'c-in', stateId: 'st-tn',
+    tenantId: 'tenant-1', taxRegime: 'GST_INDIA', countryId: 'c-in', stateId: 'st-tn',
   });
   mockStateFindUnique.mockResolvedValue({ state_code: 'TN' });
   mockContactFindFirst.mockResolvedValue(null);
@@ -79,7 +79,7 @@ describe('resolveLine — taxRateId with a kind-less GST_INDIA rate', () => {
     expect(mockTaxRateCreate).toHaveBeenCalledTimes(2);
     for (const call of mockTaxRateCreate.mock.calls) {
       expect((call[0] as { data: object }).data).toMatchObject({
-        userId: 'tenant-1', regime: 'GST_INDIA', isSystemComponent: true,
+        tenantId: 'tenant-1', regime: 'GST_INDIA', isSystemComponent: true,
       });
     }
   });

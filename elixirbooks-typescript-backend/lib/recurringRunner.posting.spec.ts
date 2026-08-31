@@ -62,7 +62,7 @@ describe('recurring invoice runner GL posting (FIX 3)', () => {
   it('posts a balanced invoice.issued entry for the cloned invoice', async () => {
     const tx = fakeTx();
     await postInvoiceIssued(tx as never, {
-      userId: 'u1',
+      tenantId: 'u1',
       invoiceId: 'clone-1',
       date: new Date('2026-06-01'),
       total: '118',
@@ -78,7 +78,7 @@ describe('recurring invoice runner GL posting (FIX 3)', () => {
   it('posts a balanced COGS entry when the clone carries stocked items', async () => {
     const tx = fakeTx();
     await postSaleCogs(tx as never, {
-      userId: 'u1',
+      tenantId: 'u1',
       invoiceId: 'clone-1',
       date: new Date('2026-06-01'),
       cost: '40',
@@ -93,7 +93,7 @@ describe('recurring invoice runner GL posting (FIX 3)', () => {
   it('does NOT post when ledger is not live (gated)', async () => {
     const tx = fakeTx({ initialized: false });
     await postInvoiceIssued(tx as never, {
-      userId: 'u1',
+      tenantId: 'u1',
       invoiceId: 'clone-1',
       date: new Date('2026-06-01'),
       total: '118',
@@ -105,7 +105,7 @@ describe('recurring invoice runner GL posting (FIX 3)', () => {
   it('is idempotent: a re-run with an existing entry does not double-post', async () => {
     const tx = fakeTx({ existing: true });
     await postInvoiceIssued(tx as never, {
-      userId: 'u1',
+      tenantId: 'u1',
       invoiceId: 'clone-1',
       date: new Date('2026-06-01'),
       total: '118',
@@ -119,7 +119,7 @@ describe('recurring expense runner GL posting (FIX 3)', () => {
   it('posts a balanced expense entry for the cloned expense (BANK source)', async () => {
     const tx = fakeTx();
     await postExpense(tx as never, {
-      userId: 'u1',
+      tenantId: 'u1',
       expenseId: 'exp-clone-1',
       date: new Date('2026-06-01'),
       total: '110',
@@ -138,7 +138,7 @@ describe('recurring expense runner GL posting (FIX 3)', () => {
   it('is idempotent on the expense path too', async () => {
     const tx = fakeTx({ existing: true });
     await postExpense(tx as never, {
-      userId: 'u1',
+      tenantId: 'u1',
       expenseId: 'exp-clone-1',
       date: new Date('2026-06-01'),
       total: '110',

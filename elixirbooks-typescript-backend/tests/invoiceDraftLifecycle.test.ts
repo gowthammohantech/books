@@ -149,7 +149,7 @@ beforeEach(() => {
   m.invoicePaymentCreate.mockResolvedValue({ id: 'pay-1', amount: new Prisma.Decimal(0) });
   m.invoicePaymentFindMany.mockResolvedValue([]);
   m.invoicePaymentUpdate.mockResolvedValue({});
-  m.signatureFindFirst.mockResolvedValue({ id: 'sig-1', userId: TENANT_ID });
+  m.signatureFindFirst.mockResolvedValue({ id: 'sig-1', tenantId: TENANT_ID });
   m.paymentModeFindUnique.mockResolvedValue({ slug: 'bank_transfer' });
   m.invoiceCreate.mockImplementation(async (arg: { data: Record<string, unknown> }) => ({
     id: 'inv-new', referenceNo: '', ...arg.data,
@@ -165,7 +165,7 @@ beforeEach(() => {
 describe('updateInvoice keeps stock and GL in step on a posted draft', () => {
   it('reverts the old issue, re-applies the new issue, voids + re-posts issued/cogs', async () => {
     m.invoiceFindFirst.mockResolvedValue({
-      id: 'inv-1', userId: TENANT_ID, status: 'DRAFT', approvalStatus: 'NOT_REQUIRED',
+      id: 'inv-1', tenantId: TENANT_ID, status: 'DRAFT', approvalStatus: 'NOT_REQUIRED',
       invoiceType: 'INVOICE', invoiceNumber: 'INV-1', convertedAt: null,
       items: [{ productId: 'p1', qty: 5, rate: 100 }],
       taxTreatment: 'STANDARD', reverseCharge: false, reverseChargeNote: null,
@@ -207,7 +207,7 @@ describe('updateInvoice never posts an unapproved (PENDING) draft', () => {
   it('adjusts inventory by the delta but skips void + re-post (approval will post later)', async () => {
     m.companySettingsFindFirst.mockResolvedValue({ approvalsEnabled: true, taxRegime: 'NONE' });
     m.invoiceFindFirst.mockResolvedValue({
-      id: 'inv-2', userId: TENANT_ID, status: 'DRAFT', approvalStatus: 'PENDING',
+      id: 'inv-2', tenantId: TENANT_ID, status: 'DRAFT', approvalStatus: 'PENDING',
       invoiceType: 'INVOICE', invoiceNumber: 'INV-2', convertedAt: null,
       items: [{ productId: 'p1', qty: 5, rate: 100 }],
       taxTreatment: 'STANDARD', reverseCharge: false, reverseChargeNote: null,
@@ -238,7 +238,7 @@ describe('updateInvoice leaves Service lines out of inventory', () => {
   it('does not adjust stock for a Service product', async () => {
     m.productFindUnique.mockResolvedValue({ item_type: 'Service', valuationMethod: 'WAC' });
     m.invoiceFindFirst.mockResolvedValue({
-      id: 'inv-3', userId: TENANT_ID, status: 'DRAFT', approvalStatus: 'NOT_REQUIRED',
+      id: 'inv-3', tenantId: TENANT_ID, status: 'DRAFT', approvalStatus: 'NOT_REQUIRED',
       invoiceType: 'INVOICE', invoiceNumber: 'INV-3', convertedAt: null,
       items: [{ productId: 'svc', qty: 5, rate: 100 }],
       taxTreatment: 'STANDARD', reverseCharge: false, reverseChargeNote: null,
@@ -272,7 +272,7 @@ describe('net stock across create + edit + delete is zero (no phantom stock)', (
 
     // --- edit (qty 5 → 10) ---
     m.invoiceFindFirst.mockResolvedValue({
-      id: 'inv-1', userId: TENANT_ID, status: 'DRAFT', approvalStatus: 'NOT_REQUIRED',
+      id: 'inv-1', tenantId: TENANT_ID, status: 'DRAFT', approvalStatus: 'NOT_REQUIRED',
       invoiceType: 'INVOICE', invoiceNumber: 'INV-1', convertedAt: null,
       items: [{ productId: 'p1', qty: 5, rate: 100 }],
       taxTreatment: 'STANDARD', reverseCharge: false, reverseChargeNote: null,
@@ -289,7 +289,7 @@ describe('net stock across create + edit + delete is zero (no phantom stock)', (
 
     // --- delete (current items are now qty 10) ---
     m.invoiceFindFirst.mockResolvedValue({
-      id: 'inv-1', userId: TENANT_ID, isDeleted: false, invoiceType: 'INVOICE',
+      id: 'inv-1', tenantId: TENANT_ID, isDeleted: false, invoiceType: 'INVOICE',
       invoiceNumber: 'INV-1', items: [{ productId: 'p1', qty: 10, unit: 'u1' }],
     });
     const delReqRes = makeReqRes({}, { id: 'inv-1' });
@@ -307,7 +307,7 @@ describe('net stock across create + edit + delete is zero (no phantom stock)', (
 describe('updateInvoice demotes a posted invoice to PROFORMA', () => {
   it('voids the stale issued/cogs entries, does NOT re-post, and reverts stock without re-applying', async () => {
     m.invoiceFindFirst.mockResolvedValue({
-      id: 'inv-5', userId: TENANT_ID, status: 'DRAFT', approvalStatus: 'NOT_REQUIRED',
+      id: 'inv-5', tenantId: TENANT_ID, status: 'DRAFT', approvalStatus: 'NOT_REQUIRED',
       invoiceType: 'INVOICE', invoiceNumber: 'INV-5', convertedAt: null,
       items: [{ productId: 'p1', qty: 5, rate: 100 }],
       taxTreatment: 'STANDARD', reverseCharge: false, reverseChargeNote: null,

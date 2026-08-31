@@ -74,10 +74,10 @@ function makeTxn(overrides: Partial<FakeTxn> & { amount: string }): FakeTxn {
 // Helper to build a mock req/res pair
 // ---------------------------------------------------------------------------
 
-function makeReqRes(userId: string, params: { userId: string }, query: Record<string, string> = {}) {
+function makeReqRes(tenantId: string, params: { tenantId: string }, query: Record<string, string> = {}) {
   const req = {
-    user: userId,
-    tenantId: userId,
+    user: tenantId,
+    tenantId: tenantId,
     params,
     query,
     body: {},
@@ -132,7 +132,7 @@ describe('getMyMoney controller', () => {
 
   it('returns the expected top-level shape', async () => {
     mockTxnFindMany.mockResolvedValue([]);
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: '2025/26' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: '2025/26' });
     await getMyMoney(req, res as import('express').Response);
     const { status, data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     expect(status).toBe(200);
@@ -148,7 +148,7 @@ describe('getMyMoney controller', () => {
 
   it('returns 404 when user is not in this workspace', async () => {
     mockFindFirst.mockResolvedValue(null);
-    const { req, res } = makeReqRes(OWNER_ID, { userId: OTHER_TARGET_ID }, { taxYear: '2025/26' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: OTHER_TARGET_ID }, { taxYear: '2025/26' });
     await getMyMoney(req, res as import('express').Response);
     const { status } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     expect(status).toBe(404);
@@ -156,7 +156,7 @@ describe('getMyMoney controller', () => {
 
   it('returns 400 for a malformed taxYear label', async () => {
     mockTxnFindMany.mockResolvedValue([]);
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: 'bad-label' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: 'bad-label' });
     await getMyMoney(req, res as import('express').Response);
     const { status } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     expect(status).toBe(400);
@@ -171,7 +171,7 @@ describe('getMyMoney controller', () => {
       makeTxn({ amount: '1500.00', transactionTypeKey: 'money_paid_to_user', userPaymentReason: 'net_salary', explainedDescription: 'Salary Jan' }),
       makeTxn({ amount: '200.00', transactionTypeKey: 'money_paid_to_user', userPaymentReason: 'benefit_in_kind', explainedDescription: 'BIK' }),
     ]);
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: '2025/26' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: '2025/26' });
     await getMyMoney(req, res as import('express').Response);
     const { data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     const d = (data as { data: Record<string, unknown> }).data;
@@ -188,7 +188,7 @@ describe('getMyMoney controller', () => {
     mockTxnFindMany.mockResolvedValue([
       makeTxn({ amount: '2000.00', transactionTypeKey: 'net_salary', userPaymentReason: null }),
     ]);
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: '2025/26' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: '2025/26' });
     await getMyMoney(req, res as import('express').Response);
     const { data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     const d = (data as { data: Record<string, unknown> }).data;
@@ -205,7 +205,7 @@ describe('getMyMoney controller', () => {
       makeTxn({ amount: '5000.00', transactionTypeKey: 'money_paid_to_user', userPaymentReason: 'dividend' }),
       makeTxn({ amount: '3000.00', transactionTypeKey: 'money_paid_to_user', userPaymentReason: 'dividend' }),
     ]);
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: '2025/26' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: '2025/26' });
     await getMyMoney(req, res as import('express').Response);
     const { data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     const d = (data as { data: Record<string, unknown> }).data;
@@ -217,7 +217,7 @@ describe('getMyMoney controller', () => {
     mockTxnFindMany.mockResolvedValue([
       makeTxn({ amount: '4000.00', transactionTypeKey: 'dividend', userPaymentReason: null }),
     ]);
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: '2025/26' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: '2025/26' });
     await getMyMoney(req, res as import('express').Response);
     const { data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     const d = (data as { data: Record<string, unknown> }).data;
@@ -235,7 +235,7 @@ describe('getMyMoney controller', () => {
       makeTxn({ amount: '10000.00', transactionTypeKey: 'money_received_from_user', userPaymentReason: 'director_loan' }),
       makeTxn({ amount: '3000.00', transactionTypeKey: 'money_paid_to_user', userPaymentReason: 'director_loan_repayment' }),
     ]);
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: '2025/26' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: '2025/26' });
     await getMyMoney(req, res as import('express').Response);
     const { data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     const d = (data as { data: Record<string, unknown> }).data;
@@ -266,7 +266,7 @@ describe('getMyMoney controller', () => {
       }),
     ]);
 
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: '2025/26' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: '2025/26' });
     await getMyMoney(req, res as import('express').Response);
     const { data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     const d = (data as { data: Record<string, unknown> }).data;
@@ -290,7 +290,7 @@ describe('getMyMoney controller', () => {
         userPaymentReason: 'net_salary',
       }),
     ]);
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: '2025/26' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: '2025/26' });
     await getMyMoney(req, res as import('express').Response);
     const { data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     const d = (data as { data: Record<string, unknown> }).data;
@@ -310,7 +310,7 @@ describe('getMyMoney controller', () => {
         userPaymentReason: 'net_salary',
       }),
     ]);
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: '2025/26' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: '2025/26' });
     await getMyMoney(req, res as import('express').Response);
     const { data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     const d = (data as { data: Record<string, unknown> }).data;
@@ -323,9 +323,9 @@ describe('getMyMoney controller', () => {
   // -------------------------------------------------------------------------
 
   it('returns empty data when no txns are returned (owner scoping)', async () => {
-    // prisma filters by bankAccount.userId = tenantId already; we simulate by returning []
+    // prisma filters by bankAccount.tenantId = tenantId already; we simulate by returning []
     mockTxnFindMany.mockResolvedValue([]);
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: '2025/26' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: '2025/26' });
     await getMyMoney(req, res as import('express').Response);
     const { data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     const d = (data as { data: Record<string, unknown> }).data;
@@ -344,7 +344,7 @@ describe('getMyMoney controller', () => {
       makeTxn({ amount: '50000.00', transactionTypeKey: 'money_received_from_user', userPaymentReason: 'share_capital_introduced' }),
       makeTxn({ amount: '10000.00', transactionTypeKey: 'money_received_from_user', userPaymentReason: 'unpaid_shares' }),
     ]);
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: '2025/26' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: '2025/26' });
     await getMyMoney(req, res as import('express').Response);
     const { data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     const d = (data as { data: Record<string, unknown> }).data;
@@ -358,7 +358,7 @@ describe('getMyMoney controller', () => {
       makeTxn({ amount: '25000.00', transactionTypeKey: 'share_capital', userPaymentReason: null }),
       makeTxn({ amount: '5000.00', transactionTypeKey: 'unpaid_shares', userPaymentReason: null }),
     ]);
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: '2025/26' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: '2025/26' });
     await getMyMoney(req, res as import('express').Response);
     const { data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     const d = (data as { data: Record<string, unknown> }).data;
@@ -380,7 +380,7 @@ describe('getMyMoney controller', () => {
         postedSourceId: null,
       }),
     ]);
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: '2025/26' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: '2025/26' });
     await getMyMoney(req, res as import('express').Response);
     const { data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     const d = (data as { data: Record<string, unknown> }).data;
@@ -394,7 +394,7 @@ describe('getMyMoney controller', () => {
 
   it('returns empty expensesOwed placeholder', async () => {
     mockTxnFindMany.mockResolvedValue([]);
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: '2025/26' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: '2025/26' });
     await getMyMoney(req, res as import('express').Response);
     const { data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     const d = (data as { data: Record<string, unknown> }).data;
@@ -454,7 +454,7 @@ describe('getMyMoney controller', () => {
       }),
     ]);
 
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: '2025/26' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: '2025/26' });
     await getMyMoney(req, res as import('express').Response);
     const { status, data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     expect(status).toBe(200);
@@ -479,7 +479,7 @@ describe('getMyMoney controller', () => {
 
   it('reflects the requested tax year label in the response', async () => {
     mockTxnFindMany.mockResolvedValue([]);
-    const { req, res } = makeReqRes(OWNER_ID, { userId: TARGET_ID }, { taxYear: '2024/25' });
+    const { req, res } = makeReqRes(OWNER_ID, { tenantId: TARGET_ID }, { taxYear: '2024/25' });
     await getMyMoney(req, res as import('express').Response);
     const { data } = (res as ReturnType<typeof makeReqRes>['res'])._get();
     const d = (data as { data: Record<string, unknown> }).data;

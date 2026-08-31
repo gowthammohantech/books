@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { insertCustomFieldValues, readCustomFieldValues } from '../lib/customFieldValues';
 
-// Unit is a global lookup table — no userId column, so tenantScope() does
+// Unit is a global lookup table — no tenantId column, so tenantScope() does
 // not apply here.
 
 // @desc Get all units (paginated, search)
@@ -63,7 +63,7 @@ export async function createUnit(req: Request, res: Response): Promise<void> {
     status?: boolean | string;
   };
 
-  const userId = (req as Request & { user?: string }).user ?? 'system';
+  const tenantId = (req as Request & { user?: string }).user ?? 'system';
 
   try {
     const unit = await prisma.$transaction(async (tx) => {
@@ -79,7 +79,7 @@ export async function createUnit(req: Request, res: Response): Promise<void> {
         recordId: created.id,
         customFields: req.body.customFields,
         files: (req.files as Express.Multer.File[]) ?? [],
-        userId,
+        tenantId,
       });
       return created;
     });
@@ -121,7 +121,7 @@ export async function updateUnit(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const userId = (req as Request & { user?: string }).user ?? 'system';
+  const tenantId = (req as Request & { user?: string }).user ?? 'system';
 
   try {
     const existing = await prisma.unit.findUnique({ where: { id } });
@@ -153,7 +153,7 @@ export async function updateUnit(req: Request, res: Response): Promise<void> {
         recordId: updated.id,
         customFields: req.body.customFields,
         files: (req.files as Express.Multer.File[]) ?? [],
-        userId,
+        tenantId,
       });
       return updated;
     });

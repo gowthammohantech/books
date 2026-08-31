@@ -5,7 +5,7 @@
 // pattern as taxReturnRoutes.ts / exportRoutes.ts / timeTrackingRoutes.ts).
 //
 // Every route requires authentication (protect) and is tenant-scoped inside the
-// controller (requireUserId = ownerId ?? id). All MTD routes are gated by
+// controller (requireTenantId = ownerId ?? id). All MTD routes are gated by
 // requirePermission('accounting-reports','edit'); the MUTATIONS that touch BYOK
 // credentials / OAuth (PUT /mtd/config and the connect endpoints) additionally
 // require the Owner role.

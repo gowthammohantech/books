@@ -2,16 +2,16 @@ import type { Request, Response } from 'express';
 import type { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 
 export async function list(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const page = Math.max(1, parseInt((req.query.page as string) ?? '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt((req.query.limit as string) ?? '10', 10)));
 
-    const where: Prisma.PaymentTransactionWhereInput = { userId };
+    const where: Prisma.PaymentTransactionWhereInput = { tenantId };
     const statusFilter = req.query.status as string | undefined;
     if (statusFilter) where.status = statusFilter as Prisma.PaymentTransactionWhereInput['status'];
     const kindFilter = req.query.kind as string | undefined;
@@ -60,10 +60,10 @@ export async function list(req: Request, res: Response): Promise<void> {
 
 export async function getById(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const row = await prisma.paymentTransaction.findFirst({
-      where: { id, userId },
+      where: { id, tenantId },
       include: {
         invoice: { select: { id: true, invoiceNumber: true } },
         refunds: true,

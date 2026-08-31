@@ -6,7 +6,7 @@
  *
  * Strategy: pass a hand-rolled prisma stub whose `projectMember.findMany`
  * returns the rows we want. No real DB. The actor matches the Express `Actor`
- * shape resolved by authMiddleware (isOwner / userId / tenantId).
+ * shape resolved by authMiddleware (isOwner / tenantId / tenantId).
  */
 
 import { describe, it, expect, vi } from 'vitest';

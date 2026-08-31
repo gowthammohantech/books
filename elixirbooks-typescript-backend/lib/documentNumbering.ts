@@ -74,8 +74,8 @@ export interface NextDocumentNumberOptions {
   width?: number;
   /**
    * Tenant filter merged into the "last row for this tenant" lookup. Pass
-   * `{ userId }` for models with a direct column, or a relation filter like
-   * `{ purchase: { userId } }` when the model has none (SupplierPayment).
+   * `{ tenantId }` for models with a direct column, or a relation filter like
+   * `{ purchase: { tenantId } }` when the model has none (SupplierPayment).
    */
   tenantWhere: Record<string, unknown>;
 }

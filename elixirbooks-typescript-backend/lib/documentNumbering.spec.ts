@@ -37,13 +37,13 @@ describe('nextDocumentNumber', () => {
       model,
       field: 'debitNoteId',
       prefix: 'DN-',
-      tenantWhere: { userId: 'tenant-1' },
+      tenantWhere: { tenantId: 'tenant-1' },
     });
 
     expect(result).toBe('DN-000005');
     expect(findFirst).toHaveBeenCalledTimes(2);
     expect(findFirst).toHaveBeenNthCalledWith(1, {
-      where: { debitNoteId: { not: null }, userId: 'tenant-1' },
+      where: { debitNoteId: { not: null }, tenantId: 'tenant-1' },
       orderBy: { createdAt: 'desc' },
       select: { debitNoteId: true },
     });
@@ -61,7 +61,7 @@ describe('nextDocumentNumber', () => {
       model,
       field: 'paymentId',
       prefix: 'PAY-',
-      tenantWhere: { purchase: { userId: 'tenant-1' } },
+      tenantWhere: { purchase: { tenantId: 'tenant-1' } },
     });
 
     expect(result).toBe('PAY-000001');
@@ -79,7 +79,7 @@ describe('nextDocumentNumber', () => {
       model,
       field: 'purchaseId',
       prefix: 'PUR-',
-      tenantWhere: { userId: 'tenant-1' },
+      tenantWhere: { tenantId: 'tenant-1' },
     });
 
     expect(result).toBe('PUR-000043');
@@ -99,7 +99,7 @@ describe('nextDocumentNumber', () => {
       field: 'creditNoteNumber',
       prefix: 'CN-',
       width: 3,
-      tenantWhere: { userId: 'tenant-1' },
+      tenantWhere: { tenantId: 'tenant-1' },
     });
 
     expect(result).toBe('CN-008');

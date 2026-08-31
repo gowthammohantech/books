@@ -25,7 +25,7 @@ export interface ToolDef {
   name: string;
   description: string;
   parameters: Record<string, unknown>; // JSON Schema
-  handler: (args: Record<string, unknown>, ctx: { userId: string }) => Promise<unknown>;
+  handler: (args: Record<string, unknown>, ctx: { tenantId: string }) => Promise<unknown>;
 }
 
 export interface ChatStreamEvent {
@@ -39,7 +39,7 @@ export interface AiProvider {
   chatStream(
     messages: ChatMessage[],
     tools: ToolDef[],
-    ctx: { userId: string },
+    ctx: { tenantId: string },
   ): AsyncIterable<ChatStreamEvent>;
 }
 

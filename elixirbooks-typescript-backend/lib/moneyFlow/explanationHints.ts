@@ -25,7 +25,7 @@ export interface HintResult {
 }
 
 interface RecordHintOptions {
-  userId: string;
+  tenantId: string;
   payee: string | null | undefined;
   transactionTypeKey: string;
   categoryId?: string | null;
@@ -63,14 +63,14 @@ export function normalisePayeeKey(s: string | null | undefined): string {
  * Upsert an ExplanationHint row.
  *
  * On insert: stores the type/category/payTo + hitCount=1 + lastUsedAt=now.
- * On conflict (userId, payeeKey): updates the type/category/payTo to the
+ * On conflict (tenantId, payeeKey): updates the type/category/payTo to the
  *   latest value, increments hitCount, and bumps lastUsedAt.
  *
  * No-ops (does nothing) when payee normalises to an empty string.
  */
 export async function recordHint(
   tx: Tx,
-  { userId, payee, transactionTypeKey, categoryId, payToUserId }: RecordHintOptions,
+  { tenantId, payee, transactionTypeKey, categoryId, payToUserId }: RecordHintOptions,
 ): Promise<void> {
   const payeeKey = normalisePayeeKey(payee);
   if (!payeeKey) return;
@@ -80,9 +80,9 @@ export async function recordHint(
   const resolvedPayToUserId = payToUserId ?? null;
 
   await tx.explanationHint.upsert({
-    where: { userId_payeeKey: { userId, payeeKey } },
+    where: { tenantId_payeeKey: { tenantId, payeeKey } },
     create: {
-      userId,
+      tenantId,
       payeeKey,
       transactionTypeKey,
       categoryId: resolvedCategoryId,
@@ -105,21 +105,21 @@ export async function recordHint(
 // ---------------------------------------------------------------------------
 
 /**
- * Look up a stored ExplanationHint by (userId, payee).
+ * Look up a stored ExplanationHint by (tenantId, payee).
  *
  * Returns the mapping { transactionTypeKey, categoryId, payToUserId } if a
  * hint exists, or null if the payee is empty / unknown.
  */
 export async function lookupHint(
   tx: Tx,
-  userId: string,
+  tenantId: string,
   payee: string | null | undefined,
 ): Promise<HintResult | null> {
   const payeeKey = normalisePayeeKey(payee);
   if (!payeeKey) return null;
 
   const row = await tx.explanationHint.findUnique({
-    where: { userId_payeeKey: { userId, payeeKey } },
+    where: { tenantId_payeeKey: { tenantId, payeeKey } },
   });
 
   if (!row) return null;

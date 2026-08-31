@@ -101,7 +101,7 @@ async function main(): Promise<void> {
   });
 
   await prisma.companySettings.upsert({
-    where: { userId: admin.id },
+    where: { tenantId: admin.id },
     update: {},
     create: {
       id: DEMO_COMPANY_ID,
@@ -113,7 +113,7 @@ async function main(): Promise<void> {
       state: 'Tamil Nadu',
       country: 'India',
       pincode: '600001',
-      userId: admin.id,
+      tenantId: admin.id,
     },
   });
 

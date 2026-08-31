@@ -67,7 +67,7 @@ import { updatePurchase } from '../controllers/Admin/Purchases/purchaseControlle
 
 const EXISTING = {
   id: 'pur-1',
-  userId: TENANT_ID,
+  tenantId: TENANT_ID,
   isDeleted: false,
   approvalStatus: 'APPROVED',
   status: 'pending',

@@ -9,14 +9,14 @@
  *   PUT    /admin/payroll/profiles/:id    — updateProfile
  *   DELETE /admin/payroll/profiles/:id    — deleteProfile
  *
- * Tenant scoping: PayrollProfile.userId = the company owner id (tenantId).
+ * Tenant scoping: PayrollProfile.tenantId = the company owner id (tenantId).
  * The `employeeUserId` must reference a User that is either the owner
  * themselves OR a staff member (ownerId == tenantId).
  */
 
 import type { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
-import { requireUserId } from '../lib/tenantScope';
+import { requireTenantId } from '../lib/tenantScope';
 import { taxYearByLabel } from '../lib/payroll/taxYear';
 import { postPayRunLineAccrual, reversePayRunLineAccrual } from '../lib/payroll/payRunPosting';
 
@@ -49,7 +49,7 @@ export function validateProfileInput(
 
 /**
  * Confirm the given `employeeUserId` is a User that belongs to this tenant
- * (i.e. the owner themselves OR a staff member whose ownerId == userId).
+ * (i.e. the owner themselves OR a staff member whose ownerId == tenantId).
  */
 async function assertTenantEmployee(tenantId: string, employeeUserId: string): Promise<boolean> {
   // PayrollProfile model is in the schema (Task 1) but the local generated
@@ -109,10 +109,10 @@ export function computeLineTotals(
 }
 
 async function resolvePayrollAccountIds(
-  userId: string,
+  tenantId: string,
 ): Promise<{ wages: string; netPayable: string; deductionsPayable: string }> {
   const accts = await prisma.account.findMany({
-    where: { userId, code: { in: ['9230', '9260', '9270'] }, isDeleted: false },
+    where: { tenantId, code: { in: ['9230', '9260', '9270'] }, isDeleted: false },
     select: { id: true, code: true },
   });
   const byCode = Object.fromEntries(accts.map((a) => [a.code, a.id]));
@@ -130,9 +130,9 @@ async function resolvePayrollAccountIds(
 
 export async function listProfiles(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const profiles = await payrollProfileDelegate.findMany({
-      where: { userId, isDeleted: false },
+      where: { tenantId, isDeleted: false },
       include: {
         employee: { select: { id: true, firstName: true, lastName: true, email: true } },
       },
@@ -147,7 +147,7 @@ export async function listProfiles(req: Request, res: Response): Promise<void> {
 
 export async function createProfile(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as ProfileInput;
 
     const v = validateProfileInput(body);
@@ -156,7 +156,7 @@ export async function createProfile(req: Request, res: Response): Promise<void> 
       return;
     }
 
-    if (!(await assertTenantEmployee(userId, body.employeeUserId as string))) {
+    if (!(await assertTenantEmployee(tenantId, body.employeeUserId as string))) {
       res.status(400).json({
         success: false,
         message: 'Validation failed.',
@@ -167,7 +167,7 @@ export async function createProfile(req: Request, res: Response): Promise<void> 
 
     // Unique active profile guard
     const existing = await payrollProfileDelegate.findFirst({
-      where: { userId, employeeUserId: body.employeeUserId, isDeleted: false },
+      where: { tenantId, employeeUserId: body.employeeUserId, isDeleted: false },
       select: { id: true },
     });
     if (existing) {
@@ -177,7 +177,7 @@ export async function createProfile(req: Request, res: Response): Promise<void> 
 
     const profile = await payrollProfileDelegate.create({
       data: {
-        userId,
+        tenantId,
         employeeUserId: body.employeeUserId as string,
         ...(body.defaultGross != null ? { defaultGross: String(body.defaultGross) } : {}),
         ...(body.payFrequency !== undefined ? { payFrequency: body.payFrequency } : {}),
@@ -193,7 +193,7 @@ export async function createProfile(req: Request, res: Response): Promise<void> 
 
 export async function updateProfile(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params;
     const body = req.body as ProfileInput;
 
@@ -207,7 +207,7 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
     }
 
     const existing = await payrollProfileDelegate.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       select: { id: true },
     });
     if (!existing) {
@@ -234,11 +234,11 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
 
 export async function deleteProfile(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params;
 
     const existing = await payrollProfileDelegate.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       select: { id: true },
     });
     if (!existing) {
@@ -263,10 +263,10 @@ export async function deleteProfile(req: Request, res: Response): Promise<void> 
 
 export async function listRuns(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const taxYear = (req.query.taxYear as string) || undefined;
     const runs = await payRunDelegate.findMany({
-      where: { userId, isDeleted: false, ...(taxYear ? { taxYearLabel: taxYear } : {}) },
+      where: { tenantId, isDeleted: false, ...(taxYear ? { taxYearLabel: taxYear } : {}) },
       include: { lines: { select: { net: true } } },
       orderBy: [{ taxYearLabel: 'desc' }, { taxMonth: 'desc' }],
     });
@@ -279,9 +279,9 @@ export async function listRuns(req: Request, res: Response): Promise<void> {
 
 export async function getRun(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const run = await payRunDelegate.findFirst({
-      where: { id: req.params.id, userId, isDeleted: false },
+      where: { id: req.params.id, tenantId, isDeleted: false },
       include: {
         lines: {
           include: { employee: { select: { id: true, firstName: true, lastName: true } } },
@@ -301,7 +301,7 @@ export async function getRun(req: Request, res: Response): Promise<void> {
 
 export async function createRun(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { taxYearLabel, taxMonth } = req.body as { taxYearLabel?: string; taxMonth?: number };
 
     if (!taxYearLabel || !taxMonth || taxMonth < 1 || taxMonth > 12) {
@@ -321,9 +321,9 @@ export async function createRun(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Reject duplicate non-VOID run for same (userId, taxYearLabel, taxMonth)
+    // Reject duplicate non-VOID run for same (tenantId, taxYearLabel, taxMonth)
     const dup = await payRunDelegate.findFirst({
-      where: { userId, taxYearLabel, taxMonth, isDeleted: false, status: { not: 'VOID' } },
+      where: { tenantId, taxYearLabel, taxMonth, isDeleted: false, status: { not: 'VOID' } },
       select: { id: true },
     });
     if (dup) {
@@ -341,7 +341,7 @@ export async function createRun(req: Request, res: Response): Promise<void> {
 
     // Pre-fill DRAFT lines from ACTIVE profiles
     const profiles = await payrollProfileDelegate.findMany({
-      where: { userId, isActive: true, isDeleted: false },
+      where: { tenantId, isActive: true, isDeleted: false },
       select: { employeeUserId: true, defaultGross: true },
     }) as Array<{ employeeUserId: string; defaultGross: string | null }>;
 
@@ -349,7 +349,7 @@ export async function createRun(req: Request, res: Response): Promise<void> {
     try {
       run = await payRunDelegate.create({
         data: {
-          userId,
+          tenantId,
           taxYearLabel,
           taxMonth,
           periodStart,
@@ -386,9 +386,9 @@ export async function createRun(req: Request, res: Response): Promise<void> {
 
 export async function updateRun(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const run = await payRunDelegate.findFirst({
-      where: { id: req.params.id, userId, isDeleted: false },
+      where: { id: req.params.id, tenantId, isDeleted: false },
       select: { id: true, status: true },
     }) as { id: string; status: string } | null;
 
@@ -414,7 +414,7 @@ export async function updateRun(req: Request, res: Response): Promise<void> {
 
     // M7b — validate each line's employee belongs to this tenant before writing
     for (const line of lines) {
-      if (!(await assertTenantEmployee(userId, line.employeeUserId))) {
+      if (!(await assertTenantEmployee(tenantId, line.employeeUserId))) {
         res.status(400).json({
           success: false,
           message: 'Validation failed.',
@@ -458,9 +458,9 @@ export async function updateRun(req: Request, res: Response): Promise<void> {
 
 export async function finalizeRun(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const run = await payRunDelegate.findFirst({
-      where: { id: req.params.id, userId, isDeleted: false },
+      where: { id: req.params.id, tenantId, isDeleted: false },
       include: { lines: true },
     }) as {
       id: string;
@@ -484,7 +484,7 @@ export async function finalizeRun(req: Request, res: Response): Promise<void> {
 
     let accts;
     try {
-      accts = await resolvePayrollAccountIds(userId);
+      accts = await resolvePayrollAccountIds(tenantId);
     } catch (e) {
       res.status(400).json({ success: false, message: (e as Error).message });
       return;
@@ -496,7 +496,7 @@ export async function finalizeRun(req: Request, res: Response): Promise<void> {
       await (prisma as unknown as any).$transaction(async (tx: Record<string, any>) => {
         for (const line of run.lines) {
           await postPayRunLineAccrual(tx as never, {
-            userId,
+            tenantId,
             lineId: line.id,
             date: run.periodEnd,
             gross: String(line.gross),
@@ -526,9 +526,9 @@ export async function finalizeRun(req: Request, res: Response): Promise<void> {
 
 export async function voidRun(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const run = await payRunDelegate.findFirst({
-      where: { id: req.params.id, userId, isDeleted: false },
+      where: { id: req.params.id, tenantId, isDeleted: false },
       include: { lines: { select: { id: true, employeeUserId: true } } },
     }) as {
       id: string;
@@ -573,7 +573,7 @@ export async function voidRun(req: Request, res: Response): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (prisma as unknown as any).$transaction(async (tx: Record<string, any>) => {
       for (const line of run.lines) {
-        await reversePayRunLineAccrual(tx as never, { userId, lineId: line.id });
+        await reversePayRunLineAccrual(tx as never, { tenantId, lineId: line.id });
       }
       await tx.payRun.update({ where: { id: run.id }, data: { status: 'VOID', voidedAt: new Date() } });
     });

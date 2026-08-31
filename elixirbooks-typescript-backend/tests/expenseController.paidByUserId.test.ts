@@ -90,7 +90,7 @@ const CATEGORY_ID = 'cat-uuid-4';
 function makeExpense(overrides: Record<string, unknown> = {}) {
   return {
     id: EXPENSE_ID,
-    userId: OWNER_ID,
+    tenantId: OWNER_ID,
     isDeleted: false,
     sourceType: 'BANK',
     bankId: 'bank-uuid-5',

@@ -71,7 +71,7 @@ beforeEach(() => {
 
 describe('sendInvoiceEmail — status guard', () => {
   it('does NOT reset an OVERDUE invoice back to SENT (payment reminder)', async () => {
-    mockInvoiceFindFirst.mockResolvedValue({ id: 'inv-1', userId: TENANT_ID, status: 'OVERDUE' });
+    mockInvoiceFindFirst.mockResolvedValue({ id: 'inv-1', tenantId: TENANT_ID, status: 'OVERDUE' });
     mockInvoiceUpdate.mockResolvedValue({ id: 'inv-1', status: 'OVERDUE' });
 
     const { req, res } = makeReqRes({
@@ -90,7 +90,7 @@ describe('sendInvoiceEmail — status guard', () => {
   });
 
   it('does NOT reset a PARTIALLY_PAID invoice back to SENT', async () => {
-    mockInvoiceFindFirst.mockResolvedValue({ id: 'inv-2', userId: TENANT_ID, status: 'PARTIALLY_PAID' });
+    mockInvoiceFindFirst.mockResolvedValue({ id: 'inv-2', tenantId: TENANT_ID, status: 'PARTIALLY_PAID' });
     mockInvoiceUpdate.mockResolvedValue({ id: 'inv-2', status: 'PARTIALLY_PAID' });
 
     const { req, res } = makeReqRes({
@@ -107,7 +107,7 @@ describe('sendInvoiceEmail — status guard', () => {
   });
 
   it('promotes a DRAFT invoice to SENT on first send', async () => {
-    mockInvoiceFindFirst.mockResolvedValue({ id: 'inv-3', userId: TENANT_ID, status: 'DRAFT' });
+    mockInvoiceFindFirst.mockResolvedValue({ id: 'inv-3', tenantId: TENANT_ID, status: 'DRAFT' });
     mockInvoiceUpdate.mockResolvedValue({ id: 'inv-3', status: 'SENT' });
 
     const { req, res } = makeReqRes({
@@ -126,7 +126,7 @@ describe('sendInvoiceEmail — status guard', () => {
 
 describe('sendInvoiceEmail — phantom PDF attachment guard', () => {
   it('sends without an attachment when the PDF has not been generated (no throw, no 500)', async () => {
-    mockInvoiceFindFirst.mockResolvedValue({ id: 'inv-4', userId: TENANT_ID, status: 'DRAFT' });
+    mockInvoiceFindFirst.mockResolvedValue({ id: 'inv-4', tenantId: TENANT_ID, status: 'DRAFT' });
     mockInvoiceUpdate.mockResolvedValue({ id: 'inv-4', status: 'SENT' });
     mockExistsSync.mockReturnValue(false);
 
@@ -150,7 +150,7 @@ describe('sendInvoiceEmail — phantom PDF attachment guard', () => {
   });
 
   it('attaches the PDF when it does exist', async () => {
-    mockInvoiceFindFirst.mockResolvedValue({ id: 'inv-5', userId: TENANT_ID, status: 'DRAFT' });
+    mockInvoiceFindFirst.mockResolvedValue({ id: 'inv-5', tenantId: TENANT_ID, status: 'DRAFT' });
     mockInvoiceUpdate.mockResolvedValue({ id: 'inv-5', status: 'SENT' });
     mockExistsSync.mockReturnValue(true);
 

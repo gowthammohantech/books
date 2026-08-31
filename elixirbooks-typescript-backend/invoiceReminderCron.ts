@@ -104,7 +104,7 @@ export async function runReminderCron(scopeUserId?: string): Promise<RunSummary>
         status: 'active',
         // HTTP-triggered runs (Wave-1 final review, Important finding) must
         // scope to the caller — same ownership boundary as sendManualReminder
-        // (reminder.createdBy === requireUserId(req)). Only the scheduled
+        // (reminder.createdBy === requireTenantId(req)). Only the scheduled
         // 9am tick below calls this with no argument, keeping that run
         // global exactly as before.
         ...(scopeUserId ? { createdBy: scopeUserId } : {}),
@@ -143,7 +143,7 @@ async function processReminder(reminder: Reminder, today: Date, summary: RunSumm
 
     const invoices = await prisma.invoice.findMany({
       where: {
-        userId: reminder.createdBy,
+        tenantId: reminder.createdBy,
         status: { in: [...DUE_INVOICE_STATUSES] },
         isDeleted: false,
       },

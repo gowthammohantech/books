@@ -11,7 +11,7 @@ import type { Request, Response } from 'express';
 
 const bankDetailFindFirst = vi.fn(async (_args?: unknown) => ({
   id: 'acct-1',
-  userId: 'tenant-1',
+  tenantId: 'tenant-1',
   isDeleted: false,
   currentBalance: 0,
 }));

@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 interface FakeExpense {
   id: string;
-  userId: string;
+  tenantId: string;
   expenseId: string | null;
   amount: string;
   tax: string | null;
@@ -97,7 +97,7 @@ function makeExpenseDelegate() {
         expenseDate: null,
         lastRecurringDate: null,
         nextRecurringDate: null,
-        userId: '',
+        tenantId: '',
         ...(data as Partial<FakeExpense>),
       } as FakeExpense;
       store.expenses.push(row);
@@ -139,7 +139,7 @@ function seedMonthly(nextRecurringDate: Date): void {
   store.seq = 0;
   store.expenses.push({
     id: 'src-1',
-    userId: 'tenant-1',
+    tenantId: 'tenant-1',
     expenseId: 'EXP-000001',
     amount: '100',
     tax: '0',

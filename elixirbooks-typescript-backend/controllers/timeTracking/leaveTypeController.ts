@@ -2,7 +2,7 @@
 // Time Tracking — Phase C (Task 3): configurable leave types + per-employee
 // annual allocations.
 //
-// Leave types (all tenant-scoped via requireUserId; tenant = ownerId ?? id):
+// Leave types (all tenant-scoped via requireTenantId; tenant = ownerId ?? id):
 //   GET    /leave-types          time-tracking,view
 //   POST   /leave-types          time-tracking-others,create  { name, paid?, defaultAllocationDays?, isActive? }
 //   PUT    /leave-types/:id       time-tracking-others,edit
@@ -24,7 +24,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../../lib/tenantScope';
 
 // =============================================================================
 // Shared helpers
@@ -72,9 +72,9 @@ async function isTenantStaff(tenantId: string, employeeUserId: string): Promise<
 /** GET /leave-types */
 export async function listLeaveTypes(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const leaveTypes = await prisma.leaveType.findMany({
-      where: { userId },
+      where: { tenantId },
       orderBy: { name: 'asc' },
     });
     res.json({ success: true, data: { leaveTypes } });
@@ -88,7 +88,7 @@ export async function listLeaveTypes(req: Request, res: Response): Promise<void>
 /** POST /leave-types — { name, paid?, defaultAllocationDays?, isActive? } */
 export async function createLeaveType(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { name, paid, defaultAllocationDays, isActive } = req.body as {
       name?: string;
       paid?: boolean;
@@ -103,7 +103,7 @@ export async function createLeaveType(req: Request, res: Response): Promise<void
 
     const leaveType = await prisma.leaveType.create({
       data: {
-        userId,
+        tenantId,
         name,
         ...(paid !== undefined && { paid }),
         defaultAllocationDays:
@@ -129,10 +129,10 @@ export async function createLeaveType(req: Request, res: Response): Promise<void
 /** PUT /leave-types/:id — { name?, paid?, defaultAllocationDays?, isActive? } */
 export async function updateLeaveType(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const id = String(req.params.id);
 
-    const existing = await prisma.leaveType.findFirst({ where: { id, userId } });
+    const existing = await prisma.leaveType.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Leave type not found' });
       return;
@@ -183,10 +183,10 @@ export async function updateLeaveType(req: Request, res: Response): Promise<void
 /** DELETE /leave-types/:id */
 export async function deleteLeaveType(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const id = String(req.params.id);
 
-    const existing = await prisma.leaveType.findFirst({ where: { id, userId } });
+    const existing = await prisma.leaveType.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Leave type not found' });
       return;
@@ -215,7 +215,7 @@ export async function deleteLeaveType(req: Request, res: Response): Promise<void
 /** GET /leave-allocations?employeeUserId=&year= */
 export async function listLeaveAllocations(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const actor = req.actor;
     if (!actor) throw new UnauthorizedError();
 
@@ -242,7 +242,7 @@ export async function listLeaveAllocations(req: Request, res: Response): Promise
 
     const allocations = await prisma.leaveAllocation.findMany({
       where: {
-        userId: tenantId,
+        tenantId: tenantId,
         ...(employeeUserIdFilter ? { employeeUserId: employeeUserIdFilter } : {}),
         ...(yearFilter !== undefined ? { year: yearFilter } : {}),
       },
@@ -267,7 +267,7 @@ export async function listLeaveAllocations(req: Request, res: Response): Promise
  */
 async function upsertAllocation(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const id = req.params.id ? String(req.params.id) : undefined;
 
@@ -289,7 +289,7 @@ async function upsertAllocation(req: Request, res: Response): Promise<void> {
 
     // PUT: the target row must exist and belong to the tenant.
     if (id) {
-      const existing = await prisma.leaveAllocation.findFirst({ where: { id, userId: tenantId } });
+      const existing = await prisma.leaveAllocation.findFirst({ where: { id, tenantId: tenantId } });
       if (!existing) {
         res.status(404).json({ success: false, message: 'Leave allocation not found' });
         return;
@@ -306,7 +306,7 @@ async function upsertAllocation(req: Request, res: Response): Promise<void> {
 
     // Validate the leave type belongs to this tenant.
     const leaveType = await prisma.leaveType.findFirst({
-      where: { id: leaveTypeId, userId: tenantId },
+      where: { id: leaveTypeId, tenantId: tenantId },
       select: { id: true },
     });
     if (!leaveType) {
@@ -323,7 +323,7 @@ async function upsertAllocation(req: Request, res: Response): Promise<void> {
         employeeUserId_leaveTypeId_year: { employeeUserId, leaveTypeId, year },
       },
       create: {
-        userId: tenantId,
+        tenantId: tenantId,
         employeeUserId,
         leaveTypeId,
         year,

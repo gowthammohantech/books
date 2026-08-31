@@ -2,13 +2,13 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { stripeGateway } from '../lib/paymentGateways/stripeGateway';
 import { decryptConfigSecrets, gatewaySecretKeys } from '../lib/configSecret';
 
-async function loadConfig(userId: string): Promise<unknown | null> {
+async function loadConfig(tenantId: string): Promise<unknown | null> {
   const row = await prisma.gatewayConfig.findUnique({
-    where: { userId_kind: { userId, kind: 'STRIPE' } },
+    where: { tenantId_kind: { tenantId, kind: 'STRIPE' } },
   });
   if (!row || !row.enabled) return null;
   // Decrypt secrets only here, at point-of-use, before calling the gateway.
@@ -17,11 +17,11 @@ async function loadConfig(userId: string): Promise<unknown | null> {
 
 export async function createCheckoutSession(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { invoiceId } = req.params as { invoiceId: string };
 
     const invoice = await prisma.invoice.findFirst({
-      where: { id: invoiceId, userId, isDeleted: false },
+      where: { id: invoiceId, tenantId, isDeleted: false },
       select: { id: true, invoiceNumber: true, TotalAmount: true },
     });
     if (!invoice) {
@@ -29,7 +29,7 @@ export async function createCheckoutSession(req: Request, res: Response): Promis
       return;
     }
 
-    const config = await loadConfig(userId);
+    const config = await loadConfig(tenantId);
     if (!config) {
       res.status(400).json({ success: false, message: 'Stripe not configured' });
       return;
@@ -52,7 +52,7 @@ export async function createCheckoutSession(req: Request, res: Response): Promis
 
     const txn = await prisma.paymentTransaction.create({
       data: {
-        userId,
+        tenantId,
         invoiceId: invoice.id,
         kind: 'STRIPE',
         status: 'CREATED',
@@ -83,12 +83,12 @@ export async function createCheckoutSession(req: Request, res: Response): Promis
 
 export async function refund(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { paymentTransactionId } = req.params as { paymentTransactionId: string };
     const body = req.body as { amount?: number; reason?: string };
 
     const txn = await prisma.paymentTransaction.findFirst({
-      where: { id: paymentTransactionId, userId, kind: 'STRIPE' },
+      where: { id: paymentTransactionId, tenantId, kind: 'STRIPE' },
     });
     if (!txn || !txn.gatewayPaymentId) {
       res.status(404).json({ success: false, message: 'Stripe transaction not found' });
@@ -99,7 +99,7 @@ export async function refund(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const config = await loadConfig(userId);
+    const config = await loadConfig(tenantId);
     if (!config) {
       res.status(400).json({ success: false, message: 'Stripe not configured' });
       return;
@@ -120,7 +120,7 @@ export async function refund(req: Request, res: Response): Promise<void> {
 
     const refundRow = await prisma.refund.create({
       data: {
-        userId,
+        tenantId,
         paymentTransactionId: txn.id,
         amount: new Prisma.Decimal(amount),
         status: result.status === 'CAPTURED' ? 'CAPTURED' : 'PENDING',

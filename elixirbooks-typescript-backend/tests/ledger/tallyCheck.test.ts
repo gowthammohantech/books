@@ -53,13 +53,13 @@ describe('tally-check: fully settled scenario (AR=0, AP=0, TB balanced)', () => 
     const { tx, balances } = buildHarness(pack, USER);
 
     // Buy inventory (60, no tax), pay in full
-    await postPurchaseReceived(tx, { userId: USER, purchaseId: 'pu-a1', date: DATE, total: '60', tax: '0', inventoryNet: '60', expenseNet: '0' });
-    await postSupplierPayment(tx, { userId: USER, purchaseId: 'pu-a1', paymentId: 'sp-a1', date: DATE, amount: '60', paymentModeSlug: 'bank-transfer' });
+    await postPurchaseReceived(tx, { tenantId: USER, purchaseId: 'pu-a1', date: DATE, total: '60', tax: '0', inventoryNet: '60', expenseNet: '0' });
+    await postSupplierPayment(tx, { tenantId: USER, purchaseId: 'pu-a1', paymentId: 'sp-a1', date: DATE, amount: '60', paymentModeSlug: 'bank-transfer' });
 
     // Sell (100 net + 18 tax = 118 total), collect in full
-    await postInvoiceIssued(tx, { userId: USER, invoiceId: 'inv-a1', date: DATE, total: '118', tax: '18' });
-    await postSaleCogs(tx, { userId: USER, invoiceId: 'inv-a1', date: DATE, cost: '60' });
-    await postInvoicePayment(tx, { userId: USER, invoiceId: 'inv-a1', paymentId: 'ip-a1', date: DATE, amount: '118', paymentModeSlug: 'bank-transfer' });
+    await postInvoiceIssued(tx, { tenantId: USER, invoiceId: 'inv-a1', date: DATE, total: '118', tax: '18' });
+    await postSaleCogs(tx, { tenantId: USER, invoiceId: 'inv-a1', date: DATE, cost: '60' });
+    await postInvoicePayment(tx, { tenantId: USER, invoiceId: 'inv-a1', paymentId: 'ip-a1', date: DATE, amount: '118', paymentModeSlug: 'bank-transfer' });
 
     accts = balances();
   });
@@ -108,8 +108,8 @@ describe('tally-check: unpaid invoice scenario (AR ties)', () => {
     const pack = getPack('IN')!;
     const { tx, balances } = buildHarness(pack, USER);
 
-    await postInvoiceIssued(tx, { userId: USER, invoiceId: 'inv-b1', date: DATE, total: '118', tax: '18' });
-    await postSaleCogs(tx, { userId: USER, invoiceId: 'inv-b1', date: DATE, cost: '0' });
+    await postInvoiceIssued(tx, { tenantId: USER, invoiceId: 'inv-b1', date: DATE, total: '118', tax: '18' });
+    await postSaleCogs(tx, { tenantId: USER, invoiceId: 'inv-b1', date: DATE, cost: '0' });
 
     accts = balances();
   });
@@ -153,7 +153,7 @@ describe('tally-check: unpaid bill scenario (AP ties)', () => {
     const pack = getPack('IN')!;
     const { tx, balances } = buildHarness(pack, USER);
 
-    await postPurchaseReceived(tx, { userId: USER, purchaseId: 'pu-c1', date: DATE, total: '60', tax: '0', inventoryNet: '60', expenseNet: '0' });
+    await postPurchaseReceived(tx, { tenantId: USER, purchaseId: 'pu-c1', date: DATE, total: '60', tax: '0', inventoryNet: '60', expenseNet: '0' });
     // No supplier payment
 
     accts = balances();
@@ -372,11 +372,11 @@ describe('tally-check FF1: AR sub-ledger nets unrefunded credit notes', () => {
     const { tx, balances } = buildHarness(pack, USER);
 
     // Invoice: Dr AR 118 / Cr SALES 100 + OUTPUT_TAX 18
-    await postInvoiceIssued(tx, { userId: USER, invoiceId: 'inv-f1', date: DATE, total: '118', tax: '18' });
-    await postSaleCogs(tx, { userId: USER, invoiceId: 'inv-f1', date: DATE, cost: '0' });
+    await postInvoiceIssued(tx, { tenantId: USER, invoiceId: 'inv-f1', date: DATE, total: '118', tax: '18' });
+    await postSaleCogs(tx, { tenantId: USER, invoiceId: 'inv-f1', date: DATE, cost: '0' });
 
     // Credit note: Dr SALES_RETURNS 50 / Cr AR 50 (no tax on net-amount CN)
-    await postCreditNoteIssued(tx, { userId: USER, creditNoteId: 'cn-f1', date: DATE, total: '50', tax: '0' });
+    await postCreditNoteIssued(tx, { tenantId: USER, creditNoteId: 'cn-f1', date: DATE, total: '50', tax: '0' });
 
     accts = balances();
   });
@@ -425,16 +425,16 @@ describe('tally-check FF1: refunded credit note is excluded from AR subledger', 
     const { tx, balances } = buildHarness(pack, USER);
 
     // Invoice: Dr AR 118 / Cr SALES 100 + OUTPUT_TAX 18
-    await postInvoiceIssued(tx, { userId: USER, invoiceId: 'inv-g1', date: DATE, total: '118', tax: '18' });
-    await postSaleCogs(tx, { userId: USER, invoiceId: 'inv-g1', date: DATE, cost: '0' });
+    await postInvoiceIssued(tx, { tenantId: USER, invoiceId: 'inv-g1', date: DATE, total: '118', tax: '18' });
+    await postSaleCogs(tx, { tenantId: USER, invoiceId: 'inv-g1', date: DATE, cost: '0' });
 
     // Credit note: Dr SALES_RETURNS 50 / Cr AR 50
-    await postCreditNoteIssued(tx, { userId: USER, creditNoteId: 'cn-g1', date: DATE, total: '50', tax: '0' });
+    await postCreditNoteIssued(tx, { tenantId: USER, creditNoteId: 'cn-g1', date: DATE, total: '50', tax: '0' });
 
     // Cash refund of CN: Dr AR 50 / Cr BANK 50
     // In production this is posted via explainPosting credit_note_link behaviour.
     // The postCreditNoteRefund function mirrors that posting path exactly.
-    await postCreditNoteRefund(tx, { userId: USER, creditNoteId: 'cn-g1', date: DATE, amount: '50' });
+    await postCreditNoteRefund(tx, { tenantId: USER, creditNoteId: 'cn-g1', date: DATE, amount: '50' });
 
     accts = balances();
   });

@@ -4,7 +4,7 @@ import { Prisma, CustomFieldPlacement } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 
 // CustomField is a global lookup table tied to Module + FieldType — it has no
-// userId column, so tenantScope() does not apply here. Soft-deletion via
+// tenantId column, so tenantScope() does not apply here. Soft-deletion via
 // `deletedAt` is still respected.
 
 // Create custom field

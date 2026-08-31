@@ -137,7 +137,7 @@ export async function runRecurringForInvoice(invoiceId: string): Promise<CloneRe
     // double-post. PROFORMA never posts AR (mirrors postInvoiceLedger).
     if (created.invoiceType !== 'PROFORMA') {
       await postInvoiceIssued(tx as unknown as PostingTx, {
-        userId: created.userId,
+        tenantId: created.tenantId,
         invoiceId: created.id,
         date: created.invoiceDate ?? today,
         total: String(created.TotalAmount),
@@ -165,13 +165,13 @@ export async function runRecurringForInvoice(invoiceId: string): Promise<CloneRe
         });
         if (product?.item_type === 'Service') continue;
         const inv = await tx.inventory.findFirst({
-          where: { productId, userId: created.userId, isDeleted: false },
+          where: { productId, tenantId: created.tenantId, isDeleted: false },
         });
         if (!inv) continue;
         totalCogs = totalCogs.plus(inv.avgCost.times(new PrismaNS.Decimal(qty)));
       }
       await postSaleCogs(tx as unknown as PostingTx, {
-        userId: created.userId,
+        tenantId: created.tenantId,
         invoiceId: created.id,
         date: created.invoiceDate ?? today,
         cost: totalCogs.toString(),

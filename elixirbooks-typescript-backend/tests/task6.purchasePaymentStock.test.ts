@@ -156,7 +156,7 @@ describe('Defect 1 — updatePurchase preserves SupplierPayment rows', () => {
   const existing = {
     id: 'pur-1',
     purchaseId: 'PUR-1',
-    userId: TENANT_ID,
+    tenantId: TENANT_ID,
     contactId: 'c1',
     supplierId: null,
     status: 'pending',
@@ -260,7 +260,7 @@ describe('Defect 2 — updatePurchaseStatus stock integrity', () => {
     m.purchaseFindFirst.mockResolvedValue({
       id: 'pur-1',
       purchaseId: 'PUR-1',
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       status,
       items: baseItems,
       totalAmount: 200,
@@ -276,7 +276,7 @@ describe('Defect 2 — updatePurchaseStatus stock integrity', () => {
     m.purchaseUpdate.mockImplementation(async (arg: { data: Record<string, unknown> }) => ({
       id: 'pur-1',
       purchaseId: 'PUR-1',
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       items: baseItems,
       totalAmount: 200,
       landedCost: null,
@@ -399,7 +399,7 @@ describe('Defect 2 — updatePurchaseStatus stock integrity', () => {
     m.purchaseFindFirst.mockResolvedValue({
       id: 'pur-1',
       purchaseId: 'PUR-1',
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       status: 'new',
       approvalStatus: 'PENDING',
       items: baseItems,
@@ -447,7 +447,7 @@ describe('Final-review Findings 2 & 3 — updatePurchase GL/approval integrity',
   const existing = {
     id: 'pur-1',
     purchaseId: 'PUR-1',
-    userId: TENANT_ID,
+    tenantId: TENANT_ID,
     contactId: 'c1',
     supplierId: null,
     status: 'pending', // stocked (not new/cancelled)
@@ -535,7 +535,7 @@ describe('Defect 3 — createSupplierPayment server-side due', () => {
   beforeEach(() => {
     m.purchaseFindFirst.mockResolvedValue({
       id: 'pur-1',
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       totalAmount: 100,
       exchangeRate: null,
     });
@@ -606,7 +606,7 @@ describe('Defect 3 — updateSupplierPayment server-side due', () => {
       sourceType: 'BANK',
       bankId: 'bank-1',
     });
-    m.purchaseFindFirst.mockResolvedValue({ id: 'pur-1', userId: TENANT_ID, totalAmount: 100 });
+    m.purchaseFindFirst.mockResolvedValue({ id: 'pur-1', tenantId: TENANT_ID, totalAmount: 100 });
     m.spAggregate.mockResolvedValue({ _sum: { paidAmount: 80 } }); // other payments = 80 → remaining 20
 
     const { req, res } = makeReqRes({ body: { paidAmount: 50, dueAmount: 0 }, params: { id: 'sp-1' } });

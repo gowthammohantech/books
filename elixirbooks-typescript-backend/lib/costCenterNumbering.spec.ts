@@ -26,7 +26,7 @@ function fakeModel(taken: string[] = []) {
   };
 }
 
-const base = { userId: 'u1', field: 'invoiceNumber' };
+const base = { tenantId: 'u1', field: 'invoiceNumber' };
 
 describe('nextCentreDocumentNumber', () => {
   it('formats prefix + zero-padded counter', async () => {
@@ -119,16 +119,16 @@ describe('peekCentreDocumentNumber', () => {
     // The create form previews a number on every open; reserving here would
     // leave a gap for every abandoned form.
     const tx = fakeTx({ numberPrefix: 'SAL-', nextNumber: 9 });
-    expect(await peekCentreDocumentNumber(tx as never, { userId: 'u1', costCenterId: 'cc-s' })).toBe('SAL-000009');
+    expect(await peekCentreDocumentNumber(tx as never, { tenantId: 'u1', costCenterId: 'cc-s' })).toBe('SAL-000009');
     expect(tx.costCenter.update).not.toHaveBeenCalled();
     expect(tx.current()).toBe(9);
   });
 
   it('returns null for no centre or a prefix-less centre', async () => {
-    expect(await peekCentreDocumentNumber(fakeTx(null) as never, { userId: 'u1', costCenterId: null })).toBeNull();
+    expect(await peekCentreDocumentNumber(fakeTx(null) as never, { tenantId: 'u1', costCenterId: null })).toBeNull();
     expect(await peekCentreDocumentNumber(
       fakeTx({ numberPrefix: null, nextNumber: 3 }) as never,
-      { userId: 'u1', costCenterId: 'cc-x' },
+      { tenantId: 'u1', costCenterId: 'cc-x' },
     )).toBeNull();
   });
 
@@ -136,7 +136,7 @@ describe('peekCentreDocumentNumber', () => {
     // If the preview and the issued number disagree, users report it as a bug.
     const peekTx = fakeTx({ numberPrefix: 'SAL-', nextNumber: 12 });
     const issueTx = fakeTx({ numberPrefix: 'SAL-', nextNumber: 12 });
-    const preview = await peekCentreDocumentNumber(peekTx as never, { userId: 'u1', costCenterId: 'cc-s' });
+    const preview = await peekCentreDocumentNumber(peekTx as never, { tenantId: 'u1', costCenterId: 'cc-s' });
     const issued = await nextCentreDocumentNumber(issueTx as never, {
       ...base, costCenterId: 'cc-s', model: fakeModel(),
     });

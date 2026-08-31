@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import type { Quotation, QuotationStatus, Customer } from '@prisma/client';
 
 import { prisma } from '../../../lib/prisma';
-import { tenantScope, requireUserId, UnauthorizedError } from '../../../lib/tenantScope';
+import { tenantScope, requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 import { applyDocumentTreatment } from '../../../lib/tax/applyTreatment';
 import {
@@ -141,7 +141,7 @@ function formatDateShort(date: Date | null | undefined): string | null {
 
 export async function createQuotation(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const body = req.body as Record<string, unknown>;
     // Resolved before the items so each line can inherit the document centre.
     const docCostCenterId = typeof body.costCenterId === 'string' && body.costCenterId ? body.costCenterId : null;
@@ -151,7 +151,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
     // id on a line would reach the ledger unnoticed. One query covers the
     // header and every line.
     try {
-      await assertCostCentresExist(prisma, userId, collectCostCentreIds(docCostCenterId, items));
+      await assertCostCentresExist(prisma, tenantId, collectCostCentreIds(docCostCenterId, items));
     } catch (centreErr) {
       if (centreErr instanceof UnknownCostCentreError) {
         res.status(400).json({ success: false, message: centreErr.message, errors: { costCenterId: centreErr.message } });
@@ -185,7 +185,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
 
     if (incomingContactId) {
       const ownedContact = (await cdb().contact.findFirst({
-        where: { id: incomingContactId, userId, isDeleted: false },
+        where: { id: incomingContactId, tenantId, isDeleted: false },
         select: { id: true, defaultTaxTreatment: true },
       } as never)) as { id: string; defaultTaxTreatment: TaxTreatment | null } | null;
       if (!ownedContact) {
@@ -195,7 +195,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
       contactDefaultTaxTreatment = ownedContact.defaultTaxTreatment;
       if (incomingBillToContactId && incomingBillToContactId !== incomingContactId) {
         const ownedBillTo = (await cdb().contact.findFirst({
-          where: { id: incomingBillToContactId, userId, isDeleted: false },
+          where: { id: incomingBillToContactId, tenantId, isDeleted: false },
           select: { id: true },
         } as never)) as { id: string } | null;
         if (!ownedBillTo) {
@@ -207,7 +207,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
       resolvedCustomerId = legacyCustomerId;
       resolvedBillTo = legacyCustomerId;
       const contactRow = (await cdb().contact.findFirst({
-        where: { legacyCustomerId, userId, isDeleted: false },
+        where: { legacyCustomerId, tenantId, isDeleted: false },
         select: { id: true, defaultTaxTreatment: true },
       } as never)) as { id: string; defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) {
@@ -219,7 +219,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
 
     // billFrom is a User FK — validate it
     const [user, billFrom] = await Promise.all([
-      prisma.user.findUnique({ where: { id: userId } }),
+      prisma.user.findUnique({ where: { id: tenantId } }),
       prisma.user.findUnique({ where: { id: billFromId } }),
     ]);
     // Also fetch legacy billTo customer for email sending (only on legacy path)
@@ -307,7 +307,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
           signatureId: signType === 'digitalSignature' ? ((body.signatureId as string) || null) : null,
           signatureImage: signType === 'eSignature' && req.file ? req.file.path : null,
           signatureName: signType === 'eSignature' ? ((body.signatureName as string) ?? null) : null,
-          userId,
+          tenantId,
           // FK to User — empty string from the form must become null, not '' (FK violation).
           salesPerson: (body.salesPerson as string) || null,
           billFrom: billFromId,
@@ -376,7 +376,6 @@ export async function getQuotationById(req: Request, res: Response): Promise<voi
         contact: { select: { id: true, firstName: true, lastName: true, organisation: true, email: true, mobile: true, vatRegNumber: true, gstin: true } },
         billToContact: { select: { id: true, firstName: true, lastName: true, organisation: true, email: true, mobile: true, vatRegNumber: true, gstin: true } },
         customer: { select: { id: true, name: true, email: true, phone: true, image: true, billingAddress: true } },
-        user: { select: { id: true, firstName: true, lastName: true, email: true, phone: true, profileImage: true, address: true } },
         billFromUser: { select: { id: true, firstName: true, lastName: true, email: true, phone: true, profileImage: true, address: true, user_type: true } },
         billToCustomer: { select: { id: true, name: true, email: true, phone: true, image: true, billingAddress: true } },
         signature: { select: { id: true, signatureName: true, signatureImage: true } },
@@ -553,7 +552,7 @@ export async function getQuotationById(req: Request, res: Response): Promise<voi
 
 export async function updateQuotation(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = req.body as Record<string, unknown>;
 
@@ -569,7 +568,7 @@ export async function updateQuotation(req: Request, res: Response): Promise<void
     let contactDefaultTaxTreatment: TaxTreatment | null = null;
     if (effectiveContactId) {
       const contactRow = (await cdb().contact.findFirst({
-        where: { id: effectiveContactId, userId, isDeleted: false },
+        where: { id: effectiveContactId, tenantId, isDeleted: false },
         select: { defaultTaxTreatment: true },
       } as never)) as { defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) contactDefaultTaxTreatment = contactRow.defaultTaxTreatment;
@@ -604,7 +603,7 @@ export async function updateQuotation(req: Request, res: Response): Promise<void
 
       if (incomingContactId) {
         const ownedContact = (await cdb().contact.findFirst({
-          where: { id: incomingContactId, userId, isDeleted: false },
+          where: { id: incomingContactId, tenantId, isDeleted: false },
           select: { id: true },
         } as never)) as { id: string } | null;
         if (!ownedContact) {
@@ -614,7 +613,7 @@ export async function updateQuotation(req: Request, res: Response): Promise<void
         const billToContactId = incomingBillToContactId ?? incomingContactId;
         if (incomingBillToContactId && incomingBillToContactId !== incomingContactId) {
           const ownedBillTo = (await cdb().contact.findFirst({
-            where: { id: incomingBillToContactId, userId, isDeleted: false },
+            where: { id: incomingBillToContactId, tenantId, isDeleted: false },
             select: { id: true },
           } as never)) as { id: string } | null;
           if (!ownedBillTo) {
@@ -629,7 +628,7 @@ export async function updateQuotation(req: Request, res: Response): Promise<void
       } else if (incomingLegacyCustomerId) {
         const contactRow = (await cdb().contact.findFirst({
           where: {
-            userId,
+            tenantId,
             isDeleted: false,
             OR: [
               { legacyCustomerId: incomingLegacyCustomerId },
@@ -1253,11 +1252,11 @@ function generatePublicToken(): string {
  */
 export async function enableQuotationPublicLink(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const existing = await prisma.quotation.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       select: { id: true, publicViewToken: true, publicViewEnabled: true },
     });
     if (!existing) {

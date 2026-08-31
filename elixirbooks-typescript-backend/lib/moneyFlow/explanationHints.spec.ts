@@ -77,7 +77,7 @@ describe('recordHint', () => {
   it('is a no-op when payee normalises to empty string', async () => {
     const tx = makeTx();
     await recordHint(tx as any, {
-      userId: 'u1',
+      tenantId: 'u1',
       payee: '   ',
       transactionTypeKey: 'EXPENSE',
     });
@@ -87,7 +87,7 @@ describe('recordHint', () => {
   it('is a no-op when payee is null', async () => {
     const tx = makeTx();
     await recordHint(tx as any, {
-      userId: 'u1',
+      tenantId: 'u1',
       payee: null,
       transactionTypeKey: 'EXPENSE',
     });
@@ -97,20 +97,20 @@ describe('recordHint', () => {
   it('calls upsert with the normalised payeeKey', async () => {
     const tx = makeTx();
     await recordHint(tx as any, {
-      userId: 'u1',
+      tenantId: 'u1',
       payee: '  Amazon.com  ',
       transactionTypeKey: 'EXPENSE',
       categoryId: 'cat-1',
     });
     expect(tx.explanationHint.upsert).toHaveBeenCalledOnce();
     const call = tx.explanationHint.upsert.mock.calls[0][0];
-    expect(call.where).toEqual({ userId_payeeKey: { userId: 'u1', payeeKey: 'amazoncom' } });
+    expect(call.where).toEqual({ tenantId_payeeKey: { tenantId: 'u1', payeeKey: 'amazoncom' } });
   });
 
   it('sets hitCount to 1 and records correct fields on insert', async () => {
     const tx = makeTx();
     await recordHint(tx as any, {
-      userId: 'u1',
+      tenantId: 'u1',
       payee: 'Shell',
       transactionTypeKey: 'EXPENSE',
       categoryId: 'cat-fuel',
@@ -118,7 +118,7 @@ describe('recordHint', () => {
     });
     const call = tx.explanationHint.upsert.mock.calls[0][0];
     expect(call.create).toMatchObject({
-      userId: 'u1',
+      tenantId: 'u1',
       payeeKey: 'shell',
       transactionTypeKey: 'EXPENSE',
       categoryId: 'cat-fuel',
@@ -131,7 +131,7 @@ describe('recordHint', () => {
   it('increments hitCount and bumps lastUsedAt on conflict', async () => {
     const tx = makeTx();
     await recordHint(tx as any, {
-      userId: 'u1',
+      tenantId: 'u1',
       payee: 'Shell',
       transactionTypeKey: 'EXPENSE',
       categoryId: 'cat-fuel',
@@ -150,7 +150,7 @@ describe('recordHint', () => {
   it('passes payToUserId correctly', async () => {
     const tx = makeTx();
     await recordHint(tx as any, {
-      userId: 'u1',
+      tenantId: 'u1',
       payee: 'Owner',
       transactionTypeKey: 'OWNER_IN',
       payToUserId: 'user-99',
@@ -163,7 +163,7 @@ describe('recordHint', () => {
   it('defaults missing categoryId and payToUserId to null', async () => {
     const tx = makeTx();
     await recordHint(tx as any, {
-      userId: 'u1',
+      tenantId: 'u1',
       payee: 'Tesco',
       transactionTypeKey: 'EXPENSE',
     });
@@ -203,14 +203,14 @@ describe('lookupHint', () => {
     const tx = makeTx({ findUnique: vi.fn().mockResolvedValue(null) });
     await lookupHint(tx as any, 'u1', '  AMAZON  ');
     expect(tx.explanationHint.findUnique).toHaveBeenCalledWith({
-      where: { userId_payeeKey: { userId: 'u1', payeeKey: 'amazon' } },
+      where: { tenantId_payeeKey: { tenantId: 'u1', payeeKey: 'amazon' } },
     });
   });
 
   it('returns the mapping fields when a hint is found', async () => {
     const stored = {
       id: 'h-1',
-      userId: 'u1',
+      tenantId: 'u1',
       payeeKey: 'amazon',
       transactionTypeKey: 'EXPENSE',
       categoryId: 'cat-1',
@@ -232,7 +232,7 @@ describe('lookupHint', () => {
   it('returns payToUserId when set', async () => {
     const stored = {
       id: 'h-2',
-      userId: 'u1',
+      tenantId: 'u1',
       payeeKey: 'owner',
       transactionTypeKey: 'OWNER_IN',
       categoryId: null,

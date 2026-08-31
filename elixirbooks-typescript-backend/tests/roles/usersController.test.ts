@@ -152,7 +152,7 @@ vi.mock('../../lib/defaultRoles', () => ({
 }));
 
 vi.mock('../../lib/tenantScope', () => ({
-  requireUserId: vi.fn(() => 'test-tenant-id'),
+  requireTenantId: vi.fn(() => 'test-tenant-id'),
   requireActingUserId: vi.fn(() => 'test-user-id'),
 }));
 

@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { tenantOwnerInclude, tenantOwner } from '../../../lib/tenantOwner';
 import { Prisma } from '@prisma/client';
 import type {
   Purchase,
@@ -32,7 +33,7 @@ const mailerModule: { sendMail: (opts: Record<string, unknown>) => Promise<void>
 import { prisma } from '../../../lib/prisma';
 import {
   tenantScope,
-  requireUserId,
+  requireTenantId,
   UnauthorizedError,
 } from '../../../lib/tenantScope';
 import { handleLedgerError } from '../../../lib/httpErrors';
@@ -192,19 +193,19 @@ function normaliseItems(raw: unknown, headerCostCenterId?: string | null): Incom
   }));
 }
 
-function generateNextPurchaseId(tx: Tx, userId: string): Promise<string> {
+function generateNextPurchaseId(tx: Tx, tenantId: string): Promise<string> {
   return nextDocumentNumber({
     model: tx.purchase as unknown as NumberingModel,
     field: 'purchaseId',
     prefix: 'PUR-',
-    tenantWhere: { userId },
+    tenantWhere: { tenantId },
   });
 }
 
 async function insertCustomFieldValues(
   tx: Tx,
   purchaseId: string,
-  userId: string,
+  tenantId: string,
   customFieldsRaw: unknown,
   files: Express.Multer.File[],
 ): Promise<void> {
@@ -231,7 +232,7 @@ async function insertCustomFieldValues(
         module: 'purchase',
         recordId: purchaseId,
         value,
-        createdBy: userId,
+        createdBy: tenantId,
       };
     },
   );
@@ -241,9 +242,11 @@ async function insertCustomFieldValues(
 
 interface UserLite {
   id: string;
-  firstName: string;
+  // Nullable since this now arrives via the tenant OWNER membership rather
+  // than a direct User FK -- User allows both to be null.
+  firstName: string | null;
   lastName: string | null;
-  email: string;
+  email: string | null;
   phone: string | null;
   address?: string | null;
   profileImage?: string | null;
@@ -399,8 +402,8 @@ function formatPaymentMode(p: PaymentModeLite | null | undefined) {
 
 async function postPurchaseLedger(
   tx: Tx,
-  purchase: { id: string; purchaseDate: Date | null; totalAmount: Prisma.Decimal; totalTax: Prisma.Decimal | null; items: Prisma.JsonValue | null; userId: string; currencyCode?: string | null; exchangeRate?: Prisma.Decimal | null; costCenterId?: string | null; projectId?: string | null },
-  userId: string,
+  purchase: { id: string; purchaseDate: Date | null; totalAmount: Prisma.Decimal; totalTax: Prisma.Decimal | null; items: Prisma.JsonValue | null; tenantId: string; currencyCode?: string | null; exchangeRate?: Prisma.Decimal | null; costCenterId?: string | null; projectId?: string | null },
+  tenantId: string,
 ): Promise<void> {
   const headerCostCentre = purchase.costCenterId ?? null;
   // Pass the header so the classification below resolves line centres exactly as
@@ -455,7 +458,7 @@ async function postPurchaseLedger(
   // G: pass document currency/rate when present; omitting falls back to functional path.
   // P3.3: pass dims if present on the document (null/undefined → no-op)
   await postPurchaseReceived(tx as unknown as PostingTx, {
-    userId,
+    tenantId,
     purchaseId: purchase.id,
     date: purchase.purchaseDate ?? new Date(),
     total,
@@ -491,14 +494,14 @@ async function applyPurchaseReceiptEffects(
   created: Awaited<ReturnType<Tx['purchase']['create']>>,
   items: IncomingItem[],
   opts: {
-    userId: string;
+    tenantId: string;
     status: PurchaseStatus;
     landedCost: number | null | undefined;
     receiptDate: Date;
     approvalsEnabled: boolean;
   },
 ): Promise<void> {
-  const { userId, status, landedCost, receiptDate, approvalsEnabled } = opts;
+  const { tenantId, status, landedCost, receiptDate, approvalsEnabled } = opts;
 
   // Inventory increment when goods received (any status except draft/cancelled).
   // P3.5: compute landed-cost per-unit additions for all inventory lines.
@@ -520,7 +523,7 @@ async function applyPurchaseReceiptEffects(
 
       await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
         productId,
-        userId,
+        tenantId,
         qtyDelta: qty,
         type: 'stock_in',
         referenceType: 'purchase',
@@ -530,7 +533,7 @@ async function applyPurchaseReceiptEffects(
         extra: {
           unitId: item.unit ?? null,
           notes: `Stock in from purchase ${created.purchaseId ?? created.id}`,
-          createdBy: userId,
+          createdBy: tenantId,
         },
       });
     }
@@ -538,7 +541,7 @@ async function applyPurchaseReceiptEffects(
 
   // GL posting — gated by approval status.
   if (shouldPostOnCreate(approvalsEnabled)) {
-    await postPurchaseLedger(tx, created, userId);
+    await postPurchaseLedger(tx, created, tenantId);
   }
 }
 
@@ -554,12 +557,12 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
   }
 
   try {
-    const authUserId = requireUserId(req);
+    const authUserId = requireTenantId(req);
     const body = req.body as Record<string, unknown>;
 
     const purchaseOrderId = body.purchaseOrderId as string | undefined;
-    // SECURITY: always use the authenticated tenant id — never trust body.userId.
-    const userId = authUserId;
+    // SECURITY: always use the authenticated tenant id — never trust body.tenantId.
+    const tenantId = authUserId;
     const billFrom = body.billFrom as string;
     const legacySupplierId = ((body.supplierId ?? body.billTo) as string | undefined) ?? null;
     const referenceNo = (body.referenceNo as string) ?? '';
@@ -569,7 +572,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
     const items = normaliseItems(body.items, docCostCenterId);
 
     try {
-      await assertCostCentresExist(prisma, userId, collectCostCentreIds(docCostCenterId, items));
+      await assertCostCentresExist(prisma, tenantId, collectCostCentreIds(docCostCenterId, items));
     } catch (centreErr) {
       if (centreErr instanceof UnknownCostCentreError) {
         res.status(400).json({ success: false, message: centreErr.message, errors: { costCenterId: centreErr.message } });
@@ -614,9 +617,9 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
 
     if (incomingContactId) {
       // New contact-based path: verify the contact belongs to the AUTHENTICATED tenant.
-      // Use authUserId (not body.userId) so a client cannot escalate via a spoofed userId.
+      // Use authUserId (not body.tenantId) so a client cannot escalate via a spoofed tenantId.
       const ownedContact = (await cdb().contact.findFirst({
-        where: { id: incomingContactId, userId: authUserId, isDeleted: false },
+        where: { id: incomingContactId, tenantId: authUserId, isDeleted: false },
         select: { id: true, currencyCode: true, defaultTaxTreatment: true },
       } as never)) as { id: string; currencyCode: string | null; defaultTaxTreatment: TaxTreatment | null } | null;
       if (!ownedContact) {
@@ -631,7 +634,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
       // Use authUserId for the ownership lookup (contact must belong to the authenticated tenant).
       resolvedSupplierId = legacySupplierId;
       const contactRow = (await cdb().contact.findFirst({
-        where: { legacySupplierId, userId: authUserId, isDeleted: false },
+        where: { legacySupplierId, tenantId: authUserId, isDeleted: false },
         select: { id: true, currencyCode: true, defaultTaxTreatment: true },
       } as never)) as { id: string; currencyCode: string | null; defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) {
@@ -654,7 +657,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
         const contactPartyId = resolvedContactId ?? legacySupplierId;
         if (contactPartyId) {
           const contactRow = (await cdb().contact.findFirst({
-            where: { OR: [{ id: contactPartyId }, { legacySupplierId: contactPartyId }], userId: authUserId, isDeleted: false },
+            where: { OR: [{ id: contactPartyId }, { legacySupplierId: contactPartyId }], tenantId: authUserId, isDeleted: false },
             select: { currencyCode: true },
           } as never)) as { currencyCode: string | null } | null;
           if (contactRow?.currencyCode) docCurrencyCode = contactRow.currencyCode;
@@ -763,11 +766,11 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
 
     const purchase = await withDocumentNumberRetry('purchaseId', () => prisma.$transaction(async (tx) => {
       // Approval gate: read companySettings for this tenant
-      const settings = await tx.companySettings.findFirst({ where: { userId } });
+      const settings = await tx.companySettings.findFirst({ where: { tenantId } });
       const approvalsEnabled = settings?.approvalsEnabled ?? false;
 
       const purchaseIdString =
-        (body.purchaseId as string) ?? (await generateNextPurchaseId(tx, userId));
+        (body.purchaseId as string) ?? (await generateNextPurchaseId(tx, tenantId));
 
       const created = await tx.purchase.create({
         data: {
@@ -798,7 +801,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
           signatureImage,
           signatureName: signatureNameFinal,
           checkNumber: checkNumber ?? null,
-          userId,
+          tenantId,
           billFrom,
           billTo: null,
           approvalStatus: initialApprovalStatus(approvalsEnabled),
@@ -842,17 +845,17 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
             paidAmount: Math.min(asNumber(body.sp_amount, 0), enforcedGrandTotal),
             dueAmount: asNumber(body.sp_due_amount, 0),
             notes: (body.sp_notes as string) ?? '',
-            createdBy: userId,
+            createdBy: tenantId,
           },
         });
       }
 
       // Inventory stock-in + GL posting (shared with PO->Purchase conversion).
-      // CRITICAL: stock is keyed to the authenticated tenant (`userId`), never a
-      // potentially spoofed body.userId. Movements reference created.id so a later
+      // CRITICAL: stock is keyed to the authenticated tenant (`tenantId`), never a
+      // potentially spoofed body.tenantId. Movements reference created.id so a later
       // edit/delete can reverse them.
       await applyPurchaseReceiptEffects(tx, created, items, {
-        userId,
+        tenantId,
         status,
         landedCost: docLandedCost,
         receiptDate: purchaseDate,
@@ -863,7 +866,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
       const files = Array.isArray(req.files)
         ? (req.files as Express.Multer.File[])
         : [];
-      await insertCustomFieldValues(tx, created.id, userId, body.customFields, files);
+      await insertCustomFieldValues(tx, created.id, tenantId, body.customFields, files);
 
       return created;
     }));
@@ -914,7 +917,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
 
 export async function createPurchaseFromPO(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { purchaseOrderId } = req.body as { purchaseOrderId?: string };
 
     if (!purchaseOrderId) {
@@ -924,20 +927,20 @@ export async function createPurchaseFromPO(req: Request, res: Response): Promise
 
     const purchase = await withDocumentNumberRetry('purchaseId', () => prisma.$transaction(async (tx) => {
       const purchaseOrder = await tx.purchaseOrder.findFirst({
-        where: { id: purchaseOrderId, userId },
+        where: { id: purchaseOrderId, tenantId },
       });
       if (!purchaseOrder) {
         throw new Error('Purchase Order not found');
       }
 
       const existing = await tx.purchase.findFirst({
-        where: { purchaseOrderId: purchaseOrder.id, userId },
+        where: { purchaseOrderId: purchaseOrder.id, tenantId },
       });
       if (existing) {
         throw new Error('Purchase Order already converted to Purchase');
       }
 
-      const nextPurchaseId = await generateNextPurchaseId(tx, userId);
+      const nextPurchaseId = await generateNextPurchaseId(tx, tenantId);
 
       // Translate the PO status onto purchase enum domain. If the PO is
       // already `completed`, the produced purchase should still start at
@@ -976,7 +979,7 @@ export async function createPurchaseFromPO(req: Request, res: Response): Promise
           signatureId: purchaseOrder.signatureId,
           signatureImage: purchaseOrder.signatureImage,
           signatureName: purchaseOrder.signatureName,
-          userId: purchaseOrder.userId,
+          tenantId: purchaseOrder.tenantId,
           billFrom: purchaseOrder.billFrom,
           billTo: purchaseOrder.billTo,
           // #61: carry the document currency through conversion so the
@@ -999,18 +1002,18 @@ export async function createPurchaseFromPO(req: Request, res: Response): Promise
       // skipped stock movements and ledger entries (GL tie-out gap).
       //
       // - Items come from the PO JSON, normalised to the same shape create uses.
-      // - Stock is keyed to the authenticated tenant (`userId`), matching create.
+      // - Stock is keyed to the authenticated tenant (`tenantId`), matching create.
       // - The PO carries no landed cost, so pass 0 (computeLandedAdditions no-ops).
       // - Idempotent by construction: the handler rejects above (already-converted
       //   guard) if a Purchase already links this PO, so no double-post risk.
       const settings = await tx.companySettings.findFirst({
-        where: { userId },
+        where: { tenantId },
       });
       const approvalsEnabled = settings?.approvalsEnabled ?? false;
       const poItems = normaliseItems(purchaseOrder.items);
 
       await applyPurchaseReceiptEffects(tx, created, poItems, {
-        userId,
+        tenantId,
         status: purchaseStatus,
         landedCost: 0,
         receiptDate: created.purchaseDate ?? new Date(),
@@ -1051,7 +1054,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
   }
 
   try {
-    const authUserId = requireUserId(req);
+    const authUserId = requireTenantId(req);
     const body = req.body as Record<string, unknown>;
 
     const purchasePk = (body.id ?? body._id) as string | undefined;
@@ -1061,7 +1064,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
     }
 
     const existingPurchase = await prisma.purchase.findFirst({
-      where: { id: purchasePk, userId: authUserId, isDeleted: false },
+      where: { id: purchasePk, tenantId: authUserId, isDeleted: false },
     });
     if (!existingPurchase) {
       res.status(404).json({ message: 'Purchase not found' });
@@ -1078,8 +1081,8 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
       );
     }
 
-    // SECURITY: always use the authenticated tenant id — never trust body.userId.
-    const userId = authUserId;
+    // SECURITY: always use the authenticated tenant id — never trust body.tenantId.
+    const tenantId = authUserId;
     const billFrom = body.billFrom as string;
     // Contact-aware party resolution (mirrors createPurchase). Empty strings coming
     // from the edit form ('') count as "not provided", so a contact-based purchase
@@ -1131,7 +1134,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
 
     if (incomingContactId) {
       const ownedContact = (await cdbParty().contact.findFirst({
-        where: { id: incomingContactId, userId: authUserId, isDeleted: false },
+        where: { id: incomingContactId, tenantId: authUserId, isDeleted: false },
         select: { id: true },
       } as never)) as { id: string } | null;
       if (!ownedContact) {
@@ -1143,7 +1146,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
     } else if (legacySupplierId) {
       resolvedSupplierId = legacySupplierId;
       const contactRow = (await cdbParty().contact.findFirst({
-        where: { legacySupplierId, userId: authUserId, isDeleted: false },
+        where: { legacySupplierId, tenantId: authUserId, isDeleted: false },
         select: { id: true },
       } as never)) as { id: string } | null;
       resolvedContactId = contactRow ? contactRow.id : null;
@@ -1197,7 +1200,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
     let upContactDefaultTreatment: TaxTreatment | null = null;
     if (upContactId) {
       const contactRow = (await cdbUP().contact.findFirst({
-        where: { id: upContactId, userId: authUserId, isDeleted: false },
+        where: { id: upContactId, tenantId: authUserId, isDeleted: false },
         select: { defaultTaxTreatment: true },
       } as never)) as { defaultTaxTreatment: TaxTreatment | null } | null;
       if (contactRow) upContactDefaultTreatment = contactRow.defaultTaxTreatment;
@@ -1253,7 +1256,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
           if (!qty) continue;
           await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
             productId,
-            userId: requireUserId(req),
+            tenantId: requireTenantId(req),
             qtyDelta: -qty,
             type: 'stock_out',
             referenceType: 'purchase',
@@ -1261,7 +1264,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
             extra: {
               unitId: item.unit ?? null,
               notes: `Stock reverted from purchase update ${existingPurchase.purchaseId ?? existingPurchase.id}`,
-              createdBy: requireUserId(req),
+              createdBy: requireTenantId(req),
             },
           });
         }
@@ -1323,7 +1326,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
           signatureName: newSignatureName,
           checkNumber: checkNumber ?? existingPurchase.checkNumber,
           bankId: bank ?? existingPurchase.bankId,
-          userId,
+          tenantId,
           billFrom,
           billTo: null,
           ...(updCurrencyCode !== undefined ? { currencyCode: updCurrencyCode } : {}),
@@ -1350,7 +1353,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
           const landedUnitCost = asNumber(item.rate, 0) + (landedAdditions[itemIdx] ?? 0);
           await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
             productId,
-            userId: requireUserId(req),
+            tenantId: requireTenantId(req),
             qtyDelta: qty,
             type: 'stock_in',
             referenceType: 'purchase',
@@ -1360,7 +1363,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
             extra: {
               unitId: item.unit ?? null,
               notes: `Stock in from updated purchase ${upd.purchaseId ?? upd.id}`,
-              createdBy: requireUserId(req),
+              createdBy: requireTenantId(req),
             },
           });
         }
@@ -1381,7 +1384,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
       // live `received` entry would overstate AP/inventory for a cancelled doc.
       {
         await voidDocument(tx as unknown as PostingTx, {
-          userId,
+          tenantId,
           sourceType: 'Purchase',
           sourceId: upd.id,
           event: 'received',
@@ -1392,7 +1395,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
           // its cost-centre/project dimensions. Previously this inlined the split
           // and called postPurchaseReceived with NO currency/rate/dims, so an
           // edited FX purchase re-posted at BASE rate 1 and dropped its dims.
-          await postPurchaseLedger(tx, upd, userId);
+          await postPurchaseLedger(tx, upd, tenantId);
         }
       }
 
@@ -1403,7 +1406,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
       const files = Array.isArray(req.files)
         ? (req.files as Express.Multer.File[])
         : [];
-      await insertCustomFieldValues(tx, upd.id, userId, body.customFields, files);
+      await insertCustomFieldValues(tx, upd.id, tenantId, body.customFields, files);
 
       return upd;
     });
@@ -1532,9 +1535,7 @@ export async function getAllPurchases(req: Request, res: Response): Promise<void
           supplier: {
             select: { id: true, supplier_name: true, supplier_email: true, supplier_phone: true, profileImage: true },
           },
-          user: {
-            select: { id: true, firstName: true, lastName: true, email: true, phone: true },
-          },
+          tenant: tenantOwnerInclude,
           billFromUser: {
             select: {
               id: true,
@@ -1674,7 +1675,7 @@ export async function getAllPurchases(req: Request, res: Response): Promise<void
         purchaseOrderId: purchase.purchaseOrderId,
         contactId: purchase.contactId ?? null,
         vendor: vendorFormatted,
-        user: formatUser(purchase.user),
+        user: formatUser(tenantOwner(purchase.tenant)),
         purchaseDate: formatDateShort(purchase.purchaseDate),
         dueDate: formatDateShort(purchase.dueDate),
         referenceNo: purchase.referenceNo,
@@ -1987,12 +1988,12 @@ export async function listPurchasesPending(req: Request, res: Response): Promise
 
 export async function getPurchaseById(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const baseUrl = buildBaseUrl(req);
 
     const purchase = await prisma.purchase.findFirst({
-      where: { id, userId },
+      where: { id, tenantId },
       include: {
         contact: {
           select: { id: true, firstName: true, lastName: true, organisation: true, email: true, mobile: true, vatRegNumber: true, gstin: true, addressLine1: true, addressLine2: true, addressLine3: true, town: true, region: true, postcode: true, country: true },
@@ -2000,9 +2001,7 @@ export async function getPurchaseById(req: Request, res: Response): Promise<void
         supplier: {
           select: { id: true, supplier_name: true, supplier_email: true, supplier_phone: true, profileImage: true },
         },
-        user: {
-          select: { id: true, firstName: true, lastName: true, email: true, phone: true },
-        },
+        tenant: tenantOwnerInclude,
         billFromUser: {
           select: {
             id: true,
@@ -2175,7 +2174,7 @@ export async function getPurchaseById(req: Request, res: Response): Promise<void
       purchaseOrderId: purchase.purchaseOrderId,
       contactId: purchase.contactId ?? null,
       vendor: vendorFormatted,
-      user: formatUser(purchase.user),
+      user: formatUser(tenantOwner(purchase.tenant)),
       purchaseDate: purchase.purchaseDate,
       dueDate: purchase.dueDate,
       referenceNo: purchase.referenceNo,
@@ -2228,7 +2227,7 @@ export async function getPurchaseById(req: Request, res: Response): Promise<void
 
 export async function updatePurchaseStatus(req: Request, res: Response): Promise<void> {
   try {
-    const authUserId = requireUserId(req);
+    const authUserId = requireTenantId(req);
     const {
       status,
       sp_amount,
@@ -2255,7 +2254,7 @@ export async function updatePurchaseStatus(req: Request, res: Response): Promise
     }
     const newStatus = status as PurchaseStatus;
 
-    const existing = await prisma.purchase.findFirst({ where: { id, userId: authUserId } });
+    const existing = await prisma.purchase.findFirst({ where: { id, tenantId: authUserId } });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Purchase not found' });
       return;
@@ -2293,9 +2292,7 @@ export async function updatePurchaseStatus(req: Request, res: Response): Promise
           balanceAmount: toDecimal(balanceAmount),
         },
         include: {
-          user: {
-            select: { id: true, firstName: true, lastName: true, email: true, phone: true },
-          },
+          tenant: tenantOwnerInclude,
           billFromUser: {
             select: {
               id: true,
@@ -2414,7 +2411,7 @@ export async function updatePurchaseStatus(req: Request, res: Response): Promise
           const landedUnitCost = asNumber(item.rate, 0) + (landedAdditions[itemIdx] ?? 0);
           await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
             productId,
-            userId: upd.userId,
+            tenantId: upd.tenantId,
             qtyDelta: qty,
             type: 'stock_in',
             referenceType: 'purchase',
@@ -2448,7 +2445,7 @@ export async function updatePurchaseStatus(req: Request, res: Response): Promise
         // no-op when a JE already exists (default approvals-off path, posted
         // at create) and a correct fresh post when it doesn't (cancelled-origin
         // reactivation after void, or any legacy gap).
-        await postPurchaseLedger(tx, upd, upd.userId);
+        await postPurchaseLedger(tx, upd, upd.tenantId);
       } else if (prevStatus !== newStatus && wasStocked && newStatus === 'cancelled') {
         // Stocked -> cancelled: reverse stock and void the received GL entry.
         for (const item of stItems) {
@@ -2458,7 +2455,7 @@ export async function updatePurchaseStatus(req: Request, res: Response): Promise
           if (!qty) continue;
           await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
             productId,
-            userId: upd.userId,
+            tenantId: upd.tenantId,
             qtyDelta: -qty,
             type: 'stock_out',
             referenceType: 'purchase',
@@ -2471,7 +2468,7 @@ export async function updatePurchaseStatus(req: Request, res: Response): Promise
           });
         }
         await voidDocument(tx as unknown as PostingTx, {
-          userId: authUserId,
+          tenantId: authUserId,
           sourceType: 'Purchase',
           sourceId: upd.id,
           event: 'received',
@@ -2577,9 +2574,9 @@ export async function updatePurchaseStatus(req: Request, res: Response): Promise
 
 export async function deletePurchase(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
-    const existing = await prisma.purchase.findFirst({ where: { id, userId } });
+    const existing = await prisma.purchase.findFirst({ where: { id, tenantId } });
     if (!existing) {
       res.status(404).json({ message: 'Purchase not found' });
       return;
@@ -2599,7 +2596,7 @@ export async function deletePurchase(req: Request, res: Response): Promise<void>
           if (!qty) continue;
           await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
             productId,
-            userId,
+            tenantId,
             qtyDelta: -qty,
             type: 'stock_out',
             referenceType: 'purchase',
@@ -2607,7 +2604,7 @@ export async function deletePurchase(req: Request, res: Response): Promise<void>
             extra: {
               unitId: item.unit ?? null,
               notes: `Stock reverted from purchase delete ${existing.purchaseId ?? id}`,
-              createdBy: userId,
+              createdBy: tenantId,
             },
           });
         }
@@ -2627,7 +2624,7 @@ export async function deletePurchase(req: Request, res: Response): Promise<void>
         });
         for (const payment of payments) {
           await reverseSupplierPaymentEffects(tx as unknown as PaymentEffectsTx, {
-            userId,
+            tenantId,
             payment,
             remarks: `Void of supplier payment ${payment.id} (purchase deleted)`,
           });
@@ -2635,7 +2632,7 @@ export async function deletePurchase(req: Request, res: Response): Promise<void>
             where: { id: payment.id },
             data: {
               isVoided: true,
-              voidedById: userId,
+              voidedById: tenantId,
               voidedAt: new Date(),
               voidReason: 'Purchase deleted',
             },
@@ -2645,7 +2642,7 @@ export async function deletePurchase(req: Request, res: Response): Promise<void>
 
       // GL: reverse the posted received entry before soft-deleting
       await reverseDocument(tx as unknown as PostingTx, {
-        userId,
+        tenantId,
         sourceType: 'Purchase',
         sourceId: id,
         event: 'received',
@@ -2684,9 +2681,9 @@ export async function createSupplierPayment(req: Request, res: Response): Promis
 
   try {
     // Ownership is derived from the authenticated session, never trusted
-    // from the request body — `body.userId` was previously used verbatim
+    // from the request body — `body.tenantId` was previously used verbatim
     // to load/stamp records, letting a caller act as any tenant.
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       purchaseId,
       amount,
@@ -2710,7 +2707,7 @@ export async function createSupplierPayment(req: Request, res: Response): Promis
       return;
     }
 
-    const purchase = await prisma.purchase.findFirst({ where: { id: purchaseId, userId } });
+    const purchase = await prisma.purchase.findFirst({ where: { id: purchaseId, tenantId } });
     if (!purchase) {
       res.status(404).json({ message: 'Purchase not found' });
       return;
@@ -2723,7 +2720,7 @@ export async function createSupplierPayment(req: Request, res: Response): Promis
       // when a bankId is supplied.
       let bankTransaction: { id: string } | null = null;
       if (bankId && paymentMode) {
-        const bank = await tx.bankDetail.findFirst({ where: { id: bankId, userId } });
+        const bank = await tx.bankDetail.findFirst({ where: { id: bankId, tenantId } });
         const paymentModeDoc = await tx.paymentMode.findUnique({
           where: { id: paymentMode },
         });
@@ -2743,7 +2740,7 @@ export async function createSupplierPayment(req: Request, res: Response): Promis
           });
           bankTransaction = await tx.bankTransaction.create({
             data: {
-              tenantId: userId,
+              tenantId: tenantId,
               bankAccountId: bank.id,
               transactionDate: safeDate(paymentDate) ?? new Date(),
               type: transactionType,
@@ -2761,7 +2758,7 @@ export async function createSupplierPayment(req: Request, res: Response): Promis
                 postedSourceType: 'SupplierPayment',
                 postedSourceId: null,
                 posted: false,
-                approvedById: userId,
+                approvedById: tenantId,
                 approvedAt: new Date(),
               }),
             },
@@ -2771,7 +2768,7 @@ export async function createSupplierPayment(req: Request, res: Response): Promis
 
       const supplierPayment = await tx.supplierPayment.create({
         data: {
-          tenantId: userId,
+          tenantId: tenantId,
           purchaseId: purchase.id,
           // Same-class fix as supplierPaymentController.createSupplierPayment:
           // inherit the party from the purchase so this path (currently unrouted,
@@ -2787,7 +2784,7 @@ export async function createSupplierPayment(req: Request, res: Response): Promis
           dueAmount: 0,
           referenceNumber: referenceNumber ?? null,
           notes: notes ?? null,
-          createdBy: userId,
+          createdBy: tenantId,
         },
       });
 
@@ -2839,18 +2836,18 @@ export async function createSupplierPayment(req: Request, res: Response): Promis
 
 export async function getSupplierPayments(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { purchaseId } = req.params as { purchaseId: string };
 
-    // SupplierPayment has no direct userId column — scope via the owning Purchase.
-    const owningPurchase = await prisma.purchase.findFirst({ where: { id: purchaseId, userId } });
+    // SupplierPayment has no direct tenantId column — scope via the owning Purchase.
+    const owningPurchase = await prisma.purchase.findFirst({ where: { id: purchaseId, tenantId } });
     if (!owningPurchase) {
       res.status(404).json({ message: 'Purchase not found' });
       return;
     }
 
     const payments = await prisma.supplierPayment.findMany({
-      where: { purchaseId, isDeleted: false, isVoided: false, purchase: { userId } },
+      where: { purchaseId, isDeleted: false, isVoided: false, purchase: { tenantId } },
       include: {
         supplier: {
           select: { id: true, supplier_name: true, supplier_email: true },
@@ -2888,11 +2885,11 @@ type _PurchaseExport = Purchase;
 
 export async function approvePurchase(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const existing = await prisma.purchase.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Purchase not found' });
@@ -2912,13 +2909,13 @@ export async function approvePurchase(req: Request, res: Response): Promise<void
         where: { id },
         data: {
           approvalStatus: 'APPROVED',
-          approvedById: userId,
+          approvedById: tenantId,
           approvedAt: new Date(),
         },
       });
       // Post ledger entries exactly as create would have (shared helper guarantees parity).
       // Split math is recomputed from the persisted items + current product types.
-      await postPurchaseLedger(tx, approved, userId);
+      await postPurchaseLedger(tx, approved, tenantId);
       return approved;
     });
 
@@ -2941,12 +2938,12 @@ export async function approvePurchase(req: Request, res: Response): Promise<void
 
 export async function rejectPurchase(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const { reason } = req.body as { reason?: string };
 
     const existing = await prisma.purchase.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
     });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Purchase not found' });
@@ -2969,7 +2966,7 @@ export async function rejectPurchase(req: Request, res: Response): Promise<void>
       },
     });
 
-    void userId; // referenced for future audit-log use
+    void tenantId; // referenced for future audit-log use
     res.status(200).json({ success: true, message: 'Purchase rejected', data: updated });
   } catch (err) {
     if (handleUnauthorized(res, err)) return;
@@ -3002,11 +2999,11 @@ export async function sendPurchaseEmail(req: Request, res: Response): Promise<vo
       return;
     }
 
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     // Scope to the authenticated user's purchase (404 if not owned)
     const existing = await prisma.purchase.findFirst({
-      where: { id: purchaseId, userId },
+      where: { id: purchaseId, tenantId },
     });
     if (!existing) {
       res.status(404).json({ message: 'Purchase not found' });

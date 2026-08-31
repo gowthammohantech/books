@@ -36,11 +36,11 @@ export async function backfillAccountCreditRoles(): Promise<void> {
   const tenants = await prisma.companySettings.findMany({
     where: { ledgerInitialized: true },
     select: {
-      userId: true,
+      tenantId: true,
       countryCode: true,
       functionalCurrency: true,
       countryRef: { select: { iso2: true } },
-      user: { select: { email: true } },
+      tenant: { select: { name: true } },
     },
   });
 
@@ -49,7 +49,7 @@ export async function backfillAccountCreditRoles(): Promise<void> {
   let errors = 0;
 
   for (const tenant of tenants) {
-    const label = tenant.user?.email ?? tenant.userId;
+    const label = tenant.tenant?.name ?? tenant.tenantId;
     const packCode = tenant.countryCode && COUNTRY_CODES.includes(tenant.countryCode.toUpperCase())
       ? tenant.countryCode.toUpperCase()
       : resolvePackCode(tenant.countryRef?.iso2 ?? null);
@@ -67,7 +67,7 @@ export async function backfillAccountCreditRoles(): Promise<void> {
     try {
       for (const roleKey of NEW_ROLES) {
         const existingMapping = await prisma.ledgerAccountMapping.findUnique({
-          where: { userId_roleKey: { userId: tenant.userId, roleKey } },
+          where: { tenantId_roleKey: { tenantId: tenant.tenantId, roleKey } },
         });
         if (existingMapping) {
           continue;
@@ -81,9 +81,9 @@ export async function backfillAccountCreditRoles(): Promise<void> {
         }
 
         const account = await prisma.account.upsert({
-          where: { userId_code: { userId: tenant.userId, code: packAccount.code } },
+          where: { tenantId_code: { tenantId: tenant.tenantId, code: packAccount.code } },
           create: {
-            userId: tenant.userId,
+            tenantId: tenant.tenantId,
             code: packAccount.code,
             name: packAccount.name,
             accountType: packAccount.accountType,
@@ -94,8 +94,8 @@ export async function backfillAccountCreditRoles(): Promise<void> {
         });
 
         await prisma.ledgerAccountMapping.upsert({
-          where: { userId_roleKey: { userId: tenant.userId, roleKey } },
-          create: { userId: tenant.userId, roleKey, accountId: account.id },
+          where: { tenantId_roleKey: { tenantId: tenant.tenantId, roleKey } },
+          create: { tenantId: tenant.tenantId, roleKey, accountId: account.id },
           update: { accountId: account.id },
         });
 

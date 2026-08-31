@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../../../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../../../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import { sendPrismaError } from '../../../middleware/prismaError';
 import {
   reverseInvoicePaymentEffects,
@@ -37,12 +37,12 @@ function toPositiveInt(value: unknown, fallback: number): number {
 
 export async function listInvoicePayments(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     // Scope invoice to this tenant/user and confirm existence.
     const invoice = await prisma.invoice.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       select: { id: true, TotalAmount: true, status: true },
     });
 
@@ -103,12 +103,12 @@ export async function listInvoicePayments(req: Request, res: Response): Promise<
 
 export async function invoiceActivity(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     // Scope invoice to this tenant/user.
     const invoice = await prisma.invoice.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       select: { id: true },
     });
 
@@ -187,7 +187,7 @@ export async function invoiceActivity(req: Request, res: Response): Promise<void
 
 export async function voidInvoicePayment(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { paymentId } = req.params as { paymentId: string };
     const reason =
       typeof (req.body as { reason?: unknown })?.reason === 'string'
@@ -197,7 +197,7 @@ export async function voidInvoicePayment(req: Request, res: Response): Promise<v
     const result = await prisma.$transaction(async (tx) => {
       // 1. Load the payment scoped to the owning user via its invoice.
       const payment = await tx.invoicePayment.findFirst({
-        where: { id: paymentId, invoice: { userId, isDeleted: false } },
+        where: { id: paymentId, invoice: { tenantId, isDeleted: false } },
         include: { invoice: true, bank: true, paymentMode: true },
       });
 
@@ -215,7 +215,7 @@ export async function voidInvoicePayment(req: Request, res: Response): Promise<v
       //      payments, so the two paths cannot drift. Cash receipts (bank null)
       //      only get the GL reversal, mirroring recordInvoicePayment.
       await reverseInvoicePaymentEffects(tx as unknown as PaymentEffectsTx, {
-        userId,
+        tenantId,
         payment,
       });
 
@@ -225,7 +225,7 @@ export async function voidInvoicePayment(req: Request, res: Response): Promise<v
         where: { id: payment.id },
         data: {
           isVoided: true,
-          voidedById: userId,
+          voidedById: tenantId,
           voidedAt,
           voidReason: reason,
         },
@@ -240,7 +240,7 @@ export async function voidInvoicePayment(req: Request, res: Response): Promise<v
       // for non-credit payments (updateMany matches zero rows).
       await tx.accountCreditEntry.updateMany({
         where: { invoicePaymentId: payment.id, type: 'REDEMPTION', isVoided: false },
-        data: { isVoided: true, voidedById: userId, voidedAt },
+        data: { isVoided: true, voidedById: tenantId, voidedAt },
       });
 
       // 5. Recompute invoice status CN-aware (post-void). Every other P1-2 site
@@ -249,8 +249,8 @@ export async function voidInvoicePayment(req: Request, res: Response): Promise<v
       //    UNPAID/full-remaining while aging (GL-reconciled) shows it PARTIALLY_
       //    PAID/CN-netted — the exact screens-disagree bug. recomputeInvoiceStatus
       //    persists the derived status (and no-ops CANCELLED invoices).
-      const derived = await recomputeInvoiceStatus(tx, invoice.id, userId);
-      const { totalPaid } = await getInvoiceSettlement(tx, invoice.id, userId);
+      const derived = await recomputeInvoiceStatus(tx, invoice.id, tenantId);
+      const { totalPaid } = await getInvoiceSettlement(tx, invoice.id, tenantId);
       const total = Number(invoice.TotalAmount);
       const paid = Number(totalPaid);
       const status = derived?.status ?? invoice.status;

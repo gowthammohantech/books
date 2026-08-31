@@ -6,7 +6,7 @@
 // Strategy: mock lib/reports/taxReturns#loadTaxFigures with a KNOWN set of GL
 // figures and assert (a) the box/label mapping for each authority and (b) the
 // rounding convention (HMRC box6/7 round DOWN to whole; box5 + all AU/NZ money
-// to 2dp). requireUserId is exercised via a tenant-stamped req. The Decimal math
+// to 2dp). requireTenantId is exercised via a tenant-stamped req. The Decimal math
 // is asserted via the pure buildXBoxes() builders too, so no float drift.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -115,7 +115,7 @@ function makeReq(query: Record<string, unknown>, path = '/tax-returns/uk-vat'): 
   return {
     query,
     path,
-    // requireUserId returns req.tenantId (ownerId ?? id, set by protect).
+    // requireTenantId returns req.tenantId (ownerId ?? id, set by protect).
     tenantId: 'tenant-1',
     user: 'tenant-1',
   };
@@ -421,7 +421,7 @@ describe('euEcSalesList handler', () => {
 
     // tenant-scoped + reverse-charge + period-bounded query.
     const where = mockInvoiceFindMany.mock.calls[0][0].where;
-    expect(where.userId).toBe('tenant-1');
+    expect(where.tenantId).toBe('tenant-1');
     expect(where.reverseCharge).toBe(true);
     expect(where.isDeleted).toBe(false);
     expect(where.invoiceDate.gte.toISOString()).toBe('2026-01-01T00:00:00.000Z');
@@ -550,13 +550,13 @@ describe('euOssReturn handler', () => {
     expect(body.data.period).toEqual({ from: '2026-01-01', to: '2026-03-31' });
 
     const where = mockInvoiceFindMany.mock.calls[0][0].where;
-    expect(where.userId).toBe('tenant-1');
+    expect(where.tenantId).toBe('tenant-1');
     expect(where.isDeleted).toBe(false);
     expect(where.invoiceDate.gte.toISOString()).toBe('2026-01-01T00:00:00.000Z');
     expect(where.invoiceDate.lte.toISOString()).toBe('2026-03-31T23:59:59.999Z');
     // supplier country resolved from CompanySettings, tenant-scoped.
     expect(mockCompanySettingsFindUnique).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { userId: 'tenant-1' } }),
+      expect.objectContaining({ where: { tenantId: 'tenant-1' } }),
     );
   });
 
@@ -598,7 +598,7 @@ describe('euOssThreshold handler (loadOssThreshold against mocked prisma)', () =
 
     // calendar-year window, tenant-scoped.
     const where = mockInvoiceFindMany.mock.calls[0][0].where;
-    expect(where.userId).toBe('tenant-1');
+    expect(where.tenantId).toBe('tenant-1');
     expect(where.invoiceDate.gte.toISOString()).toBe('2026-01-01T00:00:00.000Z');
     expect(where.invoiceDate.lte.toISOString()).toBe('2026-12-31T23:59:59.999Z');
   });

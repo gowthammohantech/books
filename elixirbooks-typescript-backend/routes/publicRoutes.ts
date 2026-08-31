@@ -100,7 +100,7 @@ router.get('/invoices/:token', limiter, async (req: Request, res: Response) => {
     }
 
     const company = await prisma.companySettings.findUnique({
-      where: { userId: invoice.userId },
+      where: { tenantId: invoice.tenantId },
       select: { companyName: true, email: true, phone: true, address: true, publicBaseUrl: true, merchantUpiId: true, merchantName: true, gstin: true, vatNumber: true, abn: true, nzGstNumber: true, taxRegime: true, siteLogo: true },
     });
 
@@ -186,7 +186,7 @@ router.get('/quotations/:token', limiter, async (req: Request, res: Response) =>
     }
 
     const company = await prisma.companySettings.findUnique({
-      where: { userId: quotation.userId },
+      where: { tenantId: quotation.tenantId },
       select: { companyName: true, email: true, phone: true, address: true, publicBaseUrl: true, gstin: true, vatNumber: true, abn: true, nzGstNumber: true, taxRegime: true, siteLogo: true },
     });
 
@@ -263,7 +263,7 @@ router.post('/razorpay/webhook', express.raw({ type: 'application/json' }), asyn
       return;
     }
     const cfg = await prisma.gatewayConfig.findUnique({
-      where: { userId_kind: { userId: txn.userId, kind: 'RAZORPAY' } },
+      where: { tenantId_kind: { tenantId: txn.tenantId, kind: 'RAZORPAY' } },
     });
     if (!cfg) {
       res.status(200).json({ success: true, message: 'No config, ignoring' });
@@ -332,7 +332,7 @@ router.post('/stripe/webhook', express.raw({ type: 'application/json' }), async 
       return;
     }
     const cfg = await prisma.gatewayConfig.findUnique({
-      where: { userId_kind: { userId: txn.userId, kind: 'STRIPE' } },
+      where: { tenantId_kind: { tenantId: txn.tenantId, kind: 'STRIPE' } },
     });
     if (!cfg) {
       res.status(200).json({ success: true, message: 'No config, ignoring' });

@@ -26,7 +26,7 @@ describe('listActivityLogs', () => {
     await listActivityLogs(req, res);
 
     const whereArg = (prisma.auditLog.findMany as any).mock.calls[0][0].where;
-    expect(whereArg.userId).toBe('u1');
+    expect(whereArg.tenantId).toBe('u1');
     const body = (res.json as any).mock.calls[0][0];
     expect(body.success).toBe(true);
     expect(body.data.pagination).toEqual({ total: 23, page: 2, limit: 10, totalPages: 3 });

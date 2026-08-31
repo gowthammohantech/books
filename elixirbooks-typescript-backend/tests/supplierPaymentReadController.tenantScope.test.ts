@@ -4,9 +4,9 @@
  * P0-2b regression tripwire: read/void endpoints in
  * controllers/Admin/Purchases/supplierPaymentReadController.ts must scope
  * every by-id load by tenant. `Purchase`/`SupplierPayment` are scoped via the
- * Purchase's `userId` (SupplierPayment has no direct userId column); the
+ * Purchase's `tenantId` (SupplierPayment has no direct tenantId column); the
  * PettyCash read inside voidSupplierPayment is scoped with a strict
- * `{ userId }` match (no OR-null fallback) per the P0-2a PettyCash
+ * `{ tenantId }` match (no OR-null fallback) per the P0-2a PettyCash
  * tenant-scope work.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -103,8 +103,8 @@ function assertNoNullUserIdBranch(value: unknown, path = 'where'): void {
     return;
   }
   const obj = value as Record<string, unknown>;
-  if ('userId' in obj && obj.userId === null) {
-    throw new Error(`found userId: null at ${path} — cross-tenant leak`);
+  if ('tenantId' in obj && obj.tenantId === null) {
+    throw new Error(`found tenantId: null at ${path} — cross-tenant leak`);
   }
   for (const [key, val] of Object.entries(obj)) {
     assertNoNullUserIdBranch(val, `${path}.${key}`);
@@ -141,7 +141,7 @@ describe('supplierPaymentReadController — tenant scoping', () => {
 
     expect(mockPurchaseFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ id: 'foreign-purchase', userId: TENANT_ID }),
+        where: expect.objectContaining({ id: 'foreign-purchase', tenantId: TENANT_ID }),
       }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
@@ -156,7 +156,7 @@ describe('supplierPaymentReadController — tenant scoping', () => {
 
     expect(mockPurchaseFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ id: 'foreign-purchase', userId: TENANT_ID }),
+        where: expect.objectContaining({ id: 'foreign-purchase', tenantId: TENANT_ID }),
       }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
@@ -173,14 +173,14 @@ describe('supplierPaymentReadController — tenant scoping', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           id: 'foreign-payment',
-          purchase: { userId: TENANT_ID, isDeleted: false },
+          purchase: { tenantId: TENANT_ID, isDeleted: false },
         }),
       }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
 
-  it('voidSupplierPayment scopes the PETTY_CASH reversal strictly by tenant (no null-userId fallback)', async () => {
+  it('voidSupplierPayment scopes the PETTY_CASH reversal strictly by tenant (no null-tenantId fallback)', async () => {
     mockSupplierPaymentFindFirst.mockResolvedValue({
       id: 'sp-1',
       isVoided: false,
@@ -189,7 +189,7 @@ describe('supplierPaymentReadController — tenant scoping', () => {
       bank: null,
       paymentModeId: null,
       movedBankBalance: true, // record-path petty payment → reversal moves the register
-      purchase: { id: 'purchase-1', userId: TENANT_ID, totalAmount: 100 },
+      purchase: { id: 'purchase-1', tenantId: TENANT_ID, totalAmount: 100 },
     });
     mockPettyCashFindFirst.mockResolvedValue({ id: 'pc-1', currentBalance: 500 });
 
@@ -198,7 +198,7 @@ describe('supplierPaymentReadController — tenant scoping', () => {
     await voidSupplierPayment(req, res);
 
     expect(mockPettyCashFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     assertNoNullUserIdBranch(mockPettyCashFindFirst.mock.calls[0][0].where);
     expect(res.status).toHaveBeenCalledWith(200);

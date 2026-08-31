@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import {
   bucketAging,
   buildSubLedgerAging,
@@ -30,9 +30,9 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
 
 /** When the GL ledger is live, aging is derived from the control account so it
  *  reconciles to the Balance Sheet by construction. */
-async function ledgerLive(userId: string): Promise<boolean> {
+async function ledgerLive(tenantId: string): Promise<boolean> {
   const s = await prisma.companySettings.findFirst({
-    where: { userId },
+    where: { tenantId },
     select: { ledgerInitialized: true },
   });
   return !!s?.ledgerInitialized;
@@ -66,7 +66,7 @@ function agingResponse(asOf: Date, result: AgingResult): Record<string, unknown>
 
 export async function arAging(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const asOf = parseAsOf(req.query.asOf);
 
     // GL-derived path: reconstruct aging from the AR control sub-ledger so the
@@ -74,8 +74,8 @@ export async function arAging(req: Request, res: Response): Promise<void> {
     // This handles credit notes on already-paid invoices and over-credits (which
     // the legacy open-invoice netting drops), and nets by the actual AR leg (ex-
     // tax) rather than CN.totalAmount.
-    if (await ledgerLive(userId)) {
-      const sub = await loadArSubLedger(prisma, userId, asOf);
+    if (await ledgerLive(tenantId)) {
+      const sub = await loadArSubLedger(prisma, tenantId, asOf);
       if (sub.available) {
         const result = buildSubLedgerAging(sub.lines, asOf, {
           nature: 'debit',
@@ -98,7 +98,7 @@ export async function arAging(req: Request, res: Response): Promise<void> {
     // CANCELLED (reversed), then keep rows whose as-of outstanding is positive.
     const invoices = await prisma.invoice.findMany({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         invoiceType: 'INVOICE',
         status: { notIn: ['DRAFT', 'CANCELLED'] },
@@ -133,7 +133,7 @@ export async function arAging(req: Request, res: Response): Promise<void> {
       invoiceIds.length > 0
         ? creditNoteTotalsByInvoice(
             await prisma.creditNote.findMany({
-              where: { userId, isDeleted: false, invoiceId: { in: invoiceIds }, creditNoteDate: { lte: asOf } },
+              where: { tenantId, isDeleted: false, invoiceId: { in: invoiceIds }, creditNoteDate: { lte: asOf } },
               select: { invoiceId: true, totalAmount: true },
             }),
           )
@@ -182,14 +182,14 @@ export async function arAging(req: Request, res: Response): Promise<void> {
 
 export async function apAging(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const asOf = parseAsOf(req.query.asOf);
 
     // GL-derived path: reconstruct from the AP control sub-ledger so the grand
     // total equals the Balance-Sheet AP control balance BY CONSTRUCTION. Handles
     // debit notes (the AP analog of credit notes) on already-paid purchases.
-    if (await ledgerLive(userId)) {
-      const sub = await loadApSubLedger(prisma, userId, asOf);
+    if (await ledgerLive(tenantId)) {
+      const sub = await loadApSubLedger(prisma, tenantId, asOf);
       if (sub.available) {
         const result = buildSubLedgerAging(sub.lines, asOf, {
           nature: 'credit',
@@ -209,7 +209,7 @@ export async function apAging(req: Request, res: Response): Promise<void> {
     // balance + Σ (payments with paymentDate > asOf). Cancelled bills excluded.
     const purchases = await prisma.purchase.findMany({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         status: { not: 'cancelled' },
         purchaseDate: { lte: asOf },
@@ -279,14 +279,14 @@ const DUNNING_STAGE: Record<string, string> = {
 
 export async function collections(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const asOf = parseAsOf(req.query.asOf);
 
     // Same source + point-in-time filtering as arAging (open invoices minus
     // as-of payments minus as-of credit notes; DRAFT/CANCELLED excluded).
     const invoices = await prisma.invoice.findMany({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         invoiceType: 'INVOICE',
         status: { notIn: ['DRAFT', 'CANCELLED'] },
@@ -313,7 +313,7 @@ export async function collections(req: Request, res: Response): Promise<void> {
       invoiceIds.length > 0
         ? creditNoteTotalsByInvoice(
             await prisma.creditNote.findMany({
-              where: { userId, isDeleted: false, invoiceId: { in: invoiceIds }, creditNoteDate: { lte: asOf } },
+              where: { tenantId, isDeleted: false, invoiceId: { in: invoiceIds }, creditNoteDate: { lte: asOf } },
               select: { invoiceId: true, totalAmount: true },
             }),
           )

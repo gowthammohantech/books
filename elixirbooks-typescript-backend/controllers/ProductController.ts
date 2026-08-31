@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import type { Prisma, Product } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, requireActingUserId } from '../lib/tenantScope';
+import { requireTenantId, requireActingUserId } from '../lib/tenantScope';
 import { insertCustomFieldValues, readCustomFieldValues } from '../lib/customFieldValues';
 import { resolveProductTaxRate } from '../lib/tax/resolveProductTaxRate';
 
@@ -158,7 +158,7 @@ export async function createProduct(req: Request, res: Response): Promise<void> 
       (await resolveDefaultCurrencyCode());
 
     const userId = requireActingUserId(req);
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     // Unified tax (spec 2026-07-12 §4B): prefer the new direct rate id; keep
     // accepting the legacy `tax` (TaxGroup id). When neither is sent, default
@@ -167,7 +167,7 @@ export async function createProduct(req: Request, res: Response): Promise<void> 
       body.taxRateId && String(body.taxRateId).trim() ? (body.taxRateId as string) : null;
     if (!productTaxRateId && !body.tax) {
       const noneRate = await prisma.taxRate.findFirst({
-        where: { userId: tenantId, regime: 'NONE', isActive: true, isDeleted: false },
+        where: { tenantId, regime: 'NONE', isActive: true, isDeleted: false },
         orderBy: { createdAt: 'asc' },
         select: { id: true },
       });
@@ -221,7 +221,7 @@ export async function createProduct(req: Request, res: Response): Promise<void> 
           data: {
             productId: newProduct.id,
             quantity: newProduct.stock,
-            userId: requireUserId(req),
+            tenantId: requireTenantId(req),
             inventory_history: [
               {
                 unitId: newProduct.unitId,
@@ -243,7 +243,7 @@ export async function createProduct(req: Request, res: Response): Promise<void> 
         recordId: newProduct.id,
         customFields: req.body.customFields,
         files: filesArray,
-        userId,
+        tenantId: requireTenantId(req),
       });
 
       return newProduct;
@@ -301,7 +301,7 @@ export async function getAllProducts(req: Request, res: Response): Promise<void>
       ];
     }
 
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const [total, products] = await Promise.all([
       prisma.product.count({ where }),
@@ -376,7 +376,7 @@ export async function getAllProducts(req: Request, res: Response): Promise<void>
 export async function getProductById(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params as { id: string };
-    const tenantId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     const [product, inventoryRow] = await Promise.all([
       prisma.product.findUnique({
@@ -566,14 +566,14 @@ export async function updateProduct(req: Request, res: Response): Promise<void> 
       // the #6 fix), create one scoped to the tenant. Stock may be 0.
       if (result.enable_inventory && req.user) {
         const existingInventory = await tx.inventory.findFirst({
-          where: { productId: result.id, userId: requireUserId(req) },
+          where: { productId: result.id, tenantId: requireTenantId(req) },
         });
         if (!existingInventory) {
           await tx.inventory.create({
             data: {
               productId: result.id,
               quantity: result.stock,
-              userId: requireUserId(req),
+              tenantId: requireTenantId(req),
               inventory_history: [
                 {
                   unitId: result.unitId,
@@ -596,7 +596,7 @@ export async function updateProduct(req: Request, res: Response): Promise<void> 
         recordId: result.id,
         customFields: req.body.customFields,
         files: filesArray,
-        userId,
+        tenantId: requireTenantId(req),
       });
       return result;
     });
@@ -846,19 +846,19 @@ export async function getAllTaxGroups(req: Request, res: Response): Promise<void
 export async function listCostLayers(req: Request, res: Response): Promise<void> {
   try {
     const { productId } = req.query as { productId?: string };
-    const userId = (req as Request & { user?: string }).user;
+    const tenantId = requireTenantId(req);
 
     if (!productId) {
       res.status(400).json({ message: 'productId query parameter is required' });
       return;
     }
-    if (!userId) {
+    if (!tenantId) {
       res.status(401).json({ message: 'Unauthorized' });
       return;
     }
 
     const layers = await prisma.inventoryCostLayer.findMany({
-      where: { userId, productId, isDeleted: false },
+      where: { tenantId, productId, isDeleted: false },
       orderBy: { receivedAt: 'asc' },
     });
 

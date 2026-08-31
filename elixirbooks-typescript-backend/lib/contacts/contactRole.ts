@@ -26,10 +26,10 @@ const SUPPLIER_SOME = {
   ],
 };
 
-export function contactViewWhere(userId: string, view: ContactView): Record<string, unknown> {
-  const base = { userId, isDeleted: false };
+export function contactViewWhere(tenantId: string, view: ContactView): Record<string, unknown> {
+  const base = { tenantId, isDeleted: false };
   switch (view) {
-    case 'all': return { userId };
+    case 'all': return { tenantId };
     case 'all-active': return { ...base, status: 'ACTIVE' };
     case 'hidden': return { ...base, status: 'HIDDEN' };
     case 'clients': return { ...base, status: 'ACTIVE', ...CLIENT_SOME };

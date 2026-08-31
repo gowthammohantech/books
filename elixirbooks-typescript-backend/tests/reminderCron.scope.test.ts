@@ -10,7 +10,7 @@
  * Fix: runReminderCron(scopeUserId?) adds a `createdBy` filter to the
  * reminder query when a scope is passed. The HTTP-triggered path
  * (reminderController.triggerReminderCron) now passes the caller's id
- * (mirroring the `reminder.createdBy !== requireUserId(req)` ownership
+ * (mirroring the `reminder.createdBy !== requireTenantId(req)` ownership
  * check used by sendManualReminder). The scheduled 9am tick must keep
  * calling this with NO argument so the daily run stays global.
  *

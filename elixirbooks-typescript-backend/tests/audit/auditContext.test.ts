@@ -7,15 +7,15 @@ describe('auditContext store', () => {
   });
 
   it('exposes the context inside a run scope', () => {
-    const ctx = { userId: 'u1', userName: 'Asha', ipAddress: '127.0.0.1', userAgent: 'jest' };
+    const ctx = { tenantId: 'u1', userName: 'Asha', ipAddress: '127.0.0.1', userAgent: 'jest' };
     const seen = runWithAuditContext(ctx, () => getAuditContext());
     expect(seen).toEqual(ctx);
   });
 
   it('isolates nested scopes', () => {
     const result = runWithAuditContext(
-      { userId: 'a', userName: 'A' },
-      () => runWithAuditContext({ userId: 'b', userName: 'B' }, () => getAuditContext()?.userId),
+      { tenantId: 'a', userName: 'A' },
+      () => runWithAuditContext({ tenantId: 'b', userName: 'B' }, () => getAuditContext()?.tenantId),
     );
     expect(result).toBe('b');
   });

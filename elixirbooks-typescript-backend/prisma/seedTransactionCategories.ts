@@ -15,7 +15,7 @@
  * `TransactionCategory` is created (group ADMIN_EXPENSES → PURCHASES account).
  * `ExpenseCategory` is left untouched (read-only legacy table).
  *
- * Idempotent on `(userId, code)` for both system and legacy categories, so it
+ * Idempotent on `(tenantId, code)` for both system and legacy categories, so it
  * is safe to run on every container boot. Owners without a ledger mapping are
  * skipped (categories cannot be mapped to accounts that do not exist yet).
  *
@@ -278,24 +278,24 @@ function slug(title: string): string {
 }
 
 /**
- * Find an Account by (userId, code), else create it. Returns the account id.
+ * Find an Account by (tenantId, code), else create it. Returns the account id.
  *
  * Throws if an existing account's `accountType` does not match the expected
  * type — prevents silent mis-mapping where a canonical pack account at the
  * same code is silently returned instead of the intended extra account.
  */
 async function ensureAccount(
-  userId: string,
+  tenantId: string,
   code: string,
   name: string,
   accountType: AccountType,
   db: Pick<PrismaClient, 'account'> = prisma,
 ): Promise<string> {
-  const existing = await db.account.findUnique({ where: { userId_code: { userId, code } } });
+  const existing = await db.account.findUnique({ where: { tenantId_code: { tenantId, code } } });
   if (existing) {
     if (existing.accountType !== accountType) {
       throw new Error(
-        `ensureAccount conflict: account code ${code} for user ${userId} already exists ` +
+        `ensureAccount conflict: account code ${code} for user ${tenantId} already exists ` +
         `with accountType ${existing.accountType} but expected ${accountType}. ` +
         `This indicates a code collision with a canonical pack account — use a different code.`,
       );
@@ -303,14 +303,14 @@ async function ensureAccount(
     return existing.id;
   }
   const created = await db.account.create({
-    data: { userId, code, name, accountType },
+    data: { tenantId, code, name, accountType },
   });
   return created.id;
 }
 
 /**
  * Seed the Money In/Out category catalog (+ legacy migration) for a SINGLE
- * owner whose ledger is initialized. Idempotent on `(userId, code)` — safe to
+ * owner whose ledger is initialized. Idempotent on `(tenantId, code)` — safe to
  * call inline right after ledger init / applyPack succeeds, and safe to re-run.
  *
  * Returns counts for this owner. If the owner's ledger is not fully
@@ -320,7 +320,7 @@ async function ensureAccount(
  * transaction; defaults to this module's own client.
  */
 export async function seedTransactionCategoriesForUser(
-  userId: string,
+  tenantId: string,
   db: Pick<PrismaClient, 'ledgerAccountMapping' | 'account' | 'transactionCategory' | 'expenseCategory'> = prisma,
 ): Promise<SeedTransactionCategoriesResult> {
   let created = 0;
@@ -328,7 +328,7 @@ export async function seedTransactionCategoriesForUser(
 
   // 1. Resolve role → accountId from this owner's mappings.
   const mappings = await db.ledgerAccountMapping.findMany({
-    where: { userId, roleKey: { in: ['PURCHASES', 'COGS', 'SALES_REVENUE', 'FIXED_ASSET', 'OUTPUT_TAX'] } },
+    where: { tenantId, roleKey: { in: ['PURCHASES', 'COGS', 'SALES_REVENUE', 'FIXED_ASSET', 'OUTPUT_TAX'] } },
     select: { roleKey: true, accountId: true },
   });
   const roleToAccount = new Map<string, string>(mappings.map((m) => [m.roleKey, m.accountId]));
@@ -341,7 +341,7 @@ export async function seedTransactionCategoriesForUser(
   // 2. Ensure the extra (non-pack) accounts exist; build a code → id map.
   const codeToAccount = new Map<string, string>();
   for (const a of EXTRA_ACCOUNTS) {
-    codeToAccount.set(a.code, await ensureAccount(userId, a.code, a.name, a.accountType, db));
+    codeToAccount.set(a.code, await ensureAccount(tenantId, a.code, a.name, a.accountType, db));
   }
 
   const resolve = (account: CatalogEntry['account']): string | undefined => {
@@ -349,17 +349,17 @@ export async function seedTransactionCategoriesForUser(
     return roleToAccount.get(account);
   };
 
-  // 3. Upsert the system catalog (idempotent on (userId, code)).
+  // 3. Upsert the system catalog (idempotent on (tenantId, code)).
   for (const entry of CATALOG) {
     const accountId = resolve(entry.account);
     if (!accountId) continue; // should not happen for required roles
     const existing = await db.transactionCategory.findUnique({
-      where: { userId_code: { userId, code: entry.code } },
+      where: { tenantId_code: { tenantId, code: entry.code } },
     });
     if (existing) continue;
     await db.transactionCategory.create({
       data: {
-        userId,
+        tenantId,
         code: entry.code,
         name: entry.name,
         group: entry.group,
@@ -383,12 +383,12 @@ export async function seedTransactionCategoriesForUser(
   for (const cat of legacy) {
     const code = `legacy-${slug(cat.title)}`;
     const existing = await db.transactionCategory.findUnique({
-      where: { userId_code: { userId, code } },
+      where: { tenantId_code: { tenantId, code } },
     });
     if (existing) continue;
     await db.transactionCategory.create({
       data: {
-        userId,
+        tenantId,
         code,
         name: cat.title,
         group: 'ADMIN_EXPENSES',
@@ -411,12 +411,12 @@ export async function seedTransactionCategories(): Promise<SeedTransactionCatego
 
   // Distinct owners that have a ledger initialized (≥1 role mapping).
   const ownerRows = await prisma.ledgerAccountMapping.findMany({
-    distinct: ['userId'],
-    select: { userId: true },
+    distinct: ['tenantId'],
+    select: { tenantId: true },
   });
 
-  for (const { userId } of ownerRows) {
-    const r = await seedTransactionCategoriesForUser(userId);
+  for (const { tenantId } of ownerRows) {
+    const r = await seedTransactionCategoriesForUser(tenantId);
     created += r.created;
     migrated += r.migrated;
   }

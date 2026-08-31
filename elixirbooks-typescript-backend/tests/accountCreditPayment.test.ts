@@ -109,7 +109,7 @@ function dataOf(mock: ReturnType<typeof vi.fn>, idx = 0) {
 
 const INVOICE = {
   id: 'inv-1',
-  userId: TENANT_ID,
+  tenantId: TENANT_ID,
   status: 'UNPAID',
   TotalAmount: new Prisma.Decimal(100),
   contactId: 'contact-1',
@@ -163,7 +163,7 @@ describe('recordInvoicePayment — account-credit redemption', () => {
       contactId: 'contact-1',
       invoiceId: 'inv-1',
       invoicePaymentId: 'pay-1',
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       createdById: TENANT_ID,
     });
     expect(Number(entryData.amount)).toBe(60);

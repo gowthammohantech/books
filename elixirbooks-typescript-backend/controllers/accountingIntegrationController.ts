@@ -3,7 +3,7 @@ import { randomBytes } from 'crypto';
 import type { IntegrationKind, Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { xeroProvider } from '../lib/accountingIntegrations/xeroProvider';
 import { quickbooksProvider } from '../lib/accountingIntegrations/quickbooksProvider';
 import { ACCOUNTING_SECRET_KEYS, decryptConfigSecrets, encryptConfigSecrets } from '../lib/configSecret';
@@ -19,8 +19,8 @@ function getProvider(kind: IntegrationKind) {
 
 export async function list(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
-    const rows = await prisma.accountingIntegration.findMany({ where: { userId } });
+    const tenantId = requireTenantId(req);
+    const rows = await prisma.accountingIntegration.findMany({ where: { tenantId } });
     res.json({
       success: true,
       data: {
@@ -46,7 +46,7 @@ export async function list(req: Request, res: Response): Promise<void> {
 
 export async function connect(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { kind } = req.params as { kind: string };
     if (!isKind(kind)) {
       res.status(400).json({ success: false, message: 'Invalid kind' });
@@ -58,10 +58,10 @@ export async function connect(req: Request, res: Response): Promise<void> {
 
     // Persist initial config (clientId may be stored to retrieve in callback)
     await prisma.accountingIntegration.upsert({
-      where: { userId_kind: { userId, kind } },
+      where: { tenantId_kind: { tenantId, kind } },
       update: { config: { state, clientId: body.clientId ?? '', redirectUri: body.redirectUri ?? '' } as Prisma.InputJsonValue },
       create: {
-        userId,
+        tenantId,
         kind,
         enabled: false,
         config: { state, clientId: body.clientId ?? '', redirectUri: body.redirectUri ?? '' } as Prisma.InputJsonValue,
@@ -82,7 +82,7 @@ export async function connect(req: Request, res: Response): Promise<void> {
 
 export async function callback(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { kind } = req.params as { kind: string };
     if (!isKind(kind)) {
       res.status(400).json({ success: false, message: 'Invalid kind' });
@@ -94,7 +94,7 @@ export async function callback(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const existing = await prisma.accountingIntegration.findUnique({ where: { userId_kind: { userId, kind } } });
+    const existing = await prisma.accountingIntegration.findUnique({ where: { tenantId_kind: { tenantId, kind } } });
     const provider = getProvider(kind);
     const tokens = await provider.exchangeCode(code, existing?.config);
 
@@ -110,7 +110,7 @@ export async function callback(req: Request, res: Response): Promise<void> {
       ACCOUNTING_SECRET_KEYS,
     );
     const updated = await prisma.accountingIntegration.update({
-      where: { userId_kind: { userId, kind } },
+      where: { tenantId_kind: { tenantId, kind } },
       data: {
         enabled: true,
         config: newConfig as Prisma.InputJsonValue,
@@ -133,13 +133,13 @@ export async function callback(req: Request, res: Response): Promise<void> {
 
 export async function syncNow(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { kind } = req.params as { kind: string };
     if (!isKind(kind)) {
       res.status(400).json({ success: false, message: 'Invalid kind' });
       return;
     }
-    const integration = await prisma.accountingIntegration.findUnique({ where: { userId_kind: { userId, kind } } });
+    const integration = await prisma.accountingIntegration.findUnique({ where: { tenantId_kind: { tenantId, kind } } });
     if (!integration || !integration.enabled) {
       res.status(400).json({ success: false, message: 'Integration not connected' });
       return;
@@ -151,14 +151,14 @@ export async function syncNow(req: Request, res: Response): Promise<void> {
       const decryptedConfig = decryptConfigSecrets(integration.config, ACCOUNTING_SECRET_KEYS);
       const result = await provider.syncInvoices(decryptedConfig);
       await prisma.accountingIntegration.update({
-        where: { userId_kind: { userId, kind } },
+        where: { tenantId_kind: { tenantId, kind } },
         data: { lastSyncedAt: new Date(), syncStatus: 'SUCCESS', errorMessage: null },
       });
       // mode: 'stub' — provider.syncInvoices is mocked in v1 (no real API sync yet).
       res.json({ success: true, message: `Synced: pushed=${result.pushed}, pulled=${result.pulled}`, mode: 'stub', data: result });
     } catch (e) {
       await prisma.accountingIntegration.update({
-        where: { userId_kind: { userId, kind } },
+        where: { tenantId_kind: { tenantId, kind } },
         data: { syncStatus: 'ERROR', errorMessage: e instanceof Error ? e.message : String(e) },
       });
       res.status(500).json({ success: false, message: e instanceof Error ? e.message : 'Sync failed' });
@@ -175,13 +175,13 @@ export async function syncNow(req: Request, res: Response): Promise<void> {
 
 export async function disconnect(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { kind } = req.params as { kind: string };
     if (!isKind(kind)) {
       res.status(400).json({ success: false, message: 'Invalid kind' });
       return;
     }
-    await prisma.accountingIntegration.deleteMany({ where: { userId, kind } });
+    await prisma.accountingIntegration.deleteMany({ where: { tenantId, kind } });
     res.json({ success: true, message: 'Disconnected' });
   } catch (err) {
     if (err instanceof UnauthorizedError) {

@@ -23,7 +23,7 @@ function makeDb(): ApplyBillPaymentDb & { createCalls: any[] } {
         paidAmount: 0,
         balanceAmount: 1000,
         status: 'pending',
-        userId: TENANT_ID,
+        tenantId: TENANT_ID,
         supplierId: 'sup-1',
         currencyCode: 'USD',
         exchangeRate: '83',
@@ -64,7 +64,7 @@ describe('applyBillPayment — FX (foreign bill payment)', () => {
     const db = makeDb();
 
     await applyBillPayment(db, {
-      userId: TENANT_ID,
+      tenantId: TENANT_ID,
       purchaseId: 'purch-1',
       amount: '100',            // 100 USD
       date: new Date('2026-02-01'),

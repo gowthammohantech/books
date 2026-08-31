@@ -87,7 +87,7 @@ describe('applyPack — EU member persistence + member rate seeding', () => {
     const { tx, seededRates, getSettings } = makeFakeTx();
 
     await applyPack(tx, {
-      userId: 'u1',
+      tenantId: 'u1',
       countryCode: 'EU', // routed EU pack
       memberCountryCode: 'DE', // the tenant's REAL country
       goLiveDate: new Date('2026-01-01'),
@@ -104,7 +104,7 @@ describe('applyPack — EU member persistence + member rate seeding', () => {
   it('FR member seeds 20%', async () => {
     const { tx, seededRates } = makeFakeTx();
     await applyPack(tx, {
-      userId: 'u2',
+      tenantId: 'u2',
       countryCode: 'EU',
       memberCountryCode: 'FR',
       goLiveDate: new Date('2026-01-01'),
@@ -116,7 +116,7 @@ describe('applyPack — EU member persistence + member rate seeding', () => {
   it('non-EU pack (GB) is unaffected — stores GB and seeds 20/5/0', async () => {
     const { tx, seededRates, getSettings } = makeFakeTx();
     await applyPack(tx, {
-      userId: 'u3',
+      tenantId: 'u3',
       countryCode: 'GB',
       goLiveDate: new Date('2026-01-01'),
     });
@@ -128,7 +128,7 @@ describe('applyPack — EU member persistence + member rate seeding', () => {
   it('EU pack without a member code falls back to the generic 21% (legacy safety)', async () => {
     const { tx, seededRates, getSettings } = makeFakeTx();
     await applyPack(tx, {
-      userId: 'u4',
+      tenantId: 'u4',
       countryCode: 'EU',
       goLiveDate: new Date('2026-01-01'),
     });

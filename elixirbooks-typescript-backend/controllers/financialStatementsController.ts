@@ -2,17 +2,17 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { getRevenueSummary, getExpenseSummary } from '../lib/financialQueries';
 import { profitLossFrom, balanceSheetFrom, trialBalanceFrom, type AccountBalance } from '../lib/ledger/statements';
 import { cashBasisProfitLoss } from '../lib/ledger/cashBasis';
 
-async function gatherCashMovements(userId: string, from: Date, to: Date) {
+async function gatherCashMovements(tenantId: string, from: Date, to: Date) {
   // Receipts: customer payments in period, allocated by their invoice's tax ratio.
   // InvoicePayment fields used: amount (Decimal), received_on (DateTime),
   //   invoice relation → taxableAmount, vat, TotalAmount.
   const invPayments = await prisma.invoicePayment.findMany({
-    where: { invoice: { userId, isDeleted: false }, received_on: { gte: from, lte: to }, isVoided: false },
+    where: { invoice: { tenantId, isDeleted: false }, received_on: { gte: from, lte: to }, isVoided: false },
     select: { amount: true, invoice: { select: { taxableAmount: true, vat: true, TotalAmount: true } } },
   });
   const receipts = invPayments.map((p) => ({
@@ -28,9 +28,9 @@ async function gatherCashMovements(userId: string, from: Date, to: Date) {
   // SupplierPayment fields used: paidAmount (Float), paymentDate (DateTime — dedicated
   //   payment-date field, preferred over createdAt), purchase relation →
   //   taxableAmount, totalTax, totalAmount.
-  // Note: SupplierPayment has no direct userId; scoped via purchase.userId.
+  // Note: SupplierPayment has no direct tenantId; scoped via purchase.tenantId.
   const supPayments = await prisma.supplierPayment.findMany({
-    where: { isDeleted: false, isVoided: false, purchase: { userId, isDeleted: false }, paymentDate: { gte: from, lte: to } },
+    where: { isDeleted: false, isVoided: false, purchase: { tenantId, isDeleted: false }, paymentDate: { gte: from, lte: to } },
     select: { paidAmount: true, purchase: { select: { taxableAmount: true, totalTax: true, totalAmount: true } } },
   });
   const supOut = supPayments.map((p) => ({
@@ -47,7 +47,7 @@ async function gatherCashMovements(userId: string, from: Date, to: Date) {
   // Cash-out: expenses (no embedded tax ratio — all net).
   // Expense fields used: amount (Decimal), expenseDate (DateTime), paymentStatus enum PAID.
   const paidExpenses = await prisma.expense.findMany({
-    where: { userId, isDeleted: false, paymentStatus: 'PAID', expenseDate: { gte: from, lte: to } },
+    where: { tenantId, isDeleted: false, paymentStatus: 'PAID', expenseDate: { gte: from, lte: to } },
     select: { amount: true },
   });
   const expOut = paidExpenses.map((e) => ({
@@ -83,18 +83,18 @@ function dimensionFilter(req: Request): string | null | undefined {
 }
 
 async function loadAccountBalances(
-  userId: string,
+  tenantId: string,
   opts: { from?: Date; to: Date; costCenterId?: string | null },
 ): Promise<AccountBalance[]> {
   const accounts = await prisma.account.findMany({
-    where: { userId, isDeleted: false },
+    where: { tenantId, isDeleted: false },
     include: {
       journalLines: {
         where: {
           // `undefined` leaves the key out entirely, so an unfiltered statement
           // produces exactly the query it always did.
           ...(opts.costCenterId !== undefined ? { costCenterId: opts.costCenterId } : {}),
-          journalEntry: { userId, isDeleted: false, entryDate: opts.from ? { gte: opts.from, lte: opts.to } : { lte: opts.to } } },
+          journalEntry: { tenantId, isDeleted: false, entryDate: opts.from ? { gte: opts.from, lte: opts.to } : { lte: opts.to } } },
         // Statements are in the tenant's functional currency, so aggregate the
         // BASE amounts (debit/credit are transaction-currency; equal to base at
         // rate 1, but differ for foreign-currency entries — Spec G).
@@ -111,8 +111,8 @@ async function loadAccountBalances(
   });
 }
 
-async function ledgerLive(userId: string): Promise<boolean> {
-  const s = await prisma.companySettings.findFirst({ where: { userId }, select: { ledgerInitialized: true } });
+async function ledgerLive(tenantId: string): Promise<boolean> {
+  const s = await prisma.companySettings.findFirst({ where: { tenantId }, select: { ledgerInitialized: true } });
   return !!s?.ledgerInitialized;
 }
 
@@ -121,7 +121,7 @@ async function ledgerLive(userId: string): Promise<boolean> {
  */
 export async function profitLoss(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { fromDate, toDate } = defaultDateRange(req);
     const costCenterId = dimensionFilter(req);
 
@@ -137,15 +137,15 @@ export async function profitLoss(req: Request, res: Response): Promise<void> {
         });
         return;
       }
-      const { receipts, cashOut } = await gatherCashMovements(userId, fromDate, toDate);
+      const { receipts, cashOut } = await gatherCashMovements(tenantId, fromDate, toDate);
       const pl = cashBasisProfitLoss(receipts, cashOut);
       res.json({ success: true, data: { period: { from: fromDate, to: toDate }, ...pl } });
       return;
     }
 
     // GL-derived mode: when ledger is initialized, aggregate from journal lines
-    if (await ledgerLive(userId)) {
-      const balances = await loadAccountBalances(userId, { from: fromDate, to: toDate, costCenterId });
+    if (await ledgerLive(tenantId)) {
+      const balances = await loadAccountBalances(tenantId, { from: fromDate, to: toDate, costCenterId });
       const pl = profitLossFrom(balances);
       res.json({
         success: true,
@@ -172,7 +172,7 @@ export async function profitLoss(req: Request, res: Response): Promise<void> {
     // Legacy subledger fallback (pre-ledger installs)
     // Revenue (taxable) + output tax: shared with the AI co-pilot's
     // get_revenue_summary tool via lib/financialQueries.
-    const revenue = await getRevenueSummary(userId, fromDate, toDate);
+    const revenue = await getRevenueSummary(tenantId, fromDate, toDate);
 
     // Sales credit notes (returns) in the period reduce revenue and output tax.
     // Exclude cancelled CNs (already reversed). Mirrors getGstSummary's CDNR
@@ -180,7 +180,7 @@ export async function profitLoss(req: Request, res: Response): Promise<void> {
     // revenue down — without this the legacy P&L over-states revenue by the CN.
     const salesCreditNotes = await prisma.creditNote.findMany({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         status: { not: 'CANCELLED' },
         creditNoteDate: { gte: fromDate, lte: toDate },
@@ -196,7 +196,7 @@ export async function profitLoss(req: Request, res: Response): Promise<void> {
     // Cost of Goods Sold: sum Purchase taxableAmount in period
     const purchases = await prisma.purchase.findMany({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         purchaseDate: { gte: fromDate, lte: toDate },
       },
@@ -207,7 +207,7 @@ export async function profitLoss(req: Request, res: Response): Promise<void> {
 
     // Operating Expenses by category: shared with the AI co-pilot's
     // get_expense_summary tool via lib/financialQueries.
-    const expenseSummary = await getExpenseSummary(userId, fromDate, toDate);
+    const expenseSummary = await getExpenseSummary(tenantId, fromDate, toDate);
     const opexTotal = expenseSummary.total;
     const operatingExpensesBy = expenseSummary.byCategory.map((c) => ({
       categoryId: c.categoryId,
@@ -219,7 +219,7 @@ export async function profitLoss(req: Request, res: Response): Promise<void> {
     const manualLines = await prisma.journalLine.findMany({
       where: {
         journalEntry: {
-          userId,
+          tenantId,
           isDeleted: false,
           entryDate: { gte: fromDate, lte: toDate },
         },
@@ -306,17 +306,17 @@ export async function profitLoss(req: Request, res: Response): Promise<void> {
  */
 export async function balanceSheet(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const asOfStr = req.query.asOf as string | undefined;
     const asOf = asOfStr ? new Date(asOfStr) : new Date();
     asOf.setHours(23, 59, 59, 999);
     const costCenterId = dimensionFilter(req);
 
     // GL-derived mode: when ledger is initialized, aggregate from journal lines
-    if (await ledgerLive(userId)) {
-      const balances = await loadAccountBalances(userId, { to: asOf, costCenterId });
+    if (await ledgerLive(tenantId)) {
+      const balances = await loadAccountBalances(tenantId, { to: asOf, costCenterId });
       const bs = balanceSheetFrom(balances);
-      const banks = await prisma.bankDetail.findMany({ where: { userId, isDeleted: false }, select: { id: true, bankName: true, currentBalance: true } });
+      const banks = await prisma.bankDetail.findMany({ where: { tenantId, isDeleted: false }, select: { id: true, bankName: true, currentBalance: true } });
       res.json({
         success: true,
         data: {
@@ -337,7 +337,7 @@ export async function balanceSheet(req: Request, res: Response): Promise<void> {
     // ASSETS
     // Cash + Bank: sum of BankDetail.currentBalance for user's bank accounts
     const banks = await prisma.bankDetail.findMany({
-      where: { userId, isDeleted: false },
+      where: { tenantId, isDeleted: false },
       select: { id: true, bankName: true, currentBalance: true },
     });
     const cashAndBank = banks.reduce((s, b) => s + Number(b.currentBalance ?? 0), 0);
@@ -345,7 +345,7 @@ export async function balanceSheet(req: Request, res: Response): Promise<void> {
     // Receivables: unpaid invoice balances (Total - paid via InvoicePayment up to asOf)
     const unpaidInvoices = await prisma.invoice.findMany({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         invoiceType: 'INVOICE',
         invoiceDate: { lte: asOf },
@@ -365,9 +365,9 @@ export async function balanceSheet(req: Request, res: Response): Promise<void> {
     }, 0);
 
     // Inventory: sum of (inventory.quantity * product.purchase_price) — best effort.
-    // Inventory has its own userId; Product does not (Product is a global catalogue entry).
+    // Inventory has its own tenantId; Product does not (Product is a global catalogue entry).
     const inventoryRows = await prisma.inventory.findMany({
-      where: { userId, isDeleted: false },
+      where: { tenantId, isDeleted: false },
       select: {
         quantity: true,
         product: { select: { purchase_price: true } },
@@ -382,7 +382,7 @@ export async function balanceSheet(req: Request, res: Response): Promise<void> {
     // Payables: unpaid purchase balances
     const unpaidPurchases = await prisma.purchase.findMany({
       where: {
-        userId,
+        tenantId,
         isDeleted: false,
         purchaseDate: { lte: asOf },
         status: { in: ['new', 'pending', 'partially_paid'] },
@@ -393,11 +393,11 @@ export async function balanceSheet(req: Request, res: Response): Promise<void> {
 
     // Tax liability: net of collected output tax minus inward input tax (invoices/purchases up to asOf)
     const allInvoices = await prisma.invoice.findMany({
-      where: { userId, isDeleted: false, invoiceDate: { lte: asOf } },
+      where: { tenantId, isDeleted: false, invoiceDate: { lte: asOf } },
       select: { vat: true },
     });
     const allPurchases = await prisma.purchase.findMany({
-      where: { userId, isDeleted: false, purchaseDate: { lte: asOf } },
+      where: { tenantId, isDeleted: false, purchaseDate: { lte: asOf } },
       select: { totalTax: true },
     });
     const outputTax = allInvoices.reduce((s, i) => s + Number(i.vat ?? 0), 0);
@@ -455,7 +455,7 @@ export async function balanceSheet(req: Request, res: Response): Promise<void> {
  */
 export async function trialBalance(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const asOfStr = req.query.asOf as string | undefined;
     const asOf = asOfStr ? new Date(asOfStr) : new Date();
     asOf.setHours(23, 59, 59, 999);
@@ -463,7 +463,7 @@ export async function trialBalance(req: Request, res: Response): Promise<void> {
 
     // Decimal-safe aggregation shared with P&L/BS (loadAccountBalances sums via
     // Prisma.Decimal); trialBalanceFrom is the same logic the golden tests cover.
-    const balances = await loadAccountBalances(userId, { to: asOf, costCenterId });
+    const balances = await loadAccountBalances(tenantId, { to: asOf, costCenterId });
     const tb = trialBalanceFrom(balances);
 
     res.json({

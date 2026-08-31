@@ -21,7 +21,7 @@ interface StoredLine {
   taxRoleKey: string | null; description: string | null;
 }
 interface StoredEntry {
-  id: string; userId: string; entryDate: Date;
+  id: string; tenantId: string; entryDate: Date;
   sourceType: string | null; sourceId: string | null; event: string | null;
   isDeleted: boolean; reversedById: string | null; reversals: { id: string }[];
   lines: StoredLine[];
@@ -47,8 +47,8 @@ function buildFakePrisma(opts?: { goLiveDate?: Date }) {
   const roleToId: Record<string, string> = {};
   for (const [role, code] of Object.entries(pack.roleMap)) roleToId[role] = code;
 
-  const accounts: Record<string, { id: string; userId: string; code: string; accountType: string; isDeleted?: boolean }> = {};
-  const banks: Record<string, { id: string; userId: string; currencyCode: string | null; currentBalance: string; accountId?: string | null }> = {};
+  const accounts: Record<string, { id: string; tenantId: string; code: string; accountType: string; isDeleted?: boolean }> = {};
+  const banks: Record<string, { id: string; tenantId: string; currencyCode: string | null; currentBalance: string; accountId?: string | null }> = {};
   const bankTxns: Record<string, Record<string, unknown>> = {};
   const categories: Record<string, Record<string, unknown>> = {};
   const taxRates: Record<string, { id: string; name: string; taxKind: string | null; rate: string }> = {};
@@ -67,7 +67,7 @@ function buildFakePrisma(opts?: { goLiveDate?: Date }) {
       const inc = (args as { include?: { lines?: boolean; reversals?: boolean } }).include;
       const found = entries.find((e) => {
         if ('id' in w && e.id !== w['id']) return false;
-        if ('userId' in w && e.userId !== w['userId']) return false;
+        if ('tenantId' in w && e.tenantId !== w['tenantId']) return false;
         if ('sourceType' in w && e.sourceType !== w['sourceType']) return false;
         if ('sourceId' in w && e.sourceId !== w['sourceId']) return false;
         if ('event' in w && e.event !== w['event']) return false;
@@ -79,16 +79,16 @@ function buildFakePrisma(opts?: { goLiveDate?: Date }) {
     },
     async create(args: { data: unknown }): Promise<{ id: string }> {
       const d = args.data as {
-        userId: string; entryDate: Date;
+        tenantId: string; entryDate: Date;
         sourceType?: string | null; sourceId?: string | null; event?: string | null;
         reversedById?: string | null; lines?: { create: StoredLine[] };
       };
-      // Enforce the real DB unique constraint @@unique([userId, sourceType,
+      // Enforce the real DB unique constraint @@unique([tenantId, sourceType,
       // sourceId, event]) — it does NOT include isDeleted, so a soft-deleted row
       // with the same triple still occupies the slot (throws P2002). This is what
       // makes the re-explain test a real guard against the no-op bug.
       const collision = entries.find(
-        (e) => e.userId === d.userId && e.sourceType === (d.sourceType ?? null)
+        (e) => e.tenantId === d.tenantId && e.sourceType === (d.sourceType ?? null)
           && e.sourceId === (d.sourceId ?? null) && e.event === (d.event ?? null),
       );
       if (collision) {
@@ -98,7 +98,7 @@ function buildFakePrisma(opts?: { goLiveDate?: Date }) {
       }
       const id = nextId('je');
       const entry: StoredEntry = {
-        id, userId: d.userId, entryDate: d.entryDate,
+        id, tenantId: d.tenantId, entryDate: d.entryDate,
         sourceType: d.sourceType ?? null, sourceId: d.sourceId ?? null, event: d.event ?? null,
         isDeleted: false, reversedById: d.reversedById ?? null, reversals: [],
         lines: d.lines?.create ?? [],
@@ -179,10 +179,10 @@ function buildFakePrisma(opts?: { goLiveDate?: Date }) {
     async findUnique(args: { where: { id: string } }) { return expenses[args.where.id] ?? null; },
   };
   const account = {
-    async findFirst(args: { where: { userId: string; code: string; isDeleted: boolean } }) {
-      const { userId, code, isDeleted } = args.where;
+    async findFirst(args: { where: { tenantId: string; code: string; isDeleted: boolean } }) {
+      const { tenantId, code, isDeleted } = args.where;
       return Object.values(accounts).find(
-        (a) => a.userId === userId && a.code === code && (a.isDeleted ?? false) === isDeleted,
+        (a) => a.tenantId === tenantId && a.code === code && (a.isDeleted ?? false) === isDeleted,
       ) ?? null;
     },
   };
@@ -194,7 +194,7 @@ function buildFakePrisma(opts?: { goLiveDate?: Date }) {
       const w = args.where;
       return Object.values(invoices).find((r) => {
         if (w['id'] !== undefined && r['id'] !== w['id']) return false;
-        if (w['userId'] !== undefined && r['userId'] !== w['userId']) return false;
+        if (w['tenantId'] !== undefined && r['tenantId'] !== w['tenantId']) return false;
         if (w['isDeleted'] !== undefined && r['isDeleted'] !== w['isDeleted']) return false;
         return true;
       }) ?? null;
@@ -328,19 +328,19 @@ function seed(opts?: { goLiveDate?: Date }) {
   fake.current = built;
   const { state } = built;
 
-  state.banks['bank-1'] = { id: 'bank-1', userId: USER, currencyCode: 'GBP', currentBalance: '1000' };
+  state.banks['bank-1'] = { id: 'bank-1', tenantId: USER, currencyCode: 'GBP', currentBalance: '1000' };
 
   // A MONEY_OUT expense category mapped to a real expense account in the pack.
   const expenseAccountId = pack.roleMap.PURCHASES;
   state.categories['cat-pay'] = {
-    id: 'cat-pay', userId: USER, code: 'OFFICE_COSTS', name: 'Office Costs',
+    id: 'cat-pay', tenantId: USER, code: 'OFFICE_COSTS', name: 'Office Costs',
     group: 'ADMIN_EXPENSES', appliesTo: 'MONEY_OUT', accountId: expenseAccountId,
     defaultTaxRateId: null, taxApplicable: true, isSystem: true, status: true, isDeleted: false,
   };
 
   // An owner-funds / equity category for an owner_funds round-trip (Dr Bank / Cr equity).
   state.categories['cat-equity'] = {
-    id: 'cat-equity', userId: USER, code: 'OWNERS_EQUITY', name: "Owner's Equity",
+    id: 'cat-equity', tenantId: USER, code: 'OWNERS_EQUITY', name: "Owner's Equity",
     group: 'EQUITY', appliesTo: 'MONEY_IN', accountId: pack.roleMap.RETAINED_EARNINGS,
     defaultTaxRateId: null, taxApplicable: false, isSystem: true, status: true, isDeleted: false,
   };
@@ -370,18 +370,18 @@ function seed(opts?: { goLiveDate?: Date }) {
 
   // An open invoice for the invoice_link tests.
   state.invoices['inv-1'] = {
-    id: 'inv-1', userId: USER, TotalAmount: '500', status: 'UNPAID', isDeleted: false, exchangeRate: null,
+    id: 'inv-1', tenantId: USER, TotalAmount: '500', status: 'UNPAID', isDeleted: false, exchangeRate: null,
   };
 
   state.fixedAssets['fa-1'] = {
-    id: 'fa-1', userId: USER, name: 'Old server',
+    id: 'fa-1', tenantId: USER, name: 'Old server',
     cost: '1000', accumulatedDepreciation: '600', status: 'active', isDeleted: false,
   };
 
   // A capital-asset category (MONEY_OUT, mapped to a fixed-asset account in the pack).
   const fixedAssetAccountId = pack.roleMap.FIXED_ASSET ?? pack.roleMap.PURCHASES; // fallback to purchases if no FIXED_ASSET role
   state.categories['cat-asset'] = {
-    id: 'cat-asset', userId: USER, code: 'FIXED_ASSETS', name: 'Fixed Assets',
+    id: 'cat-asset', tenantId: USER, code: 'FIXED_ASSETS', name: 'Fixed Assets',
     group: 'FIXED_ASSETS', appliesTo: 'MONEY_OUT', accountId: fixedAssetAccountId,
     defaultTaxRateId: null, taxApplicable: false, isSystem: true, status: true, isDeleted: false,
   };
@@ -399,7 +399,7 @@ function seed(opts?: { goLiveDate?: Date }) {
 
   // A purchase/bill for bill_link tests (GAP 3)
   state.purchases['bill-1'] = {
-    id: 'bill-1', userId: USER, totalAmount: '500', paidAmount: '0', balanceAmount: '500',
+    id: 'bill-1', tenantId: USER, totalAmount: '500', paidAmount: '0', balanceAmount: '500',
     status: 'pending', supplierId: null, vendorId: null, billTo: null, isDeleted: false,
   };
 
@@ -415,14 +415,14 @@ function seed(opts?: { goLiveDate?: Date }) {
 
   // A credit note for credit_note_link tests (GAP 3)
   state.creditNotes['cn-1'] = {
-    id: 'cn-1', userId: USER, totalAmount: '150', status: 'PENDING', isDeleted: false,
+    id: 'cn-1', tenantId: USER, totalAmount: '150', status: 'PENDING', isDeleted: false,
   };
 
   // Seed the 4 EXTRA_ACCOUNTS for the test user (GAP 2)
-  state.accounts['acct-9200'] = { id: 'acct-9200', userId: USER, code: '9200', accountType: 'LIABILITY' };
-  state.accounts['acct-9210'] = { id: 'acct-9210', userId: USER, code: '9210', accountType: 'EQUITY' };
-  state.accounts['acct-9220'] = { id: 'acct-9220', userId: USER, code: '9220', accountType: 'EQUITY' };
-  state.accounts['acct-9230'] = { id: 'acct-9230', userId: USER, code: '9230', accountType: 'EXPENSE' };
+  state.accounts['acct-9200'] = { id: 'acct-9200', tenantId: USER, code: '9200', accountType: 'LIABILITY' };
+  state.accounts['acct-9210'] = { id: 'acct-9210', tenantId: USER, code: '9210', accountType: 'EQUITY' };
+  state.accounts['acct-9220'] = { id: 'acct-9220', tenantId: USER, code: '9220', accountType: 'EQUITY' };
+  state.accounts['acct-9230'] = { id: 'acct-9230', tenantId: USER, code: '9230', accountType: 'EXPENSE' };
 
   return built;
 }
@@ -451,7 +451,7 @@ describe('explainAndPost — payment (generic_category)', () => {
     const { state } = seed();
 
     const out = await explainAndPost({
-      bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'payment',
+      bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'payment',
       categoryId: 'cat-pay', explainedDescription: 'Stationery',
     });
 
@@ -482,7 +482,7 @@ describe('explainAndPost — payment (generic_category)', () => {
     state.banks['bank-1'].accountId = 'bank-sub-acct';
 
     await explainAndPost({
-      bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'payment',
+      bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'payment',
       categoryId: 'cat-pay', explainedDescription: 'Stationery',
     });
 
@@ -503,7 +503,7 @@ describe('explainAndPost — payment (generic_category)', () => {
     const { state } = seed();
     // accountId left unset (un-backfilled bank).
     await explainAndPost({
-      bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'payment',
+      bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'payment',
       categoryId: 'cat-pay', explainedDescription: 'Stationery',
     });
     const je = state.entries.find((e) => e.sourceType === 'Expense' && e.event === 'recorded');
@@ -515,10 +515,10 @@ describe('explainAndPost — payment (generic_category)', () => {
     const { state } = seed();
 
     const out = await explainAndPost({
-      bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'payment', categoryId: 'cat-pay',
+      bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'payment', categoryId: 'cat-pay',
     });
 
-    await unexplain({ bankTxnId: 'btx-1', userId: USER });
+    await unexplain({ bankTxnId: 'btx-1', tenantId: USER });
 
     // The forward Expense JE is soft-deleted (not reversed-and-left-live), so the
     // source contributes zero to balances and no lone reversal dangles.
@@ -563,7 +563,7 @@ describe('explainAndPost — onPosted hook (approve path: atomic hint capture)',
     let sawResult: { bankTxnId?: string; expenseId?: string } | undefined;
 
     const out = await explainAndPost({
-      bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'payment', categoryId: 'cat-pay',
+      bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'payment', categoryId: 'cat-pay',
       onPosted: async (tx, result) => {
         // The hook sees the in-transaction state: the txn is already stamped
         // EXPLAINED and the result carries the freshly-created expense id.
@@ -589,7 +589,7 @@ describe('explainAndPost — onPosted hook (approve path: atomic hint capture)',
     // the JE and the EXPLAINED stamp; here we assert the rejection is not swallowed.
     await expect(
       explainAndPost({
-        bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'payment', categoryId: 'cat-pay',
+        bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'payment', categoryId: 'cat-pay',
         onPosted: async () => {
           throw new Error('hint failed');
         },
@@ -602,21 +602,21 @@ describe('explainAndPost — validation', () => {
   it('throws 400 for an unknown transaction type', async () => {
     seed();
     await expect(
-      explainAndPost({ bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'nope' }),
+      explainAndPost({ bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'nope' }),
     ).rejects.toThrow();
   });
 
   it('throws 404 for a bank txn not owned by the user', async () => {
     seed();
     await expect(
-      explainAndPost({ bankTxnId: 'btx-1', userId: 'someone-else', transactionTypeKey: 'payment', categoryId: 'cat-pay' }),
+      explainAndPost({ bankTxnId: 'btx-1', tenantId: 'someone-else', transactionTypeKey: 'payment', categoryId: 'cat-pay' }),
     ).rejects.toThrow();
   });
 
   it('throws 400 when a required category is missing', async () => {
     seed();
     await expect(
-      explainAndPost({ bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'payment' }),
+      explainAndPost({ bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'payment' }),
     ).rejects.toThrow();
   });
 });
@@ -635,7 +635,7 @@ describe('explainAndPost — double-post guard (A2)', () => {
 
     await expect(
       explainAndPost({
-        bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'payment', categoryId: 'cat-pay',
+        bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'payment', categoryId: 'cat-pay',
       }),
     ).rejects.toMatchObject({
       status: 409,
@@ -660,7 +660,7 @@ describe('explainAndPost — double-post guard (A2)', () => {
 
     await expect(
       explainAndPost({
-        bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'payment', categoryId: 'cat-pay',
+        bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'payment', categoryId: 'cat-pay',
       }),
     ).rejects.toMatchObject({
       status: 409,
@@ -679,14 +679,14 @@ describe('explainAndPost — re-explain (edit an EXPLAINED row)', () => {
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'payment',
+      bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'payment',
       categoryId: 'cat-pay', explainedDescription: 'first pass',
     });
     const firstExpenseId = state.bankTxns['btx-1'].postedSourceId as string;
 
     // Re-explain directly — NO unexplain call in between.
     await explainAndPost({
-      bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'payment',
+      bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'payment',
       categoryId: 'cat-pay', explainedDescription: 'second pass',
     });
 
@@ -722,7 +722,7 @@ describe('explainAndPost — re-explain (edit an EXPLAINED row)', () => {
     state.bankTxns['btx-1'].explainStatus = 'EXPLAINED';
 
     await expect(explainAndPost({
-      bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'payment', categoryId: 'cat-pay',
+      bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'payment', categoryId: 'cat-pay',
     })).rejects.toMatchObject({ status: 409 });
   });
 
@@ -737,7 +737,7 @@ describe('explainAndPost — re-explain (edit an EXPLAINED row)', () => {
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'invoice_receipt', invoiceId: 'inv-1',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'invoice_receipt', invoiceId: 'inv-1',
     });
     expect(state.invoices['inv-1'].status).toBe('PAID');
     const firstPaymentId = state.bankTxns['btx-in'].postedSourceId as string;
@@ -747,7 +747,7 @@ describe('explainAndPost — re-explain (edit an EXPLAINED row)', () => {
     // INVOICE_ALREADY_PAID (that would mean applyInvoiceReceipt read the invoice
     // BEFORE unexplainCore's void reverted it to UNPAID within the same transaction).
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'invoice_receipt', invoiceId: 'inv-1',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'invoice_receipt', invoiceId: 'inv-1',
     });
 
     // First InvoicePayment is voided.
@@ -783,7 +783,7 @@ describe('explainAndPost — BankTxnExplain round-trip (owner_funds)', () => {
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'owner_loan_in',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'owner_loan_in',
       categoryId: 'cat-equity',
     });
 
@@ -797,7 +797,7 @@ describe('explainAndPost — BankTxnExplain round-trip (owner_funds)', () => {
     expect(debits).toBeCloseTo(credits, 4);
     expect(debits).toBeCloseTo(500, 4);
 
-    await unexplain({ bankTxnId: 'btx-in', userId: USER });
+    await unexplain({ bankTxnId: 'btx-in', tenantId: USER });
 
     // The forward JE is soft-deleted (its event mangled to free the unique slot)
     // so the BankTxnExplain source nets to zero with no live entry remaining.
@@ -820,17 +820,17 @@ describe('explainAndPost — BankTxnExplain round-trip (owner_funds)', () => {
 
     // 1) explain
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'owner_loan_in',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'owner_loan_in',
       categoryId: 'cat-equity',
     });
     // 2) unexplain
-    await unexplain({ bankTxnId: 'btx-in', userId: USER });
+    await unexplain({ bankTxnId: 'btx-in', tenantId: USER });
     // After unexplain the source contributes ZERO.
     expect(netForSource(state.entries, 'BankTxnExplain', 'btx-in')).toBeCloseTo(0, 4);
 
     // 3) re-explain — must create a NEW live forward posting, not no-op.
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'owner_loan_in',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'owner_loan_in',
       categoryId: 'cat-equity',
     });
 
@@ -860,7 +860,7 @@ describe('explainAndPost — invoice_link round-trip (guards Critical 1)', () =>
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'invoice_receipt',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'invoice_receipt',
       invoiceId: 'inv-1',
     });
 
@@ -878,7 +878,7 @@ describe('explainAndPost — invoice_link round-trip (guards Critical 1)', () =>
     // postedSourceId must be the InvoicePayment id (not the bank txn id).
     expect(state.bankTxns['btx-in'].postedSourceId).toBe(invoicePaymentId);
 
-    await unexplain({ bankTxnId: 'btx-in', userId: USER });
+    await unexplain({ bankTxnId: 'btx-in', tenantId: USER });
 
     // The void must target event 'payment' (NOT 'explained') or it orphans the
     // posting. The forward JE is soft-deleted; the source nets to zero by removal.
@@ -902,19 +902,19 @@ describe('explainAndPost — invoice_link round-trip (guards Critical 1)', () =>
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'invoice_receipt', invoiceId: 'inv-1',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'invoice_receipt', invoiceId: 'inv-1',
     });
     const firstPayments = Object.values(state.invoicePayments);
     const firstPaymentId = firstPayments[0].id as string;
 
-    await unexplain({ bankTxnId: 'btx-in', userId: USER });
+    await unexplain({ bankTxnId: 'btx-in', tenantId: USER });
     expect(netForSource(state.entries, 'InvoicePayment', firstPaymentId)).toBeCloseTo(0, 4);
     // Invoice back to UNPAID after unexplain.
     expect(state.invoices['inv-1'].status).toBe('UNPAID');
 
     // Re-explain — a NEW InvoicePayment row + live payment posting must exist.
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'invoice_receipt', invoiceId: 'inv-1',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'invoice_receipt', invoiceId: 'inv-1',
     });
 
     // Two InvoicePayment rows: first voided, second live.
@@ -942,7 +942,7 @@ describe('explainAndPost — invoice_receipt AR sub-ledger tie (GAP 1 fix)', () 
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'invoice_receipt',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'invoice_receipt',
       invoiceId: 'inv-1',
     });
 
@@ -982,7 +982,7 @@ describe('explainAndPost — invoice_receipt AR sub-ledger tie (GAP 1 fix)', () 
     const balBefore = state.banks['bank-1'].currentBalance; // '1000' — imported deposit already baked in
 
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'invoice_receipt',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'invoice_receipt',
       invoiceId: 'inv-1',
     });
 
@@ -1017,7 +1017,7 @@ describe('explainAndPost — invoice_receipt AR sub-ledger tie (GAP 1 fix)', () 
     };
 
     await explainAndPost({
-      bankTxnId: 'btx-partial', userId: USER, transactionTypeKey: 'invoice_receipt',
+      bankTxnId: 'btx-partial', tenantId: USER, transactionTypeKey: 'invoice_receipt',
       invoiceId: 'inv-1',
     });
 
@@ -1041,7 +1041,7 @@ describe('explainAndPost — invoice_receipt AR sub-ledger tie (GAP 1 fix)', () 
 
     await expect(
       explainAndPost({
-        bankTxnId: 'btx-over', userId: USER, transactionTypeKey: 'invoice_receipt',
+        bankTxnId: 'btx-over', tenantId: USER, transactionTypeKey: 'invoice_receipt',
         invoiceId: 'inv-1',
       }),
     ).rejects.toMatchObject({ status: 400, message: expect.stringContaining('exceeds') });
@@ -1056,7 +1056,7 @@ describe('explainAndPost — invoice_receipt AR sub-ledger tie (GAP 1 fix)', () 
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'invoice_receipt',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'invoice_receipt',
       invoiceId: 'inv-1',
     });
 
@@ -1067,7 +1067,7 @@ describe('explainAndPost — invoice_receipt AR sub-ledger tie (GAP 1 fix)', () 
     // Invoice is PAID before unexplain.
     expect(state.invoices['inv-1'].status).toBe('PAID');
 
-    await unexplain({ bankTxnId: 'btx-in', userId: USER });
+    await unexplain({ bankTxnId: 'btx-in', tenantId: USER });
 
     // InvoicePayment must be voided.
     expect(state.invoicePayments[invoicePaymentId].isVoided).toBe(true);
@@ -1097,7 +1097,7 @@ describe('explainAndPost — bill_link round-trip (guards Critical 1)', () => {
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-bill', userId: USER, transactionTypeKey: 'bill_payment',
+      bankTxnId: 'btx-bill', tenantId: USER, transactionTypeKey: 'bill_payment',
       billId: 'bill-1',
     });
 
@@ -1114,7 +1114,7 @@ describe('explainAndPost — bill_link round-trip (guards Critical 1)', () => {
     expect(state.bankTxns['btx-bill'].postedSourceType).toBe('SupplierPayment');
     expect(state.bankTxns['btx-bill'].postedSourceId).toBe(supplierPaymentId);
 
-    await unexplain({ bankTxnId: 'btx-bill', userId: USER });
+    await unexplain({ bankTxnId: 'btx-bill', tenantId: USER });
 
     // GL voided, SupplierPayment voided, source nets to zero.
     expect(je!.isDeleted).toBe(true);
@@ -1132,7 +1132,7 @@ describe('explainAndPost — bill_link round-trip (guards Critical 1)', () => {
     const balBefore = state.banks['bank-1'].currentBalance; // '1000'
 
     await explainAndPost({
-      bankTxnId: 'btx-bill', userId: USER, transactionTypeKey: 'bill_payment',
+      bankTxnId: 'btx-bill', tenantId: USER, transactionTypeKey: 'bill_payment',
       billId: 'bill-1',
     });
 
@@ -1157,7 +1157,7 @@ describe('resolveTax — explicit unknown taxRateId', () => {
     seed();
     await expect(
       explainAndPost({
-        bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'payment',
+        bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'payment',
         categoryId: 'cat-pay', taxTreatment: 'no-such-rate',
       }),
     ).rejects.toThrow(/Tax rate not found/);
@@ -1173,7 +1173,7 @@ describe('explainAndPost — hp_payment (generic_category, MONEY_OUT)', () => {
     const { state } = seed();
 
     const out = await explainAndPost({
-      bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'hp_payment',
+      bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'hp_payment',
       categoryId: 'cat-pay', explainedDescription: 'HP agreement quarterly payment',
     });
 
@@ -1198,9 +1198,9 @@ describe('explainAndPost — hp_payment (generic_category, MONEY_OUT)', () => {
   it('unexplain reverses the hp_payment posting to zero', async () => {
     const { state } = seed();
     const out = await explainAndPost({
-      bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'hp_payment', categoryId: 'cat-pay',
+      bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'hp_payment', categoryId: 'cat-pay',
     });
-    await unexplain({ bankTxnId: 'btx-1', userId: USER });
+    await unexplain({ bankTxnId: 'btx-1', tenantId: USER });
 
     const fwd = state.entries.find((e) => e.sourceType === 'Expense' && e.reversedById === null);
     expect(fwd).toBeTruthy();
@@ -1223,7 +1223,7 @@ describe('explainAndPost — capital_asset_disposal (asset_disposal, MONEY_IN)',
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'capital_asset_disposal',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'capital_asset_disposal',
       assetId: 'fa-1',
     });
 
@@ -1258,7 +1258,7 @@ describe('explainAndPost — capital_asset_disposal (asset_disposal, MONEY_IN)',
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'capital_asset_disposal',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'capital_asset_disposal',
       assetId: 'fa-1',
     });
 
@@ -1267,7 +1267,7 @@ describe('explainAndPost — capital_asset_disposal (asset_disposal, MONEY_IN)',
     );
     expect(je).toBeTruthy();
 
-    await unexplain({ bankTxnId: 'btx-in', userId: USER });
+    await unexplain({ bankTxnId: 'btx-in', tenantId: USER });
 
     // Forward JE soft-deleted; source nets to zero.
     expect(je!.isDeleted).toBe(true);
@@ -1288,7 +1288,7 @@ describe('explainAndPost — capital_asset_disposal (asset_disposal, MONEY_IN)',
   it('throws when assetId is missing (no silent income fallback)', async () => {
     seed();
     await expect(
-      explainAndPost({ bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'capital_asset_disposal' }),
+      explainAndPost({ bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'capital_asset_disposal' }),
     ).rejects.toThrow();
   });
 
@@ -1296,7 +1296,7 @@ describe('explainAndPost — capital_asset_disposal (asset_disposal, MONEY_IN)',
     const { state } = seed();
     state.fixedAssets['fa-1'].status = 'disposed';
     await expect(
-      explainAndPost({ bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'capital_asset_disposal', assetId: 'fa-1' }),
+      explainAndPost({ bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'capital_asset_disposal', assetId: 'fa-1' }),
     ).rejects.toThrow();
   });
 
@@ -1305,14 +1305,14 @@ describe('explainAndPost — capital_asset_disposal (asset_disposal, MONEY_IN)',
 
     // Seed a fully-depreciated asset (accumulatedDepreciation === cost, salvageValue 0).
     state.fixedAssets['fa-fd'] = {
-      id: 'fa-fd', userId: USER, name: 'Written-down rig',
+      id: 'fa-fd', tenantId: USER, name: 'Written-down rig',
       cost: '1000', accumulatedDepreciation: '1000', salvageValue: '0',
       status: 'fully_depreciated', isDeleted: false,
     };
 
     // Explain: disposal of fully-depreciated asset must succeed (FIX 2).
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'capital_asset_disposal',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'capital_asset_disposal',
       assetId: 'fa-fd',
     });
 
@@ -1320,7 +1320,7 @@ describe('explainAndPost — capital_asset_disposal (asset_disposal, MONEY_IN)',
     expect(state.fixedAssets['fa-fd'].status).toBe('disposed');
 
     // Unexplain: status must be restored to fully_depreciated, NOT 'active' (FIX 3).
-    await unexplain({ bankTxnId: 'btx-in', userId: USER });
+    await unexplain({ bankTxnId: 'btx-in', tenantId: USER });
 
     expect(state.fixedAssets['fa-fd'].status).toBe('fully_depreciated');
     expect(state.fixedAssets['fa-fd'].disposalDate == null).toBe(true);
@@ -1351,7 +1351,7 @@ describe('explainAndPost — post-gate date-floor and reconciliation defence', (
     state.bankTxns['btx-1'].transactionDate = new Date('2026-06-23T00:00:00Z');
 
     await explainAndPost({
-      bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'payment',
+      bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'payment',
       categoryId: 'cat-pay', explainedDescription: 'Same-day go-live txn',
     });
 
@@ -1381,7 +1381,7 @@ describe('explainAndPost — post-gate date-floor and reconciliation defence', (
     state.bankTxns['btx-1'].transactionDate = new Date('2026-06-22T00:00:00Z');
 
     await explainAndPost({
-      bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'payment',
+      bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'payment',
       categoryId: 'cat-pay', explainedDescription: 'Pre-go-live txn',
     });
 
@@ -1416,7 +1416,7 @@ describe('explainAndPost — pre-go-live invoice_receipt linkage retention', () 
     const { state } = seed({ goLiveDate: new Date('2026-07-01T00:00:00Z') });
 
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'invoice_receipt',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'invoice_receipt',
       invoiceId: 'inv-1',
     });
 
@@ -1440,7 +1440,7 @@ describe('explainAndPost — pre-go-live invoice_receipt linkage retention', () 
     expect(btx.postedSourceId).toBe(invoicePaymentId);
 
     // Unexplain must void the orphan-free InvoicePayment + revert invoice to UNPAID.
-    await unexplain({ bankTxnId: 'btx-in', userId: USER });
+    await unexplain({ bankTxnId: 'btx-in', tenantId: USER });
     expect(state.invoicePayments[invoicePaymentId].isVoided).toBe(true);
     expect(state.invoices['inv-1'].status).toBe('UNPAID');
     expect(state.bankTxns['btx-in'].postedSourceType).toBeNull();
@@ -1457,7 +1457,7 @@ describe('explainAndPost — user payment reason routing (GAP 2)', () => {
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'money_paid_to_user',
+      bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'money_paid_to_user',
       payToUserId: 'user-x', reason: 'dividend',
     });
 
@@ -1483,7 +1483,7 @@ describe('explainAndPost — user payment reason routing (GAP 2)', () => {
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'money_paid_to_user',
+      bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'money_paid_to_user',
       payToUserId: 'user-x', reason: 'net_salary',
     });
 
@@ -1500,7 +1500,7 @@ describe('explainAndPost — user payment reason routing (GAP 2)', () => {
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'money_paid_to_user',
+      bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'money_paid_to_user',
       payToUserId: 'user-x', reason: 'director_loan_repayment',
     });
 
@@ -1517,7 +1517,7 @@ describe('explainAndPost — user payment reason routing (GAP 2)', () => {
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'money_received_from_user',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'money_received_from_user',
       payToUserId: 'user-x', reason: 'director_loan',
     });
 
@@ -1540,7 +1540,7 @@ describe('explainAndPost — user payment reason routing (GAP 2)', () => {
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-in', userId: USER, transactionTypeKey: 'money_received_from_user',
+      bankTxnId: 'btx-in', tenantId: USER, transactionTypeKey: 'money_received_from_user',
       payToUserId: 'user-x', reason: 'share_capital_introduced',
     });
 
@@ -1557,7 +1557,7 @@ describe('explainAndPost — user payment reason routing (GAP 2)', () => {
     seed();
     await expect(
       explainAndPost({
-        bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'money_paid_to_user',
+        bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'money_paid_to_user',
         reason: 'dividend',
       }),
     ).rejects.toMatchObject({ status: 400 });
@@ -1567,7 +1567,7 @@ describe('explainAndPost — user payment reason routing (GAP 2)', () => {
     seed();
     await expect(
       explainAndPost({
-        bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'money_paid_to_user',
+        bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'money_paid_to_user',
         payToUserId: 'user-x',
       }),
     ).rejects.toMatchObject({ status: 400 });
@@ -1577,7 +1577,7 @@ describe('explainAndPost — user payment reason routing (GAP 2)', () => {
     seed();
     await expect(
       explainAndPost({
-        bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'money_paid_to_user',
+        bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'money_paid_to_user',
         payToUserId: 'user-x', reason: 'not_a_valid_reason',
       }),
     ).rejects.toMatchObject({ status: 400, message: expect.stringContaining('Invalid reason') });
@@ -1587,13 +1587,13 @@ describe('explainAndPost — user payment reason routing (GAP 2)', () => {
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'money_paid_to_user',
+      bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'money_paid_to_user',
       payToUserId: 'user-x', reason: 'dividend',
     });
 
     expect(state.bankTxns['btx-1'].userPaymentReason).toBe('dividend');
 
-    await unexplain({ bankTxnId: 'btx-1', userId: USER });
+    await unexplain({ bankTxnId: 'btx-1', tenantId: USER });
 
     const je = state.entries.find(
       (e) => e.sourceType === 'BankTxnExplain' && e.sourceId === 'btx-1',
@@ -1614,13 +1614,13 @@ describe('explainAndPost — user payment reason routing (GAP 2)', () => {
 
   it('money_paid_to_user: a SOFT-DELETED target account is NOT resolved (throws 400)', async () => {
     const { state } = seed();
-    // Soft-delete the dividend account (9220). The @@unique([userId, code]) row
+    // Soft-delete the dividend account (9220). The @@unique([tenantId, code]) row
     // survives a soft delete, so a naive findUnique would still post to it.
     state.accounts['acct-9220'].isDeleted = true;
 
     await expect(
       explainAndPost({
-        bankTxnId: 'btx-1', userId: USER, transactionTypeKey: 'money_paid_to_user',
+        bankTxnId: 'btx-1', tenantId: USER, transactionTypeKey: 'money_paid_to_user',
         payToUserId: 'user-x', reason: 'dividend',
       }),
     ).rejects.toMatchObject({ status: 400 });
@@ -1668,7 +1668,7 @@ describe('explainAndPost — bill_payment ties to bill (GAP 3)', () => {
     const { state } = seed();
 
     const out = await explainAndPost({
-      bankTxnId: 'btx-bill', userId: USER, transactionTypeKey: 'bill_payment',
+      bankTxnId: 'btx-bill', tenantId: USER, transactionTypeKey: 'bill_payment',
       billId: 'bill-1',
     });
 
@@ -1729,7 +1729,7 @@ describe('explainAndPost — bill_payment ties to bill (GAP 3)', () => {
     // btx-bill amount is 200, remaining is 100 → should reject as overpayment.
     await expect(
       explainAndPost({
-        bankTxnId: 'btx-bill', userId: USER, transactionTypeKey: 'bill_payment',
+        bankTxnId: 'btx-bill', tenantId: USER, transactionTypeKey: 'bill_payment',
         billId: 'bill-1',
       }),
     ).rejects.toThrow(/exceeds.*balance/i);
@@ -1739,7 +1739,7 @@ describe('explainAndPost — bill_payment ties to bill (GAP 3)', () => {
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-bill', userId: USER, transactionTypeKey: 'bill_payment',
+      bankTxnId: 'btx-bill', tenantId: USER, transactionTypeKey: 'bill_payment',
       billId: 'bill-1',
     });
 
@@ -1747,7 +1747,7 @@ describe('explainAndPost — bill_payment ties to bill (GAP 3)', () => {
     expect(sp).toBeTruthy();
     const supplierPaymentId = sp.id;
 
-    await unexplain({ bankTxnId: 'btx-bill', userId: USER });
+    await unexplain({ bankTxnId: 'btx-bill', tenantId: USER });
 
     // GL entry is soft-deleted (voidDocument mangles the event to free the unique slot).
     const je = state.entries.find(
@@ -1780,7 +1780,7 @@ describe('explainAndPost — bill_payment ties to bill (GAP 3)', () => {
 
     // Seed a legacy purchase that has vendorId set but supplierId null — pre-Supplier-migration shape.
     state.purchases['bill-legacy'] = {
-      id: 'bill-legacy', userId: USER, totalAmount: '300', paidAmount: '0', balanceAmount: '300',
+      id: 'bill-legacy', tenantId: USER, totalAmount: '300', paidAmount: '0', balanceAmount: '300',
       status: 'pending',
       supplierId: null,       // ← no Supplier row
       vendorId: 'user-v1',   // ← a User FK (NOT a Supplier id)
@@ -1800,7 +1800,7 @@ describe('explainAndPost — bill_payment ties to bill (GAP 3)', () => {
 
     // This must NOT throw (before the fix it would on a real DB with FK enforcement).
     const out = await explainAndPost({
-      bankTxnId: 'btx-legacy', userId: USER, transactionTypeKey: 'bill_payment',
+      bankTxnId: 'btx-legacy', tenantId: USER, transactionTypeKey: 'bill_payment',
       billId: 'bill-legacy',
     });
 
@@ -1826,7 +1826,7 @@ describe('explainAndPost — bill_payment ties to bill (GAP 3)', () => {
     const { state } = seed({ goLiveDate: new Date('2099-01-01') });
 
     await explainAndPost({
-      bankTxnId: 'btx-bill', userId: USER, transactionTypeKey: 'bill_payment',
+      bankTxnId: 'btx-bill', tenantId: USER, transactionTypeKey: 'bill_payment',
       billId: 'bill-1',
     });
 
@@ -1854,7 +1854,7 @@ describe('explainAndPost — bill_payment ties to bill (GAP 3)', () => {
     expect(state.purchases['bill-1']['status']).toBe('partially_paid');
 
     // Unexplain still voids the SP + recomputes purchase, even with no JE.
-    await unexplain({ bankTxnId: 'btx-bill', userId: USER });
+    await unexplain({ bankTxnId: 'btx-bill', tenantId: USER });
 
     expect(sp['isVoided']).toBe(true);
     expect(Number(state.purchases['bill-1']['paidAmount'])).toBeCloseTo(0, 4);
@@ -1884,7 +1884,7 @@ describe('explainAndPost — credit_note_refund routes to AR not expense (GAP 3)
     };
 
     await explainAndPost({
-      bankTxnId: 'btx-cnr', userId: USER, transactionTypeKey: 'credit_note_refund',
+      bankTxnId: 'btx-cnr', tenantId: USER, transactionTypeKey: 'credit_note_refund',
       creditNoteId: 'cn-1',
     });
 
@@ -1929,11 +1929,11 @@ describe('explainAndPost — credit_note_refund routes to AR not expense (GAP 3)
     };
 
     await explainAndPost({
-      bankTxnId: 'btx-cnr', userId: USER, transactionTypeKey: 'credit_note_refund',
+      bankTxnId: 'btx-cnr', tenantId: USER, transactionTypeKey: 'credit_note_refund',
       creditNoteId: 'cn-1',
     });
 
-    await unexplain({ bankTxnId: 'btx-cnr', userId: USER });
+    await unexplain({ bankTxnId: 'btx-cnr', tenantId: USER });
 
     // GL reversed.
     expect(netForSource(state.entries, 'CreditNote', 'cn-1')).toBeCloseTo(0, 4);
@@ -1952,7 +1952,7 @@ describe('explainAndPost — capital_asset creates FixedAsset register row (GAP 
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-asset', userId: USER, transactionTypeKey: 'capital_asset',
+      bankTxnId: 'btx-asset', tenantId: USER, transactionTypeKey: 'capital_asset',
       categoryId: 'cat-asset',
       depreciationMethod: 'STRAIGHT_LINE',
       assetLifeMonths: 60,
@@ -1970,7 +1970,7 @@ describe('explainAndPost — capital_asset creates FixedAsset register row (GAP 
     expect(debits).toBeCloseTo(1200, 4);
 
     // 2. A FixedAsset register row was created.
-    const allAssets = Object.values(state.fixedAssets).filter((a) => a['userId'] === USER && a['status'] === 'active' && !a['isDeleted']);
+    const allAssets = Object.values(state.fixedAssets).filter((a) => a['tenantId'] === USER && a['status'] === 'active' && !a['isDeleted']);
     // Filter out the pre-seeded 'fa-1' (Old server) which has different cost.
     const newAssets = allAssets.filter((a) => Number(a['cost']) === 1200);
     expect(newAssets.length).toBe(1);
@@ -2007,7 +2007,7 @@ describe('explainAndPost — capital_asset creates FixedAsset register row (GAP 
     state.categories['cat-asset'].defaultTaxRateId = 'tr-vat';
 
     await explainAndPost({
-      bankTxnId: 'btx-asset', userId: USER, transactionTypeKey: 'capital_asset',
+      bankTxnId: 'btx-asset', tenantId: USER, transactionTypeKey: 'capital_asset',
       categoryId: 'cat-asset',
       depreciationMethod: 'REDUCING_BALANCE',
       assetLifeMonths: 36,
@@ -2045,12 +2045,12 @@ describe('explainAndPost — capital_asset creates FixedAsset register row (GAP 
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-asset', userId: USER, transactionTypeKey: 'capital_asset',
+      bankTxnId: 'btx-asset', tenantId: USER, transactionTypeKey: 'capital_asset',
       categoryId: 'cat-asset',
       // No assetLifeMonths supplied.
     });
 
-    const fa = Object.values(state.fixedAssets).find((a) => a['userId'] === USER && Number(a['cost']) === 1200);
+    const fa = Object.values(state.fixedAssets).find((a) => a['tenantId'] === USER && Number(a['cost']) === 1200);
     expect(fa).toBeTruthy();
     expect(fa!['usefulLifeMonths']).toBe(60);
     expect(fa!['method']).toBe('STRAIGHT_LINE'); // default
@@ -2060,13 +2060,13 @@ describe('explainAndPost — capital_asset creates FixedAsset register row (GAP 
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-asset', userId: USER, transactionTypeKey: 'capital_asset',
+      bankTxnId: 'btx-asset', tenantId: USER, transactionTypeKey: 'capital_asset',
       categoryId: 'cat-asset',
       depreciationMethod: 'NONE',
       assetLifeMonths: 120,
     });
 
-    const fa = Object.values(state.fixedAssets).find((a) => a['userId'] === USER && Number(a['cost']) === 1200);
+    const fa = Object.values(state.fixedAssets).find((a) => a['tenantId'] === USER && Number(a['cost']) === 1200);
     expect(fa).toBeTruthy();
     expect(fa!['method']).toBe('NONE');
   });
@@ -2075,7 +2075,7 @@ describe('explainAndPost — capital_asset creates FixedAsset register row (GAP 
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-asset', userId: USER, transactionTypeKey: 'capital_asset',
+      bankTxnId: 'btx-asset', tenantId: USER, transactionTypeKey: 'capital_asset',
       categoryId: 'cat-asset',
       depreciationMethod: 'STRAIGHT_LINE',
       assetLifeMonths: 60,
@@ -2086,7 +2086,7 @@ describe('explainAndPost — capital_asset creates FixedAsset register row (GAP 
     const assetId = btx.createdAssetId as string;
     expect(assetId).toBeTruthy();
 
-    await unexplain({ bankTxnId: 'btx-asset', userId: USER });
+    await unexplain({ bankTxnId: 'btx-asset', tenantId: USER });
 
     // GL JE is soft-deleted.
     const je = state.entries.find(
@@ -2112,7 +2112,7 @@ describe('explainAndPost — capital_asset creates FixedAsset register row (GAP 
     const { state } = seed();
 
     await explainAndPost({
-      bankTxnId: 'btx-asset', userId: USER, transactionTypeKey: 'capital_asset',
+      bankTxnId: 'btx-asset', tenantId: USER, transactionTypeKey: 'capital_asset',
       categoryId: 'cat-asset',
       depreciationMethod: 'STRAIGHT_LINE',
       assetLifeMonths: 60,
@@ -2126,7 +2126,7 @@ describe('explainAndPost — capital_asset creates FixedAsset register row (GAP 
     state.fixedAssets[assetId].accumulatedDepreciation = '20';
 
     await expect(
-      unexplain({ bankTxnId: 'btx-asset', userId: USER }),
+      unexplain({ bankTxnId: 'btx-asset', tenantId: USER }),
     ).rejects.toMatchObject({ status: 409, message: expect.stringContaining('depreciation') });
 
     // Asset remains intact (not deleted).
@@ -2140,7 +2140,7 @@ describe('explainAndPost — capital_asset creates FixedAsset register row (GAP 
     const { state } = seed({ goLiveDate: new Date('2099-01-01') });
 
     await explainAndPost({
-      bankTxnId: 'btx-asset', userId: USER, transactionTypeKey: 'capital_asset',
+      bankTxnId: 'btx-asset', tenantId: USER, transactionTypeKey: 'capital_asset',
       categoryId: 'cat-asset',
       depreciationMethod: 'STRAIGHT_LINE',
       assetLifeMonths: 60,
@@ -2153,7 +2153,7 @@ describe('explainAndPost — capital_asset creates FixedAsset register row (GAP 
     expect(je).toBeFalsy();
 
     // FixedAsset still created (register is master data, independent of GL gate).
-    const fa = Object.values(state.fixedAssets).find((a) => a['userId'] === USER && Number(a['cost']) === 1200);
+    const fa = Object.values(state.fixedAssets).find((a) => a['tenantId'] === USER && Number(a['cost']) === 1200);
     expect(fa).toBeTruthy();
     const assetId = fa!['id'] as string;
 
@@ -2164,7 +2164,7 @@ describe('explainAndPost — capital_asset creates FixedAsset register row (GAP 
     expect(btx.createdAssetId).toBe(assetId);
 
     // Unexplain still soft-deletes the asset (even with no JE).
-    await unexplain({ bankTxnId: 'btx-asset', userId: USER });
+    await unexplain({ bankTxnId: 'btx-asset', tenantId: USER });
     expect(state.fixedAssets[assetId]['isDeleted']).toBe(true);
     expect(btx.createdAssetId).toBeNull();
     expect(btx.explainStatus).toBe('UNEXPLAINED');

@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { insertCustomFieldValues, readCustomFieldValues } from '../lib/customFieldValues';
 
-// Brand is a global lookup table — no userId column, so tenantScope() does
+// Brand is a global lookup table — no tenantId column, so tenantScope() does
 // not apply here.
 
 // Attach an absolute image URL the frontend can render directly. Stored value
@@ -31,7 +31,7 @@ export async function createBrand(req: Request, res: Response): Promise<void> {
     const imageFile = req.file ?? filesArray.find((f) => f.fieldname === 'brand_image');
     const brand_image = imageFile ? imageFile.filename : null;
 
-    const userId = (req as Request & { user?: string }).user ?? 'system';
+    const tenantId = (req as Request & { user?: string }).user ?? 'system';
 
     const brand = await prisma.$transaction(async (tx) => {
       const created = await tx.brand.create({
@@ -46,7 +46,7 @@ export async function createBrand(req: Request, res: Response): Promise<void> {
         recordId: created.id,
         customFields: req.body.customFields,
         files: filesArray,
-        userId,
+        tenantId,
       });
       return created;
     });
@@ -141,7 +141,7 @@ export async function updateBrand(req: Request, res: Response): Promise<void> {
     const filesArray = (req.files as Express.Multer.File[] | undefined) ?? [];
     const imageFile = req.file ?? filesArray.find((f) => f.fieldname === 'brand_image');
 
-    const userId = (req as Request & { user?: string }).user ?? 'system';
+    const tenantId = (req as Request & { user?: string }).user ?? 'system';
 
     const data: Prisma.BrandUpdateInput = {};
     if (brand_name) data.brand_name = brand_name;
@@ -160,7 +160,7 @@ export async function updateBrand(req: Request, res: Response): Promise<void> {
         recordId: updated.id,
         customFields: req.body.customFields,
         files: filesArray,
-        userId,
+        tenantId,
       });
       return updated;
     });

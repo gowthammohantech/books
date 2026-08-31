@@ -86,7 +86,7 @@ async function nextInvoiceNumber(tx: RunnerTx, offset: number): Promise<string> 
  */
 export interface ScheduleTemplate {
   id: string;
-  userId: string;
+  tenantId: string;
   contactId: string | null;
   currencyCode: string | null;
   taxTreatment: string | null;
@@ -112,7 +112,7 @@ async function createInvoiceWithNumber(
   schedule: ScheduleTemplate,
   runDate: Date,
 ): Promise<{ id: string; invoiceNumber: string }> {
-  const billFrom = schedule.billFrom ?? schedule.userId;
+  const billFrom = schedule.billFrom ?? schedule.tenantId;
 
   for (let attempt = 0; attempt < MAX_NUMBER_RETRIES; attempt++) {
     const invoiceNumber = await nextInvoiceNumber(tx, attempt);
@@ -123,7 +123,7 @@ async function createInvoiceWithNumber(
           invoiceType: 'INVOICE',
           status: 'UNPAID',
           invoiceDate: runDate,
-          userId: schedule.userId,
+          tenantId: schedule.tenantId,
           billFrom,
           ...(schedule.contactId ? { contactId: schedule.contactId } : {}),
           items: (schedule.items ?? null) as Prisma.InputJsonValue,
@@ -181,7 +181,7 @@ async function postGeneratedInvoice(
   const postingTx = tx as unknown as PostingTx;
 
   await postInvoiceIssued(postingTx, {
-    userId: schedule.userId,
+    tenantId: schedule.tenantId,
     invoiceId: invoice.id,
     date: runDate,
     total: String(schedule.TotalAmount),
@@ -207,7 +207,7 @@ async function postGeneratedInvoice(
     if (product?.item_type === 'Service') continue;
 
     const inv = await tx.inventory.findFirst({
-      where: { productId, userId: schedule.userId, isDeleted: false },
+      where: { productId, tenantId: schedule.tenantId, isDeleted: false },
     });
     if (inv) {
       totalCogs = totalCogs.plus(inv.avgCost.times(new PrismaNS.Decimal(qty)));
@@ -216,7 +216,7 @@ async function postGeneratedInvoice(
     // Deduct inventory exactly like a normal invoice issue (stock_out).
     await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
       productId,
-      userId: schedule.userId,
+      tenantId: schedule.tenantId,
       qtyDelta: -qty,
       type: 'stock_out',
       referenceType: 'invoice',
@@ -224,13 +224,13 @@ async function postGeneratedInvoice(
       extra: {
         unitId: item.unit ?? null,
         notes: `Stock reduced due to recurring Invoice #${invoice.invoiceNumber}`,
-        createdBy: schedule.userId,
+        createdBy: schedule.tenantId,
       },
     });
   }
 
   await postSaleCogs(postingTx, {
-    userId: schedule.userId,
+    tenantId: schedule.tenantId,
     invoiceId: invoice.id,
     date: runDate,
     cost: totalCogs.toString(),
@@ -252,7 +252,7 @@ async function postGeneratedInvoice(
  * @param client a Prisma transaction client OR the PrismaClient
  * @param schedule the schedule template (already tenant-checked by caller)
  * @param runDate the effective date for the generated invoice
- * @param _userId tenant scope (kept for signature stability; schedule.userId is authoritative)
+ * @param _userId tenant scope (kept for signature stability; schedule.tenantId is authoritative)
  */
 export async function generateInvoiceFromSchedule(
   client: RunnerTx | PrismaClient,
@@ -286,7 +286,7 @@ export interface RunDueSummary {
 
 /**
  * System cron entrypoint. Tenant-agnostic SELECT of every ACTIVE schedule whose
- * nextRunDate has arrived; each is processed using its OWN userId for posting +
+ * nextRunDate has arrived; each is processed using its OWN tenantId for posting +
  * tenant scope.
  *
  * Per schedule, in a SINGLE transaction:

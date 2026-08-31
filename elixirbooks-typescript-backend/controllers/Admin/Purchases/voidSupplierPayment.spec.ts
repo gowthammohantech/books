@@ -23,7 +23,7 @@ interface StoredLine {
   taxRoleKey: string | null; description: string | null;
 }
 interface StoredEntry {
-  id: string; userId: string; entryDate: Date;
+  id: string; tenantId: string; entryDate: Date;
   sourceType: string | null; sourceId: string | null; event: string | null;
   isDeleted: boolean; reversedById: string | null; reversals: { id: string }[];
   lines: StoredLine[];
@@ -58,7 +58,7 @@ function buildFakePrisma() {
       const w = (args as { where?: Record<string, unknown> }).where ?? {};
       return entries.find((e) => {
         if ('id' in w && e.id !== w['id']) return false;
-        if ('userId' in w && e.userId !== w['userId']) return false;
+        if ('tenantId' in w && e.tenantId !== w['tenantId']) return false;
         if ('sourceType' in w && e.sourceType !== w['sourceType']) return false;
         if ('sourceId' in w && e.sourceId !== w['sourceId']) return false;
         if ('event' in w && e.event !== w['event']) return false;
@@ -68,12 +68,12 @@ function buildFakePrisma() {
     },
     async create(args: { data: unknown }): Promise<{ id: string }> {
       const d = args.data as {
-        userId: string; entryDate: Date;
+        tenantId: string; entryDate: Date;
         sourceType?: string | null; sourceId?: string | null; event?: string | null;
         reversedById?: string | null; lines?: { create: StoredLine[] };
       };
       const collision = entries.find(
-        (e) => e.userId === d.userId && e.sourceType === (d.sourceType ?? null)
+        (e) => e.tenantId === d.tenantId && e.sourceType === (d.sourceType ?? null)
           && e.sourceId === (d.sourceId ?? null) && e.event === (d.event ?? null),
       );
       if (collision) {
@@ -83,7 +83,7 @@ function buildFakePrisma() {
       }
       const id = nextId('je');
       const entry: StoredEntry = {
-        id, userId: d.userId, entryDate: d.entryDate,
+        id, tenantId: d.tenantId, entryDate: d.entryDate,
         sourceType: d.sourceType ?? null, sourceId: d.sourceId ?? null, event: d.event ?? null,
         isDeleted: false, reversedById: d.reversedById ?? null, reversals: [],
         lines: d.lines?.create ?? [],
@@ -159,7 +159,7 @@ function buildFakePrisma() {
       const row = Object.values(payments).find((r) => {
         // flat scalar matching
         if (!matchWhere(r, w)) return false;
-        // nested purchase scope: { purchase: { userId, isDeleted } }
+        // nested purchase scope: { purchase: { tenantId, isDeleted } }
         const purW = (w as { purchase?: Record<string, unknown> }).purchase;
         if (purW) {
           const pur = purchases[r.purchaseId as string];
@@ -250,11 +250,11 @@ function fakeRes() {
   return res;
 }
 
-function fakeReq(paymentId: string, userId: string | null, reason?: string) {
+function fakeReq(paymentId: string, tenantId: string | null, reason?: string) {
   return {
     params: { paymentId },
     body: reason != null ? { reason } : {},
-    user: userId ?? undefined,
+    user: tenantId ?? undefined,
   } as never;
 }
 
@@ -291,12 +291,12 @@ async function seed(opts: { total: number; payments: number[]; sourceType?: 'BAN
   const sourceType = opts.sourceType ?? 'BANK';
 
   state.paymentModes['pm-bank'] = { id: 'pm-bank', slug: 'bank-transfer', name: 'Bank Transfer' };
-  state.banks['bank-1'] = { id: 'bank-1', userId: USER, currencyCode: 'GBP', currentBalance: '2000' };
+  state.banks['bank-1'] = { id: 'bank-1', tenantId: USER, currencyCode: 'GBP', currentBalance: '2000' };
   // Seed a petty cash fund (always present — only used when sourceType=PETTY_CASH)
-  state.pettyCashes['pc-1'] = { id: 'pc-1', userId: USER, isDeleted: false, currentBalance: '1000' };
+  state.pettyCashes['pc-1'] = { id: 'pc-1', tenantId: USER, isDeleted: false, currentBalance: '1000' };
 
   state.purchases['pur-1'] = {
-    id: 'pur-1', userId: USER, isDeleted: false,
+    id: 'pur-1', tenantId: USER, isDeleted: false,
     totalAmount: String(opts.total), status: 'pending', purchaseId: 'PUR-000001',
   };
 
@@ -353,7 +353,7 @@ async function seed(opts: { total: number; payments: number[]; sourceType?: 'BAN
     }
     // post the forward payment GL: Dr AP / Cr BANK (same for both source types)
     await post(tx, {
-      userId: USER, sourceType: 'SupplierPayment', sourceId: pid, event: 'payment',
+      tenantId: USER, sourceType: 'SupplierPayment', sourceId: pid, event: 'payment',
       date: new Date('2026-06-01'), currencyCode: 'BASE',
       instructions: [
         { roleKey: 'AP', side: 'debit', amount: String(amount) },
@@ -561,9 +561,9 @@ describe('voidSupplierPayment', () => {
     const { state } = built;
     state.paymentModes['pm-bank'] = { id: 'pm-bank', slug: 'bank-transfer', name: 'Bank Transfer' };
     // currentBalance ALREADY reflects the imported outflow — money already left.
-    state.banks['bank-1'] = { id: 'bank-1', userId: USER, currencyCode: 'GBP', currentBalance: '2000' };
+    state.banks['bank-1'] = { id: 'bank-1', tenantId: USER, currencyCode: 'GBP', currentBalance: '2000' };
     state.purchases['pur-1'] = {
-      id: 'pur-1', userId: USER, isDeleted: false,
+      id: 'pur-1', tenantId: USER, isDeleted: false,
       totalAmount: '100', status: 'paid', purchaseId: 'PUR-EXPLAIN',
     };
     state.payments['spay-x'] = {
@@ -582,7 +582,7 @@ describe('voidSupplierPayment', () => {
     };
     // Forward payment GL (Dr AP / Cr BANK) so we can prove the GL reverses.
     await post(built.prisma as never, {
-      userId: USER, sourceType: 'SupplierPayment', sourceId: 'spay-x', event: 'payment',
+      tenantId: USER, sourceType: 'SupplierPayment', sourceId: 'spay-x', event: 'payment',
       date: new Date('2026-06-01'), currencyCode: 'BASE',
       instructions: [
         { roleKey: 'AP', side: 'debit', amount: '100' },

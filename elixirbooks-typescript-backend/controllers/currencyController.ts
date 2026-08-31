@@ -2,12 +2,12 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 
 // Currency is a shared lookup table that records which user created each row
 // (Currency.createdBy → User). Reads are NOT scoped to the calling user — the
 // legacy controller served every non-deleted currency to anyone. Writes use
-// `requireUserId(req)` to populate `createdBy`.
+// `requireTenantId(req)` to populate `createdBy`.
 //
 // Note: The legacy JS controller also mutated `User.defaultCurrency` whenever
 // the default currency changed. The Prisma `User` model has no such column
@@ -24,7 +24,7 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
 
 export async function createCurrency(req: Request, res: Response): Promise<void> {
   try {
-    const createdBy = requireUserId(req);
+    const createdBy = requireTenantId(req);
 
     const { name, code, symbol, status = true, isDefault = false } = req.body as {
       name?: string;

@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
 
 // =============================================================================
@@ -117,7 +117,7 @@ function calculateChangePercentage(
 
 export async function getInvoiceSalesReport(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -137,7 +137,7 @@ export async function getInvoiceSalesReport(req: Request, res: Response): Promis
     const now = new Date();
 
     // Build filters dynamically
-    const filters: Prisma.InvoiceWhereInput = { userId, isDeleted: false };
+    const filters: Prisma.InvoiceWhereInput = { tenantId, isDeleted: false };
 
     if (startDate || endDate) {
       const dateFilter: Prisma.DateTimeFilter = {};
@@ -188,7 +188,7 @@ export async function getInvoiceSalesReport(req: Request, res: Response): Promis
     const currentCardWhere: Prisma.InvoiceWhereInput = hasUserFilter
       ? filters
       : {
-          userId,
+          tenantId,
           invoiceDate: { gte: startOfCurrentMonth, lte: endOfCurrentMonth },
           isDeleted: false,
         };
@@ -197,7 +197,7 @@ export async function getInvoiceSalesReport(req: Request, res: Response): Promis
         // filtered data and let the comparison collapse to 0.
         { id: { in: [] } }
       : {
-          userId,
+          tenantId,
           invoiceDate: { gte: startOfPreviousMonth, lte: endOfPreviousMonth },
           isDeleted: false,
         };
@@ -235,7 +235,7 @@ export async function getInvoiceSalesReport(req: Request, res: Response): Promis
     ];
     const payments = allInvoiceIds.length
       ? await prisma.invoicePayment.findMany({
-          where: { invoiceId: { in: allInvoiceIds }, isVoided: false, invoice: { userId } },
+          where: { invoiceId: { in: allInvoiceIds }, isVoided: false, invoice: { tenantId } },
           select: {
             invoiceId: true,
             amount: true,
@@ -440,7 +440,7 @@ export async function getInvoiceSalesReport(req: Request, res: Response): Promis
 
 export async function getCreditNoteSalesReport(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -473,7 +473,7 @@ export async function getCreditNoteSalesReport(req: Request, res: Response): Pro
 
     // Build filters dynamically — mirrors getInvoiceSalesReport so the
     // frontend's startDate/endDate/search params actually take effect.
-    const filters: Prisma.CreditNoteWhereInput = { userId, isDeleted: false };
+    const filters: Prisma.CreditNoteWhereInput = { tenantId, isDeleted: false };
 
     if (startDate || endDate) {
       const dateFilter: Prisma.DateTimeFilter = {};
@@ -511,14 +511,14 @@ export async function getCreditNoteSalesReport(req: Request, res: Response): Pro
     const currentCardWhere: Prisma.CreditNoteWhereInput = hasUserFilter
       ? filters
       : {
-          userId,
+          tenantId,
           creditNoteDate: { gte: startOfCurrentMonth, lte: endOfCurrentMonth },
           isDeleted: false,
         };
     const previousCardWhere: Prisma.CreditNoteWhereInput = hasUserFilter
       ? { id: { in: [] } }
       : {
-          userId,
+          tenantId,
           creditNoteDate: { gte: startOfPreviousMonth, lte: endOfPreviousMonth },
           isDeleted: false,
         };
@@ -723,7 +723,7 @@ export async function getCreditNoteSalesReport(req: Request, res: Response): Pro
 
 export async function getPurchaseReport(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -742,7 +742,7 @@ export async function getPurchaseReport(req: Request, res: Response): Promise<vo
     const skip = (pageN - 1) * limitN;
     const now = new Date();
 
-    const filters: Prisma.PurchaseWhereInput = { userId, isDeleted: false };
+    const filters: Prisma.PurchaseWhereInput = { tenantId, isDeleted: false };
 
     if (startDate || endDate) {
       const dateFilter: Prisma.DateTimeFilter = {};
@@ -785,7 +785,7 @@ export async function getPurchaseReport(req: Request, res: Response): Promise<vo
     const [currentPurchases, previousPurchases, allPurchases] = await Promise.all([
       prisma.purchase.findMany({
         where: {
-          userId,
+          tenantId,
           purchaseDate: { gte: startOfCurrentMonth, lte: endOfCurrentMonth },
           isDeleted: false,
         },
@@ -794,7 +794,7 @@ export async function getPurchaseReport(req: Request, res: Response): Promise<vo
       }),
       prisma.purchase.findMany({
         where: {
-          userId,
+          tenantId,
           purchaseDate: { gte: startOfPreviousMonth, lte: endOfPreviousMonth },
           isDeleted: false,
         },
@@ -823,7 +823,7 @@ export async function getPurchaseReport(req: Request, res: Response): Promise<vo
     ];
     const supplierPayments = purchaseIds.length
       ? await prisma.supplierPayment.findMany({
-          where: { purchaseId: { in: purchaseIds }, isDeleted: false, isVoided: false, purchase: { userId } },
+          where: { purchaseId: { in: purchaseIds }, isDeleted: false, isVoided: false, purchase: { tenantId } },
           select: { purchaseId: true, paidAmount: true },
         })
       : [];
@@ -973,7 +973,7 @@ export async function getPurchaseReport(req: Request, res: Response): Promise<vo
 
 export async function getPurchaseOrderReport(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -992,7 +992,7 @@ export async function getPurchaseOrderReport(req: Request, res: Response): Promi
     const skip = (pageN - 1) * limitN;
     const now = new Date();
 
-    const filters: Prisma.PurchaseOrderWhereInput = { userId, isDeleted: false };
+    const filters: Prisma.PurchaseOrderWhereInput = { tenantId, isDeleted: false };
 
     if (startDate || endDate) {
       const dateFilter: Prisma.DateTimeFilter = {};
@@ -1035,7 +1035,7 @@ export async function getPurchaseOrderReport(req: Request, res: Response): Promi
     const [currentOrders, previousOrders, allOrders] = await Promise.all([
       prisma.purchaseOrder.findMany({
         where: {
-          userId,
+          tenantId,
           purchaseOrderDate: { gte: startOfCurrentMonth, lte: endOfCurrentMonth },
           isDeleted: false,
         },
@@ -1044,7 +1044,7 @@ export async function getPurchaseOrderReport(req: Request, res: Response): Promi
       }),
       prisma.purchaseOrder.findMany({
         where: {
-          userId,
+          tenantId,
           purchaseOrderDate: { gte: startOfPreviousMonth, lte: endOfPreviousMonth },
           isDeleted: false,
         },
@@ -1194,7 +1194,7 @@ export async function getPurchaseOrderReport(req: Request, res: Response): Promi
 
 export async function getDebitNoteReport(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -1213,7 +1213,7 @@ export async function getDebitNoteReport(req: Request, res: Response): Promise<v
     const skip = (pageN - 1) * limitN;
     const now = new Date();
 
-    const filters: Prisma.DebitNoteWhereInput = { userId, isDeleted: false };
+    const filters: Prisma.DebitNoteWhereInput = { tenantId, isDeleted: false };
 
     if (startDate || endDate) {
       const dateFilter: Prisma.DateTimeFilter = {};
@@ -1256,7 +1256,7 @@ export async function getDebitNoteReport(req: Request, res: Response): Promise<v
     const [currentNotes, previousNotes, allNotesPaginated, allNotes] = await Promise.all([
       prisma.debitNote.findMany({
         where: {
-          userId,
+          tenantId,
           debitNoteDate: { gte: startOfCurrentMonth, lte: endOfCurrentMonth },
           isDeleted: false,
         },
@@ -1264,7 +1264,7 @@ export async function getDebitNoteReport(req: Request, res: Response): Promise<v
       }),
       prisma.debitNote.findMany({
         where: {
-          userId,
+          tenantId,
           debitNoteDate: { gte: startOfPreviousMonth, lte: endOfPreviousMonth },
           isDeleted: false,
         },
@@ -1489,7 +1489,7 @@ export async function getDebitNoteReport(req: Request, res: Response): Promise<v
 
 export async function getQuotationSalesReport(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const {
       page = '1',
       limit = '10',
@@ -1508,7 +1508,7 @@ export async function getQuotationSalesReport(req: Request, res: Response): Prom
     const skip = (pageN - 1) * limitN;
     const now = new Date();
 
-    const filters: Prisma.QuotationWhereInput = { userId, isDeleted: false };
+    const filters: Prisma.QuotationWhereInput = { tenantId, isDeleted: false };
 
     if (startDate || endDate) {
       const dateFilter: Prisma.DateTimeFilter = {};
@@ -1551,7 +1551,7 @@ export async function getQuotationSalesReport(req: Request, res: Response): Prom
     const [currentQuotations, previousQuotations, allQuotations] = await Promise.all([
       prisma.quotation.findMany({
         where: {
-          userId,
+          tenantId,
           quotationDate: { gte: startOfCurrentMonth, lte: endOfCurrentMonth },
           isDeleted: false,
         },
@@ -1559,7 +1559,7 @@ export async function getQuotationSalesReport(req: Request, res: Response): Prom
       }),
       prisma.quotation.findMany({
         where: {
-          userId,
+          tenantId,
           quotationDate: { gte: startOfPreviousMonth, lte: endOfPreviousMonth },
           isDeleted: false,
         },

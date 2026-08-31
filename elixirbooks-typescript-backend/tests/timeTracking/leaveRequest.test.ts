@@ -60,7 +60,7 @@ import {
 // ---------------------------------------------------------------------------
 
 interface ActorOpts {
-  userId?: string;
+  tenantId?: string;
   isOwner?: boolean;
   roleName?: string | null;
   others?: { view?: boolean; edit?: boolean };
@@ -84,12 +84,12 @@ function makeReq(opts: {
       allowAll: false,
     });
   }
-  const userId = a.userId ?? 'actor-1';
+  const tenantId = a.tenantId ?? 'actor-1';
   return {
-    user: userId,
+    user: tenantId,
     tenantId: 'tenant-1',
     actor: {
-      userId,
+      userId: tenantId,
       tenantId: 'tenant-1',
       roleId: 'r1',
       roleName: a.roleName ?? null,

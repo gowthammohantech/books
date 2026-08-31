@@ -2,7 +2,7 @@
 //
 // TDD suite for the Banking Phase B / B2 auto-matcher.
 //
-// autoMatch(tx, bankTxn, userId) proposes the best explanation for an
+// autoMatch(tx, bankTxn, tenantId) proposes the best explanation for an
 // UNEXPLAINED MANUAL bank transaction by:
 //   (a) consulting the learning store (lookupHint, payee -> type/category), and
 //   (b) scoring candidate documents (open invoices inbound, open bills/expenses

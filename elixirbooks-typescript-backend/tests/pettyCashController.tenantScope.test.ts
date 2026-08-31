@@ -3,12 +3,12 @@
  *
  * P0-2a regression tripwire: PettyCash was historically a true unscoped
  * singleton (`tx.pettyCash.findFirst({})` — no `where` at all), shared and
- * leaked across every tenant. This adds a `PettyCash.userId` column
+ * leaked across every tenant. This adds a `PettyCash.tenantId` column
  * (migration: prisma/migrations/20260702000001_pettycash_tenant_scope),
  * whose backfill guarantees every existing row is assigned a concrete owner
  * (bank/expense/supplier-payment-derived, falling back to the install's
  * primary admin), and every touch-point is scoped with a **strict**
- * `{ userId }` match — no OR-null fallback. A null-userId branch anywhere in
+ * `{ tenantId }` match — no OR-null fallback. A null-tenantId branch anywhere in
  * these where objects would mean a row is readable/writable by more than one
  * tenant, so several tests explicitly assert its absence.
  *
@@ -117,7 +117,7 @@ beforeEach(() => {
   mockPaymentModeFindUnique.mockResolvedValue({ id: 'pm-1', name: 'Cash', slug: 'cash' });
 });
 
-/** Tripwire: fails if any where-object anywhere carries a null-userId OR
+/** Tripwire: fails if any where-object anywhere carries a null-tenantId OR
  * branch — the exact shape of the cross-tenant leak this suite guards
  * against. Recurses into arrays/objects since Prisma where clauses nest. */
 function assertNoNullUserIdBranch(value: unknown, path = 'where'): void {
@@ -127,8 +127,8 @@ function assertNoNullUserIdBranch(value: unknown, path = 'where'): void {
     return;
   }
   const obj = value as Record<string, unknown>;
-  if ('userId' in obj && obj.userId === null) {
-    throw new Error(`found userId: null at ${path} — cross-tenant leak`);
+  if ('tenantId' in obj && obj.tenantId === null) {
+    throw new Error(`found tenantId: null at ${path} — cross-tenant leak`);
   }
   for (const [key, val] of Object.entries(obj)) {
     assertNoNullUserIdBranch(val, `${path}.${key}`);
@@ -136,20 +136,20 @@ function assertNoNullUserIdBranch(value: unknown, path = 'where'): void {
 }
 
 describe('pettyCashController — tenant scoping', () => {
-  it('listPettyCash scopes the findFirst strictly by tenant (no null-userId fallback)', async () => {
+  it('listPettyCash scopes the findFirst strictly by tenant (no null-tenantId fallback)', async () => {
     const { req, res } = makeReqRes();
     await listPettyCash(req, res);
 
     expect(res.status).not.toHaveBeenCalledWith(401);
     expect(mockPettyCashFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ userId: TENANT_ID }),
+        where: expect.objectContaining({ tenantId: TENANT_ID }),
       }),
     );
     assertNoNullUserIdBranch(mockPettyCashFindFirst.mock.calls[0][0].where);
   });
 
-  it('createPettyCash finds strictly by tenant and stamps userId on create', async () => {
+  it('createPettyCash finds strictly by tenant and stamps tenantId on create', async () => {
     const { req, res } = makeReqRes({
       bankAccountId: 'bank-1',
       amount: 50,
@@ -159,13 +159,13 @@ describe('pettyCashController — tenant scoping', () => {
 
     expect(mockPettyCashFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId: TENANT_ID },
+        where: { tenantId: TENANT_ID },
       }),
     );
     assertNoNullUserIdBranch(mockPettyCashFindFirst.mock.calls[0][0].where);
-    // No existing row (mocked null) → create path; must stamp userId.
+    // No existing row (mocked null) → create path; must stamp tenantId.
     expect(mockPettyCashCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ data: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
   });
 
@@ -176,14 +176,14 @@ describe('pettyCashController — tenant scoping', () => {
     expect(mockPettyCashTransactionFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          pettyCash: { userId: TENANT_ID },
+          pettyCash: { tenantId: TENANT_ID },
         }),
       }),
     );
     expect(mockPettyCashTransactionCount).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          pettyCash: { userId: TENANT_ID },
+          pettyCash: { tenantId: TENANT_ID },
         }),
       }),
     );
@@ -196,26 +196,26 @@ describe('pettyCashController — tenant scoping', () => {
     await getFinancialSummary(req, res);
 
     expect(mockBankDetailAggregate).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ tenantId: TENANT_ID }) }),
     );
     expect(mockPettyCashAggregate).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: expect.objectContaining({ userId: TENANT_ID }),
+        where: expect.objectContaining({ tenantId: TENANT_ID }),
       }),
     );
     assertNoNullUserIdBranch(mockPettyCashAggregate.mock.calls[0][0].where);
     for (const call of mockBankTransactionFindMany.mock.calls) {
-      expect(call[0].where).toEqual(expect.objectContaining({ bankAccount: { userId: TENANT_ID } }));
+      expect(call[0].where).toEqual(expect.objectContaining({ bankAccount: { tenantId: TENANT_ID } }));
     }
     for (const call of mockPettyCashTransactionFindMany.mock.calls) {
       expect(call[0].where).toEqual(
-        expect.objectContaining({ pettyCash: { userId: TENANT_ID } }),
+        expect.objectContaining({ pettyCash: { tenantId: TENANT_ID } }),
       );
       assertNoNullUserIdBranch(call[0].where);
     }
   });
 
-  it('returnPettyCash finds the tenant petty cash strictly by userId (no null-userId fallback)', async () => {
+  it('returnPettyCash finds the tenant petty cash strictly by tenantId (no null-tenantId fallback)', async () => {
     mockPettyCashFindFirst.mockResolvedValue({ id: 'pc-1', currentBalance: 500 });
     mockPettyCashUpdate.mockResolvedValue({ id: 'pc-1', currentBalance: 450 });
 
@@ -228,7 +228,7 @@ describe('pettyCashController — tenant scoping', () => {
 
     expect(res.status).not.toHaveBeenCalledWith(401);
     expect(mockPettyCashFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { userId: TENANT_ID } }),
+      expect.objectContaining({ where: { tenantId: TENANT_ID } }),
     );
     assertNoNullUserIdBranch(mockPettyCashFindFirst.mock.calls[0][0].where);
   });

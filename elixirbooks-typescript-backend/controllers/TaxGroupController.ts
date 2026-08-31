@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
 
-// TaxGroup is a global lookup table — no userId column, so tenantScope()
+// TaxGroup is a global lookup table — no tenantId column, so tenantScope()
 // does not apply here. The implicit many-to-many relation is
 // "TaxGroupTaxRates" between TaxGroup and TaxRate.
 

@@ -3,15 +3,15 @@
  *
  * P0-2b regression tripwire: several by-id/lookup handlers in
  * controllers/Admin/Purchases/purchaseController.ts loaded Purchase /
- * PurchaseOrder / SupplierPayment rows with no `userId` filter at all
+ * PurchaseOrder / SupplierPayment rows with no `tenantId` filter at all
  * (`findUnique({ where: { id } })`), letting any authenticated tenant
  * read/mutate another tenant's purchases by guessing/observing an id.
  * The legacy `createSupplierPayment` additionally trusted a client-supplied
- * `body.userId` instead of the authenticated session for both the lookup
+ * `body.tenantId` instead of the authenticated session for both the lookup
  * and the `createdBy` stamp.
  *
  * These tests mock prisma and assert every fixed handler's lookup carries
- * `userId` (the authenticated tenant, never a client-supplied value) and
+ * `tenantId` (the authenticated tenant, never a client-supplied value) and
  * 404s when the mocked lookup returns null (simulating a foreign-tenant id).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -117,7 +117,7 @@ describe('purchaseController — tenant scoping (404 on foreign-tenant id)', () 
     await createPurchaseFromPO(req, res);
 
     expect(mockPurchaseOrderFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ id: 'po-1', userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ id: 'po-1', tenantId: TENANT_ID }) }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
@@ -127,7 +127,7 @@ describe('purchaseController — tenant scoping (404 on foreign-tenant id)', () 
     await updatePurchaseStatus(req, res);
 
     expect(mockPurchaseFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'pur-1', userId: TENANT_ID } }),
+      expect.objectContaining({ where: { id: 'pur-1', tenantId: TENANT_ID } }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
@@ -137,7 +137,7 @@ describe('purchaseController — tenant scoping (404 on foreign-tenant id)', () 
     await deletePurchase(req, res);
 
     expect(mockPurchaseFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'pur-1', userId: TENANT_ID } }),
+      expect.objectContaining({ where: { id: 'pur-1', tenantId: TENANT_ID } }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
@@ -147,7 +147,7 @@ describe('purchaseController — tenant scoping (404 on foreign-tenant id)', () 
     await getPurchaseById(req, res);
 
     expect(mockPurchaseFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ id: 'pur-1', userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ id: 'pur-1', tenantId: TENANT_ID }) }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
@@ -157,7 +157,7 @@ describe('purchaseController — tenant scoping (404 on foreign-tenant id)', () 
     await approvePurchase(req, res);
 
     expect(mockPurchaseFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ id: 'pur-1', userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ id: 'pur-1', tenantId: TENANT_ID }) }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
@@ -167,7 +167,7 @@ describe('purchaseController — tenant scoping (404 on foreign-tenant id)', () 
     await rejectPurchase(req, res);
 
     expect(mockPurchaseFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ id: 'pur-1', userId: TENANT_ID }) }),
+      expect.objectContaining({ where: expect.objectContaining({ id: 'pur-1', tenantId: TENANT_ID }) }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
@@ -177,7 +177,7 @@ describe('purchaseController — tenant scoping (404 on foreign-tenant id)', () 
     await getSupplierPayments(req, res);
 
     expect(mockPurchaseFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'pur-1', userId: TENANT_ID } }),
+      expect.objectContaining({ where: { id: 'pur-1', tenantId: TENANT_ID } }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
     expect(mockSupplierPaymentFindMany).not.toHaveBeenCalled();
@@ -188,12 +188,12 @@ describe('purchaseController — tenant scoping (404 on foreign-tenant id)', () 
     await createSupplierPayment(req, res);
 
     expect(mockPurchaseFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'pur-1', userId: TENANT_ID } }),
+      expect.objectContaining({ where: { id: 'pur-1', tenantId: TENANT_ID } }),
     );
     expect(res.status).toHaveBeenCalledWith(404);
   });
 
-  it('legacy createSupplierPayment ignores a spoofed body.userId — the lookup and createdBy stamp use the authenticated tenant', async () => {
+  it('legacy createSupplierPayment ignores a spoofed body.tenantId — the lookup and createdBy stamp use the authenticated tenant', async () => {
     mockPurchaseFindFirst.mockResolvedValue({
       id: 'pur-1',
       purchaseId: 'PUR-000001',
@@ -208,13 +208,13 @@ describe('purchaseController — tenant scoping (404 on foreign-tenant id)', () 
 
     const { req, res } = makeReqRes({
       // no bankId -> the bank/paymentMode sub-branch is skipped entirely
-      body: { purchaseId: 'pur-1', amount: 100, userId: ATTACKER_ID },
+      body: { purchaseId: 'pur-1', amount: 100, tenantId: ATTACKER_ID },
     });
     await createSupplierPayment(req, res);
 
-    // The lookup used the authenticated tenant, not the spoofed body.userId.
+    // The lookup used the authenticated tenant, not the spoofed body.tenantId.
     expect(mockPurchaseFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'pur-1', userId: TENANT_ID } }),
+      expect.objectContaining({ where: { id: 'pur-1', tenantId: TENANT_ID } }),
     );
     expect(mockSupplierPaymentCreate).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ createdBy: TENANT_ID }) }),

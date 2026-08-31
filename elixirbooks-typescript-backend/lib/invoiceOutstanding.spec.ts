@@ -55,9 +55,9 @@ describe('deriveInvoiceStatus (pure)', () => {
 // In-memory fake db (mirrors the two reads getInvoiceSettlement performs and
 // the invoice find/update recomputeInvoiceStatus performs).
 // ---------------------------------------------------------------------------
-interface FakeInvoice { id: string; userId: string; TotalAmount: Prisma.Decimal; status: string }
+interface FakeInvoice { id: string; tenantId: string; TotalAmount: Prisma.Decimal; status: string }
 interface FakePayment { invoiceId: string; amount: Prisma.Decimal; isVoided: boolean }
-interface FakeCN { invoiceId: string; userId: string; totalAmount: Prisma.Decimal; isDeleted: boolean }
+interface FakeCN { invoiceId: string; tenantId: string; totalAmount: Prisma.Decimal; isDeleted: boolean }
 
 function makeDb(invoice: FakeInvoice, payments: FakePayment[], creditNotes: FakeCN[]) {
   return {
@@ -70,19 +70,19 @@ function makeDb(invoice: FakeInvoice, payments: FakePayment[], creditNotes: Fake
       },
     },
     creditNote: {
-      findMany: async (args: { where: { userId: string; isDeleted: boolean; invoiceId: string } }) =>
+      findMany: async (args: { where: { tenantId: string; isDeleted: boolean; invoiceId: string } }) =>
         creditNotes
           .filter(
             (c) =>
               c.invoiceId === args.where.invoiceId &&
-              c.userId === args.where.userId &&
+              c.tenantId === args.where.tenantId &&
               c.isDeleted === args.where.isDeleted,
           )
           .map((c) => ({ invoiceId: c.invoiceId, totalAmount: c.totalAmount })),
     },
     invoice: {
-      findFirst: async (args: { where: { id: string; userId: string } }) =>
-        invoice.id === args.where.id && invoice.userId === args.where.userId ? { ...invoice } : null,
+      findFirst: async (args: { where: { id: string; tenantId: string } }) =>
+        invoice.id === args.where.id && invoice.tenantId === args.where.tenantId ? { ...invoice } : null,
       update: async (args: { where: { id: string }; data: { status: string } }) => {
         invoice.status = args.data.status;
         return { ...invoice };
@@ -93,7 +93,7 @@ function makeDb(invoice: FakeInvoice, payments: FakePayment[], creditNotes: Fake
 
 describe('getInvoiceSettlement (db)', () => {
   it('sums non-voided payments and non-deleted credit notes; ignores voided/deleted', async () => {
-    const inv: FakeInvoice = { id: 'inv1', userId: 'u1', TotalAmount: D(1000), status: 'UNPAID' };
+    const inv: FakeInvoice = { id: 'inv1', tenantId: 'u1', TotalAmount: D(1000), status: 'UNPAID' };
     const db = makeDb(
       inv,
       [
@@ -101,8 +101,8 @@ describe('getInvoiceSettlement (db)', () => {
         { invoiceId: 'inv1', amount: D(50), isVoided: true }, // voided → ignored
       ],
       [
-        { invoiceId: 'inv1', userId: 'u1', totalAmount: D(300), isDeleted: false },
-        { invoiceId: 'inv1', userId: 'u1', totalAmount: D(99), isDeleted: true }, // deleted → ignored
+        { invoiceId: 'inv1', tenantId: 'u1', totalAmount: D(300), isDeleted: false },
+        { invoiceId: 'inv1', tenantId: 'u1', totalAmount: D(99), isDeleted: true }, // deleted → ignored
       ],
     );
     const { totalPaid, creditNoted } = await getInvoiceSettlement(db, 'inv1', 'u1');
@@ -144,16 +144,16 @@ describe('overpayment guard traces (brief scenarios)', () => {
 
 describe('recomputeInvoiceStatus (db)', () => {
   it('full credit note flips the invoice to PAID and persists it', async () => {
-    const inv: FakeInvoice = { id: 'inv1', userId: 'u1', TotalAmount: D(1000), status: 'UNPAID' };
-    const db = makeDb(inv, [], [{ invoiceId: 'inv1', userId: 'u1', totalAmount: D(1000), isDeleted: false }]);
+    const inv: FakeInvoice = { id: 'inv1', tenantId: 'u1', TotalAmount: D(1000), status: 'UNPAID' };
+    const db = makeDb(inv, [], [{ invoiceId: 'inv1', tenantId: 'u1', totalAmount: D(1000), isDeleted: false }]);
     const r = await recomputeInvoiceStatus(db, 'inv1', 'u1');
     expect(r?.status).toBe('PAID');
     expect(inv.status).toBe('PAID');
   });
 
   it('does not resurrect a CANCELLED invoice', async () => {
-    const inv: FakeInvoice = { id: 'inv1', userId: 'u1', TotalAmount: D(1000), status: 'CANCELLED' };
-    const db = makeDb(inv, [], [{ invoiceId: 'inv1', userId: 'u1', totalAmount: D(400), isDeleted: false }]);
+    const inv: FakeInvoice = { id: 'inv1', tenantId: 'u1', TotalAmount: D(1000), status: 'CANCELLED' };
+    const db = makeDb(inv, [], [{ invoiceId: 'inv1', tenantId: 'u1', totalAmount: D(400), isDeleted: false }]);
     await recomputeInvoiceStatus(db, 'inv1', 'u1');
     expect(inv.status).toBe('CANCELLED');
   });

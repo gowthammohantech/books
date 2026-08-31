@@ -1,5 +1,6 @@
 // controllers/expenseController.ts
 import type { Request, Response } from 'express';
+import { tenantOwnerInclude, tenantOwner } from '../lib/tenantOwner';
 import { Prisma } from '@prisma/client';
 import type {
   Expense,
@@ -20,7 +21,7 @@ import {
 } from '../lib/lineDimensions';
 import {
   tenantScope,
-  requireUserId,
+  requireTenantId,
   UnauthorizedError,
 } from '../lib/tenantScope';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
@@ -113,11 +114,11 @@ async function generateNextExpenseId(
 
 async function postExpenseLedger(
   tx: Tx,
-  expense: { id: string; expenseDate: Date | null; amount: Prisma.Decimal; tax?: Prisma.Decimal | null; sourceType: ExpenseSourceType | null; paymentModeId: string | null; bankId?: string | null; paidByUserId?: string | null; userId: string; costCenterId?: string | null; projectId?: string | null; currencyCode?: string | null; exchangeRate?: Prisma.Decimal | null },
-  userId: string,
+  expense: { id: string; expenseDate: Date | null; amount: Prisma.Decimal; tax?: Prisma.Decimal | null; sourceType: ExpenseSourceType | null; paymentModeId: string | null; bankId?: string | null; paidByUserId?: string | null; tenantId: string; costCenterId?: string | null; projectId?: string | null; currencyCode?: string | null; exchangeRate?: Prisma.Decimal | null },
+  tenantId: string,
 ): Promise<void> {
   const mapping = await tx.ledgerAccountMapping.findFirst({
-    where: { userId, roleKey: 'PURCHASES' },
+    where: { tenantId, roleKey: 'PURCHASES' },
     select: { accountId: true },
   });
   if (!mapping?.accountId) return;
@@ -138,7 +139,7 @@ async function postExpenseLedger(
   let employeePayableAccountId: string | undefined;
   if ((expense.sourceType as string) === 'EMPLOYEE_PAID') {
     const owed = await tx.account.findFirst({
-      where: { userId, code: '9250', isDeleted: false },
+      where: { tenantId, code: '9250', isDeleted: false },
       select: { id: true },
     });
     if (!owed?.id) {
@@ -154,7 +155,7 @@ async function postExpenseLedger(
     : null;
 
   await postExpense(tx as unknown as PostingTx, {
-    userId,
+    tenantId,
     expenseId: expense.id,
     date: expense.expenseDate ?? new Date(),
     total: String(expense.amount),
@@ -198,7 +199,7 @@ export async function createExpense(
       return;
     }
 
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
 
     // Expenses carry no line items, so only the header centre needs checking —
     // but it still needs checking: the column is nullable with onDelete SetNull,
@@ -207,7 +208,7 @@ export async function createExpense(
       const raw = (req.body as Record<string, unknown>).costCenterId;
       const headerCentre = typeof raw === 'string' && raw ? raw : null;
       try {
-        await assertCostCentresExist(prisma, userId, collectCostCentreIds(headerCentre, []));
+        await assertCostCentresExist(prisma, tenantId, collectCostCentreIds(headerCentre, []));
       } catch (centreErr) {
         if (centreErr instanceof UnknownCostCentreError) {
           res.status(400).json({ success: false, message: centreErr.message, errors: { costCenterId: centreErr.message } });
@@ -298,7 +299,7 @@ export async function createExpense(
       }
       // Scope the person to this tenant (owner self or a staff member).
       const person = await prisma.user.findFirst({
-        where: { id: paidByUserId, isDeleted: false, OR: [{ id: userId }, { ownerId: userId }] },
+        where: { id: paidByUserId, isDeleted: false, OR: [{ id: tenantId }, { ownerId: tenantId }] },
         select: { id: true },
       });
       if (!person) {
@@ -369,7 +370,7 @@ export async function createExpense(
     const expenseDate_ = expenseDate ? new Date(expenseDate) : new Date();
     const fxResolution = await resolveExpenseFxRate(
       prisma as unknown as FxGuardDb,
-      userId,
+      tenantId,
       docCurrencyCode,
       docExchangeRate,
       expenseDate_,
@@ -396,7 +397,7 @@ export async function createExpense(
 
     if (sourceType === 'BANK') {
       const bank = await prisma.bankDetail.findFirst({
-        where: { id: bankId as string, userId },
+        where: { id: bankId as string, tenantId },
       });
       if (!bank) throw new Error('Bank not found.');
 
@@ -413,7 +414,7 @@ export async function createExpense(
 
     if (sourceType === 'PETTY_CASH') {
       const pettyCash = await prisma.pettyCash.findFirst({
-        where: { userId, isDeleted: false },
+        where: { tenantId, isDeleted: false },
       });
       if (!pettyCash) {
         res.status(400).json({
@@ -441,7 +442,7 @@ export async function createExpense(
 
     const savedExpense = await prisma.$transaction(async (tx) => {
       // Approval gate: read companySettings for this tenant
-      const settings = await tx.companySettings.findFirst({ where: { userId } });
+      const settings = await tx.companySettings.findFirst({ where: { tenantId } });
       const approvalsEnabled = settings?.approvalsEnabled ?? false;
 
       /* ===========================
@@ -467,7 +468,7 @@ export async function createExpense(
           supplierId: (supplierId as string | null | undefined) || null,
           // paidByUserId: added by migration 20260623000004; regenerate Prisma client after deploy
           ...({ paidByUserId: sourceType === 'EMPLOYEE_PAID' ? (paidByUserId as string) : null } as Record<string, unknown>),
-          userId,
+          tenantId,
           isRecurring: isRecurringFlag,
           repeatEvery: ((recurringBody.repeatEvery as string | undefined) ||
             'month') as RecurrenceFrequency,
@@ -511,7 +512,7 @@ export async function createExpense(
         if (!paymentModeDetails) throw new Error('Payment mode not found.');
 
         const bank = await tx.bankDetail.findFirst({
-          where: { id: bankId as string, userId },
+          where: { id: bankId as string, tenantId },
         });
         if (!bank) throw new Error('Bank not found.');
 
@@ -527,7 +528,7 @@ export async function createExpense(
 
         await tx.bankTransaction.create({
           data: {
-            tenantId: userId,
+            tenantId: tenantId,
             bankAccountId: bankId as string,
             transactionDate: new Date(),
             type: (paymentModeDetails.slug === 'cash'
@@ -552,7 +553,7 @@ export async function createExpense(
               posted:
                 shouldPostOnCreate(approvalsEnabled) &&
                 shouldPost(settings, expense.expenseDate ?? new Date()),
-              approvedById: userId,
+              approvedById: tenantId,
               approvedAt: new Date(),
             }),
           },
@@ -564,7 +565,7 @@ export async function createExpense(
       =========================== */
       if (sourceType === 'PETTY_CASH') {
         const pettyCash = await tx.pettyCash.findFirst({
-          where: { userId, isDeleted: false },
+          where: { tenantId, isDeleted: false },
         });
         if (!pettyCash) throw new Error('Petty cash not found.');
 
@@ -580,7 +581,7 @@ export async function createExpense(
 
         await tx.pettyCashTransaction.create({
           data: {
-            tenantId: userId,
+            tenantId: tenantId,
             pettyCashId: pettyCash.id,
             transactionDate: new Date(),
             transactionType: 'SPEND' as PettyCashTransactionType,
@@ -613,7 +614,7 @@ export async function createExpense(
           module: 'expense',
           recordId: expense.id,
           value: (value ?? null) as Prisma.InputJsonValue,
-          createdBy: userId,
+          createdBy: tenantId,
         });
       }
 
@@ -626,9 +627,9 @@ export async function createExpense(
       =========================== */
       await tx.expenseChangeLog.create({
         data: {
-          tenantId: userId,
+          tenantId: tenantId,
           expenseId: expense.id,
-          changedBy: userId,
+          changedBy: tenantId,
           changes: [
             {
               field: 'create',
@@ -647,7 +648,7 @@ export async function createExpense(
          When approvals are enabled, posting is deferred to approveExpense.
       =========================== */
       if (shouldPostOnCreate(approvalsEnabled)) {
-        await postExpenseLedger(tx, expense, userId);
+        await postExpenseLedger(tx, expense, tenantId);
       }
 
       return expense;
@@ -779,7 +780,7 @@ export async function getAllExpenses(
               image: true,
             },
           },
-          user: { select: { id: true, firstName: true, lastName: true, email: true } },
+          tenant: tenantOwnerInclude,
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -878,8 +879,8 @@ export async function getAllExpenses(
         attachment: exp.attachment
           ? `${baseUrl}${exp.attachment.replace(/\\/g, '/')}`
           : null,
-        createdBy: exp.user
-          ? { id: exp.user.id, name: `${exp.user.firstName ?? ''} ${exp.user.lastName ?? ''}`.trim() }
+        createdBy: tenantOwner(exp.tenant)
+          ? { id: tenantOwner(exp.tenant)!.id, name: `${tenantOwner(exp.tenant)!.firstName ?? ''} ${tenantOwner(exp.tenant)!.lastName ?? ''}`.trim() }
           : null,
         customFields: customFieldsObject,
         createdAt: exp.createdAt?.toISOString(),
@@ -943,7 +944,7 @@ export async function getExpenseById(
             image: true,
           },
         },
-        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        tenant: tenantOwnerInclude,
       },
     });
 
@@ -1043,8 +1044,8 @@ export async function getExpenseById(
         attachment: expense.attachment
           ? `${baseUrl}${expense.attachment.replace(/\\/g, '/')}`
           : null,
-        createdBy: expense.user
-          ? { id: expense.user.id, name: `${expense.user.firstName ?? ''} ${expense.user.lastName ?? ''}`.trim() }
+        createdBy: tenantOwner(expense.tenant)
+          ? { id: tenantOwner(expense.tenant)!.id, name: `${tenantOwner(expense.tenant)!.firstName ?? ''} ${tenantOwner(expense.tenant)!.lastName ?? ''}`.trim() }
           : null,
         customFields: customFieldResponse,
         createdAt: expense.createdAt?.toISOString(),
@@ -1071,7 +1072,7 @@ export async function updateExpense(
   res: Response,
 ): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const scope = tenantScope(req);
     const { id } = req.params as { id: string };
 
@@ -1247,7 +1248,7 @@ export async function updateExpense(
         where: {
           id: finalPaidByUserId,
           isDeleted: false,
-          OR: [{ id: userId }, { ownerId: userId }],
+          OR: [{ id: tenantId }, { ownerId: tenantId }],
         },
         select: { id: true },
       });
@@ -1474,7 +1475,7 @@ export async function updateExpense(
 
       const fxResolutionUpd = await resolveExpenseFxRate(
         prisma as unknown as FxGuardDb,
-        userId,
+        tenantId,
         postUpdateCurrencyCode,
         postUpdateSuppliedRate,
         updExpenseDate,
@@ -1515,7 +1516,7 @@ export async function updateExpense(
       // Whether the re-posted Expense JE actually posts under the go-live gate
       // (same settings/date the postExpense → gatedPost call below uses).
       // Bank lines created here are reconciled iff that JE truly posts.
-      const ledgerSettings = await tx.companySettings.findFirst({ where: { userId } });
+      const ledgerSettings = await tx.companySettings.findFirst({ where: { tenantId } });
       const didPostExpense = shouldPost(
         ledgerSettings,
         updated.expenseDate ?? new Date(),
@@ -1544,7 +1545,7 @@ export async function updateExpense(
           }
         } else if (oldSourceType === 'PETTY_CASH') {
           const pettyCash = await tx.pettyCash.findFirst({
-            where: { userId, isDeleted: false },
+            where: { tenantId, isDeleted: false },
           });
 
           await tx.pettyCashTransaction.deleteMany({
@@ -1564,7 +1565,7 @@ export async function updateExpense(
 
         if (sourceType === 'BANK') {
           const bank = await tx.bankDetail.findFirst({
-            where: { id: bankId as string, userId },
+            where: { id: bankId as string, tenantId },
           });
           if (!bank) throw new Error('Bank not found');
 
@@ -1580,7 +1581,7 @@ export async function updateExpense(
 
           await tx.bankTransaction.create({
             data: {
-              tenantId: userId,
+              tenantId: tenantId,
               bankAccountId: bankId as string,
               transactionDate: new Date(),
               type: 'PAYMENT' as BankTransactionType,
@@ -1597,14 +1598,14 @@ export async function updateExpense(
                 postedSourceType: 'Expense',
                 postedSourceId: expense.id,
                 posted: didPostExpense,
-                approvedById: userId,
+                approvedById: tenantId,
                 approvedAt: new Date(),
               }),
             },
           });
         } else if (sourceType === 'PETTY_CASH') {
           const pettyCash = await tx.pettyCash.findFirst({
-            where: { userId, isDeleted: false },
+            where: { tenantId, isDeleted: false },
           });
           if (!pettyCash) throw new Error('Petty cash not found');
 
@@ -1620,7 +1621,7 @@ export async function updateExpense(
 
           await tx.pettyCashTransaction.create({
             data: {
-              tenantId: userId,
+              tenantId: tenantId,
               pettyCashId: pettyCash.id,
               transactionDate: new Date(),
               transactionType: 'SPEND' as PettyCashTransactionType,
@@ -1639,7 +1640,7 @@ export async function updateExpense(
         if (diff !== 0) {
           if (sourceType === 'BANK' && bankId) {
             const bank = await tx.bankDetail.findFirst({
-              where: { id: bankId, userId },
+              where: { id: bankId, tenantId },
             });
             if (!bank) throw new Error('Bank not found');
 
@@ -1653,7 +1654,7 @@ export async function updateExpense(
 
             await tx.bankTransaction.create({
               data: {
-                tenantId: userId,
+                tenantId: tenantId,
                 bankAccountId: bankId,
                 transactionDate: new Date(),
                 type: (diff > 0
@@ -1672,14 +1673,14 @@ export async function updateExpense(
                   postedSourceType: 'Expense',
                   postedSourceId: expense.id,
                   posted: didPostExpense,
-                  approvedById: userId,
+                  approvedById: tenantId,
                   approvedAt: new Date(),
                 }),
               },
             });
           } else if (sourceType === 'PETTY_CASH') {
             const pettyCash = await tx.pettyCash.findFirst({
-              where: { userId, isDeleted: false },
+              where: { tenantId, isDeleted: false },
             });
             if (!pettyCash) throw new Error('Petty cash not found');
 
@@ -1693,7 +1694,7 @@ export async function updateExpense(
 
             await tx.pettyCashTransaction.create({
               data: {
-                tenantId: userId,
+                tenantId: tenantId,
                 pettyCashId: pettyCash.id,
                 transactionDate: new Date(),
                 transactionType: (diff > 0
@@ -1734,7 +1735,7 @@ export async function updateExpense(
           module: 'expense',
           recordId: expense.id,
           value: (value ?? null) as Prisma.InputJsonValue,
-          createdBy: userId,
+          createdBy: tenantId,
         });
       }
 
@@ -1748,9 +1749,9 @@ export async function updateExpense(
       if (changes.length > 0) {
         await tx.expenseChangeLog.create({
           data: {
-            tenantId: userId,
+            tenantId: tenantId,
             expenseId: expense.id,
-            changedBy: userId,
+            changedBy: tenantId,
             changes: changes as unknown as Prisma.InputJsonValue,
           },
         });
@@ -1761,13 +1762,13 @@ export async function updateExpense(
       ===================================== */
       {
         await voidDocument(tx as unknown as PostingTx, {
-          userId,
+          tenantId,
           sourceType: 'Expense',
           sourceId: expense.id,
           event: 'recorded',
         });
         const mapping = await tx.ledgerAccountMapping.findFirst({
-          where: { userId, roleKey: 'PURCHASES' },
+          where: { tenantId, roleKey: 'PURCHASES' },
           select: { accountId: true },
         });
         if (mapping?.accountId) {
@@ -1786,7 +1787,7 @@ export async function updateExpense(
           let employeePayableAccountId: string | undefined;
           if (effectiveSourceType === 'EMPLOYEE_PAID') {
             const owed = await tx.account.findFirst({
-              where: { userId, code: '9250', isDeleted: false },
+              where: { tenantId, code: '9250', isDeleted: false },
               select: { id: true },
             });
             if (!owed?.id) {
@@ -1803,7 +1804,7 @@ export async function updateExpense(
             ? await resolveBankGlAccountId(tx as never, updated.bankId ?? null)
             : null;
           await postExpense(tx as unknown as PostingTx, {
-            userId,
+            tenantId,
             expenseId: expense.id,
             date: updated.expenseDate ?? new Date(),
             total: String(updated.amount),
@@ -1848,7 +1849,7 @@ export async function deleteExpense(
   res: Response,
 ): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const scope = tenantScope(req);
     const { id } = req.params as { id: string };
 
@@ -1865,7 +1866,7 @@ export async function deleteExpense(
     await prisma.$transaction(async (tx) => {
       // GL: reverse the posted recorded entry before soft-deleting
       await reverseDocument(tx as unknown as PostingTx, {
-        userId,
+        tenantId,
         sourceType: 'Expense',
         sourceId: id,
         event: 'recorded',
@@ -1885,7 +1886,7 @@ export async function deleteExpense(
         const amount = toBaseAmount(Number(expense.amount ?? 0), expense.exchangeRate ?? null);
         if (expense.sourceType === 'BANK' && expense.bankId && amount) {
           const bank = await tx.bankDetail.findFirst({
-            where: { id: expense.bankId, userId },
+            where: { id: expense.bankId, tenantId },
           });
           if (bank) {
             const balanceBefore = Number(bank.currentBalance ?? 0);
@@ -1910,7 +1911,7 @@ export async function deleteExpense(
 
             await tx.bankTransaction.create({
               data: {
-                tenantId: userId,
+                tenantId: tenantId,
                 bankAccountId: bank.id,
                 transactionDate: new Date(),
                 type: reversalType,
@@ -1930,7 +1931,7 @@ export async function deleteExpense(
           }
         } else if (expense.sourceType === 'PETTY_CASH' && amount) {
           const pettyCash = await tx.pettyCash.findFirst({
-            where: { userId, isDeleted: false },
+            where: { tenantId, isDeleted: false },
           });
           if (pettyCash) {
             const balanceBefore = Number(pettyCash.currentBalance ?? 0);
@@ -1943,7 +1944,7 @@ export async function deleteExpense(
 
             await tx.pettyCashTransaction.create({
               data: {
-                tenantId: userId,
+                tenantId: tenantId,
                 pettyCashId: pettyCash.id,
                 transactionDate: new Date(),
                 transactionType: 'RETURN' as PettyCashTransactionType,
@@ -1987,13 +1988,13 @@ export async function deleteExpense(
 
 export async function getRecurringExpenses(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const page = Math.max(1, parseInt((req.query.page as string) ?? '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt((req.query.limit as string) ?? '10', 10)));
     const search = ((req.query.search as string) ?? '').trim();
 
     const where: Prisma.ExpenseWhereInput = {
-      userId,
+      tenantId,
       isDeleted: false,
       isRecurring: true,
       parentExpense: null,
@@ -2075,11 +2076,11 @@ export async function getRecurringExpenses(req: Request, res: Response): Promise
 
 export async function getExpenseChildren(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const parent = await prisma.expense.findFirst({
-      where: { id, userId, isDeleted: false },
+      where: { id, tenantId, isDeleted: false },
       select: { id: true },
     });
     if (!parent) {
@@ -2115,11 +2116,11 @@ export async function getExpenseChildren(req: Request, res: Response): Promise<v
 
 export async function runRecurringExpenseNow(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const owned = await prisma.expense.findFirst({
-      where: { id, userId, isDeleted: false, isRecurring: true, parentExpense: null },
+      where: { id, tenantId, isDeleted: false, isRecurring: true, parentExpense: null },
       select: { id: true, stopped: true },
     });
     if (!owned) {
@@ -2158,7 +2159,7 @@ export async function runRecurringExpenseNow(req: Request, res: Response): Promi
 
 export async function setExpenseRecurringStatus(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const body = req.body as { stopped?: boolean };
     if (typeof body.stopped !== 'boolean') {
@@ -2167,7 +2168,7 @@ export async function setExpenseRecurringStatus(req: Request, res: Response): Pr
     }
 
     const existing = await prisma.expense.findFirst({
-      where: { id, userId, isDeleted: false, isRecurring: true, parentExpense: null },
+      where: { id, tenantId, isDeleted: false, isRecurring: true, parentExpense: null },
       select: { id: true },
     });
     if (!existing) {
@@ -2202,7 +2203,7 @@ const _expenseRef = null as unknown as Expense | null;
 
 export async function approveExpense(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
 
     const existing = await prisma.expense.findFirst({
@@ -2226,12 +2227,12 @@ export async function approveExpense(req: Request, res: Response): Promise<void>
         where: { id },
         data: {
           approvalStatus: 'APPROVED',
-          approvedById: userId,
+          approvedById: tenantId,
           approvedAt: new Date(),
         },
       });
       // Post ledger entries exactly as create would have (shared helper guarantees parity).
-      await postExpenseLedger(tx, approved, userId);
+      await postExpenseLedger(tx, approved, tenantId);
       return approved;
     });
 
@@ -2254,7 +2255,7 @@ export async function approveExpense(req: Request, res: Response): Promise<void>
 
 export async function rejectExpense(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireUserId(req);
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
     const { reason } = req.body as { reason?: string };
 
@@ -2282,7 +2283,7 @@ export async function rejectExpense(req: Request, res: Response): Promise<void> 
       },
     });
 
-    void userId; // referenced for future audit-log use
+    void tenantId; // referenced for future audit-log use
     res.status(200).json({ success: true, message: 'Expense rejected', data: updated });
   } catch (err) {
     if (handleUnauthorized(res, err)) return;
