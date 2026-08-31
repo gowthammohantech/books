@@ -1,5 +1,5 @@
 {
-  "name": "elixirbooks-backend",
+  "name": "@elixirbooks/api",
   "version": "2.9.0",
   "main": "server.js",
   "scripts": {

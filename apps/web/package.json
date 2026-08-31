@@ -1,11 +1,12 @@
 {
-  "name": "elixirbooks-frontend",
+  "name": "@elixirbooks/web",
   "private": true,
   "version": "2.9.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
