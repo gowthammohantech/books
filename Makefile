@@ -65,8 +65,8 @@ smoke:
 
 seed:
 	# Postgres baseline seed (currencies, date/time formats, timezones, module
-	# hierarchy, custom-field types). The old node seed*.js scripts targeted the
-	# now-removed MongoDB and are intentionally not run here.
+	# hierarchy, custom-field types). This is the only seed path — the legacy
+	# node seed*.js scripts targeted MongoDB and have been deleted.
 	$(COMPOSE) exec api npx prisma db seed
 
 ps:

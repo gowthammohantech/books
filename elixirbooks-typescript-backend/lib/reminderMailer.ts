@@ -68,6 +68,17 @@ export interface SendReminderParams {
   invoiceId?: string;
 }
 
+export interface SendQuotationReminderParams {
+  reminderId: string;
+  /**
+   * Overrides the reminder's own target quotation — the quotation cron's
+   * equivalent of `invoiceId` above. Automatic quotation reminders are a
+   * standing rule applied across the tenant's open quotations; manual ones
+   * omit this and fall back to `reminder.targetQuotation`.
+   */
+  quotationId?: string;
+}
+
 type PartyContact = {
   firstName: string | null;
   lastName: string | null;
@@ -284,6 +295,217 @@ export async function sendReminderEmail(params: SendReminderParams): Promise<Sen
         invoice?.invoiceNumber ? ` <strong>${invoice.invoiceNumber}</strong>` : ''
       }${balance ? `, balance due ${fmtMoney(balance)}` : ''}.</p>` +
       (viewLink ? `<p><a href="${viewLink}">View Invoice</a></p>` : '');
+
+    const body = emailConfig.body
+      ? applyPercentPlaceholders(emailConfig.body, placeholderMap)
+      : fallbackBody;
+
+    await sendMail({
+      to,
+      cc: emailConfig.cc && emailConfig.cc.length ? emailConfig.cc.join(',') : undefined,
+      bcc: emailConfig.bcc && emailConfig.bcc.length ? emailConfig.bcc.join(',') : undefined,
+      from: emailConfig.fromEmail || undefined,
+      subject,
+      html: body,
+    });
+
+    return { sent: true };
+  } catch (err) {
+    return { sent: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Quotation reminders
+// -----------------------------------------------------------------------------
+
+interface QuotationForReminder {
+  id: string;
+  quotationId: string | null;
+  quotationDate: Date;
+  expiryDate: Date | null;
+  referenceNo: string | null;
+  notes: string | null;
+  termsAndCondition: string | null;
+  status: string;
+  TotalAmount: unknown;
+  taxableAmount: unknown;
+  totalDiscount: unknown;
+  vat: unknown;
+  publicViewToken: string | null;
+  publicViewEnabled: boolean;
+  contact: PartyContact;
+  billToContact: PartyContact;
+  customer: LegacyCustomer;
+  billToCustomer: LegacyCustomer;
+  billFromUser: { firstName: string | null; lastName: string | null; email: string | null } | null;
+}
+
+const quotationSelectForReminder = {
+  id: true,
+  quotationId: true,
+  quotationDate: true,
+  expiryDate: true,
+  referenceNo: true,
+  notes: true,
+  termsAndCondition: true,
+  status: true,
+  TotalAmount: true,
+  taxableAmount: true,
+  totalDiscount: true,
+  vat: true,
+  publicViewToken: true,
+  publicViewEnabled: true,
+  contact: { select: { firstName: true, lastName: true, organisation: true, email: true } },
+  billToContact: { select: { firstName: true, lastName: true, organisation: true, email: true } },
+  customer: { select: { name: true, email: true } },
+  billToCustomer: { select: { name: true, email: true } },
+  billFromUser: { select: { firstName: true, lastName: true, email: true } },
+} as const;
+
+/**
+ * Ensures the quotation has a live public-view token and returns the public
+ * link. The recipient has no account, so the link must point at the
+ * token-gated public viewer (`/quotation/:token`, routes/publicRoutes.ts) and
+ * never at the staff-only admin route — same rule, and same URL shape, as
+ * emailTeamplateController.ts#buildQuotationMap.
+ */
+async function resolveQuotationPublicLink(
+  quotation: Pick<QuotationForReminder, 'id' | 'publicViewToken' | 'publicViewEnabled'>,
+  companyPublicBaseUrl?: string | null,
+): Promise<string> {
+  let token = quotation.publicViewToken;
+  if (!token) {
+    token = generatePublicToken();
+    await prisma.quotation.update({
+      where: { id: quotation.id },
+      data: { publicViewToken: token, publicViewEnabled: true },
+    });
+  } else if (!quotation.publicViewEnabled) {
+    await prisma.quotation.update({
+      where: { id: quotation.id },
+      data: { publicViewEnabled: true },
+    });
+  }
+  return `${resolvePublicBaseUrl(companyPublicBaseUrl)}/quotation/${token}`;
+}
+
+/**
+ * Sends a single quotation reminder email — the quotation counterpart of
+ * `sendReminderEmail` above, sharing its transport, recipient resolution and
+ * `%Tag%` placeholder convention.
+ *
+ * The placeholder keys are the ones the UI advertises in
+ * `reminderController.getQuotationPlaceholders`; anything offered there must
+ * resolve here or a user-authored template renders a literal `%Tag%`.
+ *
+ * Like its sibling it never marks anything sent — the caller does that only
+ * after seeing `{ sent: true }`.
+ */
+export async function sendQuotationReminderEmail(
+  params: SendQuotationReminderParams,
+): Promise<SendReminderResult> {
+  const { reminderId } = params;
+  try {
+    const reminder = await prisma.reminder.findUnique({
+      where: { id: reminderId },
+      include: {
+        targetQuotationRel: { select: quotationSelectForReminder },
+        targetCustomerRel: { select: { name: true, email: true } },
+        targetContactRel: {
+          select: { firstName: true, lastName: true, organisation: true, email: true },
+        },
+      },
+    });
+
+    if (!reminder) {
+      return { sent: false, error: 'Reminder not found' };
+    }
+
+    let quotation: QuotationForReminder | null =
+      (reminder.targetQuotationRel as QuotationForReminder | null) ?? null;
+    const overrideId = params.quotationId;
+    if (overrideId && overrideId !== reminder.targetQuotation) {
+      quotation = (await prisma.quotation.findUnique({
+        where: { id: overrideId },
+        select: quotationSelectForReminder,
+      })) as QuotationForReminder | null;
+    }
+
+    if (!quotation) {
+      return { sent: false, error: 'Reminder has no target quotation' };
+    }
+
+    // Contact-first, then the reminder's own explicit target — same precedence
+    // as the invoice path.
+    const quotationParty = quotation.contact ?? quotation.billToContact ?? null;
+    const quotationLegacy = quotation.billToCustomer ?? quotation.customer ?? null;
+    const targetContact = reminder.targetContactRel as PartyContact;
+    const targetCustomer = reminder.targetCustomerRel as LegacyCustomer;
+
+    const to =
+      targetContact?.email || targetCustomer?.email || partyEmail(quotationParty, quotationLegacy);
+
+    if (!to) {
+      return { sent: false, error: 'No customer email on file for this reminder' };
+    }
+
+    const customerName =
+      (targetContact ? partyName(targetContact, null) : '') ||
+      targetCustomer?.name ||
+      partyName(quotationParty, quotationLegacy);
+
+    const settings = await prisma.companySettings.findUnique({
+      where: { tenantId: reminder.tenantId },
+      select: { publicBaseUrl: true, companyName: true },
+    });
+    const viewLink = await resolveQuotationPublicLink(quotation, settings?.publicBaseUrl);
+
+    const createdBy =
+      [quotation.billFromUser?.firstName, quotation.billFromUser?.lastName]
+        .filter(Boolean)
+        .join(' ') ||
+      quotation.billFromUser?.email ||
+      '';
+
+    const placeholderMap: Record<string, string> = {
+      CustomerName: customerName,
+      CustomerEmail: to,
+      QuotationNumber: quotation.quotationId ?? '',
+      QuotationDate: fmtDate(quotation.quotationDate),
+      ExpiryDate: fmtDate(quotation.expiryDate),
+      Total: fmtMoney(quotation.TotalAmount),
+      SubTotal: fmtMoney(quotation.taxableAmount),
+      Discount: fmtMoney(quotation.totalDiscount),
+      Tax: fmtMoney(quotation.vat),
+      Subject: quotation.referenceNo ?? '',
+      ReferenceNo: quotation.referenceNo ?? '',
+      TermsAndCondition: quotation.termsAndCondition ?? '',
+      Notes: quotation.notes ?? '',
+      CreatedBy: createdBy,
+      QuotationStatus: quotation.status,
+      CompanyName: settings?.companyName ?? '',
+      QuotationUrl: viewLink,
+    };
+
+    const emailConfig = (reminder.emailConfig ?? {}) as {
+      subject?: string;
+      body?: string;
+      fromEmail?: string;
+      cc?: string[];
+      bcc?: string[];
+    };
+
+    const subject = emailConfig.subject
+      ? applyPercentPlaceholders(emailConfig.subject, placeholderMap)
+      : `Quotation reminder${quotation.quotationId ? ` for ${quotation.quotationId}` : ''}`;
+
+    const fallbackBody =
+      `<p>Dear ${customerName || 'Customer'},</p>` +
+      `<p>This is a reminder regarding your quotation${
+        quotation.quotationId ? ` <strong>${quotation.quotationId}</strong>` : ''
+      }${quotation.expiryDate ? `, valid until ${fmtDate(quotation.expiryDate)}` : ''}.</p>` +
+      (viewLink ? `<p><a href="${viewLink}">View Quotation</a></p>` : '');
 
     const body = emailConfig.body
       ? applyPercentPlaceholders(emailConfig.body, placeholderMap)

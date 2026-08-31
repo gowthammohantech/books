@@ -10,7 +10,6 @@ const https = require('https');
 const { execSync } = require('child_process');
 const express = require('express');
 const cors = require('cors');
-const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const reminderRoutes = require('./routes/reminderRoutes');
@@ -26,8 +25,6 @@ const app = express();
 // so req.protocol reflects the original scheme (https) — otherwise generated
 // upload/image URLs come out as http://.
 app.set('trust proxy', true);
-connectDB();
-
 
 require('./invoiceReminderCron');
 require('./quotationReminderCron');

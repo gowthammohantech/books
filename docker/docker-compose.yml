@@ -1,28 +1,6 @@
 name: elixirbooks
 
 services:
-  # Mongo is OPT-IN / legacy. The application uses PostgreSQL (Prisma) as its
-  # sole datastore. Start Mongo only if you specifically need it:
-  #   docker compose --profile mongo up -d     (and set MONGO_URI in docker/.env)
-  mongo:
-    image: mongo:7
-    profiles: ["mongo"]
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-elixirbooks}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-elixirbooks}
-      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-elixirbooks}
-    volumes:
-      - elixirbooks-mongo-data:/data/db
-    networks:
-      - elixirbooks
-    healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -51,7 +29,6 @@ services:
       NODE_ENV: ${NODE_ENV}
       PORT: ${PORT}
       JWT_SECRET: ${JWT_SECRET}
-      MONGO_URI: ${MONGO_URI:-}
       DATABASE_URL: ${DATABASE_URL}
       # Entrypoint runs prisma migrate deploy + idempotent baseline seed on boot.
       SEED_ON_BOOT: ${SEED_ON_BOOT:-true}
@@ -128,7 +105,6 @@ services:
       NODE_ENV: ${NODE_ENV}
       PORT: 3002
       JWT_SECRET: ${JWT_SECRET}
-      MONGO_URI: ${MONGO_URI:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       REDIS_URL: ${REDIS_URL}
@@ -139,7 +115,6 @@ services:
         condition: service_healthy
 
 volumes:
-  elixirbooks-mongo-data:
   elixirbooks-pg-data:
   elixirbooks-redis-data:
   elixirbooks-uploads:

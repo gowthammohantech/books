@@ -77,8 +77,8 @@ included in the package and contains a concise production checklist.
 | Node.js | 20 (inside the API container — no host install needed) |
 | Ports | 80 and 443 reachable for web + TLS |
 
-No MongoDB or Redis install is required. Both are optional opt-in services
-described in [configuration.md](configuration.md).
+No Redis install is required — it is an optional opt-in service described in
+[configuration.md](configuration.md).
 
 ---
 

@@ -49,7 +49,7 @@ echo "    payload: $body"
 echo "$body" | grep -q '"status":"ok"'
 
 echo "==> Scanning api logs for ERROR (last 200 lines)"
-if $COMPOSE logs --tail=200 api 2>&1 | grep -E "^.*(ERROR|UnhandledPromiseRejection|Error: )" | grep -v "MongoDB connection failed" >/dev/null; then
+if $COMPOSE logs --tail=200 api 2>&1 | grep -E "^.*(ERROR|UnhandledPromiseRejection|Error: )" >/dev/null; then
   echo "WARN: api logs contain errors (review with 'make logs')"
 fi
 

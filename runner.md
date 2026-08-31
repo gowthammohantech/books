@@ -8,7 +8,7 @@ The stack is three parts:
 | API | `elixirbooks-typescript-backend/` | Express 5 + TypeScript (ts-node), port `3001` |
 | SPA | `elixirbooks-typescript-frontend/` | React 19 + Vite, port `3000` |
 
-Mongo is legacy and **off by default** — the app runs entirely on Postgres/Prisma.
+The app runs entirely on Postgres/Prisma — it is the sole datastore.
 
 ## Prerequisites
 
@@ -52,7 +52,6 @@ NODE_ENV=development
 PORT=3001
 DATABASE_URL=postgresql://elixirbooks:elixirbooks@localhost:5432/elixirbooks?schema=public
 JWT_SECRET=dev-secret-change-me
-# MONGO_URI intentionally unset — Mongo is legacy/opt-in; the app warns and skips it.
 ```
 
 Generate a real secret:
@@ -183,8 +182,7 @@ npm test             # vitest
   a different named volume from the standalone dev container.
 - **`npm install`, not `npm ci`** in the backend — the committed lockfile is out of
   sync with `package.json` (the Dockerfile does the same).
-- **Redis/worker and Mongo are opt-in compose profiles.** `make up-redis` for the
-  worker; Mongo needs `docker compose --profile mongo up -d` plus a `MONGO_URI`.
+- **The Redis worker is an opt-in compose profile.** `make up-redis` starts it.
 - **Vite env vars are build-time.** Changing `VITE_*` requires restarting the dev
   server (Option A) or rebuilding the web image (Option B).
 - To point a host-side API at the *compose* Postgres instead of a standalone

@@ -46,7 +46,6 @@
     "@": "/",
     "@controllers": "controllers",
     "@middleware": "middleware",
-    "@models": "models",
     "@routes": "routes",
     "@utils": "utils",
     "@validators": "validators"
@@ -72,7 +71,6 @@
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "module-alias": "^2.2.3",
-    "mongoose": "^8.19.2",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.5",

@@ -179,24 +179,26 @@ Leaving them implies a capability that is not there.
 
 ---
 
-## 9. Legacy Mongo layer is dead weight — **P2**
+## 9. Legacy Mongo layer is dead weight — **DONE**
 
-`runner.md:11` confirms the app runs entirely on Postgres/Prisma, and no file in
-`routes/` or `controllers/` imports mongoose.
+Resolved. MongoDB has been removed from the application entirely and the
+remaining Mongo-dependent code was migrated to Prisma/Postgres:
 
-**Still present:**
+- Deleted: `models/` (58 Mongoose models), `config/db.js`, `seedDefaults.js`,
+  `seedModules.js`, `seedNotification.js`, `utils/placeholderHelper.js`, the
+  `mongoose` dependency and the `@models` path alias.
+- Ported to Prisma: the four AI services that still read Mongo
+  (`insightsService`, `entityResolver`, `duplicateDetector`, `paymentFollowup`).
+  These back live routes — `/ai/insights`, `/ai/suggestions`, `/ai/process`,
+  `/ai/confirm` — and had been returning empty results because the Mongo they
+  queried no longer existed.
+- Rewritten: `quotationReminderCron.js` → `quotationReminderCron.ts`, which was
+  inert (it returned early with no `MONGO_URI`), so `automatic_quotation`
+  reminders never fired. It now runs on Prisma alongside `invoiceReminderCron.ts`.
+- Infrastructure: the compose `mongo` service, its volume, and every `MONGO_URI`
+  reference are gone.
 
-- `models/` — 58 Mongoose models
-- `seedModules.js` — superseded by `prisma/seedModules.ts` (whose header comment
-  says the JS version *"never populated the Postgres Module table"*)
-- `seedDefaults.js`, `seedNotification.js`
-
-**Why it matters:** 58 stale model files are the first thing a new developer or
-an AI assistant finds when searching for the data model, and they contradict the
-real schema.
-
-**Action:** delete, or move to an `legacy/` folder excluded from search and
-tsconfig.
+The Prisma schema is now the single source of truth for the data model.
 
 ---
 
@@ -246,13 +248,12 @@ Fix in this order; each step removes a blocker for the next.
 |---|---|---|---|
 | 1 | §4 nav slug `sales` | P2 | Must land before §3, or Sales disappears for every role |
 | 2 | §3 fail-closed gating + §2 unenforced modules | P0 | Access-control defects live in production today |
-| 3 | §9 delete legacy Mongo layer | P2 | Cheap; makes everything after it easier to navigate |
-| 4 | §5 de-duplicate screens | P2 | Cheap; prevents divergence from widening |
-| 5 | §1 finish Contacts migration | P1 | Every ERP module needs one party master |
-| 6 | §6 inventory model rework | P1 | Hard blocker for warehouse, GRN, and manufacturing |
-| 7 | §7 generalise approvals | P1 | Needed by P2P, O2C, and HR simultaneously |
-| 8 | §10 AI test coverage, §11 report engine | P1 | Do before the ERP build-out multiplies both surfaces |
-| 9 | §8 notifications — implement or delete | P2 | Decide once the ERP scope is fixed |
+| 3 | §5 de-duplicate screens | P2 | Cheap; prevents divergence from widening |
+| 4 | §1 finish Contacts migration | P1 | Every ERP module needs one party master |
+| 5 | §6 inventory model rework | P1 | Hard blocker for warehouse, GRN, and manufacturing |
+| 6 | §7 generalise approvals | P1 | Needed by P2P, O2C, and HR simultaneously |
+| 7 | §10 AI test coverage, §11 report engine | P1 | Do before the ERP build-out multiplies both surfaces |
+| 8 | §8 notifications — implement or delete | P2 | Decide once the ERP scope is fixed |
 
 Steps 1-4 are days of work. Steps 5-8 are the genuine prerequisites for the
 ERP-grade build described in `for_erp_grade_required_modules_and_features.md`.
