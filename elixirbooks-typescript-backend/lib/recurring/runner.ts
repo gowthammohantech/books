@@ -22,7 +22,8 @@
 import type { PrismaClient, Prisma } from '@prisma/client';
 import { Prisma as PrismaNS } from '@prisma/client';
 
-import { prisma } from '../prisma';
+import { prisma, prismaUnscoped } from '../prisma';
+import { runAsTenant } from '../tenantContext';
 import {
   postInvoiceIssued,
   postSaleCogs,
@@ -307,16 +308,25 @@ export async function runDueSchedules(
   today: Date = startOfToday(),
   db: Pick<PrismaClient, 'recurringInvoiceSchedule' | '$transaction'> = prisma,
 ): Promise<RunDueSummary> {
-  const due = await db.recurringInvoiceSchedule.findMany({
-    where: { status: 'ACTIVE', nextRunDate: { lte: today } },
-  });
+  // CROSS-TENANT BY DESIGN: the due set spans every workspace. `db` is the
+  // caller-supplied client (a test double, usually); the default path reads
+  // unscoped because there is no one tenant that owns "everything due today".
+  const due = db === prisma
+    ? await prismaUnscoped.recurringInvoiceSchedule.findMany({
+        where: { status: 'ACTIVE', nextRunDate: { lte: today } },
+      })
+    : await db.recurringInvoiceSchedule.findMany({
+        where: { status: 'ACTIVE', nextRunDate: { lte: today } },
+      });
 
   const successes: RunDueSummary['successes'] = [];
   const failures: RunDueSummary['failures'] = [];
 
   for (const schedule of due) {
     try {
-      const status = await db.$transaction(async (tx) => {
+      // The whole generation — invoice, GL posting, stock movement, schedule
+      // advance — runs as the schedule's own workspace.
+      const status = await runAsTenant(schedule.tenantId, () => db.$transaction(async (tx) => {
         const result = await generateInvoiceFromSchedule(
           tx as unknown as RunnerTx,
           schedule as unknown as ScheduleTemplate,
@@ -346,7 +356,7 @@ export async function runDueSchedules(
         });
 
         return { invoiceNumber: result.invoiceNumber, status: advance.status };
-      });
+      }));
 
       successes.push({
         scheduleId: schedule.id,

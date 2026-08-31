@@ -1,6 +1,7 @@
 import type { Expense } from '@prisma/client';
 
-import { prisma } from './prisma';
+import { prisma, prismaUnscoped } from './prisma';
+import { runAsTenant } from './tenantContext';
 import { getNextRecurringDate } from './recurringInvoiceRunner';
 import {
   nextDocumentNumber,
@@ -163,7 +164,8 @@ export async function runDueRecurringExpenses(): Promise<{
 }> {
   const today = startOfToday();
 
-  const due = await prisma.expense.findMany({
+  // CROSS-TENANT BY DESIGN: see the note in lib/recurring/runner.ts.
+  const due = await prismaUnscoped.expense.findMany({
     where: {
       isRecurring: true,
       isDeleted: false,
@@ -176,7 +178,7 @@ export async function runDueRecurringExpenses(): Promise<{
         { endsOn: { gte: today } },
       ],
     },
-    select: { id: true, referenceNo: true },
+    select: { id: true, referenceNo: true, tenantId: true },
   });
 
   const successes: string[] = [];
@@ -184,6 +186,9 @@ export async function runDueRecurringExpenses(): Promise<{
 
   for (const exp of due) {
     try {
+      // Each expense is caught up AS ITS OWN TENANT — the generated expense,
+      // its GL posting and the schedule advance all scope from this context.
+      await runAsTenant(exp.tenantId, async () => {
       // Catch up EVERY missed period deterministically, one occurrence per
       // scheduled date, until the next due date lands on/after today (or the
       // schedule ends). Advancing from the scheduled date (inside
@@ -202,6 +207,7 @@ export async function runDueRecurringExpenses(): Promise<{
           break;
         }
       }
+      });
     } catch (err) {
       failures.push({ id: exp.id, error: err instanceof Error ? err.message : String(err) });
     }

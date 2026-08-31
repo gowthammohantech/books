@@ -19,6 +19,7 @@ const externalRoutes = require('./routes/externalRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const dimensionRoutes = require('./routes/dimensionRoutes');
 const { auditContextMiddleware } = require('./middleware/auditContext');
+const { runAsSystem } = require('./lib/tenantContext');
 const { blockSettingsWriteInDemo, isDemoMode } = require('./middleware/demoMode');
 const app = express();
 // Behind an HTTPS reverse proxy (TLS terminated upstream). Trust X-Forwarded-*
@@ -136,6 +137,10 @@ const PORT = process.env.PORT || 3001;
 //   GEO_ON_BOOT=false        — skip the Country/State geo dataset import
 //                              (e.g. if you run `npm run prisma:import:geo`
 //                              manually, or manage that data yourself)
+//
+// The SCHEMA-VERSION GUARD below is deliberately NOT switchable off: booting
+// against a database without the tenancy tables cannot produce a working
+// server, so there is no configuration under which skipping the check helps.
 // ---------------------------------------------------------------------------
 (async function bootstrap() {
   if (process.env.MIGRATE_ON_BOOT !== 'false') {
@@ -145,6 +150,33 @@ const PORT = process.env.PORT || 3001;
     } catch (err) {
       console.error('[boot] migrate deploy failed (non-fatal — schema may already be current):', err.message || err);
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // Schema-version guard. The migrate step above is deliberately non-fatal,
+  // which is right when the schema is merely already current and wrong when it
+  // is genuinely behind: every route resolves its workspace through Tenant /
+  // TenantMembership now, so a server booted against a pre-tenancy database
+  // does not degrade gracefully — it 500s everything while still answering
+  // /api/healthz with "ok".
+  //
+  // Exiting is the kinder failure. A container that will not start is
+  // immediately visible in any orchestrator and rolls back; a container that
+  // starts and serves errors looks healthy and takes the traffic.
+  // -------------------------------------------------------------------------
+  try {
+    const { prismaUnscoped } = require('./lib/prisma');
+    await prismaUnscoped.$queryRaw`SELECT 1 FROM "Tenant" LIMIT 1`;
+  } catch (err) {
+    console.error(
+      '\n[boot] FATAL: the database is missing the multi-tenancy schema.\n' +
+      '       The Tenant table does not exist, so authentication and every\n' +
+      '       tenant-scoped route would fail on the first request.\n' +
+      '       Run `npx prisma migrate deploy` against this database, or unset\n' +
+      '       MIGRATE_ON_BOOT=false so boot applies migrations itself.\n' +
+      `       Underlying error: ${err.message || err}\n`,
+    );
+    process.exit(1);
   }
 
   if (process.env.SEED_ON_BOOT !== 'false') {
@@ -163,8 +195,14 @@ const PORT = process.env.PORT || 3001;
   if (process.env.BACKFILL_ON_BOOT !== 'false') {
     try {
       console.log('[boot] contact data backfill...');
-      await require('./prisma/migrateContacts').migrateContacts();
-      await require('./prisma/backfillContactFks').backfillContactFks();
+      // runAsSystem: these walk every workspace, so they declare that rather
+      // than inheriting a tenant they do not have. Without it the tenant guard
+      // refuses the first tenant-scoped query they make — which is the point:
+      // an unscoped backfill should have to say so.
+      await runAsSystem(async () => {
+        await require('./prisma/migrateContacts').migrateContacts();
+        await require('./prisma/backfillContactFks').backfillContactFks();
+      });
       console.log('[boot] contact backfill complete.');
     } catch (err) {
       console.error('[boot] contact backfill failed (non-fatal):', err.message || err);
@@ -176,7 +214,8 @@ const PORT = process.env.PORT || 3001;
     // no-op once every tenant is caught up.
     try {
       console.log('[boot] account-credit role backfill...');
-      await require('./prisma/backfillAccountCreditRoles').backfillAccountCreditRoles();
+      await runAsSystem(() =>
+        require('./prisma/backfillAccountCreditRoles').backfillAccountCreditRoles());
       console.log('[boot] account-credit role backfill complete.');
     } catch (err) {
       console.error('[boot] account-credit role backfill failed (non-fatal):', err.message || err);
@@ -192,7 +231,7 @@ const PORT = process.env.PORT || 3001;
   if (process.env.GEO_ON_BOOT !== 'false') {
     try {
       console.log('[boot] geo dataset import...');
-      await require('./prisma/importGeoDataset').importGeoDataset();
+      await runAsSystem(() => require('./prisma/importGeoDataset').importGeoDataset());
       console.log('[boot] geo dataset import complete.');
     } catch (err) {
       console.error('[boot] geo dataset import failed (non-fatal):', err.message || err);

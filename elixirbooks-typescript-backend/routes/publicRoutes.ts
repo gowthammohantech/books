@@ -1,7 +1,8 @@
 import express, { Router, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 
-import { prisma } from '../lib/prisma';
+import { prisma, prismaUnscoped } from '../lib/prisma';
+import { runAsTenant } from '../lib/tenantContext';
 import { razorpayGateway } from '../lib/paymentGateways/razorpayGateway';
 import { stripeGateway } from '../lib/paymentGateways/stripeGateway';
 import { decryptConfigSecrets, gatewaySecretKeys } from '../lib/configSecret';
@@ -85,7 +86,10 @@ router.get('/invoices/:token', limiter, async (req: Request, res: Response) => {
       return;
     }
 
-    const invoice = await prisma.invoice.findUnique({
+    // CROSS-TENANT BY DESIGN: the token IS the credential, and which workspace
+    // it belongs to is exactly what we are trying to find out. Invoice
+    // .publicViewToken stays globally unique for this reason.
+    const invoice = await prismaUnscoped.invoice.findUnique({
       where: { publicViewToken: token },
       include: {
         billToCustomer: { select: { name: true, email: true, phone: true, billingAddress: true } },
@@ -99,10 +103,12 @@ router.get('/invoices/:token', limiter, async (req: Request, res: Response) => {
       return;
     }
 
-    const company = await prisma.companySettings.findUnique({
+    // From here on we act AS the invoice's workspace, which is what makes the
+    // logo, company details and payment config resolve to the right company.
+    const company = await runAsTenant(invoice.tenantId, () => prisma.companySettings.findFirst({
       where: { tenantId: invoice.tenantId },
       select: { companyName: true, email: true, phone: true, address: true, publicBaseUrl: true, merchantUpiId: true, merchantName: true, gstin: true, vatNumber: true, abn: true, nzGstNumber: true, taxRegime: true, siteLogo: true },
-    });
+    }));
 
     // SANITIZE — drop audit timestamps, signature blobs, custom field IDs.
     // Notes, terms & conditions, and bank details are merchant-authored fields meant for the
@@ -169,7 +175,8 @@ router.get('/quotations/:token', limiter, async (req: Request, res: Response) =>
       return;
     }
 
-    const quotation = await prisma.quotation.findUnique({
+    // CROSS-TENANT BY DESIGN — see the invoice route above.
+    const quotation = await prismaUnscoped.quotation.findUnique({
       where: { publicViewToken: token },
       include: {
         contact: { select: { id: true, firstName: true, lastName: true, organisation: true, email: true, mobile: true } },
@@ -185,10 +192,10 @@ router.get('/quotations/:token', limiter, async (req: Request, res: Response) =>
       return;
     }
 
-    const company = await prisma.companySettings.findUnique({
+    const company = await runAsTenant(quotation.tenantId, () => prisma.companySettings.findFirst({
       where: { tenantId: quotation.tenantId },
       select: { companyName: true, email: true, phone: true, address: true, publicBaseUrl: true, gstin: true, vatNumber: true, abn: true, nzGstNumber: true, taxRegime: true, siteLogo: true },
-    });
+    }));
 
     // Contact-first party resolution (matches buildQuotationMap in emailTeamplateController.ts):
     // prefer the unified Contact, then the bill-to Contact, then the legacy Customer.
@@ -254,7 +261,10 @@ router.post('/razorpay/webhook', express.raw({ type: 'application/json' }), asyn
       return;
     }
 
-    const txn = await prisma.paymentTransaction.findFirst({
+    // CROSS-TENANT BY DESIGN: a gateway webhook arrives with the gateway's own
+    // order id and nothing else — resolving the workspace from it is the whole
+    // job. The id is issued by the gateway, not by the caller.
+    const txn = await prismaUnscoped.paymentTransaction.findFirst({
       where: { gatewayOrderId: orderId, kind: 'RAZORPAY' },
     });
     if (!txn) {
@@ -262,9 +272,9 @@ router.post('/razorpay/webhook', express.raw({ type: 'application/json' }), asyn
       res.status(200).json({ success: true, message: 'Unknown order, ignoring' });
       return;
     }
-    const cfg = await prisma.gatewayConfig.findUnique({
-      where: { tenantId_kind: { tenantId: txn.tenantId, kind: 'RAZORPAY' } },
-    });
+    const cfg = await runAsTenant(txn.tenantId, () => prisma.gatewayConfig.findFirst({
+      where: { tenantId: txn.tenantId, kind: 'RAZORPAY' },
+    }));
     if (!cfg) {
       res.status(200).json({ success: true, message: 'No config, ignoring' });
       return;
@@ -323,7 +333,8 @@ router.post('/stripe/webhook', express.raw({ type: 'application/json' }), async 
       res.status(400).json({ success: false, message: 'Missing session id' });
       return;
     }
-    const txn = await prisma.paymentTransaction.findFirst({
+    // CROSS-TENANT BY DESIGN — see the Razorpay webhook above.
+    const txn = await prismaUnscoped.paymentTransaction.findFirst({
       where: { gatewayOrderId: sessionId, kind: 'STRIPE' },
     });
     if (!txn) {
@@ -331,9 +342,9 @@ router.post('/stripe/webhook', express.raw({ type: 'application/json' }), async 
       res.status(200).json({ success: true, message: 'Unknown session, ignoring' });
       return;
     }
-    const cfg = await prisma.gatewayConfig.findUnique({
-      where: { tenantId_kind: { tenantId: txn.tenantId, kind: 'STRIPE' } },
-    });
+    const cfg = await runAsTenant(txn.tenantId, () => prisma.gatewayConfig.findFirst({
+      where: { tenantId: txn.tenantId, kind: 'STRIPE' },
+    }));
     if (!cfg) {
       res.status(200).json({ success: true, message: 'No config, ignoring' });
       return;
