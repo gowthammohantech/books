@@ -13,12 +13,12 @@ services:
   api:
     image: elixirbooks-api:dev
     build:
-      context: ../elixirbooks-typescript-backend
+      context: ../apps/api
       dockerfile: Dockerfile
       target: deps
     command: ["npx", "nodemon", "server.js"]
     volumes:
-      - ../elixirbooks-typescript-backend:/app
+      - ../apps/api:/app
       - /app/node_modules
       - elixirbooks-uploads:/app/uploads
     environment:

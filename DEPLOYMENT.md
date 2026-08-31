@@ -12,14 +12,15 @@ default.
   - **Docker Engine** + the **Docker Compose plugin** (`docker compose`, not the
     legacy `docker-compose`).
   - Ports **80/443** reachable (for the web app + TLS).
-- The three project folders kept **side by side** (the compose build contexts are
-  relative — do not rearrange):
+- The repository checked out with its layout intact (the compose build contexts
+  are relative — do not rearrange):
   ```
   elixirbooks/
-  ├── docker/                       # compose files + .env  (this is where you run commands)
-  ├── elixirbooks-typescript-backend/
-  └── elixirbooks-typescript-frontend/
+  ├── docker/                       # compose files + .env
+  ├── apps/api/
+  └── apps/web/
   ```
+  Run `make` targets from the repository root.
 
 ---
 
@@ -134,7 +135,7 @@ container on 8080. (nginx or Traefik work equally well if you prefer.)
 
 ```bash
 cd elixirbooks
-git pull            # in each of the three repos, as applicable
+git pull            # single repository — one pull covers both apps
 make up             # rebuilds changed images; entrypoint auto-applies new migrations
 ```
 

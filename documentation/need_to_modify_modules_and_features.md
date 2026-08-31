@@ -87,9 +87,9 @@ most likely be removed in favour of `product-services`.
 
 **Evidence**
 
-- `elixirbooks-typescript-frontend/src/lib/navigation.tsx:883-892` —
+- `apps/web/src/lib/navigation.tsx:883-892` —
   `canView` returns `true` when no permission row matches the slug
-- `elixirbooks-typescript-backend/middleware/requirePermission.ts:40-49` —
+- `apps/api/middleware/requirePermission.ts:40-49` —
   returns 403 when no permission row matches
 - All 439 routes in `routes/adminRoutes.js` carry `requirePermission`
 

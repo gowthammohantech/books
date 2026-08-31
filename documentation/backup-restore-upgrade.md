@@ -129,9 +129,7 @@ An Elixir Books upgrade is:
 
 ```bash
 cd elixirbooks
-git pull          # pull latest in the root repo
-cd elixirbooks-typescript-backend && git pull && cd ..
-cd elixirbooks-typescript-frontend && git pull && cd ..
+git pull          # single repository — one pull covers both apps
 make up
 ```
 

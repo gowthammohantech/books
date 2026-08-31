@@ -21,7 +21,7 @@ services:
 
   api:
     build:
-      context: ../elixirbooks-typescript-backend
+      context: ../apps/api
       dockerfile: Dockerfile
     image: elixirbooks-api:slice-0
     restart: unless-stopped
@@ -58,7 +58,7 @@ services:
 
   web:
     build:
-      context: ../elixirbooks-typescript-frontend
+      context: ../apps/web
       dockerfile: Dockerfile
       args:
         VITE_DEMO_MODE: ${VITE_DEMO_MODE:-false}
@@ -94,7 +94,7 @@ services:
   worker:
     profiles: ["redis"]
     build:
-      context: ../elixirbooks-typescript-backend
+      context: ../apps/api
       dockerfile: Dockerfile
     image: elixirbooks-api:slice-0
     restart: unless-stopped

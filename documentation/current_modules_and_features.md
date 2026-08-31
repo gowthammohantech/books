@@ -9,11 +9,11 @@ this repo rather than to a product spec.
 
 **Sources of truth**
 
-- Navigation tree — `elixirbooks-typescript-frontend/src/lib/navigation.tsx`
-- Route table — `elixirbooks-typescript-frontend/src/routes/AdminRoute.tsx`
-- API surface — `elixirbooks-typescript-backend/routes/adminRoutes.js`
-- Data model — `elixirbooks-typescript-backend/prisma/schema.prisma`
-- Permission modules — `elixirbooks-typescript-backend/prisma/seedModules.ts`
+- Navigation tree — `apps/web/src/lib/navigation.tsx`
+- Route table — `apps/web/src/routes/AdminRoute.tsx`
+- API surface — `apps/api/routes/adminRoutes.js`
+- Data model — `apps/api/prisma/schema.prisma`
+- Permission modules — `apps/api/prisma/seedModules.ts`
 
 **Scale at a glance**
 
