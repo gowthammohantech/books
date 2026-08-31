@@ -20,7 +20,7 @@ describe('insertCustomFieldValues', () => {
     // `createdBy` records the PERSON, which comes from the request-scoped
     // context. It used to be handed the tenant id -- a foreign key to User
     // holding a value that is not a User id once workspaces have their own.
-    await runWithAuditContext({ userId: 'actor-1', tenantId: 'u1' }, () =>
+    await runWithAuditContext({ userId: 'actor-1', userName: 'Actor One', tenantId: 'u1' }, () =>
       insertCustomFieldValues(tx as any, {
         module: CustomFieldValueModule.product, recordId: 'p1', tenantId: 'u1', files: [],
         customFields: [{ fieldId: 'cf1', value: 'red' }, { fieldId: 'cf2', value: '5' }],

@@ -22,6 +22,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const {
   mockExpenseFindFirst,
   mockUserFindFirst,
+  mockModuleFindFirst,
   mockExpenseUpdate,
   mockLogCreate,
   mockCustomFieldValueUpsert,
@@ -31,6 +32,7 @@ const {
 } = vi.hoisted(() => ({
   mockExpenseFindFirst: vi.fn(),
   mockUserFindFirst: vi.fn(),
+  mockModuleFindFirst: vi.fn(),
   mockExpenseUpdate: vi.fn(),
   mockLogCreate: vi.fn(),
   mockCustomFieldValueUpsert: vi.fn(),
@@ -46,16 +48,39 @@ vi.mock('../lib/prisma', () => ({
       update: mockExpenseUpdate,
     },
     user: { findFirst: mockUserFindFirst },
+    // updateExpense resolves the custom-field module before writing values.
+    module: { findFirst: mockModuleFindFirst },
     activityLog: { create: mockLogCreate },
     customFieldValue: { upsert: mockCustomFieldValueUpsert },
     auditLog: { create: mockAuditCreate },
     $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => {
       // Run the callback with a tx that has all the table mocks we need.
-      const tx = {
+      // The delegates this file actually asserts on. Everything else
+      // updateExpense touches on its way through - ledger settings, bank and
+      // petty-cash lookups, change log - is answered by the permissive proxy
+      // below. The subject here is narrow (how paidByUserId reaches
+      // updateData), and enumerating the whole GL posting path would make the
+      // test a mirror of the controller rather than a check on it.
+      const asserted: Record<string, unknown> = {
         expense: { update: mockExpenseUpdate },
-        customFieldValue: { upsert: mockCustomFieldValueUpsert },
+        customFieldValue: {
+          upsert: mockCustomFieldValueUpsert,
+          deleteMany: vi.fn(async () => ({ count: 0 })),
+          createMany: vi.fn(async () => ({ count: 0 })),
+        },
         activityLog: { create: mockLogCreate },
+        // null = "ledger not initialised", which short-circuits GL posting.
+        companySettings: { findFirst: vi.fn(async () => null) },
       };
+
+      const emptyDelegate = new Proxy({}, {
+        get: () => vi.fn(async () => null),
+      });
+
+      const tx = new Proxy(asserted, {
+        get: (target, prop: string) =>
+          prop in target ? target[prop] : emptyDelegate,
+      });
       return fn(tx);
     }),
   },
@@ -304,13 +329,15 @@ describe('updateExpense — paidByUserId handling', () => {
 
     await updateExpense(req, res as import('express').Response);
 
-    // The update should have been called with paidByUserId = null.
-    // We check the updateData argument passed to expense.update inside the tx.
+    // Switching away from EMPLOYEE_PAID must clear the payer. The controller
+    // writes the RELATION (`paidByUser`), not the scalar FK, because
+    // ExpenseUpdateInput rejects the scalar - so `disconnect` is what "null it
+    // out" looks like here.
     expect(mockExpenseUpdate).toHaveBeenCalledOnce();
     const callArg = mockExpenseUpdate.mock.calls[0][0] as {
       data: Record<string, unknown>;
     };
-    expect(callArg.data.paidByUserId).toBeNull();
+    expect(callArg.data.paidByUser).toEqual({ disconnect: true });
   });
 
   // -------------------------------------------------------------------------
@@ -332,6 +359,7 @@ describe('updateExpense — paidByUserId handling', () => {
     const callArg = mockExpenseUpdate.mock.calls[0][0] as {
       data: Record<string, unknown>;
     };
-    expect(callArg.data.paidByUserId).toBe(PAID_BY_ID);
+    // Written as a relation connect, for the reason above.
+    expect(callArg.data.paidByUser).toEqual({ connect: { id: PAID_BY_ID } });
   });
 });

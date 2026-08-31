@@ -181,7 +181,12 @@ describe('applyStockAdjustment — stock_out (negative delta)', () => {
     expect(entry['referenceType']).toBe('invoice');
     expect(entry['referenceId']).toBe('inv-99');
     // adjustment is the absolute quantity moved
-    expect(entry['adjustment']).toBe(3);
+    // SIGNED, not a magnitude: the history shows +qty for a stock-in and -qty
+    // for a stock-out, so the movement log reads directionally on its own. The
+    // cost helpers take Math.abs separately (see `absQty` in stockAdjust.ts),
+    // and aiController / inventoryController both write the negative form for
+    // stock-out too. This test predated that change.
+    expect(entry['adjustment']).toBe(-3);
   });
 });
 
