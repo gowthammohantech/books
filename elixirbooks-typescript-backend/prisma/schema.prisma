@@ -505,6 +505,74 @@ enum PayFrequency {
   MONTHLY
 }
 
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_DELETION
+}
+
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+}
+
+// =============================================================================
+// Models — Tenancy
+// =============================================================================
+
+/// A customer workspace. Every business row in this schema belongs to exactly
+/// one Tenant, and lib/tenantGuard.ts filters every query by it.
+///
+/// On an install that predates multi-tenancy, tenant #1 is created with
+/// `id` = the primary owner's User.id (see the tenant_core migration). That is
+/// deliberate: every pre-existing tenant column already held `ownerId ?? id`,
+/// so reusing the id makes the conversion a pure column rename with no data
+/// movement, and leaves already-issued JWTs valid.
+model Tenant {
+  id        String       @id @default(uuid())
+  name      String
+  slug      String       @unique
+  status    TenantStatus @default(ACTIVE)
+  plan      String?      @default("free")
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  deletedAt DateTime?
+
+  memberships TenantMembership[] @relation("TenantMemberships")
+  roles       Role[]             @relation("TenantRoles")
+  permissions Permission[]       @relation("TenantPermissions")
+  users       User[]             @relation("UserLastTenant")
+
+  @@index([status])
+}
+
+/// Joins a User to a Tenant with a role. A user may hold memberships in several
+/// tenants; the JWT names the one the session is currently acting on, and
+/// POST /api/auth/switch-tenant mints a token for another.
+///
+/// `roleId` lives here rather than on User because a user's role is per-tenant:
+/// an Owner in one workspace may be Staff in another.
+model TenantMembership {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation("UserMemberships", fields: [userId], references: [id], onDelete: Cascade)
+  tenantId  String
+  tenant    Tenant           @relation("TenantMemberships", fields: [tenantId], references: [id], onDelete: Cascade)
+  roleId    String?
+  role      Role?            @relation("RoleMemberships", fields: [roleId], references: [id])
+  status    MembershipStatus @default(ACTIVE)
+  isOwner   Boolean          @default(false)
+  invitedBy String?
+  joinedAt  DateTime?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([userId, tenantId])
+  @@index([tenantId, status])
+  @@index([userId, status])
+}
+
 // =============================================================================
 // Models — Auth / RBAC
 // =============================================================================
@@ -540,6 +608,11 @@ model Module {
 
 model Permission {
   id        String    @id @default(uuid())
+  // Denormalized from Role.tenantId so the tenant guard can filter Permission
+  // with a top-level `where` instead of a relation traversal. Kept in sync by
+  // every writer; prisma/checkTenantIntegrity.ts asserts it matches the Role.
+  tenantId  String
+  tenant    Tenant    @relation("TenantPermissions", fields: [tenantId], references: [id], onDelete: Cascade)
   roleId    String
   role      Role      @relation("RolePermissions", fields: [roleId], references: [id])
   moduleId  String?
@@ -552,10 +625,17 @@ model Permission {
   deletedAt DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+
+  @@index([tenantId])
 }
 
 model Role {
   id           String    @id @default(uuid())
+  // Roles are per-tenant: each workspace owns its own Owner/Admin/Staff/... set
+  // and may rename or re-permission them without affecting anyone else.
+  // Module stays global — it names features, not data.
+  tenantId     String
+  tenant       Tenant    @relation("TenantRoles", fields: [tenantId], references: [id], onDelete: Cascade)
   roleName     String
   status       Boolean   @default(true)
   defaultRoute String?   @default("dashboard")
@@ -564,8 +644,21 @@ model Role {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  permissions Permission[] @relation("RolePermissions")
-  users       User[]       @relation("UserRole")
+  permissions Permission[]       @relation("RolePermissions")
+  users       User[]             @relation("UserRole")
+  memberships TenantMembership[] @relation("RoleMemberships")
+
+  // NOTE: deliberately no @@unique([tenantId, roleName]).
+  // deleteRole soft-deletes (sets deletedAt) and every name-uniqueness check in
+  // roleController is scoped to `deletedAt: null`, so a plain unique constraint
+  // would make "delete a role, then recreate it with the same name" fail with a
+  // P2002. The correct DB-level constraint is a PARTIAL unique index
+  // (... WHERE "deletedAt" IS NULL), which Prisma 5 cannot express in the
+  // schema — declaring it in raw SQL only would show up as permanent drift on
+  // every `prisma migrate dev`. Uniqueness therefore stays where it already
+  // lives: the case-insensitive, tenant-scoped checks in roleController and
+  // lib/defaultRoles.ensureRole.
+  @@index([tenantId])
 }
 
 model User {
@@ -596,6 +689,10 @@ model User {
   ownerId      String?
   owner        User?            @relation("UserOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   staff        User[]           @relation("UserOwner")
+  // Which workspace to open on next login, for users who belong to several.
+  // Advisory only — a membership is still required and re-checked every request.
+  lastTenantId String?
+  lastTenant   Tenant?          @relation("UserLastTenant", fields: [lastTenantId], references: [id], onDelete: SetNull)
   balance      Decimal          @default(0) @db.Decimal(18, 4)
   balance_type UserBalanceType?
   isDeleted    Boolean          @default(false)
@@ -604,6 +701,7 @@ model User {
   updatedAt    DateTime         @updatedAt
 
   // --- Back-relations from other batches ---
+  memberships                TenantMembership[]      @relation("UserMemberships")
   loginActivities            LoginActivity[]         @relation("UserLoginActivities")
   bankDetails                BankDetail[]            @relation("UserBankDetails")
   reconciledBankTxs          BankTransaction[]       @relation("UserReconciledBankTransactions")
@@ -759,46 +857,46 @@ model BankDetail {
 }
 
 model BankTransaction {
-  id                 String                      @id @default(uuid())
-  bankAccountId      String
-  bankAccount        BankDetail                  @relation("BankDetailTransactions", fields: [bankAccountId], references: [id])
-  transactionDate    DateTime                    @default(now())
-  type               BankTransactionType
-  amount             Decimal                     @db.Decimal(18, 4)
-  balanceBefore      Decimal                     @db.Decimal(18, 4)
-  balanceAfter       Decimal                     @db.Decimal(18, 4)
-  paymentModeId      String
-  paymentMode        PaymentMode                 @relation("PaymentModeBankTransactions", fields: [paymentModeId], references: [id])
-  referenceNo        String?
-  remarks            String?
-  relatedType        BankTransactionRelatedType? @default(MANUAL)
-  relatedId          String?
-  isReconciled       Boolean                     @default(false)
-  reconciledBy       String?
-  reconciledByUser   User?                       @relation("UserReconciledBankTransactions", fields: [reconciledBy], references: [id])
-  reconciliationDate DateTime?
-  reconciliationNote String?
-  isDeleted            Boolean                     @default(false)
-  createdAt            DateTime                    @default(now())
-  updatedAt            DateTime                    @updatedAt
-  explainStatus        ExplainStatus               @default(UNEXPLAINED)
-  transactionTypeKey   String?
-  categoryId           String?
-  category             TransactionCategory?        @relation("CategoryBankTransactions", fields: [categoryId], references: [id])
-  payToUserId          String?
-  taxTreatment         String?
-  taxAmount            Decimal?                    @db.Decimal(18, 4)
-  explainedDescription String?
-  attachment           String?
-  assetType            String?
-  depreciationMethod   String?
-  assetLifeMonths      Int?
-  userPaymentReason    String?
-  approvedById         String?
-  approvedAt           DateTime?
-  postedSourceType     String?
-  postedSourceId       String?
-  createdAssetId       String?
+  id                         String                      @id @default(uuid())
+  bankAccountId              String
+  bankAccount                BankDetail                  @relation("BankDetailTransactions", fields: [bankAccountId], references: [id])
+  transactionDate            DateTime                    @default(now())
+  type                       BankTransactionType
+  amount                     Decimal                     @db.Decimal(18, 4)
+  balanceBefore              Decimal                     @db.Decimal(18, 4)
+  balanceAfter               Decimal                     @db.Decimal(18, 4)
+  paymentModeId              String
+  paymentMode                PaymentMode                 @relation("PaymentModeBankTransactions", fields: [paymentModeId], references: [id])
+  referenceNo                String?
+  remarks                    String?
+  relatedType                BankTransactionRelatedType? @default(MANUAL)
+  relatedId                  String?
+  isReconciled               Boolean                     @default(false)
+  reconciledBy               String?
+  reconciledByUser           User?                       @relation("UserReconciledBankTransactions", fields: [reconciledBy], references: [id])
+  reconciliationDate         DateTime?
+  reconciliationNote         String?
+  isDeleted                  Boolean                     @default(false)
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  explainStatus              ExplainStatus               @default(UNEXPLAINED)
+  transactionTypeKey         String?
+  categoryId                 String?
+  category                   TransactionCategory?        @relation("CategoryBankTransactions", fields: [categoryId], references: [id])
+  payToUserId                String?
+  taxTreatment               String?
+  taxAmount                  Decimal?                    @db.Decimal(18, 4)
+  explainedDescription       String?
+  attachment                 String?
+  assetType                  String?
+  depreciationMethod         String?
+  assetLifeMonths            Int?
+  userPaymentReason          String?
+  approvedById               String?
+  approvedAt                 DateTime?
+  postedSourceType           String?
+  postedSourceId             String?
+  createdAssetId             String?
   proposedRelatedType        String?
   proposedRelatedId          String?
   matchConfidence            String?
@@ -807,12 +905,12 @@ model BankTransaction {
   proposedCategoryId         String?
   // Marks rows posted to the GL by the AUTO-POST tier (skipping the approval
   // queue). Drives the FE badge + Undo affordance and is cleared by unexplain.
-  autoPosted                 Boolean @default(false)
+  autoPosted                 Boolean                     @default(false)
   // True when this row was CREATED by a module payment flow (invoice payment,
   // supplier payment, expense, petty-cash) — see lib/moneyFlow/explainedBankFields.ts.
   // Payment-born rows are read-only in banking (edit at source); banking-explained
   // rows are always editable. Cleared by unexplain (converts to a normal manual row).
-  isPaymentBorn              Boolean @default(false)
+  isPaymentBorn              Boolean                     @default(false)
 
   @@index([bankAccountId])
   @@index([transactionDate])
@@ -977,7 +1075,7 @@ model Supplier {
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 
-  expenses         Expense[]
+  expenses           Expense[]
   purchases          Purchase[]        @relation("PurchaseSupplier")
   purchaseOrders     PurchaseOrder[]   @relation("PurchaseOrderSupplier")
   supplierPayments   SupplierPayment[] @relation("SupplierPaymentSupplier")
@@ -986,31 +1084,31 @@ model Supplier {
 }
 
 model SupplierPayment {
-  id              String                    @id @default(uuid())
-  paymentId       String?                   @unique // TODO 0.1c: app-generated PAY-NNNNNN sequence
-  purchaseId      String
-  purchase        Purchase                  @relation("PurchaseSupplierPayments", fields: [purchaseId], references: [id])
-  supplierId      String?
-  supplier        Supplier?                 @relation("SupplierPaymentSupplier", fields: [supplierId], references: [id])
-  contactId       String?
-  contact         Contact?                  @relation("SupplierPaymentContact", fields: [contactId], references: [id])
-  referenceNumber String?
-  paymentDate     DateTime                  @default(now())
-  paymentModeId   String?
-  paymentMode     PaymentMode?              @relation("PaymentModeSupplierPayments", fields: [paymentModeId], references: [id])
-  sourceType      SupplierPaymentSourceType
-  bankId          String?
-  bank            BankDetail?               @relation("BankDetailSupplierPayments", fields: [bankId], references: [id])
-  amount          Decimal                   @db.Decimal(18, 4)
-  paidAmount      Decimal                   @db.Decimal(18, 4)
-  dueAmount       Decimal                   @db.Decimal(18, 4)
-  notes           String?
-  attachment      String?
-  isDeleted       Boolean                   @default(false)
-  createdBy       String?
-  createdByUser   User?                     @relation("UserSupplierPaymentsCreated", fields: [createdBy], references: [id])
-  currencyCode    String?
-  exchangeRate    Decimal?                  @db.Decimal(18, 8)
+  id               String                    @id @default(uuid())
+  paymentId        String?                   @unique // TODO 0.1c: app-generated PAY-NNNNNN sequence
+  purchaseId       String
+  purchase         Purchase                  @relation("PurchaseSupplierPayments", fields: [purchaseId], references: [id])
+  supplierId       String?
+  supplier         Supplier?                 @relation("SupplierPaymentSupplier", fields: [supplierId], references: [id])
+  contactId        String?
+  contact          Contact?                  @relation("SupplierPaymentContact", fields: [contactId], references: [id])
+  referenceNumber  String?
+  paymentDate      DateTime                  @default(now())
+  paymentModeId    String?
+  paymentMode      PaymentMode?              @relation("PaymentModeSupplierPayments", fields: [paymentModeId], references: [id])
+  sourceType       SupplierPaymentSourceType
+  bankId           String?
+  bank             BankDetail?               @relation("BankDetailSupplierPayments", fields: [bankId], references: [id])
+  amount           Decimal                   @db.Decimal(18, 4)
+  paidAmount       Decimal                   @db.Decimal(18, 4)
+  dueAmount        Decimal                   @db.Decimal(18, 4)
+  notes            String?
+  attachment       String?
+  isDeleted        Boolean                   @default(false)
+  createdBy        String?
+  createdByUser    User?                     @relation("UserSupplierPaymentsCreated", fields: [createdBy], references: [id])
+  currencyCode     String?
+  exchangeRate     Decimal?                  @db.Decimal(18, 8)
   // TRUE iff this payment's CREATE path moved a cash register (bankDetail or
   // pettyCash currentBalance). The record path createSupplierPayment moves it
   // for both BANK and PETTY_CASH; the EXPLAIN flow (applyBillPayment) sets
@@ -1018,14 +1116,14 @@ model SupplierPayment {
   // statement line owns it). The delete/void reversal reverses the register IFF
   // this is TRUE — see the InvoicePayment.movedBankBalance note for why a
   // bank-line lookup cannot substitute for this persisted flag.
-  movedBankBalance Boolean                  @default(false)
-  isVoided        Boolean                   @default(false)
-  voidedById      String?
-  voidedBy        User?                     @relation("UserVoidedSupplierPayments", fields: [voidedById], references: [id])
-  voidedAt        DateTime?
-  voidReason      String?
-  createdAt       DateTime                  @default(now())
-  updatedAt       DateTime                  @updatedAt
+  movedBankBalance Boolean                   @default(false)
+  isVoided         Boolean                   @default(false)
+  voidedById       String?
+  voidedBy         User?                     @relation("UserVoidedSupplierPayments", fields: [voidedById], references: [id])
+  voidedAt         DateTime?
+  voidReason       String?
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
 }
 
 // =============================================================================
@@ -1084,8 +1182,8 @@ model CreditNote {
   appliedDate         DateTime?
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
-  costCenterId String?
-  costCenter   CostCenter? @relation("CostCenterCreditNotes", fields: [costCenterId], references: [id], onDelete: SetNull)
+  costCenterId        String?
+  costCenter          CostCenter?            @relation("CostCenterCreditNotes", fields: [costCenterId], references: [id], onDelete: SetNull)
 }
 
 model DebitNote {
@@ -1137,8 +1235,8 @@ model DebitNote {
   billToContact     Contact?         @relation("DebitNoteBillToContact", fields: [billToContactId], references: [id])
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
-  costCenterId String?
-  costCenter   CostCenter? @relation("CostCenterDebitNotes", fields: [costCenterId], references: [id], onDelete: SetNull)
+  costCenterId      String?
+  costCenter        CostCenter?      @relation("CostCenterDebitNotes", fields: [costCenterId], references: [id], onDelete: SetNull)
 }
 
 model DeliveryChallan {
@@ -1183,8 +1281,8 @@ model DeliveryChallan {
   receivedDate      DateTime?
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
-  costCenterId String?
-  costCenter   CostCenter? @relation("CostCenterDeliveryChallans", fields: [costCenterId], references: [id], onDelete: SetNull)
+  costCenterId      String?
+  costCenter        CostCenter?           @relation("CostCenterDeliveryChallans", fields: [costCenterId], references: [id], onDelete: SetNull)
 }
 
 model EmailTemplate {
@@ -1282,14 +1380,14 @@ model Invoice {
   projectId    String?
   project      Project?    @relation("ProjectInvoices", fields: [projectId], references: [id], onDelete: SetNull)
 
-  creditNotes         CreditNote[]         @relation("CreditNoteInvoice")
-  creditNotesApplied  CreditNote[]         @relation("CreditNoteAppliedToInvoice")
-  deliveryChallans    DeliveryChallan[]    @relation("DeliveryChallanInvoice")
-  payments            InvoicePayment[]     @relation("InvoicePaymentInvoice")
-  paymentTransactions PaymentTransaction[] @relation("InvoicePaymentTransactions")
-  quotations          Quotation[]          @relation("QuotationConvertedInvoice")
-  reminders           Reminder[]           @relation("ReminderTargetInvoice")
-  eInvoices           EInvoiceRecord[]     @relation("InvoiceEInvoice")
+  creditNotes          CreditNote[]         @relation("CreditNoteInvoice")
+  creditNotesApplied   CreditNote[]         @relation("CreditNoteAppliedToInvoice")
+  deliveryChallans     DeliveryChallan[]    @relation("DeliveryChallanInvoice")
+  payments             InvoicePayment[]     @relation("InvoicePaymentInvoice")
+  paymentTransactions  PaymentTransaction[] @relation("InvoicePaymentTransactions")
+  quotations           Quotation[]          @relation("QuotationConvertedInvoice")
+  reminders            Reminder[]           @relation("ReminderTargetInvoice")
+  eInvoices            EInvoiceRecord[]     @relation("InvoiceEInvoice")
   accountCreditEntries AccountCreditEntry[] @relation("AccountCreditEntryInvoice")
 
   createdAt DateTime @default(now())
@@ -1468,13 +1566,13 @@ model Quotation {
   convert_type      QuotationConvertType @default(quotation)
   currencyCode      String? // C.1: per-document currency (ISO code, e.g. 'USD')
 
-  publicViewToken   String?              @unique
-  publicViewEnabled Boolean              @default(false)
+  publicViewToken   String? @unique
+  publicViewEnabled Boolean @default(false)
 
   reminders Reminder[] @relation("ReminderTargetQuotation")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
   costCenterId String?
   costCenter   CostCenter? @relation("CostCenterQuotations", fields: [costCenterId], references: [id], onDelete: SetNull)
 }
@@ -1576,8 +1674,8 @@ model Expense {
 
   changeLogs ExpenseChangeLog[] @relation("ExpenseChangeLogs")
 
-  paidByUserId      String?
-  paidByUser        User?                @relation("ExpensePaidBy", fields: [paidByUserId], references: [id])
+  paidByUserId String?
+  paidByUser   User?   @relation("ExpensePaidBy", fields: [paidByUserId], references: [id])
 }
 
 model ExpenseCategory {
@@ -1754,7 +1852,7 @@ model PurchaseOrder {
   createdAt         DateTime                  @default(now())
   updatedAt         DateTime                  @updatedAt
 
-  purchases Purchase[] @relation("PurchaseFromOrder")
+  purchases    Purchase[]  @relation("PurchaseFromOrder")
   costCenterId String?
   costCenter   CostCenter? @relation("CostCenterPurchaseOrders", fields: [costCenterId], references: [id], onDelete: SetNull)
 }
@@ -1861,7 +1959,7 @@ model CompanySettings {
   // outbound call to the EU government service, so it must never fire unless the
   // tenant explicitly opts in. Validation is fail-open and non-blocking: a save
   // is never rejected on a VIES result, only the audit flag on Contact is set.
-  viesValidationEnabled Boolean  @default(false)
+  viesValidationEnabled Boolean @default(false)
 
   // EU One-Stop-Shop (OSS) registration. When ON, B2C cross-border EU supplies are
   // taxed at the DESTINATION member-state rate (instead of origin). OFF BY DEFAULT —
@@ -1870,10 +1968,10 @@ model CompanySettings {
   ossRegistered Boolean @default(false)
 
   // Tax registration identifiers (tenant-level). Nullable / additive — null = not registered.
-  gstin                String? // India GSTIN (also used by e-invoicing)
-  vatNumber            String? // UK / EU VAT registration number
-  abn                  String? // Australia Business Number
-  nzGstNumber          String? // New Zealand GST registration number
+  gstin       String? // India GSTIN (also used by e-invoicing)
+  vatNumber   String? // UK / EU VAT registration number
+  abn         String? // Australia Business Number
+  nzGstNumber String? // New Zealand GST registration number
 
   reminders Reminder[] @relation("CompanySettingsReminders")
 }
@@ -1912,33 +2010,33 @@ model DateFormat {
 }
 
 model EmailSettings {
-  id            String                    @id @default(uuid())
-  provider_type EmailSettingsProviderType
-  nodeFromName  String?
-  nodeFromEmail String?
-  nodeReplyTo   String?
-  nodeHost      String?
-  nodePort      String?
-  nodeUsername  String?
-  nodePassword  String?
-  smtpFromName  String?
-  smtpFromEmail String?
-  smtpReplyTo   String?
-  smtpHost      String?
-  smtpPort      String?
-  smtpUsername  String?
-  smtpPassword  String?
+  id              String                    @id @default(uuid())
+  provider_type   EmailSettingsProviderType
+  nodeFromName    String?
+  nodeFromEmail   String?
+  nodeReplyTo     String?
+  nodeHost        String?
+  nodePort        String?
+  nodeUsername    String?
+  nodePassword    String?
+  smtpFromName    String?
+  smtpFromEmail   String?
+  smtpReplyTo     String?
+  smtpHost        String?
+  smtpPort        String?
+  smtpUsername    String?
+  smtpPassword    String?
   resendFromName  String?
   resendFromEmail String?
   resendReplyTo   String?
   resendApiKey    String?
-  smtp_status   Boolean?                  @default(false)
-  node_status   Boolean?                  @default(false)
-  resend_status Boolean?                  @default(false)
-  userId        String
-  user          User                      @relation("UserEmailSettings", fields: [userId], references: [id])
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
+  smtp_status     Boolean?                  @default(false)
+  node_status     Boolean?                  @default(false)
+  resend_status   Boolean?                  @default(false)
+  userId          String
+  user            User                      @relation("UserEmailSettings", fields: [userId], references: [id])
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
 }
 
 model GeneralSetting {
@@ -2004,24 +2102,24 @@ model TaxGroup {
 }
 
 model TaxRate {
-  id        String    @id @default(uuid())
-  userId    String
-  user      User      @relation("UserTaxRates", fields: [userId], references: [id])
-  regime    TaxRegime
-  taxKind   TaxKind?
-  name      String
-  rate      Decimal   @db.Decimal(7, 4)
-  countryId String?
-  country   Country?  @relation("TaxRateCountry", fields: [countryId], references: [id])
-  stateId   String?
-  state     State?    @relation("TaxRateState", fields: [stateId], references: [id])
-  isActive  Boolean   @default(true)
-  isDeleted Boolean   @default(false)
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation("UserTaxRates", fields: [userId], references: [id])
+  regime            TaxRegime
+  taxKind           TaxKind?
+  name              String
+  rate              Decimal   @db.Decimal(7, 4)
+  countryId         String?
+  country           Country?  @relation("TaxRateCountry", fields: [countryId], references: [id])
+  stateId           String?
+  state             State?    @relation("TaxRateState", fields: [stateId], references: [id])
+  isActive          Boolean   @default(true)
+  isDeleted         Boolean   @default(false)
   // Unified tax: engine-provisioned GST component rows (CGST/SGST/IGST halves)
   // are flagged so user-facing tax lists can hide them. Engine + reports see them.
-  isSystemComponent Boolean @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  isSystemComponent Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   tax_groups            TaxGroup[]            @relation("TaxGroupTaxRates")
   transactionCategories TransactionCategory[] @relation("TaxRateTransactionCategories")
@@ -2075,22 +2173,22 @@ model Unit {
 // =============================================================================
 
 model CustomField {
-  id          String            @id @default(uuid())
+  id          String               @id @default(uuid())
   moduleId    String
-  module      Module            @relation("ModuleCustomFields", fields: [moduleId], references: [id])
+  module      Module               @relation("ModuleCustomFields", fields: [moduleId], references: [id])
   labelName   String
   fieldSlug   String
   fieldTypeId String
-  fieldType   FieldType         @relation("FieldTypeCustomFields", fields: [fieldTypeId], references: [id])
-  helpText    String?           @default("")
-  isMandatory Boolean           @default(false)
-  showInTable Boolean           @default(false)
+  fieldType   FieldType            @relation("FieldTypeCustomFields", fields: [fieldTypeId], references: [id])
+  helpText    String?              @default("")
+  isMandatory Boolean              @default(false)
+  showInTable Boolean              @default(false)
   placement   CustomFieldPlacement @default(document)
   options     Json?
-  status      CustomFieldStatus @default(Active)
+  status      CustomFieldStatus    @default(Active)
   deletedAt   DateTime?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
 
   values CustomFieldValue[] @relation("CustomFieldValues")
 
@@ -2255,11 +2353,11 @@ model Conversation {
 }
 
 model Vehicle {
-  id                 String   @id @default(uuid())
+  id                 String    @id @default(uuid())
   customerId         String?
   customer           Customer? @relation(fields: [customerId], references: [id])
   contactId          String?
-  contact            Contact? @relation("VehicleContact", fields: [contactId], references: [id])
+  contact            Contact?  @relation("VehicleContact", fields: [contactId], references: [id])
   name               String?
   make               String?
   model              String?
@@ -2268,12 +2366,12 @@ model Vehicle {
   vin                String?
   mileage            Int?
   notes              String?
-  status             Boolean  @default(true)
-  isDeleted          Boolean  @default(false)
+  status             Boolean   @default(true)
+  isDeleted          Boolean   @default(false)
   userId             String
-  user               User     @relation("UserVehicles", fields: [userId], references: [id])
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  user               User      @relation("UserVehicles", fields: [userId], references: [id])
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   invoices Invoice[] @relation("InvoiceVehicle")
 
@@ -2371,26 +2469,26 @@ enum AccountType {
 }
 
 model Account {
-  id            String                 @id @default(uuid())
-  userId        String
-  user          User                   @relation("UserAccounts", fields: [userId], references: [id])
-  code          String
-  name          String
-  accountType   AccountType
-  parentId      String?
-  parent        Account?               @relation("AccountParent", fields: [parentId], references: [id])
-  children      Account[]              @relation("AccountParent")
-  description   String?
-  currencyCode  String?
-  roleProtected Boolean                @default(false)
-  isDeleted     Boolean                @default(false)
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-  journalLines         JournalLine[]
-  roleMappings         LedgerAccountMapping[]
-  budgets              Budget[]               @relation("AccountBudgets")
-  transactionCategories TransactionCategory[] @relation("AccountTransactionCategories")
-  bankDetails          BankDetail[]           @relation("BankDetailAccount")
+  id                    String                 @id @default(uuid())
+  userId                String
+  user                  User                   @relation("UserAccounts", fields: [userId], references: [id])
+  code                  String
+  name                  String
+  accountType           AccountType
+  parentId              String?
+  parent                Account?               @relation("AccountParent", fields: [parentId], references: [id])
+  children              Account[]              @relation("AccountParent")
+  description           String?
+  currencyCode          String?
+  roleProtected         Boolean                @default(false)
+  isDeleted             Boolean                @default(false)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  journalLines          JournalLine[]
+  roleMappings          LedgerAccountMapping[]
+  budgets               Budget[]               @relation("AccountBudgets")
+  transactionCategories TransactionCategory[]  @relation("AccountTransactionCategories")
+  bankDetails           BankDetail[]           @relation("BankDetailAccount")
 
   @@unique([userId, code])
   @@index([userId, accountType])
@@ -3071,55 +3169,55 @@ model TransactionCategory {
 // =============================================================================
 
 model PayrollProfile {
-  id              String       @id @default(uuid())
-  userId          String       // owner / tenant (the company)
-  user            User         @relation("CompanyPayrollProfiles", fields: [userId], references: [id])
-  employeeUserId  String
-  employee        User         @relation("EmployeePayrollProfile", fields: [employeeUserId], references: [id])
-  defaultGross    Decimal?     @db.Decimal(18, 4)
-  payFrequency    PayFrequency @default(MONTHLY)
-  isActive        Boolean      @default(true)
-  isDeleted       Boolean      @default(false)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id             String       @id @default(uuid())
+  userId         String // owner / tenant (the company)
+  user           User         @relation("CompanyPayrollProfiles", fields: [userId], references: [id])
+  employeeUserId String
+  employee       User         @relation("EmployeePayrollProfile", fields: [employeeUserId], references: [id])
+  defaultGross   Decimal?     @db.Decimal(18, 4)
+  payFrequency   PayFrequency @default(MONTHLY)
+  isActive       Boolean      @default(true)
+  isDeleted      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@index([userId])
   @@index([employeeUserId])
 }
 
 model PayRun {
-  id            String        @id @default(uuid())
-  userId        String        // owner / tenant
-  user          User          @relation("CompanyPayRuns", fields: [userId], references: [id])
-  taxYearLabel  String
-  taxMonth      Int
-  periodStart   DateTime
-  periodEnd     DateTime
-  status        PayRunStatus  @default(DRAFT)
-  finalizedAt   DateTime?
-  voidedAt      DateTime?
-  isDeleted     Boolean       @default(false)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  lines         PayRunLine[]  @relation("PayRunLines")
+  id           String       @id @default(uuid())
+  userId       String // owner / tenant
+  user         User         @relation("CompanyPayRuns", fields: [userId], references: [id])
+  taxYearLabel String
+  taxMonth     Int
+  periodStart  DateTime
+  periodEnd    DateTime
+  status       PayRunStatus @default(DRAFT)
+  finalizedAt  DateTime?
+  voidedAt     DateTime?
+  isDeleted    Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  lines        PayRunLine[] @relation("PayRunLines")
 
   @@index([userId])
   @@index([userId, taxYearLabel, taxMonth])
 }
 
 model PayRunLine {
-  id              String   @id @default(uuid())
-  payRunId        String
-  payRun          PayRun   @relation("PayRunLines", fields: [payRunId], references: [id], onDelete: Cascade)
-  employeeUserId  String
-  employee        User     @relation("EmployeePayRunLines", fields: [employeeUserId], references: [id])
-  gross           Decimal  @db.Decimal(18, 4)
-  deductions      Decimal  @default(0) @db.Decimal(18, 4)
-  net             Decimal  @db.Decimal(18, 4)
-  deductionLines  Json?
-  note            String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(uuid())
+  payRunId       String
+  payRun         PayRun   @relation("PayRunLines", fields: [payRunId], references: [id], onDelete: Cascade)
+  employeeUserId String
+  employee       User     @relation("EmployeePayRunLines", fields: [employeeUserId], references: [id])
+  gross          Decimal  @db.Decimal(18, 4)
+  deductions     Decimal  @default(0) @db.Decimal(18, 4)
+  net            Decimal  @db.Decimal(18, 4)
+  deductionLines Json?
+  note           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([payRunId])
   @@index([employeeUserId])
@@ -3143,13 +3241,13 @@ enum TaxTreatment {
 }
 
 model Contact {
-  id                      String         @id @default(uuid())
+  id                      String        @id @default(uuid())
   userId                  String
-  user                    User           @relation("UserContacts", fields: [userId], references: [id])
+  user                    User          @relation("UserContacts", fields: [userId], references: [id])
   firstName               String?
   lastName                String?
   organisation            String?
-  showNameOnInvoice       Boolean        @default(false)
+  showNameOnInvoice       Boolean       @default(false)
   email                   String?
   billingEmail            String?
   telephone               String?
@@ -3162,46 +3260,46 @@ model Contact {
   postcode                String?
   countryId               String?
   defaultPaymentTermDays  Int?
-  useContactEmailSettings Boolean        @default(false)
+  useContactEmailSettings Boolean       @default(false)
   invoiceSequencePrefix   String?
-  defaultTaxTreatment     TaxTreatment   @default(STANDARD)
+  defaultTaxTreatment     TaxTreatment  @default(STANDARD)
   vatRegNumber            String?
   vatNumber               String? // customer VAT number (EU/UK), used for reverse-charge detection
   country                 String? // ISO country code, used for EU cross-border detection
-  viesValid               Boolean?       // last online VIES result (null = never checked / VIES disabled / non-EU)
-  viesCheckedAt           DateTime?      // audit: timestamp of the last VIES check
+  viesValid               Boolean? // last online VIES result (null = never checked / VIES disabled / non-EU)
+  viesCheckedAt           DateTime? // audit: timestamp of the last VIES check
   gstin                   String?
   invoiceLanguage         String?
   currencyCode            String?
   bankDetails             Json?
   notes                   String?
   image                   String?
-  status                  ContactStatus  @default(ACTIVE)
+  status                  ContactStatus @default(ACTIVE)
   legacyCustomerId        String?
   legacySupplierId        String?
-  isDeleted               Boolean        @default(false)
-  createdAt               DateTime       @default(now())
-  updatedAt               DateTime       @updatedAt
+  isDeleted               Boolean       @default(false)
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
 
   // Back-relations from party models (task 5: contactId FK columns)
-  invoicesAsContact           Invoice[]         @relation("InvoiceContact")
-  invoicesAsBillToContact     Invoice[]         @relation("InvoiceBillToContact")
-  quotationsAsContact         Quotation[]       @relation("QuotationContact")
-  quotationsAsBillToContact   Quotation[]       @relation("QuotationBillToContact")
-  creditNotesAsContact        CreditNote[]      @relation("CreditNoteContact")
-  creditNotesAsBillToContact  CreditNote[]      @relation("CreditNoteBillToContact")
-  challansAsContact           DeliveryChallan[] @relation("DeliveryChallanContact")
-  challansAsBillToContact     DeliveryChallan[] @relation("DeliveryChallanBillToContact")
-  remindersAsTarget           Reminder[]        @relation("ReminderTargetContact")
-  vehiclesAsContact           Vehicle[]         @relation("VehicleContact")
-  purchasesAsContact          Purchase[]        @relation("PurchaseContact")
-  purchaseOrdersAsContact     PurchaseOrder[]   @relation("PurchaseOrderContact")
-  supplierPaymentsAsContact   SupplierPayment[] @relation("SupplierPaymentContact")
-  debitNotesAsContact         DebitNote[]       @relation("DebitNoteContact")
-  debitNotesAsBillToContact   DebitNote[]       @relation("DebitNoteBillToContact")
-  expensesAsContact           Expense[]         @relation("ExpenseContact")
-  recurringSchedules          RecurringInvoiceSchedule[] @relation("RecurringScheduleContact")
-  accountCreditEntries        AccountCreditEntry[] @relation("AccountCreditEntryContact")
+  invoicesAsContact          Invoice[]                  @relation("InvoiceContact")
+  invoicesAsBillToContact    Invoice[]                  @relation("InvoiceBillToContact")
+  quotationsAsContact        Quotation[]                @relation("QuotationContact")
+  quotationsAsBillToContact  Quotation[]                @relation("QuotationBillToContact")
+  creditNotesAsContact       CreditNote[]               @relation("CreditNoteContact")
+  creditNotesAsBillToContact CreditNote[]               @relation("CreditNoteBillToContact")
+  challansAsContact          DeliveryChallan[]          @relation("DeliveryChallanContact")
+  challansAsBillToContact    DeliveryChallan[]          @relation("DeliveryChallanBillToContact")
+  remindersAsTarget          Reminder[]                 @relation("ReminderTargetContact")
+  vehiclesAsContact          Vehicle[]                  @relation("VehicleContact")
+  purchasesAsContact         Purchase[]                 @relation("PurchaseContact")
+  purchaseOrdersAsContact    PurchaseOrder[]            @relation("PurchaseOrderContact")
+  supplierPaymentsAsContact  SupplierPayment[]          @relation("SupplierPaymentContact")
+  debitNotesAsContact        DebitNote[]                @relation("DebitNoteContact")
+  debitNotesAsBillToContact  DebitNote[]                @relation("DebitNoteBillToContact")
+  expensesAsContact          Expense[]                  @relation("ExpenseContact")
+  recurringSchedules         RecurringInvoiceSchedule[] @relation("RecurringScheduleContact")
+  accountCreditEntries       AccountCreditEntry[]       @relation("AccountCreditEntryContact")
 
   @@index([userId])
   @@index([userId, status])
@@ -3217,7 +3315,7 @@ model Contact {
 model ExplanationHint {
   id                 String   @id @default(uuid())
   userId             String
-  payeeKey           String   // normalised payee/description
+  payeeKey           String // normalised payee/description
   transactionTypeKey String
   categoryId         String?
   payToUserId        String?

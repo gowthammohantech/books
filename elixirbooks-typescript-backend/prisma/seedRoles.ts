@@ -1,12 +1,21 @@
 /**
- * Idempotent seeder: creates the 5 default roles and backfills existing users
- * that have no roleId.
+ * Idempotent seeder: gives every tenant its own default role set and keeps
+ * those roles reconciled against the (global) Module catalog.
  *
- * Roles created (by roleName, case-insensitive guard – duplicates skipped):
- *   Admin (user_type 1), Vendor (2), Staff (3), Maintainer (4), Supplier (5)
+ * Roles created per tenant (case-insensitive guard – duplicates skipped):
+ *   Admin (user_type 1), Vendor (2), Staff (3), Maintainer (4), Supplier (5),
+ *   plus Owner.
  *
- * Backfill: any User with user_type in the map above and roleId = null gets
- *           assigned the matching role (excludes user_type 999 sys-bootstrap).
+ * WHY THIS STILL RUNS ON EVERY BOOT: the Owner/Admin reconciliation below grants
+ * full permissions on modules that did not exist when a tenant signed up.
+ * Without it, a release that adds a Module (e.g. 'payroll', 'my-money') would
+ * leave every tenant's Owner with no Permission row for it and
+ * requirePermission() would 403 them out of a feature they already have.
+ *
+ * Backfill: any TenantMembership with no roleId gets the role matching its
+ * user's user_type (excludes user_type 999 sys-bootstrap). User.roleId is
+ * mirrored for now because authMiddleware still reads it; that flips to
+ * TenantMembership.roleId in P5.
  *
  * Run standalone:  npx ts-node prisma/seedRoles.ts
  * Called from:     prisma/seed.ts main()
@@ -23,41 +32,48 @@ const prisma = new PrismaClient();
 export { ensureRole };
 
 export interface SeedRolesResult {
-  /** How many roles were newly created (not already present) */
+  /** How many roles were newly created (not already present), across all tenants */
   created: number;
-  /** How many users were backfilled with a default role */
+  /** How many memberships were backfilled with a default role */
   backfilled: number;
-  /** How many module permissions were granted to the Admin role */
+  /** How many module permissions were granted to Admin roles */
   adminPermsGranted: number;
-  /** How many user_type 1 users were assigned the Owner role */
+  /** How many owner memberships were assigned the Owner role */
   ownerAssigned: number;
-  /** Map from user_type → role id */
+  /** Map from user_type → role id, for the LAST tenant seeded (see seedRoles) */
   roleIds: Record<number, string>;
 }
 
-export async function seedRoles(): Promise<SeedRolesResult> {
+/**
+ * Seeds and reconciles the default roles for ONE tenant. This is the unit of
+ * work: signup calls it for the tenant it just created, boot calls it for every
+ * existing tenant.
+ */
+export async function seedRolesForTenant(
+  tenantId: string,
+  client: PrismaClient = prisma,
+): Promise<SeedRolesResult> {
   let created = 0;
   const roleIds: Record<number, string> = {};
 
   for (const [userTypeStr, roleName] of Object.entries(DEFAULT_ROLE_BY_USER_TYPE)) {
     const userType = Number(userTypeStr);
-    const before = await prisma.role.findFirst({
-      where: { roleName: { equals: roleName, mode: 'insensitive' }, deletedAt: null },
+    const before = await client.role.findFirst({
+      where: { tenantId, roleName: { equals: roleName, mode: 'insensitive' }, deletedAt: null },
     });
-    const id = await ensureRole(roleName, prisma);
+    const id = await ensureRole(roleName, tenantId, client);
     roleIds[userType] = id;
     if (!before) created += 1;
   }
 
-  // Backfill: assign default role to existing users that have none
+  // Backfill: assign the default role to this tenant's members that have none.
+  // Scoped through TenantMembership so a user who is Staff here and Owner in
+  // another workspace keeps both roles.
   let backfilled = 0;
   for (const [userTypeStr, roleId] of Object.entries(roleIds)) {
     const userType = Number(userTypeStr);
-    const result = await prisma.user.updateMany({
-      where: {
-        user_type: userType,
-        roleId: null,
-      },
+    const result = await client.tenantMembership.updateMany({
+      where: { tenantId, roleId: null, user: { user_type: userType } },
       data: { roleId },
     });
     backfilled += result.count;
@@ -71,17 +87,18 @@ export async function seedRoles(): Promise<SeedRolesResult> {
   let adminPermsGranted = 0;
   const adminRoleId = roleIds[1];
   if (adminRoleId) {
-    const existingPerms = await prisma.permission.count({
+    const existingPerms = await client.permission.count({
       where: { roleId: adminRoleId, deletedAt: null },
     });
     if (existingPerms === 0) {
-      const modules = await prisma.module.findMany({
+      const modules = await client.module.findMany({
         where: { deletedAt: null },
         select: { id: true },
       });
       if (modules.length > 0) {
-        await prisma.permission.createMany({
-          data: modules.map((m) => ({
+        await client.permission.createMany({
+          data: modules.map((m: { id: string }) => ({
+            tenantId,
             roleId: adminRoleId,
             moduleId: m.id,
             create: true,
@@ -103,16 +120,17 @@ export async function seedRoles(): Promise<SeedRolesResult> {
   // Additive only: we never touch existing Admin rows, so a restriction an
   // operator set on an already-present module is respected.
   if (adminRoleId) {
-    const adminPerms = await prisma.permission.findMany({
+    const adminPerms = await client.permission.findMany({
       where: { roleId: adminRoleId, deletedAt: null },
       select: { moduleId: true },
     });
     const adminHave = new Set(adminPerms.map((p: { moduleId: string | null }) => p.moduleId));
-    const allMods = await prisma.module.findMany({ where: { deletedAt: null }, select: { id: true } });
+    const allMods = await client.module.findMany({ where: { deletedAt: null }, select: { id: true } });
     const adminMissing = allMods.filter((m: { id: string }) => !adminHave.has(m.id));
     if (adminMissing.length > 0) {
-      await prisma.permission.createMany({
+      await client.permission.createMany({
         data: adminMissing.map((m: { id: string }) => ({
+          tenantId,
           roleId: adminRoleId,
           moduleId: m.id,
           create: true,
@@ -127,19 +145,21 @@ export async function seedRoles(): Promise<SeedRolesResult> {
   }
 
   // --- Owner role: always reconciled to FULL permissions on every module ---
-  // The Owner role is separate from user_type-keyed roles. It always has allowAll:true
-  // on every module so that removing the legacy user_type===1 bypass never locks out owners.
-  const ownerRoleId = await ensureRole(OWNER_ROLE_NAME, prisma);
-  const allModules = await prisma.module.findMany({ where: { deletedAt: null }, select: { id: true } });
-  const existingOwnerPerms = await prisma.permission.findMany({
+  // The Owner role is separate from user_type-keyed roles. It always has
+  // allowAll:true on every module so that removing the legacy user_type===1
+  // bypass never locks out owners.
+  const ownerRoleId = await ensureRole(OWNER_ROLE_NAME, tenantId, client);
+  const allModules = await client.module.findMany({ where: { deletedAt: null }, select: { id: true } });
+  const existingOwnerPerms = await client.permission.findMany({
     where: { roleId: ownerRoleId, deletedAt: null },
     select: { moduleId: true },
   });
-  const haveModuleIds = new Set(existingOwnerPerms.map((p: { moduleId: string }) => p.moduleId));
+  const haveModuleIds = new Set(existingOwnerPerms.map((p: { moduleId: string | null }) => p.moduleId));
   const missing = allModules.filter((m: { id: string }) => !haveModuleIds.has(m.id));
   if (missing.length > 0) {
-    await prisma.permission.createMany({
+    await client.permission.createMany({
       data: missing.map((m: { id: string }) => ({
+        tenantId,
         roleId: ownerRoleId,
         moduleId: m.id,
         create: true,
@@ -151,27 +171,71 @@ export async function seedRoles(): Promise<SeedRolesResult> {
     });
   }
   // Force existing Owner rows to full (Owner means Owner) — flip any restricted flags.
-  await prisma.permission.updateMany({
+  await client.permission.updateMany({
     where: { roleId: ownerRoleId, deletedAt: null },
     data: { create: true, edit: true, delete: true, view: true, allowAll: true },
   });
 
-  // Assign the Owner role to every user_type 1 user that lacks it, so removing the
-  // legacy bypass never locks out an existing owner.
-  const ownerAssign = await prisma.user.updateMany({
-    where: { user_type: 1, NOT: { roleId: ownerRoleId } },
+  // Assign the Owner role to this tenant's owner membership(s) that lack it, so
+  // removing the legacy user_type===1 bypass never locks out an existing owner.
+  const ownerAssign = await client.tenantMembership.updateMany({
+    where: { tenantId, isOwner: true, NOT: { roleId: ownerRoleId } },
     data: { roleId: ownerRoleId },
   });
   const ownerAssigned = ownerAssign.count;
 
+  // Mirror onto User.roleId while authMiddleware still reads it. This mirror is
+  // removed in P5, once `protect` resolves the role from the membership.
+  const owners = await client.tenantMembership.findMany({
+    where: { tenantId, isOwner: true },
+    select: { userId: true },
+  });
+  if (owners.length > 0) {
+    await client.user.updateMany({
+      where: {
+        id: { in: owners.map((o: { userId: string }) => o.userId) },
+        NOT: { roleId: ownerRoleId },
+      },
+      data: { roleId: ownerRoleId },
+    });
+  }
+
   return { created, backfilled, adminPermsGranted, ownerAssigned, roleIds };
+}
+
+/**
+ * Boot entry point: reconciles roles for EVERY tenant.
+ *
+ * `roleIds` on the aggregate result is the LAST tenant's map — it only ever had
+ * a single-tenant meaning. Callers needing a specific tenant's role ids should
+ * call seedRolesForTenant directly.
+ */
+export async function seedRoles(client: PrismaClient = prisma): Promise<SeedRolesResult> {
+  const tenants = await client.tenant.findMany({
+    where: { deletedAt: null },
+    select: { id: true },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  const total: SeedRolesResult = {
+    created: 0, backfilled: 0, adminPermsGranted: 0, ownerAssigned: 0, roleIds: {},
+  };
+  for (const t of tenants) {
+    const r = await seedRolesForTenant(t.id, client);
+    total.created += r.created;
+    total.backfilled += r.backfilled;
+    total.adminPermsGranted += r.adminPermsGranted;
+    total.ownerAssigned += r.ownerAssigned;
+    total.roleIds = r.roleIds;
+  }
+  return total;
 }
 
 if (require.main === module) {
   seedRoles()
     .then((r) => {
       console.log(
-        `Roles seeded (created ${r.created} new, backfilled ${r.backfilled} users, granted Admin role ${r.adminPermsGranted} module permissions, assigned Owner to ${r.ownerAssigned} owner(s)).`,
+        `Roles seeded (created ${r.created} new, backfilled ${r.backfilled} memberships, granted Admin ${r.adminPermsGranted} module permissions, assigned Owner to ${r.ownerAssigned} owner(s)).`,
       );
       return prisma.$disconnect();
     })

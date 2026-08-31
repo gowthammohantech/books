@@ -3,15 +3,47 @@ import { validationResult } from 'express-validator';
 import { UAParser } from 'ua-parser-js';
 import geoip from 'geoip-lite';
 
+import type { PrismaClient } from '@prisma/client';
+
 import { prisma } from '../lib/prisma';
+import { runAsSystem } from '../lib/tenantContext';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateToken } from '../utils/generateToken';
 import { ensureRole, DEFAULT_ROLE_BY_USER_TYPE, OWNER_ROLE_NAME } from '../lib/defaultRoles';
+import { seedRolesForTenant } from '../prisma/seedRoles';
 
 function badInput(res: Response, errors: ReturnType<typeof validationResult>): void {
   res.status(400).json({
     errors: errors.array().map((err) => err.msg),
   });
+}
+
+/**
+ * Turns a workspace name into a URL-safe slug that no tenant already holds.
+ *
+ * Tenant.slug is globally unique, so two companies both called "Acme" cannot
+ * both be `acme`; the loser gets `acme-2`. The slug is cosmetic today (routing
+ * is by JWT claim, not subdomain) but is unique from the start so that adding
+ * subdomain routing later does not require a backfill.
+ */
+async function uniqueSlug(
+  raw: string,
+  tx: { tenant: { findUnique(args: { where: { slug: string } }): Promise<unknown> } },
+): Promise<string> {
+  const base =
+    raw
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40) || 'workspace';
+
+  for (let n = 1; n < 50; n += 1) {
+    const candidate = n === 1 ? base : `${base}-${n}`;
+    if (!(await tx.tenant.findUnique({ where: { slug: candidate } }))) return candidate;
+  }
+  // Practically unreachable; keeps signup working rather than 500ing on a
+  // pathological run of collisions.
+  return `${base}-${Date.now()}`;
 }
 
 export async function register(req: Request, res: Response): Promise<void> {
@@ -21,16 +53,20 @@ export async function register(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const { firstName, lastName, email, phone, password } = req.body as {
+  const { firstName, lastName, email, phone, password, companyName } = req.body as {
     firstName: string;
     lastName: string;
     email: string;
     phone?: string;
     password: string;
+    companyName?: string;
   };
 
   try {
     // Only one admin (user_type === 1) is permitted.
+    // TODO (P5): this cap is what makes the install single-tenant. It is lifted
+    // in P5 together with signup rate limiting and the SIGNUPS_ENABLED flag —
+    // not before, so P1 stays behaviour-identical.
     const existingAdmin = await prisma.user.findFirst({ where: { user_type: 1 } });
     if (existingAdmin) {
       res.status(403).json({
@@ -47,33 +83,82 @@ export async function register(req: Request, res: Response): Promise<void> {
 
     const hashed = await hashPassword(password);
 
-    // Ensure the Owner role exists (idempotent – safe on fresh installs that
-    // haven't been seeded yet) and link it to the new admin user.
-    // Resilient: role lookup failure must not block registration — next-boot
-    // backfill (seedRoles) will heal the missing roleId automatically.
-    let roleId: string | null = null;
-    try {
-      roleId = await ensureRole(OWNER_ROLE_NAME);
-    } catch (roleErr) {
-      console.warn('register: ensureRole failed (non-fatal, roleId will be null)', roleErr);
-    }
+    // Registering creates a WORKSPACE, not just a user: a Tenant, its owner,
+    // that tenant's own role set, and the membership binding them. All in one
+    // transaction — a half-provisioned tenant (an owner with no roles, or a
+    // tenant with no members) is unusable and cannot be repaired by retrying.
+    //
+    // runAsSystem because no tenant exists yet to scope by.
+    const { user, tenant } = await runAsSystem(() =>
+      prisma.$transaction(async (tx) => {
+        const created = await tx.user.create({
+          data: {
+            firstName,
+            lastName,
+            email,
+            phone,
+            password: hashed,
+            user_type: 1,
+          },
+        });
 
-    const user = await prisma.user.create({
-      data: {
-        firstName,
-        lastName,
-        email,
-        phone,
-        password: hashed,
-        user_type: 1,
-        ...(roleId ? { roleId } : {}),
-      },
-    });
+        // INVARIANT (P1–P4): a tenant created here reuses its owner's User.id.
+        // Business tables still carry the tenant in a column named `userId`
+        // holding `ownerId ?? id`, and `protect` still resolves req.tenantId
+        // that way, so Tenant.id must equal that value or nothing would line
+        // up. P5 resolves the tenant from the membership instead and lifts
+        // this constraint for additional workspaces.
+        const t = await tx.tenant.create({
+          data: {
+            id: created.id,
+            name: companyName?.trim() || 'Default Workspace',
+            slug: await uniqueSlug(companyName?.trim() || 'workspace', tx),
+            status: 'ACTIVE',
+          },
+        });
+
+        // Provision this tenant's own Owner/Admin/Staff/... roles and their
+        // permission rows. Failure here is fatal, unlike the old best-effort
+        // ensureRole: an owner with no Owner role has access to nothing, and
+        // the next-boot backfill cannot invent a membership.
+        const { roleIds } = await seedRolesForTenant(
+          t.id,
+          tx as unknown as PrismaClient,
+        );
+        const ownerRoleId = await ensureRole(
+          OWNER_ROLE_NAME,
+          t.id,
+          tx as unknown as PrismaClient,
+        );
+        void roleIds;
+
+        await tx.tenantMembership.create({
+          data: {
+            userId: created.id,
+            tenantId: t.id,
+            roleId: ownerRoleId,
+            status: 'ACTIVE',
+            isOwner: true,
+            joinedAt: new Date(),
+          },
+        });
+
+        // User.roleId is mirrored while authMiddleware still reads it (P5
+        // switches to TenantMembership.roleId).
+        const withRole = await tx.user.update({
+          where: { id: created.id },
+          data: { roleId: ownerRoleId, lastTenantId: t.id },
+        });
+
+        return { user: withRole, tenant: t };
+      }),
+    );
 
     res.status(201).json({
       message: 'Admin account created successfully',
-      token: generateToken(user.id),
+      token: generateToken(user.id, tenant.id),
       user,
+      tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug },
     });
   } catch (err) {
     console.error('register error', err);

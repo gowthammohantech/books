@@ -23,19 +23,57 @@ type UserRow = {
 };
 type RoleRow = { id: string; roleName: string; deletedAt: null };
 
+type TenantRow = { id: string; name: string; slug: string };
+type MembershipRow = { userId: string; tenantId: string; roleId: string | null; isOwner: boolean };
+
 const db = {
   users: [] as UserRow[],
   roles: [] as RoleRow[],
+  tenants: [] as TenantRow[],
+  memberships: [] as MembershipRow[],
 };
 
-// Control flag to simulate ensureRole throwing
+// Control flag to simulate role provisioning failing mid-transaction
 let ensureRoleShouldThrow = false;
 
 // ---------------------------------------------------------------------------
 // Mock ../../lib/prisma (used by userController + authController)
 // ---------------------------------------------------------------------------
-vi.mock('../../lib/prisma', () => ({
-  prisma: {
+vi.mock('../../lib/prisma', () => {
+  const client: Record<string, unknown> = {
+    // register wraps provisioning in one transaction. The fake runs the
+    // callback against this same client and, on throw, rolls the in-memory
+    // store back to the snapshot taken before the callback ran — which is what
+    // lets the "no half-provisioned tenant" test below mean anything.
+    $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => {
+      const snapshot = {
+        users: [...db.users], roles: [...db.roles],
+        tenants: [...db.tenants], memberships: [...db.memberships],
+      };
+      try {
+        return await fn(client);
+      } catch (err) {
+        db.users = snapshot.users;
+        db.roles = snapshot.roles;
+        db.tenants = snapshot.tenants;
+        db.memberships = snapshot.memberships;
+        throw err;
+      }
+    }),
+    tenant: {
+      findUnique: vi.fn(async (args: { where: { slug?: string } }) =>
+        db.tenants.find((t) => t.slug === args.where.slug) ?? null),
+      create: vi.fn(async (args: { data: TenantRow }) => {
+        db.tenants.push(args.data);
+        return args.data;
+      }),
+    },
+    tenantMembership: {
+      create: vi.fn(async (args: { data: MembershipRow }) => {
+        db.memberships.push(args.data);
+        return args.data;
+      }),
+    },
     user: {
       findFirst: vi.fn(async (args: { where: { user_type?: number } }) => {
         const ut = args.where.user_type;
@@ -86,7 +124,15 @@ vi.mock('../../lib/prisma', () => ({
         return null;
       }),
     },
-  },
+  };
+  return { prisma: client };
+});
+
+// register provisions the new tenant's role set through seedRolesForTenant.
+vi.mock('../../prisma/seedRoles', () => ({
+  seedRolesForTenant: vi.fn(async () => ({
+    created: 0, backfilled: 0, adminPermsGranted: 0, ownerAssigned: 0, roleIds: {},
+  })),
 }));
 
 // ---------------------------------------------------------------------------
@@ -292,10 +338,12 @@ describe('register', () => {
   beforeEach(() => {
     db.users = [];
     db.roles = [];
+    db.tenants = [];
+    db.memberships = [];
     ensureRoleShouldThrow = false;
   });
 
-  it('creates user with Admin roleId when no admin exists', async () => {
+  it('creates user with Owner roleId when no admin exists', async () => {
     const res = makeRes();
     await register(makeReq({
       body: { firstName: 'Leo', lastName: 'P', email: 'leo@test.com', password: 'Password1!' },
@@ -310,20 +358,57 @@ describe('register', () => {
     expect(created?.user_type).toBe(1);
   });
 
-  it('still creates user with roleId null when ensureRole throws (resilient)', async () => {
+  it('provisions a workspace: tenant + owner membership, not just a user', async () => {
+    const res = makeRes();
+    await register(makeReq({
+      body: {
+        firstName: 'Leo', lastName: 'P', email: 'leo@test.com',
+        password: 'Password1!', companyName: 'Acme Books',
+      },
+    }), res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(db.tenants).toHaveLength(1);
+    expect(db.tenants[0].name).toBe('Acme Books');
+    expect(db.tenants[0].slug).toBe('acme-books');
+
+    const user = db.users.find((u) => u.email === 'leo@test.com')!;
+    // INVARIANT (P1-P4): the tenant reuses its owner's user id, so the existing
+    // `userId`-as-tenant columns and already-issued JWTs keep lining up.
+    expect(db.tenants[0].id).toBe(user.id);
+
+    expect(db.memberships).toHaveLength(1);
+    expect(db.memberships[0]).toMatchObject({
+      userId: user.id, tenantId: db.tenants[0].id, isOwner: true,
+    });
+    expect(db.memberships[0].roleId).toBeTruthy();
+  });
+
+  it('falls back to a default workspace name when none is supplied', async () => {
+    const res = makeRes();
+    await register(makeReq({
+      body: { firstName: 'Leo', lastName: 'P', email: 'leo@test.com', password: 'Password1!' },
+    }), res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(db.tenants[0].name).toBe('Default Workspace');
+  });
+
+  it('rolls the whole workspace back when role provisioning fails', async () => {
+    // Provisioning is deliberately NOT best-effort any more: an owner with no
+    // Owner role can see nothing, and no later backfill can invent the missing
+    // membership. Better to fail the signup outright than to strand a user in a
+    // half-built workspace they can never enter.
     ensureRoleShouldThrow = true;
     const res = makeRes();
     await register(makeReq({
-      body: { firstName: 'Leo', lastName: 'P', email: 'resilient@test.com', password: 'Password1!' },
+      body: { firstName: 'Leo', lastName: 'P', email: 'broken@test.com', password: 'Password1!' },
     }), res);
 
-    // Registration must succeed even when role lookup fails
-    expect(res.status).toHaveBeenCalledWith(201);
-    const created = db.users.find((u) => u.email === 'resilient@test.com');
-    expect(created).toBeDefined();
-    expect(created?.user_type).toBe(1);
-    // roleId should be null/undefined when ensureRole threw
-    expect(created?.roleId ?? null).toBeNull();
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(db.users.find((u) => u.email === 'broken@test.com')).toBeUndefined();
+    expect(db.tenants).toHaveLength(0);
+    expect(db.memberships).toHaveLength(0);
   });
 
   it('returns 403 if admin already exists', async () => {

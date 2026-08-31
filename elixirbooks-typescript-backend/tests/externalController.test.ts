@@ -24,6 +24,11 @@ const mockHashPassword = vi.fn().mockResolvedValue('$2b$10$mockedHashedPasswordV
 
 // ensureRole stub — controllable per-test
 const mockEnsureRole = vi.fn().mockResolvedValue('mock-role-id');
+// Roles are per-tenant now, so ssoExchange must resolve a tenant before it can
+// pick one. See the TODO in externalController.ssoExchange: P5 replaces this
+// sole-tenant fallback with a `tenant` claim / WHATSAPPCRM_TENANT_ID lookup.
+const SSO_TENANT_ID = 'sso-tenant-1';
+const mockFindFirstTenant = vi.fn().mockResolvedValue({ id: SSO_TENANT_ID });
 // Control flag: when true, ensureRole rejects to test resilience path
 let ensureRoleShouldThrow = false;
 
@@ -57,14 +62,17 @@ function makeStubs() {
         customer: {
           upsert: mockUpsertCustomer,
         },
+        tenant: {
+          findFirst: mockFindFirstTenant,
+        },
       },
     },
     generateTokenStub: { generateToken: mockGenerateToken },
     defaultRolesStub: {
       DEFAULT_ROLE_BY_USER_TYPE: DEFAULT_ROLE_BY_USER_TYPE_STUB,
-      ensureRole: async (roleName: string) => {
+      ensureRole: async (roleName: string, tenantId: string) => {
         if (ensureRoleShouldThrow) throw new Error('DB error (simulated)');
-        return mockEnsureRole(roleName);
+        return mockEnsureRole(roleName, tenantId);
       },
     },
   };
@@ -417,7 +425,7 @@ describe('externalController — ssoExchange SSO role assignment', () => {
     const createData = mockCreateUser.mock.calls[0][0].data;
     expect(createData.user_type).toBe(2);
     // ensureRole should have been called with 'Vendor'
-    expect(mockEnsureRole).toHaveBeenCalledWith('Vendor');
+    expect(mockEnsureRole).toHaveBeenCalledWith('Vendor', SSO_TENANT_ID);
     // roleId should be set on the created user
     expect(createData.roleId).toBe('mock-role-id');
 

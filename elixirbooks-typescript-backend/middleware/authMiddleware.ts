@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 import { prisma } from '../lib/prisma';
+import { setVerifiedTenantId } from '../lib/tenantContext';
 
 interface DecodedToken {
   id: string;
@@ -68,6 +69,12 @@ export async function protect(
   // Fail safe to per-user scoping if the tenant couldn't be resolved (DB hiccup
   // on a pre-feature token) — never leak another tenant's data.
   req.tenantId = tenantId ?? decoded.id;
+
+  // Promote the resolved tenant onto the request-scoped store, replacing the
+  // optimistic JWT claim middleware/auditContext.ts put there. From here on,
+  // lib/tenantGuard.ts scopes Prisma queries by a tenant we have actually
+  // checked against the database rather than one the caller asserted.
+  setVerifiedTenantId(req.tenantId);
 
   // Build req.actor: resolve role + permissions for server-side RBAC.
   // Permission-load failure is isolated — it clears perms (deny-by-default)

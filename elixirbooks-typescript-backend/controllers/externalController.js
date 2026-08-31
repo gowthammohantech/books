@@ -100,11 +100,23 @@ exports.ssoExchange = async (req, res) => {
 
       // Resilient role assignment: failure here must not block SSO — next-boot
       // backfill (seedRoles) will heal the missing roleId automatically.
+      //
+      // TODO (P5): roles are per-tenant now, so this needs the tenant the SSO
+      // user is joining. Until ssoExchange resolves a tenant properly (from a
+      // `tenant` claim mapped to Tenant.slug, else WHATSAPPCRM_TENANT_ID, and
+      // hard-failing if neither resolves), fall back to the sole tenant. That
+      // fallback is only correct while the install has exactly one tenant,
+      // which is why P5 must land before SSO is used on a multi-tenant install.
       let ssoRoleId = null;
       try {
         const roleName = DEFAULT_ROLE_BY_USER_TYPE[userType];
-        if (roleName) {
-          ssoRoleId = await ensureRole(roleName);
+        const soleTenant = await prisma.tenant.findFirst({
+          where: { deletedAt: null },
+          orderBy: { createdAt: 'asc' },
+          select: { id: true },
+        });
+        if (roleName && soleTenant) {
+          ssoRoleId = await ensureRole(roleName, soleTenant.id);
         }
       } catch (roleErr) {
         console.warn('ssoExchange: ensureRole failed (non-fatal, roleId will be null)', roleErr);
