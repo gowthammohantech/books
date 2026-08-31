@@ -1,8 +1,8 @@
 # Elixir Books — Production Deployment Guide
 
 This guide deploys the full Elixir Books stack (API + web + PostgreSQL) with Docker
-Compose. PostgreSQL is the only datastore; Mongo and Redis are optional and off
-by default.
+Compose. PostgreSQL is the only datastore; Redis is optional and off by
+default.
 
 ---
 
@@ -92,8 +92,8 @@ curl -fsS http://localhost:8080/api/healthz   # -> ok
 make logs                                       # tail api + web
 ```
 
-Only **api**, **postgres**, and **web** run by default. Mongo and Redis are
-opt-in (`--profile mongo`, `--profile redis`).
+Only **api**, **postgres**, and **web** run by default. Redis is opt-in
+(`--profile redis`).
 
 ---
 

@@ -97,10 +97,6 @@ These are **build-time** — changing them requires `make rebuild-web`.
 | Variable | Used by | Purpose |
 |---|---|---|
 | `REDIS_URL` | `worker` container (redis profile) | Queue URL for the async worker |
-| `MONGO_URI` | `mongo` service (mongo profile) | Legacy. The app does not require MongoDB. Only uncomment if you have a specific need. |
-| `MONGO_INITDB_ROOT_USERNAME` | `mongo` service | Mongo root user |
-| `MONGO_INITDB_ROOT_PASSWORD` | `mongo` service | Mongo root password |
-| `MONGO_INITDB_DATABASE` | `mongo` service | Mongo initial database |
 
 ---
 
@@ -147,7 +143,6 @@ The stack defines these services in `docker/docker-compose.yml`:
 | `web` | Yes | — | nginx serving the React SPA + proxying `/api` and `/uploads` to `api`. |
 | `redis` | No | `redis` | Start with `make up-redis`. |
 | `worker` | No | `redis` | Async job worker (same image as `api`). Starts alongside Redis. |
-| `mongo` | No | `mongo` | Legacy. Start with `docker compose --profile mongo up -d`. |
 
 Docker volumes created by the stack:
 
@@ -156,4 +151,3 @@ Docker volumes created by the stack:
 | `elixirbooks_elixirbooks-pg-data` | All PostgreSQL data |
 | `elixirbooks_elixirbooks-uploads` | Invoice logos, expense receipt attachments, company logos |
 | `elixirbooks_elixirbooks-redis-data` | Redis persistence (redis profile only) |
-| `elixirbooks_elixirbooks-mongo-data` | MongoDB data (mongo profile only) |

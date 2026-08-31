@@ -6,7 +6,7 @@ Docker Compose stack for Elixir Books Core (whitelabel single-tenant invoicing).
 
 ```bash
 cp docker/.env.example docker/.env
-# edit docker/.env (set Mongo password, JWT secret, etc.)
+# edit docker/.env (set Postgres password, JWT secret, etc.)
 make up
 make smoke
 ```
@@ -15,7 +15,7 @@ Open http://localhost:8080.
 
 ## Targets
 
-- `make up` — start lean stack (web, api, mongo)
+- `make up` — start lean stack (web, api, postgres)
 - `make up-redis` — start with Redis + worker (async jobs)
 - `make down` — stop containers
 - `make down-clean` — stop containers and remove volumes (destroys data)

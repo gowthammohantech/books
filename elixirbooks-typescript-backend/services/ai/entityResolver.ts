@@ -1,111 +1,168 @@
-const Customer = require("@models/Customer");
-const Supplier = require("@models/Supplier");
-const Product = require("@models/Product");
-const TaxGroup = require("@models/TaxGroup");
-const TaxRate = require("@models/TaxRate");
-const ExpenseCategory = require("@models/ExpenseCategory");
-const Currency = require("@models/Currency");
-const BankDetail = require("@models/BankDetail");
-const PaymentMode = require("@models/PaymentMode");
-const userSupplier = require("@models/User");
-
 /**
- * Load context data from the database for AI prompt processing
- * @param {string} tenantId - The authenticated user's ID
- * @returns {object} Context data for the AI prompt
+ * services/ai/entityResolver.ts
+ *
+ * Prisma port of the former Mongoose `entityResolver.js`. Only `loadContext()`
+ * ever touched the datastore — it loaded the tenant's customers, suppliers,
+ * products, tax groups, expense categories, banks, payment modes and
+ * supplier-users so the AI's extracted entity names could be matched against
+ * real records. It queried a Mongo instance that no longer exists, so every
+ * list came back empty and `resolveEntities` matched nothing.
+ *
+ * SECURITY NOTE: four of the eight Mongo queries (products, tax groups, expense
+ * categories, supplier-users) carried NO tenant filter and so could match
+ * another workspace's records. Every query below now names `tenantId`
+ * explicitly. That is deliberate rather than delegated: lib/tenantGuard.ts
+ * ships in `warn` mode (TENANT_GUARD_MODE), where it logs what it would have
+ * filtered but passes the arguments through untouched — so the guard is
+ * defence in depth here, not the control. `User` cannot be guarded at all (a
+ * person belongs to N workspaces, so there is no `User.tenantId`) and is
+ * scoped by hand through TenantMembership, the pattern lib/tenantMembers.ts
+ * uses. `PaymentMode` is a genuinely global lookup table with no tenantId
+ * column and is intentionally left unscoped.
+ *
+ * The ~450 lines of fuzzy-matching logic below `loadContext` are pure and are
+ * carried across unchanged, including their use of `_id` as the record
+ * identity. `loadContext` therefore maps Prisma's `id` to `_id` rather than
+ * renaming the key at 40-odd call sites — the datastore changed, the matching
+ * algorithm did not, and this keeps the port free of behavioural risk.
+ * Likewise `tax_rates` (the Prisma many-to-many) is reshaped to the
+ * `tax_rate_ids: [{ tax_name, tax_rate }]` form `findTaxGroup` expects.
+ *
+ * Dropped in the port: `resolveEntitiesold()` and the `fuzzyMatch()` helper it
+ * alone called. Neither was exported and nothing reached them.
  */
-async function loadContext(tenantId) {
-  const [customers, suppliers, products, taxGroups, expenseCategories,banks,paymentModes,userSuppliers] =
-    await Promise.all([
-      Customer.find({ isDeleted: false, tenantId })
-        .select("name email phone _id")
-        .sort({ name: 1 })
-        .limit(200)
-        .lean(),
-      Supplier.find({ isDeleted: false, tenantId: tenantId })
-        .select("supplier_name supplier_email _id")
-        .sort({ supplier_name: 1 })
-        .limit(200)
-        .lean(),
-      Product.find({ status: true })
-        .select("name code selling_price purchase_price item_type _id")
-        .sort({ name: 1 })
-        .limit(200)
-        .lean(),
-      TaxGroup.find({ status: true })
-        .select("tax_name tax_rate_ids _id")
-        .populate("tax_rate_ids", "tax_name tax_rate")
-        .lean(),
-      ExpenseCategory.find({ isDeleted: false, status: true })
-        .select("title _id")
-        .lean(),
-      BankDetail.find({ isDeleted: false, status: true, tenantId }).select("bankName accountHoldername accountNumber accountType _id").lean(),
-      PaymentMode.find({ status: true }).select("name slug _id").lean(),
-      userSupplier.find({ user_type: 2 }).select("firstName lastName email phone _id").lean(),
-    ]);
+import { prisma } from '../../lib/prisma';
 
-  return { customers, suppliers, products, taxGroups, expenseCategories,banks,paymentModes,userSuppliers };
+/** A context/DB record flowing through the matchers; deliberately loose. */
+type MatchRecord = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+export interface ResolverContext {
+  customers: MatchRecord[];
+  suppliers: MatchRecord[];
+  products: MatchRecord[];
+  taxGroups: MatchRecord[];
+  expenseCategories: MatchRecord[];
+  banks: MatchRecord[];
+  paymentModes: MatchRecord[];
+  userSuppliers: MatchRecord[];
+}
+
+/** The matchers index records by `_id`; Prisma exposes `id`. */
+function withMongoStyleId<T extends { id: string }>(row: T): Omit<T, 'id'> & { _id: string } {
+  const { id, ...rest } = row;
+  return { ...rest, _id: id };
 }
 
 /**
- * Resolve extracted AI entities against the database
- * Matches fuzzy names to actual DB records
- * @param {object} extractedData - The AI-extracted data
- * @param {object} context - Database context from loadContext
- * @returns {object} Resolved data with matched IDs
+ * Load context data from the database for AI prompt processing.
+ * @param tenantId - the caller's tenant (workspace)
  */
-function resolveEntitiesold(extractedData, context) {
-  const resolved = { ...extractedData };
-  const matchDetails = {
-    customerMatch: null,
-    vendorMatch: null,
-    productMatches: [],
-    taxGroupMatch: null,
-    expenseCategoryMatch: null,
+async function loadContext(tenantId: string): Promise<ResolverContext> {
+  const [
+    customers,
+    suppliers,
+    products,
+    taxGroups,
+    expenseCategories,
+    banks,
+    paymentModes,
+    userSuppliers,
+  ] = await Promise.all([
+    prisma.customer.findMany({
+      where: { isDeleted: false, tenantId },
+      select: { id: true, name: true, email: true, phone: true },
+      orderBy: { name: 'asc' },
+      take: 200,
+    }),
+    prisma.supplier.findMany({
+      where: { isDeleted: false, tenantId },
+      select: { id: true, supplier_name: true, supplier_email: true },
+      orderBy: { supplier_name: 'asc' },
+      take: 200,
+    }),
+    prisma.product.findMany({
+      where: { status: true, tenantId },
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        selling_price: true,
+        purchase_price: true,
+        item_type: true,
+      },
+      orderBy: { name: 'asc' },
+      take: 200,
+    }),
+    prisma.taxGroup.findMany({
+      where: { status: true, tenantId },
+      select: {
+        id: true,
+        tax_name: true,
+        tax_rates: { select: { id: true, name: true, rate: true } },
+      },
+    }),
+    prisma.expenseCategory.findMany({
+      where: { isDeleted: false, status: true, tenantId },
+      select: { id: true, title: true },
+    }),
+    prisma.bankDetail.findMany({
+      where: { isDeleted: false, status: true, tenantId },
+      select: {
+        id: true,
+        bankName: true,
+        accountHoldername: true,
+        accountNumber: true,
+        accountType: true,
+      },
+    }),
+    // PaymentMode is a global lookup table — no tenantId column in the schema.
+    prisma.paymentMode.findMany({
+      where: { status: true },
+      select: { id: true, name: true, slug: true },
+    }),
+    prisma.user.findMany({
+      where: {
+        user_type: 2,
+        isDeleted: false,
+        memberships: { some: { tenantId, status: 'ACTIVE' } },
+      },
+      select: { id: true, firstName: true, lastName: true, email: true, phone: true },
+    }),
+  ]);
+
+  return {
+    customers: customers.map(withMongoStyleId),
+    suppliers: suppliers.map(withMongoStyleId),
+    products: products.map((p) => ({
+      ...withMongoStyleId(p),
+      selling_price: Number(p.selling_price),
+      purchase_price: Number(p.purchase_price),
+    })),
+    // findTaxGroup() reads `tax_rate_ids[].tax_rate`; Prisma models the same
+    // link as the `tax_rates` many-to-many with `name`/`rate` columns.
+    taxGroups: taxGroups.map((g) => ({
+      _id: g.id,
+      tax_name: g.tax_name,
+      tax_rate_ids: g.tax_rates.map((r) => ({
+        _id: r.id,
+        tax_name: r.name,
+        tax_rate: Number(r.rate),
+      })),
+    })),
+    expenseCategories: expenseCategories.map(withMongoStyleId),
+    banks: banks.map(withMongoStyleId),
+    paymentModes: paymentModes.map(withMongoStyleId),
+    userSuppliers: userSuppliers.map(withMongoStyleId),
   };
-
-  // Resolve customer
-  if (extractedData.customerName && context.customers.length > 0) {
-    const match = fuzzyMatch(
-      extractedData.customerName,
-      context.customers,
-      "name"
-    );
-    if (match) {
-      resolved.customerId = match._id;
-      resolved.customerName = match.name;
-      matchDetails.customerMatch = {
-        id: match._id,
-        name: match.name,
-        confidence: match._matchScore,
-      };
-    }
-  }
-
-  // Resolve vendor/supplier
-  if (extractedData.vendorName && context.suppliers.length > 0) {
-    const match = fuzzyMatch(
-      extractedData.expenseCategory,
-      context.expenseCategories,
-      "title"
-    );
-    if (match) {
-      resolved.expenseCategoryId = match._id;
-      resolved.expenseCategory = match.title;
-      matchDetails.expenseCategoryMatch = {
-        id: match._id,
-        title: match.title,
-        confidence: match._matchScore,
-      };
-    }
-  }
-
-  return { resolved, matchDetails };
 }
 
-function resolveEntities(extractedData, documentType, context) {
-  const resolved = { ...extractedData };
-  const matchDetails = {
+function resolveEntities(
+  extractedData: MatchRecord,
+  documentType: string,
+  context: ResolverContext,
+) {
+  const resolved: MatchRecord = { ...extractedData };
+  const matchDetails: MatchRecord = {
     customerMatch: null,
     vendorMatch: null,
     productMatches: [],
@@ -115,7 +172,7 @@ function resolveEntities(extractedData, documentType, context) {
     paymentModeMatch: null,
   };
 
-  const ambiguities = {}; // NEW
+  const ambiguities: MatchRecord = {}; // NEW
 
   if (resolved.paymentSource) {
     resolved.paymentSource = resolved.paymentSource.toString().toUpperCase().trim();
@@ -237,7 +294,7 @@ function resolveEntities(extractedData, documentType, context) {
   // Resolve products in items
   if (extractedData.items && context.products.length > 0 && documentType !== 'expense') {
     ambiguities.products = [];
-    resolved.items = extractedData.items.map((item) => {
+    resolved.items = extractedData.items.map((item: MatchRecord) => {
       const matches = fuzzyMatchAll(item.name, context.products, "name");
       if (matches.length === 1) {
         const m = matches[0];
@@ -422,59 +479,19 @@ function resolveEntities(extractedData, documentType, context) {
 }
 
 /**
- * Fuzzy match a search term against a list of records
+ * Fuzzy match a search term against every record, returning all candidates
+ * ordered by score. An exact (case-insensitive) hit short-circuits to a single
+ * result; otherwise contains / reverse-contains / word-overlap each score in.
  */
-function fuzzyMatch(searchTerm, records, fieldName) {
-  if (!searchTerm || !records.length) return null;
-
-  const normalized = searchTerm.toLowerCase().trim();
-
-  // Exact match first
-  const exact = records.find(
-    (r) => r[fieldName] && r[fieldName].toLowerCase() === normalized
-  );
-  if (exact) return { ...exact, _matchScore: 1.0 };
-
-  // Contains match
-  const contains = records.find(
-    (r) => r[fieldName] && r[fieldName].toLowerCase().includes(normalized)
-  );
-  if (contains) return { ...contains, _matchScore: 0.8 };
-
-  // Reverse contains
-  const reverseContains = records.find(
-    (r) => r[fieldName] && normalized.includes(r[fieldName].toLowerCase())
-  );
-  if (reverseContains) return { ...reverseContains, _matchScore: 0.7 };
-
-  // Word-level matching
-  const searchWords = normalized.split(/\s+/);
-  let bestMatch = null;
-  let bestScore = 0;
-
-  for (const record of records) {
-    if (!record[fieldName]) continue;
-    const recordWords = record[fieldName].toLowerCase().split(/\s+/);
-    const matchingWords = searchWords.filter((sw) =>
-      recordWords.some(
-        (rw) => rw.includes(sw) || sw.includes(rw)
-      )
-    );
-    const score = matchingWords.length / Math.max(searchWords.length, recordWords.length);
-    if (score > bestScore && score >= 0.4) {
-      bestScore = score;
-      bestMatch = { ...record, _matchScore: score };
-    }
-  }
-
-  return bestMatch;
-}
-
-function fuzzyMatchAll(searchTerm, records, fieldName) {
+function fuzzyMatchAll(
+  searchTerm: string | null | undefined,
+  records: MatchRecord[],
+  fieldName: string,
+): MatchRecord[] {
   if (!searchTerm || !records.length) return [];
 
   const normalized = searchTerm.toLowerCase().trim();
-  const results = [];
+  const results: MatchRecord[] = [];
 
   for (const record of records) {
     if (!record[fieldName]) continue;
@@ -497,7 +514,7 @@ function fuzzyMatchAll(searchTerm, records, fieldName) {
 
     const searchWords = normalized.split(/\s+/);
     const matchingWords = searchWords.filter(sw =>
-      recordWords.some(rw => rw === sw) 
+      recordWords.some((rw: string) => rw === sw)
     );
     const score = matchingWords.length / searchWords.length;
     if (score >= 0.75) {
@@ -505,10 +522,10 @@ function fuzzyMatchAll(searchTerm, records, fieldName) {
     }
   }
 
-  const seen = new Map();
+  const seen = new Map<string, MatchRecord>();
   for (const r of results) {
     const key = String(r._id);
-    if (!seen.has(key) || seen.get(key)._matchScore < r._matchScore) {
+    if (!seen.has(key) || seen.get(key)!._matchScore < r._matchScore) {
       seen.set(key, r);
     }
   }
@@ -519,7 +536,7 @@ function fuzzyMatchAll(searchTerm, records, fieldName) {
 /**
  * Find the best matching tax group
  */
-function findTaxGroup(taxInfo, taxGroups) {
+function findTaxGroup(taxInfo: MatchRecord, taxGroups: MatchRecord[]): MatchRecord | null {
   if (!taxInfo || !taxGroups.length) return null;
 
   // Try matching by name first
@@ -536,7 +553,7 @@ function findTaxGroup(taxInfo, taxGroups) {
     for (const group of taxGroups) {
       if (group.tax_rate_ids && group.tax_rate_ids.length > 0) {
         const totalRate = group.tax_rate_ids.reduce(
-          (sum, r) => sum + (r.tax_rate || 0),
+          (sum: number, r: MatchRecord) => sum + (r.tax_rate || 0),
           0
         );
         if (totalRate === taxInfo.rate) {
@@ -549,6 +566,4 @@ function findTaxGroup(taxInfo, taxGroups) {
   return null;
 }
 
-module.exports = { loadContext, resolveEntities };
-
-module.exports = { loadContext, resolveEntities };
+export { loadContext, resolveEntities };

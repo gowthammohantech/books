@@ -27,8 +27,8 @@ this repo rather than to a product spec.
 | Test files (`*.spec.ts` + `tests/*.test.ts`) | 199 |
 
 **Stack:** PostgreSQL 16 + Prisma · Express 5 + TypeScript · React 19 + Vite.
-Multi-tenant (`Tenant`, `TenantMembership`, `TenantApiKey`). Mongo is legacy and
-off by default.
+Multi-tenant (`Tenant`, `TenantMembership`, `TenantApiKey`). PostgreSQL is the
+sole datastore.
 
 ---
 
