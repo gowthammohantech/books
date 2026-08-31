@@ -15,10 +15,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Use vi.hoisted to declare mocks that survive the hoisting of vi.mock().
 // ---------------------------------------------------------------------------
 
-const { mockFindFirst, mockTxnFindMany, mockExpenseFindMany } = vi.hoisted(() => ({
+const { mockFindFirst, mockTxnFindMany, mockExpenseFindMany, mockPayRunLineFindMany } =
+  vi.hoisted(() => ({
   mockFindFirst: vi.fn(),
   mockTxnFindMany: vi.fn(),
   mockExpenseFindMany: vi.fn(),
+  mockPayRunLineFindMany: vi.fn(),
 }));
 
 vi.mock('../lib/prisma', () => ({
@@ -26,6 +28,11 @@ vi.mock('../lib/prisma', () => ({
     user: { findFirst: mockFindFirst },
     bankTransaction: { findMany: mockTxnFindMany },
     expense: { findMany: mockExpenseFindMany },
+    // getMyMoney also reads finalized pay-run lines to build salaryOwed.
+    // Without this delegate every test in the file 500s before asserting
+    // anything, which is how the endpoint's two dead relation filters
+    // (`user: { ownerId }`, renamed away by P3) went unnoticed.
+    payRunLine: { findMany: mockPayRunLineFindMany },
   },
 }));
 
@@ -124,6 +131,9 @@ describe('getMyMoney controller', () => {
 
     // Default expense mock — no reimbursable expenses (pre-M3 tests expect expensesOwed = 0)
     mockExpenseFindMany.mockResolvedValue([]);
+    // No finalized pay runs by default: salaryOwed is then driven purely
+    // by the bank transactions each test sets up.
+    mockPayRunLineFindMany.mockResolvedValue([]);
   });
 
   // -------------------------------------------------------------------------

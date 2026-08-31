@@ -106,6 +106,26 @@ exports.ssoExchange = async (req, res) => {
       where: { email, isDeleted: { not: true } },
     });
 
+    const userType = Number(claims.user_type) === 1 ? 1 : 2;
+
+    // The role is resolved in the RESOLVED workspace rather than guessed at
+    // from "the sole tenant", and it is resolved for RETURNING users too, not
+    // only new ones: someone who already has an account elsewhere and arrives
+    // here for the first time needs a role in THIS workspace, or their new
+    // membership authenticates them into an app where they can do nothing.
+    //
+    // Still best-effort: a transient failure leaves the user without
+    // permissions until prisma/seedRoles.ts heals it on the next boot, which
+    // beats refusing the SSO exchange outright. The MEMBERSHIP below is the
+    // part that is fatal - without one the user cannot authenticate at all.
+    let ssoRoleId = null;
+    try {
+      const roleName = DEFAULT_ROLE_BY_USER_TYPE[userType];
+      if (roleName) ssoRoleId = await ensureRole(roleName, tenantId);
+    } catch (roleErr) {
+      console.warn('ssoExchange: ensureRole failed (non-fatal, roleId will be null)', roleErr);
+    }
+
     if (!user) {
       // First-time SSO from whatsappcrm — provision an Elixir Books user.
       // Random password (32 bytes hex) means the local-login path can't be
@@ -118,21 +138,6 @@ exports.ssoExchange = async (req, res) => {
       const hashedPassword = await hashPassword(randomPassword);
       const fullName = String(claims.name || '').trim();
       const [firstName, ...rest] = fullName.split(/\s+/).filter(Boolean);
-      const userType = Number(claims.user_type) === 1 ? 1 : 2;
-
-      // The role is created in the RESOLVED workspace rather than guessed at
-      // from "the sole tenant". Still best-effort: a transient failure here
-      // leaves the user with no permissions until prisma/seedRoles.ts heals it
-      // on the next boot, which is a far better outcome than refusing the SSO
-      // exchange outright. The MEMBERSHIP below is the part that is fatal —
-      // without one the user cannot authenticate at all.
-      let ssoRoleId = null;
-      try {
-        const roleName = DEFAULT_ROLE_BY_USER_TYPE[userType];
-        if (roleName) ssoRoleId = await ensureRole(roleName, tenantId);
-      } catch (roleErr) {
-        console.warn('ssoExchange: ensureRole failed (non-fatal, roleId will be null)', roleErr);
-      }
 
       user = await prisma.user.create({
         data: {
@@ -141,8 +146,6 @@ exports.ssoExchange = async (req, res) => {
           email,
           password: hashedPassword,
           user_type: userType,
-          ...(ssoRoleId ? { roleId: ssoRoleId } : {}),
-          ownerId: tenantId,
           lastTenantId: tenantId,
         },
       });
@@ -159,7 +162,10 @@ exports.ssoExchange = async (req, res) => {
       create: {
         userId: user.id,
         tenantId,
-        roleId: user.roleId || null,
+        // The role resolved for THIS workspace above. It used to read
+        // `user.roleId`, a single global column — so a user arriving through
+        // SSO into a second workspace carried the first workspace's role in.
+        roleId: ssoRoleId || null,
         status: 'ACTIVE',
         isOwner: false,
         joinedAt: new Date(),

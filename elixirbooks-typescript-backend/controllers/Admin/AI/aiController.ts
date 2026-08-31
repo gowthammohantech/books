@@ -8,7 +8,7 @@ import type {
 } from '@prisma/client';
 
 import { prisma } from '../../../lib/prisma';
-import { requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
+import { requireTenantId, UnauthorizedError, requireActingUserId } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 
 // Legacy JS services — still JS, require via CommonJS shim.
@@ -541,7 +541,7 @@ export async function confirmAIDocument(req: Request, res: Response): Promise<vo
                 adjustment: -reduceBy,
                 referenceId: invoice.id,
                 referenceType: 'invoice',
-                createdBy: tenantId,
+                createdBy: requireActingUserId(req),
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
               };

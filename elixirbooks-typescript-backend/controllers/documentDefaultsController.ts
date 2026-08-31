@@ -12,7 +12,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError, requireActingUserId } from '../lib/tenantScope';
 import { resolveDefaultCurrencyCode } from '../lib/defaultCurrency';
 
 // ---------------------------------------------------------------------------
@@ -200,13 +200,13 @@ export async function updateDocumentDefaults(req: Request, res: Response): Promi
         key: 'document_defaults',
         groupSlug: 'documents',
         value: merged as Prisma.InputJsonValue,
-        createdBy: tenantId,
-        updatedBy: tenantId,
+        createdBy: requireActingUserId(req),
+        updatedBy: requireActingUserId(req),
       },
       update: {
         groupSlug: 'documents',
         value: merged as Prisma.InputJsonValue,
-        updatedBy: tenantId,
+        updatedBy: requireActingUserId(req),
       },
     });
 

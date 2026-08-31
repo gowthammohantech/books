@@ -10,7 +10,7 @@ import type {
 
 import { prisma } from '../../../lib/prisma';
 import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
-import { tenantScope, requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
+import { tenantScope, requireTenantId, UnauthorizedError, requireActingUserId } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 import { applyDocumentTreatment } from '../../../lib/tax/applyTreatment';
 import {
@@ -31,6 +31,7 @@ import { readCustomFieldValuesForRecords } from '../../../lib/customFieldValues'
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
 import { resolveProductTaxRate } from '../../../lib/tax/resolveProductTaxRate';
+import { currentActorId } from '../../../lib/actor';
 
 // utils/mailer is still JS; static require is fine here.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -218,7 +219,9 @@ async function insertCustomFieldValues(
       module: 'purchaseOrder',
       recordId,
       value,
-      createdBy: tenantId,
+      // No `req` here - this is a helper. The acting user comes from the
+      // request-scoped context, which holds the same person.
+      createdBy: currentActorId(),
     };
   });
 

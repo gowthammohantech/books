@@ -25,6 +25,7 @@ import { Prisma } from '@prisma/client';
 
 import { prisma } from '../../lib/prisma';
 import { requireTenantId, UnauthorizedError } from '../../lib/tenantScope';
+import { isTenantMember } from '../../lib/tenantMembers';
 
 // =============================================================================
 // Shared helpers
@@ -49,20 +50,12 @@ function hasOthersView(req: Request): boolean {
 }
 
 /**
- * Verify the given user id is a staff member of this tenant. Reuses the
- * `listStaffUsers` tenant-scope rule from projectMemberController: the owner
- * themselves OR a user whose ownerId == tenant, excluding the super-admin.
+ * Verify the given user id belongs to this workspace. Delegates to the shared
+ * membership predicate so this agrees with `listStaffUsers` — the query that
+ * populates the employee picker this value comes from.
  */
 async function isTenantStaff(tenantId: string, employeeUserId: string): Promise<boolean> {
-  const user = await prisma.user.findFirst({
-    where: {
-      id: employeeUserId,
-      NOT: { user_type: 999 },
-      OR: [{ id: tenantId }, { ownerId: tenantId }],
-    },
-    select: { id: true },
-  });
-  return !!user;
+  return isTenantMember(employeeUserId, tenantId);
 }
 
 // =============================================================================

@@ -1,11 +1,12 @@
 const multer = require('multer');
 const path = require('path');
+const { destinationFor } = require('../lib/uploadPaths');
 
 // Configure storage
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // Save to 'uploads/' folder
-  },
+  // Per-workspace: uploads/t/<tenantId>/. Resolved per request rather than
+  // fixed at module load, because the answer depends on who is uploading.
+  destination: destinationFor(),
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, uniqueSuffix + path.extname(file.originalname)); // unique name

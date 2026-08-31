@@ -15,6 +15,7 @@ import {
   deriveInvoiceStatus,
   OUTSTANDING_TOLERANCE,
 } from '../invoiceOutstanding';
+import { resolveActorId } from '../actor';
 
 // ---------------------------------------------------------------------------
 // DB structural type — extends PostingTx with invoice + invoicePayment ops.
@@ -124,7 +125,11 @@ export async function applyInvoiceReceipt(
     invoiceId,
     amount: toDecimal(amount),
     received_on: date,
-    received_by: tenantId,
+    // A User FK, and NOT NULL - so this resolves to the acting user, or the
+    // workspace owner when the receipt is applied outside a request. Never a
+    // tenant id, which matches no User row in a workspace created after the
+    // multi-tenancy conversion.
+    received_by: await resolveActorId(tenantId),
     notes: '',
     paymentModeId,
     bankId: bankAccountId,

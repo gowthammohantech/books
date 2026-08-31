@@ -55,7 +55,7 @@ beforeEach(() => {
 });
 
 describe('staffActivityController — tenant scoping', () => {
-  it('scopes the AuditLog query to only this tenant\'s staff userIds (owner + ownerId==tenant)', async () => {
+  it('scopes the AuditLog query to only this workspace\'s members', async () => {
     mockUserFindMany.mockResolvedValue([
       { id: TENANT_ID, firstName: 'Owner', lastName: 'Boss', email: 'owner@t.test' },
       { id: 'staff-1', firstName: 'Staff', lastName: 'One', email: 'staff1@t.test' },
@@ -66,11 +66,14 @@ describe('staffActivityController — tenant scoping', () => {
     const { req, res } = makeReqRes();
     await getStaffActivity(req, res);
 
-    // The staff-lookup query mirrors listStaffUsers's tenant OR-clause exactly.
+    // The staff lookup asks the same question listStaffUsers asks: who holds a
+    // membership here. It used to be `id == tenant OR ownerId == tenant`, which
+    // named no one in a workspace created after the conversion (the owner
+    // matched neither branch), so the report silently listed nobody.
     expect(mockUserFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          AND: [{ OR: [{ id: TENANT_ID }, { ownerId: TENANT_ID }] }],
+          memberships: { some: { tenantId: TENANT_ID } },
         }),
       }),
     );

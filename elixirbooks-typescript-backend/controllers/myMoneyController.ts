@@ -16,6 +16,7 @@ import { prisma } from '../lib/prisma';
 import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { currentTaxYear, taxYearByLabel } from '../lib/payroll/taxYear';
 import { buildSalaryOwed } from '../lib/payroll/salaryOwed';
+import { tenantMemberWhere } from '../lib/tenantMembers';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -139,17 +140,12 @@ export async function getMyMoney(req: Request, res: Response): Promise<void> {
     const now = new Date();
     const taxYear = taxYearParam ? taxYearByLabel(taxYearParam) : currentTaxYear(now);
 
-    // Owner-scoping: verify targetUserId belongs to this tenant.
-    // A valid target is either the owner themselves OR a staff member whose
-    // ownerId = tenantUserId.
+    // Verify targetUserId belongs to this workspace, by membership.
     const targetUser = await prisma.user.findFirst({
       where: {
+        ...tenantMemberWhere(tenantUserId),
         id: targetUserId,
         isDeleted: false,
-        OR: [
-          { id: tenantUserId }, // the owner themselves
-          { ownerId: tenantUserId }, // a staff member of this tenant
-        ],
       },
       select: { id: true, firstName: true, lastName: true },
     });
@@ -174,13 +170,13 @@ export async function getMyMoney(req: Request, res: Response): Promise<void> {
       where: {
         isDeleted: false,
         payToUserId: targetUserId,
-        // Scope to the tenant: the bank account's owner must be in this tenant
+        // Scope to the workspace. `BankDetail.tenantId` IS the workspace, so
+        // this is the whole answer; the second branch this used to carry
+        // (`user: { ownerId }`) named a relation P3 renamed away, which made
+        // the entire query throw at runtime.
         bankAccount: {
           isDeleted: false,
-          OR: [
-            { tenantId: tenantUserId },
-            { user: { ownerId: tenantUserId } },
-          ],
+          tenantId: tenantUserId,
         },
         // Only explained txns (posted ones filtered in JS below — isPosted check)
         explainStatus: 'EXPLAINED',
@@ -269,7 +265,8 @@ export async function getMyMoney(req: Request, res: Response): Promise<void> {
         sourceType: 'EMPLOYEE_PAID',
         paidByUserId: targetUserId,
         expenseDate: { gte: taxYear.start, lte: taxYear.end },
-        OR: [{ tenantId: tenantUserId }, { user: { ownerId: tenantUserId } }],
+        // Same dead `user` relation as above — `Expense.tenantId` is the scope.
+        tenantId: tenantUserId,
       },
       select: { expenseDate: true, amount: true, description: true, referenceNo: true },
     });

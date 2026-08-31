@@ -13,7 +13,7 @@ import { Prisma } from '@prisma/client';
 import type { PurchaseStatus } from '@prisma/client';
 
 import { prisma } from '../../../lib/prisma';
-import { requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
+import { requireTenantId, UnauthorizedError, requireActingUserId } from '../../../lib/tenantScope';
 import { sendPrismaError } from '../../../middleware/prismaError';
 import {
   reverseSupplierPaymentEffects,
@@ -241,7 +241,7 @@ export async function voidSupplierPayment(
         where: { id: payment.id },
         data: {
           isVoided: true,
-          voidedById: tenantId,
+          voidedById: requireActingUserId(req),
           voidedAt: new Date(),
           voidReason: reason,
         },

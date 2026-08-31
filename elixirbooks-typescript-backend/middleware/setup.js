@@ -1,12 +1,11 @@
 const multer = require('multer');
 const path = require('path');
+const { destinationFor } = require('../lib/uploadPaths');
 
-// Configure storage
-const uploadDir = path.join(__dirname, '../uploads/company');
+// Per-workspace: uploads/t/<tenantId>/company/. This is the company logo
+// uploaded during /setup, so it is the FIRST file a new workspace writes.
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadDir); // Save to 'uploads/' folder
-    },
+    destination: destinationFor('company'),
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         cb(null, uniqueSuffix + path.extname(file.originalname)); // unique name

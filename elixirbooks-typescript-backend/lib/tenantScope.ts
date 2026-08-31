@@ -59,12 +59,10 @@ export function tenantScope(req: Request): { tenantId: string; isDeleted: false 
   return { tenantId: requireTenantId(req), isDeleted: false };
 }
 
-/**
- * @deprecated Renamed to {@link requireTenantId}, because it returns a TENANT
- * id and never returned the acting user's id — a mismatch that already caused
- * real bugs (reminderController compared it against `createdBy`). This alias
- * exists only so the ~500 call sites could migrate file-by-file instead of in
- * one commit; it is removed in P9. Use `requireTenantId`, or
- * `requireActingUserId` if you actually want the person.
- */
-export const requireUserId = requireTenantId;
+// `requireUserId` used to be exported here as an alias for requireTenantId, so
+// the ~500 pre-P3 call sites could migrate file-by-file rather than in one
+// commit. Every one of them has, so the alias is gone. The name was actively
+// misleading — it returned a TENANT id and never the acting user's — and that
+// ambiguity caused real bugs (reminderController compared it against
+// `createdBy`, an actor column). eslint.config.mjs still bans importing the
+// name, which is what stops it coming back.

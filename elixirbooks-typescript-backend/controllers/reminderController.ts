@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import type { ReminderStatus, ReminderType, ReminderTiming, ReminderEvent } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError, requireActingUserId } from '../lib/tenantScope';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
 import { sendReminderEmail } from '../lib/reminderMailer';
 
@@ -1015,7 +1015,10 @@ export async function getRemindersByType(req: Request, res: Response): Promise<v
 
     // Build search query
     const where: Prisma.ReminderWhereInput = {
-      createdBy: tenantId,
+      // No `createdBy` filter: a reminder belongs to the WORKSPACE, not to
+      // whoever happened to create it. Filtering on it here showed each admin
+      // only their own reminders and hid their colleagues' - the same defect
+      // P7 fixed in invoiceReminderCron, which silently skipped them.
       tenantId: tenantId,
       type: type as ReminderType,
       status: { not: 'archived' },

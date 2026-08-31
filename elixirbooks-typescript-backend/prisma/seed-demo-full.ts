@@ -34,6 +34,7 @@ import {
 } from '../lib/ledger/ledgerPosting';
 import { post } from '../lib/ledger/postingEngine';
 import { seedTransactionCategoriesForUser } from './seedTransactionCategories';
+import { DEFAULT_ROLE_BY_USER_TYPE, ensureRole } from '../lib/defaultRoles';
 
 const prisma = new PrismaClient();
 
@@ -244,14 +245,24 @@ async function wipe(tenantId: string): Promise<void> {
   await prisma.leaveAllocation.deleteMany({ where: { tenantId } });
   await prisma.leaveType.deleteMany({ where: { tenantId } });
   await prisma.holiday.deleteMany({ where: { tenantId } });
-  // Demo staff users (employees) created by this script — `ownerId == owner`.
-  // Deleted AFTER all rows that FK to them (project members, timesheets, leave
-  // rows above) so the delete does not violate referential integrity.
-  // LoginActivity FKs to User with no cascade, so clear those rows for the
-  // staff first (they accumulate from logins) or the user delete violates the
-  // LoginActivity_userId_fkey constraint.
-  await prisma.loginActivity.deleteMany({ where: { user: { ownerId: tenantId } } });
-  await prisma.user.deleteMany({ where: { ownerId: tenantId } });
+  // Demo staff users (employees) created by this script, found by their
+  // MEMBERSHIP of the demo workspace. Deleted AFTER all rows that FK to them
+  // (project members, timesheets, leave rows above) so the delete does not
+  // violate referential integrity. LoginActivity FKs to User with no cascade,
+  // so clear those rows for the staff first (they accumulate from logins) or
+  // the user delete violates the LoginActivity_userId_fkey constraint.
+  //
+  // `id: { not: tenantId }` keeps the demo OWNER: this is a data reset, and
+  // seedAll re-creates the owner's rows around the existing account.
+  const demoStaffWhere = {
+    id: { not: tenantId },
+    memberships: { some: { tenantId } },
+  };
+  await prisma.loginActivity.deleteMany({ where: { user: demoStaffWhere } });
+  await prisma.tenantMembership.deleteMany({
+    where: { tenantId, user: { id: { not: tenantId } } },
+  });
+  await prisma.user.deleteMany({ where: demoStaffWhere });
 
   // --- AI feature data (cluster H, slice H.4) ------------------------------
   // Messages cascade-delete with their session, but we delete explicitly so
@@ -2540,6 +2551,15 @@ async function seedAll(tenantId: string): Promise<void> {
     { id: 'demo-emp-3', firstName: 'Meera', lastName: 'Iyer', email: 'meera.iyer@demo.elixirbooks.local' },
   ];
   const employeeIds: string[] = [];
+  // The MEMBERSHIP is what puts these people in the workspace. Creating the
+  // User alone — which is all this did while `ownerId` carried the meaning —
+  // produced demo employees who could not sign in and did not appear in the
+  // staff list, because both read TenantMembership now.
+  const demoStaffRoleId = await ensureRole(
+    DEFAULT_ROLE_BY_USER_TYPE[2] ?? 'Staff',
+    tenantId,
+    prisma,
+  ).catch(() => null);
   for (const e of employeeSpecs) {
     const u = await prisma.user.create({
       data: {
@@ -2549,8 +2569,18 @@ async function seedAll(tenantId: string): Promise<void> {
         email: e.email,
         password: staffPassword,
         user_type: 2,
-        ownerId: tenantId,
+        lastTenantId: tenantId,
         isDeleted: false,
+      },
+    });
+    await prisma.tenantMembership.create({
+      data: {
+        userId: u.id,
+        tenantId,
+        roleId: demoStaffRoleId,
+        status: 'ACTIVE',
+        isOwner: false,
+        joinedAt: new Date(),
       },
     });
     employeeIds.push(u.id);
@@ -2822,7 +2852,22 @@ async function main(): Promise<void> {
     );
   }
 
+  // The demo workspace deliberately reuses the demo admin's User.id as its
+  // Tenant.id (prisma/seed-demo.ts creates it that way). That is LOAD-BEARING
+  // here: this file writes `tenantId` into `billFrom`, `received_by`,
+  // `createdBy` and `reconciledBy`, all of which are foreign keys to User. It
+  // is correct only while the two ids are the same value, so assert it rather
+  // than let a future change surface as thirty confusing FK violations.
   const tenantId = adminUser.id;
+  const demoTenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+  if (!demoTenant) {
+    throw new Error(
+      `The demo workspace must have Tenant.id === the demo admin's User.id (${tenantId}). ` +
+        'This seeder writes that id into User foreign keys (billFrom, received_by, ' +
+        'createdBy), so they must be the same row. Re-run `npm run prisma:seed:demo`.',
+    );
+  }
+
   console.log(`Full demo seed for tenantId=${tenantId} (${DEMO_EMAIL})`);
   console.log('-'.repeat(60));
 

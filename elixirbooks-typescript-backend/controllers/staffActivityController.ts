@@ -16,6 +16,7 @@ import type { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
 import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
+import { tenantMemberWhere } from '../lib/tenantMembers';
 
 class BadRequestError extends Error {}
 
@@ -95,14 +96,11 @@ export async function getStaffActivity(req: Request, res: Response): Promise<voi
       throw new BadRequestError('Query param "from" must not be after "to"');
     }
 
-    // Tenant staff scope — copied verbatim from userController.listStaffUsers:
-    // the owner themselves OR any staff whose ownerId == tenant. Excludes the
-    // sys-bootstrap user_type (999) the same way.
+    // Tenant staff scope — the same predicate userController.listStaffUsers
+    // uses, so this report can never name someone the user list would not.
+    // tenantMemberWhere also excludes the sys-bootstrap user (type 999).
     const staffUsers: StaffUserRow[] = await prisma.user.findMany({
-      where: {
-        NOT: { user_type: 999 },
-        AND: [{ OR: [{ id: tenantId }, { ownerId: tenantId }] }],
-      },
+      where: tenantMemberWhere(tenantId),
       select: { id: true, firstName: true, lastName: true, email: true },
       orderBy: { firstName: 'asc' },
     });

@@ -274,8 +274,8 @@ describe('seedRolesForTenant', () => {
     expect(ownerRole).toBeDefined();
     expect(store.memberships[0].roleId).toBe(ownerRole!.id);
     expect(result.ownerAssigned).toBeGreaterThanOrEqual(1);
-    // Mirrored onto User.roleId while authMiddleware still reads it (P5 drops this).
-    expect(store.users.find((u) => u.id === 'u1')!.roleId).toBe(ownerRole!.id);
+    // The mirror onto User.roleId that used to be asserted here went with the
+    // column (P9). The membership above is the whole assignment.
   });
 
   it('does not backfill sys-bootstrap (user_type 999 is not in the map)', async () => {

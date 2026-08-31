@@ -65,7 +65,6 @@ async function main(): Promise<void> {
       firstName: 'Demo',
       lastName: 'Admin',
       user_type: 1,
-      roleId: ownerRoleId,
       isDeleted: false,
     },
     create: {
@@ -75,7 +74,6 @@ async function main(): Promise<void> {
       firstName: 'Demo',
       lastName: 'Admin',
       user_type: 1,
-      roleId: ownerRoleId,
       balance: 0,
       isDeleted: false,
     },

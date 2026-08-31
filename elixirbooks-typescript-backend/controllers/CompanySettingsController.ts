@@ -708,8 +708,22 @@ export async function getBasicDetails(req: Request, res: Response): Promise<void
     } | null = null;
     let permissions: Array<Permission & { module: Module | null }> = [];
 
-    if (user.roleId) {
-      const fetchedRole = await prisma.role.findUnique({ where: { id: user.roleId } });
+    // The role comes from this user's MEMBERSHIP of this workspace, not from
+    // the user record. That is a correctness fix, not just plumbing: this
+    // endpoint is what fills the SPA's cached permission set, so while it read
+    // the single global `User.roleId`, somebody who was an Owner in one company
+    // and a Viewer in another was served the Owner UI in BOTH — and then got
+    // 403s from the backend, which had been enforcing the membership's role all
+    // along.
+    const actingMembership = await prisma.tenantMembership.findFirst({
+      where: { userId: actingUserId, tenantId },
+      select: { roleId: true },
+    });
+
+    if (actingMembership?.roleId) {
+      const fetchedRole = await prisma.role.findUnique({
+        where: { id: actingMembership.roleId },
+      });
       if (fetchedRole && !fetchedRole.deletedAt) {
         role = {
           id: fetchedRole.id,

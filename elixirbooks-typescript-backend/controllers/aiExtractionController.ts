@@ -5,11 +5,12 @@ import type { Request, Response } from 'express';
 import type { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
+import { requireActingUserId, requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { matchSupplier } from '../lib/aiSupplierMatcher';
 import { normalizeBillExtraction, type BillExtractionResult } from '../lib/aiPrompts/billExtraction';
 import { getProviderForUser } from '../lib/aiProviders/registry';
 import { logAiUsage } from '../lib/aiUsage';
+import { tenantOwnerUserId } from '../lib/actor';
 
 /**
  * AI bill extraction controller (Cluster H, slice H.2).
@@ -348,6 +349,11 @@ export async function confirmJob(req: Request, res: Response): Promise<void> {
         ? new Date(extracted.dueDate)
         : purchaseDate;
 
+    // Resolved once, outside the transaction: `billFrom` is NOT NULL, and a
+    // workspace always has an owner membership (provisionTenant creates it in
+    // the same transaction as the tenant).
+    const purchaseBillParty = (await tenantOwnerUserId(tenantId)) ?? requireActingUserId(req);
+
     const purchase = await prisma.$transaction(async (tx) => {
       const purchaseIdString = await generateNextPurchaseId(tx);
       const created = await tx.purchase.create({
@@ -374,8 +380,12 @@ export async function confirmJob(req: Request, res: Response): Promise<void> {
           termsAndCondition: null,
           sign_type: 'none',
           tenantId,
-          billFrom: tenantId,
-          billTo: tenantId,
+          // Both are User FKs meaning "this company" — see lib/actor.ts. They
+          // held the tenant id, which was the owner's User.id until workspaces
+          // got their own uuids; resolving the owner keeps the same value and
+          // stops the insert failing the foreign key.
+          billFrom: purchaseBillParty,
+          billTo: purchaseBillParty,
         },
       });
 

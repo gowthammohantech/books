@@ -1,4 +1,5 @@
 import { type Prisma, type CustomFieldValueModule } from '@prisma/client';
+import { currentActorId } from './actor';
 
 type Tx = Prisma.TransactionClient;
 
@@ -51,7 +52,10 @@ export async function insertCustomFieldValues(
       module,
       recordId,
       value,
-      createdBy: tenantId,
+      // The PERSON, not the workspace. `createdBy` is a foreign key to User,
+      // and a tenant id stopped being a user id when workspaces gained their
+      // own uuids - see lib/actor.ts.
+      createdBy: currentActorId(),
     };
   });
 

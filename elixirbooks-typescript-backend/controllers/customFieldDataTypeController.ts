@@ -3,7 +3,7 @@ import type { CustomFieldDataTypeKind } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
+import { requireTenantId, UnauthorizedError, requireActingUserId } from '../lib/tenantScope';
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -44,7 +44,7 @@ export async function createCustomFieldDataType(req: Request, res: Response): Pr
         tenantId,
         type: type as CustomFieldDataTypeKind,
         description: description ?? null,
-        createdBy: tenantId,
+        createdBy: requireActingUserId(req),
       },
     });
 

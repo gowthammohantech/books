@@ -160,12 +160,12 @@ export async function seedAllTenantDefaults(): Promise<SeedTenantResult & { tena
   });
 
   for (const t of tenants) {
-    const ownerId = t.memberships[0]?.userId;
-    if (!ownerId) {
+    const ownerUserId = t.memberships[0]?.userId;
+    if (!ownerUserId) {
       console.warn(`[seedTenant] tenant ${t.id} has no owner membership — skipped`);
       continue;
     }
-    const r = await seedTenantDefaults(t.id, ownerId);
+    const r = await seedTenantDefaults(t.id, ownerUserId);
     totals.tenants += 1;
     totals.units += r.units;
     totals.currencies += r.currencies;

@@ -19,6 +19,7 @@ import { prisma } from '../lib/prisma';
 import { requireTenantId } from '../lib/tenantScope';
 import { taxYearByLabel } from '../lib/payroll/taxYear';
 import { postPayRunLineAccrual, reversePayRunLineAccrual } from '../lib/payroll/payRunPosting';
+import { isTenantMember } from '../lib/tenantMembers';
 
 // ---------------------------------------------------------------------------
 // Validation
@@ -48,25 +49,13 @@ export function validateProfileInput(
 // ---------------------------------------------------------------------------
 
 /**
- * Confirm the given `employeeUserId` is a User that belongs to this tenant
- * (i.e. the owner themselves OR a staff member whose ownerId == tenantId).
+ * Confirm the given `employeeUserId` belongs to this workspace — i.e. holds a
+ * membership in it. See lib/tenantMembers.ts for why the previous
+ * `id == tenantId OR ownerId == tenantId` test was wrong for any workspace
+ * created after the multi-tenancy conversion.
  */
 async function assertTenantEmployee(tenantId: string, employeeUserId: string): Promise<boolean> {
-  // PayrollProfile model is in the schema (Task 1) but the local generated
-  // Prisma client is stale. Use the same cast-through-unknown pattern that
-  // myMoneyController uses for fields added after the last `prisma generate`.
-  const person = await (prisma.user.findFirst as (args: unknown) => Promise<{ id: string } | null>)({
-    where: {
-      id: employeeUserId,
-      isDeleted: false,
-      OR: [
-        { id: tenantId },          // owner themselves
-        { ownerId: tenantId },     // staff member of this tenant
-      ],
-    },
-    select: { id: true },
-  });
-  return !!person;
+  return isTenantMember(employeeUserId, tenantId);
 }
 
 // Shorthand for the Prisma payrollProfile delegate (client is stale; cast once)

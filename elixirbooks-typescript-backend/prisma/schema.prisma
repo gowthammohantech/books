@@ -766,7 +766,8 @@ model Role {
   updatedAt    DateTime  @updatedAt
 
   permissions Permission[]       @relation("RolePermissions")
-  users       User[]             @relation("UserRole")
+  // No `users` back-relation: a role is held through a membership, never
+  // directly by a user. See the note on User.user_type.
   memberships TenantMembership[] @relation("RoleMemberships")
 
   // NOTE: deliberately no @@unique([tenantId, roleName]).
@@ -800,18 +801,19 @@ model User {
   cityId       String?
   city         City?            @relation("CityUsers", fields: [cityId], references: [id])
   postalCode   String?
+  // Signup intent, NOT authorization: nothing reads this to decide access.
+  // See middleware/requirePermission.ts (server) and utils/hasPermission.ts
+  // (client) — both consult the permission set the membership's role carries.
   user_type    Int              @default(1)
-  roleId       String?
-  role         Role?            @relation("UserRole", fields: [roleId], references: [id])
-  // DEPRECATED (P5), dropped in P9. This was the whole tenancy story: a staff
-  // user pointed at the sole company owner, and the tenant resolved to
-  // `ownerId ?? id`. TenantMembership replaced it — a person can belong to
-  // several workspaces, which one column can never express. Still written by
-  // createStaffUser for one release so nothing that reads it breaks mid-upgrade;
-  // NOTHING should start reading it.
-  ownerId      String?
-  owner        User?            @relation("UserOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-  staff        User[]           @relation("UserOwner")
+  //
+  // `roleId` and `ownerId` used to live here. Both were single-workspace
+  // assumptions that TenantMembership replaced, and both are dropped by
+  // migration 20260904000000_drop_user_owner_role:
+  //
+  //   roleId  -> TenantMembership.roleId. A person holds a DIFFERENT role in
+  //              each workspace they belong to, which one column cannot say.
+  //   ownerId -> a membership row. It pointed a staff user at the sole company
+  //              owner, and the tenant resolved to `ownerId ?? id`.
   // Which workspace to open on next login, for users who belong to several.
   // Advisory only — a membership is still required and re-checked every request.
   lastTenantId String?

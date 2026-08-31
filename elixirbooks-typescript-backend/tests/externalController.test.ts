@@ -435,7 +435,7 @@ describe('externalController — ssoExchange SSO role assignment', () => {
     process.env.JWT_SECRET = 'test-jwt-secret';
   });
 
-  it('new user (user_type 2) — creates user with Vendor roleId from ensureRole', async () => {
+  it('new user (user_type 2) — puts the Vendor role on the MEMBERSHIP', async () => {
     const newUser = {
       id: 'new-vendor-uuid',
       firstName: 'Carol',
@@ -454,10 +454,14 @@ describe('externalController — ssoExchange SSO role assignment', () => {
     expect(mockCreateUser).toHaveBeenCalledOnce();
     const createData = mockCreateUser.mock.calls[0][0].data;
     expect(createData.user_type).toBe(2);
-    // ensureRole should have been called with 'Vendor'
+    // ensureRole should have been called with 'Vendor', in the RESOLVED tenant
     expect(mockEnsureRole).toHaveBeenCalledWith('Vendor', SSO_TENANT_ID);
-    // roleId should be set on the created user
-    expect(createData.roleId).toBe('mock-role-id');
+    // The role belongs to the membership, not to the user: the same person can
+    // hold a different role in each workspace, so P9 dropped User.roleId.
+    expect(createData.roleId).toBeUndefined();
+    const membershipArgs = mockUpsertMembership.mock.calls[0][0];
+    expect(membershipArgs.create.roleId).toBe('mock-role-id');
+    expect(membershipArgs.create.tenantId).toBe(SSO_TENANT_ID);
 
     const body = res.json.mock.calls[0][0];
     expect(body.success).toBe(true);

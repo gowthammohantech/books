@@ -9,6 +9,7 @@
 import { toDecimal } from './money';
 import { postSupplierPayment, type PostingTx } from './ledgerPosting';
 import { nextDocumentNumber, type NumberingModel } from '../documentNumbering';
+import { resolveActorId } from '../actor';
 
 // ---------------------------------------------------------------------------
 // DB structural type — extends PostingTx with purchase + supplierPayment ops.
@@ -148,7 +149,9 @@ export async function applyBillPayment(
     amount: toDecimal(amount),
     paidAmount: toDecimal(amount),
     dueAmount: toDecimal(0),
-    createdBy: tenantId,
+    // A User FK, three lines below a comment warning that exactly this kind of
+    // column takes a User id and not a tenant id. See lib/actor.ts.
+    createdBy: await resolveActorId(tenantId),
   };
   if (currencyCode) spData['currencyCode'] = currencyCode;
 
