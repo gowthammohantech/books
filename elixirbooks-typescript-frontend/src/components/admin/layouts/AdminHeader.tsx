@@ -7,6 +7,7 @@ import { logout } from '../../../store/auth/authSlice';
 import { assetUrl } from '@utils/assetUrl';
 import { usePageHeader } from '../../../context/PageHeaderContext';
 import { useCommandPalette } from '../../../context/CommandPaletteContext';
+import TenantSwitcher from '../TenantSwitcher';
 interface HeaderProps {
     toggleSidebar: () => void;
     /** Drives the toggle button's accessible name and aria-expanded state. */
@@ -72,6 +73,12 @@ const AdminHeader = ({ toggleSidebar, isSidebarOpen = true }: HeaderProps) => {
                 {pageActions && (
                     <div className="flex items-center gap-2">{pageActions}</div>
                 )}
+
+                {/* Which company am I looking at? Beside the avatar because the
+                    two together are the answer to "who am I, and where" - and
+                    on an install serving several companies that question has to
+                    be answerable without navigating anywhere. */}
+                <TenantSwitcher />
 
                 <div className="relative">
                     <button

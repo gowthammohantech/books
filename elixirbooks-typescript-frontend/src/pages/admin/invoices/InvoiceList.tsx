@@ -25,6 +25,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchModuleHierarchy, fetchCustomFieldsByModule } from "@api/customFieldTypeApi";
 import { PageHeader } from "@/context/PageHeaderContext";
 import { Badge, Button, FormField, PageSizeSelect, Select } from "@components/ui";
+import { setTenantValue } from "@utils/tenantStorage";
 
 interface Invoice {
     id: string;
@@ -192,7 +193,7 @@ const InvoiceList: React.FC = () => {
             toast.warning("Something went wrong. Please refresh the page.");
             return;
         }
-        sessionStorage.setItem("nextInvoiceNo", nextInvoiceNo);
+        setTenantValue("nextInvoiceNo", nextInvoiceNo);
         navigate("/admin/invoices/create-invoice");
     }
 

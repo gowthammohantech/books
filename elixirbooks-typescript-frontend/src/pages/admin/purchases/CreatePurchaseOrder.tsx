@@ -38,6 +38,7 @@ import { useDocumentDefaults } from '@hooks/useDocumentDefaults';
 import { round2 } from '@utils/round2';
 import { Button, FormField, Select, fieldControlClasses } from '@components/ui';
 import { PageHeader } from "@/context/PageHeaderContext";
+import { getTenantValue } from "@utils/tenantStorage";
 
 // Extend the base ProductItem to carry per-line custom field values.
 type ProductItem = BaseProductItem & {
@@ -749,7 +750,7 @@ const CreatePurchaseOrder: React.FC = () => {
                                     label="Order ID"
                                     id="po-id"
                                     type="text"
-                                    value={sessionStorage.getItem('nextPurchaseOrderId') || ''}
+                                    value={getTenantValue('nextPurchaseOrderId') || ''}
                                     readOnly
                                 />
                             </div>

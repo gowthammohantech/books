@@ -74,7 +74,12 @@ const AccountSettings: React.FC = () => {
     const [loadingStates, setLoadingStates] = useState<boolean>(false);
     const [loadingCities, setLoadingCities] = useState<boolean>(false);
 
-    const { token, user } = useSelector((state: RootState) => state.auth);
+    const { token, activeTenant } = useSelector((state: RootState) => state.auth);
+    // Gates the Data & Backup card below. Ownership is a property of the
+    // MEMBERSHIP, not of the person: the same account can own one workspace
+    // and be an ordinary member of another, and the backup zip it downloads is
+    // whichever workspace is currently active.
+    const isOwner = !!activeTenant?.isOwner;
     const [formErrors, setFormErrors] = useState<FormErrors>({});
     const profileImageInputRef = useRef<HTMLInputElement>(null);
 
@@ -563,7 +568,7 @@ const AccountSettings: React.FC = () => {
 
             </form>
 
-            {user?.user_type === 1 && (
+            {isOwner && (
                 <Card
                     className="mt-6"
                     padded={false}

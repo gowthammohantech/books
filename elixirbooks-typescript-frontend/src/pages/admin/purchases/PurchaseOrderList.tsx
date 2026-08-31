@@ -22,6 +22,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchModuleHierarchy, fetchCustomFieldsByModule } from "@api/customFieldTypeApi";
 import { PageHeader } from "@/context/PageHeaderContext";
 import { Button, FormField, PageSizeSelect } from "@components/ui";
+import { setTenantValue } from "@utils/tenantStorage";
 
 interface PurchaseOrder {
     id: string;
@@ -159,7 +160,7 @@ const PurchaseOrderList: FC = () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             //set nextPurchaseOrderId to sessionStorage
-            if (response.data.data.nextPurchaseOrderId) sessionStorage.setItem('nextPurchaseOrderId', response.data.data.nextPurchaseOrderId);
+            if (response.data.data.nextPurchaseOrderId) setTenantValue('nextPurchaseOrderId', response.data.data.nextPurchaseOrderId);
             setPurchaseOrders(response.data.data.purchaseOrders ?? []);
             setPagination(response.data.data.pagination ?? { total: 0, page: 1, limit: 10, totalPages: 1 });
         } catch (error) {

@@ -9,6 +9,7 @@ import type { AppDispatch, RootState } from '@store/index';
 import { Info } from 'lucide-react';
 import { fetchSystemSettings } from '@store/systemSettingsSlice';
 import { Button, FormField } from '@components/ui';
+import { getTenantValue, setTenantValue } from "@utils/tenantStorage";
 
 interface Props {
     isOpen: boolean;
@@ -28,7 +29,7 @@ const InvoiceNumberConfigModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
     const [showTooltip, setShowTooltip] = useState(false);
     const dispatch: AppDispatch = useDispatch();
     //split next invoice number from session storage for initial value not prefix
-    let nextInvoiceNo = sessionStorage.getItem('defaultNextInvNo') || 'INV-000001';
+    let nextInvoiceNo = getTenantValue('defaultNextInvNo') || 'INV-000001';
     let prefix = systemSettings?.invoicePrefix || 'INV-';
     let number = nextInvoiceNo.replace(prefix, '');
     const prepareInitialFormData = (): FormData => ({
@@ -104,10 +105,10 @@ const InvoiceNumberConfigModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
             });
 
             if (formData.invoiceNumberType === 'manual') {
-                sessionStorage.setItem('nextInvoiceNo', manualNumber);
+                setTenantValue('nextInvoiceNo', manualNumber);
             } else {
                 let formattedNewNumber = formData.prefix + formData.nextNumber;
-                sessionStorage.setItem('nextInvoiceNo', formattedNewNumber);
+                setTenantValue('nextInvoiceNo', formattedNewNumber);
             }
             if (token) dispatch(fetchSystemSettings(token));
             toast.success('Configuration updated successfully.');

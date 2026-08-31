@@ -42,6 +42,7 @@ import type { Contact } from '@models/contact';
 import ContactPicker from '@components/admin/ContactPicker';
 import { Button, FormField, Select, fieldControlClasses } from '@components/ui';
 import { PageHeader } from "@/context/PageHeaderContext";
+import { getTenantValue, setTenantValue } from "@utils/tenantStorage";
 
 interface InvoiceFormData {
     invoiceNumber: string;
@@ -318,12 +319,12 @@ const CreateInvoice: React.FC = () => {
             let data = response.data.data;
             if (data) {
                 if (data.invoiceNumberType === 'auto') {
-                    sessionStorage.setItem('defaultNextInvNo', data.nextInvoiceNumber);
-                    sessionStorage.setItem('nextInvoiceNo', data.nextInvoiceNumber);
+                    setTenantValue('defaultNextInvNo', data.nextInvoiceNumber);
+                    setTenantValue('nextInvoiceNo', data.nextInvoiceNumber);
                     setInvoiceFormData(prev => ({ ...prev, invoiceNumber: data.nextInvoiceNumber }));
                 } else {
-                    sessionStorage.setItem('defaultNextInvNo', data.nextInvoiceNumber);
-                    sessionStorage.setItem('nextInvoiceNo', data.nextInvoiceNumber);
+                    setTenantValue('defaultNextInvNo', data.nextInvoiceNumber);
+                    setTenantValue('nextInvoiceNo', data.nextInvoiceNumber);
                     setInvoiceFormData(prev => ({ ...prev, invoiceNumber: '' }));
                 }
             }
@@ -1075,7 +1076,7 @@ const CreateInvoice: React.FC = () => {
     const handleNewProductClick = () => setIsProductModalOpen(true);
 
     const setNewInvoiceNumber = () => {
-        let newInvoiceNumber = sessionStorage.getItem('nextInvoiceNo');
+        let newInvoiceNumber = getTenantValue('nextInvoiceNo');
         if (newInvoiceNumber) {
             setInvoiceFormData(prev => ({ ...prev, invoiceNumber: newInvoiceNumber }));
         }

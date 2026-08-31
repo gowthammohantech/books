@@ -7,19 +7,31 @@ import { BrowserRouter } from 'react-router-dom';
 import './index.css';
 import { initializeAuth, logout } from './store/auth/authSlice';
 import { isTokenExpired } from './utils/auth';
+import { migrateLegacyKeys } from './utils/tenantStorage';
 import { store } from './store';
 import { Provider } from 'react-redux';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+// Drop the un-namespaced cache keys written by every build before workspaces
+// existed. One sweep, before anything reads storage: a returning user would
+// otherwise carry a bare `systemSettings` - one company's branding, currency
+// and permission set - on disk indefinitely.
+migrateLegacyKeys();
+
 store.dispatch(initializeAuth());
 
 // Global 401 handler: a stale/invalid session (e.g. the token's user no longer
-// exists) should cleanly log the user out and bounce to login, rather than
-// surfacing confusing errors inside forms. Skip when already on the login page.
-// Also skip the pre-dashboard onboarding pages (/setup, /register): in those
-// router states /admin/login is not a routable path, so bouncing there just
-// gets caught by the catch-all and redirected back, producing an infinite
-// /setup <-> /admin/login flicker. Let those pages surface the error inline.
+// exists, their membership was revoked, or their workspace was suspended)
+// should cleanly log the user out and bounce to login, rather than surfacing
+// confusing errors inside forms. Skip when already on the login page.
+//
+// /setup and /register stay on the skip list, though the reason has changed:
+// they were skipped because /admin/login was not a routable path in those
+// router states, which produced a /setup <-> /admin/login flicker. There is one
+// route tree now and /admin/login is always routable, so the flicker is gone -
+// but bouncing off these two pages is still wrong. They are where a user
+// completes signup and workspace setup, and a transient 401 there should show
+// inline beside the form rather than discard what they have typed.
 const LOGIN_PATH = '/admin/login';
 const NO_REDIRECT_PATHS = [LOGIN_PATH, '/setup', '/register'];
 axios.interceptors.response.use(

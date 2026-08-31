@@ -98,7 +98,7 @@ const CommandPalette = ({ isOpen, onClose }: CommandPaletteProps) => {
     );
 
     const commands = useMemo(
-        () => buildCommands(permissions ?? [], user),
+        () => buildCommands(permissions ?? []),
         [permissions, user]
     );
 

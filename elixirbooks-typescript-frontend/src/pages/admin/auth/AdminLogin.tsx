@@ -18,7 +18,7 @@ const LoginPage: React.FC = () => {
   const [rememberMe, setRememberMe] = useState<boolean>(true);
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
-  const { isLoading, error, isAuthenticated, user } = useSelector(
+  const { isLoading, error, isAuthenticated, activeTenant } = useSelector(
     (state: RootState) => state.auth
   );
   const dispatch: AppDispatch = useDispatch();
@@ -26,18 +26,21 @@ const LoginPage: React.FC = () => {
   const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
 
   // Guards direct/back-button visits to /admin/login while a session is
-  // already active (e.g. after a refresh). Owner (user_type 1) always goes to
-  // the dashboard, unaffected — everyone else lands on their permitted
-  // module instead of bouncing to a dashboard they may not have access to.
+  // already active (e.g. after a refresh). The workspace OWNER always goes to
+  // the dashboard - everyone else lands on their permitted module instead of
+  // bouncing to a dashboard they may not have access to.
+  //
+  // Ownership comes from the active membership, not from `user.user_type`:
+  // the same person can own one workspace and be an ordinary member of
+  // another, so a property of the USER cannot answer this.
   useEffect(() => {
     if (isAuthenticated) {
-      const path =
-        user?.user_type === 1
-          ? "/admin/dashboard"
-          : resolveLandingPath(systemSettings?.defaultRoute, systemSettings?.permissions);
+      const path = activeTenant?.isOwner
+        ? "/admin/dashboard"
+        : resolveLandingPath(systemSettings?.defaultRoute, systemSettings?.permissions);
       navigate(path);
     }
-  }, [isAuthenticated, navigate, user, systemSettings]);
+  }, [isAuthenticated, navigate, activeTenant, systemSettings]);
 
   const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>
@@ -45,7 +48,7 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     const resultAction = await dispatch(loginUser({ email, password }));
     if (loginUser.fulfilled.match(resultAction)) {
-      const { token, user: loggedInUser } = resultAction.payload;
+      const { token, tenant } = resultAction.payload;
 
       // Fetch system-settings/permissions with the just-issued token before
       // deciding where to land — relying on the separate App-level boot
@@ -57,10 +60,12 @@ const LoginPage: React.FC = () => {
         settings = settingsAction.payload;
       }
 
-      const path =
-        loggedInUser?.user_type === 1
-          ? "/admin/dashboard"
-          : resolveLandingPath(settings?.defaultRoute, settings?.permissions);
+      // `tenant` is the workspace this token was minted for; login picks it
+      // (last used, else oldest membership) and tells us which role the user
+      // holds THERE.
+      const path = tenant?.isOwner
+        ? "/admin/dashboard"
+        : resolveLandingPath(settings?.defaultRoute, settings?.permissions);
       navigate(path);
     }
   };

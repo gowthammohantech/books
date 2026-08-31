@@ -1,17 +1,28 @@
-import React, { useState } from "react";
-import { Eye, EyeOff, User, Mail, Phone, Lock, Loader2Icon } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Eye, EyeOff, User, Mail, Phone, Lock, Building2, Loader2Icon } from "lucide-react";
 import type { RegisterFormData } from "@models/register";
 import axios from "axios";
-import Cookies from "js-cookie";
 import Constants from "@constants/api";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@store/index";
-import { initializeAuth } from "@store/auth/authSlice";
+import { registerUser } from "@store/auth/authSlice";
 import { useSetupStatus } from "@context/SetupStatusContext";
 import { isValidPhone, PHONE_ERROR } from "@utils/validation";
 
+/**
+ * Public, uncapped signup.
+ *
+ * This page used to be reachable only on an install with no admin yet, and the
+ * backend enforced that with a hard 403 once one existed - which is exactly
+ * what made an install serve one company forever. Both are gone: the route is
+ * always mounted (routes/AppRoutes.tsx) and the endpoint is rate-limited
+ * instead of capped.
+ *
+ * `companyName` is the new field. A signup now provisions a whole WORKSPACE -
+ * its own roles, units, currencies and email templates - and this names it.
+ */
 const AdminRegister: React.FC = () => {
     const navigate = useNavigate();
     const dispatch: AppDispatch = useDispatch();
@@ -21,6 +32,7 @@ const AdminRegister: React.FC = () => {
             lastName: "",
             email: "",
             phone: "",
+            companyName: "",
             password: "",
             confirmPassword: "",
         };
@@ -30,7 +42,31 @@ const AdminRegister: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const { setStatus } = useSetupStatus();
+    const { setCompanySettingsComplete } = useSetupStatus();
+    // undefined = not yet known. An operator can close signups on a
+    // self-hosted instance (SIGNUPS_ENABLED), and the endpoint then 403s -
+    // better to say so before the visitor fills in a password than after.
+    const [signupsEnabled, setSignupsEnabled] = useState<boolean | undefined>();
+
+    useEffect(() => {
+        let cancelled = false;
+        axios
+            .get(Constants.APP_VERSION_URL)
+            .then((response) => {
+                if (cancelled) return;
+                const data = response.data?.data;
+                // Assume OPEN when the probe cannot be read. A false negative
+                // hides a working signup page; a false positive costs one
+                // rejected request with the server's own message.
+                setSignupsEnabled(data?.signupsEnabled !== false);
+            })
+            .catch(() => {
+                if (!cancelled) setSignupsEnabled(true);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -54,6 +90,12 @@ const AdminRegister: React.FC = () => {
             newErrors.lastName = 'Last name is required.';
         } else if (formData.lastName.length < 3 || formData.lastName.length > 50) {
             newErrors.lastName = 'Last name must be between 3 and 50 characters.';
+        }
+
+        if (!formData.companyName.trim()) {
+            newErrors.companyName = 'Company name is required.';
+        } else if (formData.companyName.trim().length < 2 || formData.companyName.length > 100) {
+            newErrors.companyName = 'Company name must be between 2 and 100 characters.';
         }
 
         if (!formData.email.trim()) {
@@ -89,38 +131,55 @@ const AdminRegister: React.FC = () => {
         if (!validateForm()) return;
         try {
             setIsSaving(true);
-            const response = await axios.post(Constants.REGISTER_URL, formData);
-            const token = response.data.token;
-            const user = response.data.user;
-            // Store in cookies (same options as loginUser in authSlice) so the
-            // auth system's cookie-based readers find the token immediately.
-            Cookies.set("authToken", token, { secure: window.location.protocol === "https:", sameSite: "Strict", expires: 7 });
-            Cookies.set("authUser", JSON.stringify(user), { secure: window.location.protocol === "https:", sameSite: "Strict", expires: 7 });
-            // Sync Redux state so ProtectedRoute sees isAuthenticated = true
-            // without waiting for a reload.
-            dispatch(initializeAuth());
-            sessionStorage.setItem("setupStatus", JSON.stringify({
-                new_register: false,       // user just registered
-                company_settings: true     // company setup pending
-            }));
-            setStatus({
-                new_register: false,      // user just registered
-                company_settings: true,   // company setup pending
-            });
-
+            // The thunk owns the cookies (token, user, active workspace) and the
+            // redux transition, so ProtectedRoute sees isAuthenticated without
+            // waiting for a reload.
+            const result = await dispatch(registerUser(formData));
+            if (registerUser.rejected.match(result)) {
+                toast.error((result.payload as string) || 'Failed to create your account.');
+                return;
+            }
+            // The workspace exists but has no CompanySettings yet - /setup is
+            // what creates it, and this is the same fact the session endpoint
+            // would report a moment later. Setting it here avoids a round trip
+            // and a flash of the dashboard.
+            setCompanySettingsComplete(false);
             navigate('/setup');
-        } catch (error) {
-            toast.error('Failed to register admin.');
+        } catch {
+            toast.error('Failed to create your account.');
         } finally {
             setIsSaving(false);
         }
     }
+    if (signupsEnabled === false) {
+        return (
+            <div className="min-h-screen flex items-center justify-center p-6">
+                <div className="w-full max-w-md bg-white rounded-2xl border border-gray-200 p-10 text-center">
+                    <h2 className="text-xl font-bold text-primary mb-2">Sign-ups are closed</h2>
+                    <p className="text-sm text-gray-600 mb-6">
+                        This instance is not accepting new workspaces. Ask an administrator to
+                        invite you, or sign in if you already have an account.
+                    </p>
+                    <a
+                        href="/admin/login"
+                        className="inline-block px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90"
+                    >
+                        Go to sign in
+                    </a>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen flex items-center justify-center">
             <div className="w-full max-w-2xl bg-white rounded-2xl border border-gray-200 p-10">
-                <h2 className="text-2xl font-bold text-center text-primary mb-8">
-                    Admin Registration
+                <h2 className="text-2xl font-bold text-center text-primary mb-2">
+                    Create your workspace
                 </h2>
+                <p className="text-sm text-center text-muted-foreground mb-8">
+                    You will be the owner of this workspace and can invite your team later.
+                </p>
 
                 <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleSubmit}>
                     {/* First Name */}
@@ -160,6 +219,26 @@ const AdminRegister: React.FC = () => {
                                 className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ring focus:outline-none"
                             />
                             {formErrors.lastName && <p className="text-destructive text-xs mt-1">{formErrors.lastName}</p>}
+                        </div>
+                    </div>
+
+                    {/* Company name - names the workspace this signup creates. */}
+                    <div className="flex flex-col md:col-span-2">
+                        <label className="text-sm font-medium text-gray-700 mb-1">
+                            Company Name <span className="text-destructive">*</span>
+                        </label>
+                        <div className="relative">
+                            <Building2 className="absolute left-3 top-3 text-gray-400" size={18} />
+                            <input
+                                type="text"
+                                placeholder="Enter your company name"
+                                name="companyName"
+                                value={formData.companyName}
+                                onChange={handleChange}
+                                maxLength={100}
+                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ring focus:outline-none"
+                            />
+                            {formErrors.companyName && <p className="text-destructive text-xs mt-1">{formErrors.companyName}</p>}
                         </div>
                     </div>
 
@@ -271,7 +350,7 @@ const AdminRegister: React.FC = () => {
                                     <span>Registering...</span>
                                 </>
                             ) : (
-                                "Register"
+                                "Create workspace"
                             )}
                         </button>
                     </div>

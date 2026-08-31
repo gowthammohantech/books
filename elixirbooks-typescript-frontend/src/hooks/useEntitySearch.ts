@@ -98,7 +98,7 @@ export const useEntitySearch = (query: string) => {
         const common = { signal: controller.signal, headers };
 
         const fetchInvoices = async (): Promise<EntityResult[]> => {
-            if (!canView("invoices", perms, user)) return [];
+            if (!canView("invoices", perms)) return [];
             const res = await axios.get(Constants.GET_INVOICES_FOR_LIST_URL, {
                 ...common,
                 params: { search: trimmed, page: 1, limit: PER_TYPE_LIMIT },
@@ -116,7 +116,7 @@ export const useEntitySearch = (query: string) => {
         };
 
         const fetchContacts = async (): Promise<EntityResult[]> => {
-            if (!canView("contacts", perms, user)) return [];
+            if (!canView("contacts", perms)) return [];
             const res = await axios.get(`${Constants.API_BASE_URL}/admin/contacts`, {
                 ...common,
                 params: { view: "all-active", q: trimmed, pageSize: PER_TYPE_LIMIT },
@@ -132,7 +132,7 @@ export const useEntitySearch = (query: string) => {
         };
 
         const fetchProducts = async (): Promise<EntityResult[]> => {
-            if (!canView("product-services", perms, user)) return [];
+            if (!canView("product-services", perms)) return [];
             const res = await axios.get(Constants.FETCH_PRODUCTS_URL, {
                 ...common,
                 params: { search: trimmed, page: 1, limit: PER_TYPE_LIMIT },
