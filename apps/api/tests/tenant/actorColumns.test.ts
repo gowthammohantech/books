@@ -14,10 +14,10 @@
  * User added next year is covered the day it is added. Same reasoning as
  * prisma/checkTenantIntegrity.ts.
  */
-import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 
+import { describe, it, expect } from 'vitest';
 import { Prisma } from '@prisma/client';
 
 const ROOT = path.resolve(__dirname, '../..');

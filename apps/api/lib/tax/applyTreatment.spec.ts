@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { applyDocumentTreatment } from './applyTreatment';
 
 interface Item { totalTax?: number; taxes?: { amount?: number }[] }

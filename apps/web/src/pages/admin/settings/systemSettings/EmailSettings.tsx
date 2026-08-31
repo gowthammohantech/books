@@ -200,22 +200,24 @@ const EmailSettings: React.FC = () => {
                 if (!value) return "From name is required.";
                 if (value.length > 100) return "From name cannot exceed 100 characters.";
                 break;
-            case 'fromEmail':
+            case 'fromEmail': {
                 if (!value) return "From email is required.";
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!emailRegex.test(value)) return "Invalid email address.";
                 if (value.length > 150) return "Email cannot exceed 150 characters.";
                 break;
+            }
             case 'host':
                 if (!value) return "Host is required.";
                 if (value.length > 200) return "Host cannot exceed 200 characters.";
                 break;
-            case 'port':
+            case 'port': {
                 if (value === '' || value === null) return "Port is required.";
                 const port = Number(value);
                 if (isNaN(port)) return "Port must be a number.";
                 if (port < 1 || port > 65535) return "Port must be between 1 and 65535.";
                 break;
+            }
             case 'username':
                 if (!value) return "Username is required.";
                 if (value.length > 100) return "Username cannot exceed 100 characters.";

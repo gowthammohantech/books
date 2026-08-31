@@ -17,6 +17,7 @@ process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Prisma } from '@prisma/client';
+
 import type { TaxFigures } from '../lib/reports/taxReturns';
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { LEDGER_ROLES, isLedgerRole, type LedgerRole } from './roles';
 
 describe('ledger roles', () => {

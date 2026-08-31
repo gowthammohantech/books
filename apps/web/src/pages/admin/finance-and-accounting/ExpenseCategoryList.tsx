@@ -137,7 +137,7 @@ const ExpenseCategoryList: React.FC = () => {
     const tableHeaders = ['#', 'Title', 'Description', 'Status', 'Created On', 'Actions'];
     const restrictedActions = ['edit', 'delete'];
     const allowedActions = tableActions.filter((action) => {
-        let actionaLabel = action.label.toLowerCase();
+        const actionaLabel = action.label.toLowerCase();
         if (restrictedActions.includes(actionaLabel)) {
             const actionKey = actionaLabel.toLowerCase() as PermissionAction;
             return hasPermission(permissions, 'expenses', actionKey);

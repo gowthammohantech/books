@@ -1,5 +1,6 @@
 // lib/ledger/ledgerPosting.spec.ts
 import { describe, it, expect, vi } from 'vitest';
+
 import {
   postInvoiceIssued, postInvoicePayment, postPurchaseReceived,
   postSupplierPayment, postExpense, postCreditNoteIssued, postCreditNoteRefund, postDebitNoteIssued,

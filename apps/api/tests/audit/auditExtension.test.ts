@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { isAuditable, buildAuditRecord, DENYLIST } from '../../lib/auditExtension';
 
 describe('isAuditable', () => {

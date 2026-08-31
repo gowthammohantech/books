@@ -252,7 +252,7 @@ const EditDeliveryChallan: React.FC = () => {
                 const deliveryChallanDetail = response.data.data;
                 if (deliveryChallanDetail) {
                     if (deliveryChallanDetail.invoice) {
-                        let _invoiceOptions = {
+                        const _invoiceOptions = {
                             id: deliveryChallanDetail.invoice.id,
                             name: deliveryChallanDetail.invoice.invoiceNumber ?? "",
                         };
@@ -285,11 +285,11 @@ const EditDeliveryChallan: React.FC = () => {
                     }));
 
                     if (deliveryChallanDetail.billFrom) {
-                        let _admin = { id: deliveryChallanDetail.billFrom.id, name: deliveryChallanDetail.billFrom.name };
+                        const _admin = { id: deliveryChallanDetail.billFrom.id, name: deliveryChallanDetail.billFrom.name };
                         handleAdminChange(_admin);
                     }
                     if (deliveryChallanDetail.billTo) {
-                        let _customer = {
+                        const _customer = {
                             id: deliveryChallanDetail.billTo.id,
                             name: deliveryChallanDetail.billTo.name,
                             email: deliveryChallanDetail.billTo.email,
@@ -337,11 +337,11 @@ const EditDeliveryChallan: React.FC = () => {
                     grandTotal: invoice_data.TotalAmount
                 }));
                 if (invoice_data.billFrom) {
-                    let _admin = { id: invoice_data.billFrom.id, name: invoice_data.billFrom.name };
+                    const _admin = { id: invoice_data.billFrom.id, name: invoice_data.billFrom.name };
                     handleAdminChange(_admin);
                 }
                 if (invoice_data.billTo) {
-                    let _customer = {
+                    const _customer = {
                         id: invoice_data.billTo.id,
                         name: invoice_data.billTo.name,
                         email: invoice_data.billTo.email,
@@ -352,7 +352,7 @@ const EditDeliveryChallan: React.FC = () => {
                 }
             }
         } catch (error) {
-
+            /* non-fatal: leave prior state in place */
         } finally {
             setIsFetching(false);
         }
@@ -618,7 +618,7 @@ const EditDeliveryChallan: React.FC = () => {
                     params: { search: debouncedSearchTermCustomer, limit: 100, page: 1 },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                let data = response.data.data;
+                const data = response.data.data;
                 if (data.customers.length > 0) {
                     setCustomers(response.data.data.customers);
                 } else {

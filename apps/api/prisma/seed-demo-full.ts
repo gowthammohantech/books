@@ -17,9 +17,10 @@
  *   npm run prisma:seed:demo:full
  */
 
+import { randomBytes } from 'crypto';
+
 import { PrismaClient, Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { randomBytes } from 'crypto';
 
 import { applyPack, type ApplyPackTx } from '../lib/ledger/applyPack';
 import { buildLeaveDays } from '../lib/timeTracking/leaveDays';
@@ -33,8 +34,9 @@ import {
   type PostingTx,
 } from '../lib/ledger/ledgerPosting';
 import { post } from '../lib/ledger/postingEngine';
-import { seedTransactionCategoriesForUser } from './seedTransactionCategories';
 import { DEFAULT_ROLE_BY_USER_TYPE, ensureRole } from '../lib/defaultRoles';
+
+import { seedTransactionCategoriesForUser } from './seedTransactionCategories';
 
 const prisma = new PrismaClient();
 

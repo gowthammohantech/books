@@ -22,6 +22,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+
 import { DEFAULT_ROLE_BY_USER_TYPE, OWNER_ROLE_NAME, ensureRole } from '../lib/defaultRoles';
 
 // Seed runs standalone via `prisma db seed` — use its own client so the

@@ -7,6 +7,7 @@
 // covers granting a credit and voiding an un-redeemed grant.
 import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
+
 import { prisma } from '../lib/prisma';
 import { resolveDefaultCurrencyCode } from '../lib/defaultCurrency';
 import { requireTenantId, requireActingUserId, UnauthorizedError } from '../lib/tenantScope';

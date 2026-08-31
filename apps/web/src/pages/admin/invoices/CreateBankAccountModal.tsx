@@ -91,9 +91,12 @@ const CreateBankAccountModal: React.FC<Props> = ({ isOpen, onClose, onSuccess })
         if (!formData.accountNumber.trim()) newErrors.accountNumber = 'Account number is required.';
         if (!formData.IFSCCode.trim()) newErrors.IFSCCode = `${getBankCodeType(formData.bankCodeType).label} is required.`;
         if (!formData.accountType) newErrors.accountType = 'Account type is required.';
+        // The negative case previously had two branches with the same `< 0`
+        // condition, so the second was unreachable and a negative balance
+        // reported "is required". openingBalance is a number defaulting to 0
+        // and is never absent, so the reachable message is the wrong one; keep
+        // the branch that actually describes the problem.
         if (formData.openingBalance < 0) {
-            newErrors.openingBalance = 'Opening balance is required.';
-        } else if (formData.openingBalance < 0) {
             newErrors.openingBalance = 'Opening balance cannot be negative.';
         } else if (formData.openingBalance > 9999999999) {
             newErrors.openingBalance = 'Opening balance cannot exceed 9,999,999,999.';

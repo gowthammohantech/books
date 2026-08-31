@@ -1,5 +1,6 @@
 // lib/ledger/inventoryCost.ts
 import { Prisma } from '@prisma/client';
+
 import { toDecimal, ZERO, type DecimalInput } from './money';
 
 export interface StockState {

@@ -14,9 +14,9 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { getPack } from '../lib/ledger/packs';
+
+import { getPack , COUNTRY_CODES } from '../lib/ledger/packs';
 import { resolvePackCode } from '../lib/ledger/resolvePackCode';
-import { COUNTRY_CODES } from '../lib/ledger/packs/index';
 import type { LedgerRole } from '../lib/ledger/roles';
 
 const prisma = new PrismaClient();

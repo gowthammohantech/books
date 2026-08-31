@@ -1,5 +1,6 @@
 // lib/ledger/cutover.spec.ts
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
 import { buildOpeningInstructions, type OpeningSummary } from './cutover';
 import { toDecimal, sumDecimals } from './money';
 import type { LineInstruction } from './types';
@@ -50,7 +51,6 @@ describe('buildOpeningInstructions', () => {
 // ---------------------------------------------------------------------------
 // Task 2: computeOpeningSummary + previewCutover + commitCutover
 // ---------------------------------------------------------------------------
-import { vi } from 'vitest';
 import { computeOpeningSummary, previewCutover, commitCutover } from './cutover';
 
 function fakeTx(opts: { initialized?: boolean; existingOpening?: boolean; goLive?: string } = {}) {

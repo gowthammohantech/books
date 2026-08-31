@@ -4,8 +4,8 @@
 // and then verifies the GL control vs subledger comparisons work correctly.
 
 import { describe, it, expect } from 'vitest';
+
 import { getPack } from '../../lib/ledger/packs/index';
-import { buildHarness } from './harness';
 import {
   postPurchaseReceived,
   postSupplierPayment,
@@ -16,6 +16,8 @@ import {
   postCreditNoteRefund,
 } from '../../lib/ledger/ledgerPosting';
 import { trialBalanceFrom, type AccountBalance } from '../../lib/ledger/statements';
+
+import { buildHarness } from './harness';
 
 // ---------------------------------------------------------------------------
 // Pure logic helpers extracted from reconciliationController

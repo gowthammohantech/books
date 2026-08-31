@@ -68,7 +68,7 @@ const BankTransactionList: React.FC = () => {
                 params: filterParams,
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            let data = response.data.data;
+            const data = response.data.data;
             if (data.transactions) {
                 setTransactions(data.transactions);
             }
@@ -87,13 +87,13 @@ const BankTransactionList: React.FC = () => {
                 params: { search: debouncedBankSearchKeyword },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            let data = response.data.data;
+            const data = response.data.data;
             if (data) {
-                let options = data.map((bankAccount: BankAccount) => {
-                    let name = bankAccount.accountHoldername ?? "";
-                    let accountNumber = bankAccount.accountNumber ?? "";
-                    let bankName = bankAccount.bankName ?? "";
-                    let formattedBankName = `[${accountNumber}] ${name} - ${bankName}`;
+                const options = data.map((bankAccount: BankAccount) => {
+                    const name = bankAccount.accountHoldername ?? "";
+                    const accountNumber = bankAccount.accountNumber ?? "";
+                    const bankName = bankAccount.bankName ?? "";
+                    const formattedBankName = `[${accountNumber}] ${name} - ${bankName}`;
                     return {
                         id: bankAccount.id,
                         name: formattedBankName
@@ -153,9 +153,9 @@ const BankTransactionList: React.FC = () => {
                     const data = response.data.data;
                     if (data) {
                         if (selectedTransaction?.relatedType === 'EXPENSE') {
-                            let firstName = data?.createdBy?.firstName ?? "";
-                            let lastName = data?.createdBy?.lastName ?? "";
-                            let fullName = `${firstName} ${lastName}`;
+                            const firstName = data?.createdBy?.firstName ?? "";
+                            const lastName = data?.createdBy?.lastName ?? "";
+                            const fullName = `${firstName} ${lastName}`;
                             const formattedData: TransactionOverview = {
                                 relatedData: {
                                     expenseId: data.expenseId ?? '',
@@ -240,12 +240,12 @@ const BankTransactionList: React.FC = () => {
 
             <Table headers={tableHeaders}>
                 {!isLoading && transactions.length > 0 && transactions.map((transaction, index) => {
-                    let accountHolderName = transaction.bankAccount.accountHoldername ?? '';
-                    let accountNumber = transaction.bankAccount.accountNumber ?? '';
-                    let bankName = transaction.bankAccount.bankName ?? '';
-                    let formattedBankInfo = `[${accountNumber}] ${accountHolderName} - ${bankName}`;
+                    const accountHolderName = transaction.bankAccount.accountHoldername ?? '';
+                    const accountNumber = transaction.bankAccount.accountNumber ?? '';
+                    const bankName = transaction.bankAccount.bankName ?? '';
+                    const formattedBankInfo = `[${accountNumber}] ${accountHolderName} - ${bankName}`;
                     //transaction type replace _ with space 
-                    let transactionType = transaction.type.replace('_', ' ');
+                    const transactionType = transaction.type.replace('_', ' ');
                     return (
                         <TableRow
                             index={index + 1}

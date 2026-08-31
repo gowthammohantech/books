@@ -12,6 +12,7 @@
 // triple leaves the forward entry live and nets the source != 0.
 
 import { describe, it, expect, vi } from 'vitest';
+
 import { getPack } from '../../../lib/ledger/packs/index';
 
 const USER = 'u-void';
@@ -232,8 +233,9 @@ vi.mock('../../../lib/prisma', () => ({
 }));
 
 // Import AFTER the mock is registered.
-import { voidInvoicePayment } from './invoicePaymentController';
 import { post } from '../../../lib/ledger/postingEngine';
+
+import { voidInvoicePayment } from './invoicePaymentController';
 
 function fakeRes() {
   const res = {

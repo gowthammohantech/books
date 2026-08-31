@@ -1,5 +1,6 @@
 // lib/ledger/approvals.spec.ts
 import { describe, it, expect } from 'vitest';
+
 import { initialApprovalStatus, shouldPostOnCreate } from './approvals';
 
 describe('initialApprovalStatus', () => {

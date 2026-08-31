@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { computeRegimeTax, computeLineTaxes } from '../lib/taxEngine';
 
 /**

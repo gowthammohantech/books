@@ -35,8 +35,9 @@
 
 import { Prisma } from '@prisma/client';
 import type { PrismaClient } from '@prisma/client';
+
 import { prisma as defaultPrisma } from '../prisma';
-import { isEuMember } from '../euVat';
+import { isEuMember , parseVatNumber } from '../euVat';
 
 const D0 = () => new Prisma.Decimal(0);
 
@@ -173,7 +174,6 @@ export async function loadTaxFigures(
 // parseVatNumber) and passed in as `customerVatValid` so this classifier stays
 // pure and free of euVat-parsing concerns.
 
-import { parseVatNumber } from '../euVat';
 
 /** The €10,000 EU-wide distance-selling threshold (annual, per calendar year). */
 export const OSS_THRESHOLD_EUR = 10000;

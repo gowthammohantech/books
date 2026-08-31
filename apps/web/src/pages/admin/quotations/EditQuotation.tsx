@@ -191,11 +191,11 @@ const EditQuotation: React.FC = () => {
                 params: { groupSlug: 'quotation' },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            let settings: QuotationPreference = {
+            const settings: QuotationPreference = {
                 quoteSalesPersonRole: ''
             };
 
-            let data = response.data.data;
+            const data = response.data.data;
             if (data) {
                 data.forEach((setting: any) => {
                     const key = setting.key as keyof QuotationPreference;
@@ -233,7 +233,9 @@ const EditQuotation: React.FC = () => {
                     const formattedSalesPersons = data.map((user: any) => ({ id: user.id, name: `${user.firstName ?? ''} ${user.lastName ?? ''}` }));
                     setSalesPersons(formattedSalesPersons);
                 }
-            } catch (error) { }
+            } catch {
+                /* non-fatal: leave prior state in place */
+            }
             finally {
                 setFetchingSalesPersons(false);
             }
@@ -264,7 +266,7 @@ const EditQuotation: React.FC = () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.data) {
-                let data = response.data.data;
+                const data = response.data.data;
                 setDocCreatedAt((data.createdAt as string | undefined) ?? null);
                 setQuotationFormData(prev => ({
                     ...prev,
@@ -290,11 +292,11 @@ const EditQuotation: React.FC = () => {
                 }));
 
                 if (data.billFrom) {
-                    let _admin = { id: data.billFrom.id, name: data.billFrom.name };
+                    const _admin = { id: data.billFrom.id, name: data.billFrom.name };
                     handleAdminChange(_admin);
                 }
                 if (data.billTo) {
-                    let _customer = {
+                    const _customer = {
                         id: data.billTo.id,
                         name: data.billTo.name,
                         email: data.billTo.email,
@@ -545,7 +547,7 @@ const EditQuotation: React.FC = () => {
                     params: { search: debouncedSearchTermCustomer, limit: 100, page: 1 },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                let data = response.data.data;
+                const data = response.data.data;
                 if (data.customers.length > 0) {
                     setCustomers(response.data.data.customers);
                 } else {

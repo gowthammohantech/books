@@ -190,7 +190,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
         if (!validateForm()) return;
         try {
             setIsSaving(true);
-            let payload = new FormData();
+            const payload = new FormData();
             payload.append('firstName', formData.firstName);
             payload.append('lastName', formData.lastName);
             payload.append('email', formData.email);

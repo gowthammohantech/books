@@ -12,6 +12,7 @@
 
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { Router } from 'express';
+
 import { protect } from '../middleware/authMiddleware';
 import { requirePermission } from '../middleware/requirePermission';
 import {

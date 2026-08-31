@@ -16,6 +16,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { Prisma } from '@prisma/client';
+
 import { getAccountCreditBalance, type AccountCreditBalanceDb } from '../lib/contacts/accountCreditBalance';
 
 const TENANT_ID = 'tenant-1';

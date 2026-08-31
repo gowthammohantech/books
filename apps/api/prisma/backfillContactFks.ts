@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
 const prisma = new PrismaClient();
 

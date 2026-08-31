@@ -9,6 +9,7 @@
 // server-wide line-bag contract (lib/lineCustomFields.sanitizeLineCustomFields)
 // used elsewhere, while leaving the rest of the row untouched.
 import { describe, it, expect } from 'vitest';
+
 import { sanitizeScheduleItems } from './recurringScheduleController';
 
 describe('sanitizeScheduleItems', () => {

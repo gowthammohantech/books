@@ -10,6 +10,7 @@
 // This spec exercises voidDocument (previously uncovered) driving the exact
 // void -> post cycle the four edit controllers now perform.
 import { describe, it, expect, vi } from 'vitest';
+
 import { postExpense, voidDocument } from './ledgerPosting';
 import { PeriodLockedError } from './buildLines';
 

@@ -6,10 +6,11 @@
 // Used by the explain path (explainPosting bill_link case) so the AP
 // sub-ledger stays in sync with bank transactions linked to bills.
 
-import { toDecimal } from './money';
-import { postSupplierPayment, type PostingTx } from './ledgerPosting';
 import { nextDocumentNumber, type NumberingModel } from '../documentNumbering';
 import { resolveActorId } from '../actor';
+
+import { toDecimal } from './money';
+import { postSupplierPayment, type PostingTx } from './ledgerPosting';
 
 // ---------------------------------------------------------------------------
 // DB structural type — extends PostingTx with purchase + supplierPayment ops.

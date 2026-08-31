@@ -6,16 +6,18 @@
 // Used by the explain path (explainPosting invoice_link case) so the AR
 // sub-ledger stays in sync with bank transactions linked to invoices.
 
-import type { Prisma } from '@prisma/client';
-import type { InvoiceStatus } from '@prisma/client';
-import { toDecimal } from './money';
-import { postInvoicePayment, type PostingTx } from './ledgerPosting';
+import type { Prisma , InvoiceStatus } from '@prisma/client';
+
 import {
   getInvoiceSettlement,
   deriveInvoiceStatus,
   OUTSTANDING_TOLERANCE,
 } from '../invoiceOutstanding';
 import { resolveActorId } from '../actor';
+
+import { toDecimal } from './money';
+import { postInvoicePayment, type PostingTx } from './ledgerPosting';
+
 
 // ---------------------------------------------------------------------------
 // DB structural type — extends PostingTx with invoice + invoicePayment ops.

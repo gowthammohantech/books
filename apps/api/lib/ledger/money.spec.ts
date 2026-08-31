@@ -1,6 +1,7 @@
 // lib/ledger/money.spec.ts
 import { describe, it, expect } from 'vitest';
 import { Prisma } from '@prisma/client';
+
 import { toDecimal, sumDecimals, decEq, toBaseAmount, ZERO } from './money';
 
 describe('money helpers', () => {

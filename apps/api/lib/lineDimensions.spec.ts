@@ -1,5 +1,6 @@
 // lib/lineDimensions.spec.ts
 import { describe, it, expect, vi } from 'vitest';
+
 import {
   LINE_CENTRE_NONE,
   resolveLineCostCenterId,

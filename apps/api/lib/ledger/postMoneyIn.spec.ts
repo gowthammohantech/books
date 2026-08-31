@@ -1,5 +1,6 @@
 // lib/ledger/postMoneyIn.spec.ts
 import { describe, it, expect, vi } from 'vitest';
+
 import { postMoneyIn } from './postMoneyIn';
 
 /** Minimal fake PostingTx that satisfies gating + engine + role-resolver. */

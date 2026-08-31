@@ -240,11 +240,11 @@ const CreateNewQuotation: React.FC = () => {
                 params: { groupSlug: 'quotation' },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            let settings: QuotationPreference = {
+            const settings: QuotationPreference = {
                 quoteSalesPersonRole: ''
             };
 
-            let data = response.data.data;
+            const data = response.data.data;
             if (data) {
                 data.forEach((setting: any) => {
                     const key = setting.key as keyof QuotationPreference;
@@ -282,7 +282,9 @@ const CreateNewQuotation: React.FC = () => {
                     const formattedSalesPersons = data.map((user: any) => ({ id: user.id, name: `${user.firstName ?? ''} ${user.lastName ?? ''}` }));
                     setSalesPersons(formattedSalesPersons);
                 }
-            } catch (error) { }
+            } catch {
+                /* non-fatal: leave prior state in place */
+            }
             finally {
                 setFetchingSalesPersons(false);
             }

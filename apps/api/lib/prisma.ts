@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+
 import { auditExtension } from './auditExtension';
 
 // Hot-reload safety: in nodemon / ts-node-dev the module is re-required on

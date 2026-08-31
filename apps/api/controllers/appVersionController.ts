@@ -5,6 +5,7 @@
 import type { Request, Response } from 'express';
 
 import { prismaUnscoped } from '../lib/prisma';
+
 import { signupsEnabled } from './authController';
 
 const APP_VERSION = process.env.APP_VERSION || '1.0.4';

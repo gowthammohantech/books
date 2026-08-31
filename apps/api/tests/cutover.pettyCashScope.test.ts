@@ -8,6 +8,7 @@
  * opening-balance cash figure to the tenant's own petty cash row.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { computeOpeningSummary, type CutoverTx } from '../lib/ledger/cutover';
 
 const TENANT_ID = 'tenant-alpha';

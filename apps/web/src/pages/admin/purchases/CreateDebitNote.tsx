@@ -258,7 +258,7 @@ const CreateDebitNote: React.FC = () => {
                 }
 
                 if (data.billFrom) {
-                    let _admin = { id: data.billFrom.id, name: data.billFrom.name };
+                    const _admin = { id: data.billFrom.id, name: data.billFrom.name };
                     handleAdminChange(_admin);
                 }
 

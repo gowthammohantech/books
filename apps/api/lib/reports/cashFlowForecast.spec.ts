@@ -1,6 +1,7 @@
 // lib/reports/cashFlowForecast.spec.ts
 import { describe, it, expect } from 'vitest';
 import { Prisma } from '@prisma/client';
+
 import { forecastCashFlow, type ForecastBucket } from './cashFlowForecast';
 
 // Helper: build a Date in a given year/month (1-based) on day 15

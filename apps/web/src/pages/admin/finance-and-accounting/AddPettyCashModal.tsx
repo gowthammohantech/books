@@ -49,9 +49,9 @@ const PettyCashModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
-                let data = response.data.data;
+                const data = response.data.data;
                 if (data) {
-                    let options = data.map((paymentMode: PaymentMode) => {
+                    const options = data.map((paymentMode: PaymentMode) => {
                         return {
                             id: paymentMode.id,
                             name: paymentMode.name,
@@ -77,10 +77,10 @@ const PettyCashModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
                 });
                 if (response.data.data.length > 0) {
                     const formattedBankAccounts = response.data.data.map((item: any) => {
-                        let accountNumber = item.accountNumber ?? "";
-                        let name = item.accountHoldername ?? "";
-                        let bankName = item.bankName ?? "";
-                        let formattedBankName = `[${accountNumber}] ${name} - ${bankName}`;
+                        const accountNumber = item.accountNumber ?? "";
+                        const name = item.accountHoldername ?? "";
+                        const bankName = item.bankName ?? "";
+                        const formattedBankName = `[${accountNumber}] ${name} - ${bankName}`;
                         return {
                             id: item.id,
                             name: formattedBankName
@@ -100,7 +100,7 @@ const PettyCashModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
     }, [debouncedSearchTermBankAccount]);
 
     const handlePaymentModeSelect = (item: PaymentMode) => {
-        let paymentModeId = item ? item.id : '';
+        const paymentModeId = item ? item.id : '';
         setFormData((prev) => ({
             ...prev,
             paymentModeId: paymentModeId
@@ -113,7 +113,7 @@ const PettyCashModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
     }
 
     const handleBankAccountSelect = (item: OptionType) => {
-        let bankAccountId = item ? item.id : '';
+        const bankAccountId = item ? item.id : '';
         setFormData((prev) => ({
             ...prev,
             bankAccountId: bankAccountId
@@ -141,7 +141,7 @@ const PettyCashModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
             newErrors.bankAccountId = 'Bank account is required.';
         }
         if (formData.bankAccountId && (formData.amount > 0)) {
-            let selectedBank = bankAccounts.find((item: BankAccount) => item.id == formData.bankAccountId);
+            const selectedBank = bankAccounts.find((item: BankAccount) => item.id == formData.bankAccountId);
             if (selectedBank) {
                 if (selectedBank.currentBalance < formData.amount) {
                     newErrors.bankAccountId = 'Insufficient balance in selected bank account.';

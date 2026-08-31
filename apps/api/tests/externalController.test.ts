@@ -7,8 +7,9 @@
  * we pre-populate Node's require.cache with lightweight stubs BEFORE
  * requiring the controller so its require() calls hit the stubs.
  */
-import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import path from 'path';
+
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Stub factories — recreated before each test via beforeEach

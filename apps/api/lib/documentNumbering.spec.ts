@@ -12,6 +12,7 @@
 // rows starts at 000001 even though another tenant already holds that number
 // — the behaviour the fallback used to prevent.
 import { describe, it, expect, vi } from 'vitest';
+
 import {
   nextDocumentNumber,
   isNumberFieldConflict,

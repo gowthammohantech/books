@@ -1,5 +1,6 @@
-import { COUNTRY_CODES } from './packs';
 import { isEuMember } from '../euVat';
+
+import { COUNTRY_CODES } from './packs';
 
 /** Map an ISO-2 country code to a supported ledger pack code.
  *  UK is not a valid ISO-2 (GB is) but is guarded for safety.

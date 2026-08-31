@@ -1,5 +1,6 @@
 // lib/ledger/postingRules.spec.ts
 import { describe, it, expect } from 'vitest';
+
 import { POSTING_RULES, type CashRole, type CashSettlementRole, type AssetRole } from './postingRules';
 import { toDecimal, sumDecimals } from './money';
 import type { LineInstruction } from './types';

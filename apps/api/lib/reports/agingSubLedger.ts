@@ -24,7 +24,9 @@
 // and collapses into one "Unapplied / opening" row so the total still ties out.
 
 import type { PrismaClient } from '@prisma/client';
+
 import { resolveDisplayName } from '../contacts/contactIdentity';
+
 import type { SubLedgerDoc, SubLedgerLine } from './aging';
 
 /** The Prisma client slice the loaders use. Typed as the concrete client so the

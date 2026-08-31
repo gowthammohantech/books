@@ -50,8 +50,8 @@ const Preferences: React.FC = () => {
                 params: { groupSlug: 'quotation' },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            let data = response.data.data;
-            let settings: { [key: string]: string } = {};
+            const data = response.data.data;
+            const settings: { [key: string]: string } = {};
             if (data) {
                 data.forEach((setting: any) => {
                     settings[setting.key] = setting.value;
@@ -70,7 +70,7 @@ const Preferences: React.FC = () => {
                 params: { search: debouncedRoleSearch },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            let data = response.data.data;
+            const data = response.data.data;
             if (data) {
                 const options = data.map((role: any) => ({
                     id: role.id,

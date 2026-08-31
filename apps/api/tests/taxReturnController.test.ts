@@ -11,7 +11,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Prisma } from '@prisma/client';
-import type { TaxFigures } from '../lib/reports/taxReturns';
+
+import type { TaxFigures , OssInvoice } from '../lib/reports/taxReturns';
 
 // ---------------------------------------------------------------------------
 // Hoisted mock for loadTaxFigures.
@@ -62,7 +63,6 @@ import {
   buildOssReturn,
   type EcSalesInvoice,
 } from '../controllers/taxReturnController';
-import type { OssInvoice } from '../lib/reports/taxReturns';
 
 const D = (v: number | string) => new Prisma.Decimal(v);
 

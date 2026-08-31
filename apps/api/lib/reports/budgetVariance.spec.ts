@@ -1,6 +1,7 @@
 // lib/reports/budgetVariance.spec.ts
 import { describe, it, expect } from 'vitest';
 import { Prisma } from '@prisma/client';
+
 import { computeVariance, type VarianceRow } from './budgetVariance';
 
 describe('computeVariance', () => {

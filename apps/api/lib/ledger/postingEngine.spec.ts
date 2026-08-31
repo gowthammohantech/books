@@ -1,5 +1,6 @@
 // lib/ledger/postingEngine.spec.ts
 import { describe, it, expect, vi } from 'vitest';
+
 import { post, reverse } from './postingEngine';
 import { LedgerError, PeriodLockedError } from './buildLines';
 import type { PostingInput } from './types';

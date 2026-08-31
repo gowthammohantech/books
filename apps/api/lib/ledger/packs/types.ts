@@ -1,4 +1,5 @@
 import type { AccountType } from '@prisma/client';
+
 import type { LedgerRole } from '../roles';
 
 export type TaxRegime =

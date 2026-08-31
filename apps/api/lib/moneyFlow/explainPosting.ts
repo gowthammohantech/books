@@ -7,8 +7,8 @@
 // failed dispatch never leaves a partial post.
 
 import type { Prisma } from '@prisma/client';
+
 import { prisma } from '../prisma';
-import { getTransactionType, USER_PAYMENT_REASONS, type FieldKey } from './types';
 import { post, type LedgerTx } from '../ledger/postingEngine';
 import {
   postExpense,
@@ -24,6 +24,8 @@ import { shouldPost } from '../ledger/postingGate';
 import { computeLineTaxes } from '../taxEngine';
 import { toDecimal } from '../ledger/money';
 import type { LineInstruction } from '../ledger/types';
+
+import { getTransactionType, USER_PAYMENT_REASONS, type FieldKey } from './types';
 
 // ---------------------------------------------------------------------------
 // Errors — carry an HTTP-ish status the controller can map.

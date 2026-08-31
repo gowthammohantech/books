@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { buildStandardPack } from './buildStandardPack';
+
 import { LEDGER_ROLES } from '../roles';
+
+import { buildStandardPack } from './buildStandardPack';
 
 describe('buildStandardPack', () => {
   const pack = buildStandardPack({

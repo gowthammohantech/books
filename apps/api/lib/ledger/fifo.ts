@@ -1,6 +1,7 @@
 // lib/ledger/fifo.ts
 // Pure FIFO cost-layer consumption engine — no DB access.
 import { Prisma } from '@prisma/client';
+
 import { toDecimal, ZERO, type DecimalInput } from './money';
 
 /** A single open inventory cost layer (oldest-first basis). */

@@ -1,6 +1,7 @@
 // lib/ledger/fifo.spec.ts
 import { describe, it, expect } from 'vitest';
 import { Prisma } from '@prisma/client';
+
 import { consumeFifo, type Layer } from './fifo';
 
 const D = (v: string) => new Prisma.Decimal(v);

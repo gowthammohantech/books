@@ -1100,7 +1100,7 @@ export async function deleteSupplierPayment(
 }
 
 // Avoid unused-import lint when only the namespace import is used by tests.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 const _scopeRef = tenantScope;
 
 // CommonJS interop for legacy JS routes

@@ -254,7 +254,7 @@ export function warnOnTotalsDivergence(
     return;
   }
   if (Math.abs(clientGrandTotal - serverGrandTotal) > 0.05) {
-    // eslint-disable-next-line no-console
+     
     console.warn(
       `[documentTotals] ${docType} ${docId}: client grandTotal ${clientGrandTotal} diverges from ` +
         `server ${serverGrandTotal}; persisting server value.`,

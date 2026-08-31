@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { normalizeEmail, normalizeOrg, planMerges } from './migrateContacts';
 
 describe('normalizeEmail', () => {

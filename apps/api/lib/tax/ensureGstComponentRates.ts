@@ -31,7 +31,7 @@ export async function ensureGstComponentRates(
 ): Promise<ProvisionedComponent[]> {
   const out: ProvisionedComponent[] = [];
   for (const spec of specs) {
-    // eslint-disable-next-line no-await-in-loop
+     
     const existing = await db.taxRate.findFirst({
       where: { tenantId, regime: 'GST_INDIA', taxKind: spec.kind, rate: spec.percent, isDeleted: false },
       select: { id: true },
@@ -40,7 +40,7 @@ export async function ensureGstComponentRates(
       out.push({ ...spec, taxRateId: existing.id });
       continue;
     }
-    // eslint-disable-next-line no-await-in-loop
+     
     const created = await db.taxRate.create({
       data: {
         tenantId,

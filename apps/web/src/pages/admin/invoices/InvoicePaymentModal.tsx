@@ -81,10 +81,10 @@ const InvoicePaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, inv
                 });
                 if (response.data.data.length > 0) {
                     const formattedBankAccounts = response.data.data.map((item: any) => {
-                        let accountNumber = item.accountNumber ?? "";
-                        let name = item.accountHoldername ?? "";
-                        let bankName = item.bankName ?? "";
-                        let formattedBankName = `[${accountNumber}] ${name} - ${bankName}`;
+                        const accountNumber = item.accountNumber ?? "";
+                        const name = item.accountHoldername ?? "";
+                        const bankName = item.bankName ?? "";
+                        const formattedBankName = `[${accountNumber}] ${name} - ${bankName}`;
                         return {
                             id: item.id,
                             name: formattedBankName

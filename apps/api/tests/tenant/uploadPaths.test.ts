@@ -13,10 +13,11 @@
  * file route, which can then refuse a path whose tenant segment is not the
  * caller's in a single comparison.
  */
-import { describe, it, expect, afterAll } from 'vitest';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+
+import { describe, it, expect, afterAll } from 'vitest';
 
 import { runAsSystem, runAsTenant } from '../../lib/tenantContext';
 import { TENANT_SEGMENT, UPLOAD_ROOT, destinationFor, uploadDirFor } from '../../lib/uploadPaths';

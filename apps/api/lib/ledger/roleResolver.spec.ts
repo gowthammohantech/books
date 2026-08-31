@@ -1,5 +1,6 @@
 // lib/ledger/roleResolver.spec.ts
 import { describe, it, expect } from 'vitest';
+
 import { makeResolver } from './roleResolver';
 import { LedgerError } from './buildLines';
 

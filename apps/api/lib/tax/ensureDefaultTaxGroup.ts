@@ -21,6 +21,7 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
+
 import { prisma } from '../prisma';
 
 type DefaultTaxDb = Pick<PrismaClient, 'taxGroup' | 'taxRate'>;

@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+
 import { buildLeaveDays, portionToDays } from '../../lib/timeTracking/leaveDays';
 
 describe('portionToDays', () => {

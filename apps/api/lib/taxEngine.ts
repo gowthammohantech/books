@@ -1,4 +1,5 @@
 import type { TaxRate, TaxRegime, TaxKind } from '@prisma/client';
+
 import { euStandardRate, isEuMember, isReverseCharge } from './euVat';
 
 export interface TaxLine {

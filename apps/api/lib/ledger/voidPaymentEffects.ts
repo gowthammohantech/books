@@ -23,6 +23,7 @@
 // audited voidInvoicePayment / voidSupplierPayment reference behaviour.
 
 import { Prisma } from '@prisma/client';
+
 import { reverseDocument, type PostingTx } from './ledgerPosting';
 import { toBaseAmount } from './money';
 

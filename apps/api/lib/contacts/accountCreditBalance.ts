@@ -1,5 +1,6 @@
 // lib/contacts/accountCreditBalance.ts
 import { Prisma } from '@prisma/client';
+
 import { toDecimal, ZERO } from '../ledger/money';
 
 /** Minimal structural slice of Prisma (or a `$transaction` tx) this helper needs —

@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { ensureGstComponentRates } from './ensureGstComponentRates';
+
 import { splitGstRate } from '../taxEngine';
+
+import { ensureGstComponentRates } from './ensureGstComponentRates';
 
 function fakeDb() {
   const rows: Array<Record<string, unknown>> = [];

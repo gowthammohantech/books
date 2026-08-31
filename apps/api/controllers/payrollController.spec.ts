@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { validateProfileInput, computeLineTotals } from './payrollController';
 
 describe('validateProfileInput', () => {

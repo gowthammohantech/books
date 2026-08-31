@@ -16,6 +16,7 @@ import {
   applyFifoReceipt,
   applyFifoIssue,
 } from '../ledger/inventoryValuation';
+
 import { applyStockAdjustment } from './stockAdjust';
 
 // ---------------------------------------------------------------------------

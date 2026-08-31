@@ -12,6 +12,7 @@
 //      - Rate missing → return an error string; caller must reject with 422.
 //
 import { Prisma } from '@prisma/client';
+
 import { loadRate, type RateTx } from './exchangeRates';
 
 /** Minimal DB slice we need beyond RateTx. */

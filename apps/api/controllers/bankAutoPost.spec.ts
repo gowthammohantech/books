@@ -11,6 +11,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
+
 import { PeriodLockedError } from '../lib/ledger/buildLines';
 
 const companySettingsFindFirst = vi.fn(async (_a?: unknown) => ({ bankAutoPostEnabled: true }));

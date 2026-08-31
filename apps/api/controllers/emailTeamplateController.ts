@@ -1,5 +1,6 @@
-import type { Request, Response } from 'express';
 import { randomBytes } from 'crypto';
+
+import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import type { EmailTemplateStatus, NotificationTypeStatus } from '@prisma/client';
 

@@ -12,6 +12,7 @@
 
 import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
+
 import { prisma } from '../lib/prisma';
 import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';

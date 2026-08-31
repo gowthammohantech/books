@@ -1,6 +1,7 @@
 // lib/ledger/inventoryCost.spec.ts
 import { describe, it, expect } from 'vitest';
 import { Prisma } from '@prisma/client';
+
 import { applyReceipt, applyIssue, type StockState } from './inventoryCost';
 import { toDecimal } from './money';
 

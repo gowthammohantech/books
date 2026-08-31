@@ -43,7 +43,7 @@ function numToWordsBelow100(n: number): string {
 export const numberToWords = (num: number): string => {
     if (num === 0) return "zero";
 
-    let words: string[] = [];
+    const words: string[] = [];
 
     const crore = Math.floor(num / 10000000);
     num %= 10000000;

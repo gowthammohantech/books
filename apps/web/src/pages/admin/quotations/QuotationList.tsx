@@ -112,7 +112,7 @@ const QuotationList: React.FC = () => {
                 params: { search, limit, page },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            let data = response.data.data;
+            const data = response.data.data;
             if (data.quotations.length > 0) {
                 setQuotations(data.quotations);
             } else {

@@ -1,6 +1,7 @@
 // lib/reports/pnlByDimension.spec.ts
 import { describe, it, expect } from 'vitest';
 import { Prisma } from '@prisma/client';
+
 import {
   pivotPnlByDimension,
   rollUpToParents,

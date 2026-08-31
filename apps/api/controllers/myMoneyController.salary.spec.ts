@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { buildSalaryOwed } from '../lib/payroll/salaryOwed';
 
 describe('My Money salary block contract', () => {

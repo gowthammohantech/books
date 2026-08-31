@@ -72,30 +72,13 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
-          paths: [
+          // Matched as globs against the import specifier, so this holds at any
+          // directory depth. It previously enumerated four relative prefixes
+          // ('./tenantScope' through '../../../lib/tenantScope'), which a file
+          // one level deeper would have slipped past silently.
+          patterns: [
             {
-              name: './tenantScope',
-              importNames: ['requireUserId'],
-              message:
-                'Deprecated: use requireTenantId for data scoping, or ' +
-                'requireActingUserId when you actually want the person.',
-            },
-            {
-              name: '../lib/tenantScope',
-              importNames: ['requireUserId'],
-              message:
-                'Deprecated: use requireTenantId for data scoping, or ' +
-                'requireActingUserId when you actually want the person.',
-            },
-            {
-              name: '../../lib/tenantScope',
-              importNames: ['requireUserId'],
-              message:
-                'Deprecated: use requireTenantId for data scoping, or ' +
-                'requireActingUserId when you actually want the person.',
-            },
-            {
-              name: '../../../lib/tenantScope',
+              group: ['**/tenantScope', './tenantScope', '**/lib/tenantScope'],
               importNames: ['requireUserId'],
               message:
                 'Deprecated: use requireTenantId for data scoping, or ' +

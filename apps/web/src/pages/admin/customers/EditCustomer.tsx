@@ -62,7 +62,7 @@ const EditCustomer: React.FC = () => {
             });
             
             if(response.data.data) {
-                let data = response.data.data;
+                const data = response.data.data;
                 const formattedData = {
                     id : data.id,
                     name : data.name,

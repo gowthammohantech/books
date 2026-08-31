@@ -316,7 +316,7 @@ const CreateInvoice: React.FC = () => {
                 // the number actually issued on save.
                 params: costCenterId ? { costCenterId } : undefined,
             });
-            let data = response.data.data;
+            const data = response.data.data;
             if (data) {
                 if (data.invoiceNumberType === 'auto') {
                     setTenantValue('defaultNextInvNo', data.nextInvoiceNumber);
@@ -1076,7 +1076,7 @@ const CreateInvoice: React.FC = () => {
     const handleNewProductClick = () => setIsProductModalOpen(true);
 
     const setNewInvoiceNumber = () => {
-        let newInvoiceNumber = getTenantValue('nextInvoiceNo');
+        const newInvoiceNumber = getTenantValue('nextInvoiceNo');
         if (newInvoiceNumber) {
             setInvoiceFormData(prev => ({ ...prev, invoiceNumber: newInvoiceNumber }));
         }

@@ -1,5 +1,4 @@
 import type { Request, Response } from 'express';
-import { tenantOwnerInclude, tenantOwner } from '../../../lib/tenantOwner';
 import { Prisma } from '@prisma/client';
 import type {
   Purchase,
@@ -8,6 +7,8 @@ import type {
   PurchaseOrderStatus,
 } from '@prisma/client';
 import { validationResult } from 'express-validator';
+
+import { tenantOwnerInclude, tenantOwner } from '../../../lib/tenantOwner';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 import { applyDocumentTreatment } from '../../../lib/tax/applyTreatment';
 import {
@@ -2879,7 +2880,7 @@ export async function getSupplierPayments(req: Request, res: Response): Promise<
 // -----------------------------------------------------------------------------
 // Type hint: keep `Purchase` referenced so type-only imports don't get pruned
 // -----------------------------------------------------------------------------
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 type _PurchaseExport = Purchase;
 
 // =============================================================================

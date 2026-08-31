@@ -1,5 +1,4 @@
 import type { Request, Response } from 'express';
-import { tenantOwnerInclude, tenantOwner } from '../lib/tenantOwner';
 import { Prisma } from '@prisma/client';
 import type {
   BankAccountType,
@@ -7,6 +6,7 @@ import type {
   BankTransactionRelatedType,
 } from '@prisma/client';
 
+import { tenantOwnerInclude, tenantOwner } from '../lib/tenantOwner';
 import { prisma } from '../lib/prisma';
 import { resolveDefaultCurrencyCode } from '../lib/defaultCurrency';
 import {

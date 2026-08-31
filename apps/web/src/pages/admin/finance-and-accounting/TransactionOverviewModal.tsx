@@ -20,10 +20,15 @@ const TransactionOverviewModal: React.FC<Props> = ({
     transaction,
     overviewData,
 }) => {
-    if (!overviewData) return null;
+    // Hooks must run unconditionally: this component is rendered with
+    // overviewData null and non-null across the modal's lifecycle, so returning
+    // before the hooks changed the hook order between renders.
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const { formatDate } = useDateFormatter();
     const { format } = useCurrencyFormatter();
+
+    if (!overviewData) return null;
+
     const { relatedData } = overviewData;
 
     const SectionCard: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({

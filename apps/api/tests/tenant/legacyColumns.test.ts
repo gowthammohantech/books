@@ -15,9 +15,10 @@
  * `as unknown as` cast would not be caught by anything else. Several of the
  * sites P9 fixed were hidden behind exactly such a cast.
  */
-import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
+
+import { describe, it, expect } from 'vitest';
 
 const ROOT = path.resolve(__dirname, '../..');
 

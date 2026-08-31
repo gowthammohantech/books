@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+
 import { resolveEntryRate } from '../../lib/timeTracking/rate';
 
 describe('resolveEntryRate', () => {

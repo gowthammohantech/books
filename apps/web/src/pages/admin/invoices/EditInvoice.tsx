@@ -634,11 +634,11 @@ const EditInvoice: React.FC = () => {
                 }));
 
                 if (invoiceData.billFrom) {
-                    let _admin = { id: invoiceData.billFrom.id, name: invoiceData.billFrom.name };
+                    const _admin = { id: invoiceData.billFrom.id, name: invoiceData.billFrom.name };
                     handleAdminChange(_admin);
                 }
                 if (invoiceData.billTo) {
-                    let _customer = {
+                    const _customer = {
                         id: invoiceData.billTo.id,
                         name: invoiceData.billTo.name,
                         email: invoiceData.billTo.email,

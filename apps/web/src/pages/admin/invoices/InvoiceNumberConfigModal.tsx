@@ -29,9 +29,9 @@ const InvoiceNumberConfigModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
     const [showTooltip, setShowTooltip] = useState(false);
     const dispatch: AppDispatch = useDispatch();
     //split next invoice number from session storage for initial value not prefix
-    let nextInvoiceNo = getTenantValue('defaultNextInvNo') || 'INV-000001';
-    let prefix = systemSettings?.invoicePrefix || 'INV-';
-    let number = nextInvoiceNo.replace(prefix, '');
+    const nextInvoiceNo = getTenantValue('defaultNextInvNo') || 'INV-000001';
+    const prefix = systemSettings?.invoicePrefix || 'INV-';
+    const number = nextInvoiceNo.replace(prefix, '');
     const prepareInitialFormData = (): FormData => ({
         invoiceNumberType: systemSettings?.invoiceNumberType ?? 'auto',
         prefix: prefix,
@@ -80,7 +80,7 @@ const InvoiceNumberConfigModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
             alert('Please enter an invoice number for manual mode');
             return;
         }
-        let payloadData = {
+        const payloadData = {
             settings: [
                 {
                     key: 'invoicePrefix',
@@ -107,7 +107,7 @@ const InvoiceNumberConfigModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
             if (formData.invoiceNumberType === 'manual') {
                 setTenantValue('nextInvoiceNo', manualNumber);
             } else {
-                let formattedNewNumber = formData.prefix + formData.nextNumber;
+                const formattedNewNumber = formData.prefix + formData.nextNumber;
                 setTenantValue('nextInvoiceNo', formattedNewNumber);
             }
             if (token) dispatch(fetchSystemSettings(token));

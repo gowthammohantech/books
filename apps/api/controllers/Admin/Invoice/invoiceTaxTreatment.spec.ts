@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { applyDocumentTreatment } from '../../../lib/tax/applyTreatment';
 
 // Contract the controllers rely on: STANDARD parity + full suppression.

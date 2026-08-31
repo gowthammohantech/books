@@ -11,6 +11,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+
 import { prisma as sharedPrisma } from './prisma';
 
 /** The canonical Owner role name — separate from user_type map (Owner is role-only, not user_type-keyed). */

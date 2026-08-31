@@ -117,7 +117,7 @@ const SetupOrganizationInfo: React.FC = () => {
                         'Authorization': `Bearer ${token}`
                     }
                 })
-                let formattedCountries = response.data.map((country: any) => {
+                const formattedCountries = response.data.map((country: any) => {
                     return {
                         id: country.id,
                         name: country.name
@@ -125,7 +125,7 @@ const SetupOrganizationInfo: React.FC = () => {
                 });
                 setCountryOptions(formattedCountries);
             } catch (error) {
-
+                /* non-fatal: leave prior state in place */
             }
         }
         fetchCountries();
@@ -212,7 +212,7 @@ const SetupOrganizationInfo: React.FC = () => {
         console.log(formData);
         try {
             setIsSaving(true);
-            let payloadFormData = new FormData();
+            const payloadFormData = new FormData();
             if (formData.siteLogo instanceof File) {
                 payloadFormData.append('siteLogo', formData.siteLogo);
             }

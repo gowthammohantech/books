@@ -106,7 +106,7 @@ const DeliveryChallanList: React.FC = () => {
                 params: { search, limit, page },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            let data = response.data.data;
+            const data = response.data.data;
             if (data.deliveryChallans.length > 0) {
                 setDeliveryChallans(data.deliveryChallans);
             } else {

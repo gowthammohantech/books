@@ -1,6 +1,7 @@
 // lib/ledger/depreciation.spec.ts
 import { describe, it, expect } from 'vitest';
 import { Prisma } from '@prisma/client';
+
 import { monthlyDepreciation, depreciationDue } from './depreciation';
 
 // Helper: build a minimal FixedAsset-like object

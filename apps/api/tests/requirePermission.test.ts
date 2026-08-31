@@ -1,5 +1,6 @@
 // tests/requirePermission.test.ts
 import { describe, it, expect, vi } from 'vitest';
+
 import { requirePermission } from '../middleware/requirePermission';
 
 function mkRes() {

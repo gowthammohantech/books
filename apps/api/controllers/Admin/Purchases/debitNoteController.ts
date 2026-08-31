@@ -31,7 +31,6 @@ import {
 } from '../../../lib/lineDimensions';
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
-
 import { handleLedgerError } from '../../../lib/httpErrors';
 import {
   postDebitNoteIssued,

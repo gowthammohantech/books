@@ -227,7 +227,7 @@ const NewDeliveryChallan: React.FC = () => {
                     grandTotal: invoice_data.TotalAmount
                 }));
                 if (invoice_data.billFrom) {
-                    let _admin = { id: invoice_data.billFrom.id, name: invoice_data.billFrom.name };
+                    const _admin = { id: invoice_data.billFrom.id, name: invoice_data.billFrom.name };
                     handleAdminChange(_admin);
                 }
                 if (invoice_data.billTo) {
@@ -235,7 +235,7 @@ const NewDeliveryChallan: React.FC = () => {
                 }
             }
         } catch (error) {
-
+            /* non-fatal: leave prior state in place */
         } finally {
             setIsFetching(false);
         }

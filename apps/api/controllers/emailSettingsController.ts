@@ -184,6 +184,7 @@ export async function createOrUpdateEmailSettings(req: Request, res: Response): 
 
     // Invalidate the mailer's provider cache so the next email uses the new config.
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- utils/mailer is still JS; becomes a real import in Phase 3.
       const mailer = require('../utils/mailer') as { clearMailerCache?: () => void };
       mailer.clearMailerCache?.();
     } catch {
@@ -281,6 +282,7 @@ export async function sendTestEmail(req: Request, res: Response): Promise<void> 
     }
 
     // mailer reads the active EmailSettings row (cache was cleared on save).
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- utils/mailer is still JS; becomes a real import in Phase 3.
     const mailer = require('../utils/mailer') as {
       sendMail: (opts: Record<string, unknown>) => Promise<unknown>;
     };

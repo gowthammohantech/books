@@ -13,6 +13,7 @@ vi.mock('../lib/prisma', () => ({
 }));
 
 import jwt from 'jsonwebtoken';
+
 import { prisma } from '../lib/prisma';
 import { protect } from '../middleware/authMiddleware';
 

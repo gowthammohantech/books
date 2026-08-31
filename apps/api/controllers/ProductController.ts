@@ -35,7 +35,7 @@ async function generateUniqueProductCode(
 ): Promise<string> {
   for (let i = 0; i < 5; i += 1) {
     const candidate = `PROD-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
-    // eslint-disable-next-line no-await-in-loop
+     
     const clash = await tx.product.findFirst({
       where: { tenantId, code: candidate },
       select: { id: true },

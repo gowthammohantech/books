@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { computeDiff, redactChanges, REDACTED } from '../../lib/auditDiff';
 
 describe('computeDiff', () => {

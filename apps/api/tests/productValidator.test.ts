@@ -22,7 +22,7 @@ async function runValidator(body: Record<string, unknown>) {
   for (const chain of createProductValidator) {
     // commonErrorHandler is a plain RequestHandler with no .run — skip it.
     if (typeof (chain as { run?: unknown }).run === 'function') {
-      // eslint-disable-next-line no-await-in-loop
+       
       await (chain as { run: (r: never) => Promise<unknown> }).run(req);
     }
   }

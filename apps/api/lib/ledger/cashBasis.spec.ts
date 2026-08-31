@@ -1,5 +1,6 @@
 // lib/ledger/cashBasis.spec.ts
 import { describe, it, expect } from 'vitest';
+
 import { allocateByTaxRatio, cashBasisProfitLoss, type CashMovement } from './cashBasis';
 
 describe('allocateByTaxRatio', () => {

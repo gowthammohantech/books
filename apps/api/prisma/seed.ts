@@ -30,12 +30,14 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+
+import { runAsSystem } from '../lib/tenantContext';
+
 import { seedModules } from './seedModules';
 import { seedFieldTypes } from './seedFieldTypes';
 import { seedNotifications } from './seedNotifications';
 import { seedAllTenantDefaults } from './seedTenant';
 import { seedRoles } from './seedRoles';
-import { runAsSystem } from '../lib/tenantContext';
 import { backfillTenantMemberships } from './backfillTenantMemberships';
 import { seedTransactionCategories } from './seedTransactionCategories';
 import { encryptLegacyEmailSecrets } from './encryptLegacyEmailSecrets';

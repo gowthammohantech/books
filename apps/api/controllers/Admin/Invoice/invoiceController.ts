@@ -1,8 +1,10 @@
 import { randomBytes } from 'crypto';
+
 import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import type { Invoice, InvoiceStatus } from '@prisma/client';
 import { validationResult } from 'express-validator';
+
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 // NOTE: lib/contacts/accountCreditBalance.ts is being added by a parallel task
 // (AccountCreditEntry model + ACCOUNT_CREDIT/CUSTOMER_CREDIT_EXPENSE ledger

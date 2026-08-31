@@ -20,6 +20,7 @@
 // proposal columns (Task 3) and the approve endpoint (Task 4) live elsewhere.
 
 import { matchBankTransaction, type MatchCandidate } from '../reconciliationMatcher';
+
 import { lookupHint, normalisePayeeKey } from './explanationHints';
 
 // ---------------------------------------------------------------------------

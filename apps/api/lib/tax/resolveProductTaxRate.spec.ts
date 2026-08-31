@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { resolveProductTaxRate } from './resolveProductTaxRate';
 
 const rate = (id: string, name: string, pct: number | string, extras: Record<string, unknown> = {}) =>

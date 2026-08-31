@@ -28,10 +28,12 @@ vi.mock('../lib/prisma', () => ({
 }));
 vi.mock('fs', () => ({ existsSync: mockExistsSync, default: { existsSync: mockExistsSync } }));
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
+import { sendPurchaseEmail } from '../controllers/Admin/Purchases/purchaseController';
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- utils/mailer is still JS; becomes a real import in Phase 3.
 const mailerModule = require('../utils/mailer');
 
-import { sendPurchaseEmail } from '../controllers/Admin/Purchases/purchaseController';
 
 function makeReqRes(body: Record<string, unknown>) {
   const req = { tenantId: TENANT_ID, user: TENANT_ID, params: {}, query: {}, body } as unknown as Request;

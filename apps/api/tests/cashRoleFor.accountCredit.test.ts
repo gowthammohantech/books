@@ -8,6 +8,7 @@
  * unchanged (purely additive).
  */
 import { describe, it, expect } from 'vitest';
+
 import { cashRoleFor } from '../lib/ledger/ledgerPosting';
 
 describe('cashRoleFor', () => {

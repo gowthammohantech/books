@@ -44,7 +44,7 @@ const Banking: React.FC = () => {
             const response = await axios.get(Constants.FETCH_BANK_ACCOUNT_WITH_BALANCE_URL, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            let data = response.data.data;
+            const data = response.data.data;
             if (data && data.bankDetails) {
                 setBankAccounts(data.bankDetails);
             } else {

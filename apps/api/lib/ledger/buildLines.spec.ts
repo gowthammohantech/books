@@ -1,5 +1,6 @@
 // lib/ledger/buildLines.spec.ts
 import { describe, it, expect } from 'vitest';
+
 import { buildLines, LedgerError } from './buildLines';
 import type { PostingInput } from './types';
 

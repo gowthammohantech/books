@@ -17,9 +17,10 @@
  * model rather than a TENANT_MODEL, and the purge removes it anyway by deleting
  * the demo User rows it cascades from.
  */
-import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
+
+import { describe, it, expect } from 'vitest';
 
 import { TENANT_MODELS } from '../../lib/tenantGuard';
 

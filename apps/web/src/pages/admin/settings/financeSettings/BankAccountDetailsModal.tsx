@@ -16,11 +16,15 @@ interface Props {
 }
 
 const BankAccountDetailsModal: React.FC<Props> = ({ isOpen, onClose, bankAccount }) => {
-    if (!bankAccount) return null;
-
+    // Hooks must run unconditionally — see the note in
+    // TransactionOverviewModal. Returning before them changed hook order
+    // whenever bankAccount went from absent to present.
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const { formatMoney, defaultCurrencyCode } = useCurrencies();
     const { formatDate } = useDateFormatter();
+
+    if (!bankAccount) return null;
+
     const dateFormat = systemSettings?.dateFormat.format || "DD-MM-YYYY";
     const accountCurrency = bankAccount.currencyCode || defaultCurrencyCode;
 

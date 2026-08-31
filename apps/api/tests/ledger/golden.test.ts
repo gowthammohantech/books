@@ -19,8 +19,8 @@
 //   Total assets         = 58
 
 import { describe, it, expect } from 'vitest';
+
 import { getPack } from '../../lib/ledger/packs/index';
-import { buildHarness } from './harness';
 import {
   postPurchaseReceived,
   postSupplierPayment,
@@ -29,6 +29,8 @@ import {
   postInvoicePayment,
 } from '../../lib/ledger/ledgerPosting';
 import { profitLossFrom, balanceSheetFrom, trialBalanceFrom } from '../../lib/ledger/statements';
+
+import { buildHarness } from './harness';
 
 const COUNTRY_CODES = ['IN', 'GB', 'EU', 'US', 'AU', 'NZ'];
 

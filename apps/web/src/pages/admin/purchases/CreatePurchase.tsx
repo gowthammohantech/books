@@ -308,7 +308,7 @@ const CreatePurchase: React.FC = () => {
 
     const handlePurchaseOrderSelect = (option: OptionType) => {
         isDirtyRef.current = true;
-        let _purchaseOrderId = option ? option.id : '';
+        const _purchaseOrderId = option ? option.id : '';
         setPurchaseFormData(prev => ({ ...prev, purchaseOrderId: _purchaseOrderId }));
     }
 
@@ -391,7 +391,7 @@ const CreatePurchase: React.FC = () => {
 
             if (data) {
                 if (data.billFrom) {
-                    let _admin = { id: data.billFrom.id, name: data.billFrom.name };
+                    const _admin = { id: data.billFrom.id, name: data.billFrom.name };
                     handleAdminChange(_admin);
                 }
 

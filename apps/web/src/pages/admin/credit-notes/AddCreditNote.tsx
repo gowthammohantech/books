@@ -243,7 +243,7 @@ const AddCreditNote: React.FC = () => {
                     currencyCode: invoice_data.currencyCode ?? defaultCurrencyCode,
                 }));
                 if (invoice_data.billFrom) {
-                    let _admin = { id: invoice_data.billFrom.id, name: invoice_data.billFrom.name };
+                    const _admin = { id: invoice_data.billFrom.id, name: invoice_data.billFrom.name };
                     handleAdminChange(_admin);
                 }
                 if (invoice_data.billTo) {
@@ -274,7 +274,7 @@ const AddCreditNote: React.FC = () => {
                     {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
-                let data = response.data.data;
+                const data = response.data.data;
                 if (data) {
                     const formattedInvoiceOptions = data.map((invoice: any) => ({ id: invoice.id, name: invoice.invoiceNumber }));
                     setInvoiceOptions(formattedInvoiceOptions || []);

@@ -97,10 +97,10 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
                 });
                 if (response.data.data.length > 0) {
                     const formattedBankAccounts = response.data.data.map((item: any) => {
-                        let accountNumber = item.accountNumber ?? "";
-                        let name = item.accountHoldername ?? "";
-                        let bankName = item.bankName ?? "";
-                        let formattedBankName = `[${accountNumber}] ${name} - ${bankName}`;
+                        const accountNumber = item.accountNumber ?? "";
+                        const name = item.accountHoldername ?? "";
+                        const bankName = item.bankName ?? "";
+                        const formattedBankName = `[${accountNumber}] ${name} - ${bankName}`;
                         return {
                             id: item.id,
                             name: formattedBankName
@@ -124,9 +124,9 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
                     params: { search: debouncedPurchaseSearch },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                let data = response.data.data;
+                const data = response.data.data;
                 if (data) {
-                    let formattedOptions = data.map((purchase: PendingPurchase) => {
+                    const formattedOptions = data.map((purchase: PendingPurchase) => {
                         return {
                             id: purchase.id,
                             name: purchase.purchaseId,
@@ -147,8 +147,8 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
 
     const handlePurchaseSelect = (option: OptionType) => {
         if (option) {
-            let selectedPurchase = purchases.find(p => p.id === option.id);
-            let newFormData = { ...formData };
+            const selectedPurchase = purchases.find(p => p.id === option.id);
+            const newFormData = { ...formData };
             if (selectedPurchase?.payment) {
                 newFormData.amount = selectedPurchase?.payment?.dueAmount || 0;
             } else {
@@ -188,7 +188,7 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
         }
     }
     const handleFormChange = (field: keyof PaymentFormData, value: any) => {
-        let newFormData = { ...formData, [field]: value };
+        const newFormData = { ...formData, [field]: value };
 
         if (field === 'purchaseId') {
             const selectedPurchase = purchases.find(p => p.id === value);
@@ -210,7 +210,7 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
                 delete newErrors.paidAmount;
                 setErrors(newErrors);
             }
-            let dueAmount = newFormData.amount - Number(value);
+            const dueAmount = newFormData.amount - Number(value);
             newFormData.dueAmount = dueAmount;
         }
         setFormData(newFormData);

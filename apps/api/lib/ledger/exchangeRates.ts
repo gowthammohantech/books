@@ -1,5 +1,6 @@
 // lib/ledger/exchangeRates.ts
 import { Prisma } from '@prisma/client';
+
 import { toDecimal } from './money';
 
 /** A row from the ExchangeRate table (only the fields we need here). */

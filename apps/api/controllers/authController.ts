@@ -7,7 +7,6 @@ import type { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import { UAParser } from 'ua-parser-js';
 import geoip from 'geoip-lite';
-
 import type { PrismaClient } from '@prisma/client';
 
 import { prisma, prismaUnscoped } from '../lib/prisma';

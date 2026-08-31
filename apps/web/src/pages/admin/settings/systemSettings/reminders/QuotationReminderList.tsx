@@ -39,14 +39,14 @@ const QuotationReminderList: React.FC<Props> = ({ reminders, onSuccess, isEditin
             onDelete(item.id);
         }
     }
-    const handleStatusChange = async (id: String, newStatus: boolean) => {
+    const handleStatusChange = async (id: string, newStatus: boolean) => {
         try {
             await axios.patch(`${Constants.API_BASE_URL}/reminders/${id}/toggle`, { isEnabled: newStatus }, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             onSuccess();
         } catch (error) {
-
+            /* non-fatal: leave prior state in place */
         }
     }
     return (

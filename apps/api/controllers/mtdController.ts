@@ -21,8 +21,9 @@
 // used by the on-screen UK VAT return (loadTaxFigures + buildUkVatBoxes) — the
 // boxes are NOT recomputed here.
 
-import type { Request, Response } from 'express';
 import { randomBytes } from 'crypto';
+
+import type { Request, Response } from 'express';
 
 import { prisma } from '../lib/prisma';
 import { requireActingUserId, requireTenantId, UnauthorizedError } from '../lib/tenantScope';
@@ -40,6 +41,7 @@ import {
   type TokenResult,
 } from '../lib/hmrcMtd';
 import { loadTaxFigures } from '../lib/reports/taxReturns';
+
 import { buildUkVatBoxes } from './taxReturnController';
 
 // ── Error helpers ─────────────────────────────────────────────────────────────

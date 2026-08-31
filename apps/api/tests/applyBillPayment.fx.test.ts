@@ -8,6 +8,7 @@
  * relieved at the rate it was originally booked (base = amount × rate).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { applyBillPayment, type ApplyBillPaymentDb } from '../lib/ledger/applyBillPayment';
 
 const TENANT_ID = 'tenant-alpha';

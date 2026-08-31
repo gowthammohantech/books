@@ -1,4 +1,5 @@
 import type { LedgerRole } from '../roles';
+
 import type { CountryPack, PackAccount, StandardPackOptions } from './types';
 
 /** Canonical account codes per role — identical across countries; only labels/metadata vary. */

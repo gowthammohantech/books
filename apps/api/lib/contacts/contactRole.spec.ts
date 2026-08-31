@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { deriveRole, contactViewWhere } from './contactRole';
 
 describe('deriveRole', () => {

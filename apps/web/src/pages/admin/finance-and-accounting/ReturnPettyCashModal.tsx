@@ -47,9 +47,9 @@ const ReturnPettyCashModal: React.FC<Props> = ({ isOpen, currentBalance, onClose
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
-                let data = response.data.data;
+                const data = response.data.data;
                 if (data) {
-                    let options = data.map((paymentMode: PaymentMode) => {
+                    const options = data.map((paymentMode: PaymentMode) => {
                         return {
                             id: paymentMode.id,
                             name: paymentMode.name,
@@ -75,10 +75,10 @@ const ReturnPettyCashModal: React.FC<Props> = ({ isOpen, currentBalance, onClose
                 });
                 if (response.data.data.length > 0) {
                     const formattedBankAccounts = response.data.data.map((item: any) => {
-                        let accountNumber = item.accountNumber ?? "";
-                        let name = item.accountHoldername ?? "";
-                        let bankName = item.bankName ?? "";
-                        let formattedBankName = `[${accountNumber}] ${name} - ${bankName}`;
+                        const accountNumber = item.accountNumber ?? "";
+                        const name = item.accountHoldername ?? "";
+                        const bankName = item.bankName ?? "";
+                        const formattedBankName = `[${accountNumber}] ${name} - ${bankName}`;
                         return {
                             id: item.id,
                             name: formattedBankName
@@ -96,7 +96,7 @@ const ReturnPettyCashModal: React.FC<Props> = ({ isOpen, currentBalance, onClose
     }, [debouncedSearchTermBankAccount]);
 
     const handlePaymentModeSelect = (item: PaymentMode) => {
-        let paymentModeId = item ? item.id : '';
+        const paymentModeId = item ? item.id : '';
         setFormData((prev) => ({
             ...prev,
             paymentModeId: paymentModeId
@@ -109,7 +109,7 @@ const ReturnPettyCashModal: React.FC<Props> = ({ isOpen, currentBalance, onClose
     }
 
     const handleBankAccountSelect = (item: OptionType) => {
-        let bankAccountId = item ? item.id : '';
+        const bankAccountId = item ? item.id : '';
         setFormData((prev) => ({
             ...prev,
             bankAccountId: bankAccountId

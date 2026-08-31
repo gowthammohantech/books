@@ -5,6 +5,7 @@
 // explanationHint.findUnique) — no live DB needed.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { normalisePayeeKey, recordHint, lookupHint } from './explanationHints';
 
 // ---------------------------------------------------------------------------

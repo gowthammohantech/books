@@ -10,6 +10,7 @@
  * the filter is the plain `{ paymentId: { not: null }, tenantId }` now.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { applyBillPayment, type ApplyBillPaymentDb } from '../lib/ledger/applyBillPayment';
 
 const TENANT_ID = 'tenant-alpha';

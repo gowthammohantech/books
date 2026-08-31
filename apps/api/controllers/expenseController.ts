@@ -1,6 +1,5 @@
 // controllers/expenseController.ts
 import type { Request, Response } from 'express';
-import { tenantOwnerInclude, tenantOwner } from '../lib/tenantOwner';
 import { Prisma } from '@prisma/client';
 import type {
   Expense,
@@ -13,6 +12,7 @@ import type {
 } from '@prisma/client';
 import { validationResult } from 'express-validator';
 
+import { tenantOwnerInclude, tenantOwner } from '../lib/tenantOwner';
 import { prisma } from '../lib/prisma';
 import {
   collectCostCentreIds,
@@ -2190,7 +2190,7 @@ export async function setExpenseRecurringStatus(req: Request, res: Response): Pr
 }
 
 // Avoid unused-import lint warnings when only the namespace import is used.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 const _expenseRef = null as unknown as Expense | null;
 
 // =============================================================================

@@ -107,7 +107,7 @@ const DashboardPage: React.FC = () => {
         }));
     }
 
-    let purchaseAndSaleChartData: any = [];
+    const purchaseAndSaleChartData: any = [];
     if (dashboardData.graph2.length > 0) {
         //2 data set purchase and sale
         purchaseAndSaleChartData[0] = dashboardData.graph2.map((item) => item.purchases);
@@ -142,7 +142,7 @@ const DashboardPage: React.FC = () => {
                 setDashboardData(prev => ({ ...prev, ...response.data.data }));
             }
         } catch (error) {
-
+            /* non-fatal: leave prior state in place */
         } finally {
             setIsLoading(false);
         }

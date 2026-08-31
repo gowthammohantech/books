@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { resolveDisplayName, validateContactIdentity } from './contactIdentity';
 
 describe('resolveDisplayName', () => {

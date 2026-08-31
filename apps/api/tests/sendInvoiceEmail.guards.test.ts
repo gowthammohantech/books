@@ -48,10 +48,12 @@ vi.mock('fs', () => ({ existsSync: mockExistsSync, default: { existsSync: mockEx
 // See mocking note above: `utils/mailer` is require()'d by the controller,
 // which vi.mock cannot intercept in this project. Grab the real singleton
 // and spy on it instead.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
+import { sendInvoiceEmail } from '../controllers/Admin/Invoice/invoiceController';
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- utils/mailer is still JS; becomes a real import in Phase 3.
 const mailerModule = require('../utils/mailer');
 
-import { sendInvoiceEmail } from '../controllers/Admin/Invoice/invoiceController';
 
 function makeReqRes(body: Record<string, unknown>) {
   const req = { tenantId: TENANT_ID, user: TENANT_ID, params: {}, query: {}, body } as unknown as Request;

@@ -19,8 +19,10 @@
  */
 
 import type { TaxRegime as PrismaTaxRegime, TaxKind } from '@prisma/client';
-import type { TaxRegime as PackTaxRegime } from './types';
+
 import { euStandardRate } from '../../euVat';
+
+import type { TaxRegime as PackTaxRegime } from './types';
 
 /** Minimal Prisma-like surface this helper needs (a subset of the `$transaction` tx). */
 export interface SeedTaxRatesTx {

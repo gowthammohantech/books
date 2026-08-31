@@ -74,7 +74,7 @@ const EmailTemplateList: React.FC = () => {
     const tableHeaders = ['#', 'Title', 'Created On', 'Status', 'Actions'];
     const restrictedActions = ['edit', 'delete'];
     const allowedActions = tableActions.filter((action) => {
-        let actionKey = action.label.toLowerCase() as PermissionAction;
+        const actionKey = action.label.toLowerCase() as PermissionAction;
 
         if (!restrictedActions.includes(actionKey)) {
             return true;

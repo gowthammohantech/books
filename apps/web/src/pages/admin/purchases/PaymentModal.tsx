@@ -290,7 +290,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onConfirm,
 
                 {/* --- Form Actions --- */}
                 <div className="flex justify-between items-center px-6 pb-6 pt-4">
-                    <Button type="button" variant="white" onClick={() => { onClose(), setPaymentFormErrors({}) }}>
+                    <Button type="button" variant="white" onClick={() => { onClose(); setPaymentFormErrors({}); }}>
                         Cancel
                     </Button>
                     <Button type="submit" variant="primary">

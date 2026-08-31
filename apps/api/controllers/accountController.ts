@@ -3,7 +3,6 @@ import type { AccountType, Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
 import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
-
 import { seedDefaultChart } from '../lib/defaultChartOfAccounts';
 
 const ACCOUNT_TYPES = ['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE'] as const;

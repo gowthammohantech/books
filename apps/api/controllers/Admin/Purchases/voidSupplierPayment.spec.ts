@@ -11,6 +11,7 @@
 // the wrong (sourceType, sourceId, event) triple.
 
 import { describe, it, expect, vi } from 'vitest';
+
 import { getPack } from '../../../lib/ledger/packs/index';
 
 const USER = 'u-void-sp';
@@ -237,8 +238,9 @@ vi.mock('../../../lib/prisma', () => ({
 }));
 
 // Import AFTER the mock is registered.
-import { voidSupplierPayment } from './supplierPaymentReadController';
 import { post } from '../../../lib/ledger/postingEngine';
+
+import { voidSupplierPayment } from './supplierPaymentReadController';
 
 function fakeRes() {
   const res = {

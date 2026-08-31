@@ -2,6 +2,7 @@
 // Allocate a landed-cost total across invoice/purchase lines proportionally,
 // with largest-remainder rounding so that parts sum EXACTLY to the total at 4dp.
 import { Prisma } from '@prisma/client';
+
 import { toDecimal, ZERO, type DecimalInput } from './money';
 
 export interface AllocationLine {

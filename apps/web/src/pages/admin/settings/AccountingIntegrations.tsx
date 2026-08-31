@@ -37,7 +37,7 @@ export default function AccountingIntegrations() {
     } catch { /* ignore */ }
   }
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+  useEffect(() => { load();   }, []);
 
   function getStatus(kind: Kind) {
     return integrations.find((i) => i.kind === kind);

@@ -1,6 +1,7 @@
 // lib/inventory/resolveRestockUnitCost.spec.ts
 import { describe, it, expect, vi } from 'vitest';
 import { Prisma } from '@prisma/client';
+
 import { resolveRestockUnitCost } from './stockAdjust';
 
 const D = (v: string) => new Prisma.Decimal(v);

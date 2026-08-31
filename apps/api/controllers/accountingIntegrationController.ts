@@ -1,5 +1,6 @@
-import type { Request, Response } from 'express';
 import { randomBytes } from 'crypto';
+
+import type { Request, Response } from 'express';
 import type { IntegrationKind, Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';

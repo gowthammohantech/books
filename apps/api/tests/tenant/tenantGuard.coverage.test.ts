@@ -10,9 +10,10 @@
  * the existing tests/routeCoverage.test.ts, and the same regex-over-source
  * approach so it needs no new machinery.
  */
-import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
+
+import { describe, it, expect } from 'vitest';
 
 import {
   TENANT_MODELS,

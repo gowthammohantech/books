@@ -257,7 +257,7 @@ const InvoiceList: React.FC = () => {
                 },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            let data = response.data.data;
+            const data = response.data.data;
             if (data.invoices.length > 0) {
                 setInvoices(data.invoices);
             } else {

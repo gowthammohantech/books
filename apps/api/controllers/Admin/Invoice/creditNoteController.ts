@@ -1,10 +1,10 @@
 import type { Request, Response } from 'express';
-import { tenantOwnerInclude, tenantOwner } from '../../../lib/tenantOwner';
 import { Prisma } from '@prisma/client';
 import type { CreditNoteStatus, CreditNoteRefundMethod, CreditNoteReason } from '@prisma/client';
 import { validationResult } from 'express-validator';
-import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 
+import { tenantOwnerInclude, tenantOwner } from '../../../lib/tenantOwner';
+import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 import { prisma } from '../../../lib/prisma';
 import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
 import { tenantScope, requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
@@ -17,7 +17,6 @@ import {
 import { applyDocumentTreatment } from '../../../lib/tax/applyTreatment';
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
-
 import { handleLedgerError } from '../../../lib/httpErrors';
 import {
   postCreditNoteIssued,

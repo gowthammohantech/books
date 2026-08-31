@@ -30,6 +30,7 @@ import {
   type PostingTx,
 } from '../ledger/ledgerPosting';
 import { applyStockAdjustment } from '../inventory/stockAdjust';
+
 import { advanceAfterRun, type Cadence } from './schedule';
 
 /** Marker error retained for callers that still distinguish it; never thrown now. */

@@ -1,5 +1,6 @@
 // lib/costCenterNumbering.spec.ts
 import { describe, it, expect, vi } from 'vitest';
+
 import { nextCentreDocumentNumber, peekCentreDocumentNumber } from './costCenterNumbering';
 
 function fakeTx(centre: { numberPrefix: string | null; nextNumber: number } | null) {

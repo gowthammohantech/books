@@ -61,7 +61,7 @@ const EmailTemplateModal: React.FC<TemplateProps> = ({ isOpen, onClose, onSucces
             if (editor && editItem.description) {
                 editor.commands.setContent(editItem.description);
             }
-            let _selectedNotifyType = notificationTypeOptions.find((option) => option.id === editItem.notification_type?.id);
+            const _selectedNotifyType = notificationTypeOptions.find((option) => option.id === editItem.notification_type?.id);
             if (_selectedNotifyType) {
                 setSelectedNotificationType(_selectedNotifyType);
                 if (_selectedNotifyType.tags) {
@@ -77,7 +77,7 @@ const EmailTemplateModal: React.FC<TemplateProps> = ({ isOpen, onClose, onSucces
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.success && response.data.data) {
-                let notificationTypeOptions = response.data.data.map((notificationType: NotificationTypes) => ({
+                const notificationTypeOptions = response.data.data.map((notificationType: NotificationTypes) => ({
                     id: notificationType.id,
                     name: notificationType.title,
                     tags: notificationType.tags
@@ -134,7 +134,7 @@ const EmailTemplateModal: React.FC<TemplateProps> = ({ isOpen, onClose, onSucces
         if (selectedOption) {
             handleFormChange('notification_type', selectedOption.id);
             if (selectedOption.tags) {
-                let newTags = selectedOption.tags.map((tag: NotificationTags) => {
+                const newTags = selectedOption.tags.map((tag: NotificationTags) => {
                     return {
                         id: tag.id,
                         title: tag.title,
@@ -149,7 +149,7 @@ const EmailTemplateModal: React.FC<TemplateProps> = ({ isOpen, onClose, onSucces
     const handleTagsChange = (title: string) => {
         //append to subject text editor
         if (editor) {
-            let newTitle = '{' + title + '}';
+            const newTitle = '{' + title + '}';
             editor.chain().focus().insertContent(' ' + newTitle).run();
         }
     }

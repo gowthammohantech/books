@@ -238,7 +238,7 @@ const SignatureList: FC = () => {
         }));
     };
 
-    const handleStatusChange = async (id: String, newStatus: boolean) => {
+    const handleStatusChange = async (id: string, newStatus: boolean) => {
         setSignatures(prev =>
             prev.map(sig =>
                 sig.id === id ? { ...sig, status: newStatus } : sig
@@ -255,7 +255,7 @@ const SignatureList: FC = () => {
 
     }
 
-    const handleDefaultChange = async (id: String, newDefault: boolean) => {
+    const handleDefaultChange = async (id: string, newDefault: boolean) => {
         setSignatures(prev =>
             prev.map(sig =>
                 sig.id === id ? { ...sig, markAsDefault: newDefault, status: true } : { ...sig, markAsDefault: false }

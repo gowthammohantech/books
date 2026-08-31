@@ -187,7 +187,7 @@ const EditCreditNote: React.FC = () => {
                 const creditNoteDetail = response.data.data;
                 if (creditNoteDetail) {
                     if (creditNoteDetail.invoice) {
-                        let _invoiceOptions = {
+                        const _invoiceOptions = {
                             id: creditNoteDetail.invoice.id,
                             name: creditNoteDetail.invoice.invoiceNumber ?? "",
                         };
@@ -219,11 +219,11 @@ const EditCreditNote: React.FC = () => {
                     }));
 
                     if (creditNoteDetail.billFrom) {
-                        let _admin = { id: creditNoteDetail.billFrom.id, name: creditNoteDetail.billFrom.name };
+                        const _admin = { id: creditNoteDetail.billFrom.id, name: creditNoteDetail.billFrom.name };
                         handleAdminChange(_admin);
                     }
                     if (creditNoteDetail.billTo) {
-                        let _customer = {
+                        const _customer = {
                             id: creditNoteDetail.billTo.id,
                             name: creditNoteDetail.billTo.name,
                             email: creditNoteDetail.billTo.email,
@@ -271,11 +271,11 @@ const EditCreditNote: React.FC = () => {
                     grandTotal: invoice_data.TotalAmount
                 }));
                 if (invoice_data.billFrom) {
-                    let _admin = { id: invoice_data.billFrom.id, name: invoice_data.billFrom.name };
+                    const _admin = { id: invoice_data.billFrom.id, name: invoice_data.billFrom.name };
                     handleAdminChange(_admin);
                 }
                 if (invoice_data.billTo) {
-                    let _customer = {
+                    const _customer = {
                         id: invoice_data.billTo.id,
                         name: invoice_data.billTo.name,
                         email: invoice_data.billTo.email,
@@ -286,7 +286,7 @@ const EditCreditNote: React.FC = () => {
                 }
             }
         } catch (error) {
-
+            /* non-fatal: leave prior state in place */
         } finally {
             setIsFetching(false);
         }
@@ -546,7 +546,7 @@ const EditCreditNote: React.FC = () => {
                     params: { search: debouncedSearchTermCustomer, limit: 100, page: 1 },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                let data = response.data.data;
+                const data = response.data.data;
                 if (data.customers.length > 0) {
                     setCustomers(response.data.data.customers);
                 } else {

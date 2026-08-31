@@ -161,10 +161,10 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                 });
                 if (response.data.data.length > 0) {
                     const formattedBankAccounts = response.data.data.map((item: any) => {
-                        let accountNumber = item.accountNumber ?? "";
-                        let name = item.accountHoldername ?? "";
-                        let bankName = item.bankName ?? "";
-                        let formattedBankName = `[${accountNumber}] ${name} - ${bankName}`;
+                        const accountNumber = item.accountNumber ?? "";
+                        const name = item.accountHoldername ?? "";
+                        const bankName = item.bankName ?? "";
+                        const formattedBankName = `[${accountNumber}] ${name} - ${bankName}`;
                         return {
                             id: item.id,
                             name: formattedBankName
@@ -231,7 +231,9 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
             if (response.data.data) {
                 setPaymentModeOptions(response.data.data);
             }
-        } catch (error) { }
+        } catch {
+                /* non-fatal: leave prior state in place */
+            }
     }
 
     const handleFormChange = (field: keyof ExtendedExpenseFormData, value: any) => {

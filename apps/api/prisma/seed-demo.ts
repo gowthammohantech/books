@@ -20,6 +20,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+
 import { OWNER_ROLE_NAME, ensureRole } from '../lib/defaultRoles';
 
 const prisma = new PrismaClient();

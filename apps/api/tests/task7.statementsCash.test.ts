@@ -7,6 +7,7 @@
  * the balance sheet and the cash-flow forecast now use.
  */
 import { describe, it, expect } from 'vitest';
+
 import { sumBankCashWithChildren, type AccountBalance } from '../lib/ledger/statements';
 
 function acct(p: Partial<AccountBalance> & { id: string }): AccountBalance {

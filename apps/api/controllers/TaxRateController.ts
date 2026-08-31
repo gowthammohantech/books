@@ -4,7 +4,6 @@ import { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
 import { tenantScope, requireTenantId, UnauthorizedError } from '../lib/tenantScope';
-
 import {
   suggestTaxesForLine,
   resolveLineTaxes,

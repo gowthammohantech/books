@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
 import { encrypt, decrypt, maskApiKey } from './aiCrypto';
 
 describe('aiCrypto', () => {

@@ -15,6 +15,7 @@
  * note is returned for persistence on the invoice.
  */
 import type { TaxRegime } from '@prisma/client';
+
 import { computeRegimeTax } from '../taxEngine';
 import { parseVatNumber } from '../euVat';
 import { lineTaxableBase } from '../documentTotals';

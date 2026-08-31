@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+
 import { planGroupResolution, migrateTaxesToRates, type GroupShape, type MigrateDb } from './migrateTaxesToRates';
 
 const member = (id: string, tenantId: string, name: string, rate: number, regime = 'GST_INDIA', extras: Record<string, unknown> = {}) =>

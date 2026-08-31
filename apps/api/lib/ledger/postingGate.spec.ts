@@ -1,5 +1,6 @@
 // lib/ledger/postingGate.spec.ts
 import { describe, it, expect } from 'vitest';
+
 import { shouldPost, type LedgerSettings } from './postingGate';
 
 const on: LedgerSettings = { ledgerInitialized: true, goLiveDate: new Date('2026-04-01') };

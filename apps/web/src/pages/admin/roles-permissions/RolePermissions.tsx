@@ -242,7 +242,7 @@ const RolePermissions: React.FC = () => {
         event.preventDefault();
         try {
             setIsSaving(true);
-            let permissions: any = [];
+            const permissions: any = [];
             modules.map((module) => {
                 return module.children.map((child) => {
                     permissions.push({

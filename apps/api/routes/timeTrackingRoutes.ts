@@ -3,6 +3,7 @@
 // Mounted under /api/admin via routes/adminRoutes.js.
 
 import { Router } from 'express';
+
 import { protect } from '../middleware/authMiddleware';
 import { requirePermission } from '../middleware/requirePermission';
 import { handleValidationResult } from '../middleware/handleValidationResult';

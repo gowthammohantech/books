@@ -1,6 +1,7 @@
 // controllers/Admin/Purchases/validateReturnQuantities.spec.ts
 // Bug 2b: a debit-note (purchase-return) line must never exceed the purchased qty.
 import { describe, it, expect } from 'vitest';
+
 import { validateReturnQuantities } from './debitNoteController';
 
 const purchased = (entries: [string, number][]) => new Map<string, number>(entries);

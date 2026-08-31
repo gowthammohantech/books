@@ -162,7 +162,7 @@ export async function getTimeSummaryReport(req: Request, res: Response): Promise
       ).values(),
     );
 
-    let memberRateMap = new Map<string, number | null>();
+    const memberRateMap = new Map<string, number | null>();
     if (pairs.length > 0) {
       const memberRows = await prisma.projectMember.findMany({
         where: {

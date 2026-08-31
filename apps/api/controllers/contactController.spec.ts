@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { validateContactBody } from './contactController';
 
 describe('validateContactBody', () => {

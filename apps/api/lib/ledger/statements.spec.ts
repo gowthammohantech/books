@@ -1,5 +1,6 @@
 // lib/ledger/statements.spec.ts
 import { describe, it, expect } from 'vitest';
+
 import { trialBalanceFrom, profitLossFrom, balanceSheetFrom, type AccountBalance } from './statements';
 
 // A tiny balanced book: sold goods (cost 60) for 100+18 tax, all on credit then nothing paid.

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+
 import { TRANSACTION_TYPES, getTransactionType } from './types';
 
 describe('transaction type registry', () => {

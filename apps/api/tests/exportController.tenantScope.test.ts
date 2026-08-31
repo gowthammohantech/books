@@ -13,8 +13,9 @@
  * That is exactly the kind of correct-then-wrong code that motivates checking
  * the whole surface rather than the parts that changed.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PassThrough } from 'stream';
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
 
 const TENANT = 'tenant-a';

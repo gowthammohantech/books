@@ -115,7 +115,7 @@ const CreditNoteList: React.FC = () => {
                 params: { search, limit, page },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            let data = response.data.data;
+            const data = response.data.data;
             if (data.creditNotes.length > 0) {
                 setInvoices(data.creditNotes);
             } else {
