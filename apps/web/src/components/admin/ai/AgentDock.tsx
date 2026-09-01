@@ -4,10 +4,10 @@ import { useAgentPanel } from '@context/AgentPanelContext';
 import AiChatPanel from './AiChatPanel';
 
 /**
- * Mounts the agent panel beside the page.
+ * Mounts the Lixi panel beside the page.
  *
  * Replaces AiChatFab, which was both the launcher and the owner of the open
- * state. The launcher is now the "Agent" pill in the top bar, so all this needs
+ * state. The launcher is now the "Lixi" pill in the top bar, so all this needs
  * to decide is whether — and how — the panel exists.
  *
  * Two behaviours, one component:

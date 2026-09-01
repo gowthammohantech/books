@@ -1,5 +1,5 @@
 /**
- * Financial co-pilot chat panel (Cluster H, slice H.3).
+ * Lixi — the assistant panel (Cluster H, slice H.3).
  *
  * Streams assistant replies token by token via `useAiChatStream`, renders
  * assistant text as markdown, shows tool calls inline as subtle "🔧 …" lines,
@@ -237,7 +237,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ onClose }) => {
     <div
       className="flex h-full min-h-0 flex-col bg-card"
       role="region"
-      aria-label="Financial co-pilot"
+      aria-label="Lixi"
     >
         {/* Header */}
         <div className="flex items-center gap-2 border-b border-gray-200 px-4 py-3">
@@ -269,7 +269,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ onClose }) => {
                 className="group flex items-center gap-1 truncate text-sm font-semibold text-gray-800"
                 title={sessionId ? 'Rename chat' : undefined}
               >
-                <span className="truncate">{title ?? 'Financial co-pilot'}</span>
+                <span className="truncate">{title ?? 'Lixi'}</span>
                 {sessionId && (
                   <Pencil size={12} className="opacity-0 group-hover:opacity-60" />
                 )}

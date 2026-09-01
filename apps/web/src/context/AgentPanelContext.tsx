@@ -11,8 +11,11 @@ import { useAiConfig } from "@hooks/useAiConfig";
  * the panel is a column in the layout: three components in different branches
  * of the tree now need the same boolean.
  *
- * `isAvailable` is the AI-disabled gate, kept in one place so the pill and the
- * panel cannot disagree about whether the feature exists.
+ * `isAvailable` reports whether the AI backend is actually configured. It no
+ * longer GATES the panel — the launcher is always in the top bar and always
+ * opens — it only drives the status dot beside the name. Hiding the whole
+ * feature on an unconfigured install meant the one surface that explains what
+ * the assistant is was invisible to exactly the people who had not set it up.
  */
 interface AgentPanelContextValue {
     isOpen: boolean;
@@ -35,10 +38,7 @@ export const AgentPanelProvider = ({ children }: { children: ReactNode }) => {
     const toggle = useCallback(() => setIsOpen((prev) => !prev), []);
 
     const value = useMemo(
-        // Closed, not merely hidden, when AI is switched off: a panel that is
-        // "open" behind a feature flag would reserve its 420px of layout width
-        // and squash the page for nothing.
-        () => ({ isOpen: isAvailable && isOpen, isAvailable, open, close, toggle }),
+        () => ({ isOpen, isAvailable, open, close, toggle }),
         [isAvailable, isOpen, open, close, toggle],
     );
 

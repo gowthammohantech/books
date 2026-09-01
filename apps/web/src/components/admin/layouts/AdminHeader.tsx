@@ -1,4 +1,4 @@
-import { ChevronRight, Search, Sparkles } from 'lucide-react';
+import { ChevronRight, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
@@ -18,9 +18,13 @@ import { resolveBreadcrumb } from '@lib/breadcrumb';
  * they describe — they used to sit at the far right while the company name sat
  * at the bottom left, which split one question across two corners.
  *
- * What is left is the answer to "where am I": a breadcrumb on the left, the
- * workspace on the right, and the two things you reach for from anywhere —
- * search and the agent.
+ * The company name went with it, to sit under the wordmark in the rail. It was
+ * the only thing on this bar that never changed as you moved around the app,
+ * which made it the one piece of chrome earning the least from the position it
+ * held.
+ *
+ * What is left is the answer to "where am I" — a breadcrumb — plus the two
+ * things you reach for from anywhere: search and Lixi.
  */
 const AdminHeader = () => {
     // Page-supplied title + action buttons (null when no page sets them).
@@ -29,7 +33,6 @@ const AdminHeader = () => {
     const { isOpen: isAgentOpen, isAvailable: isAgentAvailable, toggle: toggleAgent } =
         useAgentPanel();
     const { pathname } = useLocation();
-    const { activeTenant } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
 
     // The shortcut hint has to name the key the visitor's own keyboard uses, or
@@ -127,30 +130,28 @@ const AdminHeader = () => {
                 {/* Page-supplied action buttons, before the global quick-add. */}
                 {pageActions && <div className="flex items-center gap-2">{pageActions}</div>}
 
-                {/* Which company am I looking at? Read-only here — switching is
-                    in the sidebar footer, with the identity it belongs to. */}
-                {activeTenant?.name && (
-                    <span className="hidden max-w-[220px] truncate text-sm text-muted-foreground md:inline">
-                        {activeTenant.name}
-                    </span>
-                )}
-
-                {isAgentAvailable && (
-                    <button
-                        type="button"
-                        onClick={toggleAgent}
-                        aria-expanded={isAgentOpen}
-                        aria-label="Toggle the agent panel"
-                        title="Financial co-pilot · ≈ $0.005 / reply"
-                        className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer ${isAgentOpen
-                            ? 'border-transparent bg-primary text-primary-foreground'
-                            : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+                {/* Lixi. Always present, not gated on the AI config: the panel
+                    behind it is the one part of the app you cannot reach any
+                    other way, and a launcher that vanishes on some installs is
+                    a launcher nobody learns. The status dot reports whether
+                    the assistant is actually configured. */}
+                <button
+                    type="button"
+                    onClick={toggleAgent}
+                    aria-expanded={isAgentOpen}
+                    aria-label="Toggle Lixi"
+                    className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer ${isAgentOpen
+                        ? 'border-transparent bg-primary text-primary-foreground'
+                        : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+                        }`}
+                >
+                    <span
+                        aria-hidden="true"
+                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${isAgentAvailable ? 'bg-success' : 'bg-muted-foreground/50'
                             }`}
-                    >
-                        <Sparkles size={15} />
-                        Agent
-                    </button>
-                )}
+                    />
+                    Lixi
+                </button>
             </div>
         </header>
     );

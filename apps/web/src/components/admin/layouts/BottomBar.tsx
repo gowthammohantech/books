@@ -24,9 +24,6 @@ import type { RootState } from "@store/index";
 
 const SETTINGS_LINKS = [
     { to: "/settings", label: "Global Setup" },
-    // Localization: country, timezone, date and number formats. Not branch or
-    // warehouse locations — those have no model yet (erp-roadmap.md §1.1).
-    { to: "/settings/localization", label: "Location Settings" },
     { to: "/users", label: "Admin Settings" },
 ] as const;
 
