@@ -2,14 +2,16 @@ import type { ReactNode } from "react";
 import type { NavItemType } from "@models/sidebar";
 import type { PermissionSet } from "@models/permissions";
 import { navItems, canCreate, canView } from "./navigation";
+import { settingsBands } from "./settingsCatalogue";
 
 /**
  * Command palette model.
  *
  * A "command" is one thing the palette can take you to. Everything here is
- * derived from the sidebar tree in `navigation.tsx`, so a menu entry added
- * there becomes searchable here for free — there is no second list to keep
- * in sync.
+ * derived from the two nav sources — the sidebar tree in `navigation.tsx` and
+ * the settings catalogue in `settingsCatalogue.tsx` — so an entry added to
+ * either becomes searchable here for free. There is no third list to keep in
+ * sync.
  */
 
 export type CommandKind = "navigate" | "create";
@@ -136,6 +138,15 @@ const EXTRA_COMMANDS: ReadonlyArray<ExtraCommand> = [
         path: "/settings/tax-rates/new",
         slug: "finance-settings",
         keywords: ["create", "add", "new", "tax rate", "gst", "vat"],
+    },
+    {
+        id: "nav:/settings",
+        kind: "navigate",
+        title: "All Settings",
+        group: "Settings",
+        path: "/settings",
+        slug: null,
+        keywords: ["preferences", "configuration", "setup", "admin"],
     },
     {
         id: "nav:/settings/account",
@@ -283,6 +294,45 @@ export const buildCommands = (
                 ? canCreate(slug, permissions)
                 : canView(slug, permissions);
         if (allowed) push(command);
+    }
+
+    // The settings catalogue is the app's *other* nav source: it drives the
+    // /settings landing cards and the settings shell's left nav, and none of it
+    // appears in `navItems`. Flattened here so the palette still reaches every
+    // settings page.
+    //
+    // Only for the real tree. A caller that supplies its own `items` is
+    // exercising the flattener against a fixture and should get exactly the
+    // destinations it declared, not the app's.
+    //
+    // Pushed last so a hand-written EXTRA_COMMANDS entry wins the id: those
+    // carry better palette labels ("Account Settings" over the catalogue's
+    // in-context "General") and their own synonyms.
+    if (items === navItems) {
+        for (const band of settingsBands) {
+            for (const group of band.groups) {
+                for (const link of group.links) {
+                    if (link.slug !== null && !canView(link.slug, permissions)) {
+                        continue;
+                    }
+                    push({
+                        id: `nav:${link.to}`,
+                        kind: "navigate",
+                        title: link.title,
+                        group: `Settings › ${group.title}`,
+                        path: link.to,
+                        icon: group.icon,
+                        keywords: [
+                            "settings",
+                            band.title,
+                            group.title,
+                            link.to,
+                            ...(SYNONYMS[link.to] ?? []),
+                        ],
+                    });
+                }
+            }
+        }
     }
 
     return out;

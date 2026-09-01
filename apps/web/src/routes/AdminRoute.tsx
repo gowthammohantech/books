@@ -5,6 +5,8 @@ import AccountsDashboard from "@pages/admin/dashboard/AccountsDashboard";
 import ExpensesDashboard from "@pages/admin/dashboard/ExpensesDashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminLayout from "@components/admin/layouts/AdminLayout";
+import SettingsLayout from "@components/admin/layouts/SettingsLayout";
+import AllSettings from "@pages/admin/settings/AllSettings";
 import UnitList from "@pages/admin/productAndServices/UnitList";
 import BrandList from "@pages/admin/productAndServices/BrandList";
 import CategoryList from "@pages/admin/productAndServices/Categories";
@@ -258,53 +260,6 @@ const AdminRoute = () => {
                 <Route path="/vehicles/new" element={<><Seo title="New Vehicle" /><CreateVehicle /></>} />
                 <Route path="/vehicles/edit/:id" element={<><Seo title="Edit Vehicle" /><EditVehicle /></>} />
 
-                {/* General Settings */}
-                <Route element={<ProtectedRoute moduleSlug="general-settings" action="view" />}>
-                    <Route path="/settings/account" element={<><Seo title="Account Settings" /><AccountSettings /></>} />
-                    <Route path="/settings/profile" element={<><Seo title="Profile Settings" /><ProfileSettings /></>} />
-                </Route>
-
-                {/* Website Settings */}
-                <Route element={<ProtectedRoute moduleSlug="website-settings" action="view" />}>
-                    <Route path="/settings/company-settings" element={<><Seo title="Company Settings" /><CompanySettings /></>} />
-                    <Route path="/settings/localization" element={<><Seo title="Localization Settings" /><LocalizationSettings /></>} />
-                </Route>
-
-                {/* System Settings */}
-                <Route element={<ProtectedRoute moduleSlug="system-settings" action="view" />}>
-                    <Route path="/settings/email-settings" element={<><Seo title="Email Settings" /><EmailSettings /></>} />
-                    <Route path="/settings/email-templates" element={<><Seo title="Email Templates" /><EmailTemplateList /></>} />
-                    <Route path="/settings/signatures" element={<><Seo title="Signatures" /><SignatureList /></>} />
-                    <Route path="/settings/reminders" element={<><Seo title="Reminders" /><Reminder /></>} />
-                </Route>
-
-                {/* Module Settings */}
-                <Route element={<ProtectedRoute moduleSlug="module-settings" action="view" />}>
-                    <Route path="/settings/module-settings/invoice" element={<><Seo title="Module Settings - Invoice" /><InvoiceSettings /></>} />
-                    <Route path="/settings/module-settings/purchase" element={<><Seo title="Module Settings - Purchase" /><PurchaseSettings /></>} />
-                    <Route path="/settings/module-settings/purchase-order" element={<><Seo title="Module Settings - Purchase Order" /><PurchaseOrderSettings     /></>} />
-                    <Route path="/settings/module-settings/expense" element={<><Seo title="Module Settings - Expense" /><ExpenseSettings /></>} />
-                    <Route path="/settings/module-settings/quotations" element={<><Seo title="Module Settings - Quotations" /><QuotationSettings /></>} />
-                    <Route path="/settings/module-settings/product" element={<><Seo title="Module Settings - Product" /><ProductSettings /></>} />
-                    <Route path="/settings/module-settings/category" element={<><Seo title="Module Settings - Category" /><CategorySettings /></>} />
-                    <Route path="/settings/module-settings/brand" element={<><Seo title="Module Settings - Brand" /><BrandSettings /></>} />
-                    <Route path="/settings/module-settings/unit" element={<><Seo title="Module Settings - Unit" /><UnitSettings /></>} />
-                </Route>
-
-                {/* Finance Settings */}
-                <Route element={<ProtectedRoute moduleSlug="finance-settings" action="view" />}>
-                    <Route path="/settings/bank-accounts" element={<><Seo title="Bank Accounts" /><BankAccountList /></>} />
-                    <Route path="/settings/tax-rates" element={<><Seo title="Taxes" /><TaxRateList /></>} />
-                    <Route path="/settings/tax-rates/new" element={<><Seo title="New Tax" /><CreateTaxRate /></>} />
-                    <Route path="/settings/tax-rates/edit/:id" element={<><Seo title="Edit Tax" /><EditTaxRate /></>} />
-                    {/* Tax Groups merged into Taxes (spec 2026-07-12) — old deep links land on Taxes */}
-                    <Route path="/settings/tax-groups" element={<Navigate to="/settings/tax-rates" replace />} />
-                    <Route path="/settings/currencies" element={<><Seo title="Currencies" /><CurrencyList /></>} />
-                    <Route path="/settings/ledger-setup" element={<><Seo title="Ledger Setup" /><LedgerSetupWizard /></>} />
-                    <Route path="/settings/document-defaults" element={<><Seo title="Document Defaults" /><DocumentDefaultsPage /></>} />
-                    <Route path="/settings/transaction-categories" element={<><Seo title="Transaction Categories" /><TransactionCategoriesPage /></>} />
-                </Route>
-
                 {/* Purchase Module */}
                 <Route element={<ProtectedRoute moduleSlug="purchase-orders" action="view" />}>
                     <Route path="/purchase-orders" element={<><Seo title="Purchase Orders" /><PurchaseOrderList /></>} />
@@ -440,12 +395,6 @@ const AdminRoute = () => {
                 <Route element={<ProtectedRoute moduleSlug="payment-transactions" action="view" />}>
                     <Route path="/payments/transactions" element={<><Seo title="Transactions" /><PaymentTransactionList /></>} />
                 </Route>
-                <Route path="/settings/payment-gateways" element={<><Seo title="Payment Gateways" /><PaymentGateways /></>} />
-                <Route path="/settings/payment-gateways/razorpay" element={<><Seo title="Razorpay Configuration" /><RazorpayConfig /></>} />
-                <Route path="/settings/payment-gateways/stripe" element={<><Seo title="Stripe Configuration" /><StripeConfig /></>} />
-                <Route path="/settings/accounting-integrations" element={<><Seo title="Accounting Integrations" /><AccountingIntegrations /></>} />
-                <Route path="/settings/messaging" element={<><Seo title="Messaging" /><MessagingSettings /></>} />
-                <Route path="/settings/ai" element={<><Seo title="AI Settings" /><AiSettings /></>} />
                 <Route path="/ai/extractions" element={<><Seo title="AI Extractions" /><ExtractionHistory /></>} />
 
                 {/* Activity Log */}
@@ -493,6 +442,72 @@ const AdminRoute = () => {
                 <Route element={<ProtectedRoute />}>
                     <Route path="/logout" element={<AdminLogout />} />
                 </Route>
+            </Route>
+
+            {/* Settings shell — its own left nav and "Close Settings" control
+                replace the app sidebar for the whole /settings/* space. */}
+            <Route element={<SettingsLayout />}>
+                {/* The landing grid itself: any signed-in user can open it, and
+                    it only ever shows the cards their permissions allow. */}
+                <Route element={<ProtectedRoute />}>
+                    <Route path="/settings" element={<><Seo title="All Settings" /><AllSettings /></>} />
+                </Route>
+
+                {/* General Settings */}
+                <Route element={<ProtectedRoute moduleSlug="general-settings" action="view" />}>
+                    <Route path="/settings/account" element={<><Seo title="Account Settings" /><AccountSettings /></>} />
+                    <Route path="/settings/profile" element={<><Seo title="Profile Settings" /><ProfileSettings /></>} />
+                </Route>
+
+                {/* Website Settings */}
+                <Route element={<ProtectedRoute moduleSlug="website-settings" action="view" />}>
+                    <Route path="/settings/company-settings" element={<><Seo title="Company Settings" /><CompanySettings /></>} />
+                    <Route path="/settings/localization" element={<><Seo title="Localization Settings" /><LocalizationSettings /></>} />
+                </Route>
+
+                {/* System Settings */}
+                <Route element={<ProtectedRoute moduleSlug="system-settings" action="view" />}>
+                    <Route path="/settings/email-settings" element={<><Seo title="Email Settings" /><EmailSettings /></>} />
+                    <Route path="/settings/email-templates" element={<><Seo title="Email Templates" /><EmailTemplateList /></>} />
+                    <Route path="/settings/signatures" element={<><Seo title="Signatures" /><SignatureList /></>} />
+                    <Route path="/settings/reminders" element={<><Seo title="Reminders" /><Reminder /></>} />
+                </Route>
+
+                {/* Module Settings */}
+                <Route element={<ProtectedRoute moduleSlug="module-settings" action="view" />}>
+                    <Route path="/settings/module-settings/invoice" element={<><Seo title="Module Settings - Invoice" /><InvoiceSettings /></>} />
+                    <Route path="/settings/module-settings/purchase" element={<><Seo title="Module Settings - Purchase" /><PurchaseSettings /></>} />
+                    <Route path="/settings/module-settings/purchase-order" element={<><Seo title="Module Settings - Purchase Order" /><PurchaseOrderSettings     /></>} />
+                    <Route path="/settings/module-settings/expense" element={<><Seo title="Module Settings - Expense" /><ExpenseSettings /></>} />
+                    <Route path="/settings/module-settings/quotations" element={<><Seo title="Module Settings - Quotations" /><QuotationSettings /></>} />
+                    <Route path="/settings/module-settings/product" element={<><Seo title="Module Settings - Product" /><ProductSettings /></>} />
+                    <Route path="/settings/module-settings/category" element={<><Seo title="Module Settings - Category" /><CategorySettings /></>} />
+                    <Route path="/settings/module-settings/brand" element={<><Seo title="Module Settings - Brand" /><BrandSettings /></>} />
+                    <Route path="/settings/module-settings/unit" element={<><Seo title="Module Settings - Unit" /><UnitSettings /></>} />
+                </Route>
+
+                {/* Finance Settings */}
+                <Route element={<ProtectedRoute moduleSlug="finance-settings" action="view" />}>
+                    <Route path="/settings/bank-accounts" element={<><Seo title="Bank Accounts" /><BankAccountList /></>} />
+                    <Route path="/settings/tax-rates" element={<><Seo title="Taxes" /><TaxRateList /></>} />
+                    <Route path="/settings/tax-rates/new" element={<><Seo title="New Tax" /><CreateTaxRate /></>} />
+                    <Route path="/settings/tax-rates/edit/:id" element={<><Seo title="Edit Tax" /><EditTaxRate /></>} />
+                    {/* Tax Groups merged into Taxes (spec 2026-07-12) — old deep links land on Taxes */}
+                    <Route path="/settings/tax-groups" element={<Navigate to="/settings/tax-rates" replace />} />
+                    <Route path="/settings/currencies" element={<><Seo title="Currencies" /><CurrencyList /></>} />
+                    <Route path="/settings/ledger-setup" element={<><Seo title="Ledger Setup" /><LedgerSetupWizard /></>} />
+                    <Route path="/settings/document-defaults" element={<><Seo title="Document Defaults" /><DocumentDefaultsPage /></>} />
+                    <Route path="/settings/transaction-categories" element={<><Seo title="Transaction Categories" /><TransactionCategoriesPage /></>} />
+                </Route>
+
+                {/* Unguarded settings pages, relocated as-is: their access
+                    control is unchanged by the shell move. */}
+                <Route path="/settings/payment-gateways" element={<><Seo title="Payment Gateways" /><PaymentGateways /></>} />
+                <Route path="/settings/payment-gateways/razorpay" element={<><Seo title="Razorpay Configuration" /><RazorpayConfig /></>} />
+                <Route path="/settings/payment-gateways/stripe" element={<><Seo title="Stripe Configuration" /><StripeConfig /></>} />
+                <Route path="/settings/accounting-integrations" element={<><Seo title="Accounting Integrations" /><AccountingIntegrations /></>} />
+                <Route path="/settings/messaging" element={<><Seo title="Messaging" /><MessagingSettings /></>} />
+                <Route path="/settings/ai" element={<><Seo title="AI Settings" /><AiSettings /></>} />
             </Route>
 
             {/* No Layout Routes ex: print,pdf,view */}

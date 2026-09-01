@@ -6,6 +6,7 @@ import {
     LifeBuoy,
     PanelLeftClose,
     PanelLeftOpen,
+    Settings,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { assetUrl } from "@utils/assetUrl";
@@ -438,6 +439,21 @@ const Sidebar = ({
                     }
                 })}
             </nav>
+            {/* Settings is no longer a menu in the scrolling nav: it opens its
+                own shell, so it is pinned here with Get Help rather than
+                competing with the modules above. */}
+            <div className="px-3 pb-1 overflow-x-hidden">
+                <NavLink
+                    to="/settings"
+                    className={getLinkClasses}
+                    title={!isOpen ? "Settings" : undefined}
+                >
+                    <div className={getRowLayoutClasses(isOpen)}>
+                        <Settings size={16} />
+                        <span className={getRowLabelClasses(isOpen)}>Settings</span>
+                    </div>
+                </NavLink>
+            </div>
             {/* Pinned above the company footer so it stays reachable from any
                 scroll position in the nav. */}
             <div className="px-3 pb-1 overflow-x-hidden">

@@ -4,7 +4,6 @@ import type { ReactNode } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from '../Sidebar';
 import AiChatFab from '../ai/AiChatFab';
-import DemoBanner from '../DemoBanner';
 import { PageHeaderProvider } from '../../../context/PageHeaderContext';
 import { CommandPaletteProvider } from '../../../context/CommandPaletteContext';
 
@@ -32,7 +31,6 @@ const readStoredSidebarOpen = (): boolean => {
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(readStoredSidebarOpen);
   const { pathname } = useLocation();
-  const isSettingsPage = pathname.includes('/settings');
   const mainRef = useRef<HTMLElement>(null);
 
   // Scroll the main content area back to the top on every route change.
@@ -83,7 +81,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               <Header />
             </div>
             <main ref={mainRef} className="flex-1 overflow-x-hidden overflow-y-auto p-4 print:overflow-visible">
-              {isSettingsPage && <DemoBanner />}
               {children || <Outlet />}
             </main>
           </div>
