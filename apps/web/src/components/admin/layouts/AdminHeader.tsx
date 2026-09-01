@@ -7,6 +7,7 @@ import type { RootState } from '../../../store';
 import { usePageHeader } from '../../../context/PageHeaderContext';
 import { useCommandPalette } from '../../../context/CommandPaletteContext';
 import { useAgentPanel } from '@context/AgentPanelContext';
+import NotificationBell from './NotificationBell';
 import { buildCommands } from '@lib/commandPalette';
 import { resolveBreadcrumb } from '@lib/breadcrumb';
 
@@ -23,8 +24,8 @@ import { resolveBreadcrumb } from '@lib/breadcrumb';
  * which made it the one piece of chrome earning the least from the position it
  * held.
  *
- * What is left is the answer to "where am I" — a breadcrumb — plus the two
- * things you reach for from anywhere: search and Lixi.
+ * What is left is the answer to "where am I" — a breadcrumb — plus the three
+ * things you reach for from anywhere: search, what is waiting, and Lixi.
  */
 const AdminHeader = () => {
     // Page-supplied title + action buttons (null when no page sets them).
@@ -129,6 +130,8 @@ const AdminHeader = () => {
 
                 {/* Page-supplied action buttons, before the global quick-add. */}
                 {pageActions && <div className="flex items-center gap-2">{pageActions}</div>}
+
+                <NotificationBell />
 
                 {/* Lixi. Always present, not gated on the AI config: the panel
                     behind it is the one part of the app you cannot reach any
