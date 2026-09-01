@@ -1,0 +1,21 @@
+{
+  "$comment": "Vitest transpiles test files with esbuild as ES modules, so top-level `await import(...)` -- the idiom that installs vi.mock()s before the module under test is loaded -- is legal at runtime. Under the CommonJS `module` the app itself is built with, tsc rejects it (TS1378), so the tests are type-checked as ESM here instead. Run by `npm run typecheck` alongside the app config.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "es2022",
+    "noEmit": true,
+    "incremental": false
+  },
+  "include": [
+    "tests/**/*.ts",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "uploads"
+  ]
+}

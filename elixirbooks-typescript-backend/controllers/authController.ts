@@ -118,6 +118,21 @@ export async function loadMemberships(userId: string): Promise<MembershipSummary
 }
 
 /**
+ * Provisioning is a LOT of statements for one interactive transaction: the
+ * tenant, its roles, a permission row per module, then the Units, Currencies
+ * and EmailTemplates — each of those seeded with a read-then-write pair, and
+ * each write given a before-image read by the audit extension. That overruns
+ * Prisma's 5s default, after which every later statement fails with P2028
+ * ("Transaction not found... refers to an old closed transaction") and the
+ * signup dies half-way through the email templates.
+ *
+ * It stays ONE transaction on purpose (see provisionTenant below) — it just
+ * needs a budget that matches the work. maxWait covers waiting for a free
+ * connection when several signups land together.
+ */
+const PROVISION_TX_OPTIONS = { maxWait: 10_000, timeout: 60_000 };
+
+/**
  * Provision a complete, usable workspace: the Tenant, its own role set with
  * permissions, the owner membership, and the per-tenant defaults (Units,
  * Currencies, EmailTemplates).
@@ -253,7 +268,7 @@ export async function register(req: Request, res: Response): Promise<void> {
         });
 
         return { user: withRole, tenant: t, membershipId: ownerMembership?.id };
-      }),
+      }, PROVISION_TX_OPTIONS),
     );
 
     const memberships = await loadMemberships(user.id);
@@ -548,11 +563,13 @@ export async function createTenant(req: Request, res: Response): Promise<void> {
     }
 
     const tenant = await runAsSystem(() =>
-      prisma.$transaction((tx) =>
-        provisionTenant(tx as unknown as PrismaClient, {
-          ownerUserId: userId,
-          companyName,
-        }),
+      prisma.$transaction(
+        (tx) =>
+          provisionTenant(tx as unknown as PrismaClient, {
+            ownerUserId: userId,
+            companyName,
+          }),
+        PROVISION_TX_OPTIONS,
       ),
     );
 

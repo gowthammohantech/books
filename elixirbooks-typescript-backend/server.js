@@ -22,10 +22,44 @@ const { auditContextMiddleware } = require('./middleware/auditContext');
 const { runAsSystem } = require('./lib/tenantContext');
 const { blockSettingsWriteInDemo, isDemoMode } = require('./middleware/demoMode');
 const app = express();
+/**
+ * Parse TRUST_PROXY into an Express `trust proxy` value.
+ *
+ *   unset / "1"           one reverse proxy in front of us (Azure App Service,
+ *                         nginx) — the default
+ *   "0" / "false"         none; the socket address IS the client
+ *   "2", "3", ...         that many chained hops
+ *   "10.0.0.0/8,1.2.3.4"  trust these proxy addresses/CIDRs specifically
+ *   "loopback"            any of Express's named presets
+ *
+ * `true` is refused: it tells Express to believe the whole X-Forwarded-For
+ * chain, so a client can send `X-Forwarded-For: <anything>` and draw a fresh
+ * bucket from every express-rate-limit guard we have (signup, workspace
+ * switching, the public token routes). express-rate-limit detects exactly that
+ * and throws ERR_ERL_PERMISSIVE_TRUST_PROXY rather than limit nothing.
+ */
+function parseTrustProxy(raw) {
+  const value = (raw || '').trim();
+  if (!value) return 1;
+  if (/^\d+$/.test(value)) return Number(value);
+  if (value.toLowerCase() === 'false') return false;
+  if (value.toLowerCase() === 'true') {
+    console.warn(
+      '[server] TRUST_PROXY=true would trust any X-Forwarded-For a client sends and ' +
+        'disable IP rate limiting. Falling back to 1 hop — set a hop count or a proxy IP list.',
+    );
+    return 1;
+  }
+  return value.includes(',')
+    ? value.split(',').map((v) => v.trim()).filter(Boolean)
+    : value;
+}
+
 // Behind an HTTPS reverse proxy (TLS terminated upstream). Trust X-Forwarded-*
 // so req.protocol reflects the original scheme (https) — otherwise generated
-// upload/image URLs come out as http://.
-app.set('trust proxy', true);
+// upload/image URLs come out as http://. Only as far as TRUST_PROXY says,
+// because the rate limiters key on the client IP this resolves.
+app.set('trust proxy', parseTrustProxy(process.env.TRUST_PROXY));
 connectDB();
 
 
