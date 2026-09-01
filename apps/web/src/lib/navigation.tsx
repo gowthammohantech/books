@@ -7,10 +7,12 @@ import {
     BarChart2,
     ChartCandlestick,
     LandmarkIcon,
-    BookOpen,
     Percent,
     Receipt,
     Briefcase,
+    Building2,
+    ClipboardCheck,
+    ShieldCheck,
 } from "lucide-react";
 import type { NavItemType } from "@models/sidebar";
 import type { PermissionSet } from "@models/permissions";
@@ -21,24 +23,143 @@ import type { PermissionSet } from "@models/permissions";
  * Lives here rather than in Sidebar.tsx because two surfaces render it: the
  * sidebar tree, and the command palette (which flattens it into searchable
  * destinations). Anything added here shows up in both.
+ *
+ * --- Banding ---
+ *
+ * The tree is grouped into captioned bands (`type: "header"`). The bands name
+ * what a module is FOR rather than what it is called internally, so the rail
+ * reads as an ERP rather than as a list of tables: a purchase clerk looks for
+ * "Purchase Management", not for "Purchases" filed between "Contacts" and
+ * "Items & Inventory".
+ *
+ * A band is presentation only. It carries no route and no permission of its
+ * own — Sidebar.tsx drops any band left empty once permission filtering has
+ * run, so a role that cannot see a single entry under FINANCE never sees the
+ * caption either.
+ *
+ * WORKFORCE is the one band with no counterpart in the reference design. It
+ * exists because Payroll, Time Tracking and Leave are built and shipping;
+ * folding them into FINANCE would misfile them, and dropping the band to match
+ * the reference exactly would hide three working modules behind the command
+ * palette. Better an extra band than an unreachable module.
+ *
+ * --- What is NOT here ---
+ *
+ * The reference rail also shows GRN, a Delivery Challan queue and IRN
+ * generation as first-class destinations. Only routes that exist are listed
+ * below; procure-to-pay and e-invoicing are Phase 1 of
+ * documentation/product/erp-roadmap.md and have no pages to link to yet.
+ *
+ * --- Slugs ---
+ *
+ * `slug` is the permission key, not a label. Retitling an entry is safe;
+ * changing its slug silently changes who can see it, and also moves the
+ * landing route in utils/roleLanding.ts. Every slug below is carried over
+ * unchanged from before the rebanding.
  */
 export const navItems: NavItemType[] = [
+    { type: "header", title: "Overview", slug: "band-overview" },
     // Single entry point: the other dashboard views (Sales, Accounts, Expenses)
     // are switchable from the DashboardSwitcher top bar on every dashboard page.
     { type: "link", to: "/", icon: <Home size={16} />, title: "Dashboard", slug: "dashboard" },
+
+    { type: "header", title: "Operations", slug: "band-operations" },
     {
-        type: "link",
-        to: "/contacts",
-        icon: <Users size={16} />,
-        title: "Contacts",
-        slug: "contacts",
-        addPath: "/contacts/new",
+        type: "collapsible",
+        id: "purchases",
+        icon: <ShoppingBag size={16} />,
+        title: "Purchase Management",
+        slug: "purchases",
+        children: [
+            {
+                type: "link",
+                to: "/purchase-orders",
+                title: "Purchase Orders",
+                slug: "purchase-orders",
+                addPath: "/purchase-orders/new",
+            },
+            {
+                type: "link",
+                to: "/purchases",
+                title: "Purchases",
+                slug: "purchase-list",
+                addPath: "/purchases/new",
+            },
+            {
+                type: "link",
+                to: "/debit-notes",
+                title: "Debit Notes",
+                slug: "debit-notes",
+                addPath: "/debit-notes/new",
+            },
+            {
+                type: "link",
+                to: "/supplier-payments",
+                title: "Supplier Payments",
+                slug: "supplier-payments",
+            },
+            {
+                type: "link",
+                to: "/supplier-balances",
+                title: "Supplier Balances",
+                slug: "purchase-list",
+            },
+        ],
+    },
+    {
+        type: "collapsible",
+        id: "products-inventory",
+        icon: <Box size={16} />,
+        title: "Inventory Management",
+        slug: "product-services",
+        children: [
+            {
+                type: "link",
+                to: "/inventory",
+                title: "Inventory",
+                slug: "inventory",
+                // exact: "/inventory" is a prefix of the cost-layers route,
+                // so without this both children highlight on the cost-layers page.
+                exact: true,
+            },
+            {
+                type: "link",
+                to: "/inventory/cost-layers",
+                title: "Cost Layers (FIFO)",
+                slug: "inventory",
+            },
+            {
+                type: "link",
+                to: "/products",
+                title: "Items",
+                slug: "product-services",
+                addPath: "/products/new",
+            },
+            {
+                type: "link",
+                to: "/categories",
+                title: "Categories",
+                slug: "product-services",
+            },
+            {
+                type: "link",
+                to: "/brands",
+                title: "Brands",
+                slug: "product-services",
+            },
+            {
+                type: "link",
+                to: "/units",
+                title: "Units",
+                slug: "product-services",
+            },
+        ],
     },
     {
         type: "collapsible",
         id: "sales",
         icon: <Receipt size={16} />,
-        title: "Sales",
+        title: "Sales Management",
         slug: "sales",
         children: [
             {
@@ -88,101 +209,24 @@ export const navItems: NavItemType[] = [
         ],
     },
     {
-        type: "collapsible",
-        id: "purchases",
-        icon: <ShoppingBag size={16} />,
-        title: "Purchases",
-        slug: "purchases",
-        children: [
-            {
-                type: "link",
-                to: "/purchases",
-                title: "Purchases",
-                slug: "purchase-list",
-                addPath: "/purchases/new",
-            },
-            {
-                type: "link",
-                to: "/purchase-orders",
-                title: "Purchase Orders",
-                slug: "purchase-orders",
-                addPath: "/purchase-orders/new",
-            },
-            {
-                type: "link",
-                to: "/debit-notes",
-                title: "Debit Notes",
-                slug: "debit-notes",
-                addPath: "/debit-notes/new",
-            },
-            {
-                type: "link",
-                to: "/supplier-payments",
-                title: "Supplier Payments",
-                slug: "supplier-payments",
-            },
-            {
-                type: "link",
-                to: "/supplier-balances",
-                title: "Supplier Balances",
-                slug: "purchase-list",
-            },
-        ],
+        type: "link",
+        to: "/contacts",
+        icon: <Users size={16} />,
+        title: "Contacts",
+        slug: "contacts",
+        addPath: "/contacts/new",
     },
+
+    { type: "header", title: "Finance", slug: "band-finance" },
     {
+        // Banking and the accounting core were two sibling menus. They are one
+        // module to the person doing the books — you reconcile a bank line and
+        // post the journal in the same sitting — so they are one entry, with
+        // the report packs as sub-menus rather than as peers.
         type: "collapsible",
-        id: "products-inventory",
-        icon: <Box size={16} />,
-        title: "Items & Inventory",
-        slug: "product-services",
-        children: [
-            {
-                type: "link",
-                to: "/products",
-                title: "Items",
-                slug: "product-services",
-                addPath: "/products/new",
-            },
-            {
-                type: "link",
-                to: "/categories",
-                title: "Categories",
-                slug: "product-services",
-            },
-            {
-                type: "link",
-                to: "/brands",
-                title: "Brands",
-                slug: "product-services",
-            },
-            {
-                type: "link",
-                to: "/units",
-                title: "Units",
-                slug: "product-services",
-            },
-            {
-                type: "link",
-                to: "/inventory",
-                title: "Inventory",
-                slug: "inventory",
-                // exact: "/inventory" is a prefix of the cost-layers route,
-                // so without this both children highlight on the cost-layers page.
-                exact: true,
-            },
-            {
-                type: "link",
-                to: "/inventory/cost-layers",
-                title: "Cost Layers (FIFO)",
-                slug: "inventory",
-            },
-        ],
-    },
-    {
-        type: "collapsible",
-        id: "banking-finance",
+        id: "accounts",
         icon: <LandmarkIcon size={16} />,
-        title: "Banking & Finance",
+        title: "Accounts Management",
         slug: "banking",
         children: [
             {
@@ -203,6 +247,25 @@ export const navItems: NavItemType[] = [
                 to: "/banking/reconciliation",
                 title: "Reconciliation",
                 slug: "bank-transactions",
+            },
+            {
+                type: "link",
+                to: "/accounting/chart-of-accounts",
+                title: "Chart of Accounts",
+                slug: "chart-of-accounts",
+            },
+            {
+                type: "link",
+                to: "/accounting/journal-entries",
+                title: "Journal Entries",
+                slug: "journal-entries",
+                addPath: "/accounting/journal-entries/new",
+            },
+            {
+                type: "link",
+                to: "/accounting/periods",
+                title: "Accounting Periods",
+                slug: "accounting",
             },
             {
                 type: "link",
@@ -234,109 +297,6 @@ export const navItems: NavItemType[] = [
                 title: "My Money",
                 slug: "my-money",
             },
-        ],
-    },
-    {
-        type: "collapsible",
-        id: "payroll",
-        icon: <Briefcase size={16} />,
-        title: "Payroll",
-        slug: "payroll",
-        children: [
-            {
-                type: "link",
-                to: "/payroll/profiles",
-                title: "Payroll Profiles",
-                slug: "payroll",
-            },
-            {
-                type: "link",
-                to: "/payroll/runs",
-                title: "Pay Runs",
-                slug: "payroll",
-            },
-            {
-                type: "link",
-                to: "/time-tracking/my-timesheet",
-                title: "Time Tracking",
-                slug: "time-tracking",
-            },
-            {
-                type: "link",
-                to: "/time-tracking/approvals",
-                title: "Timesheet Approvals",
-                slug: "time-tracking-others",
-            },
-            {
-                type: "link",
-                to: "/time-tracking/reports",
-                title: "Time Reports",
-                slug: "time-tracking",
-            },
-            {
-                type: "link",
-                to: "/leave/my-leave",
-                title: "My Leave",
-                slug: "time-tracking",
-            },
-            {
-                type: "link",
-                to: "/leave/approvals",
-                title: "Leave Approvals",
-                slug: "time-tracking-others",
-            },
-            {
-                type: "link",
-                to: "/leave/holidays",
-                title: "Holidays",
-                slug: "time-tracking-others",
-            },
-            {
-                type: "link",
-                to: "/leave/leave-types",
-                title: "Leave Types",
-                slug: "time-tracking-others",
-            },
-            {
-                type: "link",
-                to: "/leave/report",
-                title: "Leave Report",
-                slug: "time-tracking",
-            },
-        ],
-    },
-    {
-        type: "collapsible",
-        id: "accounting",
-        icon: <BookOpen size={16} />,
-        title: "Accounting",
-        slug: "accounting",
-        children: [
-            {
-                type: "link",
-                to: "/accounting/chart-of-accounts",
-                title: "Chart of Accounts",
-                slug: "chart-of-accounts",
-            },
-            {
-                type: "link",
-                to: "/accounting/journal-entries",
-                title: "Journal Entries",
-                slug: "journal-entries",
-                addPath: "/accounting/journal-entries/new",
-            },
-            {
-                type: "link",
-                to: "/accounting/periods",
-                title: "Accounting Periods",
-                slug: "accounting",
-            },
-            {
-                type: "link",
-                to: "/accounting/e-invoices",
-                title: "E-Invoices (IRN)",
-                slug: "accounting",
-            },
             {
                 type: "link",
                 to: "/accounting/budgets",
@@ -354,18 +314,6 @@ export const navItems: NavItemType[] = [
                 type: "link",
                 to: "/accounting/projects",
                 title: "Projects",
-                slug: "accounting",
-            },
-            {
-                type: "link",
-                to: "/accounting/fixed-assets",
-                title: "Fixed Assets",
-                slug: "accounting",
-            },
-            {
-                type: "link",
-                to: "/accounting/approvals",
-                title: "Approvals Queue",
                 slug: "accounting",
             },
             {
@@ -452,44 +400,55 @@ export const navItems: NavItemType[] = [
                     },
                 ],
             },
+        ],
+    },
+    {
+        // Promoted out of Accounting. Tax is the reason a large share of these
+        // users open the app at all, and it was three levels deep.
+        type: "collapsible",
+        id: "taxation",
+        icon: <Percent size={16} />,
+        title: "Taxation Management",
+        slug: "accounting",
+        children: [
             {
-                type: "collapsible",
-                id: "tax-reports",
-                icon: <Percent size={16} />,
-                title: "Tax Reports",
+                type: "link",
+                to: "/accounting/reports/tax-summary",
+                title: "Tax Summary",
                 slug: "accounting",
-                children: [
-                    {
-                        type: "link",
-                        to: "/accounting/reports/tax-summary",
-                        icon: <Percent size={16} />,
-                        title: "Tax Summary",
-                        slug: "accounting",
-                    },
-                    {
-                        type: "link",
-                        to: "/accounting/reports/gstr-1",
-                        icon: <Receipt size={16} />,
-                        title: "GSTR-1",
-                        slug: "accounting",
-                    },
-                    {
-                        type: "link",
-                        to: "/accounting/reports/gstr-3b",
-                        icon: <Receipt size={16} />,
-                        title: "GSTR-3B",
-                        slug: "accounting",
-                    },
-                    {
-                        type: "link",
-                        to: "/accounting/tax-returns",
-                        icon: <Receipt size={16} />,
-                        title: "Tax Returns",
-                        slug: "accounting-reports",
-                    },
-                ],
+            },
+            {
+                type: "link",
+                to: "/accounting/reports/gstr-1",
+                title: "GSTR-1",
+                slug: "accounting",
+            },
+            {
+                type: "link",
+                to: "/accounting/reports/gstr-3b",
+                title: "GSTR-3B",
+                slug: "accounting",
+            },
+            {
+                type: "link",
+                to: "/accounting/tax-returns",
+                title: "Tax Returns",
+                slug: "accounting-reports",
+            },
+            {
+                type: "link",
+                to: "/accounting/e-invoices",
+                title: "E-Invoices (IRN)",
+                slug: "accounting",
             },
         ],
+    },
+    {
+        type: "link",
+        to: "/accounting/fixed-assets",
+        icon: <Building2 size={16} />,
+        title: "Fixed Assets",
+        slug: "accounting",
     },
     // One link, not a menu. The accordion here listed twelve of the app's 29
     // reports — the accounting, tax, time and leave reports were reachable only
@@ -504,11 +463,101 @@ export const navItems: NavItemType[] = [
         title: "Reports",
         slug: "reports",
     },
-    // Users, Roles & Permissions and Activity Log used to sit in an
-    // "Administration" group here, duplicating the Settings catalogue's
-    // Users & Roles card. They now live only under Settings, which leaves AI
-    // Extractions as the sole entry — a top-level link rather than a
-    // one-child collapsible.
+
+    { type: "header", title: "Workforce", slug: "band-workforce" },
+    {
+        type: "collapsible",
+        id: "payroll",
+        icon: <Briefcase size={16} />,
+        title: "Payroll & Time",
+        slug: "payroll",
+        children: [
+            {
+                type: "link",
+                to: "/payroll/profiles",
+                title: "Payroll Profiles",
+                slug: "payroll",
+            },
+            {
+                type: "link",
+                to: "/payroll/runs",
+                title: "Pay Runs",
+                slug: "payroll",
+            },
+            {
+                type: "link",
+                to: "/time-tracking/my-timesheet",
+                title: "Time Tracking",
+                slug: "time-tracking",
+            },
+            {
+                type: "link",
+                to: "/time-tracking/approvals",
+                title: "Timesheet Approvals",
+                slug: "time-tracking-others",
+            },
+            {
+                type: "link",
+                to: "/time-tracking/reports",
+                title: "Time Reports",
+                slug: "time-tracking",
+            },
+            {
+                type: "link",
+                to: "/leave/my-leave",
+                title: "My Leave",
+                slug: "time-tracking",
+            },
+            {
+                type: "link",
+                to: "/leave/approvals",
+                title: "Leave Approvals",
+                slug: "time-tracking-others",
+            },
+            {
+                type: "link",
+                to: "/leave/holidays",
+                title: "Holidays",
+                slug: "time-tracking-others",
+            },
+            {
+                type: "link",
+                to: "/leave/leave-types",
+                title: "Leave Types",
+                slug: "time-tracking-others",
+            },
+            {
+                type: "link",
+                to: "/leave/report",
+                title: "Leave Report",
+                slug: "time-tracking",
+            },
+        ],
+    },
+
+    { type: "header", title: "Oversight", slug: "band-oversight" },
+    {
+        // The MCA-compliant change log. It keeps its /activity-log path — the
+        // settings catalogue and the command palette both point at it — but it
+        // belongs in the rail rather than buried in Settings, because "who
+        // changed this document" is an operational question asked daily during
+        // an audit, not a preference.
+        type: "link",
+        to: "/activity-log",
+        icon: <ShieldCheck size={16} />,
+        title: "Audit Trail",
+        slug: "activity-log",
+    },
+    {
+        type: "link",
+        to: "/accounting/approvals",
+        icon: <ClipboardCheck size={16} />,
+        title: "Approvals Queue",
+        slug: "accounting",
+    },
+    // Users, Roles & Permissions used to sit in an "Administration" group here,
+    // duplicating the Settings catalogue's Users & Roles card. They now live
+    // only under Settings.
     {
         type: "link",
         to: "/ai/extractions",

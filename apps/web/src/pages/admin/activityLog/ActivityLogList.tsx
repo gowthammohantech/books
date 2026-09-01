@@ -31,6 +31,33 @@ interface PaginationData { total: number; page: number; limit: number; totalPage
 
 const ACTIONS = ["", "CREATE", "UPDATE", "DELETE"];
 
+/**
+ * The document types worth a tab, in the order an auditor works through them.
+ *
+ * `entityType` on AuditLog is the Prisma MODEL name — lib/auditExtension.ts
+ * records every write on every model except a small denylist — so these values
+ * have to match the schema exactly, not the label shown. They were checked
+ * against schema.prisma; a typo here silently yields an always-empty tab.
+ *
+ * The list is deliberately short. Everything else is still reachable through
+ * "All documents" plus the entity-type box, and a tab strip that names all
+ * ~200 audited models is a worse index than a search field.
+ */
+const DOCUMENT_TABS: ReadonlyArray<{ label: string; entityType: string }> = [
+    { label: "All documents", entityType: "" },
+    { label: "Sales Invoice", entityType: "Invoice" },
+    { label: "Sales Return", entityType: "CreditNote" },
+    { label: "Quotation", entityType: "Quotation" },
+    { label: "Delivery Challan", entityType: "DeliveryChallan" },
+    { label: "Purchase Order", entityType: "PurchaseOrder" },
+    { label: "Purchase Bill", entityType: "Purchase" },
+    { label: "Purchase Return", entityType: "DebitNote" },
+    { label: "Voucher", entityType: "JournalEntry" },
+    { label: "Payments", entityType: "InvoicePayment" },
+    { label: "Stock", entityType: "Inventory" },
+    { label: "Contacts", entityType: "Contact" },
+];
+
 const ActivityLogList: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -86,9 +113,54 @@ const ActivityLogList: React.FC = () => {
   const renderValue = (v: unknown): string =>
     v === undefined ? "—" : typeof v === "object" ? JSON.stringify(v) : String(v);
 
+  // A tab is "current" only when it matches exactly. Typing "Vehicle" into the
+  // entity box selects no tab, which is correct — the filter is real but no tab
+  // represents it, and highlighting the nearest one would misreport it.
+  const activeTab = DOCUMENT_TABS.find((tab) => tab.entityType === entityType);
+
   return (
     <div className="space-y-4">
-      <PageHeader title="Activity Log" />
+      <PageHeader
+        title={activeTab && activeTab.entityType ? `Audit Trail — ${activeTab.label}` : "Audit Trail"}
+      />
+
+      <div>
+        <h1 className="text-xl font-semibold text-foreground">
+          Audit Trail{activeTab?.entityType ? ` — ${activeTab.label}` : ""}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          MCA-compliant change log · every create, update and delete, with the
+          before and after values
+        </p>
+      </div>
+
+      {/* Horizontally scrollable rather than wrapping: a strip that reflows to
+          three rows on a narrow window buries the table below the fold. */}
+      <div className="-mx-1 overflow-x-auto border-b border-border">
+        <div className="flex min-w-max gap-1 px-1" role="tablist">
+          {DOCUMENT_TABS.map((tab) => {
+            const isActive = entityType === tab.entityType;
+            return (
+              <button
+                key={tab.label}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => {
+                  setEntityTypeInput(tab.entityType);
+                  setParam({ entityType: tab.entityType });
+                }}
+                className={`-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors cursor-pointer ${isActive
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="flex flex-wrap gap-2">
         <input

@@ -11,6 +11,10 @@ import {
 import { useSelector } from "react-redux";
 import BottomBar from "./layouts/BottomBar";
 import { resolveCompanyLogo } from "@utils/companyLogo";
+import { formatFiscalYear } from "@utils/fiscalYear";
+import { resolveNavPath as resolveSidebarPath } from "@lib/navPaths";
+import { badgesByRoute } from "@lib/workQueues";
+import { useWorkQueues } from "@hooks/useWorkQueues";
 import { navItems, canView, canCreate } from "@lib/navigation";
 import type { RootState } from "@store/index";
 import type {
@@ -45,15 +49,38 @@ const getRowLabelClasses = (isSidebarOpen: boolean) =>
         : "text-[11px] leading-tight truncate w-full text-center font-medium";
 
 
+/**
+ * How many things are waiting behind this entry.
+ *
+ * A menu shows the sum of everything under it, so "Sales Management 7" is the
+ * overdue invoices plus the expiring quotations you would find by opening it.
+ * Without the roll-up a collapsed menu hides its own alerts, which is the one
+ * job the badge exists to do.
+ */
+const badgeFor = (item: NavItemType, badges: Record<string, number>): number => {
+    if (item.type === "header") return 0;
+    if (item.type === "link") return badges[item.to] ?? 0;
+    return item.children.reduce((total, child) => total + badgeFor(child, badges), 0);
+};
+
+const NavBadge = ({ count }: { count: number }) =>
+    count > 0 ? (
+        <span className="ml-auto shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-semibold leading-none text-primary-foreground">
+            {count > 99 ? "99+" : count}
+        </span>
+    ) : null;
+
 // --- NavItem Component (for top-level links) ---
 const NavItem = ({
     item,
     isSidebarOpen,
     permissions,
+    badges,
 }: {
     item: NavLinkItem;
     isSidebarOpen: boolean;
     permissions: PermissionSet[];
+    badges: Record<string, number>;
 }) => {
     const { pathname: rawPathname } = useLocation();
     const pathname = resolveSidebarPath(rawPathname);
@@ -75,6 +102,7 @@ const NavItem = ({
                 <div className={getRowLayoutClasses(isSidebarOpen)}>
                     {icon}
                     <span className={getRowLabelClasses(isSidebarOpen)}>{title}</span>
+                    {isSidebarOpen && <NavBadge count={badgeFor(item, badges)} />}
                 </div>
             </NavLink>
             {isSidebarOpen && addPath && canCreate(slug, permissions) && (
@@ -93,16 +121,24 @@ const NavItem = ({
 const SubNavLinkItem = ({
     item,
     permissions,
+    badges,
 }: {
     item: NavLinkItem;
     permissions: PermissionSet[];
+    badges: Record<string, number>;
 }) => {
     const { to, title, slug, addPath, exact } = item;
 
     return (
         <div className="relative group/subitem">
             <NavLink to={to} end={to === "/" || exact} className={getSubLinkClasses}>
-                <span>{title}</span>
+                <span className="flex items-center gap-2">
+                    <span>{title}</span>
+                    {/* The leaf badge is the one the parent's roll-up is
+                        summarising — open the menu and the number resolves to
+                        the row it actually came from. */}
+                    <NavBadge count={badgeFor(item, badges)} />
+                </span>
             </NavLink>
 
             {addPath && canCreate(slug, permissions) && (
@@ -127,6 +163,7 @@ interface CollapsibleNavItemProps {
     onToggle: (id: string) => void;
     level: number;
     permissions: PermissionSet[];
+    badges: Record<string, number>;
 }
 
 // This is the updated CollapsibleNavItem component
@@ -138,6 +175,7 @@ const CollapsibleNavItem = ({
     onToggle,
     level,
     permissions,
+    badges,
 }: CollapsibleNavItemProps) => {
     const { id, icon, title, children, slug, addPath } = item;
     const isOpen = openMenus[id] || false;
@@ -146,7 +184,7 @@ const CollapsibleNavItem = ({
     const paddingClass = "p-2 my-1";
     const activeClass =
         isChildActive && isSidebarOpen
-            ? "bg-gray-100 text-gray-800"
+            ? "bg-sidebar-accent text-sidebar-accent-foreground"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
 
     return (
@@ -161,6 +199,7 @@ const CollapsibleNavItem = ({
                     {icon}
                     <span className={getRowLabelClasses(isSidebarOpen)}>{title}</span>
                 </div>
+                {isSidebarOpen && <NavBadge count={badgeFor(item, badges)} />}
                 {isSidebarOpen && (
                     <ChevronDown
                         size={16}
@@ -198,6 +237,7 @@ const CollapsibleNavItem = ({
                                         key={subItem.to}
                                         item={subItem}
                                         permissions={permissions}
+                                        badges={badges}
                                     />
                                 );
                             case "collapsible":
@@ -211,6 +251,7 @@ const CollapsibleNavItem = ({
                                         onToggle={onToggle}
                                         level={level + 1}
                                         permissions={permissions}
+                                        badges={badges}
                                     />
                                 );
                             default:
@@ -227,17 +268,6 @@ const CollapsibleNavItem = ({
 // Some document VIEW routes live outside their list path (e.g.
 // /view-quotation/:id, /view-invoice/:id). Map them to the owning
 // list path so the sidebar highlights the right menu + keeps its group open.
-const SIDEBAR_PATH_ALIASES: ReadonlyArray<readonly [string, string]> = [
-    ["/view-quotation", "/quotations"],
-    ["/view-invoice", "/invoices"],
-];
-const resolveSidebarPath = (pathname: string): string => {
-    for (const [from, to] of SIDEBAR_PATH_ALIASES) {
-        if (pathname === from || pathname.startsWith(`${from}/`)) return to;
-    }
-    return pathname;
-};
-
 const findActiveMenuPath = (
     items: NavItemType[],
     pathname: string
@@ -300,6 +330,17 @@ const Sidebar = ({
         (state: RootState) => state.systemSettings
     );
     const permissions = systemSettings?.permissions || [];
+    // Shared with the dashboard tiles through a module-level cache, so the two
+    // never disagree and the dashboard does not pay for a second request.
+    const { counts } = useWorkQueues();
+    const badges = useMemo(() => badgesByRoute(counts ?? {}), [counts]);
+
+    // "" is the fresh-install default, so a blank string means "never set",
+    // not "set to nothing".
+    const hasOwnLogo = Boolean(systemSettings?.company?.siteLogo?.trim());
+    const fiscalYear = formatFiscalYear(systemSettings?.company?.fiscalYearStartMonth);
+    // The FY half is dropped rather than faked when ledger setup has not run.
+    const subtitle = ["GST-compliant ERP", fiscalYear].filter(Boolean).join(" · ");
 
     const activePath = useMemo(
         () => findActiveMenuPath(navItems, resolveSidebarPath(pathname)),
@@ -368,7 +409,19 @@ const Sidebar = ({
                 })
                 .filter(Boolean) as NavItemType[];
         }
-        return filter(navItems);
+        // Bands are captions, not destinations, so the filter above waves them
+        // through — it has no slug to test them against. That leaves a caption
+        // standing over nothing when a role cannot see any entry beneath it
+        // (a Store Clerk, for instance, sees no FINANCE row at all). Drop any
+        // band with no surviving item before the next band, and any band left
+        // trailing at the end.
+        const visible = filter(navItems);
+        return visible.filter((item, i) => {
+            if (item.type !== "header") return true;
+            const next = visible.slice(i + 1).find((sibling) => sibling.type === "header");
+            const end = next ? visible.indexOf(next) : visible.length;
+            return end > i + 1;
+        });
     }, [permissions]);
 
     return (
@@ -376,36 +429,60 @@ const Sidebar = ({
             className={`bg-sidebar text-sidebar-foreground flex flex-col h-screen transition-all duration-300 ease-in-out z-0 border-r border-sidebar-border ${isOpen ? "w-60" : "w-24"
                 }`}
         >
-            {/* Only one branding image is rendered per state. Hiding the wide
-                site logo with opacity instead left an ~8rem phantom element
-                inside the w-24 collapsed rail, pushing the icon out of sight.
-                resolveCompanyLogo treats "" (the fresh-install default) as
-                unset, so the collapsed icon always has something to show. */}
+            {/* Product identity, not company identity — the company moved to
+                the footer, where the workspace switcher is.
+
+                An install that has uploaded its own siteLogo keeps it: this is
+                white-labelled on-prem, and replacing a customer's mark with our
+                wordmark would be a regression, not a redesign. The lettermark
+                below is the fallback for everyone else, which is most installs
+                (siteLogo defaults to ""). resolveCompanyLogo cannot answer
+                "did they set one?" — it always returns the bundled fallback —
+                so the raw value is what gets tested here.
+
+                Only one branding element is rendered per state. Hiding the wide
+                logo with opacity instead left an ~8rem phantom element inside
+                the w-24 collapsed rail, pushing the icon out of sight. */}
             <div
-                className={`p-4 flex items-center h-12 ${isOpen ? "" : "justify-center"
+                className={`px-4 py-3 flex items-center ${isOpen ? "gap-2.5" : "justify-center"
                     }`}
             >
                 <button
                     type="button"
                     onClick={() => navigate("/dashboard")}
                     aria-label="Go to dashboard"
-                    className="flex cursor-pointer items-center"
+                    className="flex cursor-pointer items-center gap-2.5 min-w-0"
                 >
-                    {isOpen ? (
-                        <img
-                            src={resolveCompanyLogo(systemSettings?.company?.siteLogo)}
-                            alt="Logo"
-                            className="w-32"
-                        />
-                    ) : (
+                    {hasOwnLogo ? (
                         <img
                             src={resolveCompanyLogo(
-                                systemSettings?.company?.favicon ||
-                                systemSettings?.company?.siteLogo,
+                                isOpen
+                                    ? systemSettings?.company?.siteLogo
+                                    : systemSettings?.company?.favicon ||
+                                    systemSettings?.company?.siteLogo,
                             )}
                             alt="Logo"
-                            className="h-6 w-6 object-contain"
+                            className={isOpen ? "w-32" : "h-8 w-8 object-contain"}
                         />
+                    ) : (
+                        <span
+                            aria-hidden="true"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-bold tracking-tight"
+                        >
+                            EB
+                        </span>
+                    )}
+                    {isOpen && !hasOwnLogo && (
+                        <span className="flex min-w-0 flex-col text-left">
+                            <span className="truncate text-sm font-semibold leading-tight text-sidebar-foreground">
+                                Elixir Book
+                            </span>
+                            {subtitle && (
+                                <span className="truncate text-[11px] leading-tight text-sidebar-foreground/60">
+                                    {subtitle}
+                                </span>
+                            )}
+                        </span>
                     )}
                 </button>
             </div>
@@ -417,7 +494,7 @@ const Sidebar = ({
                                 <p
                                     key={index}
                                     className={`${index > 0 ? "mt-4 pt-2" : ""
-                                        } mb-1 text-xs font-medium text-gray-400 uppercase ${index > 0 ? "border-t border-sidebar-border" : ""
+                                        } mb-1 text-xs font-medium text-sidebar-foreground/60 uppercase ${index > 0 ? "border-t border-sidebar-border" : ""
                                         } tracking-wider transition-opacity duration-300 ease-in-out ${isOpen ? "opacity-100" : "hidden"
                                         }`}
                                 >
@@ -431,6 +508,7 @@ const Sidebar = ({
                                     item={item}
                                     isSidebarOpen={isOpen}
                                     permissions={permissions}
+                                    badges={badges}
                                 />
                             );
                         case "collapsible":
@@ -444,6 +522,7 @@ const Sidebar = ({
                                     onToggle={handleToggle}
                                     level={1}
                                     permissions={permissions}
+                                    badges={badges}
                                 />
                             );
                         default:

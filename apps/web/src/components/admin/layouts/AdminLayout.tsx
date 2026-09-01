@@ -3,9 +3,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from '../Sidebar';
-import AiChatFab from '../ai/AiChatFab';
+import AgentDock from '../ai/AgentDock';
 import { PageHeaderProvider } from '../../../context/PageHeaderContext';
 import { CommandPaletteProvider } from '../../../context/CommandPaletteContext';
+import { AgentPanelProvider } from '../../../context/AgentPanelContext';
 
 interface AdminLayoutProps {
   children?: ReactNode;
@@ -72,23 +73,30 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       {/* Owns the Ctrl/Cmd+K palette and renders it, so the header trigger and
           any page can open it via useCommandPalette(). */}
       <CommandPaletteProvider>
-        <div className="flex h-screen bg-background font-sans print:block print:h-auto">
-          <div className="print:hidden">
-            <Sidebar isOpen={isSidebarOpen} onToggle={toggleSidebar} />
-          </div>
-          <div className="flex-1 flex flex-col overflow-hidden print:overflow-visible">
+        <AgentPanelProvider>
+          <div className="flex h-screen bg-background font-sans print:block print:h-auto">
             <div className="print:hidden">
-              <Header />
+              <Sidebar isOpen={isSidebarOpen} onToggle={toggleSidebar} />
             </div>
-            <main ref={mainRef} className="flex-1 overflow-x-hidden overflow-y-auto p-4 print:overflow-visible">
-              {children || <Outlet />}
-            </main>
+            <div className="flex-1 flex flex-col overflow-hidden print:overflow-visible min-w-0">
+              <div className="print:hidden">
+                <Header />
+              </div>
+              <main ref={mainRef} className="flex-1 overflow-x-hidden overflow-y-auto p-4 print:overflow-visible">
+                {children || <Outlet />}
+              </main>
+            </div>
+            {/* Cluster H — slice H.3. A sibling column rather than an overlay:
+                the agent is meant to be worked ALONGSIDE the page (read a
+                number off the invoice list, ask about it), and a panel that
+                covers what you are asking about defeats that. It renders
+                nothing at all when AI is disabled, so the flex row is
+                unchanged for those installs. */}
+            <div className="print:hidden">
+              <AgentDock />
+            </div>
           </div>
-          {/* Cluster H — slice H.3: floating co-pilot, only visible when AI is enabled */}
-          <div className="print:hidden">
-            <AiChatFab />
-          </div>
-        </div>
+        </AgentPanelProvider>
       </CommandPaletteProvider>
     </PageHeaderProvider>
   );

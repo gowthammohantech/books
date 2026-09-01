@@ -60,8 +60,10 @@ const StatsCard: FC<StatsCardProps> = ({ title, value, difference, icon, accent,
                 </div>
             </div>
 
-            {/* Value */}
-            <p className="text-2xl font-bold text-foreground mt-3">
+            {/* Value. Mono + tabular figures so a column of these lines up on
+                the decimal — proportional digits make ₹2,90,700 and ₹1,33,324
+                different widths, and a KPI row is read by comparing them. */}
+            <p className="text-2xl font-bold text-foreground mt-3 font-mono tabular-nums tracking-tight">
                 {value}
             </p>
 

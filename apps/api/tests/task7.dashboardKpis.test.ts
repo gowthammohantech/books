@@ -31,6 +31,9 @@ const H = vi.hoisted(() => ({
   supplierPaymentAggregate: vi.fn(),
   debitNoteCount: vi.fn(),
   creditNoteFindMany: vi.fn(),
+  purchaseCount: vi.fn(),
+  expenseCount: vi.fn(),
+  bankTransactionCount: vi.fn(),
 }));
 
 vi.mock('../lib/prisma', () => ({
@@ -39,7 +42,9 @@ vi.mock('../lib/prisma', () => ({
     product: { count: H.productCount, findMany: H.productFindMany },
     customer: { count: H.customerCount, findMany: H.customerFindMany },
     contact: { count: H.contactCount, findMany: H.contactFindMany },
-    purchase: { findMany: H.purchaseFindMany, aggregate: H.purchaseAggregate },
+    purchase: { findMany: H.purchaseFindMany, aggregate: H.purchaseAggregate, count: H.purchaseCount },
+    expense: { count: H.expenseCount },
+    bankTransaction: { count: H.bankTransactionCount },
     invoicePayment: { findMany: H.invoicePaymentFindMany, aggregate: H.invoicePaymentAggregate },
     quotation: { count: H.quotationCount },
     supplierPayment: { aggregate: H.supplierPaymentAggregate },
@@ -86,6 +91,9 @@ beforeEach(() => {
   H.supplierPaymentAggregate.mockResolvedValue({ _sum: { paidAmount: 0 } });
   H.debitNoteCount.mockResolvedValue(0);
   H.creditNoteFindMany.mockResolvedValue([]);
+  H.purchaseCount.mockResolvedValue(0);
+  H.expenseCount.mockResolvedValue(0);
+  H.bankTransactionCount.mockResolvedValue(0);
 
   // invoice.findMany fans out to last-5 / graph1 / graph2 / aging — key on select.
   H.invoiceFindMany.mockImplementation((args: { select?: Record<string, unknown> }) => {

@@ -80,7 +80,13 @@ function membershipRows(tenantIds: string[]) {
     id: `mem-${i + 1}`,
     tenantId: id,
     isOwner: i === 0,
-    tenant: { name: id === ACME ? 'Acme Ltd' : 'Globex Inc', slug: id === ACME ? 'acme' : 'globex' },
+    tenant: {
+      name: id === ACME ? 'Acme Ltd' : 'Globex Inc',
+      slug: id === ACME ? 'acme' : 'globex',
+      plan: 'free',
+      companySettings: { city: id === ACME ? 'Chennai' : 'Salem' },
+      _count: { memberships: i + 1 },
+    },
     role: { roleName: i === 0 ? 'Owner' : 'Staff' },
   }));
 }

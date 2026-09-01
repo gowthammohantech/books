@@ -216,6 +216,8 @@ const Constants = {
   GET_SALES_REPORT_URL: `${API_BASE_URL}/admin/report/sales`,
   GET_SALES_RETURN_REPORT_URL: `${API_BASE_URL}/admin/report/sales-return`,
   GET_DASHBOARD_DATA_URL: `${API_BASE_URL}/admin/dashboard`,
+  // The dashboard's queue counts on their own, for the sidebar badges.
+  GET_WORK_QUEUES_URL: `${API_BASE_URL}/admin/work-queues`,
   GET_ACCOUNTS_PLANNING_URL: `${API_BASE_URL}/admin/dashboard/accounts-planning`,
   GET_INCOME_REPORT_URL: `${API_BASE_URL}/admin/report/income`,
   GET_EXPENSE_REPORT_URL: `${API_BASE_URL}/admin/report/expense`,

@@ -60,6 +60,7 @@ const SYNONYMS: Record<string, string[]> = {
     "/users": ["staff", "team", "members"],
     "/roles": ["permissions", "access"],
     "/settings/tax-rates": ["gst", "vat", "taxes"],
+    "/activity-log": ["activity log", "audit", "change log", "history", "who changed"],
 };
 
 /**

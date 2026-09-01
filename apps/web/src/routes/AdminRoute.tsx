@@ -387,6 +387,17 @@ const AdminRoute = () => {
                     <Route path="/accounting/approvals" element={<><Seo title="Approvals Queue" /><ApprovalsQueue /></>} />
                 </Route>
 
+                {/* Audit Trail. Moved out of the settings shell: "who changed
+                    this document" is a question asked while working, not a
+                    preference to configure, and the OVERSIGHT band in the rail
+                    now points here. Path and permission slug are unchanged. */}
+                <Route element={<ProtectedRoute moduleSlug="activity-log" action="view" />}>
+                    <Route path="/activity-log" element={<><Seo title="Audit Trail" /><ActivityLogList /></>} />
+                    {/* The rail and the settings catalogue both say
+                        /activity-log, but "audit trail" is what people type. */}
+                    <Route path="/audit-trail" element={<Navigate to="/activity-log" replace />} />
+                </Route>
+
                 {/* Country tax returns (regime-aware: UK VAT / AU BAS / NZ GST / EU VAT) */}
                 <Route element={<ProtectedRoute moduleSlug="accounting-reports" action="view" />}>
                     <Route path="/accounting/tax-returns" element={<><Seo title="Tax Returns" /><TaxReturns /></>} />
@@ -509,11 +520,6 @@ const AdminRoute = () => {
                     <Route path="/users" element={<><Seo title="Users" /><UserList /></>} />
                     <Route path="/roles" element={<><Seo title="Roles" /><RolesList /></>} />
                     <Route path="/roles/permissions/:id" element={<><Seo title="Role Permissions" /><RolePermissions /></>} />
-                </Route>
-
-                {/* Activity Log */}
-                <Route element={<ProtectedRoute moduleSlug="activity-log" action="view" />}>
-                    <Route path="/activity-log" element={<><Seo title="Activity Log" /><ActivityLogList /></>} />
                 </Route>
 
                 {/* PDF Templates */}

@@ -1,10 +1,19 @@
 /**
- * Slide-in financial co-pilot chat panel (Cluster H, slice H.3).
+ * Financial co-pilot chat panel (Cluster H, slice H.3).
  *
- * Anchored to the right edge (420px). Streams assistant replies token by
- * token via `useAiChatStream`, renders assistant text as markdown, shows
- * tool calls inline as subtle "🔧 …" lines, and persists/loads sessions
- * through the chat-session API. Empty state offers three suggested prompts.
+ * Streams assistant replies token by token via `useAiChatStream`, renders
+ * assistant text as markdown, shows tool calls inline as subtle "🔧 …" lines,
+ * and persists/loads sessions through the chat-session API. Empty state offers
+ * three suggested prompts.
+ *
+ * It no longer positions itself. AgentDock decides whether the panel is a
+ * layout column or an overlay, and only mounts it when open — so what used to
+ * be an `isOpen` prop driving a translate-x transition and a backdrop is now
+ * just "fill the box I was given".
+ *
+ * Past conversations moved out of a cramped header dropdown into an Activity
+ * tab beside Chat. Same `sessions` state, same handlers; the list simply has
+ * room to be read now.
  */
 import api from '@lib/apiClient';
 import {
@@ -20,8 +29,6 @@ import {
 import { useSelector } from 'react-redux';
 import ReactMarkdown from 'react-markdown';
 import {
-  ChevronDown,
-  History,
   Loader2,
   Pencil,
   Plus,
@@ -36,9 +43,10 @@ import type { RootState } from '@store/index';
 import { useAiChatStream, type ToolEvent } from '@hooks/useAiChatStream';
 
 interface AiChatPanelProps {
-  isOpen: boolean;
   onClose: () => void;
 }
+
+type PanelTab = 'chat' | 'activity';
 
 type Role = 'USER' | 'ASSISTANT' | 'TOOL';
 
@@ -69,7 +77,8 @@ function toolLabel(name: string): string {
   return `Looked up ${pretty}`;
 }
 
-const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
+const AiChatPanel: FC<AiChatPanelProps> = ({ onClose }) => {
+  const [tab, setTab] = useState<PanelTab>('chat');
   const token = useSelector((s: RootState) => s.auth.token);
   const authHeaders = useMemo(() => ({}), [token]);
 
@@ -78,7 +87,6 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [input, setInput] = useState('');
   const [sessions, setSessions] = useState<SessionListItem[]>([]);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
 
@@ -99,8 +107,8 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
 
   // Load session list whenever the panel opens.
   useEffect(() => {
-    if (isOpen) void refreshSessions();
-  }, [isOpen, refreshSessions]);
+    void refreshSessions();
+  }, [refreshSessions]);
 
   // Auto-scroll to the newest content.
   useEffect(() => {
@@ -111,13 +119,13 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
     setSessionId(null);
     setTitle(null);
     setMessages([]);
-    setHistoryOpen(false);
+    setTab('chat');
   }, []);
 
   const loadSession = useCallback(
     async (id: string) => {
       if (!token) return;
-      setHistoryOpen(false);
+      setTab('chat');
       try {
         const res = await api.get(`${Constants.AI_CHAT_SESSIONS_URL}/${id}`, {
           headers: authHeaders
@@ -226,24 +234,11 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
   const hasContent = messages.length > 0 || isStreaming;
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className={`fixed inset-0 z-[60] bg-black/30 transition-opacity duration-200 ${
-          isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
-        }`}
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Panel */}
-      <aside
-        className={`fixed right-0 top-0 z-[61] flex h-screen w-full max-w-[420px] flex-col bg-white shadow-2xl transition-transform duration-300 ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
-        role="dialog"
-        aria-label="Financial co-pilot chat"
-      >
+    <div
+      className="flex h-full min-h-0 flex-col bg-card"
+      role="region"
+      aria-label="Financial co-pilot"
+    >
         {/* Header */}
         <div className="flex items-center gap-2 border-b border-gray-200 px-4 py-3">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white">
@@ -282,51 +277,6 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
             )}
           </div>
 
-          {/* History dropdown */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setHistoryOpen((o) => !o)}
-              className="flex items-center gap-0.5 rounded p-1.5 text-gray-500 hover:bg-gray-100"
-              title="Chat history"
-            >
-              <History size={16} />
-              <ChevronDown size={12} />
-            </button>
-            {historyOpen && (
-              <div className="absolute right-0 top-9 z-10 max-h-80 w-72 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-                {sessions.length === 0 ? (
-                  <p className="px-3 py-2 text-xs text-gray-400">No previous chats</p>
-                ) : (
-                  sessions.map((s) => (
-                    <div
-                      key={s.id}
-                      className={`group flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50 ${
-                        s.id === sessionId ? 'bg-violet-50' : ''
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => void loadSession(s.id)}
-                        className="min-w-0 flex-1 truncate text-left text-gray-700"
-                      >
-                        {s.title || 'Untitled chat'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void deleteSession(s.id)}
-                        className="opacity-0 group-hover:opacity-100"
-                        title="Delete chat"
-                      >
-                        <Trash2 size={13} className="text-gray-400 hover:text-destructive" />
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-
           <button
             type="button"
             onClick={startNewChat}
@@ -345,6 +295,70 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
+        {/* Chat is the live conversation; Activity is everything before it.
+            A dropdown could hold four sessions legibly and this list is
+            unbounded. */}
+        <div className="flex gap-1 border-b border-gray-200 px-3 pt-2" role="tablist">
+          {([
+            ['chat', 'Chat'],
+            ['activity', 'Activity'],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={tab === key}
+              onClick={() => setTab(key)}
+              className={`-mb-px border-b-2 px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer ${
+                tab === key
+                  ? 'border-primary text-foreground'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {label}
+              {key === 'activity' && sessions.length > 0 && (
+                <span className="ml-1.5 text-xs text-muted-foreground">{sessions.length}</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'activity' && (
+          <div className="flex-1 overflow-y-auto py-1" role="tabpanel">
+            {sessions.length === 0 ? (
+              <p className="px-4 py-3 text-xs text-gray-400">No previous chats</p>
+            ) : (
+              sessions.map((s) => (
+                <div
+                  key={s.id}
+                  className={`group flex items-center gap-2 px-4 py-2 text-sm hover:bg-gray-50 ${
+                    s.id === sessionId ? 'bg-accent' : ''
+                  }`}
+                >
+                  <button
+                    type="button"
+                    // loadSession switches to the Chat tab itself — reading or
+                    // continuing a past chat is what opening one is for.
+                    onClick={() => void loadSession(s.id)}
+                    className="min-w-0 flex-1 truncate text-left text-gray-700"
+                  >
+                    {s.title || 'Untitled chat'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void deleteSession(s.id)}
+                    className="opacity-0 group-hover:opacity-100"
+                    title="Delete chat"
+                  >
+                    <Trash2 size={13} className="text-gray-400 hover:text-destructive" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {tab === 'chat' && (<>
         {/* Message list */}
         <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
           {!hasContent && (
@@ -428,8 +442,8 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
             Enter to send · Shift+Enter for a new line · ≈ $0.005 / reply
           </p>
         </div>
-      </aside>
-    </>
+        </>)}
+    </div>
   );
 };
 

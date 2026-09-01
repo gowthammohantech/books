@@ -11,6 +11,7 @@ import type { AppDispatch } from "@store/index";
 import { registerUser } from "@store/auth/authSlice";
 import { useSetupStatus } from "@context/SetupStatusContext";
 import { isValidPhone, PHONE_ERROR } from "@elixirbooks/validation";
+import AuthShell from "./AuthShell";
 
 /**
  * Public, uncapped signup.
@@ -154,34 +155,33 @@ const AdminRegister: React.FC = () => {
     }
     if (signupsEnabled === false) {
         return (
-            <div className="min-h-screen flex items-center justify-center p-6">
-                <div className="w-full max-w-md bg-white rounded-2xl border border-gray-200 p-10 text-center">
-                    <h2 className="text-xl font-bold text-primary mb-2">Sign-ups are closed</h2>
-                    <p className="text-sm text-gray-600 mb-6">
-                        This instance is not accepting new workspaces. Ask an administrator to
-                        invite you, or sign in if you already have an account.
-                    </p>
-                    <Link
-                        to="/signin"
-                        className="inline-block px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90"
-                    >
-                        Go to sign in
-                    </Link>
-                </div>
-            </div>
+            <AuthShell
+                active="signup"
+                heading="Sign-ups are closed"
+                subheading="This instance is not accepting new workspaces. Ask an administrator to add you, or sign in if you already have an account."
+            >
+                <Link
+                    to="/signin"
+                    className="inline-block px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
+                >
+                    Go to sign in
+                </Link>
+            </AuthShell>
         );
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center">
-            <div className="w-full max-w-2xl bg-white rounded-2xl border border-gray-200 p-10">
-                <h2 className="text-2xl font-bold text-center text-primary mb-2">
-                    Create your workspace
-                </h2>
-                <p className="text-sm text-center text-muted-foreground mb-8">
-                    You will be the owner of this workspace and can invite your team later.
+        <AuthShell
+            active="signup"
+            wide
+            heading="Start your free trial"
+            subheading="You will be the owner of this workspace and can add your team later."
+            footer={
+                <p className="text-center text-xs text-muted-foreground">
+                    By continuing you agree to the Terms &amp; Privacy Policy.
                 </p>
-
+            }
+        >
                 <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleSubmit}>
                     {/* First Name */}
                     <div className="flex flex-col">
@@ -226,7 +226,7 @@ const AdminRegister: React.FC = () => {
                     {/* Company name - names the workspace this signup creates. */}
                     <div className="flex flex-col md:col-span-2">
                         <label className="text-sm font-medium text-gray-700 mb-1">
-                            Company Name <span className="text-destructive">*</span>
+                            Organization / company name <span className="text-destructive">*</span>
                         </label>
                         <div className="relative">
                             <Building2 className="absolute left-3 top-3 text-gray-400" size={18} />
@@ -356,15 +356,7 @@ const AdminRegister: React.FC = () => {
                         </button>
                     </div>
                 </form>
-
-                <p className="mt-6 text-center text-sm text-muted-foreground">
-                    Already have an account?{" "}
-                    <Link to="/signin" className="font-medium text-primary hover:underline">
-                        Sign in
-                    </Link>
-                </p>
-            </div>
-        </div>
+        </AuthShell>
     );
 };
 

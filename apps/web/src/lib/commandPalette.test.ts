@@ -101,7 +101,7 @@ describe('coverage of the real sidebar tree', () => {
         'Banking', 'Expenses', 'Petty Cash', 'Chart of Accounts',
         'Journal Entries', 'Budgets', 'Fixed Assets', 'Payroll Profiles',
         'Pay Runs', 'Time Tracking', 'Holidays', 'Users', 'Roles & Permissions',
-        'Activity Log', 'Company Settings', 'Email Settings', 'Bank Accounts',
+        'Audit Trail', 'Company Settings', 'Email Settings', 'Bank Accounts',
         'Currencies', 'Vehicles', 'Delivery Challans',
     ])('reaches %s', (title) => {
         expect(superAdminCommands.map((c) => c.title)).toContain(title);
