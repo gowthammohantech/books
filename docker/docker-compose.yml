@@ -1,28 +1,6 @@
 name: elixirbooks
 
 services:
-  # Mongo is OPT-IN / legacy. The application uses PostgreSQL (Prisma) as its
-  # sole datastore. Start Mongo only if you specifically need it:
-  #   docker compose --profile mongo up -d     (and set MONGO_URI in docker/.env)
-  mongo:
-    image: mongo:7
-    profiles: ["mongo"]
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-elixirbooks}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-elixirbooks}
-      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-elixirbooks}
-    volumes:
-      - elixirbooks-mongo-data:/data/db
-    networks:
-      - elixirbooks
-    healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -43,15 +21,14 @@ services:
 
   api:
     build:
-      context: ../elixirbooks-typescript-backend
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: apps/api/Dockerfile
     image: elixirbooks-api:slice-0
     restart: unless-stopped
     environment:
       NODE_ENV: ${NODE_ENV}
       PORT: ${PORT}
       JWT_SECRET: ${JWT_SECRET}
-      MONGO_URI: ${MONGO_URI:-}
       DATABASE_URL: ${DATABASE_URL}
       # Entrypoint runs prisma migrate deploy + idempotent baseline seed on boot.
       SEED_ON_BOOT: ${SEED_ON_BOOT:-true}
@@ -72,7 +49,7 @@ services:
       SMTP_FROM: ${SMTP_FROM}
       REDIS_URL: ${REDIS_URL:-}
     volumes:
-      - elixirbooks-uploads:/app/uploads
+      - elixirbooks-uploads:/repo/apps/api/uploads
     networks:
       - elixirbooks
     depends_on:
@@ -81,8 +58,8 @@ services:
 
   web:
     build:
-      context: ../elixirbooks-typescript-frontend
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: apps/web/Dockerfile
       args:
         VITE_DEMO_MODE: ${VITE_DEMO_MODE:-false}
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
@@ -117,8 +94,8 @@ services:
   worker:
     profiles: ["redis"]
     build:
-      context: ../elixirbooks-typescript-backend
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: apps/api/Dockerfile
     image: elixirbooks-api:slice-0
     restart: unless-stopped
     # In Slice 0 the worker container is a placeholder: it boots the same image
@@ -128,7 +105,6 @@ services:
       NODE_ENV: ${NODE_ENV}
       PORT: 3002
       JWT_SECRET: ${JWT_SECRET}
-      MONGO_URI: ${MONGO_URI:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       REDIS_URL: ${REDIS_URL}
@@ -139,7 +115,6 @@ services:
         condition: service_healthy
 
 volumes:
-  elixirbooks-mongo-data:
   elixirbooks-pg-data:
   elixirbooks-redis-data:
   elixirbooks-uploads:

@@ -1,0 +1,3032 @@
+// =============================================================================
+// Elixir Books - Entity Relationship Diagram (DBML / dbdiagram.io)
+// Generated from apps/api/prisma/schema.prisma
+// 101 tables, 82 enums. Target: PostgreSQL.
+// =============================================================================
+
+Project elixir_books {
+  database_type: 'PostgreSQL'
+  Note: 'Multi-tenant accounting & invoicing platform. Tenancy resolves as User.ownerId ?? User.id - every business record hangs off a User (company owner).'
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+Enum UserGender {
+  male
+  female
+  other
+}
+
+Enum UserBalanceType {
+  credit
+  debit
+}
+
+Enum ModuleUserType {
+  ADMIN
+  TYPE_TWO
+  TYPE_THREE
+}
+
+Enum BankAccountType {
+  savings
+  current
+}
+
+Enum BankTransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  TRANSFER_IN
+  TRANSFER_OUT
+  PAYMENT
+  RECEIPT
+}
+
+Enum BankTransactionRelatedType {
+  INVOICE_PAYMENT
+  SUPPLIER_PAYMENT
+  PETTYCASH
+  EXPENSE
+  MANUAL
+}
+
+Enum CustomerStatus {
+  Active
+  Inactive
+}
+
+Enum InventoryHistoryType {
+  stock_in
+  stock_out
+  adjustment
+}
+
+Enum InventoryHistoryReferenceType {
+  purchase
+  invoice
+  return_
+  adjustment
+}
+
+Enum ProductItemType {
+  Product
+  Service
+}
+
+Enum SupplierBalanceType {
+  credit
+  debit
+}
+
+Enum SupplierPaymentSourceType {
+  BANK
+  PETTY_CASH
+}
+
+Enum CreditNoteReason {
+  RETURN
+  DAMAGED_GOODS
+  WRONG_ITEM
+  OVERCHARGE
+  CANCELLATION
+  OTHER
+}
+
+Enum CreditNoteStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+Enum CreditNoteRefundMethod {
+  CASH
+  BANK_TRANSFER
+  CREDIT_TO_ACCOUNT
+  NONE
+}
+
+Enum SignType {
+  none
+  digitalSignature
+  eSignature
+}
+
+Enum DebitNoteStatus {
+  new
+  pending
+  completed
+  cancelled
+  partially_paid
+  paid
+}
+
+Enum DeliveryChallanStatus {
+  PENDING
+  DELIVERED
+  CANCELLED
+  DRAFT
+}
+
+Enum EmailTemplateStatus {
+  active
+  inactive
+}
+
+Enum InvoiceStatus {
+  DRAFT
+  UNPAID
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+  PARTIALLY_PAID
+}
+
+Enum InvoiceType {
+  INVOICE
+  PROFORMA
+}
+
+Enum RecurrenceFrequency {
+  day
+  week
+  month
+  year
+  custom
+}
+
+Enum RecurrenceCustomIntervalType {
+  day
+  week
+  month
+  year
+}
+
+Enum RecurringScheduleStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ENDED
+  COMPLETED
+}
+
+Enum QuotationStatus {
+  draft
+  sent
+  accepted
+  declined
+}
+
+Enum QuotationConvertType {
+  quotation
+  invoice
+  purchase
+}
+
+Enum ReminderType {
+  automatic
+  manual
+  automatic_Purchase
+  manual_purchase
+  automatic_quotation
+  manual_quotation
+}
+
+Enum ReminderTiming {
+  before
+  after
+  duedate
+}
+
+Enum ReminderEvent {
+  due_date
+  invoice_date
+  payment_date
+  quotation_date
+  expiry_date
+}
+
+Enum ReminderStatus {
+  active
+  inactive
+  archived
+}
+
+Enum ExpensePaymentStatus {
+  PAID
+  CANCELLED
+  PENDING
+}
+
+Enum ExpenseSourceType {
+  BANK
+  PETTY_CASH
+  EMPLOYEE_PAID
+}
+
+Enum PettyCashTransactionType {
+  ADD
+  SPEND
+  RETURN
+}
+
+Enum PettyCashTransactionRelatedType {
+  PETTY_CASH
+  SUPPLIER_PAYMENT
+  EXPENSE
+  BANK
+}
+
+Enum PurchaseStatus {
+  new
+  pending
+  completed
+  cancelled
+  partially_paid
+  paid
+}
+
+Enum PurchaseSignType {
+  none
+  digitalSignature
+  eSignature
+}
+
+Enum PurchaseOrderStatus {
+  new
+  pending
+  completed
+  cancelled
+}
+
+Enum PurchaseOrderPaymentMode {
+  CASH
+  CREDIT
+  CHECK
+  BANK_TRANSFER
+  OTHER
+}
+
+Enum PurchaseOrderSignType {
+  digitalSignature
+  eSignature
+  none
+}
+
+Enum PurchaseOrderConvertType {
+  purchase
+  estimate
+  invoice
+}
+
+Enum EmailSettingsProviderType {
+  NODE
+  SMTP
+  RESEND
+}
+
+Enum LocalizationStartWeek {
+  Sunday
+  Monday
+  Tuesday
+  Wednesday
+  Thursday
+  Friday
+  Saturday
+}
+
+Enum CustomFieldStatus {
+  Active
+  Inactive
+}
+
+Enum CustomFieldPlacement {
+  document
+  lineItem
+}
+
+Enum CustomFieldDataTypeKind {
+  text
+  number
+  email
+  date
+  time
+  boolean
+  array
+  object
+  set
+  function
+  textarea
+  select
+  checkbox
+  radio
+  currency
+}
+
+Enum CustomFieldValueModule {
+  invoice
+  purchase
+  inventory
+  customer
+  supplier
+  expense
+  purchaseOrder
+  product
+  category
+  brand
+  unit
+}
+
+Enum FieldTypeStatus {
+  Active
+  Inactive
+}
+
+Enum NotificationTagStatus {
+  active
+  inactive
+}
+
+Enum NotificationTypeStatus {
+  active
+  inactive
+}
+
+Enum AIDocumentType {
+  invoice
+  purchase_order
+  quotation
+  expense
+}
+
+Enum AIChatSessionStatus {
+  active
+  completed
+  abandoned
+}
+
+Enum AIConfigurationDefaultTaxType {
+  GST
+  CGST_SGST
+  IGST
+  VAT
+  none
+}
+
+Enum AIPromptLogStatus {
+  pending
+  processed
+  confirmed
+  failed
+  cancelled
+}
+
+Enum AIPromptLogCreatedDocumentType {
+  Invoice
+  PurchaseOrder
+  Quotation
+  Expense
+}
+
+Enum AIPromptTemplateDocumentType {
+  invoice
+  purchase_order
+  quotation
+  expense
+  any
+}
+
+Enum ConversationDocumentType {
+  invoice
+  quotation
+  expense
+}
+
+Enum ConversationStatus {
+  active
+  completed
+  expired
+}
+
+Enum TaxRegime {
+  GST_INDIA
+  VAT_GENERIC
+  US_SALES_TAX
+  NONE
+  VAT_UK
+  VAT_EU
+  GST_AU
+  GST_NZ
+}
+
+Enum TaxKind {
+  CGST
+  SGST
+  IGST
+  UTGST
+  CESS
+  VAT
+  SALES_TAX
+}
+
+Enum GatewayKind {
+  RAZORPAY
+  STRIPE
+  OFFLINE
+}
+
+Enum PaymentTransactionStatus {
+  CREATED
+  PENDING
+  CAPTURED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+Enum IntegrationKind {
+  XERO
+  QUICKBOOKS
+}
+
+Enum AiProviderKind {
+  CLAUDE
+  OPENAI
+  MOCK
+}
+
+Enum AiExtractionStatus {
+  PENDING
+  EXTRACTED
+  CONFIRMED
+  FAILED
+  DISCARDED
+}
+
+Enum AiChatRole {
+  USER
+  ASSISTANT
+  TOOL
+}
+
+Enum ApprovalStatus {
+  NOT_REQUIRED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+Enum PayRunStatus {
+  DRAFT
+  FINALIZED
+  VOID
+}
+
+Enum PayFrequency {
+  MONTHLY
+}
+
+Enum AccountCreditEntryType {
+  GRANT
+  REDEMPTION
+}
+
+Enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  EXPENSE
+}
+
+Enum EInvoiceStatus {
+  PENDING
+  GENERATED
+  CANCELLED
+  FAILED
+}
+
+Enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+Enum CategoryGroup {
+  ADMIN_EXPENSES
+  GENERAL_OVERHEADS
+  COST_OF_SALES
+  PAYROLL
+  TAXES
+  INCOME
+  CAPITAL
+  OWNER_FUNDS
+  USER_PAYMENTS
+}
+
+Enum CategoryAppliesTo {
+  MONEY_IN
+  MONEY_OUT
+  MONEY_IN_USER
+  MONEY_OUT_USER
+}
+
+Enum ExplainStatus {
+  UNEXPLAINED
+  FOR_APPROVAL
+  EXPLAINED
+}
+
+Enum CostCenterType {
+  PROFIT
+  COST
+  BOTH
+}
+
+Enum ProjectMemberRole {
+  MEMBER
+  MANAGER
+}
+
+Enum TimesheetStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+Enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+Enum LeavePortion {
+  FULL
+  AM
+  PM
+}
+
+Enum ContactStatus {
+  ACTIVE
+  HIDDEN
+}
+
+Enum TaxTreatment {
+  STANDARD
+  ZERO_RATED
+  EXEMPT
+  REVERSE_CHARGE
+  OUT_OF_SCOPE
+}
+
+// ---------------------------------------------------------------------------
+// Tables
+// ---------------------------------------------------------------------------
+
+Table LoginActivity {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  ipAddress varchar [not null]
+  browser varchar [not null]
+  device varchar [not null]
+  location varchar [default: 'Unknown']
+  loginAt timestamp [not null, default: `now()`]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table Module {
+  id varchar [pk, not null, default: `uuid()`]
+  moduleName varchar [not null]
+  moduleSlug varchar [not null]
+  parentId varchar
+  userType ModuleUserType [not null, default: 'ADMIN']
+  deletedAt timestamp
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table Permission {
+  id varchar [pk, not null, default: `uuid()`]
+  roleId varchar [not null]
+  moduleId varchar
+  create boolean [not null, default: false]
+  edit boolean [not null, default: false]
+  delete boolean [not null, default: false]
+  view boolean [not null, default: false]
+  allowAll boolean [not null, default: false]
+  deletedAt timestamp
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table Role {
+  id varchar [pk, not null, default: `uuid()`]
+  roleName varchar [not null]
+  status boolean [not null, default: true]
+  defaultRoute varchar [default: 'dashboard']
+  createdBy varchar
+  deletedAt timestamp
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table User {
+  id varchar [pk, not null, default: `uuid()`]
+  firstName varchar [not null]
+  lastName varchar
+  email varchar [unique, not null]
+  phone varchar
+  gender UserGender
+  dateOfBirth timestamp
+  password varchar [not null]
+  profileImage varchar
+  address varchar
+  countryId varchar
+  stateId varchar
+  cityId varchar
+  postalCode varchar
+  user_type integer [not null, default: 1]
+  roleId varchar
+  ownerId varchar [note: 'Shared-workspace tenancy: links a staff/admin user to the sole company owner (the single user_type:1 account). `ownerId = null` means the row IS the owner, so the tenant id resolves to `ownerId ?? id` and every member of a company shares on']
+  balance decimal(18,4) [not null, default: 0]
+  balance_type UserBalanceType
+  isDeleted boolean [not null, default: false]
+  deletedAt timestamp
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table BankDetail {
+  id varchar [pk, not null, default: `uuid()`]
+  accountHoldername varchar [not null]
+  bankName varchar [not null]
+  branchName varchar [not null]
+  accountNumber varchar [not null, note: 'Uniqueness is enforced by a PARTIAL unique index over active (isDeleted = false) rows only — see migration 20260711000000_bankdetail_active_unique_ accountnumber. Prisma can\'t express `WHERE isDeleted = false`, so no @unique here; a soft-d']
+  bankCodeType varchar [note: 'BC.2: regional bank-code format stored in IFSCCode (IFSC, SORT_CODE, ROUTING, IBAN, SWIFT, BSB, OTHER); null = legacy (treat as IFSC)']
+  IFSCCode varchar [not null]
+  accountType BankAccountType [not null]
+  openingBalance decimal(18,4) [default: 0]
+  currentBalance decimal(18,4) [default: 0]
+  asOnDate timestamp [default: `now()`]
+  currencyCode varchar [note: 'BC.1: per-account currency (ISO code, e.g. \'USD\'); null = company base currency']
+  isDeleted boolean [not null, default: false]
+  status boolean [not null, default: true]
+  userId varchar [not null]
+  accountId varchar [note: 'A1: per-bank GL sub-account under the tenant\'s BANK control account, so each bank reconciles independently. Null = falls back to the shared BANK role account.']
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    userId
+    isDeleted
+    status
+  }
+}
+
+Table BankTransaction {
+  id varchar [pk, not null, default: `uuid()`]
+  bankAccountId varchar [not null]
+  transactionDate timestamp [not null, default: `now()`]
+  type BankTransactionType [not null]
+  amount decimal(18,4) [not null]
+  balanceBefore decimal(18,4) [not null]
+  balanceAfter decimal(18,4) [not null]
+  paymentModeId varchar [not null]
+  referenceNo varchar
+  remarks varchar
+  relatedType BankTransactionRelatedType [default: 'MANUAL']
+  relatedId varchar
+  isReconciled boolean [not null, default: false]
+  reconciledBy varchar
+  reconciliationDate timestamp
+  reconciliationNote varchar
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+  explainStatus ExplainStatus [not null, default: 'UNEXPLAINED']
+  transactionTypeKey varchar
+  categoryId varchar
+  payToUserId varchar
+  taxTreatment varchar
+  taxAmount decimal(18,4)
+  explainedDescription varchar
+  attachment varchar
+  assetType varchar
+  depreciationMethod varchar
+  assetLifeMonths integer
+  userPaymentReason varchar
+  approvedById varchar
+  approvedAt timestamp
+  postedSourceType varchar
+  postedSourceId varchar
+  createdAssetId varchar
+  proposedRelatedType varchar
+  proposedRelatedId varchar
+  matchConfidence varchar
+  matchScore integer
+  proposedTransactionTypeKey varchar
+  proposedCategoryId varchar
+  autoPosted boolean [not null, default: false, note: 'Marks rows posted to the GL by the AUTO-POST tier (skipping the approval queue). Drives the FE badge + Undo affordance and is cleared by unexplain.']
+  isPaymentBorn boolean [not null, default: false, note: 'True when this row was CREATED by a module payment flow (invoice payment, supplier payment, expense, petty-cash) — see lib/moneyFlow/explainedBankFields.ts. Payment-born rows are read-only in banking (edit at source); banking-explained rows']
+
+  indexes {
+    bankAccountId
+    transactionDate
+    (relatedType, relatedId)
+    isDeleted
+  }
+}
+
+Table Brand {
+  id varchar [pk, not null, default: `uuid()`]
+  brand_name varchar [unique, not null]
+  brand_image varchar
+  status boolean [not null, default: true]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table Category {
+  id varchar [pk, not null, default: `uuid()`]
+  category_name varchar [unique, not null]
+  slug varchar [unique, not null]
+  category_image varchar
+  status boolean [not null, default: true]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table Customer {
+  id varchar [pk, not null, default: `uuid()`]
+  name varchar [not null]
+  email varchar [not null]
+  phone varchar
+  whatsapp varchar [default: '']
+  externalSource varchar
+  externalRef varchar
+  website varchar [default: '']
+  image varchar [default: '']
+  notes varchar [default: '']
+  status CustomerStatus [not null, default: 'Active']
+  billingAddress jsonb
+  shippingAddress jsonb
+  bankDetails jsonb
+  gstin varchar
+  currencyCode varchar [note: 'CC.1: customer\'s default transaction currency (null = legacy/company-default currency)']
+  userId varchar [not null]
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (externalSource, externalRef, userId) [unique]
+    (userId, email) [unique]
+  }
+}
+
+Table Inventory {
+  id varchar [pk, not null, default: `uuid()`]
+  productId varchar [not null]
+  quantity integer [not null, default: 0, note: 'legacy integer stock; use quantityOnHand for ledger-aware (WAC) stock']
+  avgCost decimal(18,4) [not null, default: 0]
+  quantityOnHand decimal(18,4) [not null, default: 0]
+  userId varchar [not null]
+  isDeleted boolean [not null, default: false]
+  inventory_history jsonb
+  notes varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table Product {
+  id varchar [pk, not null, default: `uuid()`]
+  item_type ProductItemType [not null]
+  name varchar [not null]
+  code varchar [unique, not null]
+  categoryId varchar
+  brandId varchar
+  unitId varchar
+  selling_price decimal(18,4) [not null, default: 0]
+  purchase_price decimal(18,4) [not null, default: 0]
+  discount_type varchar [not null, default: 'Fixed']
+  discount_value decimal(18,4) [not null, default: 0]
+  taxGroupId varchar
+  taxRateId varchar [note: 'Unified tax (spec 2026-07-12): direct rate link; taxGroupId is the deprecated legacy fallback, read only when taxRateId is null.']
+  barcode varchar [unique]
+  alert_quantity integer [not null, default: 0]
+  description varchar
+  product_image varchar
+  gallery_images jsonb
+  enable_inventory boolean [not null, default: false]
+  stock integer [not null, default: 0]
+  status boolean [not null, default: true]
+  valuationMethod varchar [not null, default: 'WAC', note: 'P3.5: FIFO vs WAC valuation method. Default WAC → existing path unchanged.']
+  currencyCode varchar [note: 'PC.1: currency the product is priced in (null = legacy/company-default currency)']
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table Signature {
+  id varchar [pk, not null, default: `uuid()`]
+  signatureName varchar [not null]
+  signatureImage varchar [not null]
+  status boolean [not null, default: true]
+  markAsDefault boolean [not null, default: false]
+  isDeleted boolean [not null, default: false]
+  userId varchar [not null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table Supplier {
+  id varchar [pk, not null, default: `uuid()`]
+  user_id varchar [not null]
+  supplier_name varchar [not null]
+  supplier_email varchar [unique, not null]
+  supplier_phone varchar [not null]
+  balance decimal(18,4) [default: 0]
+  balance_type SupplierBalanceType
+  currencyCode varchar [note: 'SC.1: supplier\'s currency (null = legacy/company-default currency)']
+  stateId varchar
+  countryId varchar
+  profileImage varchar
+  status boolean [not null, default: true]
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table SupplierPayment {
+  id varchar [pk, not null, default: `uuid()`]
+  paymentId varchar [unique, note: 'TODO 0.1c: app-generated PAY-NNNNNN sequence']
+  purchaseId varchar [not null]
+  supplierId varchar
+  contactId varchar
+  referenceNumber varchar
+  paymentDate timestamp [not null, default: `now()`]
+  paymentModeId varchar
+  sourceType SupplierPaymentSourceType [not null]
+  bankId varchar
+  amount decimal(18,4) [not null]
+  paidAmount decimal(18,4) [not null]
+  dueAmount decimal(18,4) [not null]
+  notes varchar
+  attachment varchar
+  isDeleted boolean [not null, default: false]
+  createdBy varchar
+  currencyCode varchar
+  exchangeRate decimal(18,8)
+  movedBankBalance boolean [not null, default: false, note: 'TRUE iff this payment\'s CREATE path moved a cash register (bankDetail or pettyCash currentBalance). The record path createSupplierPayment moves it for both BANK and PETTY_CASH; the EXPLAIN flow (applyBillPayment) sets sourceType=\'BANK\' b']
+  isVoided boolean [not null, default: false]
+  voidedById varchar
+  voidedAt timestamp
+  voidReason varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table Counter {
+  id varchar [pk, not null, default: `uuid()`]
+  key varchar [unique]
+  value integer [not null, default: 0]
+}
+
+Table CreditNote {
+  id varchar [pk, not null, default: `uuid()`]
+  creditNoteNumber varchar [unique, note: 'TODO 0.1c: app-generated CN-NNNNNN']
+  invoiceId varchar [not null]
+  customerId varchar
+  contactId varchar
+  billToContactId varchar
+  creditNoteDate timestamp [not null, default: `now()`]
+  referenceNo varchar [default: '']
+  reason CreditNoteReason [default: 'OTHER']
+  description varchar [default: '']
+  items jsonb
+  status CreditNoteStatus [not null, default: 'PENDING']
+  refund_method CreditNoteRefundMethod [not null, default: 'CREDIT_TO_ACCOUNT']
+  taxableAmount decimal(18,4) [not null]
+  totalAmount decimal(18,4) [not null]
+  vat decimal(18,4) [default: 0]
+  totalDiscount decimal(18,4) [default: 0]
+  taxTreatment TaxTreatment
+  roundOff boolean [not null, default: false]
+  bankId varchar
+  notes varchar
+  termsAndCondition varchar
+  sign_type SignType [not null, default: 'none']
+  signatureName varchar
+  signatureId varchar
+  signatureImage varchar
+  currencyCode varchar [note: 'C.1: per-document currency (ISO code, e.g. \'USD\')']
+  isDeleted boolean [not null, default: false]
+  userId varchar [not null]
+  billFrom varchar [not null]
+  billTo varchar
+  appliedToInvoice varchar
+  appliedDate timestamp
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+  costCenterId varchar
+}
+
+Table DebitNote {
+  id varchar [pk, not null, default: `uuid()`]
+  debitNoteId varchar [unique, note: 'TODO 0.1c: app-generated DN-NNNNNN']
+  purchaseId varchar [not null]
+  supplierId varchar [note: 'vendor sourced from the purchase\'s supplier (new path)']
+  debitNoteDate timestamp [not null, default: `now()`]
+  dueDate timestamp
+  referenceNo varchar [default: '']
+  items jsonb
+  status DebitNoteStatus [default: 'new']
+  paymentModeId varchar
+  taxableAmount decimal(18,4) [not null]
+  totalDiscount decimal(18,4) [default: 0]
+  totalTax decimal(18,4) [default: 0]
+  totalAmount decimal(18,4) [not null]
+  taxTreatment TaxTreatment
+  paidAmount decimal(18,4) [default: 0]
+  balanceAmount decimal(18,4) [default: 0]
+  bankId varchar
+  notes varchar
+  termsAndCondition varchar
+  sign_type SignType [not null, default: 'none']
+  signatureId varchar
+  signatureImage varchar
+  signatureName varchar
+  checkNumber varchar
+  currencyCode varchar [note: 'C.1: per-document currency (ISO code, e.g. \'USD\')']
+  isDeleted boolean [not null, default: false]
+  userId varchar [not null]
+  createdBy varchar [not null]
+  approvedBy varchar
+  billFrom varchar [not null]
+  billToSupplierId varchar [note: 'bill-to supplier (new path)']
+  contactId varchar
+  billToContactId varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+  costCenterId varchar
+}
+
+Table DeliveryChallan {
+  id varchar [pk, not null, default: `uuid()`]
+  challanNumber varchar [unique, note: 'TODO 0.1c: app-generated DC-NNNNNN']
+  invoiceId varchar
+  customerId varchar
+  contactId varchar
+  billToContactId varchar
+  challanDate timestamp [not null, default: `now()`]
+  referenceNo varchar [default: '']
+  items jsonb
+  status DeliveryChallanStatus [not null, default: 'DRAFT']
+  bankId varchar
+  taxableAmount decimal(18,4) [not null]
+  totalAmount decimal(18,4) [not null]
+  vat decimal(18,4) [default: 0]
+  totalDiscount decimal(18,4) [default: 0]
+  taxTreatment TaxTreatment
+  roundOff boolean [not null, default: false]
+  notes varchar
+  termsAndCondition varchar
+  sign_type SignType [not null, default: 'none']
+  signatureName varchar
+  signatureId varchar
+  signatureImage varchar
+  currencyCode varchar [note: 'C.1: per-document currency (ISO code, e.g. \'USD\')']
+  isDeleted boolean [not null, default: false]
+  userId varchar [not null]
+  billFrom varchar [not null]
+  billTo varchar
+  receivedBy varchar [default: '']
+  receivedDate timestamp
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+  costCenterId varchar
+}
+
+Table EmailTemplate {
+  id varchar [pk, not null, default: `uuid()`]
+  title varchar [not null]
+  notificationTypeId varchar [not null]
+  description varchar
+  subject varchar [not null]
+  sms_content varchar
+  notification_content varchar
+  status EmailTemplateStatus [not null, default: 'active']
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table Invoice {
+  id varchar [pk, not null, default: `uuid()`]
+  invoiceNumber varchar [unique, note: 'TODO 0.1c: app-generated INV-NNNNNN']
+  customerId varchar
+  contactId varchar
+  billToContactId varchar
+  invoiceDate timestamp [not null, default: `now()`]
+  dueDate timestamp
+  referenceNo varchar [default: '']
+  items jsonb
+  status InvoiceStatus [not null, default: 'DRAFT']
+  payment_method varchar
+  taxableAmount decimal(18,4) [not null]
+  TotalAmount decimal(18,4) [not null]
+  vat decimal(18,4) [default: 0]
+  totalDiscount decimal(18,4) [default: 0]
+  taxTreatment TaxTreatment
+  reverseCharge boolean [default: false, note: 'EU B2B cross-border reverse-charge: set by the server-authoritative tax recompute. reverseCharge = supply zero-rated, recipient accounts for VAT; reverseChargeNote = printable statement.']
+  reverseChargeNote varchar
+  roundOff boolean [not null, default: false]
+  bankId varchar
+  notes varchar
+  termsAndCondition varchar
+  isRecurring boolean [not null, default: false]
+  parentInvoice varchar
+  repeatEvery RecurrenceFrequency [default: 'month']
+  customIntervalNumber integer
+  customIntervalType RecurrenceCustomIntervalType
+  startOn timestamp
+  endsOn timestamp
+  neverExpire boolean [not null, default: false]
+  stopped boolean [not null, default: false]
+  lastRecurringDate timestamp
+  nextRecurringDate timestamp
+  recurringScheduleId varchar [note: 'New recurring engine: generated occurrences link to their schedule (additive; replaces the old parent-invoice engine above).']
+  sign_type SignType [not null, default: 'none']
+  signatureName varchar
+  signatureId varchar
+  signatureImage varchar
+  isDeleted boolean [not null, default: false]
+  userId varchar [not null]
+  billFrom varchar [not null]
+  billTo varchar
+  vehicleId varchar
+  invoiceType InvoiceType [not null, default: 'INVOICE']
+  convertedFromId varchar
+  convertedAt timestamp
+  publicViewToken varchar [unique]
+  publicViewEnabled boolean [not null, default: false]
+  paymentOptions jsonb [note: 'Per-invoice "Pay with" links shown on the public view. Array of { name, url }.']
+  approvalStatus ApprovalStatus [not null, default: 'NOT_REQUIRED']
+  approvedById varchar
+  approvedAt timestamp
+  rejectionReason varchar
+  currencyCode varchar
+  exchangeRate decimal(18,8)
+  costCenterId varchar
+  projectId varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table RecurringInvoiceSchedule {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null, note: 'tenant scope (raw string, app-enforced — mirrors Invoice/Contact tenant column)']
+  name varchar [note: 'human label for the schedule']
+  contactId varchar
+  currencyCode varchar
+  taxTreatment TaxTreatment
+  items jsonb [not null, note: 'Invoice template snapshot (line items + amounts); rendered into a real Invoice at each run.']
+  taxableAmount decimal(18,4) [not null]
+  totalDiscount decimal(18,4)
+  totalTax decimal(18,4)
+  roundOff decimal(18,4)
+  TotalAmount decimal(18,4) [not null]
+  notes varchar
+  termsAndCondition varchar
+  signatureId varchar
+  billFrom varchar
+  repeatEvery RecurrenceFrequency [not null, default: 'month', note: 'Cadence (reuses the existing recurrence enums)']
+  customIntervalNumber integer
+  customIntervalType RecurrenceCustomIntervalType
+  startOn timestamp [not null, note: 'End conditions']
+  endsOn timestamp
+  neverExpire boolean [not null, default: false]
+  maxOccurrences integer
+  status RecurringScheduleStatus [not null, default: 'ACTIVE', note: 'Lifecycle']
+  nextRunDate timestamp
+  lastRunDate timestamp
+  occurrencesCount integer [not null, default: 0]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    userId
+    status
+  }
+}
+
+Table InvoicePayment {
+  id varchar [pk, not null, default: `uuid()`]
+  invoiceId varchar [not null]
+  amount decimal(18,4) [not null]
+  paymentModeId varchar [not null]
+  bankId varchar
+  received_on timestamp [not null]
+  notes varchar [default: '']
+  received_by varchar [not null]
+  paymentTransactionId varchar
+  currencyCode varchar
+  exchangeRate decimal(18,8)
+  reference varchar
+  movedBankBalance boolean [not null, default: false, note: 'TRUE iff this payment\'s CREATE path moved bankDetail.currentBalance (the record path recordInvoicePayment writes its own bank line + moves the register). FALSE for the bank-reconciliation EXPLAIN flow (applyInvoiceReceipt), where a pre-exi']
+  isVoided boolean [not null, default: false]
+  voidedById varchar
+  voidedAt timestamp
+  voidReason varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table AccountCreditEntry {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  contactId varchar [not null]
+  type AccountCreditEntryType [not null]
+  amount decimal(18,4) [not null, note: 'always positive; sign implied by type']
+  reason varchar
+  invoiceId varchar
+  invoicePaymentId varchar
+  currencyCode varchar
+  isVoided boolean [not null, default: false]
+  voidedById varchar
+  voidedAt timestamp
+  voidReason varchar
+  createdById varchar [not null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, contactId)
+    invoiceId
+    invoicePaymentId
+  }
+}
+
+Table InvoiceTemplate {
+  id varchar [pk, not null, default: `uuid()`]
+  default_invoice_template varchar [not null]
+  userId varchar [not null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table Quotation {
+  id varchar [pk, not null, default: `uuid()`]
+  quotationId varchar [unique, note: 'TODO 0.1c: app-generated QT-NNNNNN']
+  customerId varchar
+  contactId varchar
+  billToContactId varchar
+  quotationDate timestamp [not null]
+  expiryDate timestamp
+  referenceNo varchar [default: '']
+  items jsonb
+  status QuotationStatus [not null, default: 'draft']
+  paymentTerms varchar
+  taxableAmount decimal(18,4) [not null]
+  totalDiscount decimal(18,4) [default: 0]
+  vat decimal(18,4) [default: 0]
+  taxTreatment TaxTreatment
+  roundOff boolean [not null, default: false]
+  TotalAmount decimal(18,4) [not null]
+  notes varchar
+  termsAndCondition varchar
+  sign_type SignType [not null, default: 'none']
+  signatureId varchar
+  signatureImage varchar
+  signatureName varchar
+  isDeleted boolean [not null, default: false]
+  userId varchar [not null]
+  salesPerson varchar
+  billFrom varchar [not null]
+  billTo varchar
+  bankId varchar
+  invoiceId varchar
+  convert_type QuotationConvertType [not null, default: 'quotation']
+  currencyCode varchar [note: 'C.1: per-document currency (ISO code, e.g. \'USD\')']
+  publicViewToken varchar [unique]
+  publicViewEnabled boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+  costCenterId varchar
+}
+
+Table Reminder {
+  id varchar [pk, not null, default: `uuid()`]
+  name varchar [not null]
+  type ReminderType [not null, default: 'automatic']
+  remindDays integer
+  remindTiming ReminderTiming [default: 'after']
+  remindEvent ReminderEvent [default: 'due_date']
+  isEnabled boolean [not null, default: true]
+  emailConfig jsonb [not null]
+  targetInvoice varchar
+  targetQuotation varchar
+  targetCustomer varchar
+  targetContactId varchar
+  manualReminderData jsonb
+  createdBy varchar [not null]
+  companyId varchar [not null]
+  status ReminderStatus [not null, default: 'active']
+  lastSent timestamp
+  nextSend timestamp
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (createdBy, status)
+    (type, status)
+    (companyId, status)
+    (nextSend, isEnabled)
+    targetInvoice
+    targetQuotation
+    targetCustomer
+  }
+}
+
+Table Expense {
+  id varchar [pk, not null, default: `uuid()`]
+  expenseId varchar [unique, note: 'TODO 0.1c: app-generated EXP-NNNNNN']
+  referenceNo varchar [default: '']
+  amount decimal(18,4) [not null]
+  expenseDate timestamp [not null, default: `now()`]
+  paymentModeId varchar
+  paymentStatus ExpensePaymentStatus [not null, default: 'PENDING']
+  description varchar [default: '']
+  attachment varchar
+  expenseCategoryId varchar
+  sourceType ExpenseSourceType [not null]
+  bankId varchar
+  supplierId varchar
+  contactId varchar
+  isDeleted boolean [not null, default: false]
+  userId varchar [not null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+  isRecurring boolean [not null, default: false]
+  parentExpense varchar
+  repeatEvery RecurrenceFrequency [default: 'month']
+  customIntervalNumber integer
+  customIntervalType RecurrenceCustomIntervalType
+  startOn timestamp
+  endsOn timestamp
+  neverExpire boolean [not null, default: false]
+  stopped boolean [not null, default: false]
+  lastRecurringDate timestamp
+  nextRecurringDate timestamp
+  approvalStatus ApprovalStatus [not null, default: 'NOT_REQUIRED']
+  approvedById varchar
+  approvedAt timestamp
+  rejectionReason varchar
+  costCenterId varchar
+  projectId varchar
+  currencyCode varchar [note: 'per-expense currency (ISO code, e.g. \'USD\'); null = company base currency']
+  exchangeRate decimal(18,8) [note: 'to functional/base currency; null = 1']
+  tax decimal(18,4) [not null, default: 0]
+  taxRateId varchar
+  paidByUserId varchar
+}
+
+Table ExpenseCategory {
+  id varchar [pk, not null, default: `uuid()`]
+  title varchar [not null]
+  description varchar
+  status boolean [not null, default: true]
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table ExpenseChangeLog {
+  id varchar [pk, not null, default: `uuid()`]
+  expenseId varchar [not null]
+  changedBy varchar [not null]
+  changes jsonb
+  changeDate timestamp [not null, default: `now()`]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table PettyCash {
+  id varchar [pk, not null, default: `uuid()`]
+  openingBalance decimal(18,4) [not null, default: 0]
+  currentBalance decimal(18,4) [not null, default: 0]
+  asOnDate timestamp [not null, default: `now()`]
+  isDeleted boolean [not null, default: false]
+  userId varchar [note: 'P0-2a: tenant scope. Nullable at the schema level, but the migration (20260702000001_pettycash_tenant_scope) guarantees every existing row is backfilled to a concrete owner — via its earliest bank-funded, expense, or supplier-payment transa']
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    userId
+  }
+}
+
+Table PettyCashTransaction {
+  id varchar [pk, not null, default: `uuid()`]
+  pettyCashId varchar [not null]
+  transactionDate timestamp [not null, default: `now()`]
+  transactionType PettyCashTransactionType [not null]
+  amount decimal(18,4) [not null]
+  balanceBefore decimal(18,4) [not null]
+  balanceAfter decimal(18,4) [not null]
+  remarks varchar
+  relatedType PettyCashTransactionRelatedType [not null]
+  relatedId varchar [not null]
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    pettyCashId
+    transactionDate
+    (relatedType, relatedId)
+    isDeleted
+  }
+}
+
+Table Purchase {
+  id varchar [pk, not null, default: `uuid()`]
+  purchaseId varchar [unique, note: 'TODO 0.1c: app-generated PUR-NNNNNN']
+  purchaseOrderId varchar
+  supplierId varchar
+  contactId varchar
+  purchaseDate timestamp [not null, default: `now()`]
+  dueDate timestamp [not null]
+  referenceNo varchar [default: '']
+  items jsonb
+  status PurchaseStatus [not null, default: 'pending']
+  paymentModeId varchar
+  taxableAmount decimal(18,4) [not null]
+  totalDiscount decimal(18,4) [not null, default: 0]
+  totalTax decimal(18,4) [not null, default: 0]
+  taxTreatment TaxTreatment
+  roundOff boolean [not null, default: false]
+  totalAmount decimal(18,4) [not null]
+  paidAmount decimal(18,4) [not null, default: 0]
+  balanceAmount decimal(18,4) [not null, default: 0]
+  bankId varchar
+  notes varchar
+  termsAndCondition varchar
+  sign_type PurchaseSignType [not null, default: 'none']
+  signatureId varchar
+  signatureImage varchar
+  signatureName varchar
+  checkNumber varchar
+  isDeleted boolean [not null, default: false]
+  userId varchar [not null]
+  billFrom varchar [not null]
+  billTo varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+  approvalStatus ApprovalStatus [not null, default: 'NOT_REQUIRED']
+  approvedById varchar
+  approvedAt timestamp
+  rejectionReason varchar
+  currencyCode varchar
+  exchangeRate decimal(18,8)
+  costCenterId varchar
+  projectId varchar
+  landedCost decimal(18,4) [note: 'P3.5: optional landed cost (freight/duties) to allocate into inventory unit cost.']
+}
+
+Table PurchaseOrder {
+  id varchar [pk, not null, default: `uuid()`]
+  purchaseOrderId varchar [unique, note: 'TODO 0.1c: app-generated PO-NNNNNN']
+  supplierId varchar
+  contactId varchar
+  purchaseOrderDate timestamp [not null, default: `now()`]
+  dueDate timestamp [not null]
+  referenceNo varchar [default: '']
+  items jsonb
+  status PurchaseOrderStatus [not null, default: 'new']
+  paymentMode PurchaseOrderPaymentMode
+  taxableAmount decimal(18,4) [not null]
+  totalDiscount decimal(18,4) [not null, default: 0]
+  vat decimal(18,4) [not null, default: 0]
+  taxTreatment TaxTreatment
+  roundOff boolean [not null, default: false]
+  TotalAmount decimal(18,4) [not null]
+  bankId varchar
+  notes varchar
+  termsAndCondition varchar
+  sign_type PurchaseOrderSignType [not null, default: 'none']
+  signatureId varchar
+  signatureImage varchar
+  signatureName varchar
+  isDeleted boolean [not null, default: false]
+  userId varchar [not null]
+  billFrom varchar [not null]
+  billTo varchar
+  convert_type PurchaseOrderConvertType [not null, default: 'purchase']
+  currencyCode varchar [note: 'C.1: per-document currency (ISO code, e.g. USD)']
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+  costCenterId varchar
+}
+
+Table City {
+  id varchar [pk, not null, default: `uuid()`]
+  name varchar
+  state_id varchar
+  country_id varchar
+
+  indexes {
+    state_id
+    country_id
+  }
+}
+
+Table State {
+  id varchar [pk, not null, default: `uuid()`]
+  name varchar
+  country_id varchar
+  state_code varchar
+
+  indexes {
+    country_id
+  }
+}
+
+Table Country {
+  id varchar [pk, not null, default: `uuid()`]
+  name varchar
+  iso3 varchar
+  iso2 varchar
+  phonecode varchar
+  capital varchar
+  currency varchar
+  native varchar
+  region varchar
+  subregion varchar
+}
+
+Table CompanySettings {
+  id varchar [pk, not null, default: `uuid()`]
+  companyName varchar [not null]
+  email varchar [not null]
+  phone varchar [not null]
+  address varchar [not null]
+  city varchar [not null]
+  state varchar [not null]
+  country varchar [not null]
+  pincode varchar [not null]
+  siteLogo varchar [default: '']
+  favicon varchar [default: '']
+  companyLogo varchar [default: '']
+  companyBanner varchar [default: '']
+  fax varchar
+  userId varchar [unique, not null]
+  taxRegime TaxRegime [not null, default: 'NONE']
+  countryId varchar
+  stateId varchar
+  publicBaseUrl varchar
+  merchantUpiId varchar
+  merchantName varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+  countryCode varchar
+  functionalCurrency varchar
+  fiscalYearStartMonth integer
+  goLiveDate timestamp
+  ledgerInitialized boolean [not null, default: false]
+  approvalsEnabled boolean [not null, default: false]
+  bankAutoPostEnabled boolean [not null, default: false, note: 'Per-tenant AUTO-POST tier for bank-transaction auto-matching. OFF BY DEFAULT — preserves the existing queue behaviour (AUTO matches only fill the approval queue). When ON, near-certain matches (see autoPostEligible in lib/moneyFlow/autoMatc']
+  itemPickerShowRate boolean [not null, default: true, note: 'Invoice item-picker display toggles — per-tenant, control which extra columns/affordances show in the invoice line-item product picker.']
+  itemPickerShowStock boolean [not null, default: true]
+  itemPickerShowImage boolean [not null, default: false]
+  viesValidationEnabled boolean [not null, default: false, note: 'OPTIONAL online EU VIES VAT-number validation. OFF BY DEFAULT — VIES is an outbound call to the EU government service, so it must never fire unless the tenant explicitly opts in. Validation is fail-open and non-blocking: a save is never rej']
+  ossRegistered boolean [not null, default: false, note: 'EU One-Stop-Shop (OSS) registration. When ON, B2C cross-border EU supplies are taxed at the DESTINATION member-state rate (instead of origin). OFF BY DEFAULT — additive / backward-compatible; reverse-charge (B2B) and domestic behaviour are ']
+  gstin varchar [note: 'Tax registration identifiers (tenant-level). Nullable / additive — null = not registered. India GSTIN (also used by e-invoicing)']
+  vatNumber varchar [note: 'UK / EU VAT registration number']
+  abn varchar [note: 'Australia Business Number']
+  nzGstNumber varchar [note: 'New Zealand GST registration number']
+}
+
+Table Currency {
+  id varchar [pk, not null, default: `uuid()`]
+  name varchar [not null]
+  code varchar [not null]
+  symbol varchar [not null]
+  status boolean [default: true]
+  isDefault boolean [default: false]
+  isDeleted boolean [default: false]
+  createdBy varchar [not null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table DateFormat {
+  id varchar [pk, not null, default: `uuid()`]
+  title varchar [unique, not null]
+  format varchar [unique, not null]
+  isActive boolean [default: true]
+  isDeleted boolean [default: false]
+  createdBy varchar
+  updatedBy varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    title
+    format
+  }
+}
+
+Table EmailSettings {
+  id varchar [pk, not null, default: `uuid()`]
+  provider_type EmailSettingsProviderType [not null]
+  nodeFromName varchar
+  nodeFromEmail varchar
+  nodeReplyTo varchar
+  nodeHost varchar
+  nodePort varchar
+  nodeUsername varchar
+  nodePassword varchar
+  smtpFromName varchar
+  smtpFromEmail varchar
+  smtpReplyTo varchar
+  smtpHost varchar
+  smtpPort varchar
+  smtpUsername varchar
+  smtpPassword varchar
+  resendFromName varchar
+  resendFromEmail varchar
+  resendReplyTo varchar
+  resendApiKey varchar
+  smtp_status boolean [default: false]
+  node_status boolean [default: false]
+  resend_status boolean [default: false]
+  userId varchar [not null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table GeneralSetting {
+  id varchar [pk, not null, default: `uuid()`]
+  key varchar [unique, not null]
+  value jsonb [not null]
+  groupSlug varchar [default: 'general']
+  createdBy varchar
+  updatedBy varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    key
+    groupSlug
+  }
+}
+
+Table Localization {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar
+  dateFormatId varchar [not null]
+  timeFormatId varchar [not null]
+  timezoneId varchar [not null]
+  startWeek LocalizationStartWeek [default: 'Monday']
+  isActive boolean [default: true]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, isActive) [unique]
+  }
+}
+
+Table PaymentMode {
+  id varchar [pk, not null, default: `uuid()`]
+  name varchar [unique, not null]
+  slug varchar [unique, not null]
+  status boolean [default: true]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table TaxGroup {
+  id varchar [pk, not null, default: `uuid()`]
+  tax_name varchar [not null]
+  status boolean [default: true]
+  created_on timestamp [default: `now()`]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table TaxRate {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  regime TaxRegime [not null]
+  taxKind TaxKind
+  name varchar [not null]
+  rate decimal(7,4) [not null]
+  countryId varchar
+  stateId varchar
+  isActive boolean [not null, default: true]
+  isDeleted boolean [not null, default: false]
+  isSystemComponent boolean [not null, default: false, note: 'Unified tax: engine-provisioned GST component rows (CGST/SGST/IGST halves) are flagged so user-facing tax lists can hide them. Engine + reports see them.']
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, isDeleted, regime)
+  }
+}
+
+Table TimeFormat {
+  id varchar [pk, not null, default: `uuid()`]
+  name varchar [unique, not null]
+  format varchar [unique, not null]
+  isActive boolean [default: true]
+  isDeleted boolean [default: false]
+  createdBy varchar
+  updatedBy varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    name
+    format
+  }
+}
+
+Table Timezone {
+  id varchar [pk, not null, default: `uuid()`]
+  name varchar [unique, not null]
+  utc_offset varchar [not null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table Unit {
+  id varchar [pk, not null, default: `uuid()`]
+  unit_name varchar [not null]
+  short_name varchar [not null]
+  status boolean [default: true]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table CustomField {
+  id varchar [pk, not null, default: `uuid()`]
+  moduleId varchar [not null]
+  labelName varchar [not null]
+  fieldSlug varchar [not null]
+  fieldTypeId varchar [not null]
+  helpText varchar [default: '']
+  isMandatory boolean [not null, default: false]
+  showInTable boolean [not null, default: false]
+  placement CustomFieldPlacement [not null, default: 'document']
+  options jsonb
+  status CustomFieldStatus [not null, default: 'Active']
+  deletedAt timestamp
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (moduleId, fieldSlug)
+  }
+}
+
+Table CustomFieldDataType {
+  id varchar [pk, not null, default: `uuid()`]
+  type CustomFieldDataTypeKind [unique, not null]
+  description varchar
+  isActive boolean [not null, default: true]
+  createdBy varchar [not null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    isActive
+    createdBy
+  }
+}
+
+Table CustomFieldValue {
+  id varchar [pk, not null, default: `uuid()`]
+  customFieldId varchar [not null]
+  module CustomFieldValueModule [not null]
+  recordId varchar [not null]
+  value jsonb
+  createdBy varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table FieldType {
+  id varchar [pk, not null, default: `uuid()`]
+  name varchar [not null]
+  slug varchar [unique, not null]
+  status FieldTypeStatus [not null, default: 'Active']
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table NotificationTag {
+  id varchar [pk, not null, default: `uuid()`]
+  title varchar [not null]
+  status NotificationTagStatus [not null, default: 'active']
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table NotificationType {
+  id varchar [pk, not null, default: `uuid()`]
+  title varchar [not null]
+  slug varchar [unique, not null]
+  status NotificationTypeStatus [not null, default: 'active']
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table NotificationTypeTag {
+  id varchar [pk, not null, default: `uuid()`]
+  notificationTypeId varchar [not null]
+  notificationTagId varchar [not null]
+
+  indexes {
+    (notificationTypeId, notificationTagId) [unique]
+    notificationTagId
+  }
+}
+
+Table AIChatSession {
+  id varchar [pk, not null, default: `uuid()`]
+  sessionId varchar [unique, note: 'TODO 0.1c: app-generated CHAT-NNNNNN']
+  messages jsonb
+  documentType AIDocumentType
+  currentExtractedData jsonb
+  status AIChatSessionStatus [not null, default: 'active']
+  createdDocumentId varchar
+  userId varchar [not null]
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table AIConfiguration {
+  id varchar [pk, not null, default: `uuid()`]
+  aiEnabled boolean [not null, default: true]
+  enabledModulesInvoice boolean [not null, default: true]
+  enabledModulesPurchaseOrder boolean [not null, default: true]
+  enabledModulesQuotation boolean [not null, default: true]
+  enabledModulesExpense boolean [not null, default: true]
+  defaultCurrency varchar [not null, default: 'INR']
+  defaultTaxType AIConfigurationDefaultTaxType [not null, default: 'GST']
+  autoApplyTax boolean [not null, default: true]
+  defaultPaymentTermsDays integer [not null, default: 15]
+  maxPromptsPerDay integer [not null, default: 100]
+  userId varchar [unique, not null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table AIPromptLog {
+  id varchar [pk, not null, default: `uuid()`]
+  promptId varchar [unique, note: 'TODO 0.1c: app-generated AI-NNNNNN']
+  prompt varchar [not null]
+  documentType AIDocumentType [not null]
+  extractedData jsonb
+  status AIPromptLogStatus [not null, default: 'pending']
+  createdDocumentId varchar
+  createdDocumentType AIPromptLogCreatedDocumentType
+  processingTimeMs integer [not null, default: 0]
+  inputTokens integer [not null, default: 0]
+  outputTokens integer [not null, default: 0]
+  errorMessage varchar
+  userId varchar [not null]
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table AIPromptTemplate {
+  id varchar [pk, not null, default: `uuid()`]
+  name varchar [not null]
+  prompt varchar [not null]
+  documentType AIPromptTemplateDocumentType [not null, default: 'any']
+  category varchar [not null, default: 'General']
+  usageCount integer [not null, default: 0]
+  userId varchar [not null]
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table Conversation {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  sessionId varchar [unique, not null]
+  documentType ConversationDocumentType
+  context jsonb
+  status ConversationStatus [not null, default: 'active']
+  expiresAt timestamp
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    expiresAt
+  }
+}
+
+Table Vehicle {
+  id varchar [pk, not null, default: `uuid()`]
+  customerId varchar
+  contactId varchar
+  name varchar
+  make varchar
+  model varchar
+  year integer
+  registrationNumber varchar
+  vin varchar
+  mileage integer
+  notes varchar
+  status boolean [not null, default: true]
+  isDeleted boolean [not null, default: false]
+  userId varchar [not null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    customerId
+    (userId, isDeleted)
+  }
+}
+
+Table GatewayConfig {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  kind GatewayKind [not null]
+  enabled boolean [not null, default: false]
+  config jsonb [not null]
+  livemode boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, kind) [unique]
+  }
+}
+
+Table PaymentLinkMethod {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  name varchar [not null]
+  defaultUrl varchar
+  enabled boolean [not null, default: true]
+  sortOrder integer [not null, default: 0]
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    userId
+  }
+}
+
+Table PaymentTransaction {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  invoiceId varchar
+  kind GatewayKind [not null]
+  status PaymentTransactionStatus [not null, default: 'CREATED']
+  amount decimal(18,4) [not null]
+  currency varchar [not null, default: 'INR']
+  gatewayOrderId varchar
+  gatewayPaymentId varchar
+  gatewaySignature varchar
+  metadata jsonb
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, status)
+    invoiceId
+    gatewayOrderId
+  }
+}
+
+Table Refund {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  paymentTransactionId varchar [not null]
+  amount decimal(18,4) [not null]
+  status PaymentTransactionStatus [not null, default: 'CREATED']
+  gatewayRefundId varchar
+  reason varchar
+  metadata jsonb
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    paymentTransactionId
+  }
+}
+
+Table Account {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  code varchar [not null]
+  name varchar [not null]
+  accountType AccountType [not null]
+  parentId varchar
+  description varchar
+  currencyCode varchar
+  roleProtected boolean [not null, default: false]
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, code) [unique]
+    (userId, accountType)
+  }
+}
+
+Table JournalEntry {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  entryNumber varchar
+  entryDate timestamp [not null]
+  postingDate timestamp
+  description varchar
+  reference varchar
+  sourceType varchar
+  sourceId varchar
+  event varchar
+  isSystemGenerated boolean [not null, default: false]
+  isOpeningBalance boolean [not null, default: false]
+  reversedById varchar
+  periodId varchar
+  isPosted boolean [not null, default: true]
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, sourceType, sourceId, event) [unique]
+    (userId, entryDate)
+  }
+}
+
+Table JournalLine {
+  id varchar [pk, not null, default: `uuid()`]
+  journalEntryId varchar [not null]
+  accountId varchar [not null]
+  debit decimal(18,4) [not null, default: 0]
+  credit decimal(18,4) [not null, default: 0]
+  currencyCode varchar
+  exchangeRate decimal(18,8) [not null, default: 1]
+  baseDebit decimal(18,4) [not null, default: 0]
+  baseCredit decimal(18,4) [not null, default: 0]
+  taxRoleKey varchar
+  description varchar
+  costCenterId varchar
+  projectId varchar
+
+  indexes {
+    accountId
+    costCenterId
+    projectId
+  }
+}
+
+Table LedgerAccountMapping {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  roleKey varchar [not null]
+  accountId varchar [not null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, roleKey) [unique]
+    userId
+  }
+}
+
+Table AccountingPeriod {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  name varchar [not null]
+  startDate timestamp [not null]
+  endDate timestamp [not null]
+  isLocked boolean [not null, default: false]
+  lockedAt timestamp
+  lockedBy varchar
+  notes varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, startDate)
+  }
+}
+
+Table EInvoiceRecord {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  invoiceId varchar [not null]
+  irn varchar [unique]
+  ackNo varchar
+  ackDate timestamp
+  signedInvoice varchar
+  signedQRCode varchar
+  status EInvoiceStatus [not null, default: 'PENDING']
+  errorMessage varchar
+  provider varchar [not null, default: 'mock']
+  cancelledAt timestamp
+  cancelReason varchar
+  metadata jsonb
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    invoiceId
+    (userId, status)
+  }
+}
+
+Table AccountingIntegration {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  kind IntegrationKind [not null]
+  enabled boolean [not null, default: false]
+  config jsonb [not null]
+  lastSyncedAt timestamp
+  syncStatus varchar
+  errorMessage varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, kind) [unique]
+  }
+}
+
+Table MtdConfig {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [unique, not null]
+  enabled boolean [not null, default: false]
+  clientId varchar
+  clientSecret varchar [note: 'encrypted at rest (enc::)']
+  accessToken varchar [note: 'encrypted at rest (enc::)']
+  refreshToken varchar [note: 'encrypted at rest (enc::)']
+  tokenExpiresAt timestamp
+  vrn varchar [note: 'VAT registration number']
+  useSandbox boolean [not null, default: true]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table MessagingConfig {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [unique, not null]
+  whatsappEnabled boolean [not null, default: false]
+  whatsappProvider varchar
+  whatsappConfig jsonb
+  defaultTemplate varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table AiConfig {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [unique, not null]
+  provider AiProviderKind [not null, default: 'MOCK']
+  enabled boolean [not null, default: false]
+  encryptedApiKey text
+  apiKeyHint varchar
+  extractionModel varchar
+  chatModel varchar
+  monthlyBudgetUsd decimal(10,2) [default: 0]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+}
+
+Table AiExtractionJob {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  sourceFilePath varchar [not null]
+  mimeType varchar [not null]
+  status AiExtractionStatus [not null, default: 'PENDING']
+  extractedData jsonb
+  rawResponse text
+  errorMessage varchar
+  confidence decimal(4,3)
+  resultingPurchaseId varchar [unique]
+  costUsd decimal(10,6)
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, status)
+  }
+}
+
+Table AiChatSession {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  title varchar
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, updatedAt)
+  }
+}
+
+Table AiChatMessage {
+  id varchar [pk, not null, default: `uuid()`]
+  sessionId varchar [not null]
+  role AiChatRole [not null]
+  content text [not null]
+  toolName varchar
+  toolInput jsonb
+  toolResult jsonb
+  costUsd decimal(10,6)
+  createdAt timestamp [not null, default: `now()`]
+
+  indexes {
+    (sessionId, createdAt)
+  }
+}
+
+Table AiUsageLog {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  feature varchar [not null]
+  provider AiProviderKind [not null]
+  model varchar
+  inputTokens integer
+  outputTokens integer
+  costUsd decimal(10,6)
+  createdAt timestamp [not null, default: `now()`]
+
+  indexes {
+    (userId, createdAt)
+  }
+}
+
+Table AuditLog {
+  id varchar [pk, not null, default: `uuid()`]
+  action AuditAction [not null]
+  entityType varchar [not null]
+  entityId varchar
+  entityLabel varchar
+  summary varchar [not null]
+  changes jsonb
+  affectedCount integer
+  userId varchar
+  userName varchar [not null]
+  ipAddress varchar
+  userAgent varchar
+  createdAt timestamp [not null, default: `now()`]
+
+  indexes {
+    (entityType, entityId)
+    userId
+    createdAt
+  }
+}
+
+Table ExchangeRate {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  fromCurrency varchar [not null]
+  toCurrency varchar [not null]
+  rate decimal(18,8) [not null]
+  asOfDate timestamp [not null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, fromCurrency, toCurrency, asOfDate)
+  }
+}
+
+Table CostCenter {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  code varchar [not null]
+  name varchar [not null]
+  description varchar
+  type CostCenterType [not null, default: 'BOTH', note: '/ PROFIT centres earn revenue, COST centres only absorb cost, BOTH does / either. Defaults to BOTH so pre-existing centres keep their full reach.']
+  isActive boolean [not null, default: true]
+  isDeleted boolean [not null, default: false]
+  parentId varchar [note: '/ Roll-up hierarchy, e.g. Division > Department.']
+  numberPrefix varchar [note: '/ Per-centre document numbering. A centre with a `numberPrefix` issues its / own series (SAL-000001, ACAD-000001, ...) counted by `nextNumber`; a centre / without one falls back to the install-wide sequence in GeneralSetting.']
+  nextNumber integer [not null, default: 1]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, code) [unique]
+    (userId, numberPrefix) [unique]
+    userId
+    parentId
+    (userId, isDeleted)
+  }
+}
+
+Table Project {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  code varchar [not null]
+  name varchar [not null]
+  description varchar
+  status varchar [not null, default: 'active']
+  billingRate decimal(12,2)
+  startDate timestamp
+  endDate timestamp
+  contactId varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, code) [unique]
+    userId
+  }
+}
+
+Table ProjectMember {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null, note: 'tenant (raw, matches Project)']
+  projectId varchar [not null]
+  employeeUserId varchar [not null]
+  role ProjectMemberRole [not null, default: 'MEMBER']
+  billingRate decimal(12,2)
+  isActive boolean [not null, default: true]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (projectId, employeeUserId) [unique]
+    userId
+    employeeUserId
+  }
+}
+
+Table Timesheet {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null, note: 'tenant']
+  employeeUserId varchar [not null]
+  weekStartDate timestamp [not null, note: 'Monday, UTC midnight']
+  status TimesheetStatus [not null, default: 'DRAFT']
+  submittedAt timestamp
+  approvedById varchar
+  approvedAt timestamp
+  rejectionNote varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (employeeUserId, weekStartDate) [unique]
+    userId
+    status
+  }
+}
+
+Table TimeEntry {
+  id varchar [pk, not null, default: `uuid()`]
+  timesheetId varchar [not null]
+  projectId varchar [not null]
+  date timestamp [not null]
+  hours decimal(5,2) [not null]
+  billable boolean [not null, default: true]
+  note varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    timesheetId
+    projectId
+    date
+  }
+}
+
+Table Holiday {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null, note: 'tenant (raw, matches Project)']
+  name varchar [not null]
+  date timestamp [not null, note: 'UTC midnight (date-only)']
+  recurringYearly boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, date) [unique]
+    userId
+  }
+}
+
+Table LeaveType {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null, note: 'tenant']
+  name varchar [not null]
+  paid boolean [not null, default: true]
+  defaultAllocationDays decimal(5,1)
+  isActive boolean [not null, default: true]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, name) [unique]
+  }
+}
+
+Table LeaveAllocation {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null, note: 'tenant']
+  employeeUserId varchar [not null]
+  leaveTypeId varchar [not null]
+  year integer [not null]
+  allocatedDays decimal(5,1) [not null]
+  carriedOverDays decimal(5,1) [not null, default: 0]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (employeeUserId, leaveTypeId, year) [unique]
+    userId
+  }
+}
+
+Table LeaveRequest {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null, note: 'tenant']
+  employeeUserId varchar [not null]
+  leaveTypeId varchar [not null]
+  startDate timestamp [not null]
+  endDate timestamp [not null]
+  status LeaveStatus [not null, default: 'PENDING']
+  reason varchar
+  totalDays decimal(5,1) [not null]
+  approvedById varchar
+  approvedAt timestamp
+  rejectionNote varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    userId
+    employeeUserId
+    status
+  }
+}
+
+Table LeaveRequestDay {
+  id varchar [pk, not null, default: `uuid()`]
+  leaveRequestId varchar [not null]
+  date timestamp [not null]
+  portion LeavePortion [not null, default: 'FULL']
+  portionDays decimal(2,1) [not null]
+
+  indexes {
+    (leaveRequestId, date) [unique]
+    date
+  }
+}
+
+Table Budget {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  accountId varchar [not null]
+  periodStart timestamp [not null]
+  periodEnd timestamp [not null]
+  amount decimal(18,4) [not null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, accountId, periodStart)
+  }
+}
+
+Table FixedAsset {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  name varchar [not null]
+  cost decimal(18,4) [not null]
+  salvageValue decimal(18,4) [not null, default: 0]
+  usefulLifeMonths integer [not null]
+  method varchar [not null, default: 'STRAIGHT_LINE']
+  acquisitionDate timestamp [not null]
+  accumulatedDepreciation decimal(18,4) [not null, default: 0]
+  lastDepreciatedOn timestamp
+  status varchar [not null, default: 'active', note: 'active | disposed | fully_depreciated']
+  disposalDate timestamp
+  disposalProceeds decimal(18,4)
+  disposalJournalEntryId varchar
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, status)
+  }
+}
+
+Table InventoryCostLayer {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  productId varchar [not null]
+  qtyRemaining decimal(18,4) [not null]
+  unitCost decimal(18,4) [not null]
+  receivedAt timestamp [not null]
+  sourceType varchar
+  sourceId varchar
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+
+  indexes {
+    (userId, productId, receivedAt)
+  }
+}
+
+Table TransactionCategory {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  code varchar [not null]
+  name varchar [not null]
+  group CategoryGroup [not null]
+  appliesTo CategoryAppliesTo [not null]
+  accountId varchar [not null]
+  defaultTaxRateId varchar
+  taxApplicable boolean [not null, default: true]
+  isSystem boolean [not null, default: false]
+  status boolean [not null, default: true]
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, code) [unique]
+  }
+}
+
+Table PayrollProfile {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null, note: 'owner / tenant (the company)']
+  employeeUserId varchar [not null]
+  defaultGross decimal(18,4)
+  payFrequency PayFrequency [not null, default: 'MONTHLY']
+  isActive boolean [not null, default: true]
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    userId
+    employeeUserId
+  }
+}
+
+Table PayRun {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null, note: 'owner / tenant']
+  taxYearLabel varchar [not null]
+  taxMonth integer [not null]
+  periodStart timestamp [not null]
+  periodEnd timestamp [not null]
+  status PayRunStatus [not null, default: 'DRAFT']
+  finalizedAt timestamp
+  voidedAt timestamp
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    userId
+    (userId, taxYearLabel, taxMonth)
+  }
+}
+
+Table PayRunLine {
+  id varchar [pk, not null, default: `uuid()`]
+  payRunId varchar [not null]
+  employeeUserId varchar [not null]
+  gross decimal(18,4) [not null]
+  deductions decimal(18,4) [not null, default: 0]
+  net decimal(18,4) [not null]
+  deductionLines jsonb
+  note varchar
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    payRunId
+    employeeUserId
+  }
+}
+
+Table Contact {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  firstName varchar
+  lastName varchar
+  organisation varchar
+  showNameOnInvoice boolean [not null, default: false]
+  email varchar
+  billingEmail varchar
+  telephone varchar
+  mobile varchar
+  addressLine1 varchar
+  addressLine2 varchar
+  addressLine3 varchar
+  town varchar
+  region varchar
+  postcode varchar
+  countryId varchar
+  defaultPaymentTermDays integer
+  useContactEmailSettings boolean [not null, default: false]
+  invoiceSequencePrefix varchar
+  defaultTaxTreatment TaxTreatment [not null, default: 'STANDARD']
+  vatRegNumber varchar
+  vatNumber varchar [note: 'customer VAT number (EU/UK), used for reverse-charge detection']
+  country varchar [note: 'ISO country code, used for EU cross-border detection']
+  viesValid boolean [note: 'last online VIES result (null = never checked / VIES disabled / non-EU)']
+  viesCheckedAt timestamp [note: 'audit: timestamp of the last VIES check']
+  gstin varchar
+  invoiceLanguage varchar
+  currencyCode varchar
+  bankDetails jsonb
+  notes varchar
+  image varchar
+  status ContactStatus [not null, default: 'ACTIVE']
+  legacyCustomerId varchar
+  legacySupplierId varchar
+  isDeleted boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    userId
+    (userId, status)
+    legacyCustomerId
+    legacySupplierId
+    email
+  }
+}
+
+Table ExplanationHint {
+  id varchar [pk, not null, default: `uuid()`]
+  userId varchar [not null]
+  payeeKey varchar [not null, note: 'normalised payee/description']
+  transactionTypeKey varchar [not null]
+  categoryId varchar
+  payToUserId varchar
+  hitCount integer [not null, default: 1]
+  lastUsedAt timestamp [not null, default: `now()`]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null]
+
+  indexes {
+    (userId, payeeKey) [unique]
+    userId
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Implicit many-to-many join tables
+// ---------------------------------------------------------------------------
+
+Table _TaxGroupTaxRates {
+  A varchar [not null, note: 'FK -> TaxGroup.id']
+  B varchar [not null, note: 'FK -> TaxRate.id']
+
+  indexes {
+    (A, B) [unique]
+    B
+  }
+
+  Note: 'Prisma implicit m2m join table: a tax group bundles several tax rates (e.g. GST = CGST + SGST).'
+}
+
+// ---------------------------------------------------------------------------
+// Relationships (233)
+// ---------------------------------------------------------------------------
+
+Ref: LoginActivity.userId > User.id
+Ref: Module.parentId > Module.id
+Ref: Permission.roleId > Role.id
+Ref: Permission.moduleId > Module.id
+Ref: User.countryId > Country.id
+Ref: User.stateId > State.id
+Ref: User.cityId > City.id
+Ref: User.roleId > Role.id
+Ref: User.ownerId > User.id [delete: set null]
+Ref: BankDetail.userId > User.id
+Ref: BankDetail.accountId > Account.id
+Ref: BankTransaction.bankAccountId > BankDetail.id
+Ref: BankTransaction.paymentModeId > PaymentMode.id
+Ref: BankTransaction.reconciledBy > User.id
+Ref: BankTransaction.categoryId > TransactionCategory.id
+Ref: Customer.userId > User.id
+Ref: Inventory.productId > Product.id
+Ref: Inventory.userId > User.id
+Ref: Product.categoryId > Category.id
+Ref: Product.brandId > Brand.id
+Ref: Product.unitId > Unit.id
+Ref: Product.taxGroupId > TaxGroup.id
+Ref: Product.taxRateId > TaxRate.id
+Ref: Signature.userId > User.id
+Ref: Supplier.user_id > User.id
+Ref: SupplierPayment.purchaseId > Purchase.id
+Ref: SupplierPayment.supplierId > Supplier.id
+Ref: SupplierPayment.contactId > Contact.id
+Ref: SupplierPayment.paymentModeId > PaymentMode.id
+Ref: SupplierPayment.bankId > BankDetail.id
+Ref: SupplierPayment.createdBy > User.id
+Ref: SupplierPayment.voidedById > User.id
+Ref: CreditNote.invoiceId > Invoice.id
+Ref: CreditNote.customerId > Customer.id
+Ref: CreditNote.contactId > Contact.id
+Ref: CreditNote.billToContactId > Contact.id
+Ref: CreditNote.bankId > BankDetail.id
+Ref: CreditNote.signatureId > Signature.id
+Ref: CreditNote.userId > User.id
+Ref: CreditNote.billFrom > User.id
+Ref: CreditNote.billTo > Customer.id
+Ref: CreditNote.appliedToInvoice > Invoice.id
+Ref: CreditNote.costCenterId > CostCenter.id [delete: set null]
+Ref: DebitNote.purchaseId > Purchase.id
+Ref: DebitNote.supplierId > Supplier.id
+Ref: DebitNote.paymentModeId > PaymentMode.id
+Ref: DebitNote.bankId > BankDetail.id
+Ref: DebitNote.signatureId > Signature.id
+Ref: DebitNote.userId > User.id
+Ref: DebitNote.createdBy > User.id
+Ref: DebitNote.approvedBy > User.id
+Ref: DebitNote.billFrom > User.id
+Ref: DebitNote.billToSupplierId > Supplier.id
+Ref: DebitNote.contactId > Contact.id
+Ref: DebitNote.billToContactId > Contact.id
+Ref: DebitNote.costCenterId > CostCenter.id [delete: set null]
+Ref: DeliveryChallan.invoiceId > Invoice.id
+Ref: DeliveryChallan.customerId > Customer.id
+Ref: DeliveryChallan.contactId > Contact.id
+Ref: DeliveryChallan.billToContactId > Contact.id
+Ref: DeliveryChallan.bankId > BankDetail.id
+Ref: DeliveryChallan.signatureId > Signature.id
+Ref: DeliveryChallan.userId > User.id
+Ref: DeliveryChallan.billFrom > User.id
+Ref: DeliveryChallan.billTo > Customer.id
+Ref: DeliveryChallan.costCenterId > CostCenter.id [delete: set null]
+Ref: EmailTemplate.notificationTypeId > NotificationType.id
+Ref: Invoice.customerId > Customer.id
+Ref: Invoice.contactId > Contact.id
+Ref: Invoice.billToContactId > Contact.id
+Ref: Invoice.bankId > BankDetail.id
+Ref: Invoice.parentInvoice > Invoice.id
+Ref: Invoice.recurringScheduleId > RecurringInvoiceSchedule.id
+Ref: Invoice.signatureId > Signature.id
+Ref: Invoice.userId > User.id
+Ref: Invoice.billFrom > User.id
+Ref: Invoice.billTo > Customer.id
+Ref: Invoice.vehicleId > Vehicle.id
+Ref: Invoice.convertedFromId > Invoice.id
+Ref: Invoice.costCenterId > CostCenter.id [delete: set null]
+Ref: Invoice.projectId > Project.id [delete: set null]
+Ref: RecurringInvoiceSchedule.contactId > Contact.id
+Ref: InvoicePayment.invoiceId > Invoice.id
+Ref: InvoicePayment.paymentModeId > PaymentMode.id
+Ref: InvoicePayment.bankId > BankDetail.id
+Ref: InvoicePayment.received_by > User.id
+Ref: InvoicePayment.paymentTransactionId > PaymentTransaction.id
+Ref: InvoicePayment.voidedById > User.id
+Ref: AccountCreditEntry.userId > User.id
+Ref: AccountCreditEntry.contactId > Contact.id
+Ref: AccountCreditEntry.invoiceId > Invoice.id
+Ref: AccountCreditEntry.invoicePaymentId > InvoicePayment.id
+Ref: InvoiceTemplate.userId > User.id
+Ref: Quotation.customerId > Customer.id
+Ref: Quotation.contactId > Contact.id
+Ref: Quotation.billToContactId > Contact.id
+Ref: Quotation.signatureId > Signature.id
+Ref: Quotation.userId > User.id
+Ref: Quotation.salesPerson > User.id
+Ref: Quotation.billFrom > User.id
+Ref: Quotation.billTo > Customer.id
+Ref: Quotation.bankId > BankDetail.id
+Ref: Quotation.invoiceId > Invoice.id
+Ref: Quotation.costCenterId > CostCenter.id [delete: set null]
+Ref: Reminder.targetInvoice > Invoice.id
+Ref: Reminder.targetQuotation > Quotation.id
+Ref: Reminder.targetCustomer > Customer.id
+Ref: Reminder.targetContactId > Contact.id
+Ref: Reminder.createdBy > User.id
+Ref: Reminder.companyId > CompanySettings.id
+Ref: Expense.paymentModeId > PaymentMode.id
+Ref: Expense.expenseCategoryId > ExpenseCategory.id
+Ref: Expense.bankId > BankDetail.id
+Ref: Expense.supplierId > Supplier.id
+Ref: Expense.contactId > Contact.id
+Ref: Expense.userId > User.id
+Ref: Expense.parentExpense > Expense.id
+Ref: Expense.costCenterId > CostCenter.id [delete: set null]
+Ref: Expense.projectId > Project.id [delete: set null]
+Ref: Expense.paidByUserId > User.id
+Ref: ExpenseChangeLog.expenseId > Expense.id
+Ref: ExpenseChangeLog.changedBy > User.id
+Ref: PettyCash.userId > User.id
+Ref: PettyCashTransaction.pettyCashId > PettyCash.id
+Ref: Purchase.purchaseOrderId > PurchaseOrder.id
+Ref: Purchase.supplierId > Supplier.id
+Ref: Purchase.contactId > Contact.id
+Ref: Purchase.paymentModeId > PaymentMode.id
+Ref: Purchase.bankId > BankDetail.id
+Ref: Purchase.signatureId > Signature.id
+Ref: Purchase.userId > User.id
+Ref: Purchase.billFrom > User.id
+Ref: Purchase.billTo > User.id
+Ref: Purchase.costCenterId > CostCenter.id [delete: set null]
+Ref: Purchase.projectId > Project.id [delete: set null]
+Ref: PurchaseOrder.supplierId > Supplier.id
+Ref: PurchaseOrder.contactId > Contact.id
+Ref: PurchaseOrder.bankId > BankDetail.id
+Ref: PurchaseOrder.signatureId > Signature.id
+Ref: PurchaseOrder.userId > User.id
+Ref: PurchaseOrder.billFrom > User.id
+Ref: PurchaseOrder.billTo > User.id
+Ref: PurchaseOrder.costCenterId > CostCenter.id [delete: set null]
+Ref: City.state_id > State.id
+Ref: City.country_id > Country.id
+Ref: State.country_id > Country.id
+Ref: CompanySettings.userId - User.id
+Ref: CompanySettings.countryId > Country.id
+Ref: Currency.createdBy > User.id
+Ref: DateFormat.createdBy > User.id
+Ref: DateFormat.updatedBy > User.id
+Ref: EmailSettings.userId > User.id
+Ref: GeneralSetting.createdBy > User.id
+Ref: GeneralSetting.updatedBy > User.id
+Ref: Localization.userId > User.id
+Ref: Localization.dateFormatId > DateFormat.id
+Ref: Localization.timeFormatId > TimeFormat.id
+Ref: Localization.timezoneId > Timezone.id
+Ref: TaxRate.userId > User.id
+Ref: TaxRate.countryId > Country.id
+Ref: TaxRate.stateId > State.id
+Ref: TimeFormat.createdBy > User.id
+Ref: TimeFormat.updatedBy > User.id
+Ref: CustomField.moduleId > Module.id
+Ref: CustomField.fieldTypeId > FieldType.id
+Ref: CustomFieldDataType.createdBy > User.id
+Ref: CustomFieldValue.customFieldId > CustomField.id
+Ref: CustomFieldValue.createdBy > User.id
+Ref: NotificationTypeTag.notificationTypeId > NotificationType.id
+Ref: NotificationTypeTag.notificationTagId > NotificationTag.id
+Ref: AIChatSession.userId > User.id
+Ref: AIConfiguration.userId - User.id
+Ref: AIPromptLog.userId > User.id
+Ref: AIPromptTemplate.userId > User.id
+Ref: Conversation.userId > User.id
+Ref: Vehicle.customerId > Customer.id
+Ref: Vehicle.contactId > Contact.id
+Ref: Vehicle.userId > User.id
+Ref: GatewayConfig.userId > User.id
+Ref: PaymentLinkMethod.userId > User.id
+Ref: PaymentTransaction.userId > User.id
+Ref: PaymentTransaction.invoiceId > Invoice.id
+Ref: Refund.userId > User.id
+Ref: Refund.paymentTransactionId > PaymentTransaction.id
+Ref: Account.userId > User.id
+Ref: Account.parentId > Account.id
+Ref: JournalEntry.userId > User.id
+Ref: JournalEntry.reversedById > JournalEntry.id
+Ref: JournalEntry.periodId > AccountingPeriod.id
+Ref: JournalLine.journalEntryId > JournalEntry.id [delete: cascade]
+Ref: JournalLine.accountId > Account.id
+Ref: JournalLine.costCenterId > CostCenter.id [delete: set null]
+Ref: JournalLine.projectId > Project.id [delete: set null]
+Ref: LedgerAccountMapping.userId > User.id
+Ref: LedgerAccountMapping.accountId > Account.id
+Ref: AccountingPeriod.userId > User.id
+Ref: EInvoiceRecord.userId > User.id
+Ref: EInvoiceRecord.invoiceId > Invoice.id
+Ref: AccountingIntegration.userId > User.id
+Ref: MtdConfig.userId - User.id
+Ref: MessagingConfig.userId - User.id
+Ref: AiConfig.userId - User.id
+Ref: AiExtractionJob.userId > User.id
+Ref: AiExtractionJob.resultingPurchaseId - Purchase.id
+Ref: AiChatSession.userId > User.id
+Ref: AiChatMessage.sessionId > AiChatSession.id [delete: cascade]
+Ref: AiUsageLog.userId > User.id
+Ref: AuditLog.userId > User.id
+Ref: ExchangeRate.userId > User.id
+Ref: CostCenter.parentId > CostCenter.id [delete: set null]
+Ref: ProjectMember.projectId > Project.id [delete: cascade]
+Ref: ProjectMember.employeeUserId > User.id
+Ref: Timesheet.employeeUserId > User.id
+Ref: TimeEntry.timesheetId > Timesheet.id [delete: cascade]
+Ref: TimeEntry.projectId > Project.id
+Ref: LeaveAllocation.employeeUserId > User.id
+Ref: LeaveAllocation.leaveTypeId > LeaveType.id
+Ref: LeaveRequest.employeeUserId > User.id
+Ref: LeaveRequest.leaveTypeId > LeaveType.id
+Ref: LeaveRequestDay.leaveRequestId > LeaveRequest.id [delete: cascade]
+Ref: Budget.userId > User.id
+Ref: Budget.accountId > Account.id
+Ref: FixedAsset.userId > User.id
+Ref: TransactionCategory.accountId > Account.id
+Ref: TransactionCategory.defaultTaxRateId > TaxRate.id
+Ref: PayrollProfile.userId > User.id
+Ref: PayrollProfile.employeeUserId > User.id
+Ref: PayRun.userId > User.id
+Ref: PayRunLine.payRunId > PayRun.id [delete: cascade]
+Ref: PayRunLine.employeeUserId > User.id
+Ref: Contact.userId > User.id
+Ref: _TaxGroupTaxRates.A > TaxGroup.id [delete: cascade]
+Ref: _TaxGroupTaxRates.B > TaxRate.id [delete: cascade]
+
+// ---------------------------------------------------------------------------
+// Table groups (subject areas) - collapse/expand these in dbdiagram.io
+// ---------------------------------------------------------------------------
+
+// Auth & RBAC
+TableGroup auth_rbac {
+  User
+  Role
+  Permission
+  Module
+  LoginActivity
+}
+
+// Contacts & Parties
+TableGroup contacts_parties {
+  Contact
+  Customer
+  Supplier
+}
+
+// Products, Inventory & Banking
+TableGroup core_entities {
+  Product
+  Category
+  Brand
+  Inventory
+  Unit
+  BankDetail
+  BankTransaction
+  ExplanationHint
+  Signature
+  Vehicle
+}
+
+// Sales & Invoicing
+TableGroup sales_invoicing {
+  Invoice
+  InvoicePayment
+  RecurringInvoiceSchedule
+  InvoiceTemplate
+  Quotation
+  CreditNote
+  DebitNote
+  DeliveryChallan
+  AccountCreditEntry
+  Counter
+  Reminder
+  EmailTemplate
+}
+
+// Purchases & Expenses
+TableGroup purchases_expenses {
+  Purchase
+  PurchaseOrder
+  SupplierPayment
+  Expense
+  ExpenseCategory
+  ExpenseChangeLog
+  PettyCash
+  PettyCashTransaction
+}
+
+// Accounting & Ledger
+TableGroup accounting_ledger {
+  Account
+  JournalEntry
+  JournalLine
+  LedgerAccountMapping
+  AccountingPeriod
+  TransactionCategory
+  Budget
+  FixedAsset
+  InventoryCostLayer
+  CostCenter
+  Project
+}
+
+// Payment Gateways
+TableGroup payments {
+  GatewayConfig
+  PaymentLinkMethod
+  PaymentTransaction
+  Refund
+}
+
+// Payroll
+TableGroup payroll {
+  PayrollProfile
+  PayRun
+  PayRunLine
+}
+
+// Time Tracking & Leave
+TableGroup time_tracking {
+  ProjectMember
+  Timesheet
+  TimeEntry
+  Holiday
+  LeaveType
+  LeaveAllocation
+  LeaveRequest
+  LeaveRequestDay
+}
+
+// Tax & Compliance
+TableGroup tax_compliance {
+  TaxGroup
+  TaxRate
+  _TaxGroupTaxRates
+  EInvoiceRecord
+  MtdConfig
+  AccountingIntegration
+}
+
+// Configuration & Geography
+TableGroup config_geo {
+  CompanySettings
+  GeneralSetting
+  Localization
+  EmailSettings
+  MessagingConfig
+  Currency
+  ExchangeRate
+  DateFormat
+  TimeFormat
+  Timezone
+  PaymentMode
+  Country
+  State
+  City
+}
+
+// Custom Fields & Notifications
+TableGroup custom_fields {
+  CustomField
+  CustomFieldDataType
+  CustomFieldValue
+  FieldType
+  NotificationTag
+  NotificationType
+  NotificationTypeTag
+}
+
+// AI Assistant
+TableGroup ai {
+  AiConfig
+  AiExtractionJob
+  AiChatSession
+  AiChatMessage
+  AiUsageLog
+  AIChatSession
+  AIConfiguration
+  AIPromptLog
+  AIPromptTemplate
+  Conversation
+}
+
+// Audit Trail
+TableGroup audit {
+  AuditLog
+}
+
+// ---------------------------------------------------------------------------
+// Soft references (NOT enforced by a foreign key - documented for completeness)
+// ---------------------------------------------------------------------------
+//
+// Polymorphic (entityType/sourceType discriminator + id, resolved in the service layer):
+//   AuditLog.entityType + AuditLog.entityId       -> any audited table
+//   InventoryCostLayer.sourceType + .sourceId     -> Purchase | Invoice | Inventory
+//   JournalEntry.sourceType + .sourceId           -> the posted source document:
+//     Invoice | InvoicePayment | CreditNote | DebitNote | Purchase | SupplierPayment |
+//     Expense | PayRunLine | AccountCreditEntry | FixedAssetDisposal | BankTxnExplain | Cutover
+//     (unique per tenant: @@unique([userId, sourceType, sourceId, event]) - the posting idempotency key)
+//
+// Plain scalar tenant/dimension FKs left unrelated in the Prisma schema:
+//   CostCenter.userId, Project.userId, TransactionCategory.userId,
+//   InventoryCostLayer.userId, InventoryCostLayer.productId  -> User.id / Product.id
+//
+// Tenancy: every business table is scoped by userId, where the effective tenant
+// id is User.ownerId ?? User.id (see lib/tenantScope.ts). Staff users share the
+// owner's dataset via the User.ownerId self-relation.

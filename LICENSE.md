@@ -27,5 +27,5 @@ your Elixir Books license.
 
 To review the full dependency lists:
 
-- Backend: `elixirbooks-typescript-backend/package.json`
-- Frontend: `elixirbooks-typescript-frontend/package.json`
+- Backend: `apps/api/package.json`
+- Frontend: `apps/web/package.json`

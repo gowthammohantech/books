@@ -6,20 +6,32 @@
 #     -f docker/docker-compose.yml \
 #     -f docker/docker-compose.override.yml up -d --build
 #
-# (Web hot-reload is deferred to a later slice; for now you can `docker compose
-# build web` to rebuild after frontend changes.)
+# (Web hot-reload is deferred; for now `docker compose build web` after a
+# frontend change.)
 
 services:
   api:
     image: elixirbooks-api:dev
     build:
-      context: ../elixirbooks-typescript-backend
-      dockerfile: Dockerfile
-      target: deps
-    command: ["npx", "nodemon", "server.js"]
+      # Root context, matching docker-compose.yml — the workspace lockfile has
+      # to be inside the build context.
+      context: ..
+      dockerfile: apps/api/Dockerfile
+      # dev-deps, not deps: nodemon is a devDependency, and `deps` installs
+      # with --omit=dev.
+      target: dev-deps
+    working_dir: /repo/apps/api
+    command: ["npx", "nodemon"]
     volumes:
-      - ../elixirbooks-typescript-backend:/app
-      - /app/node_modules
-      - elixirbooks-uploads:/app/uploads
+      # Source is bind-mounted so edits are picked up. nodemon.json sets
+      # ext=ts,js,json, so .ts edits actually trigger a restart.
+      - ../apps/api:/repo/apps/api
+      # Anonymous volumes shield the image's installed dependencies from the
+      # bind mount above. node_modules is HOISTED to the workspace root, so the
+      # root one is the important one; the app-local path is masked too in case
+      # npm nested anything there.
+      - /repo/node_modules
+      - /repo/apps/api/node_modules
+      - elixirbooks-uploads:/repo/apps/api/uploads
     environment:
       NODE_ENV: development

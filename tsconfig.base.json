@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "//": "Shared compiler options. Deliberately carries NO `paths`: apps/web maps @models/* to src/types/*, and per-package aliases must not leak across package boundaries. Each package declares its own paths.",
+  "compilerOptions": {
+    "target": "es2022",
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "allowJs": false,
+    "checkJs": false,
+    "isolatedModules": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}

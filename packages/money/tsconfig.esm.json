@@ -1,0 +1,9 @@
+{
+  "//": "ESM build for apps/web. Rollup cannot resolve named imports out of the CommonJS output, so Vite needs a real ESM entry.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "es2022",
+    "outDir": "dist/esm",
+    "declaration": false
+  }
+}
