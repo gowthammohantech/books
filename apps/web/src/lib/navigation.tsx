@@ -6,7 +6,6 @@ import {
     Users,
     BarChart2,
     ChartCandlestick,
-    ChartArea,
     LandmarkIcon,
     BookOpen,
     Percent,
@@ -495,113 +494,18 @@ export const navItems: NavItemType[] = [
             },
         ],
     },
+    // One link, not a menu. The accordion here listed twelve of the app's 29
+    // reports — the accounting, tax, time and leave reports were reachable only
+    // from their own modules, so the menu was both long and incomplete. The
+    // Reports Center at /reports indexes all of them, with categories, search
+    // and favourites; the catalogue behind it is what the command palette
+    // searches too.
     {
-        type: "collapsible",
-        id: "reports",
+        type: "link",
+        to: "/reports",
         icon: <BarChart2 size={16} />,
         title: "Reports",
         slug: "reports",
-        children: [
-            {
-                type: "collapsible",
-                id: "transaction-reports",
-                icon: <BarChart2 size={16} />,
-                title: "Transaction Reports",
-                slug: "transaction-reports",
-                children: [
-                    {
-                        type: "link",
-                        to: "/reports/sales",
-                        title: "Sales",
-                        slug: "transaction-reports",
-                    },
-                    {
-                        type: "link",
-                        to: "/reports/sales-return",
-                        title: "Sales Return",
-                        slug: "transaction-reports",
-                    },
-                    {
-                        type: "link",
-                        to: "/reports/purchase",
-                        title: "Purchase",
-                        slug: "transaction-reports",
-                    },
-                    {
-                        type: "link",
-                        to: "/reports/purchase-order",
-                        title: "Purchase Order",
-                        slug: "transaction-reports",
-                    },
-                    {
-                        type: "link",
-                        to: "/reports/purchase-return",
-                        title: "Purchase Return",
-                        slug: "transaction-reports",
-                    },
-                    {
-                        type: "link",
-                        to: "/reports/quotation",
-                        title: "Quotation",
-                        slug: "transaction-reports",
-                    },
-                    {
-                        type: "link",
-                        to: "/reports/staff-activity",
-                        title: "Staff Activity",
-                        slug: "transaction-reports",
-                    },
-                ],
-            },
-            {
-                type: "collapsible",
-                id: "accounting-reports",
-                icon: <ChartCandlestick size={16} />,
-                title: "Accounting Reports",
-                slug: "accounting-reports",
-                children: [
-                    {
-                        type: "link",
-                        to: "/reports/income",
-                        title: "Income",
-                        slug: "accounting-reports",
-                    },
-                    {
-                        type: "link",
-                        to: "/reports/expense",
-                        title: "Expense",
-                        slug: "accounting-reports",
-                    },
-                ],
-            },
-            {
-                type: "collapsible",
-                id: "item-reports",
-                icon: <ChartArea size={16} />,
-                title: "Inventory Reports",
-                slug: "item-reports",
-                children: [
-                    {
-                        type: "link",
-                        to: "/reports/inventory",
-                        title: "Inventory",
-                        slug: "item-reports",
-                    },
-                    {
-                        type: "link",
-                        to: "/reports/low-stock",
-                        title: "Low Stock",
-                        slug: "item-reports",
-                    },
-                    {
-                        type: "link",
-                        to: "/reports/out-of-stock",
-                        title: "Out of Stock",
-                        slug: "item-reports",
-                    },
-                ],
-            },
-        ],
     },
     {
         type: "collapsible",

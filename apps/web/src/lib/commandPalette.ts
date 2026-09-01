@@ -1,17 +1,19 @@
-import type { ReactNode } from "react";
+import { createElement, type ReactNode } from "react";
+import { BarChart2 } from "lucide-react";
 import type { NavItemType } from "@models/sidebar";
 import type { PermissionSet } from "@models/permissions";
 import { navItems, canCreate, canView } from "./navigation";
 import { settingsBands } from "./settingsCatalogue";
+import { reports } from "./reportCatalogue";
 
 /**
  * Command palette model.
  *
  * A "command" is one thing the palette can take you to. Everything here is
- * derived from the two nav sources — the sidebar tree in `navigation.tsx` and
- * the settings catalogue in `settingsCatalogue.tsx` — so an entry added to
- * either becomes searchable here for free. There is no third list to keep in
- * sync.
+ * derived from the app's nav sources — the sidebar tree in `navigation.tsx`,
+ * the settings catalogue in `settingsCatalogue.tsx` and the report catalogue in
+ * `reportCatalogue.ts` — so an entry added to any of them becomes searchable
+ * here for free. There is no separate list to keep in sync.
  */
 
 export type CommandKind = "navigate" | "create";
@@ -72,6 +74,14 @@ const SYNONYMS: Record<string, string[]> = {
  * `slug: null` means the destination is ungated for any signed-in user.
  */
 type ExtraCommand = Omit<Command, "icon"> & { slug: string | null };
+
+/**
+ * The icon every catalogue-sourced report row carries. Built with
+ * `createElement` because this module is a `.ts` file — the catalogues that own
+ * markup are `.tsx`, and the report catalogue deliberately holds no ReactNode
+ * so it can stay importable from a plain node test.
+ */
+const REPORT_ICON: ReactNode = createElement(BarChart2, { size: 16 });
 
 const EXTRA_COMMANDS: ReadonlyArray<ExtraCommand> = [
     // Alternate dashboard views — sidebar shows only the single "Dashboard"
@@ -309,6 +319,36 @@ export const buildCommands = (
     // carry better palette labels ("Account Settings" over the catalogue's
     // in-context "General") and their own synonyms.
     if (items === navItems) {
+        // The report catalogue is the app's third nav source. The sidebar's
+        // Reports accordion collapsed into a single link to the Reports Center,
+        // which took twelve destinations out of `navItems` — and the seventeen
+        // accounting/tax/time reports were never in it to begin with. Flattened
+        // here so every report stays one keystroke away.
+        //
+        // Pushed before the settings bands but after `walk`, so the accounting
+        // reports that DO still have a menu entry keep their in-context
+        // breadcrumb ("Accounting › Financial Statements") — `push` dedupes on
+        // the id and the first writer wins.
+        for (const report of reports) {
+            if (report.slug !== null && !canView(report.slug, permissions)) {
+                continue;
+            }
+            push({
+                id: `nav:${report.path}`,
+                kind: "navigate",
+                title: report.name,
+                group: `Reports › ${report.category}`,
+                path: report.path,
+                icon: REPORT_ICON,
+                keywords: [
+                    "report",
+                    report.category,
+                    report.path,
+                    ...(SYNONYMS[report.path] ?? []),
+                ],
+            });
+        }
+
         for (const band of settingsBands) {
             for (const group of band.groups) {
                 for (const link of group.links) {

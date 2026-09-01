@@ -68,6 +68,7 @@ import ViewDeliveryChallan from "@pages/admin/delivery-challan/ViewDeliveryChall
 import UserList from "@pages/admin/users/UserList";
 import RolePermissions from "@pages/admin/roles-permissions/RolePermissions";
 import Unauthorized from "@pages/admin/errors/Unauthorized";
+import ReportCenter from "@pages/admin/reports/ReportCenter";
 import PurchaseReport from "@pages/admin/reports/transaction-reports/PurchaseReport";
 import PurchaseOrderReport from "@pages/admin/reports/transaction-reports/PurchaseOrderReport";
 import EmailTemplateList from "@pages/admin/settings/systemSettings/EmailTemplateList";
@@ -407,6 +408,15 @@ const AdminRoute = () => {
                     <Route path="/users" element={<><Seo title="Users" /><UserList /></>} />
                     <Route path="/roles" element={<><Seo title="Roles" /><RolesList /></>} />
                     <Route path="/roles/permissions/:id" element={<><Seo title="Role Permissions" /><RolePermissions /></>} />
+                </Route>
+
+                {/* Reports Center — the index of every report. Ungated: it only
+                    ever lists the reports the viewer's permissions allow, and
+                    the individual report routes below keep their own guards.
+                    The static `/reports/*` paths below still win the match,
+                    since React Router ranks a longer static path higher. */}
+                <Route element={<ProtectedRoute />}>
+                    <Route path="/reports" element={<><Seo title="Reports" /><ReportCenter /></>} />
                 </Route>
 
                 {/* Reports - Transaction */}
