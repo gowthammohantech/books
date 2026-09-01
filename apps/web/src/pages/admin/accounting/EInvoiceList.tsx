@@ -1,10 +1,9 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from "sonner";
 import { Ban } from "lucide-react";
 
-import type { RootState } from "@store/index";
 import Constants from "@constants/api";
 import Table from "@components/admin/Table";
 import TableRow from "@components/admin/TableRow";
@@ -53,7 +52,6 @@ const StatusBadge = ({ status }: { status: EInvoiceStatus }) => {
 
 const EInvoiceList: React.FC = () => {
     const { formatDate } = useDateFormatter();
-    const { token } = useSelector((state: RootState) => state.auth);
     const [rows, setRows] = useState<EInvoiceRow[]>([]);
     const [statusFilter, setStatusFilter] = useState<string>("");
     const [isLoading, setIsLoading] = useState(false);
@@ -67,9 +65,7 @@ const EInvoiceList: React.FC = () => {
             setIsLoading(true);
             const params = new URLSearchParams({ page: String(page), limit: String(limit) });
             if (statusFilter) params.set("status", statusFilter);
-            const resp = await axios.get(`${Constants.GET_E_INVOICES_URL}?${params.toString()}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const resp = await api.get(`${Constants.GET_E_INVOICES_URL}?${params.toString()}`);
             setRows(resp.data?.data?.eInvoices ?? []);
             setTotal(resp.data?.data?.pagination?.total ?? 0);
             setTotalPages(resp.data?.data?.pagination?.totalPages ?? 1);
@@ -94,10 +90,9 @@ const EInvoiceList: React.FC = () => {
         const reason = window.prompt("Reason for cancellation?");
         if (reason === null) return;
         try {
-            await axios.post(
+            await api.post(
                 `${Constants.CANCEL_E_INVOICE_URL}/${row.id}/cancel`,
-                { reason },
-                { headers: { Authorization: `Bearer ${token}` } },
+                { reason }
             );
             toast.success("IRN cancelled");
             await fetchRows();

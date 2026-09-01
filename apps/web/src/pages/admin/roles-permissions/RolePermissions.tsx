@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import CustomCheckbox from "@components/admin/CustomCheckbox";
 import FullPageLoader from "@components/admin/FullPageLoader";
 import NoRecords from "@components/admin/NoRecords";
@@ -9,7 +10,7 @@ import { Save } from "lucide-react";
 import type { ModuleList } from "@models/role-permissions";
 import type { RootState } from "@store/index";
 import { MODULE_LANDING_PATHS } from "@utils/roleLanding";
-import axios from "axios";
+
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
@@ -74,7 +75,7 @@ const RolePermissions: React.FC = () => {
     useEffect(() => {
         const fetchModules = async () => {
             try {
-                const response = await axios.get<ModuleListResponse>(
+                const response = await api.get<ModuleListResponse>(
                     `${Constants.FETCH_MODULES_URL}`,
                     { headers: { 'Authorization': `Bearer ${token}` } }
                 );
@@ -88,7 +89,7 @@ const RolePermissions: React.FC = () => {
         const fetchRolePermissions = async () => {
             try {
                 setIsFetching(true);
-                const response = await axios.get<RolePermissionsResponse>(
+                const response = await api.get<RolePermissionsResponse>(
                     `${Constants.FETCH_ROLE_PERMISSIONS_URL}/${roleId}`,
                     { headers: { 'Authorization': `Bearer ${token}` } }
                 );
@@ -293,7 +294,7 @@ const RolePermissions: React.FC = () => {
                 defaultRoute: defaultRoute
             }
 
-            await axios.post(`${Constants.SAVE_PERMISSIONS_URL}`, payloadData, {
+            await api.post(`${Constants.SAVE_PERMISSIONS_URL}`, payloadData, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             toast.success("Permissions saved successfully.");

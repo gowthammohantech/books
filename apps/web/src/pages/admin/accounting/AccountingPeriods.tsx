@@ -1,10 +1,9 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from "sonner";
 import { CirclePlusIcon, Edit, Trash2Icon, Lock, Unlock } from "lucide-react";
 
-import type { RootState } from "@store/index";
 import Constants from "@constants/api";
 import Table from "@components/admin/Table";
 import TableRow from "@components/admin/TableRow";
@@ -41,7 +40,6 @@ const emptyForm: FormState = { name: "", startDate: "", endDate: "", notes: "" }
 
 const AccountingPeriods: React.FC = () => {
     const { formatDate } = useDateFormatter();
-    const { token } = useSelector((state: RootState) => state.auth);
     const [periods, setPeriods] = useState<AccountingPeriod[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
@@ -54,9 +52,7 @@ const AccountingPeriods: React.FC = () => {
     const fetchPeriods = async () => {
         try {
             setIsLoading(true);
-            const resp = await axios.get(Constants.GET_ACCOUNTING_PERIODS_URL, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const resp = await api.get(Constants.GET_ACCOUNTING_PERIODS_URL);
             setPeriods(resp.data?.data?.accountingPeriods ?? []);
         } catch (err) {
             console.error("Failed to fetch periods:", err);
@@ -103,16 +99,13 @@ const AccountingPeriods: React.FC = () => {
                 notes: form.notes || null,
             };
             if (editingId) {
-                await axios.put(
+                await api.put(
                     `${Constants.UPDATE_ACCOUNTING_PERIOD_URL}/${editingId}`,
-                    payload,
-                    { headers: { Authorization: `Bearer ${token}` } },
+                    payload
                 );
                 toast.success("Period updated");
             } else {
-                await axios.post(Constants.CREATE_ACCOUNTING_PERIOD_URL, payload, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                await api.post(Constants.CREATE_ACCOUNTING_PERIOD_URL, payload);
                 toast.success("Period created");
             }
             setShowModal(false);
@@ -130,10 +123,9 @@ const AccountingPeriods: React.FC = () => {
 
     const handleLock = async (row: AccountingPeriod) => {
         try {
-            await axios.post(
+            await api.post(
                 `${Constants.LOCK_ACCOUNTING_PERIOD_URL}/${row.id}/lock`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             toast.success("Period locked");
             await fetchPeriods();
@@ -148,10 +140,9 @@ const AccountingPeriods: React.FC = () => {
 
     const handleUnlock = async (row: AccountingPeriod) => {
         try {
-            await axios.post(
+            await api.post(
                 `${Constants.UNLOCK_ACCOUNTING_PERIOD_URL}/${row.id}/unlock`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             toast.success("Period unlocked");
             await fetchPeriods();
@@ -168,9 +159,7 @@ const AccountingPeriods: React.FC = () => {
         if (!deleteItem) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_ACCOUNTING_PERIOD_URL}/${deleteItem.id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.delete(`${Constants.DELETE_ACCOUNTING_PERIOD_URL}/${deleteItem.id}`);
             toast.success("Period deleted");
             setDeleteItem(null);
             await fetchPeriods();

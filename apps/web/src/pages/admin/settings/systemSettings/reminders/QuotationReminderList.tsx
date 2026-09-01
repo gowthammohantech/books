@@ -1,9 +1,10 @@
+import api from '@lib/apiClient';
 import Switch from "@components/admin/Switch";
 import Table from "@components/admin/Table";
 import TableRow from "@components/admin/TableRow";
 import Constants from "@constants/api";
 import type { RootState } from "@store/index";
-import axios from "axios";
+
 import { Edit, Trash2Icon } from "lucide-react";
 import { useSelector } from "react-redux";
 import { Card } from "@components/ui";
@@ -41,7 +42,7 @@ const QuotationReminderList: React.FC<Props> = ({ reminders, onSuccess, isEditin
     }
     const handleStatusChange = async (id: string, newStatus: boolean) => {
         try {
-            await axios.patch(`${Constants.API_BASE_URL}/reminders/${id}/toggle`, { isEnabled: newStatus }, {
+            await api.patch(`${Constants.API_BASE_URL}/reminders/${id}/toggle`, { isEnabled: newStatus }, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             onSuccess();

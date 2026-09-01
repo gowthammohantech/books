@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { PlusCircle, Edit } from 'lucide-react';
 import DateInput from '@components/admin/DateInput';
@@ -204,10 +205,8 @@ const CreateDebitNote: React.FC = () => {
     const [taxRateLibrary, setTaxRateLibrary] = useState<TaxRate[]>([]);
     useEffect(() => {
         if (!token) return;
-        axios
-            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+        api
+            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`)
             .then((r) => {
                 const list = r.data?.data?.taxRates ?? r.data?.data ?? [];
                 setTaxRateLibrary(Array.isArray(list) ? list : []);
@@ -246,7 +245,7 @@ const CreateDebitNote: React.FC = () => {
     const fetchPurchase = async () => {
         try {
             setIsFetching(true);
-            const response = await axios.get(`${Constants.GET_PURCHASE_DETAILS_URL}/${debitNoteFormData.purchaseId}`, {
+            const response = await api.get(`${Constants.GET_PURCHASE_DETAILS_URL}/${debitNoteFormData.purchaseId}`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
 
@@ -304,7 +303,7 @@ const CreateDebitNote: React.FC = () => {
     }
     const fetchPurchaseOrders = async () => {
         try {
-            const response = await axios.get(Constants.FETCH_ALL_PURCHASE_FOR_DEBIT_NOTE_URL, {
+            const response = await api.get(Constants.FETCH_ALL_PURCHASE_FOR_DEBIT_NOTE_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = response.data.data;
@@ -319,7 +318,7 @@ const CreateDebitNote: React.FC = () => {
     }
     const fetchPaymentModes = async () => {
         try {
-            const response = await axios.get(Constants.GET_ALL_PAYMENT_MODES_URL, {
+            const response = await api.get(Constants.GET_ALL_PAYMENT_MODES_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setPaymentModes(response.data.data);
@@ -330,7 +329,7 @@ const CreateDebitNote: React.FC = () => {
     const fetchTaxes = async () => {
         if (!token) return;
         try {
-            const response = await axios.get(Constants.FETCH_TAX_GROUPS_URL, {
+            const response = await api.get(Constants.FETCH_TAX_GROUPS_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -344,7 +343,7 @@ const CreateDebitNote: React.FC = () => {
     useEffect(() => {
         const fetchBankAccounts = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -370,7 +369,7 @@ const CreateDebitNote: React.FC = () => {
     useEffect(() => {
         const fetchManualSignatures = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermSignature },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -398,7 +397,7 @@ const CreateDebitNote: React.FC = () => {
         setSelectedAdmin(user);
         try {
             setIsFetching(true);
-            const response = await axios.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
+            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             //set billFrom to prev debitNoteFormData
@@ -552,7 +551,7 @@ const CreateDebitNote: React.FC = () => {
 
     const fetchAdminUsers = async () => {
         try {
-            const response = await axios.get(`${Constants.FETCH_USERS_URL}/1`, {
+            const response = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.data.length > 0) {
@@ -739,7 +738,7 @@ const CreateDebitNote: React.FC = () => {
 
         try {
             setIsSubmitting(true);
-            await axios.post(Constants.CREATE_DEBIT_NOTE_URL, formData, {
+            await api.post(Constants.CREATE_DEBIT_NOTE_URL, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data',

@@ -1,14 +1,14 @@
+import api from '@lib/apiClient';
 import Constants from "@constants/api";
 import type { InvoiceData } from "@models/invoice";
 import type { InvoicePaymentDetails } from "@models/invoice-payment";
 import type { RootState } from "@store/index";
-import Cookies from "js-cookie";
 import { hasPermission } from "@utils/hasPermission";
 import { deriveInvoiceDisplayStatus, DISPLAY_STATUS_META } from "@utils/invoiceStatus";
 import { useCurrencies } from "@hooks/useCurrencies";
 import { useLineItemCustomFields } from "@hooks/useLineItemCustomFields";
 import type { LineCustomField } from "@lib/lineCustomFields";
-import axios from "axios";
+
 import {
     BadgeDollarSignIcon,
     BellIcon,
@@ -186,12 +186,9 @@ const InvoiceActionToolbar: React.FC<InvoiceActionToolbarProps> = ({
         }
         // Use Redux token; fall back to cookie for page-refresh cases where
         // the store may not yet be hydrated (FETCH_INVOICE_DETAILS route IS protected).
-        const authToken = token || Cookies.get("authToken") || "";
         try {
             setBusy("pdf");
-            const res = await axios.get(`${Constants.FETCH_INVOICE_DETAILS_NO_AUTH_URL}/${invoiceId}`, {
-                headers: { Authorization: `Bearer ${authToken}` },
-            });
+            const res = await api.get(`${Constants.FETCH_INVOICE_DETAILS_NO_AUTH_URL}/${invoiceId}`);
             if (res.data?.data) {
                 wantPrintRef.current = true;
                 setDetails(res.data.data);
@@ -225,10 +222,9 @@ const InvoiceActionToolbar: React.FC<InvoiceActionToolbarProps> = ({
     const setStatus = async (newStatus: string, label: string) => {
         try {
             setBusy(newStatus);
-            await axios.post(
+            await api.post(
                 Constants.UPDATE_INVOICE_STATUS_URL,
-                { invoiceId, status: newStatus },
-                { headers: { Authorization: `Bearer ${token}` } },
+                { invoiceId, status: newStatus }
             );
             toast.success(label);
             onChanged?.();
@@ -242,10 +238,9 @@ const InvoiceActionToolbar: React.FC<InvoiceActionToolbarProps> = ({
     const handleMarkSent = async () => {
         try {
             setBusy("sent");
-            await axios.post(
+            await api.post(
                 `${Constants.MARK_INVOICE_SENT_URL}/${invoiceId}/mark-sent`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             toast.success("Invoice marked as sent");
             onChanged?.();
@@ -262,15 +257,13 @@ const InvoiceActionToolbar: React.FC<InvoiceActionToolbarProps> = ({
     const handleDelete = async () => {
         if (
             !window.confirm(
-                "Delete this invoice? This permanently removes it and excludes it from receivables. This cannot be undone.",
+                "Delete this invoice? This permanently removes it and excludes it from receivables. This cannot be undone."
             )
         )
             return;
         try {
             setBusy("DELETE");
-            await axios.delete(`${Constants.DELETE_INVOICE_URL}/${invoiceId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.delete(`${Constants.DELETE_INVOICE_URL}/${invoiceId}`);
             toast.success("Invoice deleted");
             navigate("/admin/invoices");
         } catch (e: any) {
@@ -289,10 +282,9 @@ const InvoiceActionToolbar: React.FC<InvoiceActionToolbarProps> = ({
         if (!window.confirm("Convert this proforma to a final invoice?")) return;
         try {
             setBusy("convert");
-            const res = await axios.post(
+            const res = await api.post(
                 `${Constants.CONVERT_PROFORMA_TO_INVOICE_URL}/${invoiceId}/convert-to-invoice`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             const newId = res.data?.data?.invoice?.id;
             toast.success("Proforma converted to invoice");
@@ -309,9 +301,7 @@ const InvoiceActionToolbar: React.FC<InvoiceActionToolbarProps> = ({
     const handleRecordPayment = async () => {
         try {
             setBusy("payment");
-            const res = await axios.get(`${Constants.FETCH_INVOICE_PAYMENT_DETAILS_URL}/${invoiceId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const res = await api.get(`${Constants.FETCH_INVOICE_PAYMENT_DETAILS_URL}/${invoiceId}`);
             if (res.data?.data) {
                 setPaymentItem(res.data.data);
                 setIsPaymentOpen(true);

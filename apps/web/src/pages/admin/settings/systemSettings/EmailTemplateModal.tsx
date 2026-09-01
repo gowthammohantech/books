@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import Modal from "@components/admin/Modal";
 import SearchableDropdown from "@components/admin/SearchableDropdown";
 import SubmitButton from "@components/admin/SubmitButton";
@@ -5,7 +6,7 @@ import { TiptapEditor } from "@components/admin/TiptapEditor";
 import Constants from "@constants/api";
 import type { EmailTemplateFormData, NotificationTags, NotificationTypes } from "@models/email-template";
 import type { RootState } from "@store/index";
-import axios from "axios";
+
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
@@ -73,7 +74,7 @@ const EmailTemplateModal: React.FC<TemplateProps> = ({ isOpen, onClose, onSucces
 
     const fetchNotificationTypes = async () => {
         try {
-            const response = await axios.get(Constants.GET_ALL_NOTIFICATION_TYPES_URL, {
+            const response = await api.get(Constants.GET_ALL_NOTIFICATION_TYPES_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.success && response.data.data) {
@@ -107,12 +108,12 @@ const EmailTemplateModal: React.FC<TemplateProps> = ({ isOpen, onClose, onSucces
         try {
             setIsSaving(true);
             if (editItem) {
-                await axios.put(`${Constants.UPDATE_EMAIL_TEMPLATE_URL}/${editItem.id}`, formData, {
+                await api.put(`${Constants.UPDATE_EMAIL_TEMPLATE_URL}/${editItem.id}`, formData, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 toast.success('Email template updated successfully.');
             } else {
-                await axios.post(Constants.CREATE_EMAIL_TEMPLATE_URL, formData, {
+                await api.post(Constants.CREATE_EMAIL_TEMPLATE_URL, formData, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 toast.success('Email template created successfully.');

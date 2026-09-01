@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { PlusCircle, Edit } from 'lucide-react';
 import DateInput from '@components/admin/DateInput';
@@ -181,10 +182,8 @@ const AddCreditNote: React.FC = () => {
     const [taxRateLibrary, setTaxRateLibrary] = useState<TaxRate[]>([]);
     useEffect(() => {
         if (!token) return;
-        axios
-            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+        api
+            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`)
             .then((r) => {
                 const list = r.data?.data?.taxRates ?? r.data?.data ?? [];
                 setTaxRateLibrary(Array.isArray(list) ? list : []);
@@ -218,7 +217,7 @@ const AddCreditNote: React.FC = () => {
     const handleInvoiceChange = async (option: OptionType) => {
         try {
             setIsFetching(true);
-            const response = await axios.get(`${Constants.FETCH_INVOICE_FOR_EDIT_URL}/${option.id}`, {
+            const response = await api.get(`${Constants.FETCH_INVOICE_FOR_EDIT_URL}/${option.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const invoice_data = response.data.data;
@@ -269,7 +268,7 @@ const AddCreditNote: React.FC = () => {
     useEffect(() => {
         const fetchInvoicesQuery = async () => {
             try {
-                const response = await axios.post(Constants.SEARCH_INVOICES_FOR_CREDIT_NOTE_URL,
+                const response = await api.post(Constants.SEARCH_INVOICES_FOR_CREDIT_NOTE_URL,
                     { search: debouncedSearchTermInvoice },
                     {
                         headers: { 'Authorization': `Bearer ${token}` }
@@ -290,7 +289,7 @@ const AddCreditNote: React.FC = () => {
     const fetchTaxes = async () => {
         if (!token) return;
         try {
-            const response = await axios.get(Constants.FETCH_TAX_GROUPS_URL, {
+            const response = await api.get(Constants.FETCH_TAX_GROUPS_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -304,7 +303,7 @@ const AddCreditNote: React.FC = () => {
     useEffect(() => {
         const fetchBankAccounts = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -330,7 +329,7 @@ const AddCreditNote: React.FC = () => {
     useEffect(() => {
         const fetchManualSignatures = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermSignature },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -357,7 +356,7 @@ const AddCreditNote: React.FC = () => {
     const handleAdminChange = async (user: OptionType) => {
         setSelectedAdmin(user);
         try {
-            const response = await axios.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
+            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             //set billFrom to formData
@@ -510,7 +509,7 @@ const AddCreditNote: React.FC = () => {
 
     const fetchAdminUsers = async () => {
         try {
-            const response = await axios.get(`${Constants.FETCH_USERS_URL}/1`, {
+            const response = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.data.length > 0) {
@@ -701,7 +700,7 @@ const AddCreditNote: React.FC = () => {
 
         try {
             setIsSaving(true);
-            await axios.post(Constants.CREATE_NEW_CREDIT_NOTE_URL, formData, {
+            await api.post(Constants.CREATE_NEW_CREDIT_NOTE_URL, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data',

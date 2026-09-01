@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { PlusCircle, Edit, Mail, Settings, Loader2Icon } from 'lucide-react';
 import DateInput from '@components/admin/DateInput';
@@ -281,7 +282,7 @@ const CreateInvoice: React.FC = () => {
     };
 
     const overriddenLineCount = invoiceFormData.items.filter(
-        (item) => item.costCenterId && item.costCenterId !== invoiceFormData.costCenterId,
+        (item) => item.costCenterId && item.costCenterId !== invoiceFormData.costCenterId
     ).length;
 
     const handleCustomFieldChange = (fieldSlugOrId: string, value: any) => {
@@ -309,7 +310,7 @@ const CreateInvoice: React.FC = () => {
     const fetchNextInvoiceNumber = async (costCenterId?: string) => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.FETCH_NEXT_INVOICE_NO_URL, {
+            const response = await api.get(Constants.FETCH_NEXT_INVOICE_NO_URL, {
                 headers: { 'Authorization': `Bearer ${token}` },
                 // A centre with its own prefix numbers from its own series, so the
                 // preview has to be asked for that centre or it will disagree with
@@ -338,7 +339,7 @@ const CreateInvoice: React.FC = () => {
     const fetchTaxes = async () => {
         if (!token) return;
         try {
-            const response = await axios.get(Constants.FETCH_TAX_GROUPS_URL, {
+            const response = await api.get(Constants.FETCH_TAX_GROUPS_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setTaxes(response.data.data);
@@ -349,10 +350,8 @@ const CreateInvoice: React.FC = () => {
 
     useEffect(() => {
         if (!token) return;
-        axios
-            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+        api
+            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`)
             .then((r) => {
                 const list = r.data?.data?.taxRates ?? r.data?.data ?? [];
                 setTaxRateLibrary(Array.isArray(list) ? list : []);
@@ -367,7 +366,7 @@ const CreateInvoice: React.FC = () => {
     const applyResolvedToLine = (
         it: ProductItem,
         taxRateId: string,
-        resolved: Awaited<ReturnType<typeof resolveLineTaxByRateId>>,
+        resolved: Awaited<ReturnType<typeof resolveLineTaxByRateId>>
     ): ProductItem => {
         const lineTaxable = { qty: Number(it.qty || 0), rate: Number(it.rate || 0), discount: Number(it.discount || 0) };
         const r = resolved
@@ -406,7 +405,7 @@ const CreateInvoice: React.FC = () => {
         const fetchBankAccounts = async () => {
             try {
                 setBankAccountsLoading(true);
-                const response = await axios.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -437,7 +436,7 @@ const CreateInvoice: React.FC = () => {
         const fetchManualSignatures = async () => {
             try {
                 setSignaturesLoading(true);
-                const response = await axios.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermSignature },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -468,7 +467,7 @@ const CreateInvoice: React.FC = () => {
         setSelectedAdmin(user);
         try {
             setIsFetching(true);
-            const response = await axios.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
+            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setInvoiceFormData(prev => ({ ...prev, billFrom: user.id }));
@@ -513,9 +512,7 @@ const CreateInvoice: React.FC = () => {
         (async () => {
             try {
                 setIsLoading(true);
-                const res = await axios.get(`${Constants.FETCH_INVOICE_FOR_EDIT_URL}/${copyFromId}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const res = await api.get(`${Constants.FETCH_INVOICE_FOR_EDIT_URL}/${copyFromId}`);
                 const src = res.data?.data;
                 if (!src || cancelled) return;
                 if (src.billFrom?.id) {
@@ -608,7 +605,7 @@ const CreateInvoice: React.FC = () => {
             if (existingComponents.length > 0) {
                 const r = recomputeLineTaxesFromComponents(
                     { qty, rate, discount: safeDiscountAmount },
-                    existingComponents,
+                    existingComponents
                 );
                 recomputedTaxes = r.taxes;
                 totalTax = r.totalTax;
@@ -685,7 +682,7 @@ const CreateInvoice: React.FC = () => {
     const fetchAdminUsers = async () => {
         try {
             setAdminUsersLoading(true);
-            const response = await axios.get(`${Constants.FETCH_USERS_URL}/1`, {
+            const response = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.data.length > 0) {
@@ -1023,7 +1020,7 @@ const CreateInvoice: React.FC = () => {
 
         try {
             setIsSubmitting(true);
-            await axios.post(Constants.CREATE_NEW_INVOICE_URL, formData, {
+            await api.post(Constants.CREATE_NEW_INVOICE_URL, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data',

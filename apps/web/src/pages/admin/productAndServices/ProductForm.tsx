@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+
 import Constants from '../../../constants/api';
 import { toast } from "sonner";
 import { Upload, X } from 'lucide-react';
@@ -154,7 +155,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
         const fetchCategoriesByQuery = async () => {
             const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await axios.get(`${Constants.FETCH_PRODUCT_CATEGORIES_URL}?search=${debouncedCategorySearch}`, { headers });
+                const response = await api.get(`${Constants.FETCH_PRODUCT_CATEGORIES_URL}?search=${debouncedCategorySearch}`, { headers });
                 const formattedCategories = response.data.data.map((category: any) => ({
                     id: category.id,
                     name: category.categoryName
@@ -172,7 +173,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
         const fetchBrandsByQuery = async () => {
             const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await axios.get(`${Constants.FETCH_PRODUCT_BRANDS_URL}?search=${debouncedBrandSearch}`, { headers });
+                const response = await api.get(`${Constants.FETCH_PRODUCT_BRANDS_URL}?search=${debouncedBrandSearch}`, { headers });
                 const formattedBrands = response.data.data.map((brand: any) => ({
                     id: brand.id,
                     name: brand.brandName
@@ -190,7 +191,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
         const fetchUnitsByQuery = async () => {
             const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await axios.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=${debouncedUnitSearch}`, { headers });
+                const response = await api.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=${debouncedUnitSearch}`, { headers });
                 const formattedUnits = response.data.data.map((unit: any) => ({
                     id: unit.id,
                     name: unit.unitName
@@ -209,7 +210,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
         const fetchTaxesByQuery = async () => {
             const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await axios.get(
+                const response = await api.get(
                     `${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true&search=${debouncedTaxSearch}`,
                     { headers },
                 );
@@ -422,11 +423,11 @@ export default function ProductForm({ productData }: ProductFormProps) {
             setIsSubmitting(true);
             const config = { headers: { 'Authorization': `Bearer ${token}` } };
             if (isEditMode) {
-                await axios.put(`${Constants.UPDATE_PRODUCT_URL}/${productData?.id}`, submissionData, config);
+                await api.put(`${Constants.UPDATE_PRODUCT_URL}/${productData?.id}`, submissionData, config);
                 toast.success("Item updated successfully!");
                 navigate('/admin/products');
             } else {
-                await axios.post(Constants.CREATE_PRODUCT_URL, submissionData, config);
+                await api.post(Constants.CREATE_PRODUCT_URL, submissionData, config);
                 toast.success("Item created successfully!");
                 if (wantsAddAnother) {
                     // The No-Tax default effect keys off [taxRateRows, isEditMode], neither
@@ -714,7 +715,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
                     setIsCategoryCreateModalOpen(false);
                     try {
                         const headers = { 'Authorization': `Bearer ${token}` };
-                        const response = await axios.get(`${Constants.FETCH_PRODUCT_CATEGORIES_URL}?search=`, { headers });
+                        const response = await api.get(`${Constants.FETCH_PRODUCT_CATEGORIES_URL}?search=`, { headers });
                         const formatted = response.data.data.map((category: { id: string; categoryName: string }) => ({
                             id: category.id,
                             name: category.categoryName
@@ -736,7 +737,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
                     setIsCreateBrandModalOpen(false);
                     try {
                         const headers = { 'Authorization': `Bearer ${token}` };
-                        const response = await axios.get(`${Constants.FETCH_PRODUCT_BRANDS_URL}?search=`, { headers });
+                        const response = await api.get(`${Constants.FETCH_PRODUCT_BRANDS_URL}?search=`, { headers });
                         const formatted = response.data.data.map((brand: { id: string; brandName: string }) => ({
                             id: brand.id,
                             name: brand.brandName
@@ -758,7 +759,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
                     setIsCreateUnitModalOpen(false);
                     try {
                         const headers = { 'Authorization': `Bearer ${token}` };
-                        const response = await axios.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=`, { headers });
+                        const response = await api.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=`, { headers });
                         const formatted = response.data.data.map((unit: { id: string; unitName: string }) => ({
                             id: unit.id,
                             name: unit.unitName

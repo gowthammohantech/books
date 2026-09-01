@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import axios from "axios";
+
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { FileDownIcon } from "lucide-react";
@@ -51,9 +52,8 @@ const InventoryView: React.FC = () => {
         try {
             setIsLoading(true);
             setNotFound(false);
-            const response = await axios.get(
-                `${Constants.FETCH_INVENTORY_HISTORY_URL}/${inventoryId}`,
-                { headers: { Authorization: `Bearer ${token}` } },
+            const response = await api.get(
+                `${Constants.FETCH_INVENTORY_HISTORY_URL}/${inventoryId}`
             );
             setData(response.data.data);
         } catch (error) {
@@ -175,7 +175,7 @@ const InventoryView: React.FC = () => {
                                     Low stock
                                 </Badge>
                             )}
-                        </span>,
+                        </span>
                     )}
                     {detail("Valuation Method", data.valuationMethod || "—")}
                     {detail("Average Cost", avgCost != null ? formatMoney(avgCost, currency) : "—")}

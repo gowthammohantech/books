@@ -1,13 +1,12 @@
+import api from '@lib/apiClient';
 import Modal from "@components/admin/Modal";
 import SubmitButton from "@components/admin/SubmitButton";
 import { Button, FormField, fieldControlClasses } from "@components/ui";
 import Constants from "@constants/api";
 import { useCurrencies } from "@hooks/useCurrencies";
-import type { RootState } from "@store/index";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import type React from "react";
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import { toast } from "sonner";
 
 interface PurchaseEmailModalProps {
@@ -36,7 +35,6 @@ const PurchaseEmailModal: React.FC<PurchaseEmailModalProps> = ({
     totalAmount,
     currencyCode,
 }) => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const { formatMoney } = useCurrencies();
     const [isSaving, setIsSaving] = useState(false);
     const [formData, setFormData] = useState<EmailFormData>({
@@ -88,7 +86,7 @@ ${totalLine}
 
         try {
             setIsSaving(true);
-            await axios.post(
+            await api.post(
                 Constants.SEND_PURCHASE_MAIL_URL,
                 {
                     purchaseId,
@@ -97,8 +95,7 @@ ${totalLine}
                     subject: formData.subject.trim(),
                     htmlContent: formData.htmlContent,
                     sendAttachment: false,
-                },
-                { headers: { Authorization: `Bearer ${token}` } },
+                }
             );
             toast.success('Purchase email sent successfully.');
             onClose();

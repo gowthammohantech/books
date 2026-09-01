@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useEffect, useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
+
 import { toast } from 'sonner';
 
 import Constants from '@constants/api';
@@ -73,7 +74,7 @@ export default function PnlByDepartmentReport() {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(Constants.FETCH_PNL_BY_DEPARTMENT_URL, {
+        const res = await api.get(Constants.FETCH_PNL_BY_DEPARTMENT_URL, {
           params: { from, to, ...(rollup ? { rollup: 'parent' } : {}) },
           headers: { Authorization: `Bearer ${token}` },
         });

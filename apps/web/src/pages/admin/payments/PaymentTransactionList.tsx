@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { Eye } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import Table from "@components/admin/Table";
@@ -6,7 +7,7 @@ import type { RootState } from "@store/index";
 import Constants from "@constants/api";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import axios from "axios";
+
 import TableRow from "@components/admin/TableRow";
 import PaginationWrapper from "@components/admin/PaginationWrapper";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
@@ -110,7 +111,7 @@ const PaymentTransactionList: React.FC = () => {
             if (statusValue && statusValue !== 'all') {
                 params.status = statusValue;
             }
-            const response = await axios.get(Constants.GET_PAYMENT_TRANSACTIONS_URL, {
+            const response = await api.get(Constants.GET_PAYMENT_TRANSACTIONS_URL, {
                 params,
                 headers: { 'Authorization': `Bearer ${token}` },
             });

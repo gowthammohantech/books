@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import axios from 'axios';
 import Cookies from 'js-cookie';
+import { installUnauthorizedHandler, isNoRedirectPath, LOGIN_PATH } from './lib/apiClient';
 import App from './App';
 import { BrowserRouter } from 'react-router-dom';
 import './index.css';
@@ -32,28 +32,14 @@ store.dispatch(initializeAuth());
 // but bouncing off these two pages is still wrong. They are where a user
 // completes signup and workspace setup, and a transient 401 there should show
 // inline beside the form rather than discard what they have typed.
-const LOGIN_PATH = '/admin/login';
-const NO_REDIRECT_PATHS = [LOGIN_PATH, '/setup', '/register'];
-axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (
-      error?.response?.status === 401 &&
-      !NO_REDIRECT_PATHS.some((p) => window.location.pathname.startsWith(p))
-    ) {
-      store.dispatch(logout());
-      window.location.assign(LOGIN_PATH);
-    }
-    return Promise.reject(error);
-  }
-);
+installUnauthorizedHandler(() => store.dispatch(logout()));
 
 // Proactive expiry watchdog: catches idle sessions where a mounted page stays
 // stale-authed because ProtectedRoute only re-checks on navigation.
 // Runs (a) when the tab becomes visible and (b) every 60 s in the background.
 const checkTokenExpiry = () => {
   const token = Cookies.get('authToken');
-  if (token && isTokenExpired(token) && !NO_REDIRECT_PATHS.some((p) => window.location.pathname.startsWith(p))) {
+  if (token && isTokenExpired(token) && !isNoRedirectPath(window.location.pathname)) {
     store.dispatch(logout());
     window.location.assign(LOGIN_PATH);
   }

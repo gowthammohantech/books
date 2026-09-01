@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import QuillEditor from "@components/admin/QuillEditor";
 import Constants from "@constants/api";
 import { useCurrencyFormatter } from "@hooks/useCurrencyFormatter";
@@ -5,7 +6,7 @@ import { useCurrencies } from "@hooks/useCurrencies";
 import useDateFormatter from "@hooks/useDateFormatter";
 import type { InvoiceData } from "@models/invoice";
 import type { RootState } from "@store/index";
-import axios from "axios";
+
 import { Send } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
@@ -70,7 +71,7 @@ const EmailInvoice: React.FC = () => {
     useEffect(() => {
         const fetchEmailSettings = async () => {
             try {
-                const response = await axios.get(Constants.GET_EMAIL_SETTINGS_URL, {
+                const response = await api.get(Constants.GET_EMAIL_SETTINGS_URL, {
                     params: { userId: user?.id },
                     headers: { Authorization: `Bearer ${token}` },
                 });
@@ -115,11 +116,8 @@ const EmailInvoice: React.FC = () => {
     useEffect(() => {
         const fetchInvoiceDetails = async () => {
             try {
-                const response = await axios.get(
-                    `${Constants.FETCH_INVOICE_FOR_EDIT_URL}/${invoiceId}`,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
+                const response = await api.get(
+                    `${Constants.FETCH_INVOICE_FOR_EDIT_URL}/${invoiceId}`
                 );
                 const responseData = response.data.data;
                 if (responseData) {
@@ -208,9 +206,8 @@ const EmailInvoice: React.FC = () => {
                 html = rb.html;
             } else {
                 try {
-                    const res = await axios.get(
-                        `${Constants.RESOLVE_EMAIL_TEMPLATE_URL}/invoice/${invoiceDetails.id}`,
-                        { headers: { Authorization: `Bearer ${token}` } },
+                    const res = await api.get(
+                        `${Constants.RESOLVE_EMAIL_TEMPLATE_URL}/invoice/${invoiceDetails.id}`
                     );
                     const d = res.data?.data;
                     if (d?.hasTemplate) {
@@ -254,12 +251,9 @@ const EmailInvoice: React.FC = () => {
         e.preventDefault();
         try {
             setIsSubmitting(true);
-            const response = await axios.post(
+            const response = await api.post(
                 Constants.SEND_INVOICE_MAIL_URL,
-                formData,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
+                formData
             );
             toast.success(response.data.message);
         } catch (error) {

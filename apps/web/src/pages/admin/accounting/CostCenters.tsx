@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Constants from "../../../constants/api";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import Table from "../../../components/admin/Table";
 import PaginationWrapper from "../../../components/admin/PaginationWrapper";
 import { Edit, Trash2, CirclePlusIcon } from "lucide-react";
@@ -111,7 +112,7 @@ const CostCenters: React.FC = () => {
     const fetchItems = async (s?: string, l?: number, p?: number) => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.FETCH_COST_CENTERS_URL, {
+            const response = await api.get(Constants.FETCH_COST_CENTERS_URL, {
                 // includeInactive: the master must still list a centre after its
                 // Active switch is turned off, or it becomes unreachable.
                 params: { search: s, limit: l, page: p, includeInactive: true },
@@ -129,7 +130,7 @@ const CostCenters: React.FC = () => {
     /** Full list for the Parent dropdown — the parent may be on another page. */
     const fetchAllCenters = async () => {
         try {
-            const response = await axios.get(Constants.FETCH_COST_CENTERS_URL, {
+            const response = await api.get(Constants.FETCH_COST_CENTERS_URL, {
                 params: { all: 1, includeInactive: true },
                 headers: authHeaders,
             });
@@ -208,10 +209,10 @@ const CostCenters: React.FC = () => {
                 nextNumber: Number(form.nextNumber) || 1,
             };
             if (isEditMode && form.id) {
-                await axios.put(`${Constants.UPDATE_COST_CENTER_URL}/${form.id}`, payload, { headers: authHeaders });
+                await api.put(`${Constants.UPDATE_COST_CENTER_URL}/${form.id}`, payload, { headers: authHeaders });
                 toast.success("Profit center updated successfully.");
             } else {
-                await axios.post(Constants.CREATE_COST_CENTER_URL, payload, { headers: authHeaders });
+                await api.post(Constants.CREATE_COST_CENTER_URL, payload, { headers: authHeaders });
                 toast.success("Profit center created successfully.");
             }
             setShowModal(false);
@@ -237,7 +238,7 @@ const CostCenters: React.FC = () => {
         if (!itemToDelete) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_COST_CENTER_URL}/${itemToDelete.id}`, { headers: authHeaders });
+            await api.delete(`${Constants.DELETE_COST_CENTER_URL}/${itemToDelete.id}`, { headers: authHeaders });
             toast.success("Profit center deleted successfully.");
             refreshAll();
             setDeleteModalOpen(false);
@@ -251,7 +252,7 @@ const CostCenters: React.FC = () => {
 
     const updateActive = async (item: ICostCenter) => {
         try {
-            await axios.put(
+            await api.put(
                 `${Constants.UPDATE_COST_CENTER_URL}/${item.id}`,
                 { isActive: !item.isActive },
                 { headers: authHeaders },

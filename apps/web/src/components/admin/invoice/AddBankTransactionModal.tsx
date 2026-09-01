@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import Modal from "@components/admin/Modal";
 import SubmitButton from "@components/admin/SubmitButton";
 import { Button, FormField, Select, fieldControlClasses } from "@components/ui";
@@ -5,7 +6,7 @@ import DateInput from "@components/admin/DateInput";
 import { ymdStringToDate, dateToYmdString } from "@utils/converters";
 import Constants from "@constants/api";
 import type { RootState } from "@store/index";
-import axios from "axios";
+
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
@@ -96,13 +97,11 @@ const AddBankTransactionModal: React.FC<AddBankTransactionModalProps> = ({
         (async () => {
             try {
                 const [accountsRes, modesRes] = await Promise.all([
-                    axios.get(Constants.GET_BANK_ACCOUNTS_URL, {
+                    api.get(Constants.GET_BANK_ACCOUNTS_URL, {
                         params: { limit: 100, page: 1 },
                         headers: { Authorization: `Bearer ${token}` },
                     }),
-                    axios.get(Constants.GET_ALL_PAYMENT_MODES_URL, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }),
+                    api.get(Constants.GET_ALL_PAYMENT_MODES_URL),
                 ]);
                 if (cancelled) return;
                 setBankAccounts(accountsRes.data?.data?.bankDetails ?? []);
@@ -128,7 +127,7 @@ const AddBankTransactionModal: React.FC<AddBankTransactionModalProps> = ({
         }
         try {
             setIsSaving(true);
-            await axios.post(
+            await api.post(
                 Constants.CREATE_BANK_TRANSACTION_URL,
                 {
                     bankAccountId: form.bankAccountId,
@@ -138,8 +137,7 @@ const AddBankTransactionModal: React.FC<AddBankTransactionModalProps> = ({
                     ...(form.paymentModeId ? { paymentModeId: form.paymentModeId } : {}),
                     referenceNo: form.referenceNo,
                     remarks: form.remarks,
-                },
-                { headers: { Authorization: `Bearer ${token}` } },
+                }
             );
             toast.success("Bank transaction added");
             onSuccess?.();

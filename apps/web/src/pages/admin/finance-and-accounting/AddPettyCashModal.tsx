@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import Modal from "@components/admin/Modal";
 import SmartDropdown from "@components/admin/SmartDropdown";
 import SubmitButton from "@components/admin/SubmitButton";
@@ -7,7 +8,7 @@ import type { BankAccount } from "@models/bank-account";
 import type { OptionType, PaymentMode } from "@models/common";
 import type { PettyCashFormData } from "@models/petty-cash";
 import type { RootState } from "@store/index";
-import axios from "axios";
+
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
@@ -45,7 +46,7 @@ const PettyCashModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
     useEffect(() => {
         const fetchPaymentModes = async () => {
             try {
-                const response = await axios.get(Constants.GET_ALL_PAYMENT_MODES_URL, {
+                const response = await api.get(Constants.GET_ALL_PAYMENT_MODES_URL, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -71,7 +72,7 @@ const PettyCashModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
     useEffect(() => {
         const fetchBankAccounts = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -156,7 +157,7 @@ const PettyCashModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
         if (!validated()) return false;
         try {
             setIsSaving(true);
-            await axios.post(Constants.ADD_MOUNT_TO_PETTY_CASH_URL, formData, {
+            await api.post(Constants.ADD_MOUNT_TO_PETTY_CASH_URL, formData, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             toast.success('Petty Cash added successfully.');

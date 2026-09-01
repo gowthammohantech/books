@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { CirclePlusIcon, EditIcon, ShieldUser, Trash2 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Table from "@components/admin/Table";
@@ -6,7 +7,7 @@ import type { RootState } from "@store/index";
 import Constants from "@constants/api";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import axios from "axios";
+
 import TableRow from "@components/admin/TableRow";
 import PaginationWrapper from "@components/admin/PaginationWrapper";
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
@@ -77,7 +78,7 @@ const RolesList: React.FC = () => {
     const fetchRoles = async (search?: string, limit?: number, page?: number) => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.FETCH_ROLES_FOR_LIST_URL, {
+            const response = await api.get(Constants.FETCH_ROLES_FOR_LIST_URL, {
                 params: { search, limit, page },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -117,7 +118,7 @@ const RolesList: React.FC = () => {
         if (deleteItem) {
             try {
                 setIsDeleting(true);
-                await axios.delete(`${Constants.DELETE_ROLE_URL}/${deleteItem.id}`, {
+                await api.delete(`${Constants.DELETE_ROLE_URL}/${deleteItem.id}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 toast.success("Role deleted successfully.");
@@ -150,11 +151,11 @@ const RolesList: React.FC = () => {
         try {
             setIsSaving(true);
             if (editItem) {
-                await axios.put(`${Constants.UPDATE_ROLE_URL}/${editItem.id}`, formData, {
+                await api.put(`${Constants.UPDATE_ROLE_URL}/${editItem.id}`, formData, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
             } else {
-                await axios.post(Constants.CREATE_ROLE_URL, formData, {
+                await api.post(Constants.CREATE_ROLE_URL, formData, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
             }

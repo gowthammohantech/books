@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { Edit, PauseCircle, PlayCircle, PlayIcon, ListIcon, StopCircle } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Table from "@components/admin/Table";
@@ -76,7 +77,7 @@ const RecurringInvoiceList: React.FC = () => {
     const fetchSchedules = async (
         searchValue?: string,
         limitValue?: number,
-        pageValue?: number,
+        pageValue?: number
     ) => {
         try {
             setIsLoading(true);
@@ -85,7 +86,7 @@ const RecurringInvoiceList: React.FC = () => {
                 limit: limitValue ?? 10,
                 page: pageValue ?? 1,
             };
-            const response = await axios.get(Constants.RECURRING_SCHEDULES_URL, {
+            const response = await api.get(Constants.RECURRING_SCHEDULES_URL, {
                 params,
                 headers: { 'Authorization': `Bearer ${token}` },
             });
@@ -126,15 +127,14 @@ const RecurringInvoiceList: React.FC = () => {
     const postLifecycle = async (
         row: RecurringScheduleSummary,
         action: 'pause' | 'resume' | 'end',
-        successMsg: string,
+        successMsg: string
     ) => {
         if (busyRowId) return;
         try {
             setBusyRowId(row.id);
-            await axios.post(
+            await api.post(
                 `${Constants.RECURRING_SCHEDULES_URL}/${row.id}/${action}`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             toast.success(successMsg);
             await fetchSchedules(search, limit, page);
@@ -149,7 +149,7 @@ const RecurringInvoiceList: React.FC = () => {
     const handleEnd = (row: RecurringScheduleSummary) => {
         if (busyRowId) return;
         const ok = window.confirm(
-            'End this recurring schedule? This is permanent — no further invoices will be generated.',
+            'End this recurring schedule? This is permanent — no further invoices will be generated.'
         );
         if (!ok) return;
         void postLifecycle(row, 'end', 'Schedule ended');
@@ -159,10 +159,10 @@ const RecurringInvoiceList: React.FC = () => {
         if (busyRowId) return;
         try {
             setBusyRowId(row.id);
-            const resp = await axios.post(
+            const resp = await api.post(
                 `${Constants.RECURRING_SCHEDULES_URL}/${row.id}/run-now`,
                 {},
-                { headers: { 'Authorization': `Bearer ${token}` } },
+                { headers: { 'Authorization': `Bearer ${token}` } }
             );
             const newNum = resp.data?.data?.invoice?.invoiceNumber ?? '';
             toast.success(newNum ? `Generated invoice ${newNum}` : 'Invoice generated');
@@ -180,9 +180,9 @@ const RecurringInvoiceList: React.FC = () => {
         setOccurrences([]);
         try {
             setOccurrencesLoading(true);
-            const resp = await axios.get(
+            const resp = await api.get(
                 `${Constants.RECURRING_SCHEDULES_URL}/${row.id}/occurrences`,
-                { headers: { 'Authorization': `Bearer ${token}` } },
+                { headers: { 'Authorization': `Bearer ${token}` } }
             );
             setOccurrences(resp.data?.data?.occurrences || []);
         } catch (error) {

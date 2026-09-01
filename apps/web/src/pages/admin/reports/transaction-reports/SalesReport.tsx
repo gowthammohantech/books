@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { DateRangePicker } from "@components/admin/DateRangePicker";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import PaginationWrapper from "@components/admin/PaginationWrapper";
@@ -14,7 +15,7 @@ import { useDebounce } from "@hooks/useDebounce";
 import type { SalesReportShape } from "@models/transaction-reports";
 import type { RootState } from "@store/index";
 import { formatLocalDateTime } from "@utils/converters";
-import axios from "axios";
+
 import { toast } from "sonner";
 import { Box, CheckCircleIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -99,7 +100,7 @@ const SalesReport: React.FC = () => {
             params.search = debouncedSearchTerm;
             params.limit = Number(searchParams.get('limit') || 10).toString();
             params.page = Number(searchParams.get('page') || 1).toString();
-            const response = await axios.get<SalesReportResponse>(Constants.GET_SALES_REPORT_URL, {
+            const response = await api.get<SalesReportResponse>(Constants.GET_SALES_REPORT_URL, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 },

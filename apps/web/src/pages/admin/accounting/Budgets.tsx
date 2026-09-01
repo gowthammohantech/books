@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Constants from "../../../constants/api";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import Table from "../../../components/admin/Table";
 import PaginationWrapper from "../../../components/admin/PaginationWrapper";
 import { Edit, Trash2, CirclePlusIcon } from "lucide-react";
@@ -93,7 +94,7 @@ const Budgets: React.FC = () => {
     const fetchBudgets = async (s?: string, l?: number, p?: number) => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.FETCH_BUDGETS_URL, {
+            const response = await api.get(Constants.FETCH_BUDGETS_URL, {
                 params: { search: s, limit: l, page: p },
                 headers: authHeaders,
             });
@@ -110,7 +111,7 @@ const Budgets: React.FC = () => {
 
     const fetchAccounts = async () => {
         try {
-            const response = await axios.get(Constants.GET_ACCOUNTS_URL, { headers: authHeaders });
+            const response = await api.get(Constants.GET_ACCOUNTS_URL, { headers: authHeaders });
             const list = response.data?.data?.accounts ?? [];
             setAccounts(list.map((a: any) => ({ id: a.id, name: a.name })));
         } catch {
@@ -179,10 +180,10 @@ const Budgets: React.FC = () => {
                 amount: Number(form.amount),
             };
             if (isEditMode && form.id) {
-                await axios.put(`${Constants.UPDATE_BUDGET_URL}/${form.id}`, payload, { headers: authHeaders });
+                await api.put(`${Constants.UPDATE_BUDGET_URL}/${form.id}`, payload, { headers: authHeaders });
                 toast.success("Budget updated successfully.");
             } else {
-                await axios.post(Constants.CREATE_BUDGET_URL, payload, { headers: authHeaders });
+                await api.post(Constants.CREATE_BUDGET_URL, payload, { headers: authHeaders });
                 toast.success("Budget created successfully.");
             }
             setShowModal(false);
@@ -208,7 +209,7 @@ const Budgets: React.FC = () => {
         if (!itemToDelete) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_BUDGET_URL}/${itemToDelete.id}`, { headers: authHeaders });
+            await api.delete(`${Constants.DELETE_BUDGET_URL}/${itemToDelete.id}`, { headers: authHeaders });
             toast.success("Budget deleted successfully.");
             fetchBudgets(search, limit, page);
             setDeleteModalOpen(false);

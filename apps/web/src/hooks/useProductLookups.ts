@@ -1,5 +1,6 @@
+import api from '@lib/apiClient';
 import { useCallback, useEffect, useState } from "react";
-import axios from "axios";
+
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import Constants from "@constants/api";
@@ -42,7 +43,7 @@ export function useProductLookups(isActive: boolean) {
             if (!isActive) return;
             const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await axios.get(`${Constants.FETCH_PRODUCT_CATEGORIES_URL}?search=${debouncedCategorySearch}`, { headers });
+                const response = await api.get(`${Constants.FETCH_PRODUCT_CATEGORIES_URL}?search=${debouncedCategorySearch}`, { headers });
                 const formattedCategories = response.data.data.map((category: any) => ({
                     id: category.id,
                     name: category.categoryName
@@ -61,7 +62,7 @@ export function useProductLookups(isActive: boolean) {
             if (!isActive) return;
             const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await axios.get(`${Constants.FETCH_PRODUCT_BRANDS_URL}?search=${debouncedBrandSearch}`, { headers });
+                const response = await api.get(`${Constants.FETCH_PRODUCT_BRANDS_URL}?search=${debouncedBrandSearch}`, { headers });
                 const formattedBrands = response.data.data.map((brand: any) => ({
                     id: brand.id,
                     name: brand.brandName
@@ -80,7 +81,7 @@ export function useProductLookups(isActive: boolean) {
             if (!isActive) return;
             const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await axios.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=${debouncedUnitSearch}`, { headers });
+                const response = await api.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=${debouncedUnitSearch}`, { headers });
                 const formattedUnits = response.data.data.map((unit: any) => ({
                     id: unit.id,
                     name: unit.unitName
@@ -99,7 +100,7 @@ export function useProductLookups(isActive: boolean) {
             if (!isActive) return;
             const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await axios.get(`${Constants.FETCH_PRODUCT_TAXES_URL}?search=${debouncedTaxSearch}`, { headers });
+                const response = await api.get(`${Constants.FETCH_PRODUCT_TAXES_URL}?search=${debouncedTaxSearch}`, { headers });
                 const formattedTaxes = response.data.data.map((tax: any) => ({
                     id: tax.id,
                     name: tax.taxGroupName
@@ -128,7 +129,7 @@ export function useProductLookups(isActive: boolean) {
     const refetchCategories = useCallback(async (): Promise<OptionType[]> => {
         const headers = { 'Authorization': `Bearer ${token}` };
         try {
-            const response = await axios.get(`${Constants.FETCH_PRODUCT_CATEGORIES_URL}?search=`, { headers });
+            const response = await api.get(`${Constants.FETCH_PRODUCT_CATEGORIES_URL}?search=`, { headers });
             const formatted = response.data.data.map((category: any) => ({ id: category.id, name: category.categoryName }));
             setCategories(formatted);
             return formatted;
@@ -142,7 +143,7 @@ export function useProductLookups(isActive: boolean) {
     const refetchBrands = useCallback(async (): Promise<OptionType[]> => {
         const headers = { 'Authorization': `Bearer ${token}` };
         try {
-            const response = await axios.get(`${Constants.FETCH_PRODUCT_BRANDS_URL}?search=`, { headers });
+            const response = await api.get(`${Constants.FETCH_PRODUCT_BRANDS_URL}?search=`, { headers });
             const formatted = response.data.data.map((brand: any) => ({ id: brand.id, name: brand.brandName }));
             setBrands(formatted);
             return formatted;
@@ -156,7 +157,7 @@ export function useProductLookups(isActive: boolean) {
     const refetchUnits = useCallback(async (): Promise<OptionType[]> => {
         const headers = { 'Authorization': `Bearer ${token}` };
         try {
-            const response = await axios.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=`, { headers });
+            const response = await api.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=`, { headers });
             const formatted = response.data.data.map((unit: any) => ({ id: unit.id, name: unit.unitName }));
             setUnits(formatted);
             return formatted;
@@ -170,7 +171,7 @@ export function useProductLookups(isActive: boolean) {
     const refetchTaxes = useCallback(async (): Promise<OptionType[]> => {
         const headers = { 'Authorization': `Bearer ${token}` };
         try {
-            const response = await axios.get(`${Constants.FETCH_PRODUCT_TAXES_URL}?search=`, { headers });
+            const response = await api.get(`${Constants.FETCH_PRODUCT_TAXES_URL}?search=`, { headers });
             const formatted = response.data.data.map((tax: any) => ({ id: tax.id, name: tax.taxGroupName }));
             setTaxes(formatted);
             return formatted;

@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { CirclePlusIcon, Edit, Sparkles, Trash2Icon } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Table from "@components/admin/Table";
@@ -6,7 +7,7 @@ import type { RootState } from "@store/index";
 import Constants from "@constants/api";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import axios from "axios";
+
 import TableRow from "@components/admin/TableRow";
 import PaginationWrapper from "@components/admin/PaginationWrapper";
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
@@ -139,7 +140,7 @@ const TaxRateList: React.FC = () => {
             if (regimeValue && regimeValue !== 'all') {
                 params.regime = regimeValue;
             }
-            const response = await axios.get(Constants.GET_TAX_RATES_FOR_LIST_URL, {
+            const response = await api.get(Constants.GET_TAX_RATES_FOR_LIST_URL, {
                 params,
                 headers: { 'Authorization': `Bearer ${token}` },
             });
@@ -156,7 +157,7 @@ const TaxRateList: React.FC = () => {
     const fetchCompanyRegime = async () => {
         if (!user?.id) return;
         try {
-            const response = await axios.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
+            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
             const regime = response.data?.data?.taxRegime as TaxRegime | undefined;
@@ -201,7 +202,7 @@ const TaxRateList: React.FC = () => {
         if (!deleteItem) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_TAX_RATE_URL}/${deleteItem.id}`, {
+            await api.delete(`${Constants.DELETE_TAX_RATE_URL}/${deleteItem.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
             toast.success("Tax deleted successfully.");
@@ -227,7 +228,7 @@ const TaxRateList: React.FC = () => {
             setIsSeeding(true);
             await Promise.all(
                 starters.map((s) =>
-                    axios.post(
+                    api.post(
                         Constants.CREATE_TAX_RATE_URL,
                         {
                             name: s.name,

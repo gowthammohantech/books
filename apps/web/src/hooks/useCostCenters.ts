@@ -1,5 +1,6 @@
+import api from '@lib/apiClient';
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
 import Constants from '@constants/api';
@@ -50,7 +51,7 @@ export function useCostCenters(usage: CostCenterUsage = 'any') {
         if (!token) return;
 
         if (!_inflight) {
-            _inflight = axios
+            _inflight = api
                 .get(Constants.FETCH_COST_CENTERS_URL, {
                     headers: { Authorization: `Bearer ${token}` },
                     // all=1: the picker must be able to resolve ANY saved id to a

@@ -1,9 +1,8 @@
+import api from '@lib/apiClient';
 import { useState, useEffect, useRef } from "react";
 import { Edit, MoreVertical, Plus, Info, X, Trash2 } from "lucide-react";
 import Constants from "@constants/api";
-import { useSelector } from "react-redux";
-import type { RootState } from "@store/index";
-import axios from "axios";
+
 import { toast } from "sonner";
 import SubmitButton from "@components/admin/SubmitButton";
 import QuillEditor from "@components/admin/QuillEditor";
@@ -76,7 +75,6 @@ interface ReminderFormData {
 }
 
 const Reminder = () => {
-    const { token } = useSelector((state: RootState) => state.auth);
 
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -220,9 +218,7 @@ const Reminder = () => {
 
     const fetchPlaceholders = async () => {
         try {
-            const response = await axios.get(Constants.PLACE_HOLDER_API_URL, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await api.get(Constants.PLACE_HOLDER_API_URL);
 
             if (response.data.success && response.data.data && response.data.data.placeholders) {
                 // Ensure data is an array
@@ -240,9 +236,7 @@ const Reminder = () => {
     const fetchReminders = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.FETCH_REMINDERS_URL, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await api.get(Constants.FETCH_REMINDERS_URL);
 
             if (response.data.success) {
                 setAutomatedReminders(response.data.data.reminders);
@@ -324,9 +318,7 @@ const Reminder = () => {
             try {
                 setIsDeleting(true);
                 const id = itemToDelete.id;
-                await axios.delete(`${Constants.DELETE_REMINDER_URL}/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                await api.delete(`${Constants.DELETE_REMINDER_URL}/${id}`);
 
                 toast.success("Reminder deleted successfully");
                 fetchReminders();
@@ -451,9 +443,7 @@ const Reminder = () => {
                 },
             };
 
-            await axios.post(Constants.CREATE_REMINDER_URL, payload, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.post(Constants.CREATE_REMINDER_URL, payload);
 
             toast.success("Manual reminder template saved successfully");
             setIsManualModalOpen(false);
@@ -555,19 +545,14 @@ const Reminder = () => {
 
             if (editingReminderId) {
                 // Update existing purchase reminder
-                await axios.put(
+                await api.put(
                     `${Constants.UPDATE_REMINDER_URL}/${editingReminderId}`,
-                    payload,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
+                    payload
                 );
                 toast.success("Purchase reminder updated successfully");
             } else {
                 // Create new purchase reminder
-                await axios.post(Constants.CREATE_REMINDER_URL, payload, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                await api.post(Constants.CREATE_REMINDER_URL, payload);
                 toast.success("Purchase reminder created successfully");
             }
 
@@ -905,19 +890,14 @@ const Reminder = () => {
 
             if (editingReminderId) {
                 // Update existing reminder
-                await axios.put(
+                await api.put(
                     `${Constants.UPDATE_REMINDER_URL}/${editingReminderId}`,
-                    payload,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
+                    payload
                 );
                 toast.success("Reminder updated successfully");
             } else {
                 // Create new reminder
-                await axios.post(Constants.CREATE_REMINDER_URL, payload, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                await api.post(Constants.CREATE_REMINDER_URL, payload);
                 toast.success("Automated reminder created successfully");
             }
 

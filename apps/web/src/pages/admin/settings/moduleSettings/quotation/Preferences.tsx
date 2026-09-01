@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import SmartDropdown from "@components/admin/SmartDropdown";
 import SubmitButton from "@components/admin/SubmitButton";
@@ -7,7 +8,7 @@ import Constants from "@constants/api";
 import { useDebounce } from "@hooks/useDebounce";
 import type { OptionType } from "@models/common";
 import type { RootState } from "@store/index";
-import axios from "axios";
+
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -46,7 +47,7 @@ const Preferences: React.FC = () => {
 
     const fetchGeneralSettings = async () => {
         try {
-            const response = await axios.get(Constants.GET_GENERAL_SETTINGS_URL, {
+            const response = await api.get(Constants.GET_GENERAL_SETTINGS_URL, {
                 params: { groupSlug: 'quotation' },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -66,7 +67,7 @@ const Preferences: React.FC = () => {
     }
     const fetchRoles = async () => {
         try {
-            const response = await axios.get(Constants.FETCH_ALL_ROLES_URL, {
+            const response = await api.get(Constants.FETCH_ALL_ROLES_URL, {
                 params: { search: debouncedRoleSearch },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -119,7 +120,7 @@ const Preferences: React.FC = () => {
         }
         try {
             setIsSubmitting(true);
-            await axios.post(Constants.UPDATE_GENERAL_SETTINGS_URL, payload, {
+            await api.post(Constants.UPDATE_GENERAL_SETTINGS_URL, payload, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             toast.success('Settings updated successfully.');

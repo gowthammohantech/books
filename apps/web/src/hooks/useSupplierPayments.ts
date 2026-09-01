@@ -1,5 +1,6 @@
+import api from '@lib/apiClient';
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
 import Constants from '@constants/api';
@@ -38,10 +39,8 @@ export function useSupplierPayments(purchaseId: string) {
         if (!token || !purchaseId) return;
 
         setLoading(true);
-        axios
-            .get(`${Constants.PURCHASE_PAYMENTS_URL}/${purchaseId}/payments`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+        api
+            .get(`${Constants.PURCHASE_PAYMENTS_URL}/${purchaseId}/payments`)
             .then((res) => {
                 const inner = res.data?.data ?? {};
                 setPayments(inner.payments ?? []);

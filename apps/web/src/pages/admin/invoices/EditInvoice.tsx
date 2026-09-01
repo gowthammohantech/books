@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { PlusCircle, Edit } from 'lucide-react';
 import DateInput from '@components/admin/DateInput';
@@ -162,10 +163,8 @@ const EditInvoice: React.FC = () => {
     // Load the company's enabled link-based payment methods for the checkboxes.
     useEffect(() => {
         if (!token) return;
-        axios
-            .get(`${Constants.PAYMENT_LINK_METHODS_URL}?enabledOnly=true`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+        api
+            .get(`${Constants.PAYMENT_LINK_METHODS_URL}?enabledOnly=true`)
             .then((r) => setPaymentMethods(r.data?.data ?? []))
             .catch(() => setPaymentMethods([]));
     }, [token]);
@@ -234,7 +233,7 @@ const EditInvoice: React.FC = () => {
      *  Surfaced next to the header picker so changing it doesn't look broken
      *  when those lines stay put. */
     const overriddenLineCount = invoiceFormData.items.filter(
-        (item) => item.costCenterId && item.costCenterId !== invoiceFormData.costCenterId,
+        (item) => item.costCenterId && item.costCenterId !== invoiceFormData.costCenterId
     ).length;
 
     // --- FORM HANDLERS (Defined first so fetchers can use them) ---
@@ -270,7 +269,7 @@ const EditInvoice: React.FC = () => {
         setSelectedAdmin(user);
         try {
             setIsFetching(true);
-            const response = await axios.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
+            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setInvoiceFormData(prev => ({ ...prev, billFrom: user.id }));
@@ -290,9 +289,8 @@ const EditInvoice: React.FC = () => {
             return;
         }
         try {
-            const res = await axios.get(
-                `${Constants.GET_VEHICLES_FOR_CUSTOMER_URL}/${customerId}/vehicles`,
-                { headers: { Authorization: `Bearer ${token}` } }
+            const res = await api.get(
+                `${Constants.GET_VEHICLES_FOR_CUSTOMER_URL}/${customerId}/vehicles`
             );
             setVehiclesForCustomer(res.data?.data?.vehicles ?? []);
         } catch {
@@ -338,7 +336,7 @@ const EditInvoice: React.FC = () => {
             const url = enable
                 ? `${Constants.ENABLE_PUBLIC_LINK_URL}/${invoiceData.id}/enable-public-link`
                 : `${Constants.DISABLE_PUBLIC_LINK_URL}/${invoiceData.id}/disable-public-link`;
-            const res = await axios.post(url, {}, { headers: { Authorization: `Bearer ${token}` } });
+            const res = await api.post(url, {});
             const updated = res.data?.data;
             if (updated) {
                 setInvoiceData((p: any) => p ? { ...p, publicViewToken: updated.publicViewToken, publicViewEnabled: updated.publicViewEnabled } : p);
@@ -356,10 +354,9 @@ const EditInvoice: React.FC = () => {
         if (!window.confirm('Rotate the public link? The old URL will stop working.')) return;
         setPublicLinkSaving(true);
         try {
-            const res = await axios.post(
+            const res = await api.post(
                 `${Constants.ROTATE_PUBLIC_LINK_URL}/${invoiceData.id}/rotate-public-link`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             const updated = res.data?.data;
             if (updated) {
@@ -402,9 +399,7 @@ const EditInvoice: React.FC = () => {
     async function fetchEInvoice(invId: string) {
         try {
             setEInvoiceLoading(true);
-            const res = await axios.get(`${Constants.GET_E_INVOICE_BY_INVOICE_URL}/${invId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const res = await api.get(`${Constants.GET_E_INVOICE_BY_INVOICE_URL}/${invId}`);
             setEInvoice(res.data?.data?.eInvoice ?? null);
         } catch (e) {
             // 404 is normal — no record yet
@@ -422,10 +417,9 @@ const EditInvoice: React.FC = () => {
         if (!invoiceData?.id) return;
         setEInvoiceSaving(true);
         try {
-            const res = await axios.post(
+            const res = await api.post(
                 `${Constants.GENERATE_E_INVOICE_URL}/${invoiceData.id}`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             const rec = res.data?.data?.eInvoice as EInvoiceRecord | undefined;
             if (rec) setEInvoice(rec);
@@ -446,10 +440,9 @@ const EditInvoice: React.FC = () => {
         if (reason === null) return;
         setEInvoiceSaving(true);
         try {
-            const res = await axios.post(
+            const res = await api.post(
                 `${Constants.CANCEL_E_INVOICE_URL}/${eInvoice.id}/cancel`,
-                { reason },
-                { headers: { Authorization: `Bearer ${token}` } },
+                { reason }
             );
             const rec = res.data?.data?.eInvoice as EInvoiceRecord | undefined;
             if (rec) setEInvoice(rec);
@@ -486,10 +479,9 @@ const EditInvoice: React.FC = () => {
         if (!invoiceData?.id) return;
         setWhatsappSending(true);
         try {
-            const res = await axios.post(
+            const res = await api.post(
                 `${Constants.SEND_INVOICE_WHATSAPP_URL}/${invoiceData.id}/send-whatsapp`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             const data = res.data?.data;
             if (data?.waMeUrl) {
@@ -519,7 +511,7 @@ const EditInvoice: React.FC = () => {
     // --- FETCHERS (Defined before useEffect) ---
     const fetchAdminUsers = async () => {
         try {
-            const response = await axios.get(`${Constants.FETCH_USERS_URL}/1`, {
+            const response = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.data.length > 0) {
@@ -536,7 +528,7 @@ const EditInvoice: React.FC = () => {
     const fetchTaxes = async () => {
         if (!token) return;
         try {
-            const response = await axios.get(Constants.FETCH_TAX_GROUPS_URL, {
+            const response = await api.get(Constants.FETCH_TAX_GROUPS_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setTaxes(response.data.data);
@@ -548,11 +540,8 @@ const EditInvoice: React.FC = () => {
     const fetchInvoiceForEdit = async () => {
         try {
             setLoadError(null);
-            const response = await axios.get(
-                `${Constants.FETCH_INVOICE_FOR_EDIT_URL}/${invoiceId}`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
+            const response = await api.get(
+                `${Constants.FETCH_INVOICE_FOR_EDIT_URL}/${invoiceId}`
             );
 
             const invoiceData = response.data?.data;
@@ -605,7 +594,7 @@ const EditInvoice: React.FC = () => {
                             // and would stop following a header change.
                             costCenterId: resolveHydratedLineCentre(
                                 it.costCenterId ?? null,
-                                invoiceData.costCenterId ?? null,
+                                invoiceData.costCenterId ?? null
                             ),
                         } as ProductItem;
                     }),
@@ -671,10 +660,8 @@ const EditInvoice: React.FC = () => {
 
     useEffect(() => {
         if (!token) return;
-        axios
-            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+        api
+            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`)
             .then((r) => {
                 const list = r.data?.data?.taxRates ?? r.data?.data ?? [];
                 setTaxRateLibrary(Array.isArray(list) ? list : []);
@@ -689,7 +676,7 @@ const EditInvoice: React.FC = () => {
     const applyResolvedToLine = (
         it: ProductItem,
         taxRateId: string,
-        resolved: Awaited<ReturnType<typeof resolveLineTaxByRateId>>,
+        resolved: Awaited<ReturnType<typeof resolveLineTaxByRateId>>
     ): ProductItem => {
         const lineTaxable = { qty: Number(it.qty || 0), rate: Number(it.rate || 0), discount: Number(it.discount || 0) };
         const r = resolved
@@ -728,7 +715,7 @@ const EditInvoice: React.FC = () => {
         const fetchBankAccounts = async () => {
             try {
                 setBankAccountsLoading(true);
-                const response = await axios.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -758,7 +745,7 @@ const EditInvoice: React.FC = () => {
         const fetchManualSignatures = async () => {
             try {
                 setSignaturesLoading(true);
-                const response = await axios.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermSignature },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -788,7 +775,7 @@ const EditInvoice: React.FC = () => {
         const fetchCustomersByQuery = async () => {
             try {
                 setCustomersLoading(true);
-                const response = await axios.get(`${Constants.GET_CUSTOMERS_WITH_SEARCH_URL}`, {
+                const response = await api.get(`${Constants.GET_CUSTOMERS_WITH_SEARCH_URL}`, {
                     params: { search: debouncedSearchTermCustomer, limit: 100, page: 1 },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -873,7 +860,7 @@ const EditInvoice: React.FC = () => {
             if (existingComponents.length > 0) {
                 const r = recomputeLineTaxesFromComponents(
                     { qty, rate, discount: safeDiscountAmount },
-                    existingComponents,
+                    existingComponents
                 );
                 recomputedTaxes = r.taxes;
                 totalTax = r.totalTax;
@@ -1253,7 +1240,7 @@ const EditInvoice: React.FC = () => {
 
         try {
             setIsSubmitting(true);
-            await axios.put(`${Constants.UPDATE_INVOICE_URL}/${invoiceId}`, formData, {
+            await api.put(`${Constants.UPDATE_INVOICE_URL}/${invoiceId}`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data',

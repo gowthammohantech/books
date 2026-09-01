@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -112,7 +113,7 @@ const ContactList: React.FC = () => {
     const fetchContacts = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get(CONTACTS_URL, {
+            const response = await api.get(CONTACTS_URL, {
                 params: { view, q: q || undefined, page, pageSize },
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -159,9 +160,7 @@ const ContactList: React.FC = () => {
         if (!itemToDelete) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_CONTACT_URL}/${itemToDelete.id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.delete(`${Constants.DELETE_CONTACT_URL}/${itemToDelete.id}`);
             toast.success('Contact deleted successfully');
             setShowDeleteModal(false);
             setItemToDelete(null);
@@ -190,7 +189,7 @@ const ContactList: React.FC = () => {
             setIsPreviewing(true);
             const formData = new FormData();
             formData.append('file', importFile);
-            const response = await axios.post(
+            const response = await api.post(
                 Constants.IMPORT_CONTACTS_URL,
                 formData,
                 {
@@ -198,7 +197,7 @@ const ContactList: React.FC = () => {
                         Authorization: `Bearer ${token}`,
                         'Content-Type': 'multipart/form-data',
                     },
-                },
+                }
             );
             const preview = (response.data?.data?.previewRows ?? []) as ContactImportPreviewRow[];
             setPreviewRows(preview);
@@ -223,7 +222,7 @@ const ContactList: React.FC = () => {
         }
         try {
             setIsConfirming(true);
-            const response = await axios.post(
+            const response = await api.post(
                 Constants.CONFIRM_IMPORT_CONTACTS_URL,
                 {
                     rows: validRows.map((r) => ({
@@ -237,8 +236,7 @@ const ContactList: React.FC = () => {
                         postcode: r.postcode,
                         currencyCode: r.currencyCode,
                     })),
-                },
-                { headers: { Authorization: `Bearer ${token}` } },
+                }
             );
             const data = response.data?.data ?? {};
             setImportResult({

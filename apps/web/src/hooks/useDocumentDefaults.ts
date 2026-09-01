@@ -1,5 +1,6 @@
+import api from '@lib/apiClient';
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
 import Constants from '@constants/api';
@@ -34,10 +35,8 @@ export function useDocumentDefaults() {
 
     const doFetch = useCallback((): Promise<DocumentDefaults> => {
         if (!_inflight) {
-            _inflight = axios
-                .get(Constants.GET_DOCUMENT_DEFAULTS_URL, {
-                    headers: { Authorization: `Bearer ${token}` },
-                })
+            _inflight = api
+                .get(Constants.GET_DOCUMENT_DEFAULTS_URL)
                 .then((res) => {
                     const raw = res.data?.data ?? {};
                     const result: DocumentDefaults = {

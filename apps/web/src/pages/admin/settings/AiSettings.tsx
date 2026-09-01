@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
@@ -78,7 +79,7 @@ export default function AiSettings() {
 
   async function load() {
     try {
-      const r = await axios.get(Constants.AI_CONFIG_URL, { headers: authHeader() });
+      const r = await api.get(Constants.AI_CONFIG_URL, { headers: authHeader() });
       const cfg = r.data?.data?.config;
       if (cfg) {
         const provider = (cfg.provider ?? 'MOCK') as Provider;
@@ -134,7 +135,7 @@ export default function AiSettings() {
       if (form.apiKey.trim().length > 0) {
         body.apiKey = form.apiKey.trim();
       }
-      const r = await axios.put(Constants.AI_CONFIG_URL, body, { headers: authHeader() });
+      const r = await api.put(Constants.AI_CONFIG_URL, body, { headers: authHeader() });
       const cfg = r.data?.data?.config;
       if (cfg) {
         setForm((prev) => ({
@@ -162,7 +163,7 @@ export default function AiSettings() {
     setTesting(true);
     setTestResult(null);
     try {
-      const r = await axios.post(Constants.AI_CONFIG_TEST_URL, {}, { headers: authHeader() });
+      const r = await api.post(Constants.AI_CONFIG_TEST_URL, {}, { headers: authHeader() });
       const data = r.data?.data as TestResult;
       setTestResult(data);
       if (data?.ok) toast.success('Provider responded successfully');
@@ -183,7 +184,7 @@ export default function AiSettings() {
     setDisabling(true);
     setTestResult(null);
     try {
-      const r = await axios.delete(Constants.AI_CONFIG_URL, { headers: authHeader() });
+      const r = await api.delete(Constants.AI_CONFIG_URL, { headers: authHeader() });
       const cfg = r.data?.data?.config;
       if (cfg) {
         setForm((prev) => ({

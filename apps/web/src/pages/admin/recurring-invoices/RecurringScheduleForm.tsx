@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import React, { useEffect, useState, useMemo } from 'react';
 import { PlusCircle, Loader2Icon } from 'lucide-react';
 import axios from 'axios';
@@ -137,9 +138,7 @@ const RecurringScheduleForm: React.FC = () => {
         const fetchTaxes = async () => {
             if (!token) return;
             try {
-                const res = await axios.get(Constants.FETCH_TAX_GROUPS_URL, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const res = await api.get(Constants.FETCH_TAX_GROUPS_URL);
                 setTaxes(res.data.data ?? []);
             } catch {
                 setTaxes([]);
@@ -150,10 +149,8 @@ const RecurringScheduleForm: React.FC = () => {
 
     useEffect(() => {
         if (!token) return;
-        axios
-            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+        api
+            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`)
             .then((r) => {
                 const list = r.data?.data?.taxRates ?? r.data?.data ?? [];
                 setTaxRateLibrary(Array.isArray(list) ? list : []);
@@ -168,9 +165,7 @@ const RecurringScheduleForm: React.FC = () => {
         (async () => {
             try {
                 setIsLoading(true);
-                const res = await axios.get(`${Constants.RECURRING_SCHEDULES_URL}/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const res = await api.get(`${Constants.RECURRING_SCHEDULES_URL}/${id}`);
                 const s = res.data?.data;
                 if (!s || cancelled) return;
 
@@ -283,7 +278,7 @@ const RecurringScheduleForm: React.FC = () => {
     const applyResolvedToLine = (
         it: ProductItem,
         taxRateId: string,
-        resolved: Awaited<ReturnType<typeof resolveLineTaxByRateId>>,
+        resolved: Awaited<ReturnType<typeof resolveLineTaxByRateId>>
     ): ProductItem => {
         const lineTaxable = { qty: Number(it.qty || 0), rate: Number(it.rate || 0), discount: Number(it.discount || 0) };
         const r = resolved
@@ -461,7 +456,7 @@ const RecurringScheduleForm: React.FC = () => {
                 acc.totalTax += item.tax;
                 return acc;
             },
-            { subTotal: 0, totalTax: 0, totalDiscount: 0 },
+            { subTotal: 0, totalTax: 0, totalDiscount: 0 }
         );
         const grand = totals.subTotal - totals.totalDiscount + totals.totalTax;
         return {
@@ -571,10 +566,10 @@ const RecurringScheduleForm: React.FC = () => {
                 'Content-Type': 'application/json',
             };
             if (isEdit && id) {
-                await axios.put(`${Constants.RECURRING_SCHEDULES_URL}/${id}`, payload, { headers });
+                await api.put(`${Constants.RECURRING_SCHEDULES_URL}/${id}`, payload, { headers });
                 toast.success('Schedule updated successfully.');
             } else {
-                await axios.post(Constants.RECURRING_SCHEDULES_URL, payload, { headers });
+                await api.post(Constants.RECURRING_SCHEDULES_URL, payload, { headers });
                 toast.success('Schedule created successfully.');
             }
             navigate('/admin/recurring-invoices');
@@ -682,7 +677,7 @@ const RecurringScheduleForm: React.FC = () => {
                                             onChange={(e) =>
                                                 handleFormChange(
                                                     'customIntervalNumber',
-                                                    e.target.value ? Number(e.target.value) : null,
+                                                    e.target.value ? Number(e.target.value) : null
                                                 )
                                             }
                                             placeholder="Enter Number"
@@ -701,7 +696,7 @@ const RecurringScheduleForm: React.FC = () => {
                                             onChange={(e) =>
                                                 handleFormChange(
                                                     'customIntervalType',
-                                                    (e.target.value || null) as CustomIntervalType | null,
+                                                    (e.target.value || null) as CustomIntervalType | null
                                                 )
                                             }
                                             className={inputClass}
@@ -793,7 +788,7 @@ const RecurringScheduleForm: React.FC = () => {
                                                 onChange={(e) =>
                                                     handleFormChange(
                                                         'maxOccurrences',
-                                                        e.target.value ? Number(e.target.value) : null,
+                                                        e.target.value ? Number(e.target.value) : null
                                                     )
                                                 }
                                                 placeholder="N"

@@ -1,11 +1,10 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
+
 import { toast } from 'sonner';
 import { Printer, RotateCw } from 'lucide-react';
 
 import Constants from '@constants/api';
-import type { RootState } from '@store/index';
 import useDateFormatter from '@hooks/useDateFormatter';
 import DrillLink from '@components/admin/DrillLink';
 import NoRecords from '@components/admin/NoRecords';
@@ -34,7 +33,6 @@ const MONTHS_OPTIONS = [3, 6, 12] as const;
 type MonthsOption = typeof MONTHS_OPTIONS[number];
 
 export default function CashFlowForecastReport() {
-  const token = useSelector((s: RootState) => s.auth.token);
   const { formatDate } = useDateFormatter();
   const [months, setMonths] = useState<MonthsOption>(6);
   const [data, setData] = useState<CashFlowForecastData | null>(null);
@@ -43,9 +41,7 @@ export default function CashFlowForecastReport() {
   async function load() {
     setLoading(true);
     try {
-      const r = await axios.get(`${Constants.FETCH_CASH_FLOW_FORECAST_URL}?months=${months}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const r = await api.get(`${Constants.FETCH_CASH_FLOW_FORECAST_URL}?months=${months}`);
       setData(r.data?.data ?? null);
     } catch {
       toast.error('Failed to load Cash Flow Forecast');

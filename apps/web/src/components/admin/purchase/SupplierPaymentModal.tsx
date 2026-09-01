@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import DateInput from "@components/admin/DateInput";
 import Modal from "@components/admin/Modal";
 import SmartDropdown from "@components/admin/SmartDropdown";
@@ -8,7 +9,7 @@ import { useDebounce } from "@hooks/useDebounce";
 import { useCurrencies } from "@hooks/useCurrencies";
 import type { OptionType } from "@models/common";
 import type { RootState } from "@store/index";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -84,7 +85,7 @@ const SupplierPaymentModal: React.FC<SupplierPaymentModalProps> = ({
     useEffect(() => {
         const fetchBankAccounts = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedBankSearch },
                     headers: { Authorization: `Bearer ${token}` },
                 });
@@ -114,9 +115,7 @@ const SupplierPaymentModal: React.FC<SupplierPaymentModalProps> = ({
         if (!isOpen) return;
         const fetchPaymentModes = async () => {
             try {
-                const response = await axios.get(Constants.GET_ALL_PAYMENT_MODES_URL, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const response = await api.get(Constants.GET_ALL_PAYMENT_MODES_URL);
                 const modes = response.data?.data ?? response.data ?? [];
                 const formatted = (Array.isArray(modes) ? modes : []).map((m: any) => ({
                     id: m.id,
@@ -229,9 +228,7 @@ const SupplierPaymentModal: React.FC<SupplierPaymentModalProps> = ({
                     ? { bankId: formData.bankId, paymentMode: formData.paymentMode }
                     : {}),
             };
-            const response = await axios.post(Constants.CREATE_SUPPLIER_PAYMENT_URL, payload, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await api.post(Constants.CREATE_SUPPLIER_PAYMENT_URL, payload);
             if (response.data.data) {
                 toast.success('Supplier payment recorded successfully.');
                 onClose();

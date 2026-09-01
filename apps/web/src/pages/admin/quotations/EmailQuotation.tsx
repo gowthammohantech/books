@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import FullPageLoader from "@components/admin/FullPageLoader";
 import QuillEditor from "@components/admin/QuillEditor";
 import Constants from "@constants/api";
@@ -5,7 +6,7 @@ import { useCurrencyFormatter } from "@hooks/useCurrencyFormatter";
 import { useCurrencies } from "@hooks/useCurrencies";
 import useDateFormatter from "@hooks/useDateFormatter";
 import type { RootState } from "@store/index";
-import axios from "axios";
+
 import { Loader2, Send, Settings } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
@@ -84,7 +85,7 @@ const EmailQuotation: React.FC = () => {
         const fetchEmailSettings = async () => {
             try {
                 setIsFetchingEmailSettings(true);
-                const response = await axios.get(Constants.GET_EMAIL_SETTINGS_URL, {
+                const response = await api.get(Constants.GET_EMAIL_SETTINGS_URL, {
                     params: { userId: user?.id },
                     headers: { Authorization: `Bearer ${token}` },
                 });
@@ -128,7 +129,7 @@ const EmailQuotation: React.FC = () => {
                             settings.fromName &&
                             settings.host &&
                             settings.port &&
-                            settings.username,
+                            settings.username
                         );
                     if (!configured) {
                         setIsSMTPNotConfigured(true);
@@ -151,9 +152,8 @@ const EmailQuotation: React.FC = () => {
     useEffect(() => {
         const fetchQuotationDetails = async () => {
             try {
-                const response = await axios.get(
-                    `${Constants.FETCH_QUOTATION_DETAILS_URL}/${quotationId}`,
-                    { headers: { Authorization: `Bearer ${token}` } }
+                const response = await api.get(
+                    `${Constants.FETCH_QUOTATION_DETAILS_URL}/${quotationId}`
                 );
                 setQuotationDetails(response.data.data);
             } catch (error) {
@@ -192,9 +192,8 @@ const EmailQuotation: React.FC = () => {
             let subject = "";
             let html = "";
             try {
-                const res = await axios.get(
-                    `${Constants.RESOLVE_EMAIL_TEMPLATE_URL}/quotation/${quotationDetails.id}`,
-                    { headers: { Authorization: `Bearer ${token}` } },
+                const res = await api.get(
+                    `${Constants.RESOLVE_EMAIL_TEMPLATE_URL}/quotation/${quotationDetails.id}`
                 );
                 const d = res.data?.data;
                 if (d?.hasTemplate) {
@@ -248,9 +247,7 @@ const EmailQuotation: React.FC = () => {
         e.preventDefault();
         try {
             setIsSubmitting(true);
-            const response = await axios.post(Constants.SEND_QUOTATION_MAIL_URL, formData, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await api.post(Constants.SEND_QUOTATION_MAIL_URL, formData);
             toast.success(response.data.message);
         } catch (error) {
             toast.error("Failed to send quotation.");

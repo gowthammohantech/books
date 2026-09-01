@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
@@ -30,7 +31,7 @@ const SsoLanding = () => {
 
         (async () => {
             try {
-                const res = await axios.post(Constants.EXTERNAL_SSO_EXCHANGE_URL, { token });
+                const res = await api.post(Constants.EXTERNAL_SSO_EXCHANGE_URL, { token });
                 const { token: elixirBooksToken, user } = res.data || {};
                 if (!elixirBooksToken || !user) {
                     throw new Error("Malformed SSO response.");

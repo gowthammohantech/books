@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import PaginationWrapper from "@components/admin/PaginationWrapper";
 import PaymentModeBadge from "@components/admin/PaymentModeBadge";
@@ -12,7 +13,7 @@ import type { BankAccount } from "@models/bank-account";
 import type { BankTransaction, TransactionOverview } from "@models/bank-transaction";
 import type { OptionType, Pagination } from "@models/common";
 import type { RootState } from "@store/index";
-import axios from "axios";
+
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -64,7 +65,7 @@ const BankTransactionList: React.FC = () => {
     const fetchTransactions = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get<TransactionResponse>(Constants.FETCH_BANK_TRANSACTION_LIST_URL, {
+            const response = await api.get<TransactionResponse>(Constants.FETCH_BANK_TRANSACTION_LIST_URL, {
                 params: filterParams,
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -83,7 +84,7 @@ const BankTransactionList: React.FC = () => {
     }
     const fetchBankAccounts = async () => {
         try {
-            const response = await axios.get<BankAccountResponse>(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
+            const response = await api.get<BankAccountResponse>(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                 params: { search: debouncedBankSearchKeyword },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -146,7 +147,7 @@ const BankTransactionList: React.FC = () => {
                     setDetails(formattedData);
                 } else {
                     setIsFetchingTransactionDetails(true);
-                    const response = await axios.get(`${Constants.FETCH_TRANSACTION_DETAILS_URL}/${selectedTransaction?.id}`, {
+                    const response = await api.get(`${Constants.FETCH_TRANSACTION_DETAILS_URL}/${selectedTransaction?.id}`, {
                         params: { id: selectedTransaction?.id },
                         headers: { 'Authorization': `Bearer ${token}` }
                     });

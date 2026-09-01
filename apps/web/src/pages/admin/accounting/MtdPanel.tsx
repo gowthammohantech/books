@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
+
 import { toast } from 'sonner';
 
 import Constants from '@constants/api';
@@ -58,9 +59,6 @@ export default function MtdPanel() {
   const activeTenant = useSelector((s: RootState) => s.auth.activeTenant);
   const { formatDate } = useDateFormatter();
   const isOwner = !!activeTenant?.isOwner;
-
-  const authHeader = { headers: { Authorization: `Bearer ${token}` } };
-
   const [config, setConfig] = useState<MtdConfig | null>(null);
   const [loadingConfig, setLoadingConfig] = useState(false);
 
@@ -86,7 +84,7 @@ export default function MtdPanel() {
   const loadConfig = useCallback(async () => {
     setLoadingConfig(true);
     try {
-      const r = await axios.get(Constants.MTD_CONFIG_URL, authHeader);
+      const r = await api.get(Constants.MTD_CONFIG_URL);
       const cfg = r.data?.data as MtdConfig | undefined;
       if (cfg) {
         setConfig(cfg);
@@ -112,11 +110,9 @@ export default function MtdPanel() {
   async function saveConfig() {
     setSaving(true);
     try {
-      await axios.put(
+      await api.put(
         Constants.MTD_CONFIG_URL,
-        { enabled, useSandbox, vrn, clientId, clientSecret },
-        authHeader,
-      );
+        { enabled, useSandbox, vrn, clientId, clientSecret });
       toast.success('MTD settings saved');
       setClientSecret(''); // never keep the secret in component state after save
       setClientId('');
@@ -132,10 +128,8 @@ export default function MtdPanel() {
     setConnecting(true);
     try {
       const redirectUri = `${window.location.origin}/admin/accounting/reports/tax-returns`;
-      const r = await axios.get(
-        `${Constants.MTD_AUTH_URL}?redirectUri=${encodeURIComponent(redirectUri)}`,
-        authHeader,
-      );
+      const r = await api.get(
+        `${Constants.MTD_AUTH_URL}?redirectUri=${encodeURIComponent(redirectUri)}`);
       const url = r.data?.data?.url as string | undefined;
       const note = r.data?.data?.note as string | undefined;
       if (url) {
@@ -153,10 +147,8 @@ export default function MtdPanel() {
   const loadObligations = useCallback(async () => {
     setLoadingObligations(true);
     try {
-      const r = await axios.get(
-        `${Constants.MTD_OBLIGATIONS_URL}?from=${from}&to=${to}`,
-        authHeader,
-      );
+      const r = await api.get(
+        `${Constants.MTD_OBLIGATIONS_URL}?from=${from}&to=${to}`);
       const payload = r.data?.data as
         | { mode?: 'mock' | 'live'; obligations?: Obligation[] }
         | undefined;
@@ -175,17 +167,15 @@ export default function MtdPanel() {
   async function submitReturn(ob: Obligation) {
     setSubmittingKey(ob.periodKey);
     try {
-      const r = await axios.post(
+      const r = await api.post(
         Constants.MTD_SUBMIT_URL,
-        { periodKey: ob.periodKey, from: ob.start, to: ob.end },
-        authHeader,
-      );
+        { periodKey: ob.periodKey, from: ob.start, to: ob.end });
       const rec = r.data?.data as SubmitReceipt | undefined;
       setReceipt(rec ?? null);
       toast.success(
         rec?.formBundleNumber
           ? `VAT return submitted — bundle ${rec.formBundleNumber}`
-          : 'VAT return submitted',
+          : 'VAT return submitted'
       );
       await loadObligations();
     } catch {

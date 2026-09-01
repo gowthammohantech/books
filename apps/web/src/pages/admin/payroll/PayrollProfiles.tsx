@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import type { RootState } from "@store/index";
 import { CirclePlusIcon, Edit, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -67,7 +68,7 @@ const PayrollProfiles: React.FC = () => {
     const fetchProfiles = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get(PAYROLL_PROFILES_URL, {
+            const response = await api.get(PAYROLL_PROFILES_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.success) {
@@ -88,7 +89,7 @@ const PayrollProfiles: React.FC = () => {
             // (assertTenantEmployee) accepts. The old /admin/user/type/1 source
             // returned owners across all tenants → "Employee not found". The
             // tenant-scoped /admin/staff endpoint returns { data: { users: [...] } }.
-            const res = await axios.get(Constants.FETCH_STAFF_FOR_LIST_URL, {
+            const res = await api.get(Constants.FETCH_STAFF_FOR_LIST_URL, {
                 params: { user_type: 3, limit: 200, page: 1 },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -150,14 +151,14 @@ const PayrollProfiles: React.FC = () => {
                 isActive: formData.isActive,
             };
             if (itemToEdit) {
-                const response = await axios.put(`${PAYROLL_PROFILES_URL}/${itemToEdit.id}`, payload, {
+                const response = await api.put(`${PAYROLL_PROFILES_URL}/${itemToEdit.id}`, payload, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.data.success) {
                     toast.success(response.data.message ?? 'Profile updated.');
                 }
             } else {
-                const response = await axios.post(PAYROLL_PROFILES_URL, payload, {
+                const response = await api.post(PAYROLL_PROFILES_URL, payload, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.data.success) {
@@ -189,7 +190,7 @@ const PayrollProfiles: React.FC = () => {
         if (!deleteItem) return;
         try {
             setIsDeleting(true);
-            const response = await axios.delete(`${PAYROLL_PROFILES_URL}/${deleteItem.id}`, {
+            const response = await api.delete(`${PAYROLL_PROFILES_URL}/${deleteItem.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.success) {
@@ -211,7 +212,7 @@ const PayrollProfiles: React.FC = () => {
             setProfiles((prev) =>
                 prev.map((p) => (p.id === item.id ? { ...p, isActive: !p.isActive } : p))
             );
-            await axios.put(
+            await api.put(
                 `${PAYROLL_PROFILES_URL}/${item.id}`,
                 { isActive: !item.isActive },
                 { headers: { 'Authorization': `Bearer ${token}` } }

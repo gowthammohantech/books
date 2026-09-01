@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import Constants from '@constants/api';
 import useDateFormatter from '@hooks/useDateFormatter';
 import type { RootState } from '@store/index';
-import axios from 'axios';
+
 import { TrendingDown, Receipt, Layers, FileText, ArrowRight, ShoppingCart, Wallet } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
@@ -52,8 +53,8 @@ const ExpensesDashboard: React.FC = () => {
             try {
                 setIsLoading(true);
                 const [plRes, exRes] = await Promise.all([
-                    axios.get(Constants.GET_PROFIT_LOSS_URL, { headers: { Authorization: `Bearer ${token}` } }),
-                    axios.get(Constants.FETCH_EXPENSES_FOR_LIST_URL, {
+                    api.get(Constants.GET_PROFIT_LOSS_URL),
+                    api.get(Constants.FETCH_EXPENSES_FOR_LIST_URL, {
                         params: { page: 1, limit: 8 },
                         headers: { Authorization: `Bearer ${token}` },
                     }),

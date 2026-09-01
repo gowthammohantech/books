@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { DateRangePicker } from "@components/admin/DateRangePicker";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import NoRecords from "@components/admin/NoRecords";
@@ -9,7 +10,7 @@ import { useCurrencyFormatter } from "@hooks/useCurrencyFormatter";
 import type { StaffActivityRowShape, StaffActivityTotalsShape } from "@models/staff-activity-reports";
 import type { RootState } from "@store/index";
 import { formatLocalDateTime } from "@utils/converters";
-import axios from "axios";
+
 import { FilePenLine, FilePlus2, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BiMoneyWithdraw } from "react-icons/bi";
@@ -62,7 +63,7 @@ const StaffActivityReport: React.FC = () => {
                 params.from = formatLocalDateTime(range.startDate, 'start', true);
                 params.to = formatLocalDateTime(range.endDate, 'end', true);
             }
-            const response = await axios.get<StaffActivityReportResponse>(Constants.STAFF_ACTIVITY_REPORT_URL, {
+            const response = await api.get<StaffActivityReportResponse>(Constants.STAFF_ACTIVITY_REPORT_URL, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 },

@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import Constants from "@constants/api";
 import type { RootState } from "@store/index";
-import axios from "axios";
+
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Banknote, ChevronDown, ChevronUp, HandCoinsIcon, LandmarkIcon, TrendingDown, TrendingUp } from "lucide-react";
@@ -21,7 +22,6 @@ interface BalanceTrend {
     pettyFlag: string;
 }
 const Banking: React.FC = () => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const currencySymbol = systemSettings?.currency?.symbol || "$";
     const [chartData, setChartData] = useState<any>(null);
@@ -41,9 +41,7 @@ const Banking: React.FC = () => {
 
     const fetchBankAccountWithBalance = async () => {
         try {
-            const response = await axios.get(Constants.FETCH_BANK_ACCOUNT_WITH_BALANCE_URL, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await api.get(Constants.FETCH_BANK_ACCOUNT_WITH_BALANCE_URL);
             const data = response.data.data;
             if (data && data.bankDetails) {
                 setBankAccounts(data.bankDetails);
@@ -72,9 +70,7 @@ const Banking: React.FC = () => {
 
     const fetchChartData = async () => {
         try {
-            const response = await axios.get(Constants.FETCH_BANKING_CHART_URL, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await api.get(Constants.FETCH_BANKING_CHART_URL);
             const data = response.data.data;
             setChartData(data.chartData);
             setTotals(data.totals);

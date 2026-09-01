@@ -1,4 +1,5 @@
-import axios from "axios";
+
+import api from '@lib/apiClient';
 import { store } from "@store/index";
 
 /**
@@ -15,7 +16,7 @@ import { store } from "@store/index";
 export async function downloadExport(path: string, filename: string): Promise<void> {
   const { token } = store.getState().auth;
 
-  const response = await axios.get(path, {
+  const response = await api.get(path, {
     responseType: "blob",
     headers: { Authorization: `Bearer ${token}` },
   });

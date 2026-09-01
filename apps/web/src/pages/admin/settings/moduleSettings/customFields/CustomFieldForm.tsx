@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import axios from "axios";
+
 import Constants from "@constants/api";
 import { toast } from "sonner";
 import type { CustomFieldFormState, CustomFieldTypeShape } from "@models/modulesettings/customField";
@@ -209,8 +210,8 @@ const CustomFieldForm: React.FC<CustomFieldFormProps> = ({
             };
 
             const response = await (isEditing
-                ? axios.put(url, payload, requestConfig)
-                : axios.post(url, payload, requestConfig)
+                ? api.put(url, payload, requestConfig)
+                : api.post(url, payload, requestConfig)
             );
 
             if (response.data?.success) {

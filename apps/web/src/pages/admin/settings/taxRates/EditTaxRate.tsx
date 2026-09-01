@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+
 import { toast } from "sonner";
 import { Trash2Icon } from "lucide-react";
 
@@ -36,7 +37,7 @@ const EditTaxRate: React.FC = () => {
     const fetchTaxRateData = async (taxRateId: string) => {
         try {
             setIsFetching(true);
-            const response = await axios.get(`${Constants.GET_TAX_RATE_FOR_EDIT_URL}/${taxRateId}`, {
+            const response = await api.get(`${Constants.GET_TAX_RATE_FOR_EDIT_URL}/${taxRateId}`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
             const data = response.data?.data?.taxRate as TaxRate | undefined;
@@ -65,7 +66,7 @@ const EditTaxRate: React.FC = () => {
         if (!id) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_TAX_RATE_URL}/${id}`, {
+            await api.delete(`${Constants.DELETE_TAX_RATE_URL}/${id}`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
             toast.success('Tax rate deleted successfully');

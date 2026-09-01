@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
@@ -108,7 +109,7 @@ const PayRuns: React.FC = () => {
     const fetchRuns = useCallback(async (year: string) => {
         try {
             setListLoading(true);
-            const res = await axios.get(PAY_RUNS_URL, {
+            const res = await api.get(PAY_RUNS_URL, {
                 params: { taxYear: year },
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -130,9 +131,7 @@ const PayRuns: React.FC = () => {
             setDetailLoading(true);
             setSelectedRun(null);
             setExpandedRows(new Set());
-            const res = await axios.get(`${PAY_RUNS_URL}/${id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const res = await api.get(`${PAY_RUNS_URL}/${id}`);
             if (res.data.success) {
                 const run: PayRun = res.data.data;
                 setSelectedRun(run);
@@ -149,10 +148,10 @@ const PayRuns: React.FC = () => {
     const handleCreate = async () => {
         try {
             setIsCreating(true);
-            const res = await axios.post(PAY_RUNS_URL, {
+            const res = await api.post(PAY_RUNS_URL, {
                 taxYearLabel: newYear,
                 taxMonth: Number(newMonth),
-            }, { headers: { Authorization: `Bearer ${token}` } });
+            });
             if (res.data.success) {
                 toast.success(res.data.message ?? 'Pay run created.');
                 const created: PayRun = res.data.data;
@@ -183,9 +182,7 @@ const PayRuns: React.FC = () => {
                     note: l.note || undefined,
                 })),
             };
-            const res = await axios.put(`${PAY_RUNS_URL}/${selectedRun.id}`, payload, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const res = await api.put(`${PAY_RUNS_URL}/${selectedRun.id}`, payload);
             if (res.data.success) {
                 toast.success(res.data.message ?? 'Pay run saved.');
                 // Reload the detail so server-computed values are reflected
@@ -206,9 +203,7 @@ const PayRuns: React.FC = () => {
         if (!selectedRun || !confirmAction) return;
         try {
             setIsActioning(true);
-            const res = await axios.post(`${PAY_RUNS_URL}/${selectedRun.id}/${confirmAction}`, {}, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const res = await api.post(`${PAY_RUNS_URL}/${selectedRun.id}/${confirmAction}`, {});
             if (res.data.success) {
                 toast.success(res.data.message ?? `Run ${confirmAction}d.`);
                 setConfirmAction(null);

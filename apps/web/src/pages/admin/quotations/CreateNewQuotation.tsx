@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { PlusCircle, Edit3, Mail } from 'lucide-react';
 import DateInput from '@components/admin/DateInput';
@@ -180,10 +181,8 @@ const CreateNewQuotation: React.FC = () => {
     const [taxRateLibrary, setTaxRateLibrary] = useState<TaxRate[]>([]);
     useEffect(() => {
         if (!token) return;
-        axios
-            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+        api
+            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`)
             .then((r) => {
                 const list = r.data?.data?.taxRates ?? r.data?.data ?? [];
                 setTaxRateLibrary(Array.isArray(list) ? list : []);
@@ -236,7 +235,7 @@ const CreateNewQuotation: React.FC = () => {
 
     const fetchModuleSettings = async () => {
         try {
-            const response = await axios.get(Constants.GET_GENERAL_SETTINGS_URL, {
+            const response = await api.get(Constants.GET_GENERAL_SETTINGS_URL, {
                 params: { groupSlug: 'quotation' },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -267,13 +266,13 @@ const CreateNewQuotation: React.FC = () => {
                 setFetchingSalesPersons(true);
                 let data;
                 if (salesPersonRoleId) {
-                    const response = await axios.get(`${Constants.FETCH_USERS_BY_ROLE_WITH_SEARCH_URL}/${salesPersonRoleId}`, {
+                    const response = await api.get(`${Constants.FETCH_USERS_BY_ROLE_WITH_SEARCH_URL}/${salesPersonRoleId}`, {
                         params: { search: debouncedSearchTermSalesPerson },
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     data = response.data.data;
                 } else {
-                    const response = await axios.get(`${Constants.FETCH_USERS_URL}/1`, {
+                    const response = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     data = response.data.data;
@@ -303,7 +302,7 @@ const CreateNewQuotation: React.FC = () => {
     const fetchTaxes = async () => {
         if (!token) return;
         try {
-            const response = await axios.get(Constants.FETCH_TAX_GROUPS_URL, {
+            const response = await api.get(Constants.FETCH_TAX_GROUPS_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -317,7 +316,7 @@ const CreateNewQuotation: React.FC = () => {
     useEffect(() => {
         const fetchBankAccounts = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -343,7 +342,7 @@ const CreateNewQuotation: React.FC = () => {
     useEffect(() => {
         const fetchManualSignatures = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermSignature },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -372,7 +371,7 @@ const CreateNewQuotation: React.FC = () => {
         setSelectedAdmin(user);
         try {
             setIsFetching(true);
-            const response = await axios.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
+            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             //set billFrom to formData
@@ -528,7 +527,7 @@ const CreateNewQuotation: React.FC = () => {
 
     const fetchAdminUsers = async () => {
         try {
-            const response = await axios.get(`${Constants.FETCH_USERS_URL}/1`, {
+            const response = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.data.length > 0) {
@@ -720,7 +719,7 @@ const CreateNewQuotation: React.FC = () => {
         formData.set('status', status);
         try {
             setIsSaving(true);
-            await axios.post(Constants.CREATE_QUOTATION_URL, formData, {
+            await api.post(Constants.CREATE_QUOTATION_URL, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data',

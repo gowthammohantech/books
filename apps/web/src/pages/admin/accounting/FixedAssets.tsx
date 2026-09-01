@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Constants from "../../../constants/api";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import Table from "../../../components/admin/Table";
 import PaginationWrapper from "../../../components/admin/PaginationWrapper";
 import { Edit, Trash2, CirclePlusIcon, PlayCircle, XCircle } from "lucide-react";
@@ -134,7 +135,7 @@ const FixedAssets: React.FC = () => {
     const fetchItems = async (s?: string, l?: number, p?: number) => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.FETCH_FIXED_ASSETS_URL, {
+            const response = await api.get(Constants.FETCH_FIXED_ASSETS_URL, {
                 params: { search: s, limit: l, page: p },
                 headers: authHeaders,
             });
@@ -197,10 +198,10 @@ const FixedAssets: React.FC = () => {
                 postAcquisition: form.postAcquisition,
             };
             if (isEditMode && form.id) {
-                await axios.put(`${Constants.UPDATE_FIXED_ASSET_URL}/${form.id}`, payload, { headers: authHeaders });
+                await api.put(`${Constants.UPDATE_FIXED_ASSET_URL}/${form.id}`, payload, { headers: authHeaders });
                 toast.success("Fixed asset updated successfully.");
             } else {
-                await axios.post(Constants.CREATE_FIXED_ASSET_URL, payload, { headers: authHeaders });
+                await api.post(Constants.CREATE_FIXED_ASSET_URL, payload, { headers: authHeaders });
                 toast.success("Fixed asset created successfully.");
             }
             setShowModal(false);
@@ -223,7 +224,7 @@ const FixedAssets: React.FC = () => {
         if (!itemToDelete) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_FIXED_ASSET_URL}/${itemToDelete.id}`, { headers: authHeaders });
+            await api.delete(`${Constants.DELETE_FIXED_ASSET_URL}/${itemToDelete.id}`, { headers: authHeaders });
             toast.success("Fixed asset deleted successfully.");
             fetchItems(search, limit, page);
             setDeleteModalOpen(false);
@@ -238,7 +239,7 @@ const FixedAssets: React.FC = () => {
         if (!deprecAsOf) { toast.error("Please select an 'as of' date."); return; }
         try {
             setIsRunningDeprec(true);
-            const response = await axios.post(
+            const response = await api.post(
                 Constants.RUN_DEPRECIATION_URL,
                 { asOf: deprecAsOf.toISOString().substring(0, 10) },
                 { headers: authHeaders }
@@ -278,7 +279,7 @@ const FixedAssets: React.FC = () => {
         if (!disposeAsset || !validateDispose()) return;
         try {
             setIsDisposing(true);
-            await axios.post(
+            await api.post(
                 `${Constants.DISPOSE_FIXED_ASSET_URL}/${disposeAsset.id}/dispose`,
                 {
                     proceeds: Number(disposeForm.proceeds),

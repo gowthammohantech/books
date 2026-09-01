@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import axios from "axios";
+
 import { toast } from "sonner";
 import { CirclePlusIcon, Eye, Trash2Icon } from "lucide-react";
 
@@ -63,7 +64,7 @@ const JournalEntryList: React.FC = () => {
     const fetchEntries = async () => {
         try {
             setIsLoading(true);
-            const resp = await axios.get(Constants.GET_JOURNAL_ENTRIES_URL, {
+            const resp = await api.get(Constants.GET_JOURNAL_ENTRIES_URL, {
                 params: { page, limit, ...drillParams },
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -86,9 +87,7 @@ const JournalEntryList: React.FC = () => {
         setViewing(row);
         setViewingDetail(null);
         try {
-            const resp = await axios.get(`${Constants.GET_JOURNAL_ENTRY_URL}/${row.id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const resp = await api.get(`${Constants.GET_JOURNAL_ENTRY_URL}/${row.id}`);
             setViewingDetail(resp.data?.data?.journalEntry ?? null);
         } catch (err) {
             console.error("Failed to fetch journal entry:", err);
@@ -100,9 +99,7 @@ const JournalEntryList: React.FC = () => {
         if (!deleteItem) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_JOURNAL_ENTRY_URL}/${deleteItem.id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.delete(`${Constants.DELETE_JOURNAL_ENTRY_URL}/${deleteItem.id}`);
             toast.success("Journal entry deleted");
             setDeleteItem(null);
             await fetchEntries();

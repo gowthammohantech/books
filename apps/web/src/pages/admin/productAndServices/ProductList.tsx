@@ -1,8 +1,9 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import type { FC, ChangeEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Constants from "@constants/api";
-import axios from "axios";
+
 import Table from "@components/admin/Table";
 import PaginationWrapper from "@components/admin/PaginationWrapper";
 import { CirclePlusIcon, Edit, Trash2Icon } from "lucide-react";
@@ -88,7 +89,7 @@ const ProductList: FC = () => {
     const fetchProducts = async (search?: string, limit?: number, page?: number) => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.FETCH_PRODUCTS_URL, {
+            const response = await api.get(Constants.FETCH_PRODUCTS_URL, {
                 params: {
                     search,
                     limit,
@@ -179,9 +180,7 @@ const ProductList: FC = () => {
             try {
                 setIsLoading(true);
                 const productPayload = { status };
-                await axios.put(`${Constants.UPDATE_PRODUCT_URL}/${id}`, productPayload, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                await api.put(`${Constants.UPDATE_PRODUCT_URL}/${id}`, productPayload);
                 toast.success('Item status updated successfully');
             } catch (error) {
                 console.error('Failed to update product status:', error);
@@ -195,9 +194,7 @@ const ProductList: FC = () => {
         if (!itemToDelete) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_PRODUCT_URL}/${itemToDelete.id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.delete(`${Constants.DELETE_PRODUCT_URL}/${itemToDelete.id}`);
             toast.success('Item deleted successfully');
             fetchProducts(search, limit, page); // Refetch current page
             setDeleteModalOpen(false);

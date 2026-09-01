@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import axios, { AxiosError } from 'axios';
+import type { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import type { RootState } from '@store/index';
 import Constants from '@constants/api';
@@ -135,9 +136,7 @@ const ContactForm: React.FC = () => {
         const fetchCountries = async () => {
             try {
                 setIsLoadingCountries(true);
-                const response = await axios.get(Constants.FETCH_COUNTRIES_URL, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const response = await api.get(Constants.FETCH_COUNTRIES_URL);
                 const list: CountryOption[] = (response.data || []).map((c: { id: string | number; name: string }) => ({
                     id: String(c.id),
                     name: c.name,
@@ -158,9 +157,7 @@ const ContactForm: React.FC = () => {
         const fetchContact = async () => {
             try {
                 setIsFetching(true);
-                const response = await axios.get(`${CONTACTS_URL}/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const response = await api.get(`${CONTACTS_URL}/${id}`);
                 const data = response.data.data;
                 if (data) {
                     setFormData({
@@ -289,12 +286,12 @@ const ContactForm: React.FC = () => {
             const payload = buildPayload();
 
             if (isEditMode) {
-                await axios.put(`${CONTACTS_URL}/${id}`, payload, {
+                await api.put(`${CONTACTS_URL}/${id}`, payload, {
                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
                 });
                 toast.success('Contact updated successfully');
             } else {
-                await axios.post(CONTACTS_URL, payload, {
+                await api.post(CONTACTS_URL, payload, {
                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
                 });
                 toast.success('Contact created successfully');

@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
+
 import { toast } from 'sonner';
 import { Download, Pencil, Wallet } from 'lucide-react';
 import type { RootState } from '@store/index';
@@ -134,7 +135,7 @@ function SummaryTab({
 
   const handleVCardDownload = async () => {
     try {
-      const res = await axios.get(`${Constants.API_BASE_URL}/admin/contacts/${contactId}/vcard`, {
+      const res = await api.get(`${Constants.API_BASE_URL}/admin/contacts/${contactId}/vcard`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob',
       });
@@ -151,10 +152,8 @@ function SummaryTab({
 
   useEffect(() => {
     setLoading(true);
-    axios
-      .get(`${CONTACTS_URL}/${contactId}/summary`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    api
+      .get(`${CONTACTS_URL}/${contactId}/summary`)
       .then((res) => {
         setSummary(res.data?.data ?? null);
       })
@@ -293,10 +292,8 @@ function DocumentsTab({
 
   useEffect(() => {
     setLoading(true);
-    axios
-      .get(`${CONTACTS_URL}/${contactId}/history`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    api
+      .get(`${CONTACTS_URL}/${contactId}/history`)
       .then((res) => {
         const raw = res.data?.data?.items;
         const all: HistoryItem[] = Array.isArray(raw) ? raw : [];
@@ -347,7 +344,7 @@ function DocumentsTab({
 
 // ── Tab: Statement of Account ─────────────────────────────────────────────────
 
-function StatementTab({ contactId, token }: { contactId: string; token: string }) {
+function StatementTab({ contactId }: { contactId: string }) {
   const todayIso = isoDate(new Date());
   const ninetyDaysAgoIso = isoDate(new Date(Date.now() - 90 * 24 * 60 * 60 * 1000));
 
@@ -362,10 +359,8 @@ function StatementTab({ contactId, token }: { contactId: string; token: string }
   const load = () => {
     setLoading(true);
     setError(null);
-    axios
-      .get(`${CONTACTS_URL}/${contactId}/statement?from=${from}&to=${to}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    api
+      .get(`${CONTACTS_URL}/${contactId}/statement?from=${from}&to=${to}`)
       .then((res) => setData(res.data?.data ?? null))
       .catch(() => setError('Failed to load statement'))
       .finally(() => setLoading(false));
@@ -488,12 +483,10 @@ function AccountHistoryTab({ contactId, token }: { contactId: string; token: str
   const { formatMoney } = useCurrencies();
 
   useEffect(() => {
-    axios
-      .get(`${CONTACTS_URL}/${contactId}/history`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    api
+      .get(`${CONTACTS_URL}/${contactId}/history`)
       .then((res) =>
-        setItems(Array.isArray(res.data?.data?.items) ? res.data.data.items : []),
+        setItems(Array.isArray(res.data?.data?.items) ? res.data.data.items : [])
       )
       .catch(() => setError('Failed to load history'))
       .finally(() => setLoading(false));
@@ -565,10 +558,8 @@ const ContactCard: React.FC = () => {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    axios
-      .get(`${CONTACTS_URL}/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+    api
+      .get(`${CONTACTS_URL}/${id}`)
       .then((res) => setContact(res.data?.data ?? null))
       .catch(() => toast.error('Failed to load contact.'))
       .finally(() => setLoading(false));
@@ -639,7 +630,7 @@ const ContactCard: React.FC = () => {
           <DocumentsTab contactId={id} token={token ?? ''} filterType="ESTIMATE" />
         )}
         {activeTab === 'statement' && (
-          <StatementTab contactId={id} token={token ?? ''} />
+          <StatementTab contactId={id} />
         )}
         {activeTab === 'history' && (
           <AccountHistoryTab contactId={id} token={token ?? ''} />

@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
@@ -74,7 +75,7 @@ const TimesheetApprovals: React.FC = () => {
         async (p: number) => {
             try {
                 setIsLoading(true);
-                const res = await axios.get(Constants.TIMESHEETS_URL, {
+                const res = await api.get(Constants.TIMESHEETS_URL, {
                     params: { scope: 'pending', page: p, limit: PAGE_LIMIT },
                     headers: { Authorization: `Bearer ${token}` },
                 });
@@ -90,7 +91,7 @@ const TimesheetApprovals: React.FC = () => {
                 setIsLoading(false);
             }
         },
-        [token],
+        [token]
     );
 
     useEffect(() => {
@@ -103,7 +104,7 @@ const TimesheetApprovals: React.FC = () => {
         setDetail(null);
         try {
             setDetailLoading(true);
-            const res = await axios.get(Constants.TIMESHEET_WEEK_URL, {
+            const res = await api.get(Constants.TIMESHEET_WEEK_URL, {
                 params: {
                     employeeUserId: ts.employeeUserId,
                     weekStart: ts.weekStartDate.slice(0, 10),
@@ -131,10 +132,9 @@ const TimesheetApprovals: React.FC = () => {
     const handleApprove = async (ts: PendingTimesheet) => {
         try {
             setIsActioning(true);
-            const res = await axios.post(
+            const res = await api.post(
                 Constants.TIMESHEET_APPROVE_URL(ts.id),
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             if (res.data.success) {
                 toast.success(res.data.message ?? 'Timesheet approved.');
@@ -160,10 +160,9 @@ const TimesheetApprovals: React.FC = () => {
         }
         try {
             setIsActioning(true);
-            const res = await axios.post(
+            const res = await api.post(
                 Constants.TIMESHEET_REJECT_URL(rejectingId),
-                { rejectionNote: rejectionNote.trim() },
-                { headers: { Authorization: `Bearer ${token}` } },
+                { rejectionNote: rejectionNote.trim() }
             );
             if (res.data.success) {
                 toast.success(res.data.message ?? 'Timesheet rejected.');

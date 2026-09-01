@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { ChartCard } from "@components/admin/ChartCard";
 import { DateRangePicker } from "@components/admin/DateRangePicker";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
@@ -14,7 +15,7 @@ import { useDebounce } from "@hooks/useDebounce";
 import type { PurchaseReportShape } from "@models/transaction-reports";
 import type { RootState } from "@store/index";
 import { formatLocalDateTime } from "@utils/converters";
-import axios from "axios";
+
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
@@ -94,7 +95,7 @@ const PurchaseReport: React.FC = () => {
             params.search = debouncedSearchTerm;
             params.limit = Number(searchParams.get('limit') || 10).toString();
             params.page = Number(searchParams.get('page') || 1).toString();
-            const response = await axios.get<PurchaseReportResponse>(Constants.GET_PURCHASE_REPORT_URL, {
+            const response = await api.get<PurchaseReportResponse>(Constants.GET_PURCHASE_REPORT_URL, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 },

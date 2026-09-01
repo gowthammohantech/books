@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import Modal from "../../../../../components/admin/Modal";
 import Switch from "../../../../../components/admin/Switch";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import Constants from "../../../../../constants/api";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../../../store";
@@ -67,13 +68,13 @@ const CurrencyFormModal: React.FC<CurrencyFormModalProps> = ({ isOpen, onClose, 
         try {
             setIsSaving(true);
             if (editData) {
-                await axios.put(Constants.UPDATE_CURRENCY_URL + `/${editData.id}`, currencyFormData, {
+                await api.put(Constants.UPDATE_CURRENCY_URL + `/${editData.id}`, currencyFormData, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 toast.success('Currency updated successfully');
                 onSuccess();
             } else {
-                await axios.post(Constants.CREATE_NEW_CURRENCY_URL, currencyFormData, {
+                await api.post(Constants.CREATE_NEW_CURRENCY_URL, currencyFormData, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 toast.success('Currency created successfully');

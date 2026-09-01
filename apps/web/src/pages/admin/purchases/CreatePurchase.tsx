@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { PlusCircle, Edit3 } from 'lucide-react';
 import DateInput from '@components/admin/DateInput';
@@ -292,7 +293,7 @@ const CreatePurchase: React.FC = () => {
         setSelectedAdmin(user);
         try {
             setIsFetching(true);
-            const response = await axios.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
+            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setPurchaseFormData(prev => ({ ...prev, billFrom: user.id }));
@@ -339,7 +340,7 @@ const CreatePurchase: React.FC = () => {
     // ==========================================
     const fetchAdminUsers = async () => {
         try {
-            const response = await axios.get(`${Constants.FETCH_USERS_URL}/1`, {
+            const response = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.data.length > 0) {
@@ -355,7 +356,7 @@ const CreatePurchase: React.FC = () => {
 
     const fetchPaymentModes = async () => {
         try {
-            const response = await axios.get(Constants.GET_ALL_PAYMENT_MODES_URL, {
+            const response = await api.get(Constants.GET_ALL_PAYMENT_MODES_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.data) {
@@ -369,7 +370,7 @@ const CreatePurchase: React.FC = () => {
     const fetchTaxes = async () => {
         if (!token) return;
         try {
-            const response = await axios.get(Constants.FETCH_TAX_GROUPS_URL, {
+            const response = await api.get(Constants.FETCH_TAX_GROUPS_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setTaxes(response.data.data);
@@ -383,7 +384,7 @@ const CreatePurchase: React.FC = () => {
         if (!purchaseFormData.purchaseOrderId) return;
         try {
             setIsFetching(true);
-            const response = await axios.get(`${Constants.FETCH_PURCHASE_ORDER_URL}/${purchaseFormData.purchaseOrderId}`, {
+            const response = await api.get(`${Constants.FETCH_PURCHASE_ORDER_URL}/${purchaseFormData.purchaseOrderId}`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
 
@@ -442,10 +443,8 @@ const CreatePurchase: React.FC = () => {
 
     useEffect(() => {
         if (!token) return;
-        axios
-            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+        api
+            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`)
             .then((r) => {
                 const list = r.data?.data?.taxRates ?? r.data?.data ?? [];
                 setTaxRateLibrary(Array.isArray(list) ? list : []);
@@ -462,7 +461,7 @@ const CreatePurchase: React.FC = () => {
     useEffect(() => {
         const fetchPurchaseOrdersMinimal = async () => {
             try {
-                const response = await axios.get(Constants.GET_PURCHASE_ORDERS_MINIMAL_URL, {
+                const response = await api.get(Constants.GET_PURCHASE_ORDERS_MINIMAL_URL, {
                     params: { search: debouncedPurchaseOrderSearchTerm },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -483,7 +482,7 @@ const CreatePurchase: React.FC = () => {
     useEffect(() => {
         const fetchBankAccounts = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -508,7 +507,7 @@ const CreatePurchase: React.FC = () => {
     useEffect(() => {
         const fetchManualSignatures = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermSignature },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -580,7 +579,7 @@ const CreatePurchase: React.FC = () => {
                 // Re-scale existing per-component taxes on the new discounted base.
                 const result = recomputeLineTaxesFromComponents(
                     { qty, rate, discount: safeDiscountAmount },
-                    existingComponents,
+                    existingComponents
                 );
                 const newAmount = round2(discountedSubtotal + result.totalTax);
                 return {
@@ -739,7 +738,7 @@ const CreatePurchase: React.FC = () => {
     const applyResolvedToLine = (
         it: PurchaseLineItem,
         taxRateId: string,
-        resolved: Awaited<ReturnType<typeof resolveLineTaxByRateId>>,
+        resolved: Awaited<ReturnType<typeof resolveLineTaxByRateId>>
     ): PurchaseLineItem => {
         const lineTaxable = { qty: Number(it.qty || 0), rate: Number(it.rate || 0), discount: Number(it.discount || 0) };
         const r = resolved
@@ -1065,7 +1064,7 @@ const CreatePurchase: React.FC = () => {
 
         try {
             setIsSubmitting(true);
-            await axios.post(Constants.CREATE_NEW_PURCHASE_URL, formData, {
+            await api.post(Constants.CREATE_NEW_PURCHASE_URL, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data',

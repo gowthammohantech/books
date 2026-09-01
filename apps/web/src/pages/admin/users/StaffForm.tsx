@@ -1,10 +1,11 @@
+import api from '@lib/apiClient';
 import Modal from "@components/admin/Modal"
 import SearchableDropdown from "@components/admin/SearchableDropdown";
 import SubmitButton from "@components/admin/SubmitButton";
 import Constants from "@constants/api";
 import type { StaffFormData, StaffList } from "@models/staff";
 import type { RootState } from "@store/index";
-import axios from "axios";
+
 import { Eye, EyeClosed, Image, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -74,7 +75,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
     useEffect(() => {
         const fetchRoleOptions = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_ALL_ROLES_URL, {
+                const response = await api.get(Constants.FETCH_ALL_ROLES_URL, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const roles = response.data.data;
@@ -214,7 +215,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                 payload.append('profile_image_removed', 'true');
             }
             if (editItem) {
-                await axios.put(`${Constants.UPDATE_STAFF_URL}/${editItem.id}`, payload, {
+                await api.put(`${Constants.UPDATE_STAFF_URL}/${editItem.id}`, payload, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                     }
@@ -222,7 +223,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                 toast.success('User updated successfully.');
                 onSuccess();
             } else {
-                await axios.post(Constants.CREATE_STAFF_URL, payload, {
+                await api.post(Constants.CREATE_STAFF_URL, payload, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                     }

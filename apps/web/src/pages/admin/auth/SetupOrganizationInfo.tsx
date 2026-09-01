@@ -1,8 +1,9 @@
+import api from '@lib/apiClient';
 import type { SetupCurrencies, SetupDropdownResponse, SetupFormData, SetupTimezones } from "@models/setup";
 import { useEffect, useState } from "react";
 import { UploadCloud, ImagePlus, Building2, MapPin, Globe, Calendar, Currency, Loader2Icon } from "lucide-react";
 import Cookies from "js-cookie";
-import axios from "axios";
+
 import Constants from "@constants/api";
 import SmartDropdown from "@components/admin/SmartDropdown";
 import type { OptionType } from "@models/common";
@@ -66,7 +67,7 @@ const SetupOrganizationInfo: React.FC = () => {
     useEffect(() => {
         const fetchDropdownData = async () => {
             try {
-                const response = await axios<SetupDropdownResponse>(Constants.FETCH_SETUP_DROPDOWNS_URL, {
+                const response = await api<SetupDropdownResponse>(Constants.FETCH_SETUP_DROPDOWNS_URL, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -109,7 +110,7 @@ const SetupOrganizationInfo: React.FC = () => {
     useEffect(() => {
         const fetchCountries = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_COUNTRIES_URL, {
+                const response = await api.get(Constants.FETCH_COUNTRIES_URL, {
                     params: {
                         search: debouncedCountrySearch
                     },
@@ -221,7 +222,7 @@ const SetupOrganizationInfo: React.FC = () => {
                     payloadFormData.append(key, String(value));
                 }
             });
-            await axios.patch(Constants.UPDATE_COMPANY_SETUP_URL, payloadFormData, {
+            await api.patch(Constants.UPDATE_COMPANY_SETUP_URL, payloadFormData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'

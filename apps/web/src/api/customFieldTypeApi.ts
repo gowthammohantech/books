@@ -1,8 +1,8 @@
+import api from '@lib/apiClient';
 import Constants from "@constants/api";
 import type { Pagination } from "@models/common";
 import type { CustomFieldShape } from "@models/modulesettings/customField";
 import type { ModuleListResponse } from "@pages/admin/roles-permissions/RolePermissions";
-import axios from "axios";
 
 export interface CustomFieldListResponse {
     success: boolean;
@@ -19,18 +19,16 @@ export interface FetchCustomFieldsParams {
     search?: string;
 }
 
-export const fetchCustomFieldTypes = async (token: string) => {
-    const res = await axios.get<any>(
-        Constants.FETCH_CUSTOM_FIELD_TYPES,
-        { headers: { Authorization: `Bearer ${token}` } }
+export const fetchCustomFieldTypes = async (_token: string) => {
+    const res = await api.get<any>(
+        Constants.FETCH_CUSTOM_FIELD_TYPES
     );
     return res.data;
 };
 
-export const fetchModuleHierarchy = async (token: string) => {
-    const res = await axios.get<ModuleListResponse>(
-        Constants.FETCH_MODULES_URL,
-        { headers: { Authorization: `Bearer ${token}` } }
+export const fetchModuleHierarchy = async (_token: string) => {
+    const res = await api.get<ModuleListResponse>(
+        Constants.FETCH_MODULES_URL
     );
     return res.data;
 };
@@ -40,7 +38,7 @@ export const fetchCustomFieldsByModule = async (
     moduleId: string,
     params?: FetchCustomFieldsParams
 ) => {
-    const res = await axios.get<CustomFieldListResponse>(
+    const res = await api.get<CustomFieldListResponse>(
         `${Constants.BASE_URL}/api/admin/custom-fields/module/${moduleId}`,
         {
             headers: { Authorization: `Bearer ${token}` },

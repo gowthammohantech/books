@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import Modal from "@components/admin/Modal";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import Constants from "@constants/api";
 import type { RootState } from "@store/index";
 import { useSelector } from "react-redux";
@@ -123,7 +124,7 @@ const CreateBrandModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
 
         try {
             setIsSubmitting(true);
-            await axios.post(Constants.CREATE_BRAND_URL, data, {
+            await api.post(Constants.CREATE_BRAND_URL, data, {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
             });
             toast.success('Brand created successfully');

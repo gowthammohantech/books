@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { useEffect, useState, useMemo, type FC } from "react";
 import { CirclePlusIcon, Edit, Sparkles, Trash2Icon } from "lucide-react";
 import ScanBillModal from "@components/admin/ai/ScanBillModal";
@@ -5,7 +6,7 @@ import { useAiConfig } from "@hooks/useAiConfig";
 import Table from "@components/admin/Table";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ActiveFilterBanner, { type ActiveFilter } from "@components/admin/ActiveFilterBanner";
-import axios from "axios";
+
 import { useSelector } from "react-redux";
 import type { RootState } from "@store/index";
 import Constants from "@constants/api";
@@ -196,7 +197,7 @@ const PurchaseList: FC = () => {
     const fetchPurchases = async (searchParam?: string, limitParam?: number, pageParam?: number) => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.GET_PURCHASE_URL, {
+            const response = await api.get(Constants.GET_PURCHASE_URL, {
                 params: { search: searchParam, limit: limitParam, page: pageParam, ...drillParams },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -224,9 +225,7 @@ const PurchaseList: FC = () => {
         if (!itemToDelete) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_PURCHASE_URL}/${itemToDelete.id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`${Constants.DELETE_PURCHASE_URL}/${itemToDelete.id}`);
             toast.success('Purchase deleted successfully');
             fetchPurchases(search, limit, page);
             setShowDeleteModal(false);

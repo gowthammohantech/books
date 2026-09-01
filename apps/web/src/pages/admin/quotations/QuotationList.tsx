@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import PaginationWrapper from "@components/admin/PaginationWrapper";
@@ -10,7 +11,7 @@ import Constants from "@constants/api";
 import useDateFormatter from "@hooks/useDateFormatter";
 import type { RootState } from "@store/index";
 import { hasPermission } from "@utils/hasPermission";
-import axios from "axios";
+
 import { CheckCircle2, CirclePlusIcon, Edit, LucideEye, MailIcon, ReceiptIcon, Trash2Icon, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -108,7 +109,7 @@ const QuotationList: React.FC = () => {
     const fetchQuotations = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.GET_QUOTATIONS_FOR_LIST_URL, {
+            const response = await api.get(Constants.GET_QUOTATIONS_FOR_LIST_URL, {
                 params: { search, limit, page },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -227,9 +228,7 @@ const QuotationList: React.FC = () => {
         if (!itemToupdateStatus) return;
         try {
             setIsUpdatingStatus(true);
-            await axios.patch(`${Constants.UPDATE_QUOTATION_STATUS_URL}/${itemToupdateStatus.id}`, { status: itemToupdateStatus.status }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.patch(`${Constants.UPDATE_QUOTATION_STATUS_URL}/${itemToupdateStatus.id}`, { status: itemToupdateStatus.status });
             toast.success('Status updated successfully');
             setIsStatusModalOpen(false);
             await fetchQuotations();
@@ -249,10 +248,8 @@ const QuotationList: React.FC = () => {
 
     const handleConvertToInvoiceClick = async (item: Quotation) => {
         try {
-            await axios.post(`${Constants.CONVERT_QUOTATION_TO_INVOICE_URL}/${item.id}`,
-                {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post(`${Constants.CONVERT_QUOTATION_TO_INVOICE_URL}/${item.id}`,
+                {});
             await fetchQuotations();
             toast.success('Quotation converted to invoice successfully');
         } catch (error) {
@@ -262,9 +259,7 @@ const QuotationList: React.FC = () => {
     const confirmDelete = async () => {
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_QUOTATION_URL}/${itemToDelete?.id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`${Constants.DELETE_QUOTATION_URL}/${itemToDelete?.id}`);
             toast.success('Quotation deleted successfully');
             setShowDeleteModal(false);
             await fetchQuotations();

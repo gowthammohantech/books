@@ -1,5 +1,6 @@
+import api from '@lib/apiClient';
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
 import Constants from '@constants/api';
@@ -18,7 +19,7 @@ export function useTransactionCategories(appliesTo?: CategoryAppliesTo) {
         };
         if (appliesTo) params.appliesTo = appliesTo;
 
-        return axios
+        return api
             .get(Constants.TRANSACTION_CATEGORIES_URL, {
                 headers: { Authorization: `Bearer ${token}` },
                 params,

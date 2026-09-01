@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { DateRangePicker } from "@components/admin/DateRangePicker";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import PaginationWrapper from "@components/admin/PaginationWrapper";
@@ -11,7 +12,7 @@ import { useDebounce } from "@hooks/useDebounce";
 import type { OutOfStockReportShape } from "@models/inventory-reports";
 import type { RootState } from "@store/index";
 import { formatLocalDateTime, toTitleCase } from "@utils/converters";
-import axios from "axios";
+
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
@@ -74,7 +75,7 @@ const OutOfStockReport: React.FC = () => {
             params.search = debouncedSearchTerm;
             params.limit = Number(searchParams.get('limit') || 10).toString();
             params.page = Number(searchParams.get('page') || 1).toString();
-            const response = await axios.get<OutOfStockReportResponse>(Constants.GET_OUT_OF_STOCK_STOCK_REPORT_URL, {
+            const response = await api.get<OutOfStockReportResponse>(Constants.GET_OUT_OF_STOCK_STOCK_REPORT_URL, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 },

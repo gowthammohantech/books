@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import Constants from "../../../constants/api";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import Table from "../../../components/admin/Table";
 import PaginationWrapper from "../../../components/admin/PaginationWrapper";
 import { Edit, Trash2, CirclePlusIcon, Users } from "lucide-react";
@@ -79,7 +80,7 @@ const Projects: React.FC = () => {
     const fetchItems = async (s?: string, l?: number, p?: number) => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.FETCH_PROJECTS_URL, {
+            const response = await api.get(Constants.FETCH_PROJECTS_URL, {
                 params: { search: s, limit: l, page: p },
                 headers: authHeaders,
             });
@@ -122,10 +123,10 @@ const Projects: React.FC = () => {
             setIsSaving(true);
             const payload = { code: form.code, name: form.name, description: form.description, status: form.status };
             if (isEditMode && form.id) {
-                await axios.put(`${Constants.UPDATE_PROJECT_URL}/${form.id}`, payload, { headers: authHeaders });
+                await api.put(`${Constants.UPDATE_PROJECT_URL}/${form.id}`, payload, { headers: authHeaders });
                 toast.success("Project updated successfully.");
             } else {
-                await axios.post(Constants.CREATE_PROJECT_URL, payload, { headers: authHeaders });
+                await api.post(Constants.CREATE_PROJECT_URL, payload, { headers: authHeaders });
                 toast.success("Project created successfully.");
             }
             setShowModal(false);
@@ -148,7 +149,7 @@ const Projects: React.FC = () => {
         if (!itemToDelete) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_PROJECT_URL}/${itemToDelete.id}`, { headers: authHeaders });
+            await api.delete(`${Constants.DELETE_PROJECT_URL}/${itemToDelete.id}`, { headers: authHeaders });
             toast.success("Project deleted successfully.");
             fetchItems(search, limit, page);
             setDeleteModalOpen(false);

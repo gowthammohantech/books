@@ -1,5 +1,6 @@
+import api from '@lib/apiClient';
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
 import Constants from '@constants/api';
@@ -19,10 +20,8 @@ export function useTransactionTypes() {
 
     const doFetch = useCallback((): Promise<{ types: TransactionTypeDef[]; userPaymentReasons: UserPaymentReasons | null }> => {
         if (!_inflight) {
-            _inflight = axios
-                .get(Constants.GET_TRANSACTION_TYPES_URL, {
-                    headers: { Authorization: `Bearer ${token}` },
-                })
+            _inflight = api
+                .get(Constants.GET_TRANSACTION_TYPES_URL)
                 .then((res) => {
                     const result: TransactionTypeDef[] = res.data?.data ?? [];
                     const reasons: UserPaymentReasons | null = res.data?.userPaymentReasons ?? null;

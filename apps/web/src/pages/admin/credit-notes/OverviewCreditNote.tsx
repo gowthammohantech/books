@@ -1,10 +1,11 @@
+import api from '@lib/apiClient';
 import { numberToWords } from '@utils/converters';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import Constants from '@constants/api';
-import axios from 'axios';
+
 import LoaderSpinner from '@components/admin/LoaderSpinner';
 import { useCurrencies } from '@hooks/useCurrencies';
 import useDateFormatter from '@hooks/useDateFormatter';
@@ -97,7 +98,7 @@ const OverviewCreditNote: React.FC = () => {
         try {
             setIsLoading(true);
             setNotFound(false);
-            const response = await axios.get(`${Constants.FETCH_CREDIT_NOTE_FOR_EDIT_URL}/${creditNoteId}`, {
+            const response = await api.get(`${Constants.FETCH_CREDIT_NOTE_FOR_EDIT_URL}/${creditNoteId}`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
             setCreditNote(response.data.data);

@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import Constants from '@constants/api';
 import useDateFormatter from '@hooks/useDateFormatter';
 import type { RootState } from '@store/index';
-import axios from 'axios';
+
 import { BarChart2, FileText, BadgeDollarSign, CreditCard, AlertCircle, Receipt, ArrowRight, Users, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
@@ -58,9 +59,7 @@ const SalesDashboard: React.FC = () => {
         (async () => {
             try {
                 setIsLoading(true);
-                const res = await axios.get<{ data: DashboardData }>(Constants.GET_DASHBOARD_DATA_URL, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const res = await api.get<{ data: DashboardData }>(Constants.GET_DASHBOARD_DATA_URL);
                 if (res.data) setData(prev => ({ ...prev, ...res.data.data }));
             } catch { /* ignore */ } finally { setIsLoading(false); }
         })();

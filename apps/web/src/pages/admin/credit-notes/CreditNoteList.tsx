@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import InvoiceStatusBadge from "@components/admin/InvoiceStatusBadge";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
@@ -12,7 +13,7 @@ import { useCurrencies } from "@hooks/useCurrencies";
 import useDateFormatter from "@hooks/useDateFormatter";
 import type { RootState } from "@store/index";
 import { hasPermission } from "@utils/hasPermission";
-import axios from "axios";
+
 import { CirclePlusIcon, Edit, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -111,7 +112,7 @@ const CreditNoteList: React.FC = () => {
     const fetchInvoices = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.CREDIT_NOTE_LIST_URL, {
+            const response = await api.get(Constants.CREDIT_NOTE_LIST_URL, {
                 params: { search, limit, page },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -181,9 +182,7 @@ const CreditNoteList: React.FC = () => {
     const confirmDelete = async () => {
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_CREDIT_NOTE_URL}/${itemToDelete?.id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`${Constants.DELETE_CREDIT_NOTE_URL}/${itemToDelete?.id}`);
             toast.success('Credit note deleted successfully');
             setShowDeleteModal(false);
             await fetchInvoices();

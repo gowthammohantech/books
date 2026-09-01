@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import DateInput from "@components/admin/DateInput";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import SearchableDropdown from "@components/admin/SearchableDropdown";
@@ -274,7 +275,7 @@ const ProfileSettings: React.FC = () => {
                 formData.append('profileImage', profileToSubmit.profileImageFile);
             }
 
-            const res = await axios.put(Constants.UPDATE_PROFILE_URL, formData, {
+            const res = await api.put(Constants.UPDATE_PROFILE_URL, formData, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             // Sync the top-right header avatar (auth.user) without a re-login.

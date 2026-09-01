@@ -1,8 +1,9 @@
+import api from '@lib/apiClient';
 import { useEffect, useState, type FC } from "react";
 import Modal from "../../../../components/admin/Modal";
 import { Edit, Image, Trash2Icon, CirclePlusIcon } from "lucide-react";
 import Constants from "../../../../constants/api";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../../store";
@@ -80,7 +81,7 @@ const SignatureList: FC = () => {
     const fetchSignatures = async (currentSearch = search, currentLimit = limit, currentPage = page) => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.GET_SIGNATURES_URL, {
+            const response = await api.get(Constants.GET_SIGNATURES_URL, {
                 params: { search: currentSearch, limit: currentLimit, page: currentPage },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -139,9 +140,7 @@ const SignatureList: FC = () => {
         if (!itemToDelete) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_SIGNATURE_URL}/${itemToDelete.id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`${Constants.DELETE_SIGNATURE_URL}/${itemToDelete.id}`);
             toast.success('Signature deleted successfully');
             fetchSignatures(); // Refresh the list
             setShowDeleteModal(false);
@@ -245,7 +244,7 @@ const SignatureList: FC = () => {
             )
         );
         try {
-            await axios.patch(`${Constants.UPDATE_SIGNATURE_STATUS_URL}/${id}`, { status: newStatus }, {
+            await api.patch(`${Constants.UPDATE_SIGNATURE_STATUS_URL}/${id}`, { status: newStatus }, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             toast.success('Status updated successfully');
@@ -262,7 +261,7 @@ const SignatureList: FC = () => {
             )
         );
         try {
-            await axios.patch(`${Constants.UPDATE_SIGNATURE_DEFAULT_URL}/${id}`, { markAsDefault: newDefault }, {
+            await api.patch(`${Constants.UPDATE_SIGNATURE_DEFAULT_URL}/${id}`, { markAsDefault: newDefault }, {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             toast.success('Default signature updated successfully');
@@ -289,12 +288,12 @@ const SignatureList: FC = () => {
         try {
             setIsSaving(true);
             if (isEditMode) {
-                await axios.put(`${Constants.UPDATE_SIGNATURE_URL}/${formData.id}`, data, {
+                await api.put(`${Constants.UPDATE_SIGNATURE_URL}/${formData.id}`, data, {
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
                 });
                 toast.success('Signature updated successfully');
             } else {
-                await axios.post(Constants.CREATE_SIGNATURE_URL, data, {
+                await api.post(Constants.CREATE_SIGNATURE_URL, data, {
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
                 });
                 toast.success('Signature created successfully');

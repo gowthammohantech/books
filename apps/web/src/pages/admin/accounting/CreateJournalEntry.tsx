@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -43,9 +44,7 @@ const CreateJournalEntry: React.FC = () => {
     useEffect(() => {
         (async () => {
             try {
-                const resp = await axios.get(Constants.GET_ACCOUNTS_URL, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const resp = await api.get(Constants.GET_ACCOUNTS_URL);
                 setAccounts(resp.data?.data?.accounts ?? []);
             } catch (err) {
                 console.error("Failed to load accounts:", err);
@@ -86,9 +85,7 @@ const CreateJournalEntry: React.FC = () => {
                     description: l.description || null,
                 })),
             };
-            await axios.post(Constants.CREATE_JOURNAL_ENTRY_URL, payload, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.post(Constants.CREATE_JOURNAL_ENTRY_URL, payload);
             toast.success("Journal entry created");
             navigate("/admin/accounting/journal-entries");
         } catch (err) {

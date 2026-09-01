@@ -10,7 +10,8 @@
  * `appendLineTaxFormData` builds a browser FormData, and `resolveLineTaxByRateId`
  * makes an HTTP call.
  */
-import axios from 'axios';
+
+import api from '@lib/apiClient';
 import Constants from '@constants/api';
 import type { TaxLine } from '@models/taxRate';
 
@@ -37,7 +38,7 @@ export function appendLineTaxFormData(
         appliedTaxRateIds?: string[];
         [key: string]: unknown;
     }>,
-    indexOffset = 0,
+    indexOffset = 0
 ): void {
     items.forEach((item, i) => {
         const index = indexOffset + i;
@@ -106,15 +107,14 @@ export async function resolveLineTaxByRateId(params: {
     supplierId?: string;
 }): Promise<ResolvedLineTax | null> {
     try {
-        const res = await axios.post(
+        const res = await api.post(
             Constants.RESOLVE_LINE_TAX_URL,
             {
                 taxableAmount: params.taxableAmount,
                 taxRateId: params.taxRateId,
                 ...(params.customerId ? { customerId: params.customerId } : {}),
                 ...(params.supplierId ? { supplierId: params.supplierId } : {}),
-            },
-            { headers: { Authorization: `Bearer ${params.token}` } },
+            }
         );
         const data = res.data?.data;
         if (!data || !Array.isArray(data.taxes)) return null;

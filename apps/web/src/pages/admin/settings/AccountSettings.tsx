@@ -1,10 +1,11 @@
+import api from '@lib/apiClient';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Constants from '../../../constants/api';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
 import { toast } from "sonner";
 import type { AxiosError } from 'axios';
-import axios from 'axios';
+
 import SearchableDropdown from '@components/admin/SearchableDropdown';
 import { User, MapPin, DatabaseIcon } from 'lucide-react';
 import SubmitButton from '@components/admin/SubmitButton';
@@ -331,7 +332,7 @@ const AccountSettings: React.FC = () => {
             if (profile.profileImageFile) {
                 formData.append('profileImage', profile.profileImageFile);
             }
-            await axios.put(Constants.UPDATE_PROFILE_URL, formData, {
+            await api.put(Constants.UPDATE_PROFILE_URL, formData, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setSavingProfile(false);

@@ -1,5 +1,6 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import { Edit, Trash2, CirclePlusIcon } from "lucide-react";
@@ -81,7 +82,7 @@ const Holidays: React.FC = () => {
     const fetchItems = async () => {
         try {
             setIsLoading(true);
-            const res = await axios.get(Constants.HOLIDAYS_URL, { headers: authHeaders });
+            const res = await api.get(Constants.HOLIDAYS_URL, { headers: authHeaders });
             setItems((res.data?.data?.holidays ?? []) as Holiday[]);
         } catch (error) {
             toast.error(serverMessage(error, "Failed to fetch holidays."));
@@ -128,10 +129,10 @@ const Holidays: React.FC = () => {
                 recurringYearly: form.recurringYearly,
             };
             if (isEditMode && form.id) {
-                await axios.put(Constants.HOLIDAY_URL(form.id), payload, { headers: authHeaders });
+                await api.put(Constants.HOLIDAY_URL(form.id), payload, { headers: authHeaders });
                 toast.success("Holiday updated successfully.");
             } else {
-                await axios.post(Constants.HOLIDAYS_URL, payload, { headers: authHeaders });
+                await api.post(Constants.HOLIDAYS_URL, payload, { headers: authHeaders });
                 toast.success("Holiday created successfully.");
             }
             setShowModal(false);
@@ -157,7 +158,7 @@ const Holidays: React.FC = () => {
         if (!itemToDelete) return;
         try {
             setIsDeleting(true);
-            await axios.delete(Constants.HOLIDAY_URL(itemToDelete.id), { headers: authHeaders });
+            await api.delete(Constants.HOLIDAY_URL(itemToDelete.id), { headers: authHeaders });
             toast.success("Holiday deleted successfully.");
             setDeleteModalOpen(false);
             fetchItems();

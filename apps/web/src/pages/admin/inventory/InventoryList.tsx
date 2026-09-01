@@ -1,9 +1,10 @@
+import api from '@lib/apiClient';
 import PaginationWrapper from "@components/admin/PaginationWrapper";
 import Table from "@components/admin/Table";
 import TableRow from "@components/admin/TableRow";
 import Constants from "@constants/api";
 import type { RootState } from "@store/index";
-import axios from "axios";
+
 import { CirclePlusIcon, HistoryIcon, MinusCircle, PlusCircleIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -79,7 +80,7 @@ const InventoryList: React.FC = () => {
     const fetchInventories = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.FETCH_INVENTORY_LIST_URL, {
+            const response = await api.get(Constants.FETCH_INVENTORY_LIST_URL, {
                 params: { search, limit, page },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -131,7 +132,7 @@ const InventoryList: React.FC = () => {
         if (!validateForm()) return;
         try {
             setIsSaving(true);
-            await axios.post(Constants.UPDATE_INVENTORY_URL, formData, {
+            await api.post(Constants.UPDATE_INVENTORY_URL, formData, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setStockUpdateModalOpen(false);

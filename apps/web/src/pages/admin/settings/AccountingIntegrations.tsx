@@ -1,10 +1,9 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { toast } from 'sonner';
 
 import Constants from '@constants/api';
-import type { RootState } from '@store/index';
 import useDateFormatter from '@hooks/useDateFormatter';
 import { Button, Badge, Card, FormField } from '@components/ui';
 import { PageHeader } from '@/context/PageHeaderContext';
@@ -21,7 +20,6 @@ interface Integration {
 }
 
 export default function AccountingIntegrations() {
-  const token = useSelector((s: RootState) => s.auth.token);
   const { formatDateTime } = useDateFormatter();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [clientIds, setClientIds] = useState<Record<Kind, string>>({ XERO: '', QUICKBOOKS: '' });
@@ -32,7 +30,7 @@ export default function AccountingIntegrations() {
 
   async function load() {
     try {
-      const r = await axios.get(Constants.GET_ACCOUNTING_INTEGRATIONS_URL, { headers: { Authorization: `Bearer ${token}` } });
+      const r = await api.get(Constants.GET_ACCOUNTING_INTEGRATIONS_URL);
       setIntegrations(r.data?.data?.integrations ?? []);
     } catch { /* ignore */ }
   }
@@ -45,10 +43,9 @@ export default function AccountingIntegrations() {
 
   async function handleConnect(kind: Kind) {
     try {
-      const r = await axios.post(
+      const r = await api.post(
         `${Constants.CONNECT_ACCOUNTING_INTEGRATION_URL}/${kind}/connect`,
-        { clientId: clientIds[kind], redirectUri: redirectUris[kind] },
-        { headers: { Authorization: `Bearer ${token}` } },
+        { clientId: clientIds[kind], redirectUri: redirectUris[kind] }
       );
       const oauthUrl = r.data?.data?.oauthUrl;
       if (oauthUrl) {
@@ -62,10 +59,9 @@ export default function AccountingIntegrations() {
 
   async function handleSync(kind: Kind) {
     try {
-      const r = await axios.post(
+      const r = await api.post(
         `${Constants.SYNC_ACCOUNTING_INTEGRATION_URL}/${kind}/sync`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } },
+        {}
       );
       toast.success(r.data?.message ?? 'Synced');
       load();
@@ -77,7 +73,7 @@ export default function AccountingIntegrations() {
   async function handleDisconnect(kind: Kind) {
     if (!window.confirm(`Disconnect ${kind}?`)) return;
     try {
-      await axios.delete(`${Constants.DISCONNECT_ACCOUNTING_INTEGRATION_URL}/${kind}`, { headers: { Authorization: `Bearer ${token}` } });
+      await api.delete(`${Constants.DISCONNECT_ACCOUNTING_INTEGRATION_URL}/${kind}`);
       toast.success('Disconnected');
       load();
     } catch {

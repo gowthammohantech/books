@@ -1,8 +1,9 @@
+import api from '@lib/apiClient';
 import { useEffect, useState, useMemo, type FC } from "react";
 import { CirclePlusIcon, Edit, Trash2Icon } from "lucide-react";
 import Table from '@components/admin/Table';
 import { useNavigate, useSearchParams } from "react-router-dom";
-import axios from "axios";
+
 import { useSelector } from "react-redux";
 import type { RootState } from '@store/index';
 import Constants from '@constants/api';
@@ -155,7 +156,7 @@ const PurchaseOrderList: FC = () => {
     const fetchPurchaseOrders = async (searchParam?: string, limitParam?: number, pageParam?: number) => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.FETCH_PURCHASE_ORDERS_URL, {
+            const response = await api.get(Constants.FETCH_PURCHASE_ORDERS_URL, {
                 params: { search: searchParam, limit: limitParam, page: pageParam },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -184,9 +185,7 @@ const PurchaseOrderList: FC = () => {
         if (!itemToDelete) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_PURCHASE_ORDER_URL}/${itemToDelete.id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`${Constants.DELETE_PURCHASE_ORDER_URL}/${itemToDelete.id}`);
             toast.success('Purchase order deleted successfully');
             fetchPurchaseOrders(search, limit, page);
             setShowDeleteModal(false);

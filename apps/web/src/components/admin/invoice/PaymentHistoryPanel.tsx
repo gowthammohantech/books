@@ -1,11 +1,10 @@
+import api from '@lib/apiClient';
 import { useState } from 'react';
-import axios from 'axios';
-import { useSelector } from 'react-redux';
+
 import { toast } from 'sonner';
 import Modal from '@components/admin/Modal';
 import { useInvoicePayments } from '@hooks/useInvoicePayments';
 import useDateFormatter from '@hooks/useDateFormatter';
-import type { RootState } from '@store/index';
 import Constants from '@constants/api';
 import type { InvoicePaymentRow } from '@models/invoice-payment';
 import { Button, Badge, FormField, fieldControlClasses } from '@components/ui';
@@ -99,17 +98,15 @@ const VoidDialog: React.FC<VoidDialogProps> = ({ payment, onConfirm, onClose }) 
 // ---- Main panel ------------------------------------------------------------
 const PaymentHistoryPanel: React.FC<PaymentHistoryPanelProps> = ({ invoiceId, onChanged }) => {
     const { formatDate } = useDateFormatter();
-    const { token } = useSelector((s: RootState) => s.auth);
     const { payments, loading, refetch } = useInvoicePayments(invoiceId);
     const [voidTarget, setVoidTarget] = useState<InvoicePaymentRow | null>(null);
 
     const handleVoidConfirm = async (reason: string) => {
         if (!voidTarget) return;
         try {
-            await axios.post(
+            await api.post(
                 `${Constants.VOID_INVOICE_PAYMENT_URL}/${voidTarget.id}/void`,
-                { reason },
-                { headers: { Authorization: `Bearer ${token}` } },
+                { reason }
             );
             toast.success('Payment voided successfully.');
             setVoidTarget(null);
@@ -145,7 +142,7 @@ const PaymentHistoryPanel: React.FC<PaymentHistoryPanelProps> = ({ invoiceId, on
                                         >
                                             {h}
                                         </th>
-                                    ),
+                                    )
                                 )}
                             </tr>
                         </thead>

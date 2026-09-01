@@ -1,5 +1,6 @@
+import api from '@lib/apiClient';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import axios, { AxiosError } from 'axios';
+import type { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { useSelector } from 'react-redux';
 import { CirclePlusIcon, X } from 'lucide-react';
@@ -107,7 +108,7 @@ const MyLeave: React.FC = () => {
     // ── Fetchers ───────────────────────────────────────────────────────────────
     const fetchTypes = useCallback(async () => {
         try {
-            const res = await axios.get(Constants.LEAVE_TYPES_URL, { headers: authHeaders });
+            const res = await api.get(Constants.LEAVE_TYPES_URL, { headers: authHeaders });
             // Only active types are selectable for new requests.
             const all = (res.data?.data ?? []) as LeaveType[];
             setTypes(all.filter((t) => t.isActive));
@@ -119,7 +120,7 @@ const MyLeave: React.FC = () => {
     const fetchBalances = useCallback(async () => {
         try {
             setLoadingBalances(true);
-            const res = await axios.get(Constants.LEAVE_BALANCES_URL, {
+            const res = await api.get(Constants.LEAVE_BALANCES_URL, {
                 params: { year },
                 headers: authHeaders,
             });
@@ -135,7 +136,7 @@ const MyLeave: React.FC = () => {
     const fetchRequests = useCallback(async () => {
         try {
             setLoadingRequests(true);
-            const res = await axios.get(Constants.LEAVE_REQUESTS_URL, {
+            const res = await api.get(Constants.LEAVE_REQUESTS_URL, {
                 params: { scope: 'mine' },
                 headers: authHeaders,
             });
@@ -204,7 +205,7 @@ const MyLeave: React.FC = () => {
                 defaultPortion,
                 reason: reason.trim() || undefined,
             };
-            await axios.post(Constants.LEAVE_REQUESTS_URL, payload, { headers: authHeaders });
+            await api.post(Constants.LEAVE_REQUESTS_URL, payload, { headers: authHeaders });
             toast.success('Leave request submitted.');
             resetForm();
             fetchRequests();
@@ -221,7 +222,7 @@ const MyLeave: React.FC = () => {
     const handleCancel = async (r: LeaveRequest) => {
         try {
             setCancellingId(r.id);
-            await axios.post(
+            await api.post(
                 Constants.LEAVE_REQUEST_CANCEL_URL(r.id),
                 {},
                 { headers: authHeaders },

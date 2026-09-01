@@ -1,10 +1,11 @@
+import api from '@lib/apiClient';
 import { numberToWords } from '@utils/converters';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Constants from '@constants/api';
-import axios from 'axios';
+
 import { Edit, RefreshCcwIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import useDateFormatter from '@hooks/useDateFormatter';
@@ -91,7 +92,7 @@ const OverviewPurchaseOrder: React.FC = () => {
     const fetchPurchaseOrder = useCallback(async (id: string) => {
         try {
             setIsLoading(true);
-            const response = await axios.get(`${Constants.FETCH_PURCHASE_ORDER_URL}/${id}`, {
+            const response = await api.get(`${Constants.FETCH_PURCHASE_ORDER_URL}/${id}`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
             setPoData(response.data.data);
@@ -139,7 +140,7 @@ const OverviewPurchaseOrder: React.FC = () => {
         if (!purchaseOrderId) return;
         try {
             setIsConverting(true);
-            const response = await axios.post(
+            const response = await api.post(
                 Constants.CONVERT_PO_TO_PURCHASE_URL,
                 { purchaseOrderId },
                 { headers: { 'Authorization': `Bearer ${token}` } },

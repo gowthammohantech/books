@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { PauseCircle, PlayCircle, PlayIcon, ListIcon } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import Table from "@components/admin/Table";
@@ -54,7 +55,7 @@ const RecurringExpenseList: React.FC = () => {
     const fetchRecurringExpenses = async (
         searchValue?: string,
         limitValue?: number,
-        pageValue?: number,
+        pageValue?: number
     ) => {
         try {
             setIsLoading(true);
@@ -63,7 +64,7 @@ const RecurringExpenseList: React.FC = () => {
                 limit: limitValue ?? 10,
                 page: pageValue ?? 1,
             };
-            const response = await axios.get(Constants.GET_RECURRING_EXPENSES_URL, {
+            const response = await api.get(Constants.GET_RECURRING_EXPENSES_URL, {
                 params,
                 headers: { 'Authorization': `Bearer ${token}` },
             });
@@ -97,10 +98,9 @@ const RecurringExpenseList: React.FC = () => {
         if (busyRowId) return;
         try {
             setBusyRowId(row.id);
-            await axios.patch(
+            await api.patch(
                 `${Constants.SET_EXPENSE_RECURRING_STATUS_URL}/${row.id}/recurring-status`,
-                { stopped: !row.stopped },
-                { headers: { Authorization: `Bearer ${token}` } },
+                { stopped: !row.stopped }
             );
             toast.success(row.stopped ? 'Schedule resumed' : 'Schedule stopped');
             await fetchRecurringExpenses(search, limit, page);
@@ -119,10 +119,10 @@ const RecurringExpenseList: React.FC = () => {
         if (busyRowId) return;
         try {
             setBusyRowId(row.id);
-            const resp = await axios.post(
+            const resp = await api.post(
                 `${Constants.RUN_RECURRING_EXPENSE_NOW_URL}/${row.id}/run-recurring-now`,
                 {},
-                { headers: { 'Authorization': `Bearer ${token}` } },
+                { headers: { 'Authorization': `Bearer ${token}` } }
             );
             if (resp.status === 201) {
                 const newRef = resp.data?.data?.newReferenceNo ?? '';
@@ -145,9 +145,9 @@ const RecurringExpenseList: React.FC = () => {
         setChildren([]);
         try {
             setChildrenLoading(true);
-            const resp = await axios.get(
+            const resp = await api.get(
                 `${Constants.GET_EXPENSE_CHILDREN_URL}/${row.id}/children`,
-                { headers: { 'Authorization': `Bearer ${token}` } },
+                { headers: { 'Authorization': `Bearer ${token}` } }
             );
             setChildren(resp.data?.data?.children || []);
         } catch (error) {

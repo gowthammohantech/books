@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Info, Image as ImageIcon, MapPin, Landmark, ListChecks } from 'lucide-react';
 import ImageCropperUpload from '@components/common/ImageCropperUpload';
-import axios from 'axios';
+
 import Constants from '@constants/api';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@store/index';
@@ -137,7 +138,7 @@ const CompanySettings: React.FC = () => {
 
     const fetchCompanySettings = async () => {
         try {
-            const response = await axios.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
+            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -176,7 +177,7 @@ const CompanySettings: React.FC = () => {
             }));
             //if country available then set it
             if (response.data.data.country) {
-                const countryRes = await axios.get(`${Constants.FETCH_COUNTRY_URL}/${response.data.data.country.id}`, {
+                const countryRes = await api.get(`${Constants.FETCH_COUNTRY_URL}/${response.data.data.country.id}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -188,7 +189,7 @@ const CompanySettings: React.FC = () => {
             }
             //if state available then set it
             if (response.data.data.state) {
-                const stateRes = await axios.get(`${Constants.FETCH_STATE_URL}/${response.data.data.state.id}`, {
+                const stateRes = await api.get(`${Constants.FETCH_STATE_URL}/${response.data.data.state.id}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -234,7 +235,7 @@ const CompanySettings: React.FC = () => {
     const fetchCountries = async (searchTerm?: string) => {
         try {
             setLoadingCountries(true);
-            const response = await axios.get(Constants.FETCH_COUNTRIES_URL, {
+            const response = await api.get(Constants.FETCH_COUNTRIES_URL, {
                 params: { search: searchTerm },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -258,7 +259,7 @@ const CompanySettings: React.FC = () => {
 
         try {
             setLoadingStates(true);
-            const response = await axios.get(`${Constants.FETCH_STATES_URL}/${countryId}`, {
+            const response = await api.get(`${Constants.FETCH_STATES_URL}/${countryId}`, {
                 params: { search: searchTerm },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -343,7 +344,7 @@ const CompanySettings: React.FC = () => {
             // already appends them — and skips them when null (free-typed country/state
             // with no real option picked), which is exactly what avoids an FK violation.
 
-            await axios.put(
+            await api.put(
                 `${Constants.UPDATE_COMPANY_SETTINGS_URL}/${companyFormData.userId}`,
                 formData,
                 {

@@ -1,11 +1,10 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
+
 import { toast } from 'sonner';
 import { Printer, RotateCw } from 'lucide-react';
 
 import Constants from '@constants/api';
-import type { RootState } from '@store/index';
 import DrillLink from '@components/admin/DrillLink';
 import NoRecords from '@components/admin/NoRecords';
 import LoaderSpinner from '@components/admin/LoaderSpinner';
@@ -60,7 +59,6 @@ function FavorableBadge({ favorable }: { favorable: boolean }) {
 }
 
 export default function BudgetVarianceReport() {
-  const token = useSelector((s: RootState) => s.auth.token);
   const today = isoDate(new Date());
   const yearStart = isoDate(new Date(new Date().getFullYear(), 0, 1));
   const [from, setFrom] = useState(yearStart);
@@ -71,9 +69,7 @@ export default function BudgetVarianceReport() {
   async function load() {
     setLoading(true);
     try {
-      const r = await axios.get(`${Constants.FETCH_BUDGET_VARIANCE_URL}?from=${from}&to=${to}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const r = await api.get(`${Constants.FETCH_BUDGET_VARIANCE_URL}?from=${from}&to=${to}`);
       setData(r.data?.data ?? null);
     } catch {
       toast.error('Failed to load Budget Variance report');

@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+
 import { toast } from "sonner";
 import { Trash2Icon } from "lucide-react";
 
@@ -34,7 +35,7 @@ const EditVehicle: React.FC = () => {
     const fetchVehicleData = async (vehicleId: string) => {
         try {
             setIsFetching(true);
-            const response = await axios.get(`${Constants.GET_VEHICLE_FOR_EDIT_URL}/${vehicleId}`, {
+            const response = await api.get(`${Constants.GET_VEHICLE_FOR_EDIT_URL}/${vehicleId}`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
             const data = response.data?.data?.vehicle;
@@ -67,7 +68,7 @@ const EditVehicle: React.FC = () => {
         if (!id) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_VEHICLE_URL}/${id}`, {
+            await api.delete(`${Constants.DELETE_VEHICLE_URL}/${id}`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
             toast.success('Vehicle deleted successfully');

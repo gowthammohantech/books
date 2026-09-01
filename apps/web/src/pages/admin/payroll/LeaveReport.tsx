@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
@@ -56,14 +57,14 @@ const LeaveReport: React.FC = () => {
     useEffect(() => {
         if (!token) return;
         const headers = { Authorization: `Bearer ${token}` };
-        axios
+        api
             .get(Constants.FETCH_STAFF_FOR_LIST_URL, {
                 params: { user_type: 3, limit: 200, page: 1 },
                 headers,
             })
             .then((res) => setStaff(res.data?.data?.users ?? []))
             .catch(() => undefined);
-        axios
+        api
             .get(Constants.LEAVE_TYPES_URL, { headers })
             .then((res) => setLeaveTypes((res.data?.data?.leaveTypes ?? []) as LeaveType[]))
             .catch(() => undefined);
@@ -77,7 +78,7 @@ const LeaveReport: React.FC = () => {
         }
         try {
             setIsLoading(true);
-            const res = await axios.get(Constants.LEAVE_REPORTS_SUMMARY_URL, {
+            const res = await api.get(Constants.LEAVE_REPORTS_SUMMARY_URL, {
                 params: {
                     from: toISODate(from),
                     to: toISODate(to),

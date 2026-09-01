@@ -1,10 +1,9 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
+
 import { Printer, RotateCw } from 'lucide-react';
 
 import Constants from '@constants/api';
-import type { RootState } from '@store/index';
 import useDateFormatter from '@hooks/useDateFormatter';
 import DrillLink from '@components/admin/DrillLink';
 import NoRecords from '@components/admin/NoRecords';
@@ -37,7 +36,6 @@ function isoDate(d: Date): string {
 }
 
 export default function TrialBalanceReport() {
-  const token = useSelector((s: RootState) => s.auth.token);
   const { formatDate } = useDateFormatter();
   const today = isoDate(new Date());
   const [asOf, setAsOf] = useState(today);
@@ -49,9 +47,7 @@ export default function TrialBalanceReport() {
     setLoading(true);
     setError(null);
     try {
-      const r = await axios.get(`${Constants.GET_TRIAL_BALANCE_URL}?asOf=${asOf}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const r = await api.get(`${Constants.GET_TRIAL_BALANCE_URL}?asOf=${asOf}`);
       setData(r.data?.data ?? null);
     } catch {
       setError('Failed to load trial balance');

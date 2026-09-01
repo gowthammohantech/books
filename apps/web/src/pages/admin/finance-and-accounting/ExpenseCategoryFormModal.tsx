@@ -1,10 +1,11 @@
+import api from '@lib/apiClient';
 import Modal from "@components/admin/Modal";
 import SubmitButton from "@components/admin/SubmitButton";
 import Switch from "@components/admin/Switch";
 import Constants from "@constants/api";
 import type { ExpenseCategoryFormData, ExpenseCategoryShape } from "@models/expense";
 import type { RootState } from "@store/index";
-import axios from "axios";
+
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
@@ -74,13 +75,13 @@ const ExpenseCategoryFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess,
         try {
             setIsSaving(true);
             if (editItem) {
-                const response = await axios.put(`${Constants.UPDATE_EXPENSE_CATEGORY_URL}/${editItem.id}`, formData, {
+                const response = await api.put(`${Constants.UPDATE_EXPENSE_CATEGORY_URL}/${editItem.id}`, formData, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 onSuccess(response.data.data);
                 toast.success(response.data.message);
             } else {
-                const response = await axios.post(Constants.CREATE_NEW_EXPENSE_CATEGORY_URL, formData, {
+                const response = await api.post(Constants.CREATE_NEW_EXPENSE_CATEGORY_URL, formData, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 onSuccess(response.data.data);

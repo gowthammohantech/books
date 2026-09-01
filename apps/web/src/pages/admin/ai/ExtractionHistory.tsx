@@ -9,6 +9,7 @@
  *                    modal pointing at the same jobId via state)
  *   - Discard      → POST /:id/discard
  */
+import api from '@lib/apiClient';
 import { useCallback, useEffect, useMemo, useState, type FC } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
@@ -90,12 +91,10 @@ const ExtractionHistory: FC = () => {
     try {
       const params = new URLSearchParams({ page: String(page), limit: '20' });
       if (statusFilter) params.set('status', statusFilter);
-      const res = await axios.get(`${Constants.AI_EXTRACT_BILL_URL}?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get(`${Constants.AI_EXTRACT_BILL_URL}?${params.toString()}`);
       setJobs(res.data?.data?.jobs ?? []);
       setPagination(
-        res.data?.data?.pagination ?? { total: 0, page: 1, limit: 20, totalPages: 1 },
+        res.data?.data?.pagination ?? { total: 0, page: 1, limit: 20, totalPages: 1 }
       );
     } catch (err) {
       const message = axios.isAxiosError(err)
@@ -115,10 +114,9 @@ const ExtractionHistory: FC = () => {
     if (!token) return;
     if (!confirm('Discard this extraction? The source file will be deleted.')) return;
     try {
-      await axios.post(
+      await api.post(
         `${Constants.AI_EXTRACT_BILL_URL}/${job.id}/discard`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } },
+        {}
       );
       toast.success('Extraction discarded');
       void fetchJobs();
@@ -132,7 +130,7 @@ const ExtractionHistory: FC = () => {
 
   const headers = useMemo(
     () => ['#', 'File', 'Uploaded', 'Vendor', 'Total', 'Confidence', 'Status', 'Actions'],
-    [],
+    []
   );
 
   const startIdx = (pagination.page - 1) * pagination.limit;

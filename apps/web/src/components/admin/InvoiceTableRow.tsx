@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
@@ -149,7 +150,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
                 const currencyParam = currencyCode
                     ? `&currencyCode=${encodeURIComponent(currencyCode)}`
                     : '';
-                const response = await axios.get(
+                const response = await api.get(
                     `${Constants.FETCH_PRODUCTS_WITH_SEARCH_URL}?search=${debouncedSearchTerm}${currencyParam}`,
                     { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal }
                 );

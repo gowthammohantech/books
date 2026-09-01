@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import Constants from "@constants/api";
 import type { SystemSettings } from "@models/system-settings";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+
 import { assetUrl } from "@utils/assetUrl";
 import { currentTenantId, tenantLocal } from "@utils/tenantStorage";
 
@@ -44,7 +45,7 @@ export const hydrateFromStorage = createAsyncThunk("system/hydrate", async () =>
 });
 
 export const fetchSystemSettings = createAsyncThunk("system/save", async (token: string) => {
-    const response = await axios.get(Constants.FETCH_SYSTEM_SETTINGS_URL, {
+    const response = await api.get(Constants.FETCH_SYSTEM_SETTINGS_URL, {
         headers: {
             'Authorization': `Bearer ${token}`
         }

@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { CirclePlusIcon, Edit, Trash2Icon } from "lucide-react";
 import type React from "react";
 import { useSearchParams } from "react-router-dom";
@@ -6,7 +7,7 @@ import CurrencyFormModal from "./CurrencyFormModal";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../../../../store";
-import axios from "axios";
+
 import Constants from "../../../../../constants/api";
 import { toast } from "sonner";
 import TableRow from "../../../../../components/admin/TableRow";
@@ -60,7 +61,7 @@ const CurrencyList: React.FC = () => {
     const fetchCurrencies = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.GET_CURRENCIES_URL, {
+            const response = await api.get(Constants.GET_CURRENCIES_URL, {
                 params: { search, limit, page },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -85,7 +86,7 @@ const CurrencyList: React.FC = () => {
         );
 
         try {
-            await axios.patch(`${Constants.UPDATE_CURRENCY_STATUS_URL}/${id}`,
+            await api.patch(`${Constants.UPDATE_CURRENCY_STATUS_URL}/${id}`,
                 { status: newStatus },
                 {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -109,7 +110,7 @@ const CurrencyList: React.FC = () => {
         );
 
         try {
-            await axios.patch(`${Constants.UPDATE_CURRENCY_STATUS_URL}/${id}`,
+            await api.patch(`${Constants.UPDATE_CURRENCY_STATUS_URL}/${id}`,
                 { isDefault: newStatus, status: newStatus },
                 {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -177,7 +178,7 @@ const CurrencyList: React.FC = () => {
     const handleCurrencyDelete = async () => {
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_CURRENCY_URL}/${deleteData?.id}`, {
+            await api.delete(`${Constants.DELETE_CURRENCY_URL}/${deleteData?.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             toast.success('Currency deleted successfully.');

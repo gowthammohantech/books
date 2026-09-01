@@ -1,5 +1,6 @@
+import api from '@lib/apiClient';
 import { useCallback, useEffect, useState } from "react";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import { Edit, Trash2, CirclePlusIcon } from "lucide-react";
@@ -98,7 +99,7 @@ const LeaveTypes: React.FC = () => {
     const fetchTypes = useCallback(async () => {
         try {
             setIsLoading(true);
-            const res = await axios.get(Constants.LEAVE_TYPES_URL, { headers: authHeaders });
+            const res = await api.get(Constants.LEAVE_TYPES_URL, { headers: authHeaders });
             setTypes((res.data?.data?.leaveTypes ?? []) as LeaveType[]);
         } catch (error) {
             toast.error(serverMessage(error, "Failed to fetch leave types."));
@@ -110,7 +111,7 @@ const LeaveTypes: React.FC = () => {
 
     const fetchStaff = useCallback(async () => {
         try {
-            const res = await axios.get(Constants.FETCH_STAFF_FOR_LIST_URL, {
+            const res = await api.get(Constants.FETCH_STAFF_FOR_LIST_URL, {
                 params: { user_type: 3, limit: 200, page: 1 },
                 headers: authHeaders,
             });
@@ -135,7 +136,7 @@ const LeaveTypes: React.FC = () => {
         }
         try {
             setLoadingAlloc(true);
-            const res = await axios.get(Constants.LEAVE_ALLOCATIONS_URL, {
+            const res = await api.get(Constants.LEAVE_ALLOCATIONS_URL, {
                 params: { employeeUserId: employeeId, year },
                 headers: authHeaders,
             });
@@ -212,10 +213,10 @@ const LeaveTypes: React.FC = () => {
                 isActive: form.isActive,
             };
             if (isEditMode && form.id) {
-                await axios.put(Constants.LEAVE_TYPE_URL(form.id), payload, { headers: authHeaders });
+                await api.put(Constants.LEAVE_TYPE_URL(form.id), payload, { headers: authHeaders });
                 toast.success("Leave type updated successfully.");
             } else {
-                await axios.post(Constants.LEAVE_TYPES_URL, payload, { headers: authHeaders });
+                await api.post(Constants.LEAVE_TYPES_URL, payload, { headers: authHeaders });
                 toast.success("Leave type created successfully.");
             }
             setShowModal(false);
@@ -241,7 +242,7 @@ const LeaveTypes: React.FC = () => {
         if (!itemToDelete) return;
         try {
             setIsDeleting(true);
-            await axios.delete(Constants.LEAVE_TYPE_URL(itemToDelete.id), { headers: authHeaders });
+            await api.delete(Constants.LEAVE_TYPE_URL(itemToDelete.id), { headers: authHeaders });
             toast.success("Leave type deleted successfully.");
             setDeleteModalOpen(false);
             fetchTypes();
@@ -276,13 +277,13 @@ const LeaveTypes: React.FC = () => {
         try {
             setSavingAllocId(row.leaveTypeId);
             if (row.allocationId) {
-                await axios.put(
+                await api.put(
                     Constants.LEAVE_ALLOCATION_URL(row.allocationId),
                     { allocatedDays: allocated, carriedOverDays: carriedOver },
                     { headers: authHeaders },
                 );
             } else {
-                await axios.post(
+                await api.post(
                     Constants.LEAVE_ALLOCATIONS_URL,
                     { employeeUserId: employeeId, leaveTypeId: row.leaveTypeId, year, allocatedDays: allocated, carriedOverDays: carriedOver },
                     { headers: authHeaders },

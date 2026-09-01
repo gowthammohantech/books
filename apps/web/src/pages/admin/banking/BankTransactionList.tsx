@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import React from "react";
 import {
     CheckIcon,
@@ -215,9 +216,7 @@ const BankTransactionList: React.FC = () => {
 
     const fetchLedgerStatus = async () => {
         try {
-            const response = await axios.get(Constants.FETCH_LEDGER_STATUS_URL, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await api.get(Constants.FETCH_LEDGER_STATUS_URL);
             const configured = response.data?.data?.configured;
             if (configured === false) {
                 setShowLedgerBanner(true);
@@ -229,7 +228,7 @@ const BankTransactionList: React.FC = () => {
 
     const fetchBankAccounts = async () => {
         try {
-            const response = await axios.get(Constants.GET_BANK_ACCOUNTS_URL, {
+            const response = await api.get(Constants.GET_BANK_ACCOUNTS_URL, {
                 params: { limit: 100, page: 1 },
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -250,14 +249,14 @@ const BankTransactionList: React.FC = () => {
             if (explainStatusFilter !== "") params.explainStatus = explainStatusFilter;
             if (search.trim()) params.search = search.trim();
             if (categoryId) params.categoryId = categoryId;
-            const response = await axios.get(Constants.GET_BANK_TRANSACTIONS_URL, {
+            const response = await api.get(Constants.GET_BANK_TRANSACTIONS_URL, {
                 params,
                 headers: { Authorization: `Bearer ${token}` },
             });
             const data = response.data?.data;
             setRows(data?.bankTransactions ?? []);
             setPagination(
-                data?.pagination ?? { total: 0, page: 1, limit: 10, totalPages: 1 },
+                data?.pagination ?? { total: 0, page: 1, limit: 10, totalPages: 1 }
             );
             if (data?.counts) {
                 setCounts(data.counts as CountsData);
@@ -277,9 +276,7 @@ const BankTransactionList: React.FC = () => {
             return;
         }
         try {
-            const response = await axios.get(Constants.GET_TALLY_CHECK_URL, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await api.get(Constants.GET_TALLY_CHECK_URL);
             const bankRows = (response.data?.data?.bank ?? []) as TallyBankRow[];
             setTallyRow(bankRows.find((r) => r.bankAccountId === bankId) ?? null);
         } catch (err) {
@@ -333,9 +330,8 @@ const BankTransactionList: React.FC = () => {
     const handleSuggestMatches = async (txnId: string) => {
         try {
             setIsLoadingMatches(true);
-            const res = await axios.get(
-                `${Constants.SUGGEST_BANK_TX_MATCHES_URL}/${txnId}/suggest-matches`,
-                { headers: { Authorization: `Bearer ${token}` } },
+            const res = await api.get(
+                `${Constants.SUGGEST_BANK_TX_MATCHES_URL}/${txnId}/suggest-matches`
             );
             const matches = (res.data?.data?.matches ?? []) as SuggestMatchRow[];
             setSuggestModalState({ txnId, matches });
@@ -353,13 +349,12 @@ const BankTransactionList: React.FC = () => {
 
     const handleLink = async (
         txnId: string,
-        candidate: { kind: 'INVOICE_PAYMENT' | 'SUPPLIER_PAYMENT'; candidateId: string },
+        candidate: { kind: 'INVOICE_PAYMENT' | 'SUPPLIER_PAYMENT'; candidateId: string }
     ) => {
         try {
-            await axios.post(
+            await api.post(
                 `${Constants.LINK_BANK_TX_URL}/${txnId}/link`,
-                { relatedType: candidate.kind, relatedId: candidate.candidateId },
-                { headers: { Authorization: `Bearer ${token}` } },
+                { relatedType: candidate.kind, relatedId: candidate.candidateId }
             );
             toast.success("Linked + reconciled");
             setSuggestModalState(null);
@@ -372,10 +367,9 @@ const BankTransactionList: React.FC = () => {
 
     const handleUnlink = async (txnId: string) => {
         try {
-            await axios.post(
+            await api.post(
                 `${Constants.UNLINK_BANK_TX_URL}/${txnId}/unlink`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             toast.success("Unlinked");
             fetchRows();
@@ -394,10 +388,9 @@ const BankTransactionList: React.FC = () => {
     const handleApprove = async (txnId: string) => {
         try {
             setActioningId(txnId);
-            await axios.post(
+            await api.post(
                 `${Constants.BANK_TXN_APPROVE_URL}/${txnId}/approve`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             toast.success("Approved.");
             fetchRows();
@@ -413,10 +406,9 @@ const BankTransactionList: React.FC = () => {
     const handleReject = async (txnId: string) => {
         try {
             setActioningId(txnId);
-            await axios.post(
+            await api.post(
                 `${Constants.BANK_TXN_REJECT_URL}/${txnId}/reject`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             toast.success("Proposal rejected.");
             fetchRows();
@@ -435,10 +427,9 @@ const BankTransactionList: React.FC = () => {
     const handleUndo = async (txnId: string) => {
         try {
             setActioningId(txnId);
-            await axios.post(
+            await api.post(
                 `${Constants.EXPLAIN_BANK_TXN_URL}/${txnId}/unexplain`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             toast.success("Auto-posted entry undone.");
             fetchRows();
@@ -454,10 +445,9 @@ const BankTransactionList: React.FC = () => {
     const handleAnalyse = async (txnId: string) => {
         try {
             setActioningId(txnId);
-            const res = await axios.post(
+            const res = await api.post(
                 `${Constants.BANK_TXN_ANALYSE_URL}/${txnId}/analyse`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             const newStatus = res.data?.data?.explainStatus ?? res.data?.data?.transaction?.explainStatus;
             if (newStatus === "FOR_APPROVAL") {
@@ -480,10 +470,9 @@ const BankTransactionList: React.FC = () => {
             setActioningId("all");
             const params: Record<string, string> = {};
             if (effectiveBankFilter) params.bankAccountId = effectiveBankFilter;
-            const res = await axios.post(
+            const res = await api.post(
                 Constants.BANK_TXN_ANALYSE_ALL_URL,
-                params,
-                { headers: { Authorization: `Bearer ${token}` } },
+                params
             );
             const queued = res.data?.data?.queued ?? res.data?.data?.count ?? 0;
             toast.success(`${queued} queued`);
@@ -501,9 +490,8 @@ const BankTransactionList: React.FC = () => {
         if (!deleteItem) return;
         try {
             setIsDeleting(true);
-            await axios.delete(
-                `${Constants.DELETE_BANK_TRANSACTION_URL}/${deleteItem.id}`,
-                { headers: { Authorization: `Bearer ${token}` } },
+            await api.delete(
+                `${Constants.DELETE_BANK_TRANSACTION_URL}/${deleteItem.id}`
             );
             toast.success("Bank transaction deleted.");
             setDeleteModalOpen(false);
@@ -534,7 +522,7 @@ const BankTransactionList: React.FC = () => {
         }
         try {
             setIsSubmitting(true);
-            await axios.post(
+            await api.post(
                 Constants.CREATE_BANK_TRANSACTION_URL,
                 {
                     bankAccountId: addForm.bankAccountId,
@@ -542,8 +530,7 @@ const BankTransactionList: React.FC = () => {
                     type: addForm.type,
                     amount: Number(addForm.amount),
                     remarks: addForm.remarks,
-                },
-                { headers: { Authorization: `Bearer ${token}` } },
+                }
             );
             toast.success("Bank transaction created.");
             setIsAddOpen(false);
@@ -566,7 +553,7 @@ const BankTransactionList: React.FC = () => {
             setIsPreviewing(true);
             const formData = new FormData();
             formData.append("file", importFile);
-            const response = await axios.post(
+            const response = await api.post(
                 Constants.IMPORT_BANK_TRANSACTIONS_URL,
                 formData,
                 {
@@ -574,7 +561,7 @@ const BankTransactionList: React.FC = () => {
                         Authorization: `Bearer ${token}`,
                         "Content-Type": "multipart/form-data",
                     },
-                },
+                }
             );
             const preview = (response.data?.data?.previewRows ?? []) as BankTransactionPreviewRow[];
             setPreviewRows(preview);
@@ -599,7 +586,7 @@ const BankTransactionList: React.FC = () => {
         }
         try {
             setIsConfirming(true);
-            await axios.post(
+            await api.post(
                 Constants.CONFIRM_IMPORT_BANK_TRANSACTIONS_URL,
                 {
                     bankAccountId: importBankAccountId,
@@ -610,8 +597,7 @@ const BankTransactionList: React.FC = () => {
                         type: r.type,
                         reference: r.reference,
                     })),
-                },
-                { headers: { Authorization: `Bearer ${token}` } },
+                }
             );
             toast.success(`${validRows.length} bank transactions imported.`);
             setImportStep("done");
@@ -752,7 +738,7 @@ const BankTransactionList: React.FC = () => {
                             {tallyRow.currentVsExplainedTied
                                 ? "In balance"
                                 : `Difference: ${Number(
-                                      tallyRow.currentBalance - tallyRow.sumExplained,
+                                      tallyRow.currentBalance - tallyRow.sumExplained
                                   ).toFixed(2)}`}
                         </Badge>
                     )}
@@ -1031,7 +1017,7 @@ const BankTransactionList: React.FC = () => {
                                                   primary: true,
                                                   onClick: (item: BankTransactionRow) => {
                                                       setExpandedId((prev) =>
-                                                          prev === item.id ? null : item.id,
+                                                          prev === item.id ? null : item.id
                                                       );
                                                   },
                                               },

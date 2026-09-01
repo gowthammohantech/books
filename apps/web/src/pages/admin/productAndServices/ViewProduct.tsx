@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
 import type { FC, ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import { ArrowLeft, Edit } from 'lucide-react';
@@ -70,9 +71,7 @@ const ViewProduct: FC = () => {
             try {
                 setLoading(true);
                 // getProductById returns the product object directly at response.data.
-                const response = await axios.get<IProductView>(`${Constants.GET_PRODUCT_URL}/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const response = await api.get<IProductView>(`${Constants.GET_PRODUCT_URL}/${id}`);
                 setProduct(response.data);
             } catch (error) {
                 console.error('Failed to fetch product data:', error);

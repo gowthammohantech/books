@@ -6,6 +6,7 @@
  * month). Self-fetches from the usage reporting endpoints. Embedded in the
  * AI settings page below the config form.
  */
+import api from '@lib/apiClient';
 import { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
@@ -74,8 +75,8 @@ export default function AiUsageChart() {
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const [usageRes, summaryRes] = await Promise.all([
-        axios.get(Constants.AI_USAGE_URL, { headers }),
-        axios.get(Constants.AI_USAGE_SUMMARY_URL, { headers }),
+        api.get(Constants.AI_USAGE_URL, { headers }),
+        api.get(Constants.AI_USAGE_SUMMARY_URL, { headers }),
       ]);
       setUsage(usageRes.data?.data?.usage ?? []);
       setSummary(summaryRes.data?.data?.summary ?? null);

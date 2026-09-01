@@ -1,10 +1,11 @@
+import api from '@lib/apiClient';
 import Modal from "@components/admin/Modal";
 import QuillEditor, { type QuillEditorRef } from "@components/admin/QuillEditor";
 import SubmitButton from "@components/admin/SubmitButton";
 import Switch from "@components/admin/Switch";
 import Constants from "@constants/api";
 import type { RootState } from "@store/index";
-import axios from "axios";
+
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
@@ -85,9 +86,7 @@ const QuotationReminderModal: React.FC<Props> = ({ isOpen, onClose, editingRemin
     useEffect(() => {
         const fetchPlaceholders = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_QUOTATION_PLACEHOLDERS_URL, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const response = await api.get(Constants.FETCH_QUOTATION_PLACEHOLDERS_URL);
 
                 if (response.data.success && response.data.data && response.data.data.placeholders) {
                     const placeholderData = Array.isArray(response.data.data.placeholders)
@@ -228,12 +227,12 @@ const QuotationReminderModal: React.FC<Props> = ({ isOpen, onClose, editingRemin
         try {
             setIsSubmitting(true);
             if (editingReminder) {
-                await axios.put(`${Constants.UPDATE_QUOTATION_REMINDER_URL}/${editingReminder.id}`, payload, {
+                await api.put(`${Constants.UPDATE_QUOTATION_REMINDER_URL}/${editingReminder.id}`, payload, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 toast.success('Quotation reminder updated successfully.');
             } else {
-                await axios.post(Constants.CREATE_NEW_QUOTATION_REMINDER_URL, payload, {
+                await api.post(Constants.CREATE_NEW_QUOTATION_REMINDER_URL, payload, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 toast.success('Quotation reminder created successfully.');

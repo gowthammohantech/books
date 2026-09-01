@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { DateRangePicker } from "@components/admin/DateRangePicker";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import Modal from "@components/admin/Modal";
@@ -18,7 +19,7 @@ import type { OptionType, Pagination } from "@models/common";
 import type { RootState } from "@store/index";
 import { formatLocalDateTime } from "@utils/converters";
 import { PageHeader } from "@/context/PageHeaderContext";
-import axios from "axios";
+
 import { AlertCircle, CheckCircle, ChevronDown, LandmarkIcon, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
@@ -122,7 +123,7 @@ const ReconciliationList: React.FC = () => {
 
     const fetchBankAccounts = async () => {
         try {
-            const response = await axios.get(Constants.FETCH_BANK_ACCOUNT_WITH_BALANCE_URL, {
+            const response = await api.get(Constants.FETCH_BANK_ACCOUNT_WITH_BALANCE_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = response.data.data;
@@ -180,7 +181,7 @@ const ReconciliationList: React.FC = () => {
     const fetchTransactions = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.FETCH_TRANSACTIONS_FOR_RECONCILIATION_URL, {
+            const response = await api.get(Constants.FETCH_TRANSACTIONS_FOR_RECONCILIATION_URL, {
                 params: filterParams,
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -206,7 +207,7 @@ const ReconciliationList: React.FC = () => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            const response = await axios.post(`${Constants.RECONCILE_TRANSACTION_URL}/${itemToUpdate?.id}`, {
+            const response = await api.post(`${Constants.RECONCILE_TRANSACTION_URL}/${itemToUpdate?.id}`, {
                 transactionId: itemToUpdate?.id,
                 isReconciled: !itemToUpdate?.isReconciled,
                 reconciliationNote: note

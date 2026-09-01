@@ -6,8 +6,9 @@
  * render UI based on whether AI is enabled. Single GET per mount,
  * cached in module state so the various consumers share one fetch.
  */
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+
 import { useSelector } from 'react-redux';
 
 import Constants from '@constants/api';
@@ -35,14 +36,12 @@ function notify() {
   for (const cb of subscribers) cb(cache);
 }
 
-async function loadAiConfig(token: string): Promise<void> {
+async function loadAiConfig(_token: string): Promise<void> {
   if (cache.loading) return;
   cache = { ...cache, loading: true };
   notify();
   try {
-    const res = await axios.get(Constants.AI_CONFIG_URL, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await api.get(Constants.AI_CONFIG_URL);
     const config = res.data?.data?.config ?? null;
     cache = { config, loading: false };
   } catch {

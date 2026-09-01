@@ -1,8 +1,9 @@
+import api from '@lib/apiClient';
 import React, { useState, useEffect } from 'react';
 import InputField from '@components/admin/InputField';
 import SmartDropdown from '@components/admin/SmartDropdown';
 import Switch from '@components/admin/Switch';
-import axios, { AxiosError } from 'axios';
+import type { AxiosError } from 'axios';
 import Constants from '@constants/api';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
@@ -106,7 +107,7 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ vehicleData = null }) => {
         const fetchCustomers = async () => {
             try {
                 setIsLoadingCustomers(true);
-                const response = await axios.get(Constants.GET_CUSTOMERS_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.GET_CUSTOMERS_WITH_SEARCH_URL, {
                     params: { search: debouncedCustomerSearch, limit: 100, page: 1 },
                     headers: { 'Authorization': `Bearer ${token}` },
                 });
@@ -231,12 +232,12 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ vehicleData = null }) => {
             const payload = buildPayload();
 
             if (isEditMode && formData.id) {
-                await axios.put(`${Constants.UPDATE_VEHICLE_URL}/${formData.id}`, payload, {
+                await api.put(`${Constants.UPDATE_VEHICLE_URL}/${formData.id}`, payload, {
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 });
                 toast.success('Vehicle updated successfully');
             } else {
-                await axios.post(Constants.CREATE_VEHICLE_URL, payload, {
+                await api.post(Constants.CREATE_VEHICLE_URL, payload, {
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 });
                 toast.success('Vehicle created successfully');

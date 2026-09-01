@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
@@ -66,7 +67,7 @@ const TimeReports: React.FC = () => {
     useEffect(() => {
         if (!token) return;
         const headers = { Authorization: `Bearer ${token}` };
-        axios
+        api
             .get(Constants.FETCH_PROJECTS_URL, { params: { limit: 500, page: 1 }, headers })
             .then((res) => {
                 const raw = res.data?.data;
@@ -74,7 +75,7 @@ const TimeReports: React.FC = () => {
                 setProjects(arr);
             })
             .catch(() => undefined);
-        axios
+        api
             .get(Constants.FETCH_STAFF_FOR_LIST_URL, {
                 params: { user_type: 3, limit: 200, page: 1 },
                 headers,
@@ -91,7 +92,7 @@ const TimeReports: React.FC = () => {
         }
         try {
             setIsLoading(true);
-            const res = await axios.get(Constants.TIME_REPORTS_SUMMARY_URL, {
+            const res = await api.get(Constants.TIME_REPORTS_SUMMARY_URL, {
                 params: {
                     from: toISODate(from),
                     to: toISODate(to),

@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import DateInput from "@components/admin/DateInput";
 import { ymdStringToDate, dateToYmdString } from "@utils/converters";
 import Modal from "@components/admin/Modal";
@@ -130,7 +131,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
     useEffect(() => {
         const fetchExpenseCategories = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_EXPENSE_CATEGORIES_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_EXPENSE_CATEGORIES_WITH_SEARCH_URL, {
                     params: { search: categorySearchKeyword },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -155,7 +156,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
     useEffect(() => {
         const fetchBankAccounts = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -184,7 +185,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
     useEffect(() => {
         const fetchSuppliers = async () => {
             try {
-                const response = await axios.get(Constants.GET_SUPPLIERS_URL, {
+                const response = await api.get(Constants.GET_SUPPLIERS_URL, {
                     params: { search: debouncedSupplierSearchKeyword, limit: 100, page: 1 },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -207,7 +208,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
     useEffect(() => {
         const fetchPeople = async () => {
             try {
-                const res = await axios.get(`${Constants.FETCH_USERS_URL}/1`, {
+                const res = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
                     params: { limit: 100, page: 1 },
                     headers: { Authorization: `Bearer ${token}` },
                 });
@@ -225,7 +226,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
 
     const fetchAllPaymentModes = async () => {
         try {
-            const response = await axios.get(Constants.GET_ALL_PAYMENT_MODES_URL, {
+            const response = await api.get(Constants.GET_ALL_PAYMENT_MODES_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.data) {
@@ -420,14 +421,14 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
             });
 
             if (editItem) {
-                await axios.put(`${Constants.UPDATE_EXPENSE_URL}/${editItem.id}`, payload, {
+                await api.put(`${Constants.UPDATE_EXPENSE_URL}/${editItem.id}`, payload, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
                 toast.success('Expense updated successfully');
                 onSuccess();
             } else {
-                await axios.post(Constants.CREATE_NEW_EXPENSE_URL, payload, {
+                await api.post(Constants.CREATE_NEW_EXPENSE_URL, payload, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 

@@ -1,9 +1,7 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
 
 import Constants from '@constants/api';
-import type { RootState } from '@store/index';
 import useDateFormatter from '@hooks/useDateFormatter';
 import DrillLink from '@components/admin/DrillLink';
 import { PageHeader } from '@/context/PageHeaderContext';
@@ -31,7 +29,7 @@ function monthStart(d: Date): string {
 
 function renderRows(
   buckets: TaxBuckets,
-  drill?: { to: string; params: Record<string, string>; title: string },
+  drill?: { to: string; params: Record<string, string>; title: string }
 ) {
   const entries = Object.entries(buckets).filter(([k]) => k !== 'TOTAL');
   if (entries.length === 0) {
@@ -50,7 +48,6 @@ function renderRows(
 }
 
 export default function TaxSummaryReport() {
-  const token = useSelector((s: RootState) => s.auth.token);
   const { formatDate } = useDateFormatter();
   const today = isoDate(new Date());
   const start = monthStart(new Date());
@@ -64,9 +61,7 @@ export default function TaxSummaryReport() {
     setLoading(true);
     setError(null);
     try {
-      const r = await axios.get(`${Constants.GET_TAX_SUMMARY_URL}?from=${from}&to=${to}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const r = await api.get(`${Constants.GET_TAX_SUMMARY_URL}?from=${from}&to=${to}`);
       setData(r.data?.data ?? null);
     } catch {
       setError('Failed to load tax summary');

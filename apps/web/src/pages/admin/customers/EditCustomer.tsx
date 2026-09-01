@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import CustomerForm from "@pages/admin/customers/CreateCustomer";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+
 import Constants from "@constants/api";
 import { useSelector } from "react-redux";
 import type { RootState } from "@store/index";
@@ -55,7 +56,7 @@ const EditCustomer: React.FC = () => {
     const fetchCustomerData = async (id: string | undefined) => {
         try {
             setIsFetching(true);
-            const response = await axios.get(`${Constants.GET_CUSTOMER_FOR_EDIT_URL}/${id}`, {
+            const response = await api.get(`${Constants.GET_CUSTOMER_FOR_EDIT_URL}/${id}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

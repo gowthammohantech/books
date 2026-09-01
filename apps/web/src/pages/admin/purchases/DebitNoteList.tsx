@@ -1,8 +1,9 @@
+import api from '@lib/apiClient';
 import { useEffect, useState, type FC } from "react";
 import { CirclePlusIcon, Trash2Icon } from "lucide-react";
 import Table from "@components/admin/Table";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import axios from "axios";
+
 import { useSelector } from "react-redux";
 import type { RootState } from "@store/index";
 import Constants from "@constants/api";
@@ -120,7 +121,7 @@ const DebitNoteList: FC = () => {
     const fetchDebitNotes = async (search?: string, limit?: number, page?: number) => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.FETCH_FOR_DEBIT_NOTE_LIST_URL, {
+            const response = await api.get(Constants.FETCH_FOR_DEBIT_NOTE_LIST_URL, {
                 params: { search, limit, page },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -143,9 +144,7 @@ const DebitNoteList: FC = () => {
         if (!itemToDelete) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_DEBIT_NOTE_URL}/${itemToDelete.id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`${Constants.DELETE_DEBIT_NOTE_URL}/${itemToDelete.id}`);
             toast.success('Debit note deleted successfully');
             fetchDebitNotes(search, limit, page);
             setShowDeleteModal(false);

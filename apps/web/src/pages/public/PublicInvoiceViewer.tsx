@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
@@ -24,7 +25,7 @@ export default function PublicInvoiceViewer() {
       setLoading(false);
       return;
     }
-    axios
+    api
       .get(`${Constants.GET_PUBLIC_INVOICE_URL}/${token}`)
       .then((r) => setData(r.data?.data?.invoice ?? null))
       .catch((e) => setError(axios.isAxiosError(e) && e.response?.status === 404 ? 'Link not found or revoked.' : 'Failed to load.'))

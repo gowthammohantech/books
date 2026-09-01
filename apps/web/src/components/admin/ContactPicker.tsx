@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import axios from 'axios';
+
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
 import type { Contact } from '@models/contact';
@@ -89,7 +90,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
         const fetchContacts = async () => {
             setLoading(true);
             try {
-                const response = await axios.get(`${Constants.API_BASE_URL}/admin/contacts`, {
+                const response = await api.get(`${Constants.API_BASE_URL}/admin/contacts`, {
                     params: { view, q: debouncedInput, pageSize: 50 },
                     headers: { Authorization: `Bearer ${token}` },
                 });
@@ -123,9 +124,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
         let cancelled = false;
         const fetchContactById = async () => {
             try {
-                const response = await axios.get(`${Constants.API_BASE_URL}/admin/contacts/${value}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const response = await api.get(`${Constants.API_BASE_URL}/admin/contacts/${value}`);
                 const contact: Contact | null = response.data?.data ?? null;
                 if (cancelled || !contact) return;
                 setSelectedContact(contact);
@@ -191,10 +190,10 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
         if (!newOrgName.trim() || !token) return;
         setCreating(true);
         try {
-            const response = await axios.post(
+            const response = await api.post(
                 `${Constants.API_BASE_URL}/admin/contacts/minimal`,
                 { organisation: newOrgName.trim() },
-                { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } },
+                { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
             );
             const created: Contact = response.data.data;
             setShowNewModal(false);

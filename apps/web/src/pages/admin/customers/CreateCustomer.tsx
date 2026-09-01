@@ -1,8 +1,9 @@
+import api from '@lib/apiClient';
 import React, { useState, useEffect } from 'react';
 import { Save, Trash2Icon } from 'lucide-react';
 import ImageCropperUpload from '@components/common/ImageCropperUpload';
 import InputField from '@components/admin/InputField';
-import axios, { AxiosError } from 'axios';
+import type { AxiosError } from 'axios';
 import Constants from '@constants/api';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
@@ -253,12 +254,12 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerData = null }) => {
             setIsSubmitting(true);
             if (isEditMode) {
                 _formData.append('id', String(formData.id));
-                await axios.put(`${Constants.UPDATE_CUSTOMER_URL}/${formData.id}`, _formData, {
+                await api.put(`${Constants.UPDATE_CUSTOMER_URL}/${formData.id}`, _formData, {
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
                 });
                 toast.success('Customer updated successfully');
             } else {
-                await axios.post(Constants.CREATE_CUSTOMER_URL, _formData, {
+                await api.post(Constants.CREATE_CUSTOMER_URL, _formData, {
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
                 });
                 toast.success('Customer created successfully');

@@ -1,8 +1,9 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { FC, ChangeEvent, FormEvent } from "react";
 import Constants from "@constants/api";
-import axios from "axios";
+
 import Table from "@components/admin/Table";
 import PaginationWrapper from "@components/admin/PaginationWrapper";
 import { Trash2Icon, Edit, CirclePlusIcon } from "lucide-react";
@@ -96,7 +97,7 @@ const BrandList: FC = () => {
     const fetchBrands = async (search?: string, limit?: number, page?: number): Promise<void> => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.FETCH_BRAND_LIST_URL, {
+            const response = await api.get(Constants.FETCH_BRAND_LIST_URL, {
                 params: { search, limit, page },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -132,7 +133,7 @@ const BrandList: FC = () => {
     const updateStatus = async (brandToUpdate: Brand): Promise<void> => {
         try {
             const updatedBrand = { ...brandToUpdate, status: !brandToUpdate.status };
-            await axios.put(`${Constants.UPDATE_BRAND_URL}/${brandToUpdate.id}`, updatedBrand, {
+            await api.put(`${Constants.UPDATE_BRAND_URL}/${brandToUpdate.id}`, updatedBrand, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             toast.success('Status updated successfully');
@@ -153,7 +154,7 @@ const BrandList: FC = () => {
 
     const handleEditClick = async (brandToEdit: Brand): Promise<void> => {
         try {
-            const response = await axios.get<any>(`${Constants.GET_BRAND_URL}/${brandToEdit.id}`, {
+            const response = await api.get<any>(`${Constants.GET_BRAND_URL}/${brandToEdit.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setBrand(response.data);
@@ -210,7 +211,7 @@ const BrandList: FC = () => {
                 : Constants.CREATE_BRAND_URL;
             const method = isEditMode ? 'put' : 'post';
 
-            await axios[method](url, formData, {
+            await api[method](url, formData, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -246,9 +247,7 @@ const BrandList: FC = () => {
         if (!itemToDelete) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_BRAND_URL}/${itemToDelete.id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.delete(`${Constants.DELETE_BRAND_URL}/${itemToDelete.id}`);
             toast.success('Brand deleted successfully');
             fetchBrands(search, limit, page); // Refetch current page
             setDeleteModalOpen(false);

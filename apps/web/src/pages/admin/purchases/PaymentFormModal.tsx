@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { useSelector } from "react-redux";
 import type { RootState } from "@store/index";
 import { useEffect, useState, type FC } from "react";
@@ -79,7 +80,7 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
 
     const fetchPaymentModes = async () => {
         try {
-            const response = await axios.get(Constants.GET_ALL_PAYMENT_MODES_URL, {
+            const response = await api.get(Constants.GET_ALL_PAYMENT_MODES_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setPaymentModeOptions(response.data.data);
@@ -91,7 +92,7 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
     useEffect(() => {
         const fetchBankAccounts = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -120,7 +121,7 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
     useEffect(() => {
         const fetchPendingPurchases = async () => {
             try {
-                const response = await axios.get(Constants.GET_ALL_PENDING_PURCHASES_URL, {
+                const response = await api.get(Constants.GET_ALL_PENDING_PURCHASES_URL, {
                     params: { search: debouncedPurchaseSearch },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -259,7 +260,7 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
 
         try {
             setIsSubmitting(true);
-            await axios.post(Constants.CREATE_SUPPLIER_PAYMENT_URL, apiData, {
+            await api.post(Constants.CREATE_SUPPLIER_PAYMENT_URL, apiData, {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
             });
             toast.success('Payment created successfully');

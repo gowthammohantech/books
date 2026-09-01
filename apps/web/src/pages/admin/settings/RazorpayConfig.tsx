@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
+
 import { toast } from 'sonner';
 
 import Constants from '@constants/api';
@@ -30,8 +31,8 @@ export default function RazorpayConfig() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    axios
-      .get(`${Constants.GET_GATEWAY_CONFIGS_URL}/RAZORPAY?reveal=true`, { headers: { Authorization: `Bearer ${token}` } })
+    api
+      .get(`${Constants.GET_GATEWAY_CONFIGS_URL}/RAZORPAY?reveal=true`)
       .then((r) => {
         const cfg = r.data?.data?.gatewayConfig;
         if (!cfg) return;
@@ -51,14 +52,13 @@ export default function RazorpayConfig() {
     e.preventDefault();
     setSaving(true);
     try {
-      await axios.put(
+      await api.put(
         `${Constants.UPSERT_GATEWAY_CONFIG_URL}/RAZORPAY`,
         {
           enabled: data.enabled,
           livemode: data.livemode,
           config: { keyId: data.keyId, keySecret: data.keySecret, webhookSecret: data.webhookSecret },
-        },
-        { headers: { Authorization: `Bearer ${token}` } },
+        }
       );
       toast.success('Razorpay config saved');
     } catch {

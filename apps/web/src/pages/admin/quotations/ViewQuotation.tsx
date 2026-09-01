@@ -1,8 +1,9 @@
+import api from '@lib/apiClient';
 import { useEffect, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { useNavigate, useParams } from "react-router-dom";
 import Constants from "@constants/api";
-import axios from "axios";
+
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import { useSelector } from "react-redux";
 import type { RootState } from "@store/index";
@@ -24,9 +25,7 @@ const ViewQuotation: React.FC = () => {
         const fetchQuotationDetails = async () => {
             try {
                 setIsFetching(true);
-                const response = await axios.get(`${Constants.FETCH_QUOTATION_DETAILS_URL}/${quotationId}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                })
+                const response = await api.get(`${Constants.FETCH_QUOTATION_DETAILS_URL}/${quotationId}`)
                 if (response.data.data) {
                     setQuotationDetails(response.data.data);
                 }

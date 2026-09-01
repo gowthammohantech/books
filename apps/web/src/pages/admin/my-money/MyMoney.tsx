@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
@@ -96,7 +97,7 @@ const MyMoney: React.FC = () => {
   const fetchUsers = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await axios.get(`${Constants.FETCH_USERS_URL}/1`, {
+      const res = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
         params: { limit: 200, page: 1 },
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -121,7 +122,7 @@ const MyMoney: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get(
+      const res = await api.get(
         `${Constants.GET_MY_MONEY_URL}/${selectedUserId}`,
         {
           params: { taxYear: selectedTaxYear },

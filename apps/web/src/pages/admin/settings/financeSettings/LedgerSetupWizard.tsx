@@ -1,10 +1,9 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from "sonner";
 import type { SyntheticEvent } from "react";
 
-import type { RootState } from "@store/index";
 import Constants from "@constants/api";
 import InputField from "@components/admin/InputField";
 import SearchableDropdown from "@components/admin/SearchableDropdown";
@@ -90,7 +89,6 @@ const StepIndicator = ({ stage }: { stage: Stage }) => {
 // ---- main component ---------------------------------------------------------
 
 const LedgerSetupWizard: React.FC = () => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const { formatDate } = useDateFormatter();
 
     // stage
@@ -120,9 +118,7 @@ const LedgerSetupWizard: React.FC = () => {
         (async () => {
             try {
                 setStatusLoading(true);
-                const resp = await axios.get(Constants.FETCH_LEDGER_STATUS_URL, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const resp = await api.get(Constants.FETCH_LEDGER_STATUS_URL);
                 const s = resp.data?.data as LedgerStatus | undefined;
                 if (!s) {
                     toast.error("Unexpected response loading ledger status");
@@ -156,9 +152,7 @@ const LedgerSetupWizard: React.FC = () => {
     const loadPacks = async () => {
         try {
             setPacksLoading(true);
-            const resp = await axios.get(Constants.FETCH_LEDGER_COUNTRY_PACKS_URL, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const resp = await api.get(Constants.FETCH_LEDGER_COUNTRY_PACKS_URL);
             setPacks(resp.data?.data?.packs ?? []);
         } catch {
             toast.error("Failed to load country packs");
@@ -170,9 +164,7 @@ const LedgerSetupWizard: React.FC = () => {
     const loadPreview = async () => {
         try {
             setPreviewLoading(true);
-            const resp = await axios.get(Constants.FETCH_LEDGER_CUTOVER_PREVIEW_URL, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const resp = await api.get(Constants.FETCH_LEDGER_CUTOVER_PREVIEW_URL);
             setPreview(resp.data?.data ?? null);
         } catch {
             toast.error("Failed to load cutover preview");
@@ -223,9 +215,7 @@ const LedgerSetupWizard: React.FC = () => {
                 fiscalYearStartMonth,
                 goLiveDate: goLiveDate.toISOString().slice(0, 10),
             };
-            await axios.post(Constants.POST_LEDGER_SETUP_URL, payload, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.post(Constants.POST_LEDGER_SETUP_URL, payload);
             toast.success("Setup applied. Loading preview...");
             await loadPreview();
             setStage("review");
@@ -246,9 +236,7 @@ const LedgerSetupWizard: React.FC = () => {
     const handleCommit = async () => {
         try {
             setCommitting(true);
-            await axios.post(Constants.POST_LEDGER_CUTOVER_COMMIT_URL, {}, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.post(Constants.POST_LEDGER_CUTOVER_COMMIT_URL, {});
             toast.success("Ledger is now live");
             setShowCommitModal(false);
             setStage("live");
@@ -262,9 +250,7 @@ const LedgerSetupWizard: React.FC = () => {
         // must NOT report a commit failure — the ledger is already live, so we
         // fall back to the status loaded on mount.
         try {
-            const resp = await axios.get(Constants.FETCH_LEDGER_STATUS_URL, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const resp = await api.get(Constants.FETCH_LEDGER_STATUS_URL);
             setLiveStatus((prev) => resp.data?.data ?? prev);
         } catch {
             /* non-critical: keep the existing liveStatus */

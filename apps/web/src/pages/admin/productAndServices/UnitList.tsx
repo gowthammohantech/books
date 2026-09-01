@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useEffect, useState, type FC, type ChangeEvent, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
-import axios from "axios";
+
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../store";
@@ -80,7 +81,7 @@ const UnitList: FC = () => {
     const fetchUnits = async (search?: string, limit?: number, page?: number): Promise<void> => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.FETCH_UNITS_URL, {
+            const response = await api.get(Constants.FETCH_UNITS_URL, {
                 params: { search, limit, page },
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -113,9 +114,7 @@ const UnitList: FC = () => {
     const toggleStatus = async (unit: Unit): Promise<void> => {
         const updatedUnit = { ...unit, status: !unit.status };
         try {
-            await axios.put(`${Constants.UPDATE_UNIT_URL}/${unit.id}`, updatedUnit, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.put(`${Constants.UPDATE_UNIT_URL}/${unit.id}`, updatedUnit);
             toast.success('Status updated successfully');
             fetchUnits(search, limit, page); // Refetch current page
         } catch (error) {
@@ -171,10 +170,10 @@ const UnitList: FC = () => {
             const headers = { Authorization: `Bearer ${token}` };
 
             if (editingUnit) {
-                await axios.put(`${Constants.UPDATE_UNIT_URL}/${editingUnit}`, formData, { headers });
+                await api.put(`${Constants.UPDATE_UNIT_URL}/${editingUnit}`, formData, { headers });
                 toast.success('Unit updated successfully');
             } else {
-                await axios.post(Constants.CREATE_UNIT_URL, formData, { headers });
+                await api.post(Constants.CREATE_UNIT_URL, formData, { headers });
                 toast.success('Unit added successfully');
             }
 
@@ -198,9 +197,7 @@ const UnitList: FC = () => {
 
     const handleEditClick = async (unit: Unit): Promise<void> => {
         try {
-            const response = await axios.get<any>(`${Constants.GET_UNIT_URL}/${unit.id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await api.get<any>(`${Constants.GET_UNIT_URL}/${unit.id}`);
             setEditingUnit(unit.id);
             setNewUnit({
                 unit_name: response.data.unit_name,
@@ -233,9 +230,7 @@ const UnitList: FC = () => {
         if (!itemToDelete) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_UNIT_URL}/${itemToDelete.id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.delete(`${Constants.DELETE_UNIT_URL}/${itemToDelete.id}`);
             toast.success('Unit deleted successfully');
             fetchUnits(search, limit, page); // Refetch current page
             setDeleteModalOpen(false);

@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+
 import Constants from '../../../constants/api';
 import ProductForm from './ProductForm';
 import { toast } from "sonner";
@@ -53,7 +54,7 @@ export default function EditProduct() {
         const fetchProduct = async () => {
             try {
                 // Type the axios response to expect an IProduct object
-                const response = await axios.get<IProduct>(`${Constants.GET_PRODUCT_URL}/${id}`, {
+                const response = await api.get<IProduct>(`${Constants.GET_PRODUCT_URL}/${id}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 setProduct(response.data);

@@ -1,9 +1,10 @@
+import api from '@lib/apiClient';
 import Modal from "@components/admin/Modal";
 import Constants from "@constants/api";
 import type { Product, ProductFormData } from "@models/product";
 import type { TaxRate } from "@models/taxRate";
 import type { RootState } from "@store/index";
-import axios from "axios";
+
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
@@ -53,7 +54,7 @@ const CreateProductForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
             if (!isOpen) return;
             const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await axios.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=${debouncedUnitSearch}`, { headers });
+                const response = await api.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=${debouncedUnitSearch}`, { headers });
                 const formattedUnits = response.data.data.map((unit: { id: string; unitName: string }) => ({
                     id: unit.id,
                     name: unit.unitName
@@ -72,7 +73,7 @@ const CreateProductForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
             if (!isOpen) return;
             const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await axios.get(
+                const response = await api.get(
                     `${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true&search=${debouncedTaxSearch}`,
                     { headers },
                 );
@@ -114,7 +115,7 @@ const CreateProductForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
             if (formData.description) payloadFormData.append('description', formData.description);
             if (formData.selling_price !== '') payloadFormData.append('selling_price', String(formData.selling_price));
             if (formData.taxRateId) payloadFormData.append('taxRateId', formData.taxRateId);
-            const response = await axios.post(Constants.CREATE_PRODUCT_URL, payloadFormData, {
+            const response = await api.post(Constants.CREATE_PRODUCT_URL, payloadFormData, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

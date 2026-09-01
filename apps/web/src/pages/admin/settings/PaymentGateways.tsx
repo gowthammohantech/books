@@ -1,5 +1,6 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -25,12 +26,9 @@ function PaymentLinkMethodsSection() {
   const [newName, setNewName] = useState('');
   const [newUrl, setNewUrl] = useState('');
   const [saving, setSaving] = useState(false);
-
-  const auth = { headers: { Authorization: `Bearer ${token}` } };
-
   const load = () => {
-    axios
-      .get(Constants.PAYMENT_LINK_METHODS_URL, auth)
+    api
+      .get(Constants.PAYMENT_LINK_METHODS_URL)
       .then((r) => setMethods(r.data?.data ?? []))
       .catch(() => setMethods([]));
   };
@@ -44,11 +42,9 @@ function PaymentLinkMethodsSection() {
     }
     try {
       setSaving(true);
-      await axios.post(
+      await api.post(
         Constants.PAYMENT_LINK_METHODS_URL,
-        { name: newName.trim(), defaultUrl: newUrl.trim() || null },
-        auth,
-      );
+        { name: newName.trim(), defaultUrl: newUrl.trim() || null });
       setNewName('');
       setNewUrl('');
       toast.success('Payment method added');
@@ -62,7 +58,7 @@ function PaymentLinkMethodsSection() {
 
   const patch = async (id: string, data: Partial<PaymentLinkMethod>) => {
     try {
-      await axios.put(`${Constants.PAYMENT_LINK_METHODS_URL}/${id}`, data, auth);
+      await api.put(`${Constants.PAYMENT_LINK_METHODS_URL}/${id}`, data);
     } catch {
       toast.error('Failed to update method');
       load();
@@ -72,7 +68,7 @@ function PaymentLinkMethodsSection() {
   const remove = async (id: string) => {
     if (!window.confirm('Delete this payment method?')) return;
     try {
-      await axios.delete(`${Constants.PAYMENT_LINK_METHODS_URL}/${id}`, auth);
+      await api.delete(`${Constants.PAYMENT_LINK_METHODS_URL}/${id}`);
       load();
     } catch {
       toast.error('Failed to delete method');
@@ -160,8 +156,8 @@ export default function PaymentGateways() {
   const [configs, setConfigs] = useState<GatewayConfigSummary[]>([]);
 
   useEffect(() => {
-    axios
-      .get(Constants.GET_GATEWAY_CONFIGS_URL, { headers: { Authorization: `Bearer ${token}` } })
+    api
+      .get(Constants.GET_GATEWAY_CONFIGS_URL)
       .then((r) => setConfigs(r.data?.data?.gatewayConfigs ?? []))
       .catch(() => setConfigs([]));
   }, [token]);

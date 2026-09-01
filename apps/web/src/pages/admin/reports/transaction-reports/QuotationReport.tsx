@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { DateRangePicker } from "@components/admin/DateRangePicker";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import PaginationWrapper from "@components/admin/PaginationWrapper";
@@ -14,7 +15,7 @@ import { useDebounce } from "@hooks/useDebounce";
 import type { QuotationReportShape } from "@models/transaction-reports";
 import type { RootState } from "@store/index";
 import { formatLocalDateTime } from "@utils/converters";
-import axios from "axios";
+
 import { Ban, CheckCircleIcon, HourglassIcon, ShoppingBagIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -102,7 +103,7 @@ const QuotationReport: React.FC = () => {
             params.search = debouncedSearchTerm;
             params.limit = Number(searchParams.get('limit') || 10).toString();
             params.page = Number(searchParams.get('page') || 1).toString();
-            const response = await axios.get<QuotationReportResponse>(Constants.GET_QUOTATION_REPORT_URL, {
+            const response = await api.get<QuotationReportResponse>(Constants.GET_QUOTATION_REPORT_URL, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 },

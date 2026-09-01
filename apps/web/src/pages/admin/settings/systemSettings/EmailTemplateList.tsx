@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import { CirclePlusIcon, Edit, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import EmailTemplateModal from "./EmailTemplateModal";
-import axios from "axios";
+
 import Constants from "@constants/api";
 import { useSelector } from "react-redux";
 import type { RootState } from "@store/index";
@@ -50,7 +51,7 @@ const EmailTemplateList: React.FC = () => {
     const fetchEmailTemplates = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get<TemplateListResponse>(Constants.GET_EMAIL_TEMPLATES_URL, {
+            const response = await api.get<TemplateListResponse>(Constants.GET_EMAIL_TEMPLATES_URL, {
                 params: { search, limit, page },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -109,10 +110,9 @@ const EmailTemplateList: React.FC = () => {
     const handleToggleStatus = async (item: EmailTemplate) => {
         const nextStatus = item.status === 'active' ? 'inactive' : 'active';
         try {
-            await axios.put(
+            await api.put(
                 `${Constants.UPDATE_EMAIL_TEMPLATE_URL}/${item.id}`,
-                { status: nextStatus },
-                { headers: { Authorization: `Bearer ${token}` } },
+                { status: nextStatus }
             );
             toast.success(nextStatus === 'active' ? 'Template activated for sending' : 'Template deactivated');
             fetchEmailTemplates();
@@ -130,7 +130,7 @@ const EmailTemplateList: React.FC = () => {
     const handleDeleteConfirm = async () => {
         try {
             setIsDeleting(true);
-            const response = await axios.delete(`${Constants.DELETE_EMAIL_TEMPLATE_URL}/${deleteItem?.id}`, {
+            const response = await api.delete(`${Constants.DELETE_EMAIL_TEMPLATE_URL}/${deleteItem?.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.success) {

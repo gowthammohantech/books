@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import type { RootState } from "@store/index";
 import { hasPermission } from "@utils/hasPermission";
 import { CirclePlusIcon, Edit, Link, Trash2Icon } from "lucide-react";
@@ -7,7 +8,7 @@ import { useSelector } from "react-redux";
 import ActiveFilterBanner, { type ActiveFilter } from "@components/admin/ActiveFilterBanner";
 import ExpenseFormModal from "./ExpenseFormModal";
 import Constants from "@constants/api";
-import axios from "axios";
+
 import type { ExpenseListShape } from "@models/expense";
 import Table from "@components/admin/Table";
 import TableRow from "@components/admin/TableRow";
@@ -162,7 +163,7 @@ const ExpenseList: React.FC = () => {
     useEffect(() => {
         const fetchSupplierFilterOptions = async () => {
             try {
-                const response = await axios.get(Constants.GET_SUPPLIERS_URL, {
+                const response = await api.get(Constants.GET_SUPPLIERS_URL, {
                     params: { limit: 100, page: 1 },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -181,7 +182,7 @@ const ExpenseList: React.FC = () => {
             setIsLoading(true);
             const params: FilterParams = { ...filterParams };
             if (!params.supplierId) delete params.supplierId;
-            const response = await axios.get<ExpenseResponse>(Constants.FETCH_EXPENSES_FOR_LIST_URL, {
+            const response = await api.get<ExpenseResponse>(Constants.FETCH_EXPENSES_FOR_LIST_URL, {
                 params,
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -223,7 +224,7 @@ const ExpenseList: React.FC = () => {
     const handleDelete = async () => {
         try {
             setIsDeleting(true);
-            const response = await axios.delete(`${Constants.DELETE_EXPENSE_URL}/${deleteItem?.id}`, {
+            const response = await api.delete(`${Constants.DELETE_EXPENSE_URL}/${deleteItem?.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.success) {

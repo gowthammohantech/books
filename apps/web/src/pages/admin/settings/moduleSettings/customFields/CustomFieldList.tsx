@@ -1,8 +1,9 @@
+import api from '@lib/apiClient';
 import React, { useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
 import { CirclePlusIcon, Edit, Trash2Icon } from "lucide-react";
-import axios from "axios";
+
 import { toast } from "sonner";
 import type { RootState } from "@store/index";
 import Constants from "@constants/api";
@@ -106,7 +107,7 @@ const CustomFieldList: React.FC<CustomFieldListProps> = ({ moduleSlug }) => {
 
         try {
             setIsDeleting(true);
-            const response = await axios.delete(`${Constants.BASE_URL}/api/admin/custom-fields/${itemToDelete.id}`, {
+            const response = await api.delete(`${Constants.BASE_URL}/api/admin/custom-fields/${itemToDelete.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 

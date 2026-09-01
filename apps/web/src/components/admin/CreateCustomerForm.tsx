@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import Constants from "@constants/api";
 import type { RootState } from "@store/index";
 import { useSelector } from "react-redux";
@@ -84,7 +85,7 @@ const CreateCustomerForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => 
         if (!validateForm()) return;
         try {
             setIsSubmitting(true);
-            const response = await axios.post(Constants.CREATE_CUSTOMER_MINIMAL_URL, formData, {
+            const response = await api.post(Constants.CREATE_CUSTOMER_MINIMAL_URL, formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

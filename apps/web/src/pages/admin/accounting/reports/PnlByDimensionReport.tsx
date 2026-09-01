@@ -1,10 +1,9 @@
+import api from '@lib/apiClient';
 import { useEffect, useState, type SyntheticEvent } from 'react';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
+
 import { toast } from 'sonner';
 
 import Constants from '@constants/api';
-import type { RootState } from '@store/index';
 import SearchableDropdown from '@components/admin/SearchableDropdown';
 import useDateFormatter from '@hooks/useDateFormatter';
 import { PageHeader } from '@/context/PageHeaderContext';
@@ -43,7 +42,6 @@ interface PnlData {
 type DimensionType = 'cost-center' | 'project';
 
 export default function PnlByDimensionReport() {
-  const token = useSelector((s: RootState) => s.auth.token);
   const { formatDate } = useDateFormatter();
   const today = isoDate(new Date());
   const yearStart = isoDate(new Date(new Date().getFullYear(), 0, 1));
@@ -66,7 +64,7 @@ export default function PnlByDimensionReport() {
     setData(null);
     try {
       const url = dim === 'cost-center' ? Constants.FETCH_COST_CENTERS_URL : Constants.FETCH_PROJECTS_URL;
-      const r = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
+      const r = await api.get(url);
       const raw: DimensionOption[] = r.data?.data ?? [];
       // Ensure each item has an id and name
       setOptions(raw.map((item) => ({
@@ -97,9 +95,7 @@ export default function PnlByDimensionReport() {
         ? Constants.FETCH_PNL_BY_COST_CENTER_URL
         : Constants.FETCH_PNL_BY_PROJECT_URL;
       const paramKey = dimension === 'cost-center' ? 'costCenterId' : 'projectId';
-      const r = await axios.get(`${baseUrl}?from=${from}&to=${to}&${paramKey}=${selected.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const r = await api.get(`${baseUrl}?from=${from}&to=${to}&${paramKey}=${selected.id}`);
       setData(r.data?.data ?? null);
     } catch {
       toast.error('Failed to load P&L report');

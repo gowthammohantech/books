@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import ExportButton from "@components/admin/ExportButton";
 import InvoiceStatusBadge from "@components/admin/InvoiceStatusBadge";
@@ -7,7 +8,7 @@ import TableRow from "@components/admin/TableRow";
 import type { Action } from "@components/admin/tableActions";
 import Constants from "@constants/api";
 import type { RootState } from "@store/index";
-import axios from "axios";
+
 import { CirclePlusIcon, Edit, Trash2Icon } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { useSelector } from "react-redux";
@@ -247,7 +248,7 @@ const InvoiceList: React.FC = () => {
     const fetchInvoices = async () => {
         try {
             setIsInvoiceLoading(true);
-            const response = await axios.get(Constants.GET_INVOICES_FOR_LIST_URL, {
+            const response = await api.get(Constants.GET_INVOICES_FOR_LIST_URL, {
                 params: {
                     search,
                     limit,
@@ -335,9 +336,7 @@ const InvoiceList: React.FC = () => {
     const confirmDelete = async () => {
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_INVOICE_URL}/${itemToDelete?.id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`${Constants.DELETE_INVOICE_URL}/${itemToDelete?.id}`);
             toast.success('Invoice deleted successfully');
             setShowDeleteModal(false);
             await fetchInvoices();

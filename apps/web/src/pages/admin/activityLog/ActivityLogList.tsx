@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import { Fragment, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import axios from "axios";
+
 import { toast } from "sonner";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { RootState } from "@store/index";
@@ -61,7 +62,7 @@ const ActivityLogList: React.FC = () => {
   const fetchLogs = async () => {
     try {
       setIsLoading(true);
-      const res = await axios.get(Constants.GET_ACTIVITY_LOGS_URL, {
+      const res = await api.get(Constants.GET_ACTIVITY_LOGS_URL, {
         params: { search, entityType, action, limit, page },
         headers: { Authorization: `Bearer ${token}` },
       });

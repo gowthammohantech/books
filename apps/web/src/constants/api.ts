@@ -1,4 +1,9 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// Empty means same-origin — which is what the nginx `/api` proxy in front of
+// the built bundle serves. Without the fallback an unset VITE_API_BASE_URL made
+// every URL here begin with the literal string "undefined".
+import { API_BASE_URL as ORIGIN } from "@lib/apiClient";
+
+const BASE_URL: string = ORIGIN;
 const API_BASE_URL = BASE_URL + "/api";
 const Constants = {
   API_BASE_URL,

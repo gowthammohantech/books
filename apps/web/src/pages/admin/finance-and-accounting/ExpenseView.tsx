@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import axios from "axios";
+
 import type { RootState } from "@store/index";
 import Constants from "@constants/api";
 import { hasPermission } from "@utils/hasPermission";
@@ -67,9 +68,7 @@ const ExpenseView: React.FC = () => {
         try {
             setIsLoading(true);
             setNotFound(false);
-            const response = await axios.get(`${Constants.GET_EXPENSE_URL}/${expenseId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await api.get(`${Constants.GET_EXPENSE_URL}/${expenseId}`);
             if (response.data?.success && response.data?.data) {
                 setExpense(response.data.data);
             } else {

@@ -1,9 +1,10 @@
+import api from '@lib/apiClient';
 import React, { useEffect } from "react";
 import invoice1 from "@assets/invoices/invoice-1.png";
 import invoice2 from "@assets/invoices/invoice-2.png";
 import invoice3 from "@assets/invoices/invoice-3.png";
 import { Star, Eye } from "lucide-react";
-import axios from "axios";
+
 import Constants from "@constants/api";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@store/index";
@@ -35,12 +36,9 @@ const InvoiceTemplateList: React.FC = () => {
     const dispatch: AppDispatch = useDispatch();
     const makeDefault = async (id: number) => {
         try {
-            await axios.post(
+            await api.post(
                 Constants.MAKE_INVOICE_TEMPLATE_DEFAULT_URL,
-                { default_invoice_template: id },
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
+                { default_invoice_template: id }
             );
             await fetchDefaultTemplate();
             if (token) {
@@ -54,9 +52,7 @@ const InvoiceTemplateList: React.FC = () => {
 
     const fetchDefaultTemplate = async () => {
         try {
-            const response = await axios.get(Constants.FETCH_DEFAULT_INVOICE_TEMPLATE_URL, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await api.get(Constants.FETCH_DEFAULT_INVOICE_TEMPLATE_URL);
             const data = response.data.data[0] || null;
             if (data?.default_invoice_template) {
                 setDefaultInvoiceTemplate(Number(data.default_invoice_template));

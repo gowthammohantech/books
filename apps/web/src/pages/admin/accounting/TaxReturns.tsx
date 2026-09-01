@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+
 import { toast } from 'sonner';
 
 import Constants from '@constants/api';
@@ -169,9 +170,7 @@ export default function TaxReturns() {
     async function loadRegime() {
       if (!user?.id) return;
       try {
-        const r = await axios.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const r = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`);
         const resolved = r.data?.data?.taxRegime as TaxRegime | undefined;
         if (!cancelled && resolved && resolved in REGIME_LABELS) {
           setRegime(resolved);
@@ -210,28 +209,23 @@ export default function TaxReturns() {
     }
     setLoading(true);
     try {
-      const r = await axios.get(`${url}?from=${from}&to=${to}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const r = await api.get(`${url}?from=${from}&to=${to}`);
       setData(r.data?.data ?? null);
 
       if (regime === 'VAT_EU') {
-        const ec = await axios.get(
-          `${Constants.GET_TAX_RETURN_EU_EC_SALES_LIST_URL}?from=${from}&to=${to}`,
-          { headers: { Authorization: `Bearer ${token}` } },
+        const ec = await api.get(
+          `${Constants.GET_TAX_RETURN_EU_EC_SALES_LIST_URL}?from=${from}&to=${to}`
         );
         setEcSales(ec.data?.data ?? null);
 
-        const ossRes = await axios.get(
-          `${Constants.GET_TAX_RETURN_EU_OSS_URL}?from=${from}&to=${to}`,
-          { headers: { Authorization: `Bearer ${token}` } },
+        const ossRes = await api.get(
+          `${Constants.GET_TAX_RETURN_EU_OSS_URL}?from=${from}&to=${to}`
         );
         setOss(ossRes.data?.data ?? null);
 
         const year = Number(from.slice(0, 4)) || new Date().getFullYear();
-        const thr = await axios.get(
-          `${Constants.GET_TAX_RETURN_EU_OSS_THRESHOLD_URL}?year=${year}`,
-          { headers: { Authorization: `Bearer ${token}` } },
+        const thr = await api.get(
+          `${Constants.GET_TAX_RETURN_EU_OSS_THRESHOLD_URL}?year=${year}`
         );
         setOssThreshold(thr.data?.data ?? null);
       } else {
@@ -260,7 +254,7 @@ export default function TaxReturns() {
     try {
       await downloadExport(
         `${url}.csv?from=${from}&to=${to}`,
-        `tax-return-${regime.toLowerCase()}-${from}_${to}.csv`,
+        `tax-return-${regime.toLowerCase()}-${from}_${to}.csv`
       );
     } catch {
       toast.error('Failed to export CSV');
@@ -271,7 +265,7 @@ export default function TaxReturns() {
     try {
       await downloadExport(
         `${Constants.GET_TAX_RETURN_EU_EC_SALES_LIST_URL}.csv?from=${from}&to=${to}`,
-        `ec-sales-list-${from}_${to}.csv`,
+        `ec-sales-list-${from}_${to}.csv`
       );
     } catch {
       toast.error('Failed to export EC Sales List CSV');
@@ -282,7 +276,7 @@ export default function TaxReturns() {
     try {
       await downloadExport(
         `${Constants.GET_TAX_RETURN_EU_OSS_URL}.csv?from=${from}&to=${to}`,
-        `oss-return-${from}_${to}.csv`,
+        `oss-return-${from}_${to}.csv`
       );
     } catch {
       toast.error('Failed to export OSS return CSV');

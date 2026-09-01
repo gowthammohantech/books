@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -89,7 +90,7 @@ export const loginUser = createAsyncThunk(
     "auth/login",
     async (credentials: { email: string; password: string }, { rejectWithValue }) => {
         try {
-            const response = await axios.post(Constants.LOGIN_URL, {
+            const response = await api.post(Constants.LOGIN_URL, {
                 email: credentials.email,
                 password: credentials.password,
             });
@@ -126,7 +127,7 @@ export const registerUser = createAsyncThunk(
     // trusting the client to have done it.
     async (form: RegisterFormData, { rejectWithValue }) => {
         try {
-            const response = await axios.post(Constants.REGISTER_URL, form);
+            const response = await api.post(Constants.REGISTER_URL, form);
             const data = response.data as SessionResponse;
             persistSession(data.token, data.user, data.tenant ?? null);
             return {
@@ -158,11 +159,9 @@ export const switchTenant = createAsyncThunk(
     "auth/switchTenant",
     async (tenantId: string, { rejectWithValue }) => {
         try {
-            const token = Cookies.get("authToken");
-            const response = await axios.post(
+            const response = await api.post(
                 Constants.SWITCH_TENANT_URL,
-                { tenantId },
-                { headers: { Authorization: `Bearer ${token}` } }
+                { tenantId }
             );
             const data = response.data as SessionResponse;
 
@@ -186,11 +185,9 @@ export const createTenant = createAsyncThunk(
     "auth/createTenant",
     async (companyName: string, { rejectWithValue }) => {
         try {
-            const token = Cookies.get("authToken");
-            const response = await axios.post(
+            const response = await api.post(
                 Constants.CREATE_TENANT_URL,
-                { companyName },
-                { headers: { Authorization: `Bearer ${token}` } }
+                { companyName }
             );
             const data = response.data as SessionResponse;
 

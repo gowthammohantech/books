@@ -1,10 +1,11 @@
+import api from '@lib/apiClient';
 import type { RootState } from "@store/index";
 import { hasPermission } from "@utils/hasPermission";
 import { CalendarDays, CircleMinusIcon, CirclePlusIcon, PiggyBank, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import Constants from "@constants/api";
-import axios from "axios";
+
 import Table from "@components/admin/Table";
 import TableRow from "@components/admin/TableRow";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
@@ -62,7 +63,7 @@ const PettyCashList: React.FC = () => {
 
     const fetchPettyCashList = async () => {
         try {
-            const response = await axios.get<ExpenseResponse>(Constants.PETTY_CASH_LIST_URL, {
+            const response = await api.get<ExpenseResponse>(Constants.PETTY_CASH_LIST_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.success && response.data.data.pettyCash) {
@@ -97,7 +98,7 @@ const PettyCashList: React.FC = () => {
     const fetchTransactions = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get<PettyCashTransactionResponse>(Constants.FETCH_PETTYCASH_TRANSACTION_LIST_URL,
+            const response = await api.get<PettyCashTransactionResponse>(Constants.FETCH_PETTYCASH_TRANSACTION_LIST_URL,
                 {
                     params: filterParams,
                     headers: { 'Authorization': `Bearer ${token}` }

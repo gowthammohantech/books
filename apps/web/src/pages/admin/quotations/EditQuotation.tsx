@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { PlusCircle, Edit3 } from 'lucide-react';
 import DateInput from '@components/admin/DateInput';
-import axios from 'axios';
+
 import Constants from '@constants/api';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
@@ -139,10 +140,8 @@ const EditQuotation: React.FC = () => {
     const [taxRateLibrary, setTaxRateLibrary] = useState<TaxRate[]>([]);
     useEffect(() => {
         if (!token) return;
-        axios
-            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+        api
+            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`)
             .then((r) => {
                 const list = r.data?.data?.taxRates ?? r.data?.data ?? [];
                 setTaxRateLibrary(Array.isArray(list) ? list : []);
@@ -187,7 +186,7 @@ const EditQuotation: React.FC = () => {
 
     const fetchModuleSettings = async () => {
         try {
-            const response = await axios.get(Constants.GET_GENERAL_SETTINGS_URL, {
+            const response = await api.get(Constants.GET_GENERAL_SETTINGS_URL, {
                 params: { groupSlug: 'quotation' },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -218,13 +217,13 @@ const EditQuotation: React.FC = () => {
                 setFetchingSalesPersons(true);
                 let data;
                 if (salesPersonRoleId) {
-                    const response = await axios.get(`${Constants.FETCH_USERS_BY_ROLE_WITH_SEARCH_URL}/${salesPersonRoleId}`, {
+                    const response = await api.get(`${Constants.FETCH_USERS_BY_ROLE_WITH_SEARCH_URL}/${salesPersonRoleId}`, {
                         params: { search: debouncedSearchTermSalesPerson },
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     data = response.data.data;
                 } else {
-                    const response = await axios.get(`${Constants.FETCH_USERS_URL}/1`, {
+                    const response = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     data = response.data.data;
@@ -262,7 +261,7 @@ const EditQuotation: React.FC = () => {
 
     const fetchQuotationDetails = async () => {
         try {
-            const response = await axios.get(`${Constants.FETCH_QUOTATION_DETAILS_URL}/${id}`, {
+            const response = await api.get(`${Constants.FETCH_QUOTATION_DETAILS_URL}/${id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.data) {
@@ -313,7 +312,7 @@ const EditQuotation: React.FC = () => {
     const fetchTaxes = async () => {
         if (!token) return;
         try {
-            const response = await axios.get(Constants.FETCH_TAX_GROUPS_URL, {
+            const response = await api.get(Constants.FETCH_TAX_GROUPS_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -327,7 +326,7 @@ const EditQuotation: React.FC = () => {
     useEffect(() => {
         const fetchBankAccounts = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -353,7 +352,7 @@ const EditQuotation: React.FC = () => {
     useEffect(() => {
         const fetchManualSignatures = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermSignature },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -381,7 +380,7 @@ const EditQuotation: React.FC = () => {
         setSelectedAdmin(user);
         try {
             setIsFetching(true);
-            const response = await axios.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
+            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             //set billFrom to pre formData
@@ -526,7 +525,7 @@ const EditQuotation: React.FC = () => {
 
     const fetchAdminUsers = async () => {
         try {
-            const response = await axios.get(`${Constants.FETCH_USERS_URL}/1`, {
+            const response = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.data.length > 0) {
@@ -543,7 +542,7 @@ const EditQuotation: React.FC = () => {
     useEffect(() => {
         const fetchCustomersByQuery = async () => {
             try {
-                const response = await axios.get(`${Constants.GET_CUSTOMERS_WITH_SEARCH_URL}`, {
+                const response = await api.get(`${Constants.GET_CUSTOMERS_WITH_SEARCH_URL}`, {
                     params: { search: debouncedSearchTermCustomer, limit: 100, page: 1 },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -720,7 +719,7 @@ const EditQuotation: React.FC = () => {
 
         try {
             setIsSaving(true);
-            await axios.put(`${Constants.UPDATE_QUOTATION_URL}/${id}`, formData, {
+            await api.put(`${Constants.UPDATE_QUOTATION_URL}/${id}`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data',

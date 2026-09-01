@@ -1,10 +1,11 @@
+import api from '@lib/apiClient';
 import type { RootState } from "@store/index";
 import { hasPermission } from "@utils/hasPermission";
 import { CirclePlusIcon, Edit, Trash2Icon } from "lucide-react";
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import Constants from "@constants/api";
-import axios from "axios";
+
 import type { ExpenseCategoryShape } from "@models/expense";
 import Table from "@components/admin/Table";
 import TableRow from "@components/admin/TableRow";
@@ -78,7 +79,7 @@ const ExpenseCategoryList: React.FC = () => {
     const handleDelete = async () => {
         try {
             setIsDeleting(true);
-            const response = await axios.delete(`${Constants.DELETE_EXPENSE_CATEGORY_URL}/${deleteItem?.id}`, {
+            const response = await api.delete(`${Constants.DELETE_EXPENSE_CATEGORY_URL}/${deleteItem?.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.success) {
@@ -102,7 +103,7 @@ const ExpenseCategoryList: React.FC = () => {
                 title: item.title,
                 description: item.description
             };
-            await axios.put(`${Constants.UPDATE_EXPENSE_CATEGORY_URL}/${item.id}`, formData, {
+            await api.put(`${Constants.UPDATE_EXPENSE_CATEGORY_URL}/${item.id}`, formData, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             toast.success('Status updated successfully');

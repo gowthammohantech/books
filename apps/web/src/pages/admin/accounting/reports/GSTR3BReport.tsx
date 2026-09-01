@@ -1,6 +1,6 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
 
 import Constants from '@constants/api';
 import type { RootState } from '@store/index';
@@ -94,9 +94,7 @@ export default function GSTR3BReport() {
     setLoading(true);
     setError(null);
     try {
-      const r = await axios.get(`${Constants.GET_GSTR3B_URL}?from=${from}&to=${to}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const r = await api.get(`${Constants.GET_GSTR3B_URL}?from=${from}&to=${to}`);
       setData(r.data?.data ?? null);
     } catch {
       setError('Failed to load GSTR-3B report');
@@ -107,12 +105,12 @@ export default function GSTR3BReport() {
 
   async function download(format: 'json' | 'csv') {
     try {
-      const res = await axios.get(
+      const res = await api.get(
         `${Constants.EXPORT_GSTR3B_URL}?from=${from}&to=${to}&format=${format}`,
         {
           headers: { Authorization: `Bearer ${token}` },
           responseType: 'blob',
-        },
+        }
       );
       const blob = new Blob([res.data], { type: format === 'csv' ? 'text/csv' : 'application/json' });
       const url = URL.createObjectURL(blob);

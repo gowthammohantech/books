@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import DateInput from "@components/admin/DateInput";
 import Modal from "@components/admin/Modal";
 import SmartDropdown from "@components/admin/SmartDropdown";
@@ -8,7 +9,7 @@ import { useDebounce } from "@hooks/useDebounce";
 import type { OptionType } from "@models/common";
 import type { InvoicePaymentDetails, InvoicePaymentFormData } from "@models/invoice-payment";
 import type { RootState } from "@store/index";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -75,7 +76,7 @@ const InvoicePaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, inv
     useEffect(() => {
         const fetchBankAccounts = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -108,10 +109,8 @@ const InvoicePaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, inv
         }
         let cancelled = false;
         setIsLoadingCredit(true);
-        axios
-            .get(`${Constants.API_BASE_URL}/admin/contacts/${invoiceItem.contactId}/summary`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+        api
+            .get(`${Constants.API_BASE_URL}/admin/contacts/${invoiceItem.contactId}/summary`)
             .then((response) => {
                 if (cancelled) return;
                 const balance = Number(response.data?.data?.accountCreditBalance ?? 0);
@@ -232,7 +231,7 @@ const InvoicePaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, inv
         };
         try {
             setIsSaving(true);
-            const response = await axios.post(Constants.CREATE_INVOICE_PAYMENT_URL, payload, {
+            const response = await api.post(Constants.CREATE_INVOICE_PAYMENT_URL, payload, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.data) {

@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import React, { useEffect, useState } from "react";
 import { Eye, EyeOff, User, Mail, Phone, Lock, Building2, Loader2Icon } from "lucide-react";
 import type { RegisterFormData } from "@models/register";
-import axios from "axios";
+
 import Constants from "@constants/api";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -50,7 +51,7 @@ const AdminRegister: React.FC = () => {
 
     useEffect(() => {
         let cancelled = false;
-        axios
+        api
             .get(Constants.APP_VERSION_URL)
             .then((response) => {
                 if (cancelled) return;

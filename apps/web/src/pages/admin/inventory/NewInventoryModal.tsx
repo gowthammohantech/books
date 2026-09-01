@@ -1,10 +1,11 @@
+import api from '@lib/apiClient';
 import Modal from "@components/admin/Modal";
 import SearchableDropdown from "@components/admin/SearchableDropdown";
 import SubmitButton from "@components/admin/SubmitButton";
 import Constants from "@constants/api";
 import { useDebounce } from "@hooks/useDebounce";
 import type { RootState } from "@store/index";
-import axios from "axios";
+
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
@@ -50,7 +51,7 @@ const NewInventoryModal: React.FC<InventoryModalProps> = ({ isOpen, onClose, onS
     useEffect(() => {
         const fetchProductsByQuery = async () => {
             try {
-                const response = await axios.get(`${Constants.FETCH_PRODUCTS_WITH_SEARCH_URL}?search=${debouncedSearchTerm}`, {
+                const response = await api.get(`${Constants.FETCH_PRODUCTS_WITH_SEARCH_URL}?search=${debouncedSearchTerm}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 setProducts(response.data.data);
@@ -84,7 +85,7 @@ const NewInventoryModal: React.FC<InventoryModalProps> = ({ isOpen, onClose, onS
                 productId: selectedProduct?.id || '',
                 type: 'stock_in',
             };
-            await axios.post(Constants.UPDATE_INVENTORY_URL, payload, {
+            await api.post(Constants.UPDATE_INVENTORY_URL, payload, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             toast.success('Inventory created successfully');

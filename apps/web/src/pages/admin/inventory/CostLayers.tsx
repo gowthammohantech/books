@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import Constants from "../../../constants/api";
-import axios from "axios";
+
 import Table from "../../../components/admin/Table";
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
@@ -40,7 +41,7 @@ const CostLayers: React.FC = () => {
     const fetchProducts = async () => {
         try {
             setIsLoadingProducts(true);
-            const response = await axios.get(Constants.FETCH_PRODUCTS_URL, {
+            const response = await api.get(Constants.FETCH_PRODUCTS_URL, {
                 params: { limit: 500 },
                 headers: authHeaders,
             });
@@ -59,7 +60,7 @@ const CostLayers: React.FC = () => {
         try {
             setIsLoadingLayers(true);
             setLayers([]);
-            const response = await axios.get(Constants.FETCH_COST_LAYERS_URL, {
+            const response = await api.get(Constants.FETCH_COST_LAYERS_URL, {
                 params: { productId },
                 headers: authHeaders,
             });

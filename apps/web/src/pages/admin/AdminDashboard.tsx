@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import Constants from '@constants/api';
 import useDateFormatter from '@hooks/useDateFormatter';
 import type { RootState } from '@store/index';
-import axios from 'axios';
+
 import { Calendar, Clock, Users, FileText, ShoppingCart, Truck, Receipt, LayoutGrid, ArrowRight, User, Package, BarChart2, BadgeDollarSign, CreditCard, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
@@ -135,7 +136,7 @@ const DashboardPage: React.FC = () => {
     const fetchDashboardData = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get<DashboardDataResponse>(Constants.GET_DASHBOARD_DATA_URL, {
+            const response = await api.get<DashboardDataResponse>(Constants.GET_DASHBOARD_DATA_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data) {

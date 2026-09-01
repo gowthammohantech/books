@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from '@lib/apiClient';
 
 /**
  * Resolves a customer-facing public share URL for an invoice or quotation,
@@ -29,10 +29,9 @@ export async function resolvePublicDocumentLink(opts: {
     let publicToken = opts.existingEnabled ? opts.existingToken ?? null : null;
     if (!publicToken) {
         try {
-            const res = await axios.post(
+            const res = await api.post(
                 `${opts.adminBaseUrl}/${opts.documentId}/enable-public-link`,
-                {},
-                { headers: { Authorization: `Bearer ${opts.authToken}` } },
+                {}
             );
             publicToken = res.data?.data?.publicViewToken ?? null;
         } catch (error) {

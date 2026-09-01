@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
@@ -124,7 +125,7 @@ const MyTimesheet: React.FC = () => {
 
     const days = useMemo(
         () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
-        [weekStart],
+        [weekStart]
     );
     const dayISOs = useMemo(() => days.map(toISODate), [days]);
 
@@ -162,7 +163,7 @@ const MyTimesheet: React.FC = () => {
             try {
                 setLoading(true);
                 setSaveState('idle');
-                const res = await axios.get(Constants.TIMESHEET_WEEK_URL, {
+                const res = await api.get(Constants.TIMESHEET_WEEK_URL, {
                     params: { employeeUserId, weekStart: toISODate(monday) },
                     headers: { Authorization: `Bearer ${token}` },
                 });
@@ -177,15 +178,13 @@ const MyTimesheet: React.FC = () => {
                 setLoading(false);
             }
         },
-        [employeeUserId, token],
+        [employeeUserId, token]
     );
 
     // ── Fetch available projects (not yet a member of) ───────────────────────────
     const fetchAvailableProjects = useCallback(async () => {
         try {
-            const res = await axios.get(Constants.TIMESHEET_AVAILABLE_PROJECTS_URL, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const res = await api.get(Constants.TIMESHEET_AVAILABLE_PROJECTS_URL);
             if (res.data.success) {
                 setAvailableProjects(res.data.data?.projects ?? []);
             }
@@ -200,10 +199,9 @@ const MyTimesheet: React.FC = () => {
             if (!projectId) return;
             try {
                 setJoining(true);
-                const res = await axios.post(
+                const res = await api.post(
                     Constants.TIMESHEET_JOIN_PROJECT_URL,
-                    { projectId },
-                    { headers: { Authorization: `Bearer ${token}` } },
+                    { projectId }
                 );
                 if (res.data.success) {
                     toast.success('Project added to your timesheet.');
@@ -218,7 +216,7 @@ const MyTimesheet: React.FC = () => {
                 setJoining(false);
             }
         },
-        [token, weekStart, fetchWeek, fetchAvailableProjects],
+        [token, weekStart, fetchWeek, fetchAvailableProjects]
     );
 
     // ── Leave a project (self-leave): remove the row from the timesheet ──────────
@@ -227,14 +225,13 @@ const MyTimesheet: React.FC = () => {
         async (projectId: string, projectName: string) => {
             if (!projectId) return;
             const ok = window.confirm(
-                `Remove "${projectName}" from your timesheet? This clears this week's unsaved hours for it; submitted history is kept. You can re-add it any time with "+ Add project".`,
+                `Remove "${projectName}" from your timesheet? This clears this week's unsaved hours for it; submitted history is kept. You can re-add it any time with "+ Add project".`
             );
             if (!ok) return;
             try {
                 setLeavingProjectId(projectId);
-                const res = await axios.delete(
-                    Constants.TIMESHEET_LEAVE_PROJECT_URL(projectId),
-                    { headers: { Authorization: `Bearer ${token}` } },
+                const res = await api.delete(
+                    Constants.TIMESHEET_LEAVE_PROJECT_URL(projectId)
                 );
                 if (res.data.success) {
                     toast.success('Project removed from your timesheet.');
@@ -249,7 +246,7 @@ const MyTimesheet: React.FC = () => {
                 setLeavingProjectId(null);
             }
         },
-        [token, weekStart, fetchWeek, fetchAvailableProjects],
+        [token, weekStart, fetchWeek, fetchAvailableProjects]
     );
 
     useEffect(() => {
@@ -288,10 +285,9 @@ const MyTimesheet: React.FC = () => {
 
         try {
             setSaveState('saving');
-            const res = await axios.put(
+            const res = await api.put(
                 Constants.TIMESHEET_ENTRIES_URL(week.timesheet.id),
-                { entries },
-                { headers: { Authorization: `Bearer ${token}` } },
+                { entries }
             );
             if (res.data.success) {
                 setSaveState('saved');
@@ -344,10 +340,9 @@ const MyTimesheet: React.FC = () => {
                 saveTimer.current = null;
             }
             await persist();
-            const res = await axios.post(
+            const res = await api.post(
                 Constants.TIMESHEET_SUBMIT_URL(week.timesheet.id),
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             if (res.data.success) {
                 toast.success(res.data.message ?? 'Timesheet submitted.');
@@ -643,7 +638,7 @@ const MyTimesheet: React.FC = () => {
                                                             type="button"
                                                             onClick={() =>
                                                                 setOpenNoteKey((k) =>
-                                                                    k === key ? null : key,
+                                                                    k === key ? null : key
                                                                 )
                                                             }
                                                             title={cell.note || 'Add note'}

@@ -1,15 +1,14 @@
+import api from '@lib/apiClient';
 import Modal from "@components/admin/Modal";
 import SubmitButton from "@components/admin/SubmitButton";
 import { Button, FormField, Select, fieldControlClasses } from "@components/ui";
 import DateInput from "@components/admin/DateInput";
 import { ymdStringToDate, dateToYmdString } from "@utils/converters";
 import Constants from "@constants/api";
-import type { RootState } from "@store/index";
 import type { BankAccount } from "@models/bank-account";
 import { useCurrencies } from "@hooks/useCurrencies";
-import axios, { AxiosError } from "axios";
+import { AxiosError } from 'axios';
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import { toast } from "sonner";
 
 interface AdjustBalanceModalProps {
@@ -32,7 +31,6 @@ const TYPE_OPTIONS: { value: AdjustType; label: string }[] = [
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
 const AdjustBalanceModal: React.FC<AdjustBalanceModalProps> = ({ isOpen, onClose, onSuccess, bankAccount }) => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const { formatMoney, defaultCurrencyCode } = useCurrencies();
     const [isSaving, setIsSaving] = useState(false);
 
@@ -68,7 +66,7 @@ const AdjustBalanceModal: React.FC<AdjustBalanceModalProps> = ({ isOpen, onClose
         }
         try {
             setIsSaving(true);
-            await axios.post(
+            await api.post(
                 Constants.CREATE_BANK_TRANSACTION_URL,
                 {
                     bankAccountId: bankAccount.id,
@@ -76,8 +74,7 @@ const AdjustBalanceModal: React.FC<AdjustBalanceModalProps> = ({ isOpen, onClose
                     type: form.type,
                     amount: Number(form.amount),
                     remarks: form.remarks.trim(),
-                },
-                { headers: { Authorization: `Bearer ${token}` } },
+                }
             );
             toast.success("Balance adjusted successfully");
             onSuccess?.();

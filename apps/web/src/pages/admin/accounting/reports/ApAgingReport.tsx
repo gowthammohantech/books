@@ -1,11 +1,10 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
+
 import { toast } from 'sonner';
 import { Printer, RotateCw } from 'lucide-react';
 
 import Constants from '@constants/api';
-import type { RootState } from '@store/index';
 import useDateFormatter from '@hooks/useDateFormatter';
 import DrillLink from '@components/admin/DrillLink';
 import NoRecords from '@components/admin/NoRecords';
@@ -58,7 +57,6 @@ const BUCKET_LABELS: Record<keyof AgingBuckets, string> = {
 };
 
 export default function ApAgingReport() {
-  const token = useSelector((s: RootState) => s.auth.token);
   const { formatDate } = useDateFormatter();
   const today = isoDate(new Date());
   const [asOf, setAsOf] = useState(today);
@@ -68,9 +66,7 @@ export default function ApAgingReport() {
   async function load() {
     setLoading(true);
     try {
-      const r = await axios.get(`${Constants.FETCH_AP_AGING_URL}?asOf=${asOf}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const r = await api.get(`${Constants.FETCH_AP_AGING_URL}?asOf=${asOf}`);
       setData(r.data?.data ?? null);
     } catch {
       toast.error('Failed to load AP Aging report');

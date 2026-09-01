@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
+
 import { Printer, Download, RotateCw } from 'lucide-react';
 
 import Constants from '@constants/api';
@@ -74,9 +75,7 @@ export default function GSTR1Report() {
     setLoading(true);
     setError(null);
     try {
-      const r = await axios.get(`${Constants.GET_GSTR1_URL}?from=${from}&to=${to}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const r = await api.get(`${Constants.GET_GSTR1_URL}?from=${from}&to=${to}`);
       setData(r.data?.data ?? null);
     } catch {
       setError('Failed to load GSTR-1 report');
@@ -87,12 +86,12 @@ export default function GSTR1Report() {
 
   async function download(format: 'json' | 'csv') {
     try {
-      const res = await axios.get(
+      const res = await api.get(
         `${Constants.EXPORT_GSTR1_URL}?from=${from}&to=${to}&format=${format}`,
         {
           headers: { Authorization: `Bearer ${token}` },
           responseType: 'blob',
-        },
+        }
       );
       const blob = new Blob([res.data], { type: format === 'csv' ? 'text/csv' : 'application/json' });
       const url = URL.createObjectURL(blob);

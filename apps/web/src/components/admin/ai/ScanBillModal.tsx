@@ -9,6 +9,7 @@
  * surfaced as a whole-payload value today) shows a yellow banner. The
  * line-item table is fully editable; the totals recompute on edit.
  */
+import api from '@lib/apiClient';
 import { useMemo, useState, type ChangeEvent, type DragEvent, type FC } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
@@ -147,7 +148,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
     try {
       const form = new FormData();
       form.append('bill', file);
-      const res = await axios.post(Constants.AI_EXTRACT_BILL_URL, form, {
+      const res = await api.post(Constants.AI_EXTRACT_BILL_URL, form, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
@@ -191,10 +192,9 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
           phone: supplierPhone.trim() || undefined,
         };
       }
-      const res = await axios.post(
+      const res = await api.post(
         `${Constants.AI_EXTRACT_BILL_URL}/${jobId}/confirm`,
-        body,
-        { headers: { Authorization: `Bearer ${token}` } },
+        body
       );
       const purchaseId = res.data?.data?.purchaseId;
       toast.success('Purchase created from bill.');

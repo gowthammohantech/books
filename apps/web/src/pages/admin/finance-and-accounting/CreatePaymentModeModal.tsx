@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import Modal from "@components/admin/Modal";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import Constants from "@constants/api";
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
@@ -35,7 +36,7 @@ const CreatePaymentModeModal: React.FC<CreatePaymentModeModalProps> = ({ isOpen,
         }
         try {
             setIsSubmitting(true);
-            const response = await axios.post(
+            const response = await api.post(
                 Constants.CREATE_PAYMENT_MODE_URL,
                 { name: name.trim() },
                 { headers: { 'Authorization': `Bearer ${token}` } }

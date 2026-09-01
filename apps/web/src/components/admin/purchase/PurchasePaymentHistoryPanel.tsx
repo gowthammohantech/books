@@ -1,12 +1,11 @@
+import api from '@lib/apiClient';
 import { useState } from 'react';
-import axios from 'axios';
-import { useSelector } from 'react-redux';
+
 import { toast } from 'sonner';
 import Modal from '@components/admin/Modal';
 import { useSupplierPayments } from '@hooks/useSupplierPayments';
 import type { SupplierPaymentRow } from '@hooks/useSupplierPayments';
 import useDateFormatter from '@hooks/useDateFormatter';
-import type { RootState } from '@store/index';
 import Constants from '@constants/api';
 import { Button, Badge, FormField, fieldControlClasses } from '@components/ui';
 
@@ -99,17 +98,15 @@ const VoidDialog: React.FC<VoidDialogProps> = ({ payment, onConfirm, onClose }) 
 // ---- Main panel ------------------------------------------------------------
 const PurchasePaymentHistoryPanel: React.FC<PurchasePaymentHistoryPanelProps> = ({ purchaseId, onChanged }) => {
     const { formatDate } = useDateFormatter();
-    const { token } = useSelector((s: RootState) => s.auth);
     const { payments, loading, refetch } = useSupplierPayments(purchaseId);
     const [voidTarget, setVoidTarget] = useState<SupplierPaymentRow | null>(null);
 
     const handleVoidConfirm = async (voidReason: string) => {
         if (!voidTarget) return;
         try {
-            await axios.post(
+            await api.post(
                 `${Constants.VOID_SUPPLIER_PAYMENT_URL}/${voidTarget.id}/void`,
-                { reason: voidReason },
-                { headers: { Authorization: `Bearer ${token}` } },
+                { reason: voidReason }
             );
             toast.success('Payment voided successfully.');
             setVoidTarget(null);
@@ -146,7 +143,7 @@ const PurchasePaymentHistoryPanel: React.FC<PurchasePaymentHistoryPanelProps> = 
                                         >
                                             {h}
                                         </th>
-                                    ),
+                                    )
                                 )}
                             </tr>
                         </thead>

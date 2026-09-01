@@ -6,6 +6,7 @@
  * tool calls inline as subtle "🔧 …" lines, and persists/loads sessions
  * through the chat-session API. Empty state offers three suggested prompts.
  */
+import api from '@lib/apiClient';
 import {
   useCallback,
   useEffect,
@@ -15,7 +16,7 @@ import {
   type FC,
   type KeyboardEvent,
 } from 'react';
-import axios from 'axios';
+
 import { useSelector } from 'react-redux';
 import ReactMarkdown from 'react-markdown';
 import {
@@ -87,7 +88,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
   const refreshSessions = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await axios.get(`${Constants.AI_CHAT_SESSIONS_URL}?limit=30`, {
+      const res = await api.get(`${Constants.AI_CHAT_SESSIONS_URL}?limit=30`, {
         headers: authHeaders,
       });
       setSessions(res.data?.data?.sessions ?? []);
@@ -118,7 +119,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
       if (!token) return;
       setHistoryOpen(false);
       try {
-        const res = await axios.get(`${Constants.AI_CHAT_SESSIONS_URL}/${id}`, {
+        const res = await api.get(`${Constants.AI_CHAT_SESSIONS_URL}/${id}`, {
           headers: authHeaders,
         });
         const s = res.data?.data?.session;
@@ -198,7 +199,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
     if (!next || !sessionId || next === title) return;
     setTitle(next);
     try {
-      await axios.patch(
+      await api.patch(
         `${Constants.AI_CHAT_SESSIONS_URL}/${sessionId}`,
         { title: next },
         { headers: authHeaders },
@@ -212,7 +213,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
   const deleteSession = useCallback(
     async (id: string) => {
       try {
-        await axios.delete(`${Constants.AI_CHAT_SESSIONS_URL}/${id}`, { headers: authHeaders });
+        await api.delete(`${Constants.AI_CHAT_SESSIONS_URL}/${id}`, { headers: authHeaders });
       } catch {
         /* ignore */
       }

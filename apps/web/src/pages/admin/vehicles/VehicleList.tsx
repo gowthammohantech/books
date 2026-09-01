@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { CirclePlusIcon, Edit, Trash2Icon } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Table from "@components/admin/Table";
@@ -6,7 +7,7 @@ import type { RootState } from "@store/index";
 import Constants from "@constants/api";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import axios from "axios";
+
 import TableRow from "@components/admin/TableRow";
 import PaginationWrapper from "@components/admin/PaginationWrapper";
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
@@ -99,7 +100,7 @@ const VehicleList: React.FC = () => {
             if (statusValue && statusValue !== 'all') {
                 params.status = statusValue;
             }
-            const response = await axios.get(Constants.GET_VEHICLES_FOR_LIST_URL, {
+            const response = await api.get(Constants.GET_VEHICLES_FOR_LIST_URL, {
                 params,
                 headers: { 'Authorization': `Bearer ${token}` },
             });
@@ -138,7 +139,7 @@ const VehicleList: React.FC = () => {
         if (!deleteItem) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_VEHICLE_URL}/${deleteItem.id}`, {
+            await api.delete(`${Constants.DELETE_VEHICLE_URL}/${deleteItem.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
             toast.success("Vehicle deleted successfully.");

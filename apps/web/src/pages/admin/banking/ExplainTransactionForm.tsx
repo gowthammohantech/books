@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
@@ -90,7 +91,7 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
     const [categoryId, setCategoryId] = useState<string>(prefill.categoryId);
     const TAX_VALUES: string[] = TAX_OPTIONS.map((o) => o.value);
     const [taxTreatment, setTaxTreatment] = useState<TaxTreatment>(
-        (TAX_VALUES.includes(prefill.taxTreatment) ? prefill.taxTreatment : 'AUTO') as TaxTreatment,
+        (TAX_VALUES.includes(prefill.taxTreatment) ? prefill.taxTreatment : 'AUTO') as TaxTreatment
     );
     const [description, setDescription] = useState<string>(prefill.description);
     const [assetType, setAssetType] = useState<string>('');
@@ -109,28 +110,28 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
     const [invoices, setInvoices] = useState<DropdownItem[]>([]);
     const [invoiceSearch, setInvoiceSearch] = useState('');
     const [selectedInvoice, setSelectedInvoice] = useState<DropdownItem | null>(
-        prefill.linkedRelatedType === 'INVOICE_PAYMENT' ? prefill.linkedDoc : null,
+        prefill.linkedRelatedType === 'INVOICE_PAYMENT' ? prefill.linkedDoc : null
     );
 
     // Bill / purchase picker
     const [purchases, setPurchases] = useState<DropdownItem[]>([]);
     const [purchaseSearch, setPurchaseSearch] = useState('');
     const [selectedPurchase, setSelectedPurchase] = useState<DropdownItem | null>(
-        prefill.linkedRelatedType === 'SUPPLIER_PAYMENT' ? prefill.linkedDoc : null,
+        prefill.linkedRelatedType === 'SUPPLIER_PAYMENT' ? prefill.linkedDoc : null
     );
 
     // Credit note picker (for credit_note_refund)
     const [creditNotes, setCreditNotes] = useState<DropdownItem[]>([]);
     const [creditNoteSearch, setCreditNoteSearch] = useState('');
     const [selectedCreditNote, setSelectedCreditNote] = useState<DropdownItem | null>(
-        txn.transactionTypeKey === 'credit_note_refund' ? prefill.linkedDoc : null,
+        txn.transactionTypeKey === 'credit_note_refund' ? prefill.linkedDoc : null
     );
 
     // Fixed-asset picker (for capital_asset_disposal)
     const [assets, setAssets] = useState<DropdownItem[]>([]);
     const [assetSearch, setAssetSearch] = useState('');
     const [selectedAsset, setSelectedAsset] = useState<DropdownItem | null>(
-        txn.transactionTypeKey === 'capital_asset_disposal' ? prefill.linkedDoc : null,
+        txn.transactionTypeKey === 'capital_asset_disposal' ? prefill.linkedDoc : null
     );
 
     // Reason (for money_received_from_user / money_paid_to_user)
@@ -147,7 +148,7 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
         try {
             setUsersLoading(true);
             // /admin/user/type/1 = admin/staff users (user_type = 1)
-            const res = await axios.get(`${Constants.FETCH_USERS_URL}/1`, {
+            const res = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
                 params: { search, limit: 50, page: 1 },
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -164,10 +165,9 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
         if (!token) return;
         try {
             // POST /admin/invoices-minimal with { search } — same pattern as credit-note search
-            const res = await axios.post(
+            const res = await api.post(
                 Constants.SEARCH_INVOICES_FOR_CREDIT_NOTE_URL,
-                { search },
-                { headers: { Authorization: `Bearer ${token}` } },
+                { search }
             );
             const data = (res.data?.data ?? []) as Array<{ id: string; invoiceNumber: string }>;
             setInvoices(data.map((inv) => ({ id: inv.id, name: inv.invoiceNumber })));
@@ -180,7 +180,7 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
         if (!token) return;
         try {
             // GET /admin/purchases-minimal (same endpoint used by debit-note)
-            const res = await axios.get(Constants.FETCH_ALL_PURCHASE_FOR_DEBIT_NOTE_URL, {
+            const res = await api.get(Constants.FETCH_ALL_PURCHASE_FOR_DEBIT_NOTE_URL, {
                 params: { search, limit: 50, page: 1 },
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -194,7 +194,7 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
     const fetchCreditNotes = useCallback(async (search: string) => {
         if (!token) return;
         try {
-            const res = await axios.get(Constants.CREDIT_NOTE_LIST_URL, {
+            const res = await api.get(Constants.CREDIT_NOTE_LIST_URL, {
                 params: { search, limit: 50, page: 1 },
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -213,7 +213,7 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
     const fetchAssets = useCallback(async (search: string) => {
         if (!token) return;
         try {
-            const res = await axios.get(Constants.SEARCH_FIXED_ASSETS_URL, {
+            const res = await api.get(Constants.SEARCH_FIXED_ASSETS_URL, {
                 params: { q: search },
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -335,10 +335,9 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
 
         try {
             setIsSubmitting(true);
-            await axios.post(
+            await api.post(
                 `${Constants.EXPLAIN_BANK_TXN_URL}/${txn.id}/explain`,
-                body,
-                { headers: { Authorization: `Bearer ${token}` } },
+                body
             );
             toast.success('Saved.');
             onDone();
@@ -355,10 +354,9 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
     const handleUnexplain = async () => {
         try {
             setIsUnexplaining(true);
-            await axios.post(
+            await api.post(
                 `${Constants.EXPLAIN_BANK_TXN_URL}/${txn.id}/unexplain`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             toast.success('Transaction un-explained.');
             // Keep the row expanded so the form re-renders with the retained

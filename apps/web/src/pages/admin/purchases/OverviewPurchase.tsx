@@ -1,10 +1,11 @@
+import api from '@lib/apiClient';
 import { numberToWords } from '@utils/converters';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Constants from '@constants/api';
-import axios from 'axios';
+
 import type { PurchaseShape } from '@models/purchase';
 import useDateFormatter from '@hooks/useDateFormatter';
 import LoaderSpinner from '@components/admin/LoaderSpinner';
@@ -35,7 +36,7 @@ const OverviewPurchase: React.FC = () => {
     const fetchPurchase = useCallback(async (id: string) => {
         try {
             setIsLoading(true);
-            const response = await axios.get(`${Constants.GET_PURCHASE_DETAILS_URL}/${id}`, {
+            const response = await api.get(`${Constants.GET_PURCHASE_DETAILS_URL}/${id}`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
             setPurchaseData(response.data.data);

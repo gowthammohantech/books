@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import SearchableDropdown from '@components/admin/SearchableDropdown';
 import SubmitButton from '@components/admin/SubmitButton';
 import Constants from '@constants/api';
@@ -6,7 +7,7 @@ import { fetchSystemSettings } from '@store/systemSettingsSlice';
 import { hasPermission } from '@utils/hasPermission';
 import { Button, Card, FormField } from '@components/ui';
 import { PageHeader } from '@/context/PageHeaderContext';
-import axios from 'axios';
+
 import { Settings2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -70,7 +71,7 @@ const LocalizationSettings: React.FC = () => {
     const fetchLocalizations = async () => {
         setIsLoading(true);
         try {
-            const response = await axios.get(Constants.FETCH_LOCALIZATION_DROPDOWNS_URL, {
+            const response = await api.get(Constants.FETCH_LOCALIZATION_DROPDOWNS_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -116,7 +117,7 @@ const LocalizationSettings: React.FC = () => {
 
         setIsSaving(true);
         try {
-            await axios.post(Constants.UPDATE_LOCALIZATION_URL, {
+            await api.post(Constants.UPDATE_LOCALIZATION_URL, {
                 timezoneId: selectedTimeZone.id,
                 startWeek: selectedWeekDay.id,
                 dateFormatId: selectedDateFormat.id,

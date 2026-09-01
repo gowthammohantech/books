@@ -1,10 +1,9 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { toast } from 'sonner';
 
 import Constants from '@constants/api';
-import type { RootState } from '@store/index';
 import { Button, Card, FormField, Select, fieldControlClasses } from '@components/ui';
 import { PageHeader } from '@/context/PageHeaderContext';
 
@@ -24,7 +23,6 @@ interface FormState {
 const DEFAULT_TEMPLATE = 'Hi {customer}, your invoice {invoiceNumber} for {amount} is ready. {link}';
 
 export default function MessagingSettings() {
-  const token = useSelector((s: RootState) => s.auth.token);
   const [form, setForm] = useState<FormState>({
     whatsappEnabled: false,
     whatsappProvider: '',
@@ -40,7 +38,7 @@ export default function MessagingSettings() {
 
   async function load() {
     try {
-      const r = await axios.get(Constants.GET_MESSAGING_CONFIG_URL, { headers: { Authorization: `Bearer ${token}` } });
+      const r = await api.get(Constants.GET_MESSAGING_CONFIG_URL);
       const cfg = r.data?.data?.config;
       if (cfg) {
         setForm((prev) => ({
@@ -80,7 +78,7 @@ export default function MessagingSettings() {
         whatsappConfig,
         defaultTemplate: form.defaultTemplate,
       };
-      await axios.put(Constants.UPSERT_MESSAGING_CONFIG_URL, body, { headers: { Authorization: `Bearer ${token}` } });
+      await api.put(Constants.UPSERT_MESSAGING_CONFIG_URL, body);
       toast.success('Messaging config saved');
       load();
     } catch (e) {

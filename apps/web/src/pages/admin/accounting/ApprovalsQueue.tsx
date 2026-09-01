@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import axios from "axios";
@@ -158,7 +159,7 @@ const ApprovalsQueue: React.FC = () => {
     const fetchApprovals = async () => {
         try {
             setIsLoading(true);
-            const resp = await axios.get(Constants.FETCH_PENDING_APPROVALS_URL, { headers: authHeaders });
+            const resp = await api.get(Constants.FETCH_PENDING_APPROVALS_URL, { headers: authHeaders });
             const data = resp.data?.data ?? {};
             setApprovals({
                 invoices: data.invoices ?? [],
@@ -181,7 +182,7 @@ const ApprovalsQueue: React.FC = () => {
     const handleApprove = async (type: DocType, doc: PendingDoc) => {
         try {
             setActionLoadingId(doc.id);
-            await axios.post(`${baseUrl(type)}/${doc.id}/approve`, {}, { headers: authHeaders });
+            await api.post(`${baseUrl(type)}/${doc.id}/approve`, {}, { headers: authHeaders });
             toast.success(`${docLabel(type)} approved successfully.`);
             await fetchApprovals();
         } catch (err) {
@@ -207,7 +208,7 @@ const ApprovalsQueue: React.FC = () => {
         const { type, doc } = rejectModal;
         try {
             setIsRejecting(true);
-            await axios.post(`${baseUrl(type)}/${doc.id}/reject`, { reason: rejectReason }, { headers: authHeaders });
+            await api.post(`${baseUrl(type)}/${doc.id}/reject`, { reason: rejectReason }, { headers: authHeaders });
             toast.success(`${docLabel(type)} rejected.`);
             closeRejectModal();
             await fetchApprovals();

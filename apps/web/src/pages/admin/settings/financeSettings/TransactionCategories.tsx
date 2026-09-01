@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import axios, { type AxiosError } from 'axios';
+import type { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { CirclePlusIcon, Edit, Trash2Icon } from 'lucide-react';
 
@@ -104,7 +105,7 @@ const TransactionCategoriesPage: React.FC = () => {
     useEffect(() => {
         if (!token) return;
         setAccountsLoading(true);
-        axios
+        api
             .get(Constants.GET_ACCOUNTS_URL, {
                 headers: { Authorization: `Bearer ${token}` },
                 params: { limit: 500 },
@@ -122,7 +123,7 @@ const TransactionCategoriesPage: React.FC = () => {
 
     useEffect(() => {
         if (!token) return;
-        axios
+        api
             .get(Constants.FETCH_TAX_RATE_LIST_URL, {
                 headers: { Authorization: `Bearer ${token}` },
                 params: { limit: 500 },
@@ -196,14 +197,10 @@ const TransactionCategoriesPage: React.FC = () => {
         try {
             setSubmitting(true);
             if (editingId) {
-                await axios.put(`${Constants.TRANSACTION_CATEGORIES_URL}/${editingId}`, payload, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                await api.put(`${Constants.TRANSACTION_CATEGORIES_URL}/${editingId}`, payload);
                 toast.success('Category updated');
             } else {
-                await axios.post(Constants.TRANSACTION_CATEGORIES_URL, payload, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                await api.post(Constants.TRANSACTION_CATEGORIES_URL, payload);
                 toast.success('Category created');
             }
             closeModal();
@@ -228,10 +225,9 @@ const TransactionCategoriesPage: React.FC = () => {
 
     const handleToggleStatus = async (cat: TransactionCategory) => {
         try {
-            await axios.patch(
+            await api.patch(
                 `${Constants.TRANSACTION_CATEGORIES_URL}/${cat.id}/status`,
-                { status: !cat.status },
-                { headers: { Authorization: `Bearer ${token}` } }
+                { status: !cat.status }
             );
             toast.success(cat.status ? 'Category disabled' : 'Category enabled');
             refetch();
@@ -244,9 +240,7 @@ const TransactionCategoriesPage: React.FC = () => {
         if (!deleteTarget) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.TRANSACTION_CATEGORIES_URL}/${deleteTarget.id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.delete(`${Constants.TRANSACTION_CATEGORIES_URL}/${deleteTarget.id}`);
             toast.success('Category deleted');
             setDeleteTarget(null);
             refetch();

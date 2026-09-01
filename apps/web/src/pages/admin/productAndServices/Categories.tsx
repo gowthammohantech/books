@@ -1,8 +1,9 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { FC, FormEvent } from "react";
 import Constants from "../../../constants/api";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import Table from "../../../components/admin/Table";
 import PaginationWrapper from "../../../components/admin/PaginationWrapper";
 import { Edit, Trash2Icon, CirclePlusIcon } from "lucide-react";
@@ -86,7 +87,7 @@ const CategoryList: FC = () => {
     const fetchCategories = async (search?: string, limit?: number, page?: number) => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.FETCH_CATEGORY_LIST_URL, {
+            const response = await api.get(Constants.FETCH_CATEGORY_LIST_URL, {
                 params: { search, limit, page },
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -122,7 +123,7 @@ const CategoryList: FC = () => {
     const updateStatus = async (categoryItem: Category) => {
         try {
             const updatedCategory = { ...categoryItem, status: !categoryItem.status };
-            await axios.put(`${Constants.UPDATE_CATEGORY_URL}/${categoryItem.id}`, updatedCategory, {
+            await api.put(`${Constants.UPDATE_CATEGORY_URL}/${categoryItem.id}`, updatedCategory, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             toast.success('Status updated successfully');
@@ -143,7 +144,7 @@ const CategoryList: FC = () => {
 
     const handleEditClick = async (categoryItem: Category) => {
         try {
-            const response = await axios.get<any>(`${Constants.GET_CATEGORY_URL}/${categoryItem.id}`, {
+            const response = await api.get<any>(`${Constants.GET_CATEGORY_URL}/${categoryItem.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setCategory(response.data);
@@ -201,7 +202,7 @@ const CategoryList: FC = () => {
 
         try {
             setIsSubmitting(true);
-            await axios[method](url, formData, {
+            await api[method](url, formData, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             toast.success(`Category ${isEditMode ? 'updated' : 'added'} successfully`);
@@ -238,9 +239,7 @@ const CategoryList: FC = () => {
         if (!itemToDelete) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_CATEGORY_URL}/${itemToDelete.id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.delete(`${Constants.DELETE_CATEGORY_URL}/${itemToDelete.id}`);
             toast.success('Category deleted successfully');
             fetchCategories(search, limit, page); // Refetch current page
             setDeleteModalOpen(false);

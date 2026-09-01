@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import axios from 'axios';
+
 import { toast } from 'sonner';
 
 import type { RootState } from '@store/index';
@@ -53,7 +54,7 @@ const DocumentDefaultsPage: React.FC = () => {
     useEffect(() => {
         if (!token) return;
         setSignaturesLoading(true);
-        axios
+        api
             .get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
                 headers: { Authorization: `Bearer ${token}` },
                 params: { limit: 200 },
@@ -89,9 +90,7 @@ const DocumentDefaultsPage: React.FC = () => {
             payload.paymentTermsDays =
                 terms === '' || terms === '0' ? null : Number(terms);
 
-            await axios.put(Constants.UPDATE_DOCUMENT_DEFAULTS_URL, payload, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.put(Constants.UPDATE_DOCUMENT_DEFAULTS_URL, payload);
             toast.success('Document defaults saved');
             refetch();
         } catch {

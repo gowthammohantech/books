@@ -1,5 +1,6 @@
+import api from '@lib/apiClient';
 import { useCallback, useEffect, useState } from "react";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import { Trash2, Plus } from "lucide-react";
@@ -91,7 +92,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
 
     const fetchSettings = useCallback(async () => {
         try {
-            const res = await axios.get(`${Constants.FETCH_PROJECTS_URL}/${projectId}`, { headers: authHeaders });
+            const res = await api.get(`${Constants.FETCH_PROJECTS_URL}/${projectId}`, { headers: authHeaders });
             const p = res.data?.data ?? {};
             setBillingRate(p.billingRate != null ? String(p.billingRate) : "");
             setStartDate(toDate(p.startDate));
@@ -110,7 +111,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
     const fetchMembers = useCallback(async () => {
         try {
             setLoadingMembers(true);
-            const res = await axios.get(Constants.PROJECT_MEMBERS_URL(projectId), { headers: authHeaders });
+            const res = await api.get(Constants.PROJECT_MEMBERS_URL(projectId), { headers: authHeaders });
             setMembers(res.data?.data?.members ?? []);
         } catch (error) {
             toast.error(serverMessage(error, "Failed to load project members."));
@@ -122,7 +123,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
 
     const fetchStaff = useCallback(async () => {
         try {
-            const res = await axios.get(Constants.FETCH_STAFF_FOR_LIST_URL, {
+            const res = await api.get(Constants.FETCH_STAFF_FOR_LIST_URL, {
                 params: { user_type: 3, limit: 200, page: 1 },
                 headers: authHeaders,
             });
@@ -138,7 +139,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
         if (!open) return;
         const handle = setTimeout(async () => {
             try {
-                const res = await axios.get(Constants.GET_CUSTOMERS_WITH_SEARCH_URL, {
+                const res = await api.get(Constants.GET_CUSTOMERS_WITH_SEARCH_URL, {
                     params: { search: customerSearch, limit: 100, page: 1 },
                     headers: authHeaders,
                 });
@@ -172,7 +173,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                 endDate: toDateOnly(endDate),
                 contactId: customer?.id ?? null,
             };
-            await axios.put(Constants.PROJECT_SETTINGS_URL(projectId), payload, { headers: authHeaders });
+            await api.put(Constants.PROJECT_SETTINGS_URL(projectId), payload, { headers: authHeaders });
             toast.success("Project billing settings saved.");
         } catch (error) {
             toast.error(serverMessage(error, "Failed to save billing settings."));
@@ -197,7 +198,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                 role: newRole,
                 billingRate: newRate === "" ? null : Number(newRate),
             };
-            await axios.post(Constants.PROJECT_MEMBERS_URL(projectId), payload, { headers: authHeaders });
+            await api.post(Constants.PROJECT_MEMBERS_URL(projectId), payload, { headers: authHeaders });
             toast.success("Member added.");
             setNewEmployeeId("");
             setNewRole("MEMBER");
@@ -218,7 +219,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                 billingRate: changes.billingRate !== undefined ? changes.billingRate : member.billingRate,
                 isActive: changes.isActive !== undefined ? changes.isActive : member.isActive,
             };
-            await axios.put(Constants.PROJECT_MEMBER_URL(projectId, member.id), payload, { headers: authHeaders });
+            await api.put(Constants.PROJECT_MEMBER_URL(projectId, member.id), payload, { headers: authHeaders });
             setMembers((prev) => prev.map((m) => (m.id === member.id ? { ...m, ...payload } : m)));
         } catch (error) {
             toast.error(serverMessage(error, "Failed to update member."));
@@ -230,7 +231,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
     const removeMember = async (member: ProjectMember) => {
         try {
             setRowBusyId(member.id);
-            await axios.delete(Constants.PROJECT_MEMBER_URL(projectId, member.id), { headers: authHeaders });
+            await api.delete(Constants.PROJECT_MEMBER_URL(projectId, member.id), { headers: authHeaders });
             toast.success("Member removed.");
             setMembers((prev) => prev.filter((m) => m.id !== member.id));
         } catch (error) {

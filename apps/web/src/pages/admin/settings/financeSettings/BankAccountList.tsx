@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import React, { type FC, useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
-import axios, { AxiosError } from "axios";
+import { AxiosError } from 'axios';
 import { toast } from "sonner";
 import { Edit, Trash2Icon, CirclePlusIcon, EyeIcon, RotateCcw, Scale } from "lucide-react";
 import Modal from "@components/admin/Modal";
@@ -76,7 +77,7 @@ const BankAccountList: FC = () => {
     const fetchBankAccounts = async (currentSearch = search, currentLimit = limit, currentPage = page) => {
         try {
             setIsLoading(true);
-            const response = await axios.get(Constants.GET_BANK_ACCOUNTS_URL, {
+            const response = await api.get(Constants.GET_BANK_ACCOUNTS_URL, {
                 params: {
                     search: currentSearch,
                     limit: currentLimit,
@@ -108,9 +109,7 @@ const BankAccountList: FC = () => {
 
     const handleRestore = async (account: BankAccount) => {
         try {
-            await axios.patch(`${Constants.RESTORE_BANK_ACCOUNT_URL}/${account.id}`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.patch(`${Constants.RESTORE_BANK_ACCOUNT_URL}/${account.id}`, {});
             toast.success('Bank account restored successfully');
             fetchBankAccounts();
         } catch (error) {
@@ -161,9 +160,7 @@ const BankAccountList: FC = () => {
         if (!itemToDelete) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_BANK_ACCOUNT_URL}/${itemToDelete.id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`${Constants.DELETE_BANK_ACCOUNT_URL}/${itemToDelete.id}`);
             toast.success('Bank account deleted successfully');
             fetchBankAccounts();
             setShowDeleteModal(false);
@@ -183,7 +180,7 @@ const BankAccountList: FC = () => {
             )
         );
         try {
-            await axios.patch(`${Constants.UPDATE_BANK_ACCOUNT_STATUS_URL}/${id}`, { status: newStatus }, {
+            await api.patch(`${Constants.UPDATE_BANK_ACCOUNT_STATUS_URL}/${id}`, { status: newStatus }, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             toast.success('Status updated successfully');
@@ -284,12 +281,12 @@ const BankAccountList: FC = () => {
         try {
             setIsSaving(true);
             if (isEditMode) {
-                await axios.put(`${Constants.UPDATE_BANK_ACCOUNT_URL}/${formData.id}`, payload, {
+                await api.put(`${Constants.UPDATE_BANK_ACCOUNT_URL}/${formData.id}`, payload, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 toast.success('Bank account updated successfully');
             } else {
-                await axios.post(Constants.CREATE_BANK_ACCOUNT_URL, payload, {
+                await api.post(Constants.CREATE_BANK_ACCOUNT_URL, payload, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 toast.success('Bank account created successfully');

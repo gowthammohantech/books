@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import {
     createContext,
     useCallback,
@@ -8,7 +9,7 @@ import {
     useState,
     type ReactNode,
 } from "react";
-import axios from "axios";
+
 import { useDispatch, useSelector } from "react-redux";
 import Constants from "@constants/api";
 import type { RootState } from "@store/index";
@@ -76,9 +77,7 @@ export const SetupStatusProvider = ({ children }: { children: ReactNode }) => {
             return;
         }
         try {
-            const response = await axios.get(Constants.SESSION_URL, {
-                headers: { Authorization: `Bearer ${authToken}` },
-            });
+            const response = await api.get(Constants.SESSION_URL);
             const data: SessionPayload | undefined = response.data?.data;
             if (!data || typeof data !== "object") {
                 // Answered by something other than the API — a dev server

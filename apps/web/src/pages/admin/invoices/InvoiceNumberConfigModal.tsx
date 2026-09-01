@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import { useState, useEffect } from 'react';
 import Modal from '@components/admin/Modal';
 import CustomCheckbox from '@components/admin/CustomCheckbox';
-import axios from 'axios';
+
 import Constants from '@constants/api';
 import { toast } from "sonner";
 import { useDispatch, useSelector } from 'react-redux';
@@ -100,7 +101,7 @@ const InvoiceNumberConfigModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
             ]
         }
         try {
-            await axios.post(Constants.CONFIGURE_INVOICE_NUMBER_URL, payloadData, {
+            await api.post(Constants.CONFIGURE_INVOICE_NUMBER_URL, payloadData, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 

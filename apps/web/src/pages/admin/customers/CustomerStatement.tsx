@@ -1,11 +1,10 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { Printer, RotateCw } from 'lucide-react';
 
 import Constants from '@constants/api';
-import type { RootState } from '@store/index';
 import { useCurrencies } from '@hooks/useCurrencies';
 import useDateFormatter from '@hooks/useDateFormatter';
 import { PageHeader } from '@/context/PageHeaderContext';
@@ -44,7 +43,6 @@ function isoDate(d: Date): string {
 
 export default function CustomerStatement() {
   const { id } = useParams<{ id: string }>();
-  const token = useSelector((s: RootState) => s.auth.token);
   const { resolveCurrency } = useCurrencies();
   const { formatDate } = useDateFormatter();
 
@@ -62,9 +60,7 @@ export default function CustomerStatement() {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get(`${Constants.GET_CUSTOMER_STATEMENT_URL}/${id}/statement?from=${from}&to=${to}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get(`${Constants.GET_CUSTOMER_STATEMENT_URL}/${id}/statement?from=${from}&to=${to}`);
       setData(res.data?.data ?? null);
     } catch (e) {
       setError(axios.isAxiosError(e) && e.response?.status === 404 ? 'Customer not found' : 'Failed to load statement');

@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import axios from "axios";
@@ -57,7 +58,7 @@ const ChartOfAccountsList: React.FC = () => {
             setIsLoading(true);
             const params: Record<string, string> = {};
             if (filterType) params.accountType = filterType;
-            const resp = await axios.get(Constants.GET_ACCOUNTS_URL, {
+            const resp = await api.get(Constants.GET_ACCOUNTS_URL, {
                 params,
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -79,10 +80,9 @@ const ChartOfAccountsList: React.FC = () => {
         if (isSeeding) return;
         try {
             setIsSeeding(true);
-            const resp = await axios.post(
+            const resp = await api.post(
                 Constants.SEED_DEFAULT_ACCOUNTS_URL,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             toast.success(resp.data?.message ?? "Seeded default chart");
             await fetchAccounts();
@@ -128,16 +128,13 @@ const ChartOfAccountsList: React.FC = () => {
                 description: form.description || null,
             };
             if (editingId) {
-                await axios.put(
+                await api.put(
                     `${Constants.UPDATE_ACCOUNT_URL}/${editingId}`,
-                    payload,
-                    { headers: { Authorization: `Bearer ${token}` } },
+                    payload
                 );
                 toast.success("Account updated");
             } else {
-                await axios.post(Constants.CREATE_ACCOUNT_URL, payload, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                await api.post(Constants.CREATE_ACCOUNT_URL, payload);
                 toast.success("Account created");
             }
             setShowModal(false);
@@ -157,9 +154,7 @@ const ChartOfAccountsList: React.FC = () => {
         if (!deleteItem) return;
         try {
             setIsDeleting(true);
-            await axios.delete(`${Constants.DELETE_ACCOUNT_URL}/${deleteItem.id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            await api.delete(`${Constants.DELETE_ACCOUNT_URL}/${deleteItem.id}`);
             toast.success("Account deleted");
             setDeleteItem(null);
             await fetchAccounts();

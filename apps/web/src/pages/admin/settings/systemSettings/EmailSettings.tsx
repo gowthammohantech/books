@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import Switch from '@components/admin/Switch';
 import { Settings, Send, Check } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
@@ -7,7 +8,7 @@ import Modal from '@components/admin/Modal';
 import type { EmailSettingsFormData } from '@models/email-settings';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
-import axios from 'axios';
+
 import Constants from '@constants/api';
 import { toast } from "sonner";
 import { hasPermission } from '@utils/hasPermission';
@@ -130,10 +131,9 @@ const EmailSettings: React.FC = () => {
         }
         try {
             setIsTesting(true);
-            const res = await axios.post(
+            const res = await api.post(
                 Constants.SEND_TEST_EMAIL_URL,
-                { to: testEmail },
-                { headers: { Authorization: `Bearer ${token}` } },
+                { to: testEmail }
             );
             toast.success(res.data?.message || 'Test email sent.');
         } catch (error: any) {
@@ -146,7 +146,7 @@ const EmailSettings: React.FC = () => {
     };
 
     const fetchConfigurations = async () => {
-        const response = await axios.get(`${Constants.GET_EMAIL_SETTINGS_URL}`, {
+        const response = await api.get(`${Constants.GET_EMAIL_SETTINGS_URL}`, {
             params: { userId: user?.id },
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -332,7 +332,7 @@ const EmailSettings: React.FC = () => {
 
         try {
             setIsSaving(true);
-            await axios.post(Constants.UPDATE_EMAIL_SETTINGS_URL, payload, {
+            await api.post(Constants.UPDATE_EMAIL_SETTINGS_URL, payload, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             toast.success('Email settings updated successfully');
@@ -355,7 +355,7 @@ const EmailSettings: React.FC = () => {
         };
 
         try {
-            await axios.post(Constants.UPDATE_EMAIL_SETTINGS_URL, payload, {
+            await api.post(Constants.UPDATE_EMAIL_SETTINGS_URL, payload, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             toast.success('Email settings updated successfully');

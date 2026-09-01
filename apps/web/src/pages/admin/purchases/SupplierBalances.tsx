@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+
 import { toast } from 'sonner';
 
 import Constants from '@constants/api';
@@ -49,15 +50,13 @@ export default function SupplierBalances() {
 
   const money = useCallback(
     (v: string | number) => formatMoney(Number(v ?? 0), defaultCurrencyCode),
-    [formatMoney, defaultCurrencyCode],
+    [formatMoney, defaultCurrencyCode]
   );
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get(Constants.GET_SUPPLIER_BALANCES_URL, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get(Constants.GET_SUPPLIER_BALANCES_URL);
       setData(res.data?.data ?? null);
     } catch {
       toast.error('Failed to load supplier balances');

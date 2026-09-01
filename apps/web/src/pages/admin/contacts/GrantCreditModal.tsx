@@ -1,8 +1,7 @@
+import api from '@lib/apiClient';
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
+
 import { toast } from 'sonner';
-import type { RootState } from '@store/index';
 import Constants from '@constants/api';
 import Modal from '@components/admin/Modal';
 import SubmitButton from '@components/admin/SubmitButton';
@@ -17,7 +16,6 @@ interface GrantCreditModalProps {
 }
 
 const GrantCreditModal: React.FC<GrantCreditModalProps> = ({ isOpen, onClose, contactId, onSuccess }) => {
-  const { token } = useSelector((state: RootState) => state.auth);
   const [amount, setAmount] = useState<string>('');
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -40,10 +38,9 @@ const GrantCreditModal: React.FC<GrantCreditModalProps> = ({ isOpen, onClose, co
     setError(null);
     try {
       setIsSaving(true);
-      await axios.post(
+      await api.post(
         `${Constants.API_BASE_URL}/admin/contacts/${contactId}/credits`,
-        { amount: parsed, reason: reason.trim() || undefined },
-        { headers: { Authorization: `Bearer ${token}` } },
+        { amount: parsed, reason: reason.trim() || undefined }
       );
       toast.success('Credit granted successfully.');
       setAmount('');

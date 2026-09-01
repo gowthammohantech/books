@@ -1,5 +1,6 @@
+import api from '@lib/apiClient';
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+
 import Cookies from 'js-cookie';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
@@ -18,10 +19,8 @@ export function useInvoiceActivity(invoiceId: string) {
         if (!token || !invoiceId) return;
 
         setLoading(true);
-        axios
-            .get(`${Constants.INVOICE_ACTIVITY_URL}/${invoiceId}/activity`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+        api
+            .get(`${Constants.INVOICE_ACTIVITY_URL}/${invoiceId}/activity`)
             .then((res) => {
                 // Confirmed array key from API: data.items (not logs/activities/data)
                 const inner = res.data?.data ?? {};

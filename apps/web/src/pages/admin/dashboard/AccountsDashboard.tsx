@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import Constants from '@constants/api';
 import useDateFormatter from '@hooks/useDateFormatter';
 import type { RootState } from '@store/index';
-import axios from 'axios';
+
 import { TrendingUp, TrendingDown, Scale, Landmark, ArrowRight, Wallet, Receipt, PiggyBank, CalendarClock, Repeat } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
@@ -61,11 +62,10 @@ const AccountsDashboard: React.FC = () => {
         (async () => {
             try {
                 setIsLoading(true);
-                const h = { headers: { Authorization: `Bearer ${token}` } };
                 const [planRes, plRes, bsRes] = await Promise.all([
-                    axios.get(Constants.GET_ACCOUNTS_PLANNING_URL, h),
-                    axios.get(Constants.GET_PROFIT_LOSS_URL, h),
-                    axios.get(Constants.GET_BALANCE_SHEET_URL, h),
+                    api.get(Constants.GET_ACCOUNTS_PLANNING_URL),
+                    api.get(Constants.GET_PROFIT_LOSS_URL),
+                    api.get(Constants.GET_BALANCE_SHEET_URL),
                 ]);
                 setPlan(planRes.data?.data ?? null);
                 setPl(plRes.data?.data ?? null);

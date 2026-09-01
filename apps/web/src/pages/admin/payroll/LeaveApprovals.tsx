@@ -1,3 +1,4 @@
+import api from '@lib/apiClient';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
@@ -54,7 +55,7 @@ const LeaveApprovals: React.FC = () => {
         async (p: number) => {
             try {
                 setIsLoading(true);
-                const res = await axios.get(Constants.LEAVE_REQUESTS_URL, {
+                const res = await api.get(Constants.LEAVE_REQUESTS_URL, {
                     params: { scope: 'pending', page: p, limit: PAGE_LIMIT },
                     headers: { Authorization: `Bearer ${token}` },
                 });
@@ -71,7 +72,7 @@ const LeaveApprovals: React.FC = () => {
                 setIsLoading(false);
             }
         },
-        [token],
+        [token]
     );
 
     useEffect(() => {
@@ -82,10 +83,9 @@ const LeaveApprovals: React.FC = () => {
     const handleApprove = async (r: LeaveRequest) => {
         try {
             setIsActioning(true);
-            const res = await axios.post(
+            const res = await api.post(
                 Constants.LEAVE_REQUEST_APPROVE_URL(r.id),
-                {},
-                { headers: { Authorization: `Bearer ${token}` } },
+                {}
             );
             if (res.data.success) {
                 toast.success(res.data.message ?? 'Leave request approved.');
@@ -111,10 +111,9 @@ const LeaveApprovals: React.FC = () => {
         }
         try {
             setIsActioning(true);
-            const res = await axios.post(
+            const res = await api.post(
                 Constants.LEAVE_REQUEST_REJECT_URL(rejectingId),
-                { rejectionNote: rejectionNote.trim() },
-                { headers: { Authorization: `Bearer ${token}` } },
+                { rejectionNote: rejectionNote.trim() }
             );
             if (res.data.success) {
                 toast.success(res.data.message ?? 'Leave request rejected.');

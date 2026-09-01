@@ -1,7 +1,8 @@
+import api from '@lib/apiClient';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Edit, PlusCircle } from 'lucide-react';
 import DateInput from '@components/admin/DateInput';
-import axios from 'axios';
+
 import Constants from '@constants/api';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
@@ -167,10 +168,8 @@ const NewDeliveryChallan: React.FC = () => {
     const [taxRateLibrary, setTaxRateLibrary] = useState<TaxRate[]>([]);
     useEffect(() => {
         if (!token) return;
-        axios
-            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
+        api
+            .get(`${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true`)
             .then((r) => {
                 const list = r.data?.data?.taxRates ?? r.data?.data ?? [];
                 setTaxRateLibrary(Array.isArray(list) ? list : []);
@@ -203,7 +202,7 @@ const NewDeliveryChallan: React.FC = () => {
     const handleInvoiceChange = async (option: OptionType) => {
         try {
             setIsFetching(true);
-            const response = await axios.get(`${Constants.FETCH_INVOICE_FOR_EDIT_URL}/${option.id}`, {
+            const response = await api.get(`${Constants.FETCH_INVOICE_FOR_EDIT_URL}/${option.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const invoice_data = response.data.data;
@@ -244,12 +243,9 @@ const NewDeliveryChallan: React.FC = () => {
     useEffect(() => {
         const fetchInvoicesQuery = async () => {
             try {
-                const response = await axios.post(
+                const response = await api.post(
                     Constants.SEARCH_INVOICES_FOR_DELIVERY_CHALLAN_URL,
-                    { search: debouncedSearchTermInvoice || "" },
-                    {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }
+                    { search: debouncedSearchTermInvoice || "" }
                 );
                 const data = response.data.data;
                 if (data) {
@@ -274,7 +270,7 @@ const NewDeliveryChallan: React.FC = () => {
     const fetchTaxes = async () => {
         if (!token) return;
         try {
-            const response = await axios.get(Constants.FETCH_TAX_GROUPS_URL, {
+            const response = await api.get(Constants.FETCH_TAX_GROUPS_URL, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -288,7 +284,7 @@ const NewDeliveryChallan: React.FC = () => {
     useEffect(() => {
         const fetchBankAccounts = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -314,7 +310,7 @@ const NewDeliveryChallan: React.FC = () => {
     useEffect(() => {
         const fetchManualSignatures = async () => {
             try {
-                const response = await axios.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
+                const response = await api.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermSignature },
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -342,7 +338,7 @@ const NewDeliveryChallan: React.FC = () => {
         setSelectedAdmin(user);
         try {
             setIsFetching(true);
-            const response = await axios.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
+            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             //set billFrom to formData
@@ -496,7 +492,7 @@ const NewDeliveryChallan: React.FC = () => {
 
     const fetchAdminUsers = async () => {
         try {
-            const response = await axios.get(`${Constants.FETCH_USERS_URL}/1`, {
+            const response = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.data.length > 0) {
@@ -683,7 +679,7 @@ const NewDeliveryChallan: React.FC = () => {
 
         try {
             setIsSaving(true);
-            await axios.post(`${Constants.CREATE_DELIVERY_CHALLAN_URL}`, formData, {
+            await api.post(`${Constants.CREATE_DELIVERY_CHALLAN_URL}`, formData, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data',

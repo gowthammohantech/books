@@ -1,6 +1,7 @@
+import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import Modal from "@components/admin/Modal";
-import axios, { AxiosError } from "axios";
+import type { AxiosError } from 'axios';
 import Constants from "@constants/api";
 import type { RootState } from "@store/index";
 import { useSelector } from "react-redux";
@@ -116,7 +117,7 @@ const CreateBankAccountModal: React.FC<Props> = ({ isOpen, onClose, onSuccess })
 
         try {
             setIsSubmitting(true);
-            const response = await axios.post(Constants.CREATE_BANK_ACCOUNT_URL, payload, {
+            const response = await api.post(Constants.CREATE_BANK_ACCOUNT_URL, payload, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             toast.success('Bank account created successfully');

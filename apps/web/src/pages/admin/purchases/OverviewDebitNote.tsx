@@ -1,10 +1,11 @@
+import api from '@lib/apiClient';
 import { numberToWords } from '@utils/converters';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import Constants from '@constants/api';
-import axios from 'axios';
+
 import LoaderSpinner from '@components/admin/LoaderSpinner';
 import { useCurrencies } from '@hooks/useCurrencies';
 import useDateFormatter from '@hooks/useDateFormatter';
@@ -99,7 +100,7 @@ const OverviewDebitNote: React.FC = () => {
         try {
             setIsLoading(true);
             setNotFound(false);
-            const response = await axios.get(`${Constants.GET_DEBIT_NOTE_DETAILS_URL}/${debitNoteId}`, {
+            const response = await api.get(`${Constants.GET_DEBIT_NOTE_DETAILS_URL}/${debitNoteId}`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
             setDebitNote(response.data.data);

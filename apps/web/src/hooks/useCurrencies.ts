@@ -1,5 +1,6 @@
+import api from '@lib/apiClient';
 import { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+
 import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
 import Constants from '@constants/api';
@@ -34,7 +35,7 @@ export function useCurrencies() {
         if (!token) return;
 
         if (!_inflight) {
-            _inflight = axios
+            _inflight = api
                 .get(Constants.GET_CURRENCIES_URL, {
                     headers: { Authorization: `Bearer ${token}` },
                     // high limit so we get every active currency, not just page 1

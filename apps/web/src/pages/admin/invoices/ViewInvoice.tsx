@@ -1,9 +1,9 @@
+import api from '@lib/apiClient';
 import { useEffect, useState, useCallback } from "react";
 import InvoiceTemplateA from "./InvoiceTemplateA";
 import { useNavigate, useParams } from "react-router-dom";
 import Constants from "@constants/api";
-import axios from "axios";
-import Cookies from "js-cookie";
+
 import type { InvoiceData } from "@models/invoice";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import InvoiceTemplateB from "./InvoiceTemplateB";
@@ -36,12 +36,9 @@ const ViewInvoice: React.FC = () => {
         if (!invoiceId) return;
         // Use Redux token; fall back to cookie for page-refresh cases where
         // the store may not yet be hydrated (FETCH_INVOICE_DETAILS route IS protected).
-        const token = reduxToken || Cookies.get("authToken") || "";
         try {
             setIsFetching(true);
-            const response = await axios.get(`${Constants.FETCH_INVOICE_DETAILS_NO_AUTH_URL}/${invoiceId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await api.get(`${Constants.FETCH_INVOICE_DETAILS_NO_AUTH_URL}/${invoiceId}`);
             if (response.data.data) {
                 setInvoiceDetails(response.data.data);
             }
