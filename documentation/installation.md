@@ -42,16 +42,16 @@ and register the first admin account.
 
 ### 1. Directory layout
 
-The three project folders must sit side by side — the compose build contexts are
-relative paths and will fail if the layout is changed:
+Keep the repository layout intact — the compose build contexts are relative
+paths and will fail if it is changed:
 
 ```
 elixirbooks/                          <- repo root (run all commands from here)
 ├── docker/
 │   ├── docker-compose.yml
 │   └── .env                      <- you create this from .env.example
-├── elixirbooks-typescript-backend/
-└── elixirbooks-typescript-frontend/
+├── apps/api/
+└── apps/web/
 ```
 
 ### 2. Create and edit `docker/.env`

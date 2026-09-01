@@ -1,0 +1,5 @@
+{
+  "//": "ESM build for apps/web — Rollup cannot resolve named imports out of CommonJS.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "module": "es2022", "outDir": "dist/esm", "declaration": false }
+}

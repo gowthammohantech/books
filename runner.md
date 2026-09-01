@@ -5,8 +5,8 @@ The stack is three parts:
 | Part | Path | Tech |
 |---|---|---|
 | Datastore | (container) | PostgreSQL 16 + Prisma |
-| API | `elixirbooks-typescript-backend/` | Express 5 + TypeScript (ts-node), port `3001` |
-| SPA | `elixirbooks-typescript-frontend/` | React 19 + Vite, port `3000` |
+| API | `apps/api/` | Express 5 + TypeScript (ts-node in dev, compiled `dist/` in prod), port `3001` |
+| SPA | `apps/web/` | React 19 + Vite, port `3000` |
 
 The app runs entirely on Postgres/Prisma — it is the sole datastore.
 
@@ -45,7 +45,7 @@ docker run -d --name elixirbooks-pg -p 5432:5432 `
 
 ### 2. Backend env
 
-Create `elixirbooks-typescript-backend/.env` (gitignored):
+Create `apps/api/.env` (gitignored):
 
 ```env
 NODE_ENV=development
@@ -63,14 +63,14 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ### 3. Run the API
 
 ```bash
-cd elixirbooks-typescript-backend
+cd apps/api
 npm install          # not `npm ci` — the lockfile is out of sync with package.json
 npm run prisma:generate
-npm run dev          # nodemon server.js → http://localhost:3001
+npm run dev          # nodemon → ts-node server.ts → http://localhost:3001
 ```
 
 First boot handles all schema and data setup itself. The bootstrap in
-`server.js` runs, in order:
+`server.ts` runs, in order:
 
 1. `prisma migrate deploy`
 2. baseline seed (currencies, date/time formats, timezones, module hierarchy, custom-field types)
@@ -85,7 +85,7 @@ Health check: <http://localhost:3001/api/healthz>
 
 ### 4. Frontend env
 
-Create `elixirbooks-typescript-frontend/.env.local`:
+Create `apps/web/.env.local`:
 
 ```env
 VITE_API_BASE_URL=http://localhost:3001
@@ -99,7 +99,7 @@ VITE_DEMO_MODE=false
 ### 5. Run the SPA
 
 ```bash
-cd elixirbooks-typescript-frontend
+cd apps/web
 npm install
 npm run dev          # Vite → http://localhost:3000
 ```

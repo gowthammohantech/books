@@ -25,9 +25,11 @@ Open http://localhost:8080.
 
 ## Layout
 
+- `apps/api/` — Express 5 + Prisma backend
+- `apps/web/` — React 19 + Vite frontend
 - `docker/` — compose files + env example
 - `scripts/` — verification helpers (`smoke.sh`)
-- `docs/` — design specs and implementation plans
-- `tasks/` — backlog (`todo.md`) and lessons (`lessons.md`)
+- `documentation/` — operator guides (install, configure, backup, troubleshoot)
 
-The two app repos `../elixirbooks-typescript-backend/` and `../elixirbooks-typescript-frontend/` are independent git repos. Compose builds them from relative paths.
+This is a single repository containing both applications. Compose builds them
+from paths relative to `docker/`.

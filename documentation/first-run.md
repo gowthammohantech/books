@@ -124,7 +124,7 @@ make rebuild-web
 
 ```bash
 docker compose --env-file docker/.env -f docker/docker-compose.yml \
-  exec api npx ts-node prisma/seed-demo.ts
+  exec api node dist/prisma/seed-demo.js
 ```
 
 This creates:

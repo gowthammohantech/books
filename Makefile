@@ -77,4 +77,11 @@ ps:
 #           release/elixirbooks-mobile-addon-v$(VERSION).zip
 # Example:  make package VERSION=2.1.0
 package:
+	@if [ ! -f scripts/package-release.sh ]; then \
+	  echo "make package: scripts/package-release.sh is not in this repository."; \
+	  echo "The target and its documentation predate the script; nothing has ever"; \
+	  echo "produced the release/*.zip artefacts it describes. Add the script, or"; \
+	  echo "drop this target and the 'package' lines from the help text above."; \
+	  exit 1; \
+	fi
 	bash scripts/package-release.sh $(VERSION)

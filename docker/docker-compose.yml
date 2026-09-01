@@ -21,8 +21,8 @@ services:
 
   api:
     build:
-      context: ../elixirbooks-typescript-backend
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: apps/api/Dockerfile
     image: elixirbooks-api:slice-0
     restart: unless-stopped
     environment:
@@ -49,7 +49,7 @@ services:
       SMTP_FROM: ${SMTP_FROM}
       REDIS_URL: ${REDIS_URL:-}
     volumes:
-      - elixirbooks-uploads:/app/uploads
+      - elixirbooks-uploads:/repo/apps/api/uploads
     networks:
       - elixirbooks
     depends_on:
@@ -58,8 +58,8 @@ services:
 
   web:
     build:
-      context: ../elixirbooks-typescript-frontend
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: apps/web/Dockerfile
       args:
         VITE_DEMO_MODE: ${VITE_DEMO_MODE:-false}
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
@@ -94,8 +94,8 @@ services:
   worker:
     profiles: ["redis"]
     build:
-      context: ../elixirbooks-typescript-backend
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: apps/api/Dockerfile
     image: elixirbooks-api:slice-0
     restart: unless-stopped
     # In Slice 0 the worker container is a placeholder: it boots the same image

@@ -1,6 +1,6 @@
 // =============================================================================
 // Elixir Books - Entity Relationship Diagram (DBML / dbdiagram.io)
-// Generated from elixirbooks-typescript-backend/prisma/schema.prisma
+// Generated from apps/api/prisma/schema.prisma
 // 101 tables, 82 enums. Target: PostgreSQL.
 // =============================================================================
 

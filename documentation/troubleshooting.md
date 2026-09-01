@@ -209,7 +209,7 @@ seed after the stack is started:
 
 ```bash
 docker compose --env-file docker/.env -f docker/docker-compose.yml \
-  exec api npx ts-node prisma/seed-demo.ts
+  exec api node dist/prisma/seed-demo.js
 ```
 
 **Cause B — Running an older database with the old demo email:**
@@ -226,7 +226,7 @@ Then re-run the demo seed to reset the password:
 
 ```bash
 docker compose --env-file docker/.env -f docker/docker-compose.yml \
-  exec api npx ts-node prisma/seed-demo.ts
+  exec api node dist/prisma/seed-demo.js
 ```
 
 **Cause C — `VITE_DEMO_MODE` is not set to `true`:**
@@ -241,7 +241,7 @@ is enabled.
 
 Uploaded files (logos, receipt attachments) are stored in the
 `elixirbooks_elixirbooks-uploads` Docker volume, mounted into the API container
-at `/app/uploads`. The API serves them at `/uploads/<filename>` (proxied
+at `/repo/apps/api/uploads`. The API serves them at `/uploads/<filename>` (proxied
 through nginx at the same path).
 
 To list the contents of the volume:
