@@ -1,12 +1,23 @@
 name: $(Date:yyyyMMdd).$(Rev:r)
 
+# The web image builds from the REPOSITORY ROOT (npm workspaces keep a single
+# lockfile there), so the triggers cover the shared workspace files too — a
+# change to packages/* or the root manifests changes the bundle.
 trigger:
   branches:
     include:
       - dev
   paths:
     include:
-      - elixirbooks-typescript-frontend/**
+      - apps/web/**
+      - packages/**
+      - scripts/**
+      - package.json
+      - package-lock.json
+      - tsconfig.base.json
+      - turbo.json
+      - .npmrc
+      - .dockerignore
       - azure-pipelines-web-ui.yml
 
 pr:
@@ -15,7 +26,15 @@ pr:
       - dev
   paths:
     include:
-      - elixirbooks-typescript-frontend/**
+      - apps/web/**
+      - packages/**
+      - scripts/**
+      - package.json
+      - package-lock.json
+      - tsconfig.base.json
+      - turbo.json
+      - .npmrc
+      - .dockerignore
       - azure-pipelines-web-ui.yml
 
 variables:
@@ -31,6 +50,13 @@ variables:
   webAppName: 'stg-elixirbooks-kan-app-ui'
 
   imageTag: 'stage-kanakku-ui-$(Build.BuildNumber)'
+
+  # Baked into the bundle at build time. apps/web/Dockerfile deliberately has
+  # NO default for this (an empty value means same-origin, which only works
+  # behind the compose nginx /api proxy), so staging must pass the API host
+  # explicitly here.
+  viteApiBaseUrl: 'https://elixirbooks-kanaku-api-cagqg6fng5dtazbc.southeastasia-01.azurewebsites.net'
+  viteDemoMode: 'false'
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -50,14 +76,31 @@ stages:
     steps:
     - checkout: self
 
+    # build and push are separate steps because Docker@2 ignores `arguments`
+    # for the buildAndPush command, and the VITE_* build args must reach the
+    # build.
     - task: Docker@2
-      displayName: 'Build and push Kanakku Web UI image'
+      displayName: 'Build Kanakku Web UI image'
       inputs:
-        command: buildAndPush
+        command: build
         containerRegistry: '$(acrServiceConnection)'
         repository: '$(ACR_REPOSITORY)'
-        dockerfile: 'elixirbooks-typescript-frontend/Dockerfile'
-        buildContext: 'elixirbooks-typescript-frontend'
+        dockerfile: 'apps/web/Dockerfile'
+        # Repo root: the Dockerfile copies the root lockfile and every workspace
+        # manifest so `npm ci` is reproducible.
+        buildContext: '$(Build.SourcesDirectory)'
+        arguments: >-
+          --build-arg VITE_API_BASE_URL=$(viteApiBaseUrl)
+          --build-arg VITE_DEMO_MODE=$(viteDemoMode)
+        tags: |
+          $(imageTag)
+
+    - task: Docker@2
+      displayName: 'Push Kanakku Web UI image'
+      inputs:
+        command: push
+        containerRegistry: '$(acrServiceConnection)'
+        repository: '$(ACR_REPOSITORY)'
         tags: |
           $(imageTag)
 
