@@ -304,9 +304,74 @@ consumer, and `scripts/write-esm-package-marker.mjs` drops `{"type":"module"}` i
 output directory so those `.js` files are not read as CommonJS — without making the whole
 package ESM, which would break the CJS build.
 
-### Not done
+### `@elixirbooks/money`
 
-`packages/money` and `packages/api-client` from the plan are **not** included. Both are
-refactors rather than extractions: money needs the frontend to adopt `decimal.js` to match the
-backend's `Prisma.Decimal` rounding, and api-client touches 209 axios call sites. The
-duplication they address is documented above and unchanged.
+The frontend re-implemented the backend's line-tax, discount, aging-bucket and invoice-status
+maths. Deliberately — `apps/web/src/lib/lineTax.ts` carried comments like "Do NOT round `base`
+here" and "Mirrors the backend component path exactly" — but as an honour-system invariant that
+had already broken.
+
+**The rounding rules differed.** Backend: `Prisma.Decimal.toDecimalPlaces(2, ROUND_HALF_UP)`.
+Frontend: `Math.round((v + Number.EPSILON) * 100) / 100`. Over 2,000,000 realistic line
+computations (qty 1-20 x rate 0.01-200.00 x tax 5/12/18/20/28%) they disagree on **2,422 —
+0.12%, about one line in 825** — always by exactly one cent, always with the float version
+rounding a `.xx5` boundary down. qty 1 x 13.25 @ 18%: float 2.38, Decimal 2.39.
+
+Severity was display, not corruption: the server recomputes and persists its own totals, so the
+user saw a figure that shifted by a cent on save. Which is precisely what those "mirrors the
+backend" comments existed to prevent.
+
+`decimal.js` cost **+13.3 KB gzipped** (1,369.3 -> 1,382.6), measured, not estimated — 0.97% of
+a bundle that was already 1.37 MB.
+
+Sequenced so the extraction was provably faithful: the package's tests were written against the
+current behaviour of both sides FIRST, then the backend adopted it (its 24 documentTotals, 29
+serverAuthoritativeTax and 13 invoiceOutstanding golden cases all passing unchanged), and only
+then the frontend — which is where the one-cent shift landed.
+
+`AR_UNPAID_STATUSES` / `AP_UNPAID_STATUSES` are no longer string literals; they derive from the
+Prisma enums, with a test pinning the CSVs byte-identical. They go straight into a `status` query
+param, so a rename in schema.prisma would previously have made four report drill-downs silently
+return nothing.
+
+### A correction on the credit-note bug
+
+Earlier in this branch I reported that `creditNoteController` never refreshes the linked
+invoice's status. **That was wrong.** All three write paths call `recomputeInvoiceStatus` inside
+their transaction and have since the "Task 2" work; my grep looked for `deriveInvoiceStatus` and
+`invoice.update` and missed the helper wrapping both.
+
+So the frontend's missing credit-note term was masked in practice. Sharing the derivation is
+defence in depth — the badge is now right from the numbers alone rather than only while the
+stored status is fresh, which still matters for rows written before that refresh existed since
+nothing backfills them.
+
+What WAS missing is a test. The existing suites mocked the invoice surface and asserted only that
+the reads happen, so the refresh was load-bearing but unverified.
+`tests/creditNoteInvoiceStatus.test.ts` now pins four cases. The `creditNoted` API field the plan
+called for is **not** added — it was justified by a bug that turns out not to exist.
+
+### The HTTP client
+
+`axios.create()` appeared nowhere. 602 call sites across 209 files each built their own request,
+**303 re-deriving `Authorization: Bearer ${token}` by hand**, and the only shared behaviour was a
+401 handler on the GLOBAL axios default, which every other axios consumer inherited.
+
+`apps/web/src/lib/apiClient.ts` adds an instance with a base URL, a token-attaching request
+interceptor, and that 401 handler moved onto the instance. All 303 headers are gone.
+
+**Deliberately not a workspace package.** It reads `window.location` and has exactly one
+consumer, so a package would buy a dual build and Docker wiring for no second consumer.
+
+The 92 headers that came with another option — 81 files posting FormData where Content-Type must
+stay unset for the browser to set the multipart boundary, 4 blob downloads, 8 AbortController
+signals — were excluded from the mechanical sweep and migrated individually afterwards.
+
+Typing `import.meta.env` (`vite-env.d.ts` was a single reference line, so `VITE_API_BASE_URL` was
+`any`) immediately caught four places assuming it is always set. `Constants.BASE_URL` now
+defaults to empty — same-origin, what the nginx `/api` proxy serves — instead of producing URLs
+beginning with the literal string "undefined".
+
+Scope stopped there on purpose. `constants/api.ts` stays and response unwrapping is untouched:
+366 call sites read `.data.data` and 44 read `.data.success`. Changing that is the full
+602-site migration, which is a different piece of work.
