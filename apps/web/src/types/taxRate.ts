@@ -1,3 +1,4 @@
+import type { TaxComponent } from '@elixirbooks/money';
 import type { TaxRegime, TaxKind } from '@elixirbooks/enums';
 
 // Generated from apps/api/prisma/schema.prisma. Re-exported so the existing
@@ -17,10 +18,9 @@ export interface TaxRate {
   updatedAt: string;
 }
 
-export interface TaxLine {
-  taxRateId: string;
-  name: string;
-  kind: TaxKind | null;
-  percent: number;
-  amount: number;
-}
+/**
+ * A resolved tax component on a line. The shape lives in @elixirbooks/money so
+ * the recompute helpers there return exactly this; the TaxKind narrowing is
+ * preserved by parameterising it.
+ */
+export type TaxLine = TaxComponent<TaxKind | null>;

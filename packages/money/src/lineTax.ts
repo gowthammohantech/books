@@ -23,28 +23,31 @@ export interface LineTaxable {
 }
 
 /**
- * One resolved tax component on a line. Structural on purpose: the frontend's
- * `TaxLine` (src/types/taxRate.ts) satisfies it without this package needing to
- * know about `TaxKind`, which lives in @elixirbooks/enums.
+ * One resolved tax component on a line.
+ *
+ * Generic over `kind` so a caller with a narrower vocabulary keeps it: the
+ * frontend declares `TaxLine = TaxComponent<TaxKind | null>` and does not lose
+ * the enum. This package deliberately does not depend on @elixirbooks/enums for
+ * it — the shape is what matters here, not the vocabulary.
  */
-export interface TaxComponent {
+export interface TaxComponent<Kind extends string | null = string | null> {
   taxRateId: string;
   name: string;
-  kind: string | null;
+  kind: Kind;
   percent: number;
   amount: number;
 }
 
 /** The subset of a TaxRate row this module reads. */
-export interface AppliedTaxRate {
+export interface AppliedTaxRate<Kind extends string | null = string | null> {
   id: string;
   name: string;
   rate: number | string;
-  taxKind?: string | null;
+  taxKind?: Kind;
 }
 
-export interface RecomputeResult {
-  taxes: TaxComponent[];
+export interface RecomputeResult<Kind extends string | null = string | null> {
+  taxes: TaxComponent<Kind>[];
   totalTax: number;
   /** Post-tax line total (taxable + totalTax). */
   amount: number;
@@ -68,16 +71,16 @@ export function discountedBase(line: LineTaxable): Decimal {
  * Given a line's taxable inputs and the TaxRate rows that apply, compute the
  * per-component taxes[] split, totalTax and line amount.
  */
-export function recomputeLineTaxes(
+export function recomputeLineTaxes<Kind extends string | null = string | null>(
   line: LineTaxable,
-  appliedRates: AppliedTaxRate[],
-): RecomputeResult {
+  appliedRates: AppliedTaxRate<Kind>[],
+): RecomputeResult<Kind> {
   const base = discountedBase(line);
 
-  const taxes: TaxComponent[] = appliedRates.map((r) => ({
+  const taxes: TaxComponent<Kind>[] = appliedRates.map((r) => ({
     taxRateId: r.id,
     name: r.name,
-    kind: r.taxKind ?? null,
+    kind: (r.taxKind ?? null) as Kind,
     percent: toNum(r.rate),
     amount: round2(base.times(toNum(r.rate)).div(100)).toNumber(),
   }));
@@ -93,13 +96,13 @@ export function recomputeLineTaxes(
  * components were already resolved (tax group / resolve-line endpoint), each
  * component must be re-scaled rather than left stale.
  */
-export function recomputeLineTaxesFromComponents(
+export function recomputeLineTaxesFromComponents<Kind extends string | null = string | null>(
   line: LineTaxable,
-  components: TaxComponent[],
-): RecomputeResult {
+  components: TaxComponent<Kind>[],
+): RecomputeResult<Kind> {
   const base = discountedBase(line);
 
-  const taxes: TaxComponent[] = components.map((t) => ({
+  const taxes: TaxComponent<Kind>[] = components.map((t) => ({
     ...t,
     amount: round2(base.times(toNum(t.percent)).div(100)).toNumber(),
   }));
@@ -108,7 +111,10 @@ export function recomputeLineTaxesFromComponents(
 }
 
 /** Sum the (already 2dp) components and derive the line total. */
-function finalise(base: Decimal, taxes: TaxComponent[]): RecomputeResult {
+function finalise<Kind extends string | null>(
+  base: Decimal,
+  taxes: TaxComponent<Kind>[],
+): RecomputeResult<Kind> {
   let sum = toDecimal(0);
   for (const t of taxes) sum = sum.plus(toDecimal(t.amount));
   const totalTax = round2(sum);
@@ -152,23 +158,23 @@ export function clampDiscountValue(
  * Resolve TaxRate objects from a library by id, then recompute. Ids missing
  * from the library are dropped.
  */
-export function recomputeLineTaxesByIds(
+export function recomputeLineTaxesByIds<Kind extends string | null = string | null>(
   line: LineTaxable,
   appliedTaxRateIds: string[],
-  taxRateLibrary: AppliedTaxRate[],
-): RecomputeResult & { appliedTaxRateIds: string[] } {
+  taxRateLibrary: AppliedTaxRate<Kind>[],
+): RecomputeResult<Kind> & { appliedTaxRateIds: string[] } {
   const appliedRates = appliedTaxRateIds
     .map((id) => taxRateLibrary.find((r) => r.id === id))
-    .filter((r): r is AppliedTaxRate => !!r);
+    .filter((r): r is AppliedTaxRate<Kind> => !!r);
 
   return { ...recomputeLineTaxes(line, appliedRates), appliedTaxRateIds };
 }
 
 /** Apply a single flat rate to a line, or clear the tax when given none. */
-export function applyFlatRateToLine(
+export function applyFlatRateToLine<Kind extends string | null = string | null>(
   line: LineTaxable,
-  rate: AppliedTaxRate | null,
-): RecomputeResult & { appliedTaxRateIds: string[] } {
+  rate: AppliedTaxRate<Kind> | null,
+): RecomputeResult<Kind> & { appliedTaxRateIds: string[] } {
   if (!rate) {
     return {
       taxes: [],

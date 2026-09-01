@@ -1,9 +1,14 @@
-// Rounds a number to 2 decimal places, guarding against binary floating-point
-// drift (e.g. 2.9970000000000003) so document totals sent to the API and
-// shown on screen always agree to the cent. Never Math.floor/round a monetary
-// total to an integer -- the backend persists 2dp values and the FE must send
-// and display the same shape it will be saved as.
-export const round2 = (value: number): number => {
-    if (!Number.isFinite(value)) return 0;
-    return Math.round((value + Number.EPSILON) * 100) / 100;
-};
+/**
+ * Rounds a number to 2 decimal places, so document totals sent to the API and
+ * shown on screen always agree to the cent.
+ *
+ * This used to be `Math.round((value + Number.EPSILON) * 100) / 100`, which
+ * rounds a .xx5 boundary DOWN wherever the binary float sits just below it —
+ * disagreeing with the server's Decimal ROUND_HALF_UP on about one line in 825.
+ * It now delegates to @elixirbooks/money, the same implementation the server
+ * uses, so the preview and the persisted value cannot drift.
+ *
+ * Still returns a `number`: the Decimal is an implementation detail of the
+ * arithmetic and deliberately does not cross into component props.
+ */
+export { round2Number as round2 } from '@elixirbooks/money';

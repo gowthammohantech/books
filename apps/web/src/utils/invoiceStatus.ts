@@ -1,58 +1,22 @@
-// Single source of truth for how an invoice's stored status maps to what the
-// user sees. The stored lifecycle is DRAFT → SENT → PARTIALLY_PAID → PAID
-// (+ CANCELLED). "Delayed Payment" is NOT stored — it's derived on the fly when
-// an open invoice's due date has passed and a balance remains. Legacy UNPAID
-// rows are treated as SENT.
-
-export type DisplayStatus =
-    | "DRAFT"
-    | "SENT"
-    | "PARTIALLY_PAID"
-    | "PAID"
-    | "DELAYED"
-    | "CANCELLED";
-
-export interface InvoiceStatusInput {
-    status?: string | null;
-    dueDate?: string | Date | null;
-    totalAmount?: number | null;
-    totalPaid?: number | null;
-}
-
-const startOfToday = (): number => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d.getTime();
-};
-
 /**
- * Derive the user-facing status. Overdue ("DELAYED") overlays SENT/PARTIALLY_PAID
- * when the due date has passed and a balance remains.
+ * How an invoice's stored status maps to what the user sees.
+ *
+ * The derivation itself lives in @elixirbooks/money, shared with the server, so
+ * the badge and the aging report answer the same question. The frontend's own
+ * copy had no credit-note term at all — it computed `totalAmount - totalPaid` —
+ * so a credit-noted, past-due invoice rendered "Delayed Payment" while the
+ * backend considered it settled. Callers should now pass `creditNoted`.
+ *
+ * The label/colour map stays here: it is presentation, and the package has no
+ * business knowing about Tailwind classes.
  */
-export const deriveInvoiceDisplayStatus = (input: InvoiceStatusInput): DisplayStatus => {
-    const stored = (input.status || "").toUpperCase();
+import type { DisplayStatus } from '@elixirbooks/money';
 
-    if (stored === "CANCELLED") return "CANCELLED";
-    if (stored === "DRAFT") return "DRAFT";
-
-    const total = Number(input.totalAmount ?? 0);
-    const paid = Number(input.totalPaid ?? 0);
-    const balance = total - paid;
-
-    // Fully settled regardless of stored value.
-    if (stored === "PAID" || (total > 0 && balance <= 0)) return "PAID";
-
-    // Open invoice (SENT / PARTIALLY_PAID / legacy UNPAID / OVERDUE).
-    const due = input.dueDate ? new Date(input.dueDate) : null;
-    const isPastDue =
-        !!due && !Number.isNaN(due.getTime()) && due.getTime() < startOfToday() && balance > 0;
-    if (isPastDue) return "DELAYED";
-
-    if (paid > 0 || stored === "PARTIALLY_PAID") return "PARTIALLY_PAID";
-
-    // SENT, UNPAID (legacy), OVERDUE-but-not-actually-past-due → Sent.
-    return "SENT";
-};
+export {
+  deriveInvoiceDisplayStatus,
+  isInvoiceEditable,
+} from '@elixirbooks/money';
+export type { DisplayStatus, InvoiceDisplayInput } from '@elixirbooks/money';
 
 export const DISPLAY_STATUS_META: Record<
     DisplayStatus,
@@ -65,7 +29,3 @@ export const DISPLAY_STATUS_META: Record<
     DELAYED: { label: "Delayed Payment", classes: "bg-destructive-soft text-destructive-strong" },
     CANCELLED: { label: "Cancelled", classes: "bg-muted text-muted-foreground" },
 };
-
-/** Only draft invoices can be edited. */
-export const isInvoiceEditable = (status?: string | null): boolean =>
-    (status || "").toUpperCase() === "DRAFT";
