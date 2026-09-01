@@ -18,24 +18,56 @@
 import { Prisma } from '@prisma/client';
 import type { InvoiceStatus } from '@prisma/client';
 
-import { creditNoteTotalsByInvoice, netInvoiceOutstanding } from './reports/aging';
+import { creditNoteTotalsByInvoice } from './reports/aging';
+import {
+  OUTSTANDING_TOLERANCE as SHARED_TOLERANCE,
+  deriveInvoiceStatus as sharedDeriveInvoiceStatus,
+  netInvoiceOutstanding as sharedNetInvoiceOutstanding,
+} from '@elixirbooks/money';
 
-/** Money tolerance: balances within half a cent are treated as fully settled. */
-export const OUTSTANDING_TOLERANCE = new Prisma.Decimal('0.005');
+/**
+ * The derivation itself now lives in @elixirbooks/money, so the invoice list in
+ * the browser answers this question the same way the server does. The frontend
+ * copy had no credit-note term at all, which is why a credit-noted past-due
+ * invoice rendered "Delayed Payment" while aging treated it as settled.
+ *
+ * These wrappers keep the Prisma.Decimal signatures the ~15 backend call sites
+ * already use. Decimal values cross into the shared package via toString():
+ * Prisma bundles its own minified decimal.js, so the two classes are structurally
+ * identical but not the same constructor.
+ */
 
 const ZERO = new Prisma.Decimal(0);
 
+/** Money tolerance: balances within half a cent are treated as fully settled. */
+export const OUTSTANDING_TOLERANCE = new Prisma.Decimal(SHARED_TOLERANCE.toString());
+
 export interface InvoiceStatusResult {
-  /** TotalAmount − payments − credit notes (may be negative on over-credit). */
+  /** TotalAmount - payments - credit notes (may be negative on over-credit). */
   outstanding: Prisma.Decimal;
   status: InvoiceStatus;
+}
+
+/** Pure: outstanding receivable for one invoice, as a Prisma.Decimal. */
+export function netInvoiceOutstanding(
+  totalAmount: Prisma.Decimal | string | number,
+  totalPaid: Prisma.Decimal | string | number,
+  creditNoted: Prisma.Decimal | string | number,
+): Prisma.Decimal {
+  return new Prisma.Decimal(
+    sharedNetInvoiceOutstanding(
+      totalAmount.toString(),
+      totalPaid.toString(),
+      creditNoted.toString(),
+    ).toString(),
+  );
 }
 
 /**
  * Pure: derive outstanding + payment status from totals.
  *
  * Status:
- *  - PAID            outstanding ≤ tolerance (settled by cash and/or credit notes)
+ *  - PAID            outstanding <= tolerance (settled by cash and/or credit notes)
  *  - PARTIALLY_PAID  a balance remains but something has been settled
  *  - otherwise       the invoice's prior non-settled display status is preserved
  *                    (UNPAID / OVERDUE / SENT / DRAFT), defaulting to UNPAID.
@@ -48,20 +80,16 @@ export function deriveInvoiceStatus(
   creditNoted: Prisma.Decimal | string | number,
   currentStatus?: InvoiceStatus | null,
 ): InvoiceStatusResult {
-  const outstanding = netInvoiceOutstanding(totalAmount, totalPaid, creditNoted);
-  const settled = new Prisma.Decimal(totalPaid.toString()).add(new Prisma.Decimal(creditNoted.toString()));
-
-  let status: InvoiceStatus;
-  if (outstanding.lte(OUTSTANDING_TOLERANCE)) {
-    status = 'PAID';
-  } else if (settled.gt(OUTSTANDING_TOLERANCE)) {
-    status = 'PARTIALLY_PAID';
-  } else if (currentStatus && currentStatus !== 'PAID' && currentStatus !== 'PARTIALLY_PAID') {
-    status = currentStatus;
-  } else {
-    status = 'UNPAID';
-  }
-  return { outstanding, status };
+  const result = sharedDeriveInvoiceStatus(
+    totalAmount.toString(),
+    totalPaid.toString(),
+    creditNoted.toString(),
+    currentStatus,
+  );
+  return {
+    outstanding: new Prisma.Decimal(result.outstanding.toString()),
+    status: result.status,
+  };
 }
 
 /** The subset of the Prisma client this helper reads/writes. */

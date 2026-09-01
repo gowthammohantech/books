@@ -9,7 +9,11 @@ export interface AgingItem {
   dueDate: Date;
 }
 
-export type AgingBucket = 'current' | 'd1_30' | 'd31_60' | 'd61_90' | 'd90plus';
+// Bucket boundaries live in @elixirbooks/money so the frontend's drill-down
+// links resolve to exactly the rows these buckets counted. The DB-backed parts
+// of this module (credit-note netting, the GL-derived aging queries) stay here.
+export type { AgingBucket } from '@elixirbooks/money';
+import { classifyDays, type AgingBucket } from '@elixirbooks/money';
 
 export interface AgingRow extends AgingItem {
   daysOverdue: number;
@@ -30,14 +34,6 @@ export interface AgingResult {
 
 const ZERO = new Prisma.Decimal(0);
 const MS_PER_DAY = 86_400_000;
-
-function classifyDays(days: number): AgingBucket {
-  if (days <= 0) return 'current';
-  if (days <= 30) return 'd1_30';
-  if (days <= 60) return 'd31_60';
-  if (days <= 90) return 'd61_90';
-  return 'd90plus';
-}
 
 /**
  * Pure: group credit-note amounts by the invoice they relate to.
