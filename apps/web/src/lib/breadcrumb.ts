@@ -13,14 +13,15 @@ export interface Crumb {
  * Derived rather than declared: `buildCommands` already flattens the sidebar
  * tree, the settings catalogue and the report catalogue into one list, and each
  * entry already carries the ancestor chain it was found under (`group`, e.g.
- * "Accounts Management › Finance Reports"). That is a breadcrumb with the
+ * "Reports › Payables"). That is a breadcrumb with the
  * separators already in it, so the alternative — a `breadcrumb` prop on all ~120
  * pages — would be re-typing what the nav tree knows, and would go stale
  * silently the first time an entry moved between menus.
  *
- * Only the LEAF is linkable-by-omission here: ancestors are menu titles, not
- * routes ("Finance Reports" has no page of its own), so they render as plain
- * text. The one exception is the root crumb, which is a real destination.
+ * Only the LEAF is linkable-by-omission here: ancestors are menu titles and
+ * catalogue categories, not routes ("Payables" has no page of its own), so they
+ * render as plain text. The one exception is the root crumb, which is a real
+ * destination.
  */
 export const resolveBreadcrumb = (
     pathname: string,

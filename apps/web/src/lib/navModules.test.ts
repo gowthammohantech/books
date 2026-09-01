@@ -28,26 +28,58 @@ describe('buildNavModules', () => {
         expect(first.items.map((item) => item.title)).toContain('Chart of Accounts');
     });
 
-    it('demotes a nested menu to a captioned section, not another accordion', () => {
-        const captions = moduleFor('accounts')
-            .sections.map((section) => section.caption)
-            .filter(Boolean);
-        expect(captions).toEqual(['Financial Statements', 'Finance Reports']);
-
-        const reports = moduleFor('accounts').sections.find(
-            (section) => section.caption === 'Finance Reports'
+    it('leaves no menu inside a menu in the shipped tree', () => {
+        // Financial Statements and Finance Reports were the last two, and their
+        // eleven paths are indexed by the Reports Center now. Nothing in the
+        // rail should reintroduce a level the panel has to caption around.
+        const captions = modules.flatMap((navModule) =>
+            navModule.sections.map((section) => section.caption).filter(Boolean)
         );
-        expect(reports?.items.map((item) => item.title)).toContain('AP Aging');
+        expect(captions).toEqual([]);
     });
 
-    it('shows a plain link its band rather than an empty panel', () => {
-        const auditTrail = moduleFor('/activity-log');
-        expect(auditTrail.panelTitle).toBe('Oversight');
-        expect(auditTrail.sections[0].items.map((item) => item.title)).toEqual([
-            'Audit Trail',
-            'Approvals Queue',
-            'AI Extractions',
+    it('demotes a nested menu to a captioned section, not another accordion', () => {
+        // Against a fixture: the rule outlives the tree that needed it, so it is
+        // pinned here rather than left untested until a menu grows a submenu.
+        const [navModule] = buildNavModules([], [
+            { type: 'header', title: 'Finance', slug: 'band-finance' },
+            {
+                type: 'collapsible',
+                id: 'ledger',
+                icon: null,
+                title: 'Ledger',
+                slug: 'accounting',
+                children: [
+                    { type: 'link', to: '/journals', title: 'Journals', slug: 'accounting' },
+                    {
+                        type: 'collapsible',
+                        id: 'statements',
+                        icon: null,
+                        title: 'Statements',
+                        slug: 'accounting',
+                        children: [
+                            { type: 'link', to: '/pl', title: 'P&L', slug: 'accounting' },
+                        ],
+                    },
+                ],
+            },
         ]);
+
+        expect(navModule.sections).toEqual([
+            { items: [{ type: 'link', to: '/journals', title: 'Journals', slug: 'accounting' }] },
+            {
+                caption: 'Statements',
+                items: [{ type: 'link', to: '/pl', title: 'P&L', slug: 'accounting' }],
+            },
+        ]);
+    });
+
+    it('gives a plain link no panel, so the rail has nothing to fly out', () => {
+        // Dashboard and the Oversight links are destinations, not menus: a
+        // flyout on hover would be a menu nobody asked for.
+        expect(moduleFor('/').sections).toEqual([]);
+        expect(moduleFor('/activity-log').sections).toEqual([]);
+        expect(moduleFor('/reports').sections).toEqual([]);
     });
 
     it('carries the band through so the rail can rule between groups', () => {
@@ -93,11 +125,17 @@ describe('matchesNavRoute', () => {
 });
 
 describe('findActiveNavRoute', () => {
-    it('lights up the module a nested destination belongs to', () => {
-        expect(findActiveNavRoute(modules, '/accounting/reports/ap-aging')).toEqual({
+    it('lights up the module a destination belongs to', () => {
+        expect(findActiveNavRoute(modules, '/accounting/journal-entries')).toEqual({
             moduleId: 'accounts',
-            to: '/accounting/reports/ap-aging',
+            to: '/accounting/journal-entries',
         });
+    });
+
+    it('claims no rail module for a report that only the catalogue lists', () => {
+        // /reports is where these live now, and the Reports Center is a module
+        // of its own - the accounting rail entry must not light up for them.
+        expect(findActiveNavRoute(modules, '/accounting/reports/ap-aging')).toBeNull();
     });
 
     it('prefers the most specific route, not the first prefix match', () => {

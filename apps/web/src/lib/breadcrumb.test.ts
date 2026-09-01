@@ -17,11 +17,14 @@ describe('resolveBreadcrumb', () => {
         expect(labels('/contacts')).toEqual(['Dashboard', 'Contacts']);
     });
 
-    it('lists the menus a nested destination sits under', () => {
+    it('files a report under the Reports Center, not under a menu', () => {
+        // The Financial Statements / Finance Reports menus are gone from the
+        // nav tree; the report catalogue is where these paths are declared now,
+        // so the trail is its category rather than an accounting submenu.
         expect(labels('/accounting/reports/ap-aging')).toEqual([
             'Dashboard',
-            'Accounts Management',
-            'Finance Reports',
+            'Reports',
+            'Payables',
             'AP Aging',
         ]);
     });

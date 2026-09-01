@@ -5,7 +5,6 @@ import {
     ShoppingBag,
     Users,
     BarChart2,
-    ChartCandlestick,
     LandmarkIcon,
     Percent,
     Receipt,
@@ -316,90 +315,19 @@ export const navItems: NavItemType[] = [
                 title: "Projects",
                 slug: "accounting",
             },
-            {
-                type: "collapsible",
-                id: "financial-statements",
-                icon: <ChartCandlestick size={16} />,
-                title: "Financial Statements",
-                slug: "accounting",
-                children: [
-                    {
-                        type: "link",
-                        to: "/accounting/reports/profit-loss",
-                        title: "Profit & Loss",
-                        slug: "accounting",
-                    },
-                    {
-                        type: "link",
-                        to: "/accounting/reports/balance-sheet",
-                        title: "Balance Sheet",
-                        slug: "accounting",
-                    },
-                    {
-                        type: "link",
-                        to: "/accounting/reports/trial-balance",
-                        title: "Trial Balance",
-                        slug: "accounting",
-                    },
-                    {
-                        type: "link",
-                        to: "/accounting/reports/tally-check",
-                        title: "Tally Check",
-                        slug: "accounting",
-                    },
-                ],
-            },
-            {
-                type: "collapsible",
-                id: "finance-reports",
-                icon: <BarChart2 size={16} />,
-                title: "Finance Reports",
-                slug: "accounting",
-                children: [
-                    {
-                        type: "link",
-                        to: "/accounting/reports/ar-aging",
-                        title: "AR Aging",
-                        slug: "accounting",
-                    },
-                    {
-                        type: "link",
-                        to: "/accounting/reports/ap-aging",
-                        title: "AP Aging",
-                        slug: "accounting",
-                    },
-                    {
-                        type: "link",
-                        to: "/accounting/reports/collections",
-                        title: "Collections",
-                        slug: "accounting",
-                    },
-                    {
-                        type: "link",
-                        to: "/accounting/reports/budget-variance",
-                        title: "Budget Variance",
-                        slug: "accounting",
-                    },
-                    {
-                        type: "link",
-                        to: "/accounting/reports/cash-flow-forecast",
-                        title: "Cash Flow Forecast",
-                        slug: "accounting",
-                    },
-                    {
-                        type: "link",
-                        to: "/accounting/reports/pnl-by-dimension",
-                        title: "P&L by Dimension",
-                        slug: "accounting",
-                    },
-                    {
-                        type: "link",
-                        to: "/accounting/reports/pnl-by-department",
-                        title: "P&L by Department",
-                        slug: "accounting",
-                    },
-                ],
-            },
+            // Financial Statements (P&L, Balance Sheet, Trial Balance,
+            // Tally Check) and Finance Reports (AR/AP Aging, Collections,
+            // Budget Variance, Cash Flow Forecast, P&L by Dimension and by
+            // Department) were two nested menus here. All eleven are in the
+            // report catalogue, so the Reports Center at /reports already
+            // indexed them alongside the other eighteen - the menus were a
+            // second, partial index of the same set, and the only reason the
+            // tree was three levels deep.
+            //
+            // Nothing moved on disk: reportCatalogue.ts already carries every
+            // one of these paths, so they keep their routes, their command
+            // palette entries and their favourites. What changed is that the
+            // Reports Center is now the single way in.
         ],
     },
     {

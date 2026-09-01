@@ -326,10 +326,12 @@ export const buildCommands = (
         // accounting/tax/time reports were never in it to begin with. Flattened
         // here so every report stays one keystroke away.
         //
-        // Pushed before the settings bands but after `walk`, so the accounting
-        // reports that DO still have a menu entry keep their in-context
-        // breadcrumb ("Accounting › Financial Statements") — `push` dedupes on
-        // the id and the first writer wins.
+        // No report has a menu entry any more: the Financial Statements and
+        // Finance Reports menus were the last ones, and they came out of the
+        // tree once the Reports Center indexed the same eleven paths. So this
+        // loop is the only writer for every report id, and a report's group is
+        // its catalogue category ("Reports › Payables") — which is also the
+        // breadcrumb resolveBreadcrumb will show for it.
         for (const report of reports) {
             if (report.slug !== null && !canView(report.slug, permissions)) {
                 continue;

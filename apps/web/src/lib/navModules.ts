@@ -12,18 +12,20 @@ import type { PermissionSet } from "@models/permissions";
  * The nav tree, reshaped for a two-column rail: modules on the left, the
  * selected module's destinations on the right.
  *
- * The tree in navigation.tsx is three levels deep (Accounts Management >
- * Finance Reports > AR Aging) and one module carries sixteen children. Rendered
- * as nested accordions that meant opening a menu pushed everything below it off
- * screen, and a menu inside a menu needed two clicks before a destination was
- * even visible. The shape here is flatter by construction:
+ * The tree in navigation.tsx runs two levels deep, and one module (Accounts
+ * Management) carries fourteen children. Rendered as accordions that meant
+ * opening a menu pushed everything below it off screen. The shape here is
+ * flatter by construction:
  *
  *   level 1 (top-level entry)  -> a rail icon
  *   level 2 (its direct links) -> the panel's first, uncaptioned section
  *   level 3 (a nested menu)    -> a captioned section in the same panel
  *
- * So the third level survives as a *caption*, not as another thing to open, and
- * a whole module is on screen at once with nothing to expand.
+ * A third level therefore survives as a *caption*, not as another thing to
+ * open, and a whole module is on screen at once with nothing to expand. The
+ * tree has no third level left today - Financial Statements and Finance Reports
+ * were the last two, and the Reports Center indexes those paths now - but the
+ * rule is kept so a menu that grows one does not need a new render path.
  *
  * navigation.tsx stays the single source of truth. Nothing here is authored by
  * hand: add an entry there and it appears in the rail, the panel and the
@@ -51,7 +53,7 @@ export interface NavModule {
     to?: string;
     exact?: boolean;
     addPath?: string;
-    /** Panel heading: the module for a menu, the band for a plain link. */
+    /** Flyout heading. Unused by a plain link, which has no flyout. */
     panelTitle: string;
     sections: NavModuleSection[];
 }
@@ -118,25 +120,15 @@ export const buildNavModules = (
 ): NavModule[] => {
     const visible = filterTree(items, permissions);
 
-    // A top-level plain link (Reports, Audit Trail) has no children to show, so
-    // its panel would be a heading over nothing. It gets its band instead: the
-    // neighbourhood it belongs to, with itself highlighted among its siblings.
-    // Selecting Audit Trail therefore reveals Approvals Queue and AI
-    // Extractions rather than an empty column.
-    const linksByBand = new Map<string, NavLinkItem[]>();
-    let band = "";
-    for (const item of visible) {
-        if (item.type === "header") {
-            band = item.title;
-        } else if (item.type === "link") {
-            const siblings = linksByBand.get(band) ?? [];
-            siblings.push(item);
-            linksByBand.set(band, siblings);
-        }
-    }
-
+    // A top-level plain link (Dashboard, Reports, Audit Trail) is a
+    // destination, not a menu, so it gets no sections and therefore no flyout.
+    // An earlier revision lent it its band - hovering Audit Trail revealed
+    // Approvals Queue and AI Extractions - but a panel opening over the page
+    // when the row you are pointing at is one click away is a menu you did not
+    // ask for, and the band's siblings are already the rows directly above and
+    // below it in the rail.
     const modules: NavModule[] = [];
-    band = "";
+    let band = "";
     for (const item of visible) {
         if (item.type === "header") {
             band = item.title;
@@ -164,8 +156,8 @@ export const buildNavModules = (
                 to: item.to,
                 exact: item.exact,
                 addPath: item.addPath,
-                panelTitle: band,
-                sections: [{ items: linksByBand.get(band) ?? [item] }],
+                panelTitle: item.title,
+                sections: [],
             });
         }
     }
