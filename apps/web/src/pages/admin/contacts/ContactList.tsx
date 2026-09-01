@@ -286,7 +286,7 @@ const ContactList: React.FC = () => {
 
     return (
         <div className="space-y-4">
-            <PageHeader title="Contacts">
+            <PageHeader title="Parties">
                 {hasPermission(permissions, 'customers', 'view') && (
                     <ExportButton
                         url={Constants.EXPORT_CONTACTS_URL}

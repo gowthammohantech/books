@@ -71,20 +71,17 @@ describe('buildCommands', () => {
         // These have no menu entry at all, so the palette is the only way to
         // reach them by keyboard — regressing this is how modules go missing.
         const all = titles();
-        expect(all).toContain('Sales Dashboard');
-        expect(all).toContain('Accounts Dashboard');
-        expect(all).toContain('Expenses Dashboard');
         expect(all).toContain('Expense Categories');
         expect(all).toContain('Account Settings');
     });
 
     it('gates the sidebar-less pages on the slug their route guard uses', () => {
-        const noDashboard = allPerms
-            .filter((p) => p.moduleSlug !== 'dashboard')
-            .concat(perm('dashboard', { view: false }));
-        expect(titles(noDashboard)).not.toContain('Sales Dashboard');
+        const noExpenses = allPerms
+            .filter((p) => p.moduleSlug !== 'expenses')
+            .concat(perm('expenses', { view: false }));
+        expect(titles(noExpenses)).not.toContain('Expense Categories');
         // ...while the ungated account destinations survive.
-        expect(titles(noDashboard)).toContain('Log Out');
+        expect(titles(noExpenses)).toContain('Log Out');
     });
 });
 
@@ -96,7 +93,7 @@ describe('coverage of the real sidebar tree', () => {
     const superAdminCommands = buildCommands([]);
 
     it.each([
-        'Dashboard', 'Contacts', 'Invoices', 'Quotations', 'Purchases',
+        'Dashboard', 'Parties', 'Invoices', 'Quotations', 'Purchases',
         'Purchase Orders', 'Debit Notes', 'Credit Notes', 'Items', 'Inventory',
         'Banking', 'Expenses', 'Petty Cash', 'Chart of Accounts',
         'Journal Entries', 'Budgets', 'Fixed Assets', 'Payroll Profiles',

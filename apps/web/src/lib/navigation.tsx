@@ -1,18 +1,4 @@
-import { MdSecurity } from "react-icons/md";
-import {
-    Home,
-    Box,
-    ShoppingBag,
-    Users,
-    BarChart2,
-    LandmarkIcon,
-    Percent,
-    Receipt,
-    Briefcase,
-    Building2,
-    ClipboardCheck,
-    ShieldCheck,
-} from "lucide-react";
+import { AnimatedIcon } from "@components/icons";
 import type { NavItemType } from "@models/sidebar";
 import type { PermissionSet } from "@models/permissions";
 
@@ -27,9 +13,13 @@ import type { PermissionSet } from "@models/permissions";
  *
  * The tree is grouped into captioned bands (`type: "header"`). The bands name
  * what a module is FOR rather than what it is called internally, so the rail
- * reads as an ERP rather than as a list of tables: a purchase clerk looks for
- * "Purchase Management", not for "Purchases" filed between "Contacts" and
- * "Items & Inventory".
+ * reads as an ERP rather than as a list of tables: a purchase clerk looks under
+ * OPERATIONS for "Purchase", not for a "Purchases" table filed between
+ * "Parties" and "Items & Inventory".
+ *
+ * The group titles carry no "… Management" suffix. Five of them had one, which
+ * made the rail five words longer and told the reader nothing the band caption
+ * had not already said.
  *
  * A band is presentation only. It carries no route and no permission of its
  * own — Sidebar.tsx drops any band left empty once permission filtering has
@@ -58,16 +48,17 @@ import type { PermissionSet } from "@models/permissions";
  */
 export const navItems: NavItemType[] = [
     { type: "header", title: "Overview", slug: "band-overview" },
-    // Single entry point: the other dashboard views (Sales, Accounts, Expenses)
-    // are switchable from the DashboardSwitcher top bar on every dashboard page.
-    { type: "link", to: "/", icon: <Home size={16} />, title: "Dashboard", slug: "dashboard" },
+    // The only dashboard. Sales, Accounts and Expenses used to be three more
+    // screens behind a switcher in the top bar; they said the same things in
+    // four places, so there is one screen and one entry point now.
+    { type: "link", to: "/", icon: <AnimatedIcon name="dashboard" size={16} />, title: "Dashboard", slug: "dashboard" },
 
     { type: "header", title: "Operations", slug: "band-operations" },
     {
         type: "collapsible",
         id: "purchases",
-        icon: <ShoppingBag size={16} />,
-        title: "Purchase Management",
+        icon: <AnimatedIcon name="purchases" size={16} />,
+        title: "Purchase",
         slug: "purchases",
         children: [
             {
@@ -108,8 +99,8 @@ export const navItems: NavItemType[] = [
     {
         type: "collapsible",
         id: "products-inventory",
-        icon: <Box size={16} />,
-        title: "Inventory Management",
+        icon: <AnimatedIcon name="inventory" size={16} />,
+        title: "Inventory",
         slug: "product-services",
         children: [
             {
@@ -157,8 +148,8 @@ export const navItems: NavItemType[] = [
     {
         type: "collapsible",
         id: "sales",
-        icon: <Receipt size={16} />,
-        title: "Sales Management",
+        icon: <AnimatedIcon name="sales" size={16} />,
+        title: "Sales",
         slug: "sales",
         children: [
             {
@@ -210,8 +201,8 @@ export const navItems: NavItemType[] = [
     {
         type: "link",
         to: "/contacts",
-        icon: <Users size={16} />,
-        title: "Contacts",
+        icon: <AnimatedIcon name="contacts" size={16} />,
+        title: "Parties",
         slug: "contacts",
         addPath: "/contacts/new",
     },
@@ -224,8 +215,8 @@ export const navItems: NavItemType[] = [
         // the report packs as sub-menus rather than as peers.
         type: "collapsible",
         id: "accounts",
-        icon: <LandmarkIcon size={16} />,
-        title: "Accounts Management",
+        icon: <AnimatedIcon name="accounts" size={16} />,
+        title: "Accounts",
         slug: "banking",
         children: [
             {
@@ -335,8 +326,8 @@ export const navItems: NavItemType[] = [
         // users open the app at all, and it was three levels deep.
         type: "collapsible",
         id: "taxation",
-        icon: <Percent size={16} />,
-        title: "Taxation Management",
+        icon: <AnimatedIcon name="taxation" size={16} />,
+        title: "Taxation",
         slug: "accounting",
         children: [
             {
@@ -374,7 +365,7 @@ export const navItems: NavItemType[] = [
     {
         type: "link",
         to: "/accounting/fixed-assets",
-        icon: <Building2 size={16} />,
+        icon: <AnimatedIcon name="fixed-assets" size={16} />,
         title: "Fixed Assets",
         slug: "accounting",
     },
@@ -387,7 +378,7 @@ export const navItems: NavItemType[] = [
     {
         type: "link",
         to: "/reports",
-        icon: <BarChart2 size={16} />,
+        icon: <AnimatedIcon name="reports" size={16} />,
         title: "Reports",
         slug: "reports",
     },
@@ -396,7 +387,7 @@ export const navItems: NavItemType[] = [
     {
         type: "collapsible",
         id: "payroll",
-        icon: <Briefcase size={16} />,
+        icon: <AnimatedIcon name="payroll" size={16} />,
         title: "Payroll & Time",
         slug: "payroll",
         children: [
@@ -472,27 +463,20 @@ export const navItems: NavItemType[] = [
         // an audit, not a preference.
         type: "link",
         to: "/activity-log",
-        icon: <ShieldCheck size={16} />,
+        icon: <AnimatedIcon name="audit-trail" size={16} />,
         title: "Audit Trail",
         slug: "activity-log",
     },
     {
         type: "link",
         to: "/accounting/approvals",
-        icon: <ClipboardCheck size={16} />,
-        title: "Approvals Queue",
+        icon: <AnimatedIcon name="approvals" size={16} />,
+        title: "Approvals",
         slug: "accounting",
     },
     // Users, Roles & Permissions used to sit in an "Administration" group here,
     // duplicating the Settings catalogue's Users & Roles card. They now live
     // only under Settings.
-    {
-        type: "link",
-        to: "/ai/extractions",
-        icon: <MdSecurity size={16} />,
-        title: "AI Extractions",
-        slug: "ai",
-    },
 ];
 
 // --- Permission Check Helpers ---

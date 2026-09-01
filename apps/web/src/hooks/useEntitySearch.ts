@@ -23,7 +23,7 @@ const PER_TYPE_LIMIT = 5;
 
 const ENTITY_LABELS: Record<EntityType, string> = {
     invoice: "Invoices",
-    contact: "Contacts",
+    contact: "Parties",
     product: "Items"
 };
 

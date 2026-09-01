@@ -55,7 +55,7 @@ const DOCUMENT_TABS: ReadonlyArray<{ label: string; entityType: string }> = [
     { label: "Voucher", entityType: "JournalEntry" },
     { label: "Payments", entityType: "InvoicePayment" },
     { label: "Stock", entityType: "Inventory" },
-    { label: "Contacts", entityType: "Contact" },
+    { label: "Parties", entityType: "Contact" },
 ];
 
 const ActivityLogList: React.FC = () => {

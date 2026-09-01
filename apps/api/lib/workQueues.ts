@@ -86,7 +86,7 @@ export async function computeWorkQueues(
     billsUnpaid,
     bankUnexplained,
     quotationsExpiring,
-    // One queue to the user — the Approvals Queue page lists all three document
+    // One queue to the user — the Approvals page lists all three document
     // types together — so one number.
     awaitingApproval:
       invoicesAwaitingApproval + expensesAwaitingApproval + purchasesAwaitingApproval,

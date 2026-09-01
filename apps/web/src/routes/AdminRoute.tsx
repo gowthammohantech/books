@@ -1,8 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import AdminDashboard from "@pages/admin/AdminDashboard";
-import SalesDashboard from "@pages/admin/dashboard/SalesDashboard";
-import AccountsDashboard from "@pages/admin/dashboard/AccountsDashboard";
-import ExpensesDashboard from "@pages/admin/dashboard/ExpensesDashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminLayout from "@components/admin/layouts/AdminLayout";
 import SettingsLayout from "@components/admin/layouts/SettingsLayout";
@@ -117,7 +114,6 @@ import StripeConfig from "@pages/admin/settings/StripeConfig";
 import AccountingIntegrations from "@pages/admin/settings/AccountingIntegrations";
 import MessagingSettings from "@pages/admin/settings/MessagingSettings";
 import AiSettings from "@pages/admin/settings/AiSettings";
-import ExtractionHistory from "@pages/admin/ai/ExtractionHistory";
 import ChartOfAccountsList from "@pages/admin/accounting/ChartOfAccountsList";
 import JournalEntryList from "@pages/admin/accounting/JournalEntryList";
 import CreateJournalEntry from "@pages/admin/accounting/CreateJournalEntry";
@@ -175,9 +171,6 @@ const AdminRoute = () => {
 
                 <Route element={<ProtectedRoute moduleSlug="dashboard" action="view" />}>
                     <Route path="/dashboard" element={<><Seo title="Dashboard" /><AdminDashboard /></>} />
-                    <Route path="/dashboard/sales" element={<><Seo title="Sales & Invoices" /><SalesDashboard /></>} />
-                    <Route path="/dashboard/accounts" element={<><Seo title="Accounts & P&L" /><AccountsDashboard /></>} />
-                    <Route path="/dashboard/expenses" element={<><Seo title="Expenses" /><ExpensesDashboard /></>} />
                 </Route>
 
                 {/* Product & Services */}
@@ -250,7 +243,7 @@ const AdminRoute = () => {
 
                 {/* Contacts */}
                 <Route element={<ProtectedRoute moduleSlug="contacts" action="view" />}>
-                    <Route path="/contacts" element={<><Seo title="Contacts" /><ContactList /></>} />
+                    <Route path="/contacts" element={<><Seo title="Parties" /><ContactList /></>} />
                     <Route path="/contacts/new" element={<><Seo title="New Contact" /><ContactForm /></>} />
                     <Route path="/contacts/edit/:id" element={<><Seo title="Edit Contact" /><ContactForm /></>} />
                     <Route path="/contacts/:id" element={<><Seo title="Contact" /><ContactCard /></>} />
@@ -384,7 +377,7 @@ const AdminRoute = () => {
                     <Route path="/accounting/cost-centers" element={<><Seo title="Profit Centers" /><CostCenters /></>} />
                     <Route path="/accounting/projects" element={<><Seo title="Projects" /><Projects /></>} />
                     <Route path="/accounting/fixed-assets" element={<><Seo title="Fixed Assets" /><FixedAssets /></>} />
-                    <Route path="/accounting/approvals" element={<><Seo title="Approvals Queue" /><ApprovalsQueue /></>} />
+                    <Route path="/accounting/approvals" element={<><Seo title="Approvals" /><ApprovalsQueue /></>} />
                 </Route>
 
                 {/* Audit Trail. Moved out of the settings shell: "who changed
@@ -407,7 +400,6 @@ const AdminRoute = () => {
                 <Route element={<ProtectedRoute moduleSlug="payment-transactions" action="view" />}>
                     <Route path="/payments/transactions" element={<><Seo title="Transactions" /><PaymentTransactionList /></>} />
                 </Route>
-                <Route path="/ai/extractions" element={<><Seo title="AI Extractions" /><ExtractionHistory /></>} />
 
                 {/* Activity Log, Users and Roles & Permissions are settings
                     catalogue entries — they live in the settings shell below. */}

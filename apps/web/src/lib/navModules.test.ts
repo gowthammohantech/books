@@ -119,7 +119,7 @@ describe('matchesNavRoute', () => {
 
     it('treats "/" as the dashboard, not as everything', () => {
         expect(matchesNavRoute('/', '/')).toBe(true);
-        expect(matchesNavRoute('/', '/dashboard/sales')).toBe(true);
+        expect(matchesNavRoute('/', '/dashboard')).toBe(true);
         expect(matchesNavRoute('/', '/invoices')).toBe(false);
     });
 });

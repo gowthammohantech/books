@@ -17,8 +17,8 @@ export const MODULE_LANDING_PATHS: Record<string, { path: string; label: string 
     // Dashboards
     dashboard: { path: "/dashboard", label: "Dashboard" },
 
-    // Contacts
-    contacts: { path: "/contacts", label: "Contacts" },
+    // Parties
+    contacts: { path: "/contacts", label: "Parties" },
 
     // Sales
     sales: { path: "/invoices", label: "Sales" },
@@ -68,7 +68,6 @@ export const MODULE_LANDING_PATHS: Record<string, { path: string; label: string 
     // Administration
     "manage-users": { path: "/users", label: "Administration" },
     "activity-log": { path: "/activity-log", label: "Activity Log" },
-    ai: { path: "/ai/extractions", label: "AI Extractions" },
 
     // Settings
     settings: { path: "/settings/company-settings", label: "Settings" },
