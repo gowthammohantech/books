@@ -1,14 +1,9 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-    ChevronRight,
-    Plus,
-    LifeBuoy,
-    PanelLeftClose,
-    PanelLeftOpen,
-    Settings,
-} from "lucide-react";
+import { ChevronRight, LifeBuoy } from "lucide-react";
 import { useSelector } from "react-redux";
+
+import { AnimatedIcon } from "@components/icons";
 import BottomBar from "./layouts/BottomBar";
 import { cn } from "@lib/cn";
 import { resolveCompanyLogo } from "@utils/companyLogo";
@@ -79,7 +74,7 @@ const AddButton = ({ to, title }: { to: string; title: string }) => (
         aria-label={`Add new ${title}`}
         className="absolute right-1 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground opacity-0 transition-opacity group-hover/row:opacity-100 focus-visible:opacity-100"
     >
-        <Plus size={14} />
+        <AnimatedIcon name="plus" size={14} />
     </Link>
 );
 
@@ -241,7 +236,7 @@ const ModulePanel = ({
                     title={`Add new ${navModule.title}`}
                     className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-primary"
                 >
-                    <Plus size={15} />
+                    <AnimatedIcon name="plus" size={15} />
                 </Link>
             )}
         </div>
@@ -485,7 +480,13 @@ const Sidebar = ({
                     and at both widths. */}
                 <div className="shrink-0 border-t border-sidebar-border py-1">
                     {[
-                        { to: "/settings", icon: <Settings size={16} />, label: "Settings" },
+                        {
+                            to: "/settings",
+                            icon: <AnimatedIcon name="settings" size={16} />,
+                            label: "Settings",
+                        },
+                        // LifeBuoy stays static: a spinning life ring reads as
+                        // loading, which is the one thing Help must not say.
                         { to: "/help", icon: <LifeBuoy size={16} />, label: "Get Help" },
                     ].map((entry) => (
                         <div
@@ -525,7 +526,11 @@ const Sidebar = ({
                             )}
                         >
                             <span className="shrink-0">
-                                {isOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+                                {isOpen ? (
+                                    <AnimatedIcon name="panel-close" size={16} />
+                                ) : (
+                                    <AnimatedIcon name="panel-open" size={16} />
+                                )}
                             </span>
                             {isOpen && <span className="truncate text-sm font-medium">Collapse</span>}
                         </button>
@@ -536,7 +541,7 @@ const Sidebar = ({
                     <div
                         role="menu"
                         aria-label={peekModule.panelTitle}
-                        className="fixed z-50 flex w-56 flex-col rounded-xl border border-sidebar-border bg-sidebar py-2 shadow-xl"
+                        className="fixed z-50 flex w-56 origin-top-left flex-col rounded-xl border border-sidebar-border bg-sidebar py-2 shadow-xl animate-pop-in motion-reduce:animate-none"
                         style={{ top: peek.top, left: peek.left, maxHeight: "70vh" }}
                     >
                         <ModulePanel

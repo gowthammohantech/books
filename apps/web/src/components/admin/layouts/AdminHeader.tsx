@@ -1,4 +1,6 @@
-import { ChevronRight, Search } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+
+import { AnimatedIcon } from '@components/icons';
 import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
@@ -121,7 +123,7 @@ const AdminHeader = () => {
                     className="flex items-center gap-2 rounded-lg border border-border bg-muted/60 px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer lg:w-56 lg:justify-between xl:w-72"
                 >
                     <span className="flex items-center gap-2">
-                        <Search className="w-4 h-4" />
+                        <AnimatedIcon name="search" size={16} />
                         <span className="hidden lg:inline">Search…</span>
                     </span>
                     <kbd className="hidden lg:inline rounded border border-border bg-card px-1.5 py-0.5 text-[11px] font-medium">

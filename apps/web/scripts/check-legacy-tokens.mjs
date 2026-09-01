@@ -11,7 +11,7 @@
  * rule is enabled and this script reports zero. Run: npm run lint:tokens
  */
 import { readdirSync, readFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 
 const ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const SRC = join(ROOT, "src");
@@ -105,6 +105,20 @@ const RULES = [
     hint: "-danger / -danger-soft -> -destructive / -destructive/10",
     pattern: color("danger(?:-soft)?"),
   },
+
+  // ---- Keeps the animated-icon chunk boundary honest. ----
+  {
+    id: "motion-outside-chunk",
+    enabled: true,
+    stage: "icons",
+    hint:
+      "`motion` may only be value-imported from components/icons/variants/. " +
+      "A static import anywhere else puts ~35 kB in the initial bundle and " +
+      "defeats the lazy loading. Use `import type` if you only need types.",
+    // The variants directory IS the lazy chunk — motion belongs there.
+    allowIn: /^apps\/web\/src\/components\/icons\/variants\//,
+    pattern: /^\s*import\s+(?!type\b)[^;]*from\s+["']motion(?:\/[a-z-]+)?["']/gm,
+  },
 ];
 
 function* walk(dir) {
@@ -126,7 +140,11 @@ const findings = new Map(active.map((r) => [r.id, []]));
 for (const file of files) {
   const text = readFileSync(file, "utf8");
   const lines = text.split(/\r?\n/);
+  // Posix-normalised: on Windows relative() hands back backslashes, which
+  // no `allowIn` pattern would ever match.
+  const rel = `apps/web/${relative(ROOT, file).split(sep).join("/")}`;
   for (const rule of active) {
+    if (rule.allowIn?.test(rel)) continue;
     rule.pattern.lastIndex = 0;
     if (!rule.pattern.test(text)) continue;
     lines.forEach((line, i) => {

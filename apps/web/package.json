@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "lint:tokens": "node scripts/check-legacy-tokens.mjs"
+    "lint:tokens": "node scripts/check-legacy-tokens.mjs",
+    "gen:icons": "node scripts/gen-icon-variants.mjs"
   },
   "dependencies": {
     "@elixirbooks/enums": "*",
@@ -42,6 +43,7 @@
     "jwt-decode": "^4.0.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.525.0",
+    "motion": "^13.1.1",
     "nodemailer": "9.1.0",
     "qrcode.react": "^4.2.0",
     "quill": "^2.0.2",
