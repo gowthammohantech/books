@@ -49,6 +49,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@elixirbooks/enums": "*",
+    "@elixirbooks/money": "*",
     "@elixirbooks/validation": "*",
     "@prisma/client": "~5.22.0",
     "archiver": "^7.0.1",

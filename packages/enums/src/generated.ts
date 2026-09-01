@@ -78,6 +78,26 @@ export const GATEWAY_KIND_VALUES = [
   'OFFLINE',
 ] as const satisfies readonly GatewayKind[];
 
+/** Mirrors the Prisma `InvoiceStatus` enum. */
+export type InvoiceStatus =
+  | 'DRAFT'
+  | 'UNPAID'
+  | 'SENT'
+  | 'PAID'
+  | 'OVERDUE'
+  | 'CANCELLED'
+  | 'PARTIALLY_PAID';
+
+export const INVOICE_STATUS_VALUES = [
+  'DRAFT',
+  'UNPAID',
+  'SENT',
+  'PAID',
+  'OVERDUE',
+  'CANCELLED',
+  'PARTIALLY_PAID',
+] as const satisfies readonly InvoiceStatus[];
+
 /** Mirrors the Prisma `LeavePortion` enum. */
 export type LeavePortion =
   | 'FULL'
@@ -121,6 +141,24 @@ export const PAYMENT_TRANSACTION_STATUS_VALUES = [
   'REFUNDED',
   'PARTIALLY_REFUNDED',
 ] as const satisfies readonly PaymentTransactionStatus[];
+
+/** Mirrors the Prisma `PurchaseStatus` enum. */
+export type PurchaseStatus =
+  | 'new'
+  | 'pending'
+  | 'completed'
+  | 'cancelled'
+  | 'partially_paid'
+  | 'paid';
+
+export const PURCHASE_STATUS_VALUES = [
+  'new',
+  'pending',
+  'completed',
+  'cancelled',
+  'partially_paid',
+  'paid',
+] as const satisfies readonly PurchaseStatus[];
 
 /** Mirrors the Prisma `ProjectMemberRole` enum. */
 export type ProjectMemberRole =
