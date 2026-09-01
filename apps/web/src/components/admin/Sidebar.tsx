@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useMemo, useEffect, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ChevronRight, LifeBuoy } from "lucide-react";
 import { useSelector } from "react-redux";
@@ -10,6 +10,7 @@ import { resolveCompanyLogo } from "@utils/companyLogo";
 import { resolveNavPath as resolveSidebarPath } from "@lib/navPaths";
 import { badgesByRoute } from "@lib/workQueues";
 import { useWorkQueues } from "@hooks/useWorkQueues";
+import { useNavFlyout } from "@hooks/useNavFlyout";
 import { canCreate } from "@lib/navigation";
 import {
     buildNavModules,
@@ -307,52 +308,29 @@ const Sidebar = ({
         [modules, pathname]
     );
 
-    // The children live in a flyout anchored to the row that opened it. Fixed
-    // rather than absolute: the rail scrolls, and an absolutely placed flyout
-    // would be clipped by its own scroll container.
-    const [peek, setPeek] = useState<{ id: string; top: number; left: number } | null>(null);
+    // The children live in a flyout anchored to the row that opened it, shared
+    // with the settings rail so both open the same way in the same place.
+    const { flyout: peek, openFlyout, closeFlyout: closePeek } = useNavFlyout();
     const peekModule = peek ? modules.find((navModule) => navModule.id === peek.id) : undefined;
-    const closePeek = useCallback(() => setPeek(null), []);
 
     const openPeek = useCallback(
         (navModule: NavModule, element: HTMLElement) => {
             // A module that is only a link (Dashboard, Fixed Assets, Reports)
-            // has nothing to fly out; an empty panel would be a promise of
-            // content that never arrives.
-            if (navModule.sections.length === 0) {
-                setPeek(null);
-                return;
-            }
+            // has no rows, so this opens nothing.
             const rows = navModule.sections.reduce(
                 (total, section) => total + section.items.length + (section.caption ? 1 : 0),
                 0
             );
-            const rect = element.getBoundingClientRect();
-            const height = Math.min(0.7 * window.innerHeight, 56 + rows * 32);
-            setPeek({
-                id: navModule.id,
-                left: rect.right + 8,
-                top: Math.max(8, Math.min(rect.top - 8, window.innerHeight - height - 16)),
-            });
+            openFlyout(navModule.id, element, rows);
         },
-        []
+        [openFlyout]
     );
 
-    // A flyout that outlives what opened it is a stray menu: close it when the
-    // rail changes width (the anchor coordinates go stale), when the route
-    // changes, and on Escape.
+    // The one close the hook cannot know about: the rail changing width leaves
+    // the anchor coordinates pointing at where the row used to be.
     useEffect(() => {
-        setPeek(null);
-    }, [isOpen]);
-    useEffect(() => setPeek(null), [pathname]);
-    useEffect(() => {
-        if (!peek) return;
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape") setPeek(null);
-        };
-        document.addEventListener("keydown", onKeyDown);
-        return () => document.removeEventListener("keydown", onKeyDown);
-    }, [peek]);
+        closePeek();
+    }, [isOpen, closePeek]);
 
     return (
         <aside

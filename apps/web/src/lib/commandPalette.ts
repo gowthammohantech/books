@@ -3,7 +3,7 @@ import { BarChart2 } from "lucide-react";
 import type { NavItemType } from "@models/sidebar";
 import type { PermissionSet } from "@models/permissions";
 import { navItems, canCreate, canView } from "./navigation";
-import { settingsBands } from "./settingsCatalogue";
+import { allSettingsGroups } from "./settingsCatalogue";
 import { reports } from "./reportCatalogue";
 
 /**
@@ -323,28 +323,25 @@ export const buildCommands = (
             });
         }
 
-        for (const band of settingsBands) {
-            for (const group of band.groups) {
-                for (const link of group.links) {
-                    if (link.slug !== null && !canView(link.slug, permissions)) {
-                        continue;
-                    }
-                    push({
-                        id: `nav:${link.to}`,
-                        kind: "navigate",
-                        title: link.title,
-                        group: `Settings › ${group.title}`,
-                        path: link.to,
-                        icon: group.icon,
-                        keywords: [
-                            "settings",
-                            band.title,
-                            group.title,
-                            link.to,
-                            ...(SYNONYMS[link.to] ?? []),
-                        ],
-                    });
+        for (const group of allSettingsGroups) {
+            for (const link of group.links) {
+                if (link.slug !== null && !canView(link.slug, permissions)) {
+                    continue;
                 }
+                push({
+                    id: `nav:${link.to}`,
+                    kind: "navigate",
+                    title: link.title,
+                    group: `Settings › ${group.title}`,
+                    path: link.to,
+                    icon: group.icon,
+                    keywords: [
+                        "settings",
+                        group.title,
+                        link.to,
+                        ...(SYNONYMS[link.to] ?? []),
+                    ],
+                });
             }
         }
     }
