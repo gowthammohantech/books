@@ -91,11 +91,10 @@ const emptyForm = (): IForm => ({
     usefulLifeMonths: "",
     method: "STRAIGHT_LINE",
     acquisitionDate: "",
-    postAcquisition: false,
+    postAcquisition: false
 });
 
 const FixedAssets: React.FC = () => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const [searchParams, setSearchParams] = useSearchParams();
     const { formatDate } = useDateFormatter();
@@ -130,14 +129,14 @@ const FixedAssets: React.FC = () => {
     const search = searchParams.get("search") || "";
     const limit = Number(searchParams.get("limit") || 10);
     const page = Number(searchParams.get("page") || 1);
-    const authHeaders = { Authorization: `Bearer ${token}` };
+    const authHeaders = {};
 
     const fetchItems = async (s?: string, l?: number, p?: number) => {
         try {
             setIsLoading(true);
             const response = await api.get(Constants.FETCH_FIXED_ASSETS_URL, {
                 params: { search: s, limit: l, page: p },
-                headers: authHeaders,
+                headers: authHeaders
             });
             setItems(response.data.data || []);
             if (response.data.pagination) setPagination(response.data.pagination);
@@ -165,7 +164,7 @@ const FixedAssets: React.FC = () => {
             usefulLifeMonths: String(item.usefulLifeMonths),
             method: item.method,
             acquisitionDate: item.acquisitionDate ? item.acquisitionDate.substring(0, 10) : "",
-            postAcquisition: item.postAcquisition ?? false,
+            postAcquisition: item.postAcquisition ?? false
         });
         setIsEditMode(true);
         setFormErrors({});
@@ -195,7 +194,7 @@ const FixedAssets: React.FC = () => {
                 usefulLifeMonths: Number(form.usefulLifeMonths),
                 method: form.method,
                 acquisitionDate: form.acquisitionDate,
-                postAcquisition: form.postAcquisition,
+                postAcquisition: form.postAcquisition
             };
             if (isEditMode && form.id) {
                 await api.put(`${Constants.UPDATE_FIXED_ASSET_URL}/${form.id}`, payload, { headers: authHeaders });
@@ -284,7 +283,7 @@ const FixedAssets: React.FC = () => {
                 {
                     proceeds: Number(disposeForm.proceeds),
                     tax: disposeForm.tax ? Number(disposeForm.tax) : 0,
-                    disposalDate: disposeForm.disposalDate,
+                    disposalDate: disposeForm.disposalDate
                 },
                 { headers: authHeaders }
             );
@@ -309,7 +308,7 @@ const FixedAssets: React.FC = () => {
             label: "Dispose",
             icon: <XCircle size={14} />,
             onClick: (item: IFixedAsset) => openDispose(item),
-            isDisabled: (item: IFixedAsset) => item.status === "disposed",
+            isDisabled: (item: IFixedAsset) => item.status === "disposed"
         },
     ];
 

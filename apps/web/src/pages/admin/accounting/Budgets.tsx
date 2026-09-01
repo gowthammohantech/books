@@ -62,11 +62,10 @@ const emptyForm = (): IBudgetForm => ({
     accountId: "",
     periodStart: "",
     periodEnd: "",
-    amount: "",
+    amount: ""
 });
 
 const Budgets: React.FC = () => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const [searchParams, setSearchParams] = useSearchParams();
     const { formatDate } = useDateFormatter();
@@ -89,14 +88,14 @@ const Budgets: React.FC = () => {
     const limit = Number(searchParams.get("limit") || 10);
     const page = Number(searchParams.get("page") || 1);
 
-    const authHeaders = { Authorization: `Bearer ${token}` };
+    const authHeaders = {};
 
     const fetchBudgets = async (s?: string, l?: number, p?: number) => {
         try {
             setIsLoading(true);
             const response = await api.get(Constants.FETCH_BUDGETS_URL, {
                 params: { search: s, limit: l, page: p },
-                headers: authHeaders,
+                headers: authHeaders
             });
             setBudgets(response.data.data || []);
             if (response.data.pagination) {
@@ -150,7 +149,7 @@ const Budgets: React.FC = () => {
             accountId: budget.accountId,
             periodStart: budget.periodStart ? budget.periodStart.substring(0, 10) : "",
             periodEnd: budget.periodEnd ? budget.periodEnd.substring(0, 10) : "",
-            amount: String(budget.amount),
+            amount: String(budget.amount)
         });
         setSelectedAccount(acct);
         setIsEditMode(true);
@@ -177,7 +176,7 @@ const Budgets: React.FC = () => {
                 accountId: form.accountId,
                 periodStart: form.periodStart,
                 periodEnd: form.periodEnd,
-                amount: Number(form.amount),
+                amount: Number(form.amount)
             };
             if (isEditMode && form.id) {
                 await api.put(`${Constants.UPDATE_BUDGET_URL}/${form.id}`, payload, { headers: authHeaders });

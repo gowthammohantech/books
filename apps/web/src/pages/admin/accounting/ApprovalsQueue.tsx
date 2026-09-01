@@ -1,11 +1,9 @@
 import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from "sonner";
 import { CheckCircle, XCircle } from "lucide-react";
 
-import type { RootState } from "@store/index";
 import Constants from "@constants/api";
 import Modal from "@components/admin/Modal";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
@@ -140,8 +138,7 @@ const SectionTable = ({ type, docs, onApprove, onReject, actionLoadingId, format
 
 const ApprovalsQueue: React.FC = () => {
     const { formatDate } = useDateFormatter();
-    const { token } = useSelector((state: RootState) => state.auth);
-    const authHeaders = { Authorization: `Bearer ${token}` };
+    const authHeaders = {};
 
     const [approvals, setApprovals] = useState<PendingApprovals>({ invoices: [], expenses: [], purchases: [] });
     const [isLoading, setIsLoading] = useState(true);
@@ -151,7 +148,7 @@ const ApprovalsQueue: React.FC = () => {
     const [rejectModal, setRejectModal] = useState<{ open: boolean; type: DocType; doc: PendingDoc | null }>({
         open: false,
         type: "invoices",
-        doc: null,
+        doc: null
     });
     const [rejectReason, setRejectReason] = useState("");
     const [isRejecting, setIsRejecting] = useState(false);
@@ -164,7 +161,7 @@ const ApprovalsQueue: React.FC = () => {
             setApprovals({
                 invoices: data.invoices ?? [],
                 expenses: data.expenses ?? [],
-                purchases: data.purchases ?? [],
+                purchases: data.purchases ?? []
             });
         } catch (err) {
             const msg = axios.isAxiosError(err) ? err.response?.data?.message : undefined;

@@ -150,7 +150,7 @@ const EditInvoice: React.FC = () => {
         currencyCode: '',
         paymentOptions: [],
         taxTreatment: 'STANDARD',
-        costCenterId: '',
+        costCenterId: ''
     });
 
     // Enabled link-based payment methods (Wise, Revolut, ...) from settings.
@@ -177,7 +177,7 @@ const EditInvoice: React.FC = () => {
                 ...prev,
                 paymentOptions: exists
                     ? prev.paymentOptions.filter((o) => o.name !== name)
-                    : [...prev.paymentOptions, { name, url: defaultUrl ?? '' }],
+                    : [...prev.paymentOptions, { name, url: defaultUrl ?? '' }]
             };
         });
     };
@@ -185,7 +185,7 @@ const EditInvoice: React.FC = () => {
     const setPaymentOptionUrl = (name: string, url: string) => {
         setInvoiceFormData((prev) => ({
             ...prev,
-            paymentOptions: prev.paymentOptions.map((o) => (o.name === name ? { ...o, url } : o)),
+            paymentOptions: prev.paymentOptions.map((o) => (o.name === name ? { ...o, url } : o))
         }));
     };
 
@@ -307,7 +307,7 @@ const EditInvoice: React.FC = () => {
                 billTo: user.id,
                 vehicleId: null,
                 currencyCode: user.currencyCode || prev.currencyCode,
-                taxTreatment: (user as any).defaultTaxTreatment ?? prev.taxTreatment,
+                taxTreatment: (user as any).defaultTaxTreatment ?? prev.taxTreatment
             }));
             setCustomerDetails(user);
             fetchVehiclesForCustomer(user.id);
@@ -489,7 +489,7 @@ const EditInvoice: React.FC = () => {
                     waMeUrl: data.waMeUrl,
                     phone: data.phone ?? '',
                     message: data.message ?? '',
-                    publicLink: data.publicLink ?? null,
+                    publicLink: data.publicLink ?? null
                 });
             } else {
                 toast.error('No WhatsApp URL returned');
@@ -564,7 +564,7 @@ const EditInvoice: React.FC = () => {
                                   name: String(t.name ?? ''),
                                   kind: (t.kind ?? null) as TaxLine['kind'],
                                   percent: Number(t.percent ?? t.rate ?? 0),
-                                  amount: Number(t.amount ?? 0),
+                                  amount: Number(t.amount ?? 0)
                               }))
                             : [];
                         // The persisted invoice item shape (productId/productName/
@@ -595,7 +595,7 @@ const EditInvoice: React.FC = () => {
                             costCenterId: resolveHydratedLineCentre(
                                 it.costCenterId ?? null,
                                 invoiceData.costCenterId ?? null
-                            ),
+                            )
                         } as ProductItem;
                     }),
                     notes: invoiceData.notes || '',
@@ -619,7 +619,7 @@ const EditInvoice: React.FC = () => {
                               .map((o: any) => ({ name: String(o.name), url: String(o.url ?? '') }))
                         : [],
                     taxTreatment: (invoiceData.taxTreatment as InvoiceFormData['taxTreatment']) ?? 'STANDARD',
-                    costCenterId: invoiceData.costCenterId ?? '',
+                    costCenterId: invoiceData.costCenterId ?? ''
                 }));
 
                 if (invoiceData.billFrom) {
@@ -692,8 +692,8 @@ const EditInvoice: React.FC = () => {
                 ...prev,
                 items: prev.items.map((it) => it.id === rowId ? {
                     ...it, tax_rate_id: '', tax_group_id: '', taxes: [], totalTax: 0, tax: 0, appliedTaxRateIds: [],
-                    amount: round2(Number(it.qty || 0) * Number(it.rate || 0) - Number(it.discount || 0)),
-                } : it),
+                    amount: round2(Number(it.qty || 0) * Number(it.rate || 0) - Number(it.discount || 0))
+                } : it)
             }));
             return;
         }
@@ -702,12 +702,12 @@ const EditInvoice: React.FC = () => {
         const taxableAmount = round2(Number(line.qty || 0) * Number(line.rate || 0) - Number(line.discount || 0));
         const resolved = await resolveLineTaxByRateId({
             token: token!, taxableAmount, taxRateId,
-            ...(selectedCustomer?.id ? { customerId: selectedCustomer.id } : {}),
+            ...(selectedCustomer?.id ? { customerId: selectedCustomer.id } : {})
         });
         setPartyStateMissing(!!resolved?.partyStateMissing);
         setInvoiceFormData((prev) => ({
             ...prev,
-            items: prev.items.map((it) => (it.id === rowId ? applyResolvedToLine(it, taxRateId, resolved) : it)),
+            items: prev.items.map((it) => (it.id === rowId ? applyResolvedToLine(it, taxRateId, resolved) : it))
         }));
     };
 
@@ -876,7 +876,7 @@ const EditInvoice: React.FC = () => {
                 discount_type: discount_type ?? 'Fixed',
                 discount: safeDiscountAmount,
                 ...(recomputedTaxes ? { taxes: recomputedTaxes, totalTax } : {}),
-                tax: totalTax, amount: newAmount,
+                tax: totalTax, amount: newAmount
             } as ProductItem;
         });
     };
@@ -1025,7 +1025,7 @@ const EditInvoice: React.FC = () => {
                     stateId: null,
                     isActive: true,
                     createdAt: '',
-                    updatedAt: '',
+                    updatedAt: ''
                 } as TaxRate;
             });
             const groupMemberIds = selectedTaxGroup.tax_rates.map((r) => r.id);
@@ -1036,7 +1036,7 @@ const EditInvoice: React.FC = () => {
                 totalTax: result.totalTax,
                 amount: result.amount,
                 taxes: result.taxes,
-                appliedTaxRateIds: result.appliedTaxRateIds,
+                appliedTaxRateIds: result.appliedTaxRateIds
             };
         }
 
@@ -1050,7 +1050,7 @@ const EditInvoice: React.FC = () => {
                 totalTax: result.totalTax,
                 amount: result.amount,
                 taxes: result.taxes,
-                appliedTaxRateIds: result.appliedTaxRateIds,
+                appliedTaxRateIds: result.appliedTaxRateIds
             };
         }
 
@@ -1066,7 +1066,7 @@ const EditInvoice: React.FC = () => {
             tax_group_id: product.tax_group_id,
             tax_rate_id: product.tax_rate_id,
             appliedTaxRateIds: product.appliedTaxRateIds,
-            taxes: product.taxes,
+            taxes: product.taxes
         });
         const updatedProduct: ProductItem = { ...(product as ProductItem), ...computed };
         isDirtyRef.current = true;
@@ -1087,7 +1087,7 @@ const EditInvoice: React.FC = () => {
             discount_value: product.discount?.value,
             discount_type: product.discount?.type,
             tax_group_id: product.tax?.group_id,
-            tax_rate_id: product.tax_rate?.taxRateId ?? undefined,
+            tax_rate_id: product.tax_rate?.taxRateId ?? undefined
         });
 
         let updated = false;
@@ -1113,7 +1113,7 @@ const EditInvoice: React.FC = () => {
                         discount_value: product.discount?.value,
                         ...(computed.taxes ? { taxes: computed.taxes } : {}),
                         ...(computed.totalTax !== undefined ? { totalTax: computed.totalTax } : {}),
-                        ...(computed.appliedTaxRateIds ? { appliedTaxRateIds: computed.appliedTaxRateIds } : {}),
+                        ...(computed.appliedTaxRateIds ? { appliedTaxRateIds: computed.appliedTaxRateIds } : {})
                     }
                 }
                 return item;
@@ -1242,9 +1242,8 @@ const EditInvoice: React.FC = () => {
             setIsSubmitting(true);
             await api.put(`${Constants.UPDATE_INVOICE_URL}/${invoiceId}`, formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
+                  'Content-Type': 'multipart/form-data'
+                }
             });
             toast.success('Invoice updated successfully.');
             isDirtyRef.current = false;

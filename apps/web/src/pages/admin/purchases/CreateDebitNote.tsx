@@ -157,7 +157,7 @@ const CreateDebitNote: React.FC = () => {
         sp_due_amount: 0,
         currencyCode: defaultCurrencyCode,
         billToContactId: '',
-        taxTreatment: 'STANDARD',
+        taxTreatment: 'STANDARD'
     });
 
     // Apply document defaults once loaded — seed blank new form, never overwrite user edits
@@ -246,7 +246,7 @@ const CreateDebitNote: React.FC = () => {
         try {
             setIsFetching(true);
             const response = await api.get(`${Constants.GET_PURCHASE_DETAILS_URL}/${debitNoteFormData.purchaseId}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { 'Authorization': `Bearer ${token}` }
             });
 
             const data = response.data.data;
@@ -272,7 +272,7 @@ const CreateDebitNote: React.FC = () => {
                 const mappedItems = (data.items || []).map((item: any) => ({
                     ...item,
                     tax_group_id: item.tax_group?.id ?? item.tax_group_id ?? '',
-                    tax_rate_id: item.tax_rate_id ?? undefined,
+                    tax_rate_id: item.tax_rate_id ?? undefined
                 }));
 
                 setDebitNoteFormData(prev => ({
@@ -418,13 +418,13 @@ const CreateDebitNote: React.FC = () => {
                 billToContactId: contactId ?? '',
                 billTo: '',
                 currencyCode: contact.currencyCode || prev.currencyCode,
-                taxTreatment: contact.defaultTaxTreatment ?? 'STANDARD',
+                taxTreatment: contact.defaultTaxTreatment ?? 'STANDARD'
             }));
         } else {
             setDebitNoteFormData(prev => ({
                 ...prev,
                 billToContactId: '',
-                billTo: '',
+                billTo: ''
             }));
         }
     };
@@ -640,7 +640,7 @@ const CreateDebitNote: React.FC = () => {
                         tax_group_id: product.tax?.group_id,
                         tax_rate_id: product.tax_rate?.taxRateId ?? undefined,
                         discount_type: product.discount?.type,
-                        discount_value: product.discount?.value,
+                        discount_value: product.discount?.value
                     }
                 }
                 return item;
@@ -740,9 +740,8 @@ const CreateDebitNote: React.FC = () => {
             setIsSubmitting(true);
             await api.post(Constants.CREATE_DEBIT_NOTE_URL, formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
+                  'Content-Type': 'multipart/form-data'
+                }
             });
 
             toast.success('Debit note created successfully.');

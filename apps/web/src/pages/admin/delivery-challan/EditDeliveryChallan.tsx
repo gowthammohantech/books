@@ -192,7 +192,7 @@ const EditDeliveryChallan: React.FC = () => {
         totalDiscount: null,
         grandTotal: null,
         currencyCode: defaultCurrencyCode,
-        taxTreatment: 'STANDARD',
+        taxTreatment: 'STANDARD'
     });
     const [docCreatedAt, setDocCreatedAt] = useState<string | null>(null);
 
@@ -253,7 +253,7 @@ const EditDeliveryChallan: React.FC = () => {
                     if (deliveryChallanDetail.invoice) {
                         const _invoiceOptions = {
                             id: deliveryChallanDetail.invoice.id,
-                            name: deliveryChallanDetail.invoice.invoiceNumber ?? "",
+                            name: deliveryChallanDetail.invoice.invoiceNumber ?? ""
                         };
                         setInvoiceOptions([_invoiceOptions]);
                     }
@@ -280,7 +280,7 @@ const EditDeliveryChallan: React.FC = () => {
                         totalDiscount: deliveryChallanDetail.totalDiscount,
                         grandTotal: deliveryChallanDetail.totalAmount,
                         currencyCode: deliveryChallanDetail.currencyCode || defaultCurrencyCode,
-                        taxTreatment: (deliveryChallanDetail.taxTreatment as InvoiceFormData['taxTreatment']) ?? 'STANDARD',
+                        taxTreatment: (deliveryChallanDetail.taxTreatment as InvoiceFormData['taxTreatment']) ?? 'STANDARD'
                     }));
 
                     if (deliveryChallanDetail.billFrom) {
@@ -697,7 +697,7 @@ const EditDeliveryChallan: React.FC = () => {
                         tax_group_id: product.tax?.group_id,
                         tax_rate_id: product.tax_rate?.taxRateId ?? undefined,
                         discount_type: product.discount?.type,
-                        discount_value: product.discount?.value,
+                        discount_value: product.discount?.value
                     }
                 }
                 return item;
@@ -804,9 +804,8 @@ const EditDeliveryChallan: React.FC = () => {
             setIsSaving(true);
             await api.put(`${Constants.UPDATE_DELIVERY_CHALLAN_URL}/${id}`, formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
+                  'Content-Type': 'multipart/form-data'
+                }
             });
 
             toast.success('Delivery Challan updated successfully.');

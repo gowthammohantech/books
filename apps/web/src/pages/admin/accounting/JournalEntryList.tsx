@@ -1,12 +1,10 @@
 import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { useSelector } from "react-redux";
 
 import { toast } from "sonner";
 import { CirclePlusIcon, Eye, Trash2Icon } from "lucide-react";
 
-import type { RootState } from "@store/index";
 import Constants from "@constants/api";
 import Table from "@components/admin/Table";
 import TableRow from "@components/admin/TableRow";
@@ -34,7 +32,6 @@ const formatNumber = (n: number): string => Number(n ?? 0).toFixed(2);
 const JournalEntryList: React.FC = () => {
     const { formatDate } = useDateFormatter();
     const [searchParams, setSearchParams] = useSearchParams();
-    const { token } = useSelector((state: RootState) => state.auth);
     const [entries, setEntries] = useState<JournalEntryRow[]>([]);
     const [pagination, setPagination] = useState<PaginationData>({ total: 0, page: 1, limit: 10, totalPages: 1 });
     const [isLoading, setIsLoading] = useState(false);
@@ -52,7 +49,7 @@ const JournalEntryList: React.FC = () => {
     const drillParams: Record<string, string> = {
         ...(fromDate ? { from: fromDate } : {}),
         ...(toDate ? { to: toDate } : {}),
-        ...(accountId ? { accountId } : {}),
+        ...(accountId ? { accountId } : {})
     };
     const activeFilters: ActiveFilter[] = [
         ...(fromDate ? [{ label: "From", value: fromDate }] : []),
@@ -65,9 +62,8 @@ const JournalEntryList: React.FC = () => {
         try {
             setIsLoading(true);
             const resp = await api.get(Constants.GET_JOURNAL_ENTRIES_URL, {
-                params: { page, limit, ...drillParams },
-                headers: { Authorization: `Bearer ${token}` },
-            });
+                params: { page, limit, ...drillParams }
+});
             setEntries(resp.data?.data?.journalEntries ?? []);
             setPagination(resp.data?.data?.pagination ?? { total: 0, page: 1, limit: 10, totalPages: 1 });
         } catch (err) {

@@ -2,7 +2,7 @@ import api from '@lib/apiClient';
 import Constants from "@constants/api";
 import type { Pagination } from "@models/common";
 import type { CustomFieldShape } from "@models/modulesettings/customField";
-import type { ModuleListResponse } from "@pages/admin/roles-permissions/RolePermissions";
+import type { ModuleListResponse } from "@models/apiResponses";
 
 export interface CustomFieldListResponse {
     success: boolean;
@@ -19,14 +19,14 @@ export interface FetchCustomFieldsParams {
     search?: string;
 }
 
-export const fetchCustomFieldTypes = async (_token: string) => {
+export const fetchCustomFieldTypes = async () => {
     const res = await api.get<any>(
         Constants.FETCH_CUSTOM_FIELD_TYPES
     );
     return res.data;
 };
 
-export const fetchModuleHierarchy = async (_token: string) => {
+export const fetchModuleHierarchy = async () => {
     const res = await api.get<ModuleListResponse>(
         Constants.FETCH_MODULES_URL
     );
@@ -34,15 +34,13 @@ export const fetchModuleHierarchy = async (_token: string) => {
 };
 
 export const fetchCustomFieldsByModule = async (
-    token: string,
     moduleId: string,
     params?: FetchCustomFieldsParams
 ) => {
     const res = await api.get<CustomFieldListResponse>(
         `${Constants.BASE_URL}/api/admin/custom-fields/module/${moduleId}`,
         {
-            headers: { Authorization: `Bearer ${token}` },
-            params: params,
+params: params
         }
     );
     return res.data;

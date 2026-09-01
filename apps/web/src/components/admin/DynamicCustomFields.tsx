@@ -26,7 +26,7 @@ const DynamicCustomFields: React.FC<DynamicCustomFieldsProps> = ({
 
     const { data: moduleHierarchyResponse, isLoading: isModulesLoading } = useQuery({
         queryKey: ['moduleHierarchy'],
-        queryFn: () => fetchModuleHierarchy(token!),
+        queryFn: () => fetchModuleHierarchy(),
         refetchOnMount: false,
         enabled: !!token,
         staleTime: 1000 * 60 * 60
@@ -46,7 +46,7 @@ const DynamicCustomFields: React.FC<DynamicCustomFieldsProps> = ({
 
     const { data: customFieldTypesResponse, isLoading: isTypesLoading } = useQuery({
         queryKey: ['customFieldTypes'],
-        queryFn: () => fetchCustomFieldTypes(token!),
+        queryFn: () => fetchCustomFieldTypes(),
         refetchOnMount: false,
         enabled: !!token,
         staleTime: 1000 * 60 * 60
@@ -54,7 +54,7 @@ const DynamicCustomFields: React.FC<DynamicCustomFieldsProps> = ({
 
     const { data: customFieldsResponse, isLoading: isFieldsLoading } = useQuery({
         queryKey: ['customFields', targetModuleId],
-        queryFn: () => fetchCustomFieldsByModule(token!, targetModuleId!),
+        queryFn: () => fetchCustomFieldsByModule(targetModuleId!),
         refetchOnMount: false,
         enabled: !!token && !!targetModuleId
     });

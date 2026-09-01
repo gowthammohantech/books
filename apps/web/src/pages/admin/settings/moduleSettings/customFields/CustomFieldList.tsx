@@ -42,7 +42,7 @@ const CustomFieldList: React.FC<CustomFieldListProps> = ({ moduleSlug }) => {
 
     const { data: moduleHierarchyResponse, isLoading: modulesLoading } = useQuery({
         queryKey: ['moduleHierarchy'],
-        queryFn: () => fetchModuleHierarchy(token!),
+        queryFn: () => fetchModuleHierarchy(),
         refetchOnMount: false,
         enabled: !!token
     });
@@ -61,7 +61,7 @@ const CustomFieldList: React.FC<CustomFieldListProps> = ({ moduleSlug }) => {
 
     const { data: customFieldTypesResponse, isLoading: typesLoading } = useQuery({
         queryKey: ['customFieldTypes'],
-        queryFn: () => fetchCustomFieldTypes(token!),
+        queryFn: () => fetchCustomFieldTypes(),
         refetchOnMount: false,
         enabled: !!token
     });
@@ -70,7 +70,7 @@ const CustomFieldList: React.FC<CustomFieldListProps> = ({ moduleSlug }) => {
 
     const { data: customFieldsResponse, isLoading: fieldsLoading, refetch } = useQuery({
         queryKey: ['customFields', currentModule?.id, page],
-        queryFn: () => fetchCustomFieldsByModule(token!, currentModule!.id, { page, limit: 10 }),
+        queryFn: () => fetchCustomFieldsByModule(currentModule!.id, { page, limit: 10 }),
         refetchOnMount: false,
         enabled: !!token && !!currentModule?.id
     });

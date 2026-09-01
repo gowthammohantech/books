@@ -152,7 +152,7 @@ const InvoiceList: React.FC = () => {
     // --- DYNAMIC CUSTOM FIELDS FETCHING ---
     const { data: moduleHierarchyResponse, isLoading: isModulesLoading } = useQuery({
         queryKey: ['moduleHierarchy'],
-        queryFn: () => fetchModuleHierarchy(token!),
+        queryFn: () => fetchModuleHierarchy(),
         refetchOnMount: false,
         enabled: !!token,
         staleTime: 1000 * 60 * 60
@@ -172,7 +172,7 @@ const InvoiceList: React.FC = () => {
 
     const { data: customFieldsResponse, isLoading: isCustomFieldsLoading } = useQuery({
         queryKey: ['customFields', invoicesModuleId],
-        queryFn: () => fetchCustomFieldsByModule(token!, invoicesModuleId!),
+        queryFn: () => fetchCustomFieldsByModule(invoicesModuleId!),
         refetchOnMount: false,
         enabled: !!token && !!invoicesModuleId
     });

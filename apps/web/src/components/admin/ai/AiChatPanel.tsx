@@ -14,7 +14,7 @@ import {
   useRef,
   useState,
   type FC,
-  type KeyboardEvent,
+  type KeyboardEvent
 } from 'react';
 
 import { useSelector } from 'react-redux';
@@ -28,7 +28,7 @@ import {
   Send,
   Sparkles,
   Trash2,
-  X,
+  X
 } from 'lucide-react';
 
 import Constants from '@constants/api';
@@ -71,7 +71,7 @@ function toolLabel(name: string): string {
 
 const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
   const token = useSelector((s: RootState) => s.auth.token);
-  const authHeaders = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
+  const authHeaders = useMemo(() => ({}), [token]);
 
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [title, setTitle] = useState<string | null>(null);
@@ -89,7 +89,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
     if (!token) return;
     try {
       const res = await api.get(`${Constants.AI_CHAT_SESSIONS_URL}?limit=30`, {
-        headers: authHeaders,
+        headers: authHeaders
       });
       setSessions(res.data?.data?.sessions ?? []);
     } catch {
@@ -120,7 +120,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
       setHistoryOpen(false);
       try {
         const res = await api.get(`${Constants.AI_CHAT_SESSIONS_URL}/${id}`, {
-          headers: authHeaders,
+          headers: authHeaders
         });
         const s = res.data?.data?.session;
         if (!s) return;
@@ -131,14 +131,14 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
             id: m.id,
             role: m.role,
             content: m.content,
-            toolName: m.toolName,
-          })),
+            toolName: m.toolName
+          }))
         );
       } catch {
         /* ignore */
       }
     },
-    [token, authHeaders],
+    [token, authHeaders]
   );
 
   const handleSend = useCallback(
@@ -168,22 +168,22 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
                   id: `local-tool-${assistantMessageId}-${ev.name}-${next.length}`,
                   role: 'TOOL',
                   content: '',
-                  toolName: ev.name,
+                  toolName: ev.name
                 });
               }
             }
             next.push({
               id: assistantMessageId || `local-assistant-${Date.now()}`,
               role: 'ASSISTANT',
-              content: finalText,
+              content: finalText
             });
             return next;
           });
           void refreshSessions();
-        },
+        }
       });
     },
-    [isStreaming, send, sessionId, title, refreshSessions],
+    [isStreaming, send, sessionId, title, refreshSessions]
   );
 
   const onInputKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -202,7 +202,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
       await api.patch(
         `${Constants.AI_CHAT_SESSIONS_URL}/${sessionId}`,
         { title: next },
-        { headers: authHeaders },
+        { headers: authHeaders }
       );
       void refreshSessions();
     } catch {
@@ -220,7 +220,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ isOpen, onClose }) => {
       if (id === sessionId) startNewChat();
       void refreshSessions();
     },
-    [authHeaders, sessionId, startNewChat, refreshSessions],
+    [authHeaders, sessionId, startNewChat, refreshSessions]
   );
 
   const hasContent = messages.length > 0 || isStreaming;

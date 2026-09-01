@@ -52,7 +52,7 @@ const InventoryReport: React.FC = () => {
         `${resolveCurrency(code).symbol}${Number(amount).toLocaleString(locale, { maximumFractionDigits: 2 })}`;
     const [dateRange, setDateRange] = useState<{ startDate: Date | null, endDate: Date | null }>({
         startDate: null,
-        endDate: null,
+        endDate: null
     });
     const [dateRangeError, setDateRangeError] = useState<string | null>(null);
     const [searchInput, setSearchInput] = useState<string>('');
@@ -79,10 +79,7 @@ const InventoryReport: React.FC = () => {
             params.limit = Number(searchParams.get('limit') || 10).toString();
             params.page = Number(searchParams.get('page') || 1).toString();
             const response = await api.get<InventoryReportResponse>(Constants.GET_INVENTORY_REPORT_URL, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                },
-                params
+params
             });
 
             if (response.data.data) {

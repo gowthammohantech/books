@@ -125,7 +125,7 @@ const EditPurchaseOrder: React.FC = () => {
         grandTotal: null,
         customFields: {},
         currencyCode: defaultCurrencyCode,
-        taxTreatment: 'STANDARD',
+        taxTreatment: 'STANDARD'
     });
     const [docCreatedAt, setDocCreatedAt] = useState<string | null>(null);
 
@@ -227,14 +227,14 @@ const EditPurchaseOrder: React.FC = () => {
                 supplierId: '',
                 billTo: '',
                 currencyCode: contact.currencyCode || prev.currencyCode,
-                taxTreatment: contact.defaultTaxTreatment ?? 'STANDARD',
+                taxTreatment: contact.defaultTaxTreatment ?? 'STANDARD'
             }));
         } else {
             setPurchaseFormData(prev => ({
                 ...prev,
                 contactId: '',
                 supplierId: '',
-                billTo: '',
+                billTo: ''
             }));
         }
     };
@@ -273,7 +273,7 @@ const EditPurchaseOrder: React.FC = () => {
         try {
             setIsFetching(true);
             const response = await api.get(`${Constants.FETCH_PURCHASE_ORDER_URL}/${purchaseOrderId}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { 'Authorization': `Bearer ${token}` }
             });
 
             const data = response.data.data;
@@ -312,7 +312,7 @@ const EditPurchaseOrder: React.FC = () => {
                     grandTotal: data.TotalAmount,
                     customFields: data.customFields || {}, // <-- Hydrate custom fields
                     currencyCode: data.currencyCode || defaultCurrencyCode || '',
-                    taxTreatment: (data.taxTreatment as PurchaseFormData['taxTreatment']) ?? 'STANDARD',
+                    taxTreatment: (data.taxTreatment as PurchaseFormData['taxTreatment']) ?? 'STANDARD'
                 }));
 
                 if (data.billFrom) {
@@ -537,7 +537,7 @@ const EditPurchaseOrder: React.FC = () => {
                         tax_group_id: product.tax?.group_id,
                         tax_rate_id: product.tax_rate?.taxRateId ?? undefined,
                         discount_type: product.discount?.type || "Fixed",
-                        discount_value: product.discount?.value,
+                        discount_value: product.discount?.value
                     }
                 }
                 return item;
@@ -712,9 +712,8 @@ const EditPurchaseOrder: React.FC = () => {
             setIsSaving(true);
             await api.put(`${Constants.UPDATE_PURCHASE_ORDER_URL}/${purchaseFormData.id}`, formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
+                  'Content-Type': 'multipart/form-data'
+                }
             });
 
             toast.success('Purchase order updated successfully.');

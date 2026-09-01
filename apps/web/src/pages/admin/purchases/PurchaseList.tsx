@@ -132,7 +132,7 @@ const PurchaseList: FC = () => {
     // --- DYNAMIC CUSTOM FIELDS FETCHING (Inlined) ---
     const { data: moduleHierarchyResponse, isLoading: isModulesLoading } = useQuery({
         queryKey: ['moduleHierarchy'],
-        queryFn: () => fetchModuleHierarchy(token!),
+        queryFn: () => fetchModuleHierarchy(),
         refetchOnMount: false,
         enabled: !!token,
         staleTime: 1000 * 60 * 60
@@ -153,7 +153,7 @@ const PurchaseList: FC = () => {
 
     const { data: customFieldsResponse, isLoading: isCustomFieldsLoading } = useQuery({
         queryKey: ['customFields', purchasesModuleId],
-        queryFn: () => fetchCustomFieldsByModule(token!, purchasesModuleId!),
+        queryFn: () => fetchCustomFieldsByModule(purchasesModuleId!),
         refetchOnMount: false,
         enabled: !!token && !!purchasesModuleId
     });

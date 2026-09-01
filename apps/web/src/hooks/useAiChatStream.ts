@@ -105,11 +105,10 @@ export function useAiChatStream(): UseAiChatStream {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Accept: 'text/event-stream',
-            Authorization: `Bearer ${token}`,
-          },
+            Accept: 'text/event-stream'
+},
           body: JSON.stringify({ message, sessionId: opts.sessionId }),
-          signal: controller.signal,
+          signal: controller.signal
         });
 
         if (!res.ok || !res.body) {
@@ -139,7 +138,7 @@ export function useAiChatStream(): UseAiChatStream {
               resolvedSessionId = String(payload.sessionId ?? resolvedSessionId);
               opts.onMeta?.({
                 sessionId: resolvedSessionId,
-                messageId: String(payload.messageId ?? ''),
+                messageId: String(payload.messageId ?? '')
               });
               break;
             }
@@ -152,7 +151,7 @@ export function useAiChatStream(): UseAiChatStream {
               tools.push({
                 kind: 'call',
                 name: String(payload.name ?? ''),
-                input: (payload.input as Record<string, unknown>) ?? {},
+                input: (payload.input as Record<string, unknown>) ?? {}
               });
               setToolEvents([...tools]);
               break;
@@ -161,7 +160,7 @@ export function useAiChatStream(): UseAiChatStream {
               tools.push({
                 kind: 'result',
                 name: String(payload.name ?? ''),
-                result: payload.result,
+                result: payload.result
               });
               setToolEvents([...tools]);
               break;
@@ -199,7 +198,7 @@ export function useAiChatStream(): UseAiChatStream {
           assistantMessageId,
           text,
           toolEvents: tools,
-          totalCostUsd,
+          totalCostUsd
         });
       } catch (err) {
         if ((err as Error)?.name === 'AbortError') {
@@ -212,7 +211,7 @@ export function useAiChatStream(): UseAiChatStream {
         abortRef.current = null;
       }
     },
-    [token, reset],
+    [token, reset]
   );
 
   return { streamingText, toolEvents, isStreaming, error, send, reset };

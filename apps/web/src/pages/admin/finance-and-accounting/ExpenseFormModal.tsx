@@ -60,7 +60,7 @@ const initialFormData: ExtendedExpenseFormData = {
     startOn: null,
     endsOn: null,
     neverExpire: false,
-    stopped: false,
+    stopped: false
 } as ExtendedExpenseFormData;
 
 const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editItem }) => {
@@ -120,7 +120,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                 startOn: editItem.startOn ? String(editItem.startOn).slice(0, 10) : null,
                 endsOn: editItem.endsOn ? String(editItem.endsOn).slice(0, 10) : null,
                 neverExpire: editItem.neverExpire ?? false,
-                stopped: editItem.stopped ?? false,
+                stopped: editItem.stopped ?? false
             };
 
             setFormData(editItemData);
@@ -209,13 +209,12 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
         const fetchPeople = async () => {
             try {
                 const res = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
-                    params: { limit: 100, page: 1 },
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                    params: { limit: 100, page: 1 }
+});
                 const users = (res.data?.data ?? []) as Array<{ id: string; firstName: string; lastName: string; email?: string }>;
                 setPeople(users.map((u) => ({
                     id: u.id,
-                    name: `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || u.email || u.id,
+                    name: `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || u.email || u.id
                 })));
             } catch {
                 // non-fatal
@@ -519,7 +518,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                                     onChange={(e) =>
                                         handleFormChange(
                                             'sourceType',
-                                            e.target.checked ? 'EMPLOYEE_PAID' : 'PETTY_CASH',
+                                            e.target.checked ? 'EMPLOYEE_PAID' : 'PETTY_CASH'
                                         )
                                     }
                                 />

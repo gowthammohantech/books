@@ -50,7 +50,7 @@ const VIEW_LABELS: Record<ContactView, string> = {
     'clients-open-invoices': 'Clients — open invoices',
     'suppliers-open-bills': 'Suppliers — open bills',
     'hidden': 'Hidden',
-    'all': 'All',
+    'all': 'All'
 };
 
 const VIEW_OPTIONS: ContactView[] = [
@@ -73,7 +73,6 @@ const statusBadge = (status?: string) => {
 const ContactList: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
 
@@ -88,7 +87,7 @@ const ContactList: React.FC = () => {
         page: 1,
         pageSize: 20,
         total: 0,
-        totalPages: 1,
+        totalPages: 1
     });
     const [isLoading, setIsLoading] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<Contact | null>(null);
@@ -114,9 +113,8 @@ const ContactList: React.FC = () => {
         try {
             setIsLoading(true);
             const response = await api.get(CONTACTS_URL, {
-                params: { view, q: q || undefined, page, pageSize },
-                headers: { Authorization: `Bearer ${token}` },
-            });
+                params: { view, q: q || undefined, page, pageSize }
+});
             setContacts(response.data.data || []);
             setPagination(response.data.pagination || { page: 1, pageSize: 20, total: 0, totalPages: 1 });
         } catch (error) {
@@ -194,9 +192,8 @@ const ContactList: React.FC = () => {
                 formData,
                 {
                     headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'multipart/form-data',
-                    },
+                      'Content-Type': 'multipart/form-data'
+                    }
                 }
             );
             const preview = (response.data?.data?.previewRows ?? []) as ContactImportPreviewRow[];
@@ -234,14 +231,14 @@ const ContactList: React.FC = () => {
                         town: r.town,
                         region: r.region,
                         postcode: r.postcode,
-                        currencyCode: r.currencyCode,
-                    })),
+                        currencyCode: r.currencyCode
+                    }))
                 }
             );
             const data = response.data?.data ?? {};
             setImportResult({
                 createdCount: data.createdCount ?? 0,
-                skippedCount: data.skippedCount ?? 0,
+                skippedCount: data.skippedCount ?? 0
             });
             toast.success(`Imported ${data.createdCount ?? 0} contacts (${data.skippedCount ?? 0} skipped).`);
             setImportStep('done');
@@ -267,7 +264,7 @@ const ContactList: React.FC = () => {
             icon: <Edit size={14} />,
             primary: true,
             requirePermission: { moduleSlug: 'customers', action: 'edit' },
-            onClick: (item) => handleEditClick(item),
+            onClick: (item) => handleEditClick(item)
         },
         {
             label: 'Delete',
@@ -275,7 +272,7 @@ const ContactList: React.FC = () => {
             primary: true,
             variant: 'danger',
             requirePermission: { moduleSlug: 'customers', action: 'delete' },
-            onClick: (item) => handleDeleteClick(item),
+            onClick: (item) => handleDeleteClick(item)
         },
     ];
 

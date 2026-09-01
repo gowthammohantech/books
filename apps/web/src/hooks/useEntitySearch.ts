@@ -24,7 +24,7 @@ const PER_TYPE_LIMIT = 5;
 const ENTITY_LABELS: Record<EntityType, string> = {
     invoice: "Invoices",
     contact: "Contacts",
-    product: "Items",
+    product: "Items"
 };
 
 export const entityLabel = (type: EntityType) => ENTITY_LABELS[type];
@@ -95,14 +95,14 @@ export const useEntitySearch = (query: string) => {
 
         const controller = new AbortController();
         const perms = permissions ?? [];
-        const headers = { Authorization: `Bearer ${token}` };
+        const headers = {};
         const common = { signal: controller.signal, headers };
 
         const fetchInvoices = async (): Promise<EntityResult[]> => {
             if (!canView("invoices", perms)) return [];
             const res = await api.get(Constants.GET_INVOICES_FOR_LIST_URL, {
                 ...common,
-                params: { search: trimmed, page: 1, limit: PER_TYPE_LIMIT },
+                params: { search: trimmed, page: 1, limit: PER_TYPE_LIMIT }
             });
             const invoices: InvoiceRow[] = res.data?.data?.invoices ?? [];
             return invoices.map((invoice) => ({
@@ -112,7 +112,7 @@ export const useEntitySearch = (query: string) => {
                 subtitle: [invoice.customer?.name, invoice.status]
                     .filter(Boolean)
                     .join(" · "),
-                path: `/admin/view-invoice/${invoice.id}`,
+                path: `/admin/view-invoice/${invoice.id}`
             }));
         };
 
@@ -120,7 +120,7 @@ export const useEntitySearch = (query: string) => {
             if (!canView("contacts", perms)) return [];
             const res = await api.get(`${Constants.API_BASE_URL}/admin/contacts`, {
                 ...common,
-                params: { view: "all-active", q: trimmed, pageSize: PER_TYPE_LIMIT },
+                params: { view: "all-active", q: trimmed, pageSize: PER_TYPE_LIMIT }
             });
             const contacts: ContactRow[] = res.data?.data ?? [];
             return contacts.map((contact) => ({
@@ -128,7 +128,7 @@ export const useEntitySearch = (query: string) => {
                 type: "contact" as const,
                 title: contactName(contact),
                 subtitle: [contact.email, contact.mobile].filter(Boolean).join(" · "),
-                path: `/admin/contacts/${contact.id}`,
+                path: `/admin/contacts/${contact.id}`
             }));
         };
 
@@ -136,7 +136,7 @@ export const useEntitySearch = (query: string) => {
             if (!canView("product-services", perms)) return [];
             const res = await api.get(Constants.FETCH_PRODUCTS_URL, {
                 ...common,
-                params: { search: trimmed, page: 1, limit: PER_TYPE_LIMIT },
+                params: { search: trimmed, page: 1, limit: PER_TYPE_LIMIT }
             });
             const products: ProductRow[] = res.data?.data?.products ?? [];
             return products.map((product) => ({
@@ -144,7 +144,7 @@ export const useEntitySearch = (query: string) => {
                 type: "product" as const,
                 title: product.name ?? "Item",
                 subtitle: [product.code, product.item_type].filter(Boolean).join(" · "),
-                path: `/admin/products/view/${product.id}`,
+                path: `/admin/products/view/${product.id}`
             }));
         };
 

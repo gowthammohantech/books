@@ -117,7 +117,7 @@ const EditCreditNote: React.FC = () => {
         totalDiscount: null,
         grandTotal: null,
         currencyCode: defaultCurrencyCode,
-        taxTreatment: 'STANDARD',
+        taxTreatment: 'STANDARD'
     });
     const [docCreatedAt, setDocCreatedAt] = useState<string | null>(null);
 
@@ -188,7 +188,7 @@ const EditCreditNote: React.FC = () => {
                     if (creditNoteDetail.invoice) {
                         const _invoiceOptions = {
                             id: creditNoteDetail.invoice.id,
-                            name: creditNoteDetail.invoice.invoiceNumber ?? "",
+                            name: creditNoteDetail.invoice.invoiceNumber ?? ""
                         };
                         setInvoiceOptions([_invoiceOptions]);
                     }
@@ -214,7 +214,7 @@ const EditCreditNote: React.FC = () => {
                         totalDiscount: creditNoteDetail.totalDiscount,
                         grandTotal: creditNoteDetail.totalAmount,
                         currencyCode: creditNoteDetail.currencyCode || defaultCurrencyCode || '',
-                        taxTreatment: (creditNoteDetail.taxTreatment as InvoiceFormData['taxTreatment']) ?? 'STANDARD',
+                        taxTreatment: (creditNoteDetail.taxTreatment as InvoiceFormData['taxTreatment']) ?? 'STANDARD'
                     }));
 
                     if (creditNoteDetail.billFrom) {
@@ -615,7 +615,7 @@ const EditCreditNote: React.FC = () => {
                         tax_group_id: product.tax?.group_id,
                         tax_rate_id: product.tax_rate?.taxRateId ?? undefined,
                         discount_type: product.discount?.type,
-                        discount_value: product.discount?.value,
+                        discount_value: product.discount?.value
                     }
                 }
                 return item;
@@ -724,9 +724,8 @@ const EditCreditNote: React.FC = () => {
             setIsSaving(true);
             await api.put(`${Constants.UPDATE_CREDIT_NOTE_URL}/${id}`, formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
+                  'Content-Type': 'multipart/form-data'
+                }
             });
 
             toast.success('Credit note updated successfully.');

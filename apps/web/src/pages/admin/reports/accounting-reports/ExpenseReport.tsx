@@ -49,7 +49,7 @@ interface ChartData {
         currentMonthAmount: number;
         percentage: number;
         trend: 'down' | 'up' | 'equal';
-    },
+    }
 }
 const ExpenseReport: React.FC = () => {
     const { token } = useSelector((state: RootState) => state.auth);
@@ -61,7 +61,7 @@ const ExpenseReport: React.FC = () => {
     const { formatDate } = useDateFormatter();
     const [dateRange, setDateRange] = useState<{ startDate: Date | null, endDate: Date | null }>({
         startDate: null,
-        endDate: null,
+        endDate: null
     });
     const [dateRangeError, setDateRangeError] = useState<string | null>(null);
     const [searchInput, setSearchInput] = useState<string>('');
@@ -88,10 +88,7 @@ const ExpenseReport: React.FC = () => {
             params.limit = Number(searchParams.get('limit') || 10).toString();
             params.page = Number(searchParams.get('page') || 1).toString();
             const response = await api.get<ExpenseReportResponse>(Constants.GET_EXPENSE_REPORT_URL, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                },
-                params
+params
             });
 
             if (response.data.data) {

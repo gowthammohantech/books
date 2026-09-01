@@ -100,7 +100,7 @@ const InitialCompanyFormData: CompanyFormData = {
     bankAutoPostEnabled: false,
     itemPickerShowRate: true,
     itemPickerShowStock: true,
-    itemPickerShowImage: false,
+    itemPickerShowImage: false
 };
 const CompanySettings: React.FC = () => {
     const [companyFormData, setCompanyFormData] = useState<CompanyFormData>(InitialCompanyFormData);
@@ -349,9 +349,8 @@ const CompanySettings: React.FC = () => {
                 formData,
                 {
                     headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "multipart/form-data",
-                    },
+                      "Content-Type": "multipart/form-data"
+                    }
                 }
             );
 
@@ -686,7 +685,7 @@ const CompanySettings: React.FC = () => {
                                     setCompanyFormData((prev) => ({
                                         ...prev,
                                         siteLogo: file,
-                                        siteLogo_preview_url: URL.createObjectURL(file),
+                                        siteLogo_preview_url: URL.createObjectURL(file)
                                     }));
                                 }}
                             />
@@ -706,7 +705,7 @@ const CompanySettings: React.FC = () => {
                                     setCompanyFormData((prev) => ({
                                         ...prev,
                                         favicon: file,
-                                        favicon_preview_url: URL.createObjectURL(file),
+                                        favicon_preview_url: URL.createObjectURL(file)
                                     }));
                                 }}
                             />
@@ -726,7 +725,7 @@ const CompanySettings: React.FC = () => {
                                     setCompanyFormData((prev) => ({
                                         ...prev,
                                         companyLogo: file,
-                                        companyLogo_preview_url: URL.createObjectURL(file),
+                                        companyLogo_preview_url: URL.createObjectURL(file)
                                     }));
                                 }}
                             />

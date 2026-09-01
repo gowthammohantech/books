@@ -64,7 +64,7 @@ const EmailQuotation: React.FC = () => {
         fromName: "",
         host: "",
         port: 0,
-        username: "",
+        username: ""
     });
 
     const [isSMTPNotConfigured, setIsSMTPNotConfigured] = useState(false);
@@ -77,7 +77,7 @@ const EmailQuotation: React.FC = () => {
         cc: null,
         subject: "",
         htmlContent: "",
-        status: "sent",
+        status: "sent"
     });
 
     // fetch email settings
@@ -86,9 +86,8 @@ const EmailQuotation: React.FC = () => {
             try {
                 setIsFetchingEmailSettings(true);
                 const response = await api.get(Constants.GET_EMAIL_SETTINGS_URL, {
-                    params: { userId: user?.id },
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                    params: { userId: user?.id }
+});
 
                 const data = response.data.data;
                 if (data) {
@@ -98,7 +97,7 @@ const EmailQuotation: React.FC = () => {
                             fromName: data.smtpFromName,
                             host: data.smtpHost,
                             port: data.smtpPort,
-                            username: data.smtpUsername,
+                            username: data.smtpUsername
                         }
                         : data.node_status
                             ? {
@@ -106,7 +105,7 @@ const EmailQuotation: React.FC = () => {
                                 fromName: data.nodeFromName,
                                 host: data.nodeHost,
                                 port: data.nodePort,
-                                username: data.nodeUsername,
+                                username: data.nodeUsername
                             }
                             : data.resend_status
                                 ? {
@@ -114,7 +113,7 @@ const EmailQuotation: React.FC = () => {
                                     fromName: data.resendFromName,
                                     host: "smtp.resend.com",
                                     port: 465,
-                                    username: "resend",
+                                    username: "resend"
                                 }
                                 : null;
 
@@ -213,7 +212,7 @@ const EmailQuotation: React.FC = () => {
                     routeSegment: "quotation",
                     documentId: quotationDetails.id,
                     authToken: token,
-                    publicBaseUrl: systemSettings?.company.publicBaseUrl,
+                    publicBaseUrl: systemSettings?.company.publicBaseUrl
                 });
                 if (cancelled) return;
                 if (!viewQuotationLink) {
@@ -232,7 +231,7 @@ const EmailQuotation: React.FC = () => {
                 cc: null,
                 subject,
                 htmlContent: html,
-                status: "sent",
+                status: "sent"
             });
         })();
 

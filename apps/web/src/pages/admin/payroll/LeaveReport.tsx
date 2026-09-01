@@ -56,11 +56,11 @@ const LeaveReport: React.FC = () => {
     // ── Load filter options ─────────────────────────────────────────────────────
     useEffect(() => {
         if (!token) return;
-        const headers = { Authorization: `Bearer ${token}` };
+        const headers = {};
         api
             .get(Constants.FETCH_STAFF_FOR_LIST_URL, {
                 params: { user_type: 3, limit: 200, page: 1 },
-                headers,
+                headers
             })
             .then((res) => setStaff(res.data?.data?.users ?? []))
             .catch(() => undefined);
@@ -83,10 +83,9 @@ const LeaveReport: React.FC = () => {
                     from: toISODate(from),
                     to: toISODate(to),
                     ...(employeeUserId ? { employeeUserId } : {}),
-                    ...(leaveTypeId ? { leaveTypeId } : {}),
-                },
-                headers: { Authorization: `Bearer ${token}` },
-            });
+                    ...(leaveTypeId ? { leaveTypeId } : {})
+                }
+});
             if (res.data.success) {
                 setSummary(res.data.data as LeaveReportSummary);
             }

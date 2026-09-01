@@ -127,7 +127,7 @@ const AddCreditNote: React.FC = () => {
         currencyCode: defaultCurrencyCode,
         contactId: '',
         billToContactId: '',
-        taxTreatment: 'STANDARD',
+        taxTreatment: 'STANDARD'
     });
 
     const invoiceStatuses = [
@@ -239,7 +239,7 @@ const AddCreditNote: React.FC = () => {
                     totalTax: invoice_data.vat,
                     totalDiscount: invoice_data.totalDiscount,
                     grandTotal: invoice_data.TotalAmount,
-                    currencyCode: invoice_data.currencyCode ?? defaultCurrencyCode,
+                    currencyCode: invoice_data.currencyCode ?? defaultCurrencyCode
                 }));
                 if (invoice_data.billFrom) {
                     const _admin = { id: invoice_data.billFrom.id, name: invoice_data.billFrom.name };
@@ -378,14 +378,14 @@ const AddCreditNote: React.FC = () => {
                 billToContactId: contactId ?? '',
                 currencyCode: prev.invoiceId ? prev.currencyCode : (contact.currencyCode || prev.currencyCode),
                 billTo: '',
-                taxTreatment: contact.defaultTaxTreatment ?? 'STANDARD',
+                taxTreatment: contact.defaultTaxTreatment ?? 'STANDARD'
             }));
         } else {
             setInvoiceFormData(prev => ({
                 ...prev,
                 contactId: '',
                 billToContactId: '',
-                billTo: '',
+                billTo: ''
             }));
         }
     };
@@ -595,7 +595,7 @@ const AddCreditNote: React.FC = () => {
                         tax_group_id: product.tax?.group_id,
                         tax_rate_id: product.tax_rate?.taxRateId ?? undefined,
                         discount_type: product.discount?.type,
-                        discount_value: product.discount?.value,
+                        discount_value: product.discount?.value
                     }
                 }
                 return item;
@@ -702,9 +702,8 @@ const AddCreditNote: React.FC = () => {
             setIsSaving(true);
             await api.post(Constants.CREATE_NEW_CREDIT_NOTE_URL, formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
+                  'Content-Type': 'multipart/form-data'
+                }
             });
 
             toast.success('Credit note created successfully.');

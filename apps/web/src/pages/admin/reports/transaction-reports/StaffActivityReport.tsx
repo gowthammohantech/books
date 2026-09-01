@@ -33,7 +33,7 @@ const EMPTY_TOTALS: StaffActivityTotalsShape = {
     invoicesCreated: 0,
     invoicesUpdated: 0,
     invoicesDeleted: 0,
-    totalValueCreated: 0,
+    totalValueCreated: 0
 };
 
 const StaffActivityReport: React.FC = () => {
@@ -43,7 +43,7 @@ const StaffActivityReport: React.FC = () => {
     const [totals, setTotals] = useState<StaffActivityTotalsShape>(EMPTY_TOTALS);
     const [dateRange, setDateRange] = useState<{ startDate: Date | null, endDate: Date | null }>({
         startDate: null,
-        endDate: null,
+        endDate: null
     });
     const [dateRangeError, setDateRangeError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -64,10 +64,7 @@ const StaffActivityReport: React.FC = () => {
                 params.to = formatLocalDateTime(range.endDate, 'end', true);
             }
             const response = await api.get<StaffActivityReportResponse>(Constants.STAFF_ACTIVITY_REPORT_URL, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                },
-                params
+params
             });
 
             if (response.data.success) {

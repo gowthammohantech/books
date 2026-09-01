@@ -12,7 +12,7 @@ import type {
     LeaveRequest,
     LeaveBalance,
     LeaveStatus,
-    LeavePortion,
+    LeavePortion
 } from '@models/timeTracking';
 import LoaderSpinner from '@components/admin/LoaderSpinner';
 import NoRecords from '@components/admin/NoRecords';
@@ -49,7 +49,7 @@ const STATUS_COLORS: Record<LeaveStatus, BadgeColor> = {
     PENDING: 'warning',
     APPROVED: 'success',
     REJECTED: 'danger',
-    CANCELLED: 'gray',
+    CANCELLED: 'gray'
 };
 
 const PORTION_OPTIONS: { value: LeavePortion; label: string }[] = [
@@ -84,7 +84,7 @@ const canCancel = (r: LeaveRequest): boolean => {
 const MyLeave: React.FC = () => {
     const { token } = useSelector((state: RootState) => state.auth);
     const { formatDate } = useDateFormatter();
-    const authHeaders = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
+    const authHeaders = useMemo(() => ({}), [token]);
 
     // --- Data ---
     const [types, setTypes] = useState<LeaveType[]>([]);
@@ -122,7 +122,7 @@ const MyLeave: React.FC = () => {
             setLoadingBalances(true);
             const res = await api.get(Constants.LEAVE_BALANCES_URL, {
                 params: { year },
-                headers: authHeaders,
+                headers: authHeaders
             });
             setBalances((res.data?.data?.balances ?? []) as LeaveBalance[]);
         } catch (error) {
@@ -138,7 +138,7 @@ const MyLeave: React.FC = () => {
             setLoadingRequests(true);
             const res = await api.get(Constants.LEAVE_REQUESTS_URL, {
                 params: { scope: 'mine' },
-                headers: authHeaders,
+                headers: authHeaders
             });
             const data = res.data?.data;
             // Tolerate both a bare array and a paginated `{ requests: [...] }` envelope.
@@ -166,11 +166,11 @@ const MyLeave: React.FC = () => {
     // ── Derived ────────────────────────────────────────────────────────────────
     const selectedBalance = useMemo(
         () => balances.find((b) => b.leaveTypeId === leaveTypeId),
-        [balances, leaveTypeId],
+        [balances, leaveTypeId]
     );
     const selectedType = useMemo(
         () => types.find((t) => t.id === leaveTypeId),
-        [types, leaveTypeId],
+        [types, leaveTypeId]
     );
 
     // ── Submit a new request ─────────────────────────────────────────────────────
@@ -203,7 +203,7 @@ const MyLeave: React.FC = () => {
                 startDate: toISODate(startDate),
                 endDate: toISODate(endDate),
                 defaultPortion,
-                reason: reason.trim() || undefined,
+                reason: reason.trim() || undefined
             };
             await api.post(Constants.LEAVE_REQUESTS_URL, payload, { headers: authHeaders });
             toast.success('Leave request submitted.');
@@ -225,7 +225,7 @@ const MyLeave: React.FC = () => {
             await api.post(
                 Constants.LEAVE_REQUEST_CANCEL_URL(r.id),
                 {},
-                { headers: authHeaders },
+                { headers: authHeaders }
             );
             toast.success('Leave request cancelled.');
             fetchRequests();

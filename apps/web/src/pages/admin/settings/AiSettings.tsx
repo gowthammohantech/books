@@ -1,12 +1,10 @@
 import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Sparkles, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 
 import Constants from '@constants/api';
-import type { RootState } from '@store/index';
 import AiUsageChart from '@components/admin/ai/AiUsageChart';
 import { Button, Card, FormField, Select } from '@components/ui';
 import { PageHeader } from '@/context/PageHeaderContext';
@@ -35,29 +33,28 @@ interface TestResult {
 const MODEL_OPTIONS: Record<Provider, { extraction: string[]; chat: string[] }> = {
   CLAUDE: {
     extraction: ['claude-haiku-4-5-20251001', 'claude-sonnet-4-6'],
-    chat: ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001'],
+    chat: ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001']
   },
   OPENAI: {
     extraction: ['gpt-4o-mini', 'gpt-4o'],
-    chat: ['gpt-4o', 'gpt-4o-mini'],
+    chat: ['gpt-4o', 'gpt-4o-mini']
   },
   MOCK: {
     extraction: ['mock-extract-v1'],
-    chat: ['mock-chat-v1'],
-  },
+    chat: ['mock-chat-v1']
+  }
 };
 
 const DEFAULTS: Record<Provider, { extraction: string; chat: string }> = {
   CLAUDE: { extraction: 'claude-haiku-4-5-20251001', chat: 'claude-sonnet-4-6' },
   OPENAI: { extraction: 'gpt-4o-mini', chat: 'gpt-4o' },
-  MOCK: { extraction: 'mock-extract-v1', chat: 'mock-chat-v1' },
+  MOCK: { extraction: 'mock-extract-v1', chat: 'mock-chat-v1' }
 };
 
 const HELP_TEXT =
   'Elixir Books ships with optional AI features. Bring your own Anthropic Claude or OpenAI key — billing goes to your account, no markup. Typical costs: ~$0.003 per bill scan, ~$0.005 per chat reply. The Mock provider returns canned data for demos without any external calls.';
 
 export default function AiSettings() {
-  const token = useSelector((s: RootState) => s.auth.token);
   const [form, setForm] = useState<ConfigState>({
     provider: 'MOCK',
     enabled: false,
@@ -66,7 +63,7 @@ export default function AiSettings() {
     hasApiKey: false,
     extractionModel: DEFAULTS.MOCK.extraction,
     chatModel: DEFAULTS.MOCK.chat,
-    monthlyBudgetUsd: 0,
+    monthlyBudgetUsd: 0
   });
   const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -74,7 +71,7 @@ export default function AiSettings() {
   const [testResult, setTestResult] = useState<TestResult | null>(null);
 
   function authHeader() {
-    return { Authorization: `Bearer ${token}` };
+    return {};
   }
 
   async function load() {
@@ -91,7 +88,7 @@ export default function AiSettings() {
           hasApiKey: !!cfg.hasApiKey,
           extractionModel: cfg.extractionModel ?? DEFAULTS[provider].extraction,
           chatModel: cfg.chatModel ?? DEFAULTS[provider].chat,
-          monthlyBudgetUsd: Number(cfg.monthlyBudgetUsd ?? 0),
+          monthlyBudgetUsd: Number(cfg.monthlyBudgetUsd ?? 0)
         });
       }
     } catch {
@@ -116,7 +113,7 @@ export default function AiSettings() {
       // Reset model selections to provider defaults so the dropdowns
       // never show an option that doesn't belong to the active provider.
       extractionModel: DEFAULTS[next].extraction,
-      chatModel: DEFAULTS[next].chat,
+      chatModel: DEFAULTS[next].chat
     }));
     setTestResult(null);
   }
@@ -130,7 +127,7 @@ export default function AiSettings() {
         enabled: form.enabled,
         extractionModel: form.extractionModel,
         chatModel: form.chatModel,
-        monthlyBudgetUsd: form.monthlyBudgetUsd,
+        monthlyBudgetUsd: form.monthlyBudgetUsd
       };
       if (form.apiKey.trim().length > 0) {
         body.apiKey = form.apiKey.trim();
@@ -145,7 +142,7 @@ export default function AiSettings() {
           hasApiKey: !!cfg.hasApiKey,
           extractionModel: cfg.extractionModel ?? prev.extractionModel,
           chatModel: cfg.chatModel ?? prev.chatModel,
-          monthlyBudgetUsd: Number(cfg.monthlyBudgetUsd ?? 0),
+          monthlyBudgetUsd: Number(cfg.monthlyBudgetUsd ?? 0)
         }));
       }
       toast.success('AI configuration saved');
@@ -193,7 +190,7 @@ export default function AiSettings() {
           apiKey: '',
           apiKeyHint: null,
           hasApiKey: false,
-          provider: (cfg.provider ?? prev.provider) as Provider,
+          provider: (cfg.provider ?? prev.provider) as Provider
         }));
       }
       toast.success('AI features disabled');

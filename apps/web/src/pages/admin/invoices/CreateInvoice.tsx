@@ -160,7 +160,7 @@ const CreateInvoice: React.FC = () => {
         contactId: '',
         billToContactId: '',
         taxTreatment: 'STANDARD',
-        costCenterId: '',
+        costCenterId: ''
     });
 
     // Apply document defaults once loaded — seed blank new form, never overwrite user edits
@@ -315,7 +315,7 @@ const CreateInvoice: React.FC = () => {
                 // A centre with its own prefix numbers from its own series, so the
                 // preview has to be asked for that centre or it will disagree with
                 // the number actually issued on save.
-                params: costCenterId ? { costCenterId } : undefined,
+                params: costCenterId ? { costCenterId } : undefined
             });
             const data = response.data.data;
             if (data) {
@@ -382,8 +382,8 @@ const CreateInvoice: React.FC = () => {
                 ...prev,
                 items: prev.items.map((it) => it.id === rowId ? {
                     ...it, tax_rate_id: '', tax_group_id: '', taxes: [], totalTax: 0, tax: 0, appliedTaxRateIds: [],
-                    amount: round2(Number(it.qty || 0) * Number(it.rate || 0) - Number(it.discount || 0)),
-                } : it),
+                    amount: round2(Number(it.qty || 0) * Number(it.rate || 0) - Number(it.discount || 0))
+                } : it)
             }));
             return;
         }
@@ -392,12 +392,12 @@ const CreateInvoice: React.FC = () => {
         const taxableAmount = round2(Number(line.qty || 0) * Number(line.rate || 0) - Number(line.discount || 0));
         const resolved = await resolveLineTaxByRateId({
             token: token!, taxableAmount, taxRateId,
-            ...(selectedContactId ? { customerId: selectedContactId } : {}),
+            ...(selectedContactId ? { customerId: selectedContactId } : {})
         });
         setPartyStateMissing(!!resolved?.partyStateMissing);
         setInvoiceFormData((prev) => ({
             ...prev,
-            items: prev.items.map((it) => (it.id === rowId ? applyResolvedToLine(it, taxRateId, resolved) : it)),
+            items: prev.items.map((it) => (it.id === rowId ? applyResolvedToLine(it, taxRateId, resolved) : it))
         }));
     };
 
@@ -491,14 +491,14 @@ const CreateInvoice: React.FC = () => {
                 billToContactId: contactId ?? '',
                 currencyCode: contact.currencyCode || prev.currencyCode,
                 billTo: '',
-                taxTreatment: contact.defaultTaxTreatment ?? 'STANDARD',
+                taxTreatment: contact.defaultTaxTreatment ?? 'STANDARD'
             }));
         } else {
             setInvoiceFormData(prev => ({
                 ...prev,
                 contactId: '',
                 billToContactId: '',
-                billTo: '',
+                billTo: ''
             }));
         }
     };
@@ -523,7 +523,7 @@ const CreateInvoice: React.FC = () => {
                 }
                 const clonedItems = (src.items ?? []).map((it: ProductItem) => ({
                     ...it,
-                    id: crypto.randomUUID(),
+                    id: crypto.randomUUID()
                 }));
                 setInvoiceFormData(prev => ({
                     ...prev,
@@ -536,7 +536,7 @@ const CreateInvoice: React.FC = () => {
                     customFields: src.customFields ?? prev.customFields,
                     status: 'DRAFT',
                     invoiceDate: new Date(),
-                    dueDate: null,
+                    dueDate: null
                 }));
                 toast.success('Invoice duplicated — review and save it as a new invoice — select the customer again (it is not copied)');
             } catch {
@@ -621,7 +621,7 @@ const CreateInvoice: React.FC = () => {
                 discount_type: discount_type ?? 'Fixed',
                 discount: safeDiscountAmount,
                 ...(recomputedTaxes ? { taxes: recomputedTaxes, totalTax } : {}),
-                tax: totalTax, amount: newAmount,
+                tax: totalTax, amount: newAmount
             } as ProductItem;
         });
     };
@@ -786,7 +786,7 @@ const CreateInvoice: React.FC = () => {
                     stateId: null,
                     isActive: true,
                     createdAt: '',
-                    updatedAt: '',
+                    updatedAt: ''
                 } as TaxRate;
             });
             const result = recomputeLineTaxesByIds(lineTaxable, groupMemberIds, syntheticRates);
@@ -796,7 +796,7 @@ const CreateInvoice: React.FC = () => {
                 totalTax: result.totalTax,
                 amount: result.amount,
                 taxes: result.taxes,
-                appliedTaxRateIds: result.appliedTaxRateIds,
+                appliedTaxRateIds: result.appliedTaxRateIds
             };
         }
 
@@ -810,7 +810,7 @@ const CreateInvoice: React.FC = () => {
                 totalTax: result.totalTax,
                 amount: result.amount,
                 taxes: result.taxes,
-                appliedTaxRateIds: result.appliedTaxRateIds,
+                appliedTaxRateIds: result.appliedTaxRateIds
             };
         }
 
@@ -826,7 +826,7 @@ const CreateInvoice: React.FC = () => {
             tax_group_id: product.tax_group_id,
             tax_rate_id: product.tax_rate_id,
             appliedTaxRateIds: product.appliedTaxRateIds,
-            taxes: product.taxes,
+            taxes: product.taxes
         });
         const updatedProduct: ProductItem = { ...product, ...computed };
         isDirtyRef.current = true;
@@ -847,7 +847,7 @@ const CreateInvoice: React.FC = () => {
             discount_value: product.discount?.value,
             discount_type: product.discount?.type,
             tax_group_id: product.tax?.group_id,
-            tax_rate_id: product.tax_rate?.taxRateId ?? undefined,
+            tax_rate_id: product.tax_rate?.taxRateId ?? undefined
         });
 
         let updated = false;
@@ -873,7 +873,7 @@ const CreateInvoice: React.FC = () => {
                         discount_value: product.discount?.value,
                         ...(computed.taxes ? { taxes: computed.taxes } : {}),
                         ...(computed.totalTax !== undefined ? { totalTax: computed.totalTax } : {}),
-                        ...(computed.appliedTaxRateIds ? { appliedTaxRateIds: computed.appliedTaxRateIds } : {}),
+                        ...(computed.appliedTaxRateIds ? { appliedTaxRateIds: computed.appliedTaxRateIds } : {})
                     }
                 }
                 return item;
@@ -1022,9 +1022,8 @@ const CreateInvoice: React.FC = () => {
             setIsSubmitting(true);
             await api.post(Constants.CREATE_NEW_INVOICE_URL, formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
+                  'Content-Type': 'multipart/form-data'
+                }
             });
 
             toast.success('Invoice created successfully.');

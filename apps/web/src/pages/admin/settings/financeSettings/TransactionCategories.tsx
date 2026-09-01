@@ -79,7 +79,7 @@ const emptyForm: CategoryForm = {
     appliesTo: 'MONEY_OUT',
     accountId: '',
     defaultTaxRateId: '',
-    taxApplicable: true,
+    taxApplicable: true
 };
 
 // ── 409 / validation error shapes ────────────────────────────────────────────
@@ -107,8 +107,7 @@ const TransactionCategoriesPage: React.FC = () => {
         setAccountsLoading(true);
         api
             .get(Constants.GET_ACCOUNTS_URL, {
-                headers: { Authorization: `Bearer ${token}` },
-                params: { limit: 500 },
+params: { limit: 500 }
             })
             .then((res) => setAccounts(res.data?.data?.accounts ?? []))
             .catch((err) => {
@@ -125,8 +124,7 @@ const TransactionCategoriesPage: React.FC = () => {
         if (!token) return;
         api
             .get(Constants.FETCH_TAX_RATE_LIST_URL, {
-                headers: { Authorization: `Bearer ${token}` },
-                params: { limit: 500 },
+params: { limit: 500 }
             })
             .then((res) => setTaxRates(res.data?.data?.taxRates ?? []))
             .catch(() => {/* non-critical */});
@@ -166,7 +164,7 @@ const TransactionCategoriesPage: React.FC = () => {
             appliesTo: cat.appliesTo,
             accountId: cat.accountId ?? '',
             defaultTaxRateId: cat.defaultTaxRateId ?? '',
-            taxApplicable: cat.taxApplicable,
+            taxApplicable: cat.taxApplicable
         });
         setFieldErrors({});
         setShowModal(true);
@@ -192,7 +190,7 @@ const TransactionCategoriesPage: React.FC = () => {
             appliesTo: form.appliesTo,
             accountId: form.accountId,
             defaultTaxRateId: form.defaultTaxRateId || null,
-            taxApplicable: form.taxApplicable,
+            taxApplicable: form.taxApplicable
         };
         try {
             setSubmitting(true);
@@ -355,11 +353,11 @@ const TransactionCategoriesPage: React.FC = () => {
                                                           {
                                                               label: 'Edit',
                                                               icon: <Edit size={14} />,
-                                                              onClick: (row: TransactionCategory) => openEdit(row),
+                                                              onClick: (row: TransactionCategory) => openEdit(row)
                                                           },
                                                           {
                                                               label: cat.status ? 'Disable' : 'Enable',
-                                                              onClick: (row: TransactionCategory) => handleToggleStatus(row),
+                                                              onClick: (row: TransactionCategory) => handleToggleStatus(row)
                                                           },
                                                       ]
                                                     : []),
@@ -368,7 +366,7 @@ const TransactionCategoriesPage: React.FC = () => {
                                                           {
                                                               label: 'Delete',
                                                               icon: <Trash2Icon size={14} />,
-                                                              onClick: (row: TransactionCategory) => setDeleteTarget(row),
+                                                              onClick: (row: TransactionCategory) => setDeleteTarget(row)
                                                           },
                                                       ]
                                                     : []),
@@ -421,7 +419,7 @@ const TransactionCategoriesPage: React.FC = () => {
                         onChange={(e) =>
                             setForm((f) => ({
                                 ...f,
-                                appliesTo: e.target.value as CategoryAppliesTo,
+                                appliesTo: e.target.value as CategoryAppliesTo
                             }))
                         }
                         error={fieldErrors.appliesTo}

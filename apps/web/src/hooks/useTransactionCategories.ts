@@ -15,14 +15,13 @@ export function useTransactionCategories(appliesTo?: CategoryAppliesTo) {
     const doFetch = useCallback((): Promise<TransactionCategory[]> => {
         const params: Record<string, string | number> = {
             limit: 500,
-            page: 1,
+            page: 1
         };
         if (appliesTo) params.appliesTo = appliesTo;
 
         return api
             .get(Constants.TRANSACTION_CATEGORIES_URL, {
-                headers: { Authorization: `Bearer ${token}` },
-                params,
+params
             })
             .then((res) => {
                 const data = res.data?.data ?? {};

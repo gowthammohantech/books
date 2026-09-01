@@ -93,7 +93,7 @@ const initialFormData: ContactFormData = {
     invoiceSequencePrefix: '',
     useContactEmailSettings: false,
     currencyCode: '',
-    status: 'ACTIVE',
+    status: 'ACTIVE'
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -126,7 +126,7 @@ const ContactForm: React.FC = () => {
         if (!isEditMode && defaultCurrencyCode) {
             setFormData((prev) => ({
                 ...prev,
-                currencyCode: prev.currencyCode || defaultCurrencyCode,
+                currencyCode: prev.currencyCode || defaultCurrencyCode
             }));
         }
     }, [defaultCurrencyCode, isEditMode]);
@@ -139,7 +139,7 @@ const ContactForm: React.FC = () => {
                 const response = await api.get(Constants.FETCH_COUNTRIES_URL);
                 const list: CountryOption[] = (response.data || []).map((c: { id: string | number; name: string }) => ({
                     id: String(c.id),
-                    name: c.name,
+                    name: c.name
                 }));
                 setCountries(list);
             } catch (error) {
@@ -186,7 +186,7 @@ const ContactForm: React.FC = () => {
                         invoiceSequencePrefix: data.invoiceSequencePrefix || '',
                         useContactEmailSettings: data.useContactEmailSettings ?? false,
                         currencyCode: data.currencyCode || defaultCurrencyCode || '',
-                        status: data.status || 'ACTIVE',
+                        status: data.status || 'ACTIVE'
                     });
                     setViesValid(data.viesValid ?? null);
                     setViesCheckedAt(data.viesCheckedAt ?? null);
@@ -274,7 +274,7 @@ const ContactForm: React.FC = () => {
         invoiceSequencePrefix: formData.invoiceSequencePrefix.trim() || null,
         useContactEmailSettings: formData.useContactEmailSettings,
         currencyCode: formData.currencyCode || null,
-        status: formData.status,
+        status: formData.status
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -287,12 +287,12 @@ const ContactForm: React.FC = () => {
 
             if (isEditMode) {
                 await api.put(`${CONTACTS_URL}/${id}`, payload, {
-                    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    headers: {'Content-Type': 'application/json' }
                 });
                 toast.success('Contact updated successfully');
             } else {
                 await api.post(CONTACTS_URL, payload, {
-                    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    headers: {'Content-Type': 'application/json' }
                 });
                 toast.success('Contact created successfully');
             }

@@ -1,11 +1,9 @@
 import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 
 import { Printer, Download, RotateCw } from 'lucide-react';
 
 import Constants from '@constants/api';
-import type { RootState } from '@store/index';
 import useDateFormatter from '@hooks/useDateFormatter';
 import DrillLink from '@components/admin/DrillLink';
 import NoRecords from '@components/admin/NoRecords';
@@ -61,7 +59,6 @@ function monthStart(d: Date): string {
 }
 
 export default function GSTR1Report() {
-  const token = useSelector((s: RootState) => s.auth.token);
   const { formatDate } = useDateFormatter();
   const today = isoDate(new Date());
   const start = monthStart(new Date());
@@ -89,8 +86,7 @@ export default function GSTR1Report() {
       const res = await api.get(
         `${Constants.EXPORT_GSTR1_URL}?from=${from}&to=${to}&format=${format}`,
         {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: 'blob',
+responseType: 'blob'
         }
       );
       const blob = new Blob([res.data], { type: format === 'csv' ? 'text/csv' : 'application/json' });

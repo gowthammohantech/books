@@ -55,13 +55,12 @@ const UnitList: FC = () => {
     const [newUnit, setNewUnit] = useState<NewUnit>({
         unit_name: '',
         short_name: '',
-        status: true,
+        status: true
     });
     const [formErrors, setFormErrors] = useState<FormErrors>({});
 
     const [isDeleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
     const [itemToDelete, setItemToDelete] = useState<Unit | null>(null);
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     // Get search, limit, and page from URL params
@@ -82,9 +81,8 @@ const UnitList: FC = () => {
         try {
             setIsLoading(true);
             const response = await api.get(Constants.FETCH_UNITS_URL, {
-                params: { search, limit, page },
-                headers: { Authorization: `Bearer ${token}` },
-            });
+                params: { search, limit, page }
+});
             setUnits(response.data.data.units || []);
             setPagination(response.data.data.pagination);
         } catch (error) {
@@ -127,7 +125,7 @@ const UnitList: FC = () => {
         const { name, value, type, checked } = e.target;
         setNewUnit((prev) => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : value,
+            [name]: type === 'checkbox' ? checked : value
         }));
     };
 
@@ -167,7 +165,7 @@ const UnitList: FC = () => {
 
         try {
             setIsSubmitting(true);
-            const headers = { Authorization: `Bearer ${token}` };
+            const headers = {};
 
             if (editingUnit) {
                 await api.put(`${Constants.UPDATE_UNIT_URL}/${editingUnit}`, formData, { headers });
@@ -202,7 +200,7 @@ const UnitList: FC = () => {
             setNewUnit({
                 unit_name: response.data.unit_name,
                 short_name: response.data.short_name,
-                status: response.data.status,
+                status: response.data.status
             });
             setCustomFields(response.data.customFields || {});
             setFormErrors({});

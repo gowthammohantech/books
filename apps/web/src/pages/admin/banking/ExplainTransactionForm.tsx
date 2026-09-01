@@ -38,7 +38,7 @@ const TAX_OPTIONS: { value: TaxTreatment; label: string }[] = [
 const STATUS_PILL: Record<BankTransactionRow['explainStatus'], { label: string; cls: string }> = {
     EXPLAINED: { label: 'Explained — posted', cls: 'bg-success-soft text-success-strong' },
     FOR_APPROVAL: { label: 'Awaiting approval', cls: 'bg-warning-soft text-warning-strong' },
-    UNEXPLAINED: { label: 'Unexplained', cls: 'bg-muted text-muted-foreground' },
+    UNEXPLAINED: { label: 'Unexplained', cls: 'bg-muted text-muted-foreground' }
 };
 
 const DEPRECIATION_OPTIONS = [
@@ -149,9 +149,8 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
             setUsersLoading(true);
             // /admin/user/type/1 = admin/staff users (user_type = 1)
             const res = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
-                params: { search, limit: 50, page: 1 },
-                headers: { Authorization: `Bearer ${token}` },
-            });
+                params: { search, limit: 50, page: 1 }
+});
             const data = (res.data?.data ?? []) as Array<{ id: string; firstName: string; lastName: string }>;
             setUsers(data.map((u) => ({ id: u.id, name: `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() })));
         } catch {
@@ -181,9 +180,8 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
         try {
             // GET /admin/purchases-minimal (same endpoint used by debit-note)
             const res = await api.get(Constants.FETCH_ALL_PURCHASE_FOR_DEBIT_NOTE_URL, {
-                params: { search, limit: 50, page: 1 },
-                headers: { Authorization: `Bearer ${token}` },
-            });
+                params: { search, limit: 50, page: 1 }
+});
             const data = (res.data?.data ?? []) as Array<{ id: string; purchaseId: string }>;
             setPurchases(data.map((p) => ({ id: p.id, name: p.purchaseId })));
         } catch {
@@ -195,15 +193,14 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
         if (!token) return;
         try {
             const res = await api.get(Constants.CREDIT_NOTE_LIST_URL, {
-                params: { search, limit: 50, page: 1 },
-                headers: { Authorization: `Bearer ${token}` },
-            });
+                params: { search, limit: 50, page: 1 }
+});
             const data = (res.data?.data?.creditNotes ?? []) as Array<{ id: string; creditNoteNumber: string; customer?: { name?: string }; totalAmount?: string | number }>;
             setCreditNotes(data.map((cn) => ({
                 id: cn.id,
                 name: cn.customer?.name
                     ? `${cn.creditNoteNumber} – ${cn.customer.name}`
-                    : cn.creditNoteNumber,
+                    : cn.creditNoteNumber
             })));
         } catch {
             // silently ignore
@@ -214,9 +211,8 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
         if (!token) return;
         try {
             const res = await api.get(Constants.SEARCH_FIXED_ASSETS_URL, {
-                params: { q: search },
-                headers: { Authorization: `Bearer ${token}` },
-            });
+                params: { q: search }
+});
             const data = (res.data?.data ?? []) as Array<{ id: string; name: string; cost: string | number; accumulatedDepreciation: string | number }>;
             setAssets(data.map((a) => {
                 const nbv = Number(a.cost) - Number(a.accumulatedDepreciation);
@@ -316,7 +312,7 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
         }
 
         const body: Record<string, string | number | undefined> = {
-            transactionTypeKey: selectedTypeKey,
+            transactionTypeKey: selectedTypeKey
         };
         if (categoryId) body.categoryId = categoryId;
         if (selectedUser?.id) body.payToUserId = selectedUser.id;

@@ -98,7 +98,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
     onRequestNewRow,
     lineFields,
     showCostCenter = false,
-    costCenterUsage = "any",
+    costCenterUsage = "any"
 }) => {
     const { token } = useSelector((state: RootState) => state.auth);
     const company = useSelector((state: RootState) => state.systemSettings.data?.company);
@@ -152,7 +152,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
                     : '';
                 const response = await api.get(
                     `${Constants.FETCH_PRODUCTS_WITH_SEARCH_URL}?search=${debouncedSearchTerm}${currencyParam}`,
-                    { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal }
+                    {signal: controller.signal }
                 );
 
                 setFetchedProducts(response.data.data);
@@ -219,7 +219,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
         const mergedCustomFields = mergeLineFieldAutofill(
             (product as { customFields?: Record<string, unknown> }).customFields,
             item.customFields,
-            lineFields ?? [],
+            lineFields ?? []
         );
 
         (onProductPicked ?? onInLineItemChange)({
@@ -239,7 +239,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
             item_type: product.item_type,
             enable_inventory: product.enable_inventory,
             stock: product.stock,
-            ...(Object.keys(mergedCustomFields).length > 0 ? { customFields: mergedCustomFields } : {}),
+            ...(Object.keys(mergedCustomFields).length > 0 ? { customFields: mergedCustomFields } : {})
         });
     };
 
@@ -296,7 +296,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
 
         const updated = {
             ...item,
-            [key]: nextValue,
+            [key]: nextValue
         };
 
         // Auto recalc total if qty or rate changed
@@ -320,7 +320,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
     const handleLineFieldChange = (slug: string, value: string) => {
         onInLineItemChange({
             ...item,
-            customFields: { ...(item.customFields ?? {}), [slug]: value },
+            customFields: { ...(item.customFields ?? {}), [slug]: value }
         });
     };
 

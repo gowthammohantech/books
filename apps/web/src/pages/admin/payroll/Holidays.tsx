@@ -60,13 +60,12 @@ const toDate = (v: string | null | undefined): Date | null => {
 };
 
 const Holidays: React.FC = () => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     const canEdit = hasPermission(permissions, MODULE_SLUG, "edit");
     const canDelete = hasPermission(permissions, MODULE_SLUG, "delete");
     const { formatDate } = useDateFormatter();
-    const authHeaders = { Authorization: `Bearer ${token}` };
+    const authHeaders = {};
 
     const [items, setItems] = useState<Holiday[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -126,7 +125,7 @@ const Holidays: React.FC = () => {
             const payload = {
                 name: form.name.trim(),
                 date: toDateOnly(form.date),
-                recurringYearly: form.recurringYearly,
+                recurringYearly: form.recurringYearly
             };
             if (isEditMode && form.id) {
                 await api.put(Constants.HOLIDAY_URL(form.id), payload, { headers: authHeaders });

@@ -164,7 +164,7 @@ const CreatePurchase: React.FC = () => {
             tax: 0,
             amount: 0,
             taxes: [],
-            appliedTaxRateIds: [],
+            appliedTaxRateIds: []
         }],
         notes: '',
         termsAndCondition: '',
@@ -189,7 +189,7 @@ const CreatePurchase: React.FC = () => {
         customFields: {},
         currencyCode: defaultCurrencyCode,
         contactId: '',
-        taxTreatment: 'STANDARD',
+        taxTreatment: 'STANDARD'
     });
 
     // Apply document defaults once loaded — seed blank new form, never overwrite user edits
@@ -323,14 +323,14 @@ const CreatePurchase: React.FC = () => {
                 supplierId: '',
                 billTo: '',
                 currencyCode: contact.currencyCode || prev.currencyCode,
-                taxTreatment: contact.defaultTaxTreatment ?? 'STANDARD',
+                taxTreatment: contact.defaultTaxTreatment ?? 'STANDARD'
             }));
         } else {
             setPurchaseFormData(prev => ({
                 ...prev,
                 contactId: '',
                 supplierId: '',
-                billTo: '',
+                billTo: ''
             }));
         }
     };
@@ -385,7 +385,7 @@ const CreatePurchase: React.FC = () => {
         try {
             setIsFetching(true);
             const response = await api.get(`${Constants.FETCH_PURCHASE_ORDER_URL}/${purchaseFormData.purchaseOrderId}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { 'Authorization': `Bearer ${token}` }
             });
 
             const data = response.data.data;
@@ -590,7 +590,7 @@ const CreatePurchase: React.FC = () => {
                     taxes: result.taxes,
                     totalTax: result.totalTax,
                     tax: result.totalTax,
-                    amount: newAmount,
+                    amount: newAmount
                 };
             }
 
@@ -700,7 +700,7 @@ const CreatePurchase: React.FC = () => {
                     stateId: null,
                     isActive: true,
                     createdAt: '',
-                    updatedAt: '',
+                    updatedAt: ''
                 } as TaxRate;
             });
             const result = recomputeLineTaxesByIds(lineTaxable, groupMemberIds, syntheticRates);
@@ -710,7 +710,7 @@ const CreatePurchase: React.FC = () => {
                 totalTax: result.totalTax,
                 amount: result.amount,
                 taxes: result.taxes,
-                appliedTaxRateIds: result.appliedTaxRateIds,
+                appliedTaxRateIds: result.appliedTaxRateIds
             };
         }
 
@@ -724,7 +724,7 @@ const CreatePurchase: React.FC = () => {
                 totalTax: result.totalTax,
                 amount: result.amount,
                 taxes: result.taxes,
-                appliedTaxRateIds: result.appliedTaxRateIds,
+                appliedTaxRateIds: result.appliedTaxRateIds
             };
         }
 
@@ -754,8 +754,8 @@ const CreatePurchase: React.FC = () => {
                 ...prev,
                 items: prev.items.map((it) => it.id === rowId ? {
                     ...it, tax_rate_id: '', tax_group_id: '', taxes: [], totalTax: 0, tax: 0, appliedTaxRateIds: [],
-                    amount: round2(Number(it.qty || 0) * Number(it.rate || 0) - Number(it.discount || 0)),
-                } : it),
+                    amount: round2(Number(it.qty || 0) * Number(it.rate || 0) - Number(it.discount || 0))
+                } : it)
             }));
             return;
         }
@@ -764,12 +764,12 @@ const CreatePurchase: React.FC = () => {
         const taxableAmount = round2(Number(line.qty || 0) * Number(line.rate || 0) - Number(line.discount || 0));
         const resolved = await resolveLineTaxByRateId({
             token: token!, taxableAmount, taxRateId,
-            ...(selectedContactId ? { supplierId: selectedContactId } : {}),
+            ...(selectedContactId ? { supplierId: selectedContactId } : {})
         });
         setPartyStateMissing(!!resolved?.partyStateMissing);
         setPurchaseFormData((prev) => ({
             ...prev,
-            items: prev.items.map((it) => (it.id === rowId ? applyResolvedToLine(it, taxRateId, resolved) : it)),
+            items: prev.items.map((it) => (it.id === rowId ? applyResolvedToLine(it, taxRateId, resolved) : it))
         }));
     };
 
@@ -782,7 +782,7 @@ const CreatePurchase: React.FC = () => {
             tax_group_id: product.tax_group_id,
             tax_rate_id: product.tax_rate_id,
             appliedTaxRateIds: product.appliedTaxRateIds,
-            taxes: product.taxes,
+            taxes: product.taxes
         });
         const updatedProduct: PurchaseLineItem = { ...product, ...computed };
         isDirtyRef.current = true;
@@ -809,7 +809,7 @@ const CreatePurchase: React.FC = () => {
                 tax_group_id: undefined,
                 amount: 0,
                 taxes: [],
-                appliedTaxRateIds: [],
+                appliedTaxRateIds: []
             }]
         }));
     }
@@ -825,7 +825,7 @@ const CreatePurchase: React.FC = () => {
             discount_value: product.discount?.value,
             discount_type: product.discount?.type,
             tax_group_id: product.tax?.group_id,
-            tax_rate_id: product.tax_rate?.taxRateId ?? undefined,
+            tax_rate_id: product.tax_rate?.taxRateId ?? undefined
         });
 
         let updated = false;
@@ -851,7 +851,7 @@ const CreatePurchase: React.FC = () => {
                         discount_value: product.discount?.value,
                         ...(computed.taxes ? { taxes: computed.taxes } : {}),
                         ...(computed.totalTax !== undefined ? { totalTax: computed.totalTax } : {}),
-                        ...(computed.appliedTaxRateIds ? { appliedTaxRateIds: computed.appliedTaxRateIds } : {}),
+                        ...(computed.appliedTaxRateIds ? { appliedTaxRateIds: computed.appliedTaxRateIds } : {})
                     }
                 }
                 return item;
@@ -1066,9 +1066,8 @@ const CreatePurchase: React.FC = () => {
             setIsSubmitting(true);
             await api.post(Constants.CREATE_NEW_PURCHASE_URL, formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
+                  'Content-Type': 'multipart/form-data'
+                }
             });
 
             toast.success('Purchase order saved successfully.');

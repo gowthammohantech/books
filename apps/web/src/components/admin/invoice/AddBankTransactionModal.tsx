@@ -60,7 +60,7 @@ const AddBankTransactionModal: React.FC<AddBankTransactionModalProps> = ({
     defaultType = "RECEIPT",
     defaultAmount = null,
     defaultRemarks = "",
-    defaultReferenceNo = "",
+    defaultReferenceNo = ""
 }) => {
     const { token } = useSelector((state: RootState) => state.auth);
     const [bankAccounts, setBankAccounts] = useState<BankAccountOption[]>([]);
@@ -74,7 +74,7 @@ const AddBankTransactionModal: React.FC<AddBankTransactionModalProps> = ({
         amount: defaultAmount != null ? String(defaultAmount) : "",
         paymentModeId: "",
         referenceNo: defaultReferenceNo,
-        remarks: defaultRemarks,
+        remarks: defaultRemarks
     });
 
     // Reset the form each time the modal is (re)opened so invoice defaults apply.
@@ -87,7 +87,7 @@ const AddBankTransactionModal: React.FC<AddBankTransactionModalProps> = ({
             amount: defaultAmount != null ? String(defaultAmount) : "",
             paymentModeId: "",
             referenceNo: defaultReferenceNo,
-            remarks: defaultRemarks,
+            remarks: defaultRemarks
         });
     }, [isOpen, defaultType, defaultAmount, defaultRemarks, defaultReferenceNo]);
 
@@ -98,9 +98,8 @@ const AddBankTransactionModal: React.FC<AddBankTransactionModalProps> = ({
             try {
                 const [accountsRes, modesRes] = await Promise.all([
                     api.get(Constants.GET_BANK_ACCOUNTS_URL, {
-                        params: { limit: 100, page: 1 },
-                        headers: { Authorization: `Bearer ${token}` },
-                    }),
+                        params: { limit: 100, page: 1 }
+}),
                     api.get(Constants.GET_ALL_PAYMENT_MODES_URL),
                 ]);
                 if (cancelled) return;
@@ -136,7 +135,7 @@ const AddBankTransactionModal: React.FC<AddBankTransactionModalProps> = ({
                     amount: Number(form.amount),
                     ...(form.paymentModeId ? { paymentModeId: form.paymentModeId } : {}),
                     referenceNo: form.referenceNo,
-                    remarks: form.remarks,
+                    remarks: form.remarks
                 }
             );
             toast.success("Bank transaction added");

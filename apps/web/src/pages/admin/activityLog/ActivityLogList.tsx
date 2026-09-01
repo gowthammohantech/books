@@ -38,7 +38,6 @@ const ActivityLogList: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const { token } = useSelector((state: RootState) => state.auth);
   const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
   const { formatDate } = useDateFormatter();
 
@@ -63,9 +62,8 @@ const ActivityLogList: React.FC = () => {
     try {
       setIsLoading(true);
       const res = await api.get(Constants.GET_ACTIVITY_LOGS_URL, {
-        params: { search, entityType, action, limit, page },
-        headers: { Authorization: `Bearer ${token}` },
-      });
+        params: { search, entityType, action, limit, page }
+});
       setLogs(res.data.data.items || []);
       setPagination(res.data.data.pagination);
     } catch (err) {

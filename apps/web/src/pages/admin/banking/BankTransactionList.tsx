@@ -12,7 +12,7 @@ import {
     Unlink2Icon,
     Upload,
     X,
-    XIcon,
+    XIcon
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -37,7 +37,7 @@ import { useTransactionCategories } from "@hooks/useTransactionCategories";
 import type {
     BankTransactionRow,
     BankTransactionPreviewRow,
-    BankTransactionType,
+    BankTransactionType
 } from "@/types/bankTransaction";
 import { BANK_TXN_RELATED_TYPE_LABEL, canOfferExplain, isBankTxnPaymentBorn } from "@/types/bankTransaction";
 import ExplainTransactionForm from "./ExplainTransactionForm";
@@ -76,7 +76,7 @@ const typeLabel: Record<string, string> = {
     TRANSFER_IN: "Transfer In",
     TRANSFER_OUT: "Transfer Out",
     PAYMENT: "Payment",
-    RECEIPT: "Receipt",
+    RECEIPT: "Receipt"
 };
 
 const typeBadgeColor = (t: string): "success" | "danger" | "gray" => {
@@ -136,7 +136,7 @@ const BankTransactionList: React.FC = () => {
         total: 0,
         page: 1,
         limit: 10,
-        totalPages: 1,
+        totalPages: 1
     });
     const [counts, setCounts] = useState<CountsData>({ unexplained: 0, forApproval: 0, all: 0 });
     const [bankAccounts, setBankAccounts] = useState<BankAccountOption[]>([]);
@@ -199,7 +199,7 @@ const BankTransactionList: React.FC = () => {
         transactionDate: new Date().toISOString().slice(0, 10),
         type: "DEPOSIT",
         amount: "",
-        remarks: "",
+        remarks: ""
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -229,9 +229,8 @@ const BankTransactionList: React.FC = () => {
     const fetchBankAccounts = async () => {
         try {
             const response = await api.get(Constants.GET_BANK_ACCOUNTS_URL, {
-                params: { limit: 100, page: 1 },
-                headers: { Authorization: `Bearer ${token}` },
-            });
+                params: { limit: 100, page: 1 }
+});
             const list = (response.data?.data?.bankDetails ?? []) as BankAccountOption[];
             setBankAccounts(list);
         } catch (err) {
@@ -250,9 +249,8 @@ const BankTransactionList: React.FC = () => {
             if (search.trim()) params.search = search.trim();
             if (categoryId) params.categoryId = categoryId;
             const response = await api.get(Constants.GET_BANK_TRANSACTIONS_URL, {
-                params,
-                headers: { Authorization: `Bearer ${token}` },
-            });
+                params
+});
             const data = response.data?.data;
             setRows(data?.bankTransactions ?? []);
             setPagination(
@@ -511,7 +509,7 @@ const BankTransactionList: React.FC = () => {
             transactionDate: new Date().toISOString().slice(0, 10),
             type: "DEPOSIT",
             amount: "",
-            remarks: "",
+            remarks: ""
         });
     };
 
@@ -529,7 +527,7 @@ const BankTransactionList: React.FC = () => {
                     transactionDate: addForm.transactionDate,
                     type: addForm.type,
                     amount: Number(addForm.amount),
-                    remarks: addForm.remarks,
+                    remarks: addForm.remarks
                 }
             );
             toast.success("Bank transaction created.");
@@ -558,9 +556,8 @@ const BankTransactionList: React.FC = () => {
                 formData,
                 {
                     headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "multipart/form-data",
-                    },
+                      "Content-Type": "multipart/form-data"
+                    }
                 }
             );
             const preview = (response.data?.data?.previewRows ?? []) as BankTransactionPreviewRow[];
@@ -595,8 +592,8 @@ const BankTransactionList: React.FC = () => {
                         description: r.description,
                         amount: r.amount,
                         type: r.type,
-                        reference: r.reference,
-                    })),
+                        reference: r.reference
+                    }))
                 }
             );
             toast.success(`${validRows.length} bank transactions imported.`);
@@ -824,7 +821,7 @@ const BankTransactionList: React.FC = () => {
                                 { value: "", label: "All bank accounts" },
                                 ...bankAccounts.map((b) => ({
                                     value: b.id,
-                                    label: `[${b.accountNumber}] ${b.accountHoldername ?? ""} - ${b.bankName}`,
+                                    label: `[${b.accountNumber}] ${b.accountHoldername ?? ""} - ${b.bankName}`
                                 })),
                             ]}
                         />
@@ -837,7 +834,7 @@ const BankTransactionList: React.FC = () => {
                         }}
                         options={TYPE_PILLS.map((opt) => ({
                             value: opt,
-                            label: opt === "all" ? "All types" : typeLabel[opt] ?? opt,
+                            label: opt === "all" ? "All types" : typeLabel[opt] ?? opt
                         }))}
                     />
                     <Select
@@ -1009,7 +1006,7 @@ const BankTransactionList: React.FC = () => {
                                                       actioningId === item.id,
                                                   onClick: (item: BankTransactionRow) => {
                                                       handleApprove(item.id);
-                                                  },
+                                                  }
                                               },
                                               {
                                                   label: "Edit",
@@ -1019,7 +1016,7 @@ const BankTransactionList: React.FC = () => {
                                                       setExpandedId((prev) =>
                                                           prev === item.id ? null : item.id
                                                       );
-                                                  },
+                                                  }
                                               },
                                               {
                                                   label: "Reject",
@@ -1028,7 +1025,7 @@ const BankTransactionList: React.FC = () => {
                                                       actioningId === item.id,
                                                   onClick: (item: BankTransactionRow) => {
                                                       handleReject(item.id);
-                                                  },
+                                                  }
                                               },
                                           ]
                                         : []),
@@ -1048,7 +1045,7 @@ const BankTransactionList: React.FC = () => {
                                                       actioningId === item.id,
                                                   onClick: (item: BankTransactionRow) => {
                                                       handleAnalyse(item.id);
-                                                  },
+                                                  }
                                               },
                                           ]
                                         : []),
@@ -1066,7 +1063,7 @@ const BankTransactionList: React.FC = () => {
                                                       actioningId === item.id,
                                                   onClick: (item: BankTransactionRow) => {
                                                       handleUndo(item.id);
-                                                  },
+                                                  }
                                               },
                                           ]
                                         : []),
@@ -1077,7 +1074,7 @@ const BankTransactionList: React.FC = () => {
                                                   icon: <LinkIcon size={14} />,
                                                   onClick: (item: BankTransactionRow) => {
                                                       handleSuggestMatches(item.id);
-                                                  },
+                                                  }
                                               },
                                           ]
                                         : [
@@ -1086,7 +1083,7 @@ const BankTransactionList: React.FC = () => {
                                                   icon: <Unlink2Icon size={14} />,
                                                   onClick: (item: BankTransactionRow) => {
                                                       handleUnlink(item.id);
-                                                  },
+                                                  }
                                               },
                                           ]),
                                     {
@@ -1097,7 +1094,7 @@ const BankTransactionList: React.FC = () => {
                                         onClick: (item: BankTransactionRow) => {
                                             setDeleteItem(item);
                                             setDeleteModalOpen(true);
-                                        },
+                                        }
                                     },
                                 ] as Action<BankTransactionRow>[]}
                             />
@@ -1212,7 +1209,7 @@ const BankTransactionList: React.FC = () => {
                                 { value: "", label: "Select bank account" },
                                 ...bankAccounts.map((b) => ({
                                     value: b.id,
-                                    label: `[${b.accountNumber}] ${b.bankName}`,
+                                    label: `[${b.accountNumber}] ${b.bankName}`
                                 })),
                             ]}
                         />
@@ -1230,12 +1227,12 @@ const BankTransactionList: React.FC = () => {
                                 onChange={(e) =>
                                     setAddForm({
                                         ...addForm,
-                                        type: e.target.value as BankTransactionType,
+                                        type: e.target.value as BankTransactionType
                                     })
                                 }
                                 options={(Object.keys(typeLabel) as BankTransactionType[]).map((t) => ({
                                     value: t,
-                                    label: typeLabel[t],
+                                    label: typeLabel[t]
                                 }))}
                             />
                         </div>
@@ -1308,7 +1305,7 @@ const BankTransactionList: React.FC = () => {
                                 { value: "", label: "Select bank account" },
                                 ...bankAccounts.map((b) => ({
                                     value: b.id,
-                                    label: `[${b.accountNumber}] ${b.bankName}`,
+                                    label: `[${b.accountNumber}] ${b.bankName}`
                                 })),
                             ]}
                         />
@@ -1469,7 +1466,7 @@ const BankTransactionList: React.FC = () => {
                                                     onClick={() =>
                                                         handleLink(suggestModalState.txnId, {
                                                             kind: m.kind,
-                                                            candidateId: m.candidateId,
+                                                            candidateId: m.candidateId
                                                         })
                                                     }
                                                 >

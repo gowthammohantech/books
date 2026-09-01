@@ -129,7 +129,7 @@ const CreatePurchaseOrder: React.FC = () => {
         customFields: {},
         currencyCode: defaultCurrencyCode,
         contactId: '',
-        taxTreatment: 'STANDARD',
+        taxTreatment: 'STANDARD'
     });
 
     // Apply document defaults once loaded — seed blank new form, never overwrite user edits
@@ -303,14 +303,14 @@ const CreatePurchaseOrder: React.FC = () => {
                 supplierId: '',
                 billTo: '',
                 currencyCode: contact.currencyCode || prev.currencyCode,
-                taxTreatment: contact.defaultTaxTreatment ?? 'STANDARD',
+                taxTreatment: contact.defaultTaxTreatment ?? 'STANDARD'
             }));
         } else {
             setPurchaseFormData(prev => ({
                 ...prev,
                 contactId: '',
                 supplierId: '',
-                billTo: '',
+                billTo: ''
             }));
         }
     };
@@ -546,7 +546,7 @@ const CreatePurchaseOrder: React.FC = () => {
                         tax_group_id: product.tax?.group_id,
                         tax_rate_id: product.tax_rate?.taxRateId ?? undefined,
                         discount_type: product.discount?.type || "Fixed",
-                        discount_value: product.discount?.value,
+                        discount_value: product.discount?.value
                     }
                 }
                 return item;
@@ -677,9 +677,8 @@ const CreatePurchaseOrder: React.FC = () => {
             setIsSubmitting(true);
             await api.post(Constants.CREATE_PURCHASE_ORDER_URL, formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
+                  'Content-Type': 'multipart/form-data'
+                }
             });
 
             toast.success('Purchase order saved successfully.');

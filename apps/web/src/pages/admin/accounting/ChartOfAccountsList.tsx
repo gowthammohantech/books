@@ -1,11 +1,9 @@
 import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from "sonner";
 import { CirclePlusIcon, Edit, Trash2Icon } from "lucide-react";
 
-import type { RootState } from "@store/index";
 import Constants from "@constants/api";
 import Table from "@components/admin/Table";
 import TableRow from "@components/admin/TableRow";
@@ -41,7 +39,6 @@ interface FormState {
 const emptyForm: FormState = { code: "", name: "", accountType: "ASSET", parentId: "", description: "" };
 
 const ChartOfAccountsList: React.FC = () => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSeeding, setIsSeeding] = useState(false);
@@ -59,9 +56,8 @@ const ChartOfAccountsList: React.FC = () => {
             const params: Record<string, string> = {};
             if (filterType) params.accountType = filterType;
             const resp = await api.get(Constants.GET_ACCOUNTS_URL, {
-                params,
-                headers: { Authorization: `Bearer ${token}` },
-            });
+                params
+});
             setAccounts(resp.data?.data?.accounts ?? []);
         } catch (err) {
             console.error("Failed to fetch accounts:", err);
@@ -106,7 +102,7 @@ const ChartOfAccountsList: React.FC = () => {
             name: row.name,
             accountType: row.accountType,
             parentId: row.parentId ?? "",
-            description: row.description ?? "",
+            description: row.description ?? ""
         });
         setEditingId(row.id);
         setShowModal(true);
@@ -125,7 +121,7 @@ const ChartOfAccountsList: React.FC = () => {
                 name: form.name,
                 accountType: form.accountType,
                 parentId: form.parentId || null,
-                description: form.description || null,
+                description: form.description || null
             };
             if (editingId) {
                 await api.put(

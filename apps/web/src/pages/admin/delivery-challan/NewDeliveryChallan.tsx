@@ -114,7 +114,7 @@ const NewDeliveryChallan: React.FC = () => {
         currencyCode: defaultCurrencyCode,
         contactId: '',
         billToContactId: '',
-        taxTreatment: 'STANDARD',
+        taxTreatment: 'STANDARD'
     });
 
     // Apply document defaults once loaded — seed blank new form, never overwrite user edits
@@ -362,14 +362,14 @@ const NewDeliveryChallan: React.FC = () => {
                 billToContactId: contactId ?? '',
                 currencyCode: contact.currencyCode || prev.currencyCode,
                 billTo: '',
-                taxTreatment: contact.defaultTaxTreatment ?? 'STANDARD',
+                taxTreatment: contact.defaultTaxTreatment ?? 'STANDARD'
             }));
         } else {
             setInvoiceFormData(prev => ({
                 ...prev,
                 contactId: '',
                 billToContactId: '',
-                billTo: '',
+                billTo: ''
             }));
         }
     };
@@ -575,7 +575,7 @@ const NewDeliveryChallan: React.FC = () => {
                         tax_group_id: product.tax?.group_id,
                         tax_rate_id: product.tax_rate?.taxRateId ?? undefined,
                         discount_type: product.discount?.type,
-                        discount_value: product.discount?.value,
+                        discount_value: product.discount?.value
                     }
                 }
                 return item;
@@ -681,9 +681,8 @@ const NewDeliveryChallan: React.FC = () => {
             setIsSaving(true);
             await api.post(`${Constants.CREATE_DELIVERY_CHALLAN_URL}`, formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
+                  'Content-Type': 'multipart/form-data'
+                }
             });
 
             toast.success('Delivery Challan created successfully.');

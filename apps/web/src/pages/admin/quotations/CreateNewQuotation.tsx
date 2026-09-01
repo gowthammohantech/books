@@ -127,7 +127,7 @@ const CreateNewQuotation: React.FC = () => {
         currencyCode: defaultCurrencyCode,
         contactId: '',
         billToContactId: '',
-        taxTreatment: 'STANDARD',
+        taxTreatment: 'STANDARD'
     });
 
     // Apply document defaults once loaded — seed blank new form, never overwrite user edits
@@ -396,14 +396,14 @@ const CreateNewQuotation: React.FC = () => {
                 billToContactId: contactId ?? '',
                 currencyCode: contact.currencyCode || prev.currencyCode,
                 billTo: '',
-                taxTreatment: contact.defaultTaxTreatment ?? 'STANDARD',
+                taxTreatment: contact.defaultTaxTreatment ?? 'STANDARD'
             }));
         } else {
             setQuotationFormData(prev => ({
                 ...prev,
                 contactId: '',
                 billToContactId: '',
-                billTo: '',
+                billTo: ''
             }));
         }
     };
@@ -603,7 +603,7 @@ const CreateNewQuotation: React.FC = () => {
                         tax_group_id: product.tax?.group_id,
                         tax_rate_id: product.tax_rate?.taxRateId ?? undefined,
                         discount_type: product.discount?.type,
-                        discount_value: product.discount?.value,
+                        discount_value: product.discount?.value
                     }
                 }
                 return item;
@@ -721,9 +721,8 @@ const CreateNewQuotation: React.FC = () => {
             setIsSaving(true);
             await api.post(Constants.CREATE_QUOTATION_URL, formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
+                  'Content-Type': 'multipart/form-data'
+                }
             });
 
             toast.success('Quotation saved successfully.');

@@ -74,7 +74,7 @@ const LeaveTypes: React.FC = () => {
     const canEdit = hasPermission(permissions, MODULE_SLUG, "edit");
     const canDelete = hasPermission(permissions, MODULE_SLUG, "delete");
     const canManageAllocations = hasPermission(permissions, MODULE_SLUG, "edit") || hasPermission(permissions, MODULE_SLUG, "create");
-    const authHeaders = { Authorization: `Bearer ${token}` };
+    const authHeaders = {};
 
     // --- Leave types ---
     const [types, setTypes] = useState<LeaveType[]>([]);
@@ -113,7 +113,7 @@ const LeaveTypes: React.FC = () => {
         try {
             const res = await api.get(Constants.FETCH_STAFF_FOR_LIST_URL, {
                 params: { user_type: 3, limit: 200, page: 1 },
-                headers: authHeaders,
+                headers: authHeaders
             });
             setStaff((res.data?.data?.users ?? []) as StaffUser[]);
         } catch {
@@ -138,7 +138,7 @@ const LeaveTypes: React.FC = () => {
             setLoadingAlloc(true);
             const res = await api.get(Constants.LEAVE_ALLOCATIONS_URL, {
                 params: { employeeUserId: employeeId, year },
-                headers: authHeaders,
+                headers: authHeaders
             });
             const existing = (res.data?.data?.allocations ?? []) as LeaveAllocation[];
             const byType = new Map(existing.map((a) => [a.leaveTypeId, a]));
@@ -151,7 +151,7 @@ const LeaveTypes: React.FC = () => {
                         leaveTypeName: t.name,
                         allocationId: a?.id,
                         allocated: a != null ? String(a.allocatedDays) : String(t.defaultAllocationDays),
-                        carriedOver: a != null ? String(a.carriedOverDays) : "0",
+                        carriedOver: a != null ? String(a.carriedOverDays) : "0"
                     };
                 });
             setAllocRows(rows);
@@ -184,7 +184,7 @@ const LeaveTypes: React.FC = () => {
             name: item.name,
             paid: item.paid,
             defaultAllocationDays: String(item.defaultAllocationDays),
-            isActive: item.isActive,
+            isActive: item.isActive
         });
         setIsEditMode(true);
         setFormErrors({});
@@ -210,7 +210,7 @@ const LeaveTypes: React.FC = () => {
                 name: form.name.trim(),
                 paid: form.paid,
                 defaultAllocationDays: Number(form.defaultAllocationDays),
-                isActive: form.isActive,
+                isActive: form.isActive
             };
             if (isEditMode && form.id) {
                 await api.put(Constants.LEAVE_TYPE_URL(form.id), payload, { headers: authHeaders });
@@ -280,13 +280,13 @@ const LeaveTypes: React.FC = () => {
                 await api.put(
                     Constants.LEAVE_ALLOCATION_URL(row.allocationId),
                     { allocatedDays: allocated, carriedOverDays: carriedOver },
-                    { headers: authHeaders },
+                    { headers: authHeaders }
                 );
             } else {
                 await api.post(
                     Constants.LEAVE_ALLOCATIONS_URL,
                     { employeeUserId: employeeId, leaveTypeId: row.leaveTypeId, year, allocatedDays: allocated, carriedOverDays: carriedOver },
-                    { headers: authHeaders },
+                    { headers: authHeaders }
                 );
             }
             toast.success("Allocation saved.");
@@ -300,7 +300,7 @@ const LeaveTypes: React.FC = () => {
 
     const staffOptions = staff.map((s) => ({
         id: s.id,
-        name: `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim() || s.email,
+        name: `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim() || s.email
     }));
 
     const tableActions = [

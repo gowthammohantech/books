@@ -25,7 +25,6 @@ interface ICostLayer {
 }
 
 const CostLayers: React.FC = () => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const { formatDate } = useDateFormatter();
 
@@ -35,7 +34,7 @@ const CostLayers: React.FC = () => {
     const [isLoadingProducts, setIsLoadingProducts] = useState(false);
     const [isLoadingLayers, setIsLoadingLayers] = useState(false);
 
-    const authHeaders = { Authorization: `Bearer ${token}` };
+    const authHeaders = {};
     const dateFormat = systemSettings?.dateFormat?.format || "d-m-Y";
 
     const fetchProducts = async () => {
@@ -43,7 +42,7 @@ const CostLayers: React.FC = () => {
             setIsLoadingProducts(true);
             const response = await api.get(Constants.FETCH_PRODUCTS_URL, {
                 params: { limit: 500 },
-                headers: authHeaders,
+                headers: authHeaders
             });
             const data = response.data.data?.products || response.data.data || [];
             setProducts(
@@ -62,7 +61,7 @@ const CostLayers: React.FC = () => {
             setLayers([]);
             const response = await api.get(Constants.FETCH_COST_LAYERS_URL, {
                 params: { productId },
-                headers: authHeaders,
+                headers: authHeaders
             });
             setLayers(response.data.data || []);
         } catch {

@@ -56,8 +56,7 @@ const DocumentDefaultsPage: React.FC = () => {
         setSignaturesLoading(true);
         api
             .get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
-                headers: { Authorization: `Bearer ${token}` },
-                params: { limit: 200 },
+params: { limit: 200 }
             })
             .then((res) => {
                 const raw: Array<{ id: string; signatureName: string }> =
@@ -78,7 +77,7 @@ const DocumentDefaultsPage: React.FC = () => {
             const payload: Record<string, unknown> = {
                 defaultSignType: signType,
                 defaultNotes,
-                defaultTerms,
+                defaultTerms
             };
             if (currencyCode) payload.defaultCurrencyCode = currencyCode;
             if (signType === 'digitalSignature' && signatureId) {

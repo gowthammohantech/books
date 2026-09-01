@@ -75,9 +75,8 @@ export default function PnlByDepartmentReport() {
       try {
         setLoading(true);
         const res = await api.get(Constants.FETCH_PNL_BY_DEPARTMENT_URL, {
-          params: { from, to, ...(rollup ? { rollup: 'parent' } : {}) },
-          headers: { Authorization: `Bearer ${token}` },
-        });
+          params: { from, to, ...(rollup ? { rollup: 'parent' } : {}) }
+});
         if (!cancelled) setData(res.data?.data ?? null);
       } catch {
         if (!cancelled) {

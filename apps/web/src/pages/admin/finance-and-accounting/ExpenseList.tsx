@@ -116,7 +116,7 @@ const ExpenseList: React.FC = () => {
     // 1. Fetch Module Hierarchy & Find Module ID for 'expenses'
     const { data: moduleHierarchyResponse, isLoading: isModulesLoading } = useQuery({
         queryKey: ['moduleHierarchy'],
-        queryFn: () => fetchModuleHierarchy(token!),
+        queryFn: () => fetchModuleHierarchy(),
         refetchOnMount: false,
         enabled: !!token,
         staleTime: 1000 * 60 * 60
@@ -137,7 +137,7 @@ const ExpenseList: React.FC = () => {
     // 2. Fetch Custom Fields specifically for the expenses module
     const { data: customFieldsResponse, isLoading: isCustomFieldsLoading } = useQuery({
         queryKey: ['customFields', expensesModuleId],
-        queryFn: () => fetchCustomFieldsByModule(token!, expensesModuleId!),
+        queryFn: () => fetchCustomFieldsByModule(expensesModuleId!),
         refetchOnMount: false,
         enabled: !!token && !!expensesModuleId
     });

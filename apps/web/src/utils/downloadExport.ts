@@ -1,6 +1,5 @@
 
 import api from '@lib/apiClient';
-import { store } from "@store/index";
 
 /**
  * Downloads an authenticated export (CSV / ZIP) from the backend and triggers a
@@ -14,12 +13,10 @@ import { store } from "@store/index";
  * @param filename Suggested filename for the saved file (e.g. "journal-entries.csv").
  */
 export async function downloadExport(path: string, filename: string): Promise<void> {
-  const { token } = store.getState().auth;
 
   const response = await api.get(path, {
-    responseType: "blob",
-    headers: { Authorization: `Bearer ${token}` },
-  });
+    responseType: "blob"
+});
 
   const blobUrl = window.URL.createObjectURL(response.data as Blob);
   const link = document.createElement("a");

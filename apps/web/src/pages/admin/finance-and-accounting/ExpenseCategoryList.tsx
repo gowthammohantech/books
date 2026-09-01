@@ -15,7 +15,6 @@ import LoaderSpinner from "@components/admin/LoaderSpinner";
 import { toast } from "sonner";
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import useDateFormatter from "@hooks/useDateFormatter";
-import type { Pagination } from "@models/common";
 import ExpenseCategoryFormModal from "./ExpenseCategoryFormModal";
 import Switch from "@components/admin/Switch";
 import { useQuery } from "@tanstack/react-query";
@@ -24,14 +23,7 @@ import { useDebounce } from "@hooks/useDebounce";
 import { PageHeader } from "@/context/PageHeaderContext";
 import { Button, FormField, PageSizeSelect } from "@components/ui";
 
-export interface ExpenseCategoryResponse {
-    success: boolean;
-    message: string;
-    data: {
-        categories: ExpenseCategoryShape[]
-        pagination: Pagination
-    }
-}
+
 interface FilterParams {
     search?: string;
     limit?: number;
@@ -115,7 +107,7 @@ const ExpenseCategoryList: React.FC = () => {
 
     const { data, isLoading, refetch } = useQuery({
         queryKey: ['expenseCategories', { debouncedSearch, limit, page }],
-        queryFn: () => fetchExpenseCategories(token!, { debouncedSearch, limit, page }),
+        queryFn: () => fetchExpenseCategories({ debouncedSearch, limit, page }),
         refetchOnMount: false,
         staleTime: 1000 * 60 * 5,
         enabled: !!token

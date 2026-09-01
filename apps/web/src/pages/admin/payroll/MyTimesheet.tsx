@@ -9,7 +9,7 @@ import Constants from '@constants/api';
 import type {
     TimesheetWeek,
     TimeEntry,
-    TimesheetStatus,
+    TimesheetStatus
 } from '@models/timeTracking';
 import LoaderSpinner from '@components/admin/LoaderSpinner';
 import { PageHeader } from '@/context/PageHeaderContext';
@@ -57,7 +57,7 @@ const STATUS_COLORS: Record<TimesheetStatus, BadgeColor> = {
     DRAFT: 'gray',
     SUBMITTED: 'info',
     APPROVED: 'success',
-    REJECTED: 'danger',
+    REJECTED: 'danger'
 };
 
 // ── Cell model: keyed by `${projectId}|${isoDate}` ─────────────────────────────
@@ -81,7 +81,7 @@ function buildCellMap(entries: TimeEntry[]): CellMap {
         map[cellKey(e.projectId, iso)] = {
             hours: e.hours != null ? String(e.hours) : '',
             billable: e.billable,
-            note: e.note ?? '',
+            note: e.note ?? ''
         };
     }
     return map;
@@ -164,9 +164,8 @@ const MyTimesheet: React.FC = () => {
                 setLoading(true);
                 setSaveState('idle');
                 const res = await api.get(Constants.TIMESHEET_WEEK_URL, {
-                    params: { employeeUserId, weekStart: toISODate(monday) },
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                    params: { employeeUserId, weekStart: toISODate(monday) }
+});
                 if (res.data.success) {
                     const data: TimesheetWeek = res.data.data;
                     setWeek(data);
@@ -280,7 +279,7 @@ const MyTimesheet: React.FC = () => {
                 date: e.date, // yyyy-MM-dd
                 hours: e.hours,
                 billable: e.billable,
-                note: e.note || undefined,
+                note: e.note || undefined
             }));
 
         try {
@@ -324,7 +323,7 @@ const MyTimesheet: React.FC = () => {
     const updateCell = (key: string, patch: Partial<CellState>) => {
         setCells((prev) => ({
             ...prev,
-            [key]: { ...(prev[key] ?? EMPTY_CELL), ...patch },
+            [key]: { ...(prev[key] ?? EMPTY_CELL), ...patch }
         }));
         scheduleSave();
     };
@@ -381,7 +380,7 @@ const MyTimesheet: React.FC = () => {
             idle: { text: 'All changes saved', cls: 'text-gray-400' },
             saving: { text: 'Saving…', cls: 'text-amber-600' },
             saved: { text: 'Saved', cls: 'text-green-600' },
-            error: { text: 'Save failed', cls: 'text-destructive' },
+            error: { text: 'Save failed', cls: 'text-destructive' }
         };
         const { text, cls } = map[saveState];
         return <span className={`text-xs ${cls}`}>{text}</span>;
@@ -627,7 +626,7 @@ const MyTimesheet: React.FC = () => {
                                                                 disabled={cellDisabled}
                                                                 onChange={(e) =>
                                                                     updateCell(key, {
-                                                                        billable: e.target.checked,
+                                                                        billable: e.target.checked
                                                                     })
                                                                 }
                                                                 className="h-3 w-3 accent-primary"
@@ -661,7 +660,7 @@ const MyTimesheet: React.FC = () => {
                                                                 placeholder="Note…"
                                                                 onChange={(e) =>
                                                                     updateCell(key, {
-                                                                        note: e.target.value,
+                                                                        note: e.target.value
                                                                     })
                                                                 }
                                                                 onBlur={() => setOpenNoteKey(null)}

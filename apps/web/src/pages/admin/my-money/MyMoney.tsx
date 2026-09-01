@@ -98,9 +98,8 @@ const MyMoney: React.FC = () => {
     if (!token) return;
     try {
       const res = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
-        params: { limit: 200, page: 1 },
-        headers: { Authorization: `Bearer ${token}` },
-      });
+        params: { limit: 200, page: 1 }
+});
       const raw = (res.data?.data ?? []) as Array<{ id: string; firstName: string; lastName: string }>;
       const list = raw.map((u) => ({ id: u.id, name: `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() }));
       setUsers(list);
@@ -125,9 +124,8 @@ const MyMoney: React.FC = () => {
       const res = await api.get(
         `${Constants.GET_MY_MONEY_URL}/${selectedUserId}`,
         {
-          params: { taxYear: selectedTaxYear },
-          headers: { Authorization: `Bearer ${token}` },
-        },
+          params: { taxYear: selectedTaxYear }
+}
       );
       if (res.data?.success) {
         setData(res.data.data as MyMoneyData);

@@ -65,7 +65,7 @@ const toDateOnly = (d: Date | null): string | null => {
 const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, open, onClose }) => {
     const { token } = useSelector((state: RootState) => state.auth);
     const { formatMoney, defaultCurrencyCode } = useCurrencies();
-    const authHeaders = { Authorization: `Bearer ${token}` };
+    const authHeaders = {};
 
     // --- Billing settings state ---
     const [billingRate, setBillingRate] = useState<string>("");
@@ -125,7 +125,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
         try {
             const res = await api.get(Constants.FETCH_STAFF_FOR_LIST_URL, {
                 params: { user_type: 3, limit: 200, page: 1 },
-                headers: authHeaders,
+                headers: authHeaders
             });
             setStaff((res.data?.data?.users ?? []) as StaffUser[]);
         } catch {
@@ -141,7 +141,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
             try {
                 const res = await api.get(Constants.GET_CUSTOMERS_WITH_SEARCH_URL, {
                     params: { search: customerSearch, limit: 100, page: 1 },
-                    headers: authHeaders,
+                    headers: authHeaders
                 });
                 setCustomerOptions(res.data?.data?.customers ?? []);
             } catch {
@@ -171,7 +171,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                 billingRate: billingRate === "" ? null : Number(billingRate),
                 startDate: toDateOnly(startDate),
                 endDate: toDateOnly(endDate),
-                contactId: customer?.id ?? null,
+                contactId: customer?.id ?? null
             };
             await api.put(Constants.PROJECT_SETTINGS_URL(projectId), payload, { headers: authHeaders });
             toast.success("Project billing settings saved.");
@@ -196,7 +196,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
             const payload = {
                 employeeUserId: newEmployeeId,
                 role: newRole,
-                billingRate: newRate === "" ? null : Number(newRate),
+                billingRate: newRate === "" ? null : Number(newRate)
             };
             await api.post(Constants.PROJECT_MEMBERS_URL(projectId), payload, { headers: authHeaders });
             toast.success("Member added.");
@@ -217,7 +217,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
             const payload = {
                 role: changes.role ?? member.role,
                 billingRate: changes.billingRate !== undefined ? changes.billingRate : member.billingRate,
-                isActive: changes.isActive !== undefined ? changes.isActive : member.isActive,
+                isActive: changes.isActive !== undefined ? changes.isActive : member.isActive
             };
             await api.put(Constants.PROJECT_MEMBER_URL(projectId, member.id), payload, { headers: authHeaders });
             setMembers((prev) => prev.map((m) => (m.id === member.id ? { ...m, ...payload } : m)));
@@ -243,7 +243,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
 
     const staffOptions: CustomerOption[] = staff.map((s) => ({
         id: s.id,
-        name: `${s.firstName} ${s.lastName}`.trim() || s.email,
+        name: `${s.firstName} ${s.lastName}`.trim() || s.email
     }));
 
     return (

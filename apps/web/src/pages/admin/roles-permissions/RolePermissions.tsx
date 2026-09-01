@@ -8,6 +8,7 @@ import { Button, Select } from "@components/ui";
 import type { SelectOption } from "@components/ui";
 import { Save } from "lucide-react";
 import type { ModuleList } from "@models/role-permissions";
+import type { ModuleListResponse } from "@models/apiResponses";
 import type { RootState } from "@store/index";
 import { MODULE_LANDING_PATHS } from "@utils/roleLanding";
 
@@ -20,11 +21,7 @@ const DEFAULT_ROUTE_OPTIONS: SelectOption[] = Object.entries(MODULE_LANDING_PATH
     ([slug, { label }]) => ({ value: slug, label })
 );
 
-export type ModuleListResponse = {
-    success: boolean,
-    message: string,
-    data: ModuleList[]
-}
+
 type RolePermissionsResponse = {
     success: boolean,
     message: string,

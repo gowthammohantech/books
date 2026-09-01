@@ -53,10 +53,9 @@ export function useCostCenters(usage: CostCenterUsage = 'any') {
         if (!_inflight) {
             _inflight = api
                 .get(Constants.FETCH_COST_CENTERS_URL, {
-                    headers: { Authorization: `Bearer ${token}` },
-                    // all=1: the picker must be able to resolve ANY saved id to a
+// all=1: the picker must be able to resolve ANY saved id to a
                     // label. A paginated fetch would render older centres blank.
-                    params: { all: 1 },
+                    params: { all: 1 }
                 })
                 .then((res) => {
                     const raw = res.data?.data;
@@ -92,7 +91,7 @@ export function useCostCenters(usage: CostCenterUsage = 'any') {
             if (!id) return null;
             return (costCenters.length ? costCenters : _cached ?? []).find((c) => c.id === id) ?? null;
         },
-        [costCenters],
+        [costCenters]
     );
 
     const labelFor = useCallback(
@@ -100,7 +99,7 @@ export function useCostCenters(usage: CostCenterUsage = 'any') {
             const found = resolveCostCenter(id);
             return found ? `${found.code} — ${found.name}` : '';
         },
-        [resolveCostCenter],
+        [resolveCostCenter]
     );
 
     return { costCenters, options, loading, resolveCostCenter, labelFor };

@@ -87,7 +87,7 @@ const blankItem = (): ProductItem => ({
     discount: 0,
     discount_type: 'Fixed',
     tax: 0,
-    amount: 0,
+    amount: 0
 });
 
 const toIsoDate = (d: Date): string => {
@@ -119,7 +119,7 @@ const RecurringScheduleForm: React.FC = () => {
         startOn: new Date(),
         endsOn: null,
         maxOccurrences: null,
-        endCondition: 'never',
+        endCondition: 'never'
     });
 
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
@@ -187,7 +187,7 @@ const RecurringScheduleForm: React.FC = () => {
                         taxes: it.taxes ?? [],
                         totalTax: Number(it.totalTax ?? it.tax ?? 0),
                         appliedTaxRateIds:
-                            it.appliedTaxRateIds ?? (it.taxes ?? []).map((t: TaxLine) => t.taxRateId),
+                            it.appliedTaxRateIds ?? (it.taxes ?? []).map((t: TaxLine) => t.taxRateId)
                     }))
                     : [blankItem()];
 
@@ -217,7 +217,7 @@ const RecurringScheduleForm: React.FC = () => {
                     startOn: s.startOn ? new Date(s.startOn) : new Date(),
                     endsOn: s.endsOn ? new Date(s.endsOn) : null,
                     maxOccurrences: s.maxOccurrences ?? null,
-                    endCondition,
+                    endCondition
                 });
             } catch {
                 toast.error('Could not load the schedule.');
@@ -247,7 +247,7 @@ const RecurringScheduleForm: React.FC = () => {
             ...prev,
             contactId: contactId ?? '',
             currencyCode: contact?.currencyCode || prev.currencyCode,
-            taxTreatment: contact?.defaultTaxTreatment ?? prev.taxTreatment,
+            taxTreatment: contact?.defaultTaxTreatment ?? prev.taxTreatment
         }));
         if (formErrors.contactId) {
             setFormErrors((prev) => {
@@ -267,7 +267,7 @@ const RecurringScheduleForm: React.FC = () => {
             totalTax: result.totalTax,
             tax: result.totalTax,
             amount: result.amount,
-            appliedTaxRateIds: result.appliedTaxRateIds,
+            appliedTaxRateIds: result.appliedTaxRateIds
         };
     };
 
@@ -296,8 +296,8 @@ const RecurringScheduleForm: React.FC = () => {
                 ...prev,
                 items: prev.items.map((it) => it.id === rowId ? {
                     ...it, tax_rate_id: '', tax_group_id: '', taxes: [], totalTax: 0, tax: 0, appliedTaxRateIds: [],
-                    amount: round2(Number(it.qty || 0) * Number(it.rate || 0) - Number(it.discount || 0)),
-                } : it),
+                    amount: round2(Number(it.qty || 0) * Number(it.rate || 0) - Number(it.discount || 0))
+                } : it)
             }));
             return;
         }
@@ -307,7 +307,7 @@ const RecurringScheduleForm: React.FC = () => {
         const resolved = await resolveLineTaxByRateId({ token: token!, taxableAmount, taxRateId });
         setFormData((prev) => ({
             ...prev,
-            items: prev.items.map((it) => (it.id === rowId ? applyResolvedToLine(it, taxRateId, resolved) : it)),
+            items: prev.items.map((it) => (it.id === rowId ? applyResolvedToLine(it, taxRateId, resolved) : it))
         }));
     };
 
@@ -343,7 +343,7 @@ const RecurringScheduleForm: React.FC = () => {
                     totalTax: result.totalTax,
                     tax: result.totalTax,
                     amount: result.amount,
-                    appliedTaxRateIds: stickyIds,
+                    appliedTaxRateIds: stickyIds
                 };
             } else {
                 updatedProduct = recomputeLineTaxes(updatedProduct, stickyIds);
@@ -356,7 +356,7 @@ const RecurringScheduleForm: React.FC = () => {
                 totalTax: flat.totalTax,
                 tax: flat.totalTax,
                 amount: flat.amount,
-                appliedTaxRateIds: flat.appliedTaxRateIds,
+                appliedTaxRateIds: flat.appliedTaxRateIds
             };
         } else if (selectedTaxGroup && selectedTaxGroup.tax_rates.length > 0) {
             const groupMemberIds = selectedTaxGroup.tax_rates.map((r) => r.id);
@@ -366,7 +366,7 @@ const RecurringScheduleForm: React.FC = () => {
                 return {
                     id: r.id, name: r.tax_name, rate: r.tax_rate, regime: 'NONE',
                     taxKind: null, countryId: null, stateId: null, isActive: true,
-                    createdAt: '', updatedAt: '',
+                    createdAt: '', updatedAt: ''
                 } as TaxRate;
             });
             const result = recomputeLineTaxesByIds(updatedProduct, groupMemberIds, syntheticRates);
@@ -376,7 +376,7 @@ const RecurringScheduleForm: React.FC = () => {
                 totalTax: result.totalTax,
                 tax: result.totalTax,
                 amount: result.amount,
-                appliedTaxRateIds: result.appliedTaxRateIds,
+                appliedTaxRateIds: result.appliedTaxRateIds
             };
         } else {
             const appliedIds = product.appliedTaxRateIds ?? (product.taxes ?? []).map((t) => t.taxRateId);
@@ -387,7 +387,7 @@ const RecurringScheduleForm: React.FC = () => {
 
         setFormData((prev) => ({
             ...prev,
-            items: prev.items.map((item) => (item.id === rowId ? updatedProduct : item)),
+            items: prev.items.map((item) => (item.id === rowId ? updatedProduct : item))
         }));
     };
 
@@ -424,11 +424,11 @@ const RecurringScheduleForm: React.FC = () => {
                         tax_group_id: product.tax?.group_id,
                         tax_rate_id: product.tax_rate?.taxRateId ?? '',
                         discount_type: product.discount?.type || 'Fixed',
-                        discount_value: product.discount?.value,
+                        discount_value: product.discount?.value
                     };
                 }
                 return item;
-            }),
+            })
         }));
         setIsProductModalOpen(false);
         if (product.tax_rate?.taxRateId) {
@@ -463,7 +463,7 @@ const RecurringScheduleForm: React.FC = () => {
             subTotal: round2(totals.subTotal),
             totalTax: round2(totals.totalTax),
             totalDiscount: round2(totals.totalDiscount),
-            grandTotal: round2(grand),
+            grandTotal: round2(grand)
         };
     }, [formData.items]);
 
@@ -519,7 +519,7 @@ const RecurringScheduleForm: React.FC = () => {
                 customFields: item.customFields,
                 taxes: item.taxes ?? [],
                 totalTax: item.totalTax ?? item.tax ?? 0,
-                appliedTaxRateIds: item.appliedTaxRateIds ?? (item.taxes ?? []).map((t) => t.taxRateId),
+                appliedTaxRateIds: item.appliedTaxRateIds ?? (item.taxes ?? []).map((t) => t.taxRateId)
             }));
 
         return {
@@ -547,7 +547,7 @@ const RecurringScheduleForm: React.FC = () => {
                     : undefined,
             neverExpire: formData.endCondition === 'never',
             maxOccurrences:
-                formData.endCondition === 'afterN' ? formData.maxOccurrences : undefined,
+                formData.endCondition === 'afterN' ? formData.maxOccurrences : undefined
         };
     };
 
@@ -562,8 +562,7 @@ const RecurringScheduleForm: React.FC = () => {
             setIsSubmitting(true);
             const payload = buildPayload();
             const headers = {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
+'Content-Type': 'application/json'
             };
             if (isEdit && id) {
                 await api.put(`${Constants.RECURRING_SCHEDULES_URL}/${id}`, payload, { headers });

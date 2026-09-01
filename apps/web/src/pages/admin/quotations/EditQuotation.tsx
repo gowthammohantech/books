@@ -119,7 +119,7 @@ const EditQuotation: React.FC = () => {
         totalDiscount: null,
         grandTotal: null,
         currencyCode: defaultCurrencyCode,
-        taxTreatment: 'STANDARD',
+        taxTreatment: 'STANDARD'
     });
     const [docCreatedAt, setDocCreatedAt] = useState<string | null>(null);
 
@@ -287,7 +287,7 @@ const EditQuotation: React.FC = () => {
                     signatureName: data.signature?.name || '',
                     esignDataUrl: data.signature?.image || null,
                     currencyCode: data.currencyCode || defaultCurrencyCode || '',
-                    taxTreatment: (data.taxTreatment as QuotationFormData['taxTreatment']) ?? 'STANDARD',
+                    taxTreatment: (data.taxTreatment as QuotationFormData['taxTreatment']) ?? 'STANDARD'
                 }));
 
                 if (data.billFrom) {
@@ -402,7 +402,7 @@ const EditQuotation: React.FC = () => {
                 ...prev,
                 billTo: user.id,
                 currencyCode: user.currencyCode || prev.currencyCode,
-                taxTreatment: (user as any).defaultTaxTreatment ?? prev.taxTreatment,
+                taxTreatment: (user as any).defaultTaxTreatment ?? prev.taxTreatment
             }));
             setCustomerDetails(user);
         } else {
@@ -617,7 +617,7 @@ const EditQuotation: React.FC = () => {
                         tax_group_id: product.tax?.group_id,
                         tax_rate_id: product.tax_rate?.taxRateId ?? undefined,
                         discount_type: product.discount?.type,
-                        discount_value: product.discount?.value,
+                        discount_value: product.discount?.value
                     }
                 }
                 return item;
@@ -721,9 +721,8 @@ const EditQuotation: React.FC = () => {
             setIsSaving(true);
             await api.put(`${Constants.UPDATE_QUOTATION_URL}/${id}`, formData, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
+                  'Content-Type': 'multipart/form-data'
+                }
             });
 
             toast.success('Quotation updated successfully.');

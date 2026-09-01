@@ -19,7 +19,7 @@ const STATUS_COLORS: Record<LeaveStatus, BadgeColor> = {
     PENDING: 'warning',
     APPROVED: 'success',
     REJECTED: 'danger',
-    CANCELLED: 'gray',
+    CANCELLED: 'gray'
 };
 
 const PAGE_LIMIT = 10;
@@ -56,9 +56,8 @@ const LeaveApprovals: React.FC = () => {
             try {
                 setIsLoading(true);
                 const res = await api.get(Constants.LEAVE_REQUESTS_URL, {
-                    params: { scope: 'pending', page: p, limit: PAGE_LIMIT },
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                    params: { scope: 'pending', page: p, limit: PAGE_LIMIT }
+});
                 if (res.data.success) {
                     const data = res.data.data ?? {};
                     const list: LeaveRequest[] = data.leaveRequests ?? [];

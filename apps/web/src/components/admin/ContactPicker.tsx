@@ -91,9 +91,8 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
             setLoading(true);
             try {
                 const response = await api.get(`${Constants.API_BASE_URL}/admin/contacts`, {
-                    params: { view, q: debouncedInput, pageSize: 50 },
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                    params: { view, q: debouncedInput, pageSize: 50 }
+});
                 setContacts(response.data.data ?? []);
             } catch {
                 setContacts([]);
@@ -193,7 +192,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
             const response = await api.post(
                 `${Constants.API_BASE_URL}/admin/contacts/minimal`,
                 { organisation: newOrgName.trim() },
-                { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
+                { headers: {'Content-Type': 'application/json' } }
             );
             const created: Contact = response.data.data;
             setShowNewModal(false);

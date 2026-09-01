@@ -121,7 +121,7 @@ function DetailRow({ label, value }: { label: string; value?: string | number | 
 function SummaryTab({
   contactId,
   token,
-  refreshKey,
+  refreshKey
 }: {
   contactId: string;
   token: string;
@@ -136,8 +136,7 @@ function SummaryTab({
   const handleVCardDownload = async () => {
     try {
       const res = await api.get(`${Constants.API_BASE_URL}/admin/contacts/${contactId}/vcard`, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: 'blob',
+responseType: 'blob'
       });
       const url = URL.createObjectURL(res.data as Blob);
       const a = document.createElement('a');
@@ -272,13 +271,13 @@ const DOC_TYPE_LABELS: Record<DocType, string> = {
   INVOICE: 'Invoice',
   RECURRING_INVOICE: 'Recurring Invoice',
   BILL: 'Bill',
-  ESTIMATE: 'Estimate',
+  ESTIMATE: 'Estimate'
 };
 
 function DocumentsTab({
   contactId,
   token,
-  filterType,
+  filterType
 }: {
   contactId: string;
   token: string;

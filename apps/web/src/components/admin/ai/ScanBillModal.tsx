@@ -22,7 +22,7 @@ import {
   Trash2,
   Upload,
   UserPlus,
-  X,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -150,9 +150,8 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
       form.append('bill', file);
       const res = await api.post(Constants.AI_EXTRACT_BILL_URL, form, {
         headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
+          'Content-Type': 'multipart/form-data'
+        }
       });
       const payload = res.data?.data;
       if (!payload?.extractedData) {
@@ -181,7 +180,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
     setSubmitting(true);
     try {
       const body: Record<string, unknown> = {
-        extractedData: data,
+        extractedData: data
       };
       if (match?.supplierId && !createSupplier) {
         body.supplierId = match.supplierId;
@@ -189,7 +188,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
         body.createSupplier = {
           name: supplierName.trim(),
           email: supplierEmail.trim() || undefined,
-          phone: supplierPhone.trim() || undefined,
+          phone: supplierPhone.trim() || undefined
         };
       }
       const res = await api.post(
@@ -230,7 +229,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
       lineItems: [
         ...data.lineItems,
         { description: '', quantity: 1, unitPrice: 0, amount: 0 },
-      ],
+      ]
     });
   }
   function removeLine(i: number) {
@@ -248,7 +247,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
     if (!data) return;
     setData({
       ...data,
-      taxBreakdown: [...data.taxBreakdown, { label: 'Tax', rate: 0, amount: 0 }],
+      taxBreakdown: [...data.taxBreakdown, { label: 'Tax', rate: 0, amount: 0 }]
     });
   }
   function removeTax(i: number) {

@@ -8,7 +8,7 @@ import Constants from '@constants/api';
 import type {
     Timesheet,
     TimesheetStatus,
-    TimesheetWeek,
+    TimesheetWeek
 } from '@models/timeTracking';
 import LoaderSpinner from '@components/admin/LoaderSpinner';
 import NoRecords from '@components/admin/NoRecords';
@@ -23,7 +23,7 @@ const STATUS_COLORS: Record<TimesheetStatus, BadgeColor> = {
     DRAFT: 'gray',
     SUBMITTED: 'info',
     APPROVED: 'success',
-    REJECTED: 'danger',
+    REJECTED: 'danger'
 };
 
 // The list endpoint may embed a light employee summary on each row.
@@ -76,9 +76,8 @@ const TimesheetApprovals: React.FC = () => {
             try {
                 setIsLoading(true);
                 const res = await api.get(Constants.TIMESHEETS_URL, {
-                    params: { scope: 'pending', page: p, limit: PAGE_LIMIT },
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                    params: { scope: 'pending', page: p, limit: PAGE_LIMIT }
+});
                 if (res.data.success) {
                     const data = res.data.data ?? {};
                     setTimesheets(data.timesheets ?? []);
@@ -107,10 +106,9 @@ const TimesheetApprovals: React.FC = () => {
             const res = await api.get(Constants.TIMESHEET_WEEK_URL, {
                 params: {
                     employeeUserId: ts.employeeUserId,
-                    weekStart: ts.weekStartDate.slice(0, 10),
-                },
-                headers: { Authorization: `Bearer ${token}` },
-            });
+                    weekStart: ts.weekStartDate.slice(0, 10)
+                }
+});
             if (res.data.success) {
                 setDetail(res.data.data as TimesheetWeek);
             }

@@ -18,7 +18,7 @@ import {
   ResponsiveContainer,
   Tooltip,
   XAxis,
-  YAxis,
+  YAxis
 } from 'recharts';
 
 import Constants from '@constants/api';
@@ -73,7 +73,7 @@ export default function AiUsageChart() {
     setLoading(true);
     setError(null);
     try {
-      const headers = { Authorization: `Bearer ${token}` };
+      const headers = {};
       const [usageRes, summaryRes] = await Promise.all([
         api.get(Constants.AI_USAGE_URL, { headers }),
         api.get(Constants.AI_USAGE_SUMMARY_URL, { headers }),

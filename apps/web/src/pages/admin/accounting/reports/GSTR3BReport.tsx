@@ -1,9 +1,7 @@
 import api from '@lib/apiClient';
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 
 import Constants from '@constants/api';
-import type { RootState } from '@store/index';
 import useDateFormatter from '@hooks/useDateFormatter';
 import DrillLink from '@components/admin/DrillLink';
 import { PageHeader } from '@/context/PageHeaderContext';
@@ -43,7 +41,7 @@ function monthStart(d: Date): string {
 
 function TaxBlockRow({
   block,
-  drill,
+  drill
 }: {
   block: TaxBlock;
   drill?: { to: string; params: Record<string, string>; title: string };
@@ -80,7 +78,6 @@ function TaxBlockRow({
 }
 
 export default function GSTR3BReport() {
-  const token = useSelector((s: RootState) => s.auth.token);
   const { formatDate } = useDateFormatter();
   const today = isoDate(new Date());
   const start = monthStart(new Date());
@@ -108,8 +105,7 @@ export default function GSTR3BReport() {
       const res = await api.get(
         `${Constants.EXPORT_GSTR3B_URL}?from=${from}&to=${to}&format=${format}`,
         {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: 'blob',
+responseType: 'blob'
         }
       );
       const blob = new Blob([res.data], { type: format === 'csv' ? 'text/csv' : 'application/json' });
@@ -176,7 +172,7 @@ export default function GSTR3BReport() {
               drill={{
                 to: '/admin/invoices',
                 params: { startDate: from, endDate: to, invoiceType: 'INVOICE' },
-                title: 'View source invoices',
+                title: 'View source invoices'
               }}
             />
           </section>
@@ -196,7 +192,7 @@ export default function GSTR3BReport() {
               drill={{
                 to: '/admin/purchases',
                 params: { startDate: from, endDate: to },
-                title: 'View source purchases',
+                title: 'View source purchases'
               }}
             />
           </section>

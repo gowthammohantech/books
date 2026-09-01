@@ -47,7 +47,7 @@ const initialFormData: SupplierPaymentFormData = {
     bankId: null,
     notes: '',
     referenceNumber: null,
-    sourceType: 'BANK',
+    sourceType: 'BANK'
 };
 
 const SupplierPaymentModal: React.FC<SupplierPaymentModalProps> = ({
@@ -58,7 +58,7 @@ const SupplierPaymentModal: React.FC<SupplierPaymentModalProps> = ({
     totalAmount,
     remaining,
     currencyCode,
-    onSuccess,
+    onSuccess
 }) => {
     const [formData, setFormData] = useState<SupplierPaymentFormData>({ ...initialFormData, purchaseId });
     const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
@@ -86,9 +86,8 @@ const SupplierPaymentModal: React.FC<SupplierPaymentModalProps> = ({
         const fetchBankAccounts = async () => {
             try {
                 const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
-                    params: { search: debouncedBankSearch },
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                    params: { search: debouncedBankSearch }
+});
                 if (response.data.data.length > 0) {
                     const formatted = response.data.data.map((item: any) => {
                         const accountNumber = item.accountNumber ?? '';
@@ -96,7 +95,7 @@ const SupplierPaymentModal: React.FC<SupplierPaymentModalProps> = ({
                         const bankName = item.bankName ?? '';
                         return {
                             id: item.id,
-                            name: `[${accountNumber}] ${name} - ${bankName}`,
+                            name: `[${accountNumber}] ${name} - ${bankName}`
                         };
                     });
                     setBankAccountOptions(formatted);
@@ -119,7 +118,7 @@ const SupplierPaymentModal: React.FC<SupplierPaymentModalProps> = ({
                 const modes = response.data?.data ?? response.data ?? [];
                 const formatted = (Array.isArray(modes) ? modes : []).map((m: any) => ({
                     id: m.id,
-                    name: m.name,
+                    name: m.name
                 }));
                 setPaymentModeOptions(formatted);
             } catch (error) {
@@ -146,7 +145,7 @@ const SupplierPaymentModal: React.FC<SupplierPaymentModalProps> = ({
             ...prev,
             sourceType,
             // Clear bank-specific fields when switching to Petty Cash.
-            ...(sourceType === 'PETTY_CASH' ? { bankId: null, paymentMode: null } : {}),
+            ...(sourceType === 'PETTY_CASH' ? { bankId: null, paymentMode: null } : {})
         }));
         // Drop any stale bank/paymentMode validation errors.
         setFormErrors((prev) => {
@@ -226,7 +225,7 @@ const SupplierPaymentModal: React.FC<SupplierPaymentModalProps> = ({
                 // (backend resolves the single petty-cash account itself).
                 ...(isBank
                     ? { bankId: formData.bankId, paymentMode: formData.paymentMode }
-                    : {}),
+                    : {})
             };
             const response = await api.post(Constants.CREATE_SUPPLIER_PAYMENT_URL, payload);
             if (response.data.data) {

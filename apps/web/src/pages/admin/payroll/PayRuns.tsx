@@ -48,7 +48,7 @@ const StatusBadge: React.FC<{ status: PayRun['status'] }> = ({ status }) => {
     const colours: Record<PayRun['status'], BadgeColor> = {
         DRAFT: 'warning',
         FINALIZED: 'success',
-        VOID: 'gray',
+        VOID: 'gray'
     };
     return <Badge color={colours[status]} variant="soft">{status}</Badge>;
 };
@@ -77,7 +77,7 @@ function buildEditableLines(lines: PayRunLine[]): EditableLine[] {
             : l.employeeUserId,
         gross: String(l.gross),
         deductionLines: l.deductionLines.map((d) => ({ label: d.label, amount: d.amount })),
-        note: l.note ?? '',
+        note: l.note ?? ''
     }));
 }
 
@@ -110,9 +110,8 @@ const PayRuns: React.FC = () => {
         try {
             setListLoading(true);
             const res = await api.get(PAY_RUNS_URL, {
-                params: { taxYear: year },
-                headers: { Authorization: `Bearer ${token}` },
-            });
+                params: { taxYear: year }
+});
             if (res.data.success) {
                 setRuns(res.data.data ?? []);
             }
@@ -150,7 +149,7 @@ const PayRuns: React.FC = () => {
             setIsCreating(true);
             const res = await api.post(PAY_RUNS_URL, {
                 taxYearLabel: newYear,
-                taxMonth: Number(newMonth),
+                taxMonth: Number(newMonth)
             });
             if (res.data.success) {
                 toast.success(res.data.message ?? 'Pay run created.');
@@ -179,8 +178,8 @@ const PayRuns: React.FC = () => {
                     employeeUserId: l.employeeUserId,
                     gross: parseFloat(l.gross) || 0,
                     deductionLines: l.deductionLines,
-                    note: l.note || undefined,
-                })),
+                    note: l.note || undefined
+                }))
             };
             const res = await api.put(`${PAY_RUNS_URL}/${selectedRun.id}`, payload);
             if (res.data.success) {
@@ -232,7 +231,7 @@ const PayRuns: React.FC = () => {
             deductionLines: [
                 ...editableLines[lineIdx].deductionLines,
                 { label: '', amount: 0 },
-            ],
+            ]
         });
     };
 

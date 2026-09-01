@@ -8,8 +8,6 @@ import PaginationWrapper from "../../../components/admin/PaginationWrapper";
 import { Edit, Trash2, CirclePlusIcon, Users } from "lucide-react";
 import { toast } from "sonner";
 import Modal from "../../../components/admin/Modal";
-import { useSelector } from "react-redux";
-import type { RootState } from "../../../store";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import TableRow from "@components/admin/TableRow";
 import type { Action } from "@components/admin/tableActions";
@@ -56,7 +54,6 @@ interface IForm {
 const emptyForm = (): IForm => ({ code: "", name: "", description: "", status: "active" });
 
 const Projects: React.FC = () => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const [searchParams, setSearchParams] = useSearchParams();
 
     const [items, setItems] = useState<IProject[]>([]);
@@ -75,14 +72,14 @@ const Projects: React.FC = () => {
     const search = searchParams.get("search") || "";
     const limit = Number(searchParams.get("limit") || 10);
     const page = Number(searchParams.get("page") || 1);
-    const authHeaders = { Authorization: `Bearer ${token}` };
+    const authHeaders = {};
 
     const fetchItems = async (s?: string, l?: number, p?: number) => {
         try {
             setIsLoading(true);
             const response = await api.get(Constants.FETCH_PROJECTS_URL, {
                 params: { search: s, limit: l, page: p },
-                headers: authHeaders,
+                headers: authHeaders
             });
             setItems(response.data.data || []);
             if (response.data.pagination) setPagination(response.data.pagination);

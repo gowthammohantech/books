@@ -55,9 +55,8 @@ const ExpensesDashboard: React.FC = () => {
                 const [plRes, exRes] = await Promise.all([
                     api.get(Constants.GET_PROFIT_LOSS_URL),
                     api.get(Constants.FETCH_EXPENSES_FOR_LIST_URL, {
-                        params: { page: 1, limit: 8 },
-                        headers: { Authorization: `Bearer ${token}` },
-                    }),
+                        params: { page: 1, limit: 8 }
+}),
                 ]);
                 setPl(plRes.data?.data ?? null);
                 setExpenses(exRes.data?.data?.expenses ?? []);

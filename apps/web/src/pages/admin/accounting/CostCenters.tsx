@@ -8,8 +8,6 @@ import PaginationWrapper from "../../../components/admin/PaginationWrapper";
 import { Edit, Trash2, CirclePlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import Modal from "../../../components/admin/Modal";
-import { useSelector } from "react-redux";
-import type { RootState } from "../../../store";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import TableRow from "@components/admin/TableRow";
 import type { Action } from "@components/admin/tableActions";
@@ -67,7 +65,7 @@ const emptyForm = (): IForm => ({
     isActive: true,
     parentId: "",
     numberPrefix: "",
-    nextNumber: "1",
+    nextNumber: "1"
 });
 
 const TYPE_OPTIONS: { value: CostCenterType; label: string }[] = [
@@ -79,7 +77,7 @@ const TYPE_OPTIONS: { value: CostCenterType; label: string }[] = [
 const TYPE_BADGE: Record<CostCenterType, { label: string; color: "success" | "warning" | "gray" }> = {
     PROFIT: { label: "Profit", color: "success" },
     COST: { label: "Cost", color: "warning" },
-    BOTH: { label: "Both", color: "gray" },
+    BOTH: { label: "Both", color: "gray" }
 };
 
 /** Mirrors NUMBER_PREFIX_RE in the backend controller: must not end in a digit,
@@ -88,7 +86,6 @@ const TYPE_BADGE: Record<CostCenterType, { label: string; color: "success" | "wa
 const PREFIX_RE = /^[A-Z0-9][A-Z0-9._/-]*[^0-9]$/;
 
 const CostCenters: React.FC = () => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const [searchParams, setSearchParams] = useSearchParams();
 
     const [items, setItems] = useState<ICostCenter[]>([]);
@@ -107,7 +104,7 @@ const CostCenters: React.FC = () => {
     const search = searchParams.get("search") || "";
     const limit = Number(searchParams.get("limit") || 10);
     const page = Number(searchParams.get("page") || 1);
-    const authHeaders = { Authorization: `Bearer ${token}` };
+    const authHeaders = {};
 
     const fetchItems = async (s?: string, l?: number, p?: number) => {
         try {
@@ -116,7 +113,7 @@ const CostCenters: React.FC = () => {
                 // includeInactive: the master must still list a centre after its
                 // Active switch is turned off, or it becomes unreachable.
                 params: { search: s, limit: l, page: p, includeInactive: true },
-                headers: authHeaders,
+                headers: authHeaders
             });
             setItems(response.data.data || []);
             if (response.data.pagination) setPagination(response.data.pagination);
@@ -132,7 +129,7 @@ const CostCenters: React.FC = () => {
         try {
             const response = await api.get(Constants.FETCH_COST_CENTERS_URL, {
                 params: { all: 1, includeInactive: true },
-                headers: authHeaders,
+                headers: authHeaders
             });
             setAllCenters(response.data.data || []);
         } catch {
@@ -166,7 +163,7 @@ const CostCenters: React.FC = () => {
             isActive: item.isActive,
             parentId: item.parentId ?? "",
             numberPrefix: item.numberPrefix ?? "",
-            nextNumber: String(item.nextNumber ?? 1),
+            nextNumber: String(item.nextNumber ?? 1)
         });
         setIsEditMode(true);
         setFormErrors({});
@@ -206,7 +203,7 @@ const CostCenters: React.FC = () => {
                 isActive: form.isActive,
                 parentId: form.parentId || null,
                 numberPrefix: form.numberPrefix.trim().toUpperCase() || null,
-                nextNumber: Number(form.nextNumber) || 1,
+                nextNumber: Number(form.nextNumber) || 1
             };
             if (isEditMode && form.id) {
                 await api.put(`${Constants.UPDATE_COST_CENTER_URL}/${form.id}`, payload, { headers: authHeaders });
@@ -255,7 +252,7 @@ const CostCenters: React.FC = () => {
             await api.put(
                 `${Constants.UPDATE_COST_CENTER_URL}/${item.id}`,
                 { isActive: !item.isActive },
-                { headers: authHeaders },
+                { headers: authHeaders }
             );
             toast.success("Status updated successfully.");
             refreshAll();

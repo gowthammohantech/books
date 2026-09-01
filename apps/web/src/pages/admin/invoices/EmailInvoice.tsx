@@ -56,7 +56,7 @@ const EmailInvoice: React.FC = () => {
         to: "",
         cc: null,
         subject: "",
-        htmlContent: "",
+        htmlContent: ""
     });
 
     const [emailSettings, setEmailSettings] = useState<SMTPSettings>({
@@ -64,7 +64,7 @@ const EmailInvoice: React.FC = () => {
         fromName: "",
         host: "",
         port: 0,
-        username: "",
+        username: ""
     });
 
     // fetch email settings
@@ -72,9 +72,8 @@ const EmailInvoice: React.FC = () => {
         const fetchEmailSettings = async () => {
             try {
                 const response = await api.get(Constants.GET_EMAIL_SETTINGS_URL, {
-                    params: { userId: user?.id },
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                    params: { userId: user?.id }
+});
 
                 const data = response.data.data;
                 if (data) {
@@ -84,7 +83,7 @@ const EmailInvoice: React.FC = () => {
                             fromName: data.smtpFromName,
                             host: data.smtpHost,
                             port: data.smtpPort,
-                            username: data.smtpUsername,
+                            username: data.smtpUsername
                         });
                     } else if (data.node_status) {
                         setEmailSettings({
@@ -92,7 +91,7 @@ const EmailInvoice: React.FC = () => {
                             fromName: data.nodeFromName,
                             host: data.nodeHost,
                             port: data.nodePort,
-                            username: data.nodeUsername,
+                            username: data.nodeUsername
                         });
                     } else if (data.resend_status) {
                         setEmailSettings({
@@ -100,7 +99,7 @@ const EmailInvoice: React.FC = () => {
                             fromName: data.resendFromName,
                             host: "smtp.resend.com",
                             port: 465,
-                            username: "resend",
+                            username: "resend"
                         });
                     }
                 }
@@ -187,7 +186,7 @@ const EmailInvoice: React.FC = () => {
             authToken: token,
             publicBaseUrl: systemSettings?.company.publicBaseUrl,
             existingToken: invoiceDetails.publicViewToken,
-            existingEnabled: invoiceDetails.publicViewEnabled,
+            existingEnabled: invoiceDetails.publicViewEnabled
         });
 
         (async () => {
@@ -235,7 +234,7 @@ const EmailInvoice: React.FC = () => {
                 ...prev,
                 to: invoiceDetails.billTo?.email ?? "",
                 subject,
-                htmlContent: html,
+                htmlContent: html
             }));
         })();
 

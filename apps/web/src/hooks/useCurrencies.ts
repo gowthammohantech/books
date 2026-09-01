@@ -37,9 +37,8 @@ export function useCurrencies() {
         if (!_inflight) {
             _inflight = api
                 .get(Constants.GET_CURRENCIES_URL, {
-                    headers: { Authorization: `Bearer ${token}` },
-                    // high limit so we get every active currency, not just page 1
-                    params: { limit: 1000 },
+// high limit so we get every active currency, not just page 1
+                    params: { limit: 1000 }
                 })
                 .then((res) => {
                     // The endpoint returns { data: { currencies: [...], pagination } };
@@ -85,7 +84,7 @@ export function useCurrencies() {
                     symbol: defaultCurrency.symbol,
                     name: defaultCurrency.name,
                     status: true,
-                    isDefault: true,
+                    isDefault: true
                 };
             }
             // last resort

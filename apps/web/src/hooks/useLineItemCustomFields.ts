@@ -15,7 +15,7 @@ export function useLineItemCustomFields(
 ): { fields: LineCustomField[]; isLoading: boolean } {
     const { data: hierarchy, isLoading: isModulesLoading } = useQuery({
         queryKey: ['moduleHierarchy'],
-        queryFn: () => fetchModuleHierarchy(token!),
+        queryFn: () => fetchModuleHierarchy(),
         refetchOnMount: false,
         enabled: !!token,
         staleTime: 1000 * 60 * 60,
@@ -32,7 +32,7 @@ export function useLineItemCustomFields(
 
     const { data: fieldsResponse, isLoading: isFieldsLoading } = useQuery({
         queryKey: ['lineItemCustomFields', moduleId],
-        queryFn: () => fetchCustomFieldsByModule(token!, moduleId!, { limit: 100 }),
+        queryFn: () => fetchCustomFieldsByModule(moduleId!, { limit: 100 }),
         refetchOnMount: false,
         enabled: !!token && !!moduleId,
     });
