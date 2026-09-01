@@ -17,7 +17,7 @@ import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import { hasPermission } from "@utils/hasPermission";
 import type { PermissionAction } from "@models/permissions";
 import SubmitButton from "@components/admin/SubmitButton";
-import { Button, FormField, PageSizeSelect } from "@components/ui";
+import { Button, FormField, PageSizeSelect, EmptyStateRow } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 // Interface for the form data
 interface SignatureFormData {
@@ -355,9 +355,7 @@ const SignatureList: FC = () => {
                 ))}
 
                 {!isLoading && signatures && signatures.length === 0 &&
-                    <tr>
-                        <td colSpan={6} className="text-center py-4 text-muted-foreground font-medium">No Signatures Found</td>
-                    </tr>
+                    <EmptyStateRow colSpan={6} art="empty" title="No Signatures Found" />
                 }
 
                 {isLoading && (

@@ -356,7 +356,7 @@ const TaxRateList: React.FC = () => {
                     />
                 ))}
                 {!isLoading && !taxRates.length &&
-                    <NoRecords colSpan={7} message="No tax rates found" />
+                    <NoRecords art="cash-payment" colSpan={7} message="No tax rates found" />
                 }
                 {isLoading && (
                     <tr key="table-loader">

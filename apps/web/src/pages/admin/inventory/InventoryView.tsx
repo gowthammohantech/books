@@ -200,7 +200,7 @@ const InventoryView: React.FC = () => {
                         </thead>
                         <tbody>
                             {data.history.length === 0 ? (
-                                <NoRecords colSpan={5} message="No activity history found." />
+                                <NoRecords art="empty" colSpan={5} message="No activity history found." />
                             ) : (
                                 data.history.map((h) => {
                                     const adj = Number(h.adjustment ?? 0);

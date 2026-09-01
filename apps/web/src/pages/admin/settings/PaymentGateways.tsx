@@ -9,7 +9,7 @@ import { Trash2 } from 'lucide-react';
 import Constants from '@constants/api';
 import type { GatewayConfigSummary, GatewayKind } from '@models/payment';
 import type { RootState } from '@store/index';
-import { Button, Badge, Card, FormField } from '@components/ui';
+import { Button, Badge, Card, FormField, EmptyState } from "@components/ui";
 import { PageHeader } from '@/context/PageHeaderContext';
 
 interface PaymentLinkMethod {
@@ -87,7 +87,7 @@ function PaymentLinkMethodsSection() {
       {/* Existing methods */}
       <div className="space-y-2 mb-4">
         {methods.length === 0 && (
-          <p className="text-sm text-muted-foreground">No link-based methods yet.</p>
+          <EmptyState size="compact" art="cash-payment" title="No link-based methods yet" />
         )}
         {methods.map((m) => (
           <div key={m.id} className="flex flex-wrap items-center gap-2 border border-border rounded-md p-2">

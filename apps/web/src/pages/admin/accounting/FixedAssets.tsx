@@ -19,7 +19,7 @@ import InputField from "@components/admin/InputField";
 import ReactDateInput from "@components/admin/ReactDateInput";
 import useDateFormatter from "@hooks/useDateFormatter";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Badge, Button, PageSizeSelect } from "@components/ui";
+import { Badge, Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
 
 const DEPRECIATION_METHODS = ["STRAIGHT_LINE"] as const;
 type DepreciationMethod = typeof DEPRECIATION_METHODS[number];
@@ -370,7 +370,7 @@ const FixedAssets: React.FC = () => {
                     ))
                 }
                 {!isLoading && items.length === 0 && (
-                    <tr><td className="text-center py-4 font-semibold text-gray-500" colSpan={8}>No Fixed Assets Found</td></tr>
+                    <EmptyStateRow colSpan={8} art="empty" title="No Fixed Assets Found" />
                 )}
                 {isLoading && (
                     <tr key="loader"><td className="text-center py-2 font-semibold" colSpan={8}><LoaderSpinner /></td></tr>

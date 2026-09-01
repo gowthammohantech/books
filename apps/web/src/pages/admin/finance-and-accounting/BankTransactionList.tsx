@@ -20,7 +20,8 @@ import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import TransactionOverviewModal from "./TransactionOverviewModal";
 import FullPageLoader from "@components/admin/FullPageLoader";
-import { PageSizeSelect } from "@components/ui";
+import { PageSizeSelect, EmptyStateRow } from "@components/ui";
+
 interface FilterParams {
     search?: string;
     limit?: number;
@@ -271,9 +272,7 @@ const BankTransactionList: React.FC = () => {
                 })}
 
                 {!isLoading && transactions && transactions.length === 0 && (
-                    <tr>
-                        <td colSpan={8} className="text-center text-gray-800  py-2 font-semibold">No Records Found</td>
-                    </tr>
+                    <EmptyStateRow colSpan={8} art="cash-payment" title="No Records Found" />
                 )}
 
                 {isLoading && (

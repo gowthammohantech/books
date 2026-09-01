@@ -18,7 +18,7 @@ import type { PermissionAction } from "@models/permissions";
 import { hasPermission } from "@utils/hasPermission";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import ProfileCard from "@components/admin/ProfileImage";
-import { Button, PageSizeSelect } from "@components/ui";
+import { Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 
 interface PaginationData {
@@ -190,9 +190,7 @@ const UserList: React.FC = () => {
                     </TableRow>
                 ))}
                 {!isLoading && !staffs.length &&
-                    <tr>
-                        <td colSpan={tableHeaders.length} className="text-center text-gray-950  py-2 font-semibold">No Users Found</td>
-                    </tr>
+                    <EmptyStateRow colSpan={tableHeaders.length} art="people-search" title="No Users Found" />
                 }
 
                 {isLoading && (

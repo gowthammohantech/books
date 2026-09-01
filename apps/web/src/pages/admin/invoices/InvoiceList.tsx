@@ -459,7 +459,7 @@ const InvoiceList: React.FC = () => {
                 ))}
 
                 {!isPageLoading && invoices.length === 0 && (
-                    <NoRecords message="No records found" colSpan={tableHeaders.length} />
+                    <NoRecords art="invoice" message="No records found" colSpan={tableHeaders.length} />
                 )}
 
                 {isPageLoading && (

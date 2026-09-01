@@ -221,7 +221,7 @@ const ChartOfAccountsList: React.FC = () => {
                     />
                 ))}
                 {!isLoading && accounts.length === 0 && (
-                    <NoRecords colSpan={6} message="No accounts found. Click 'Seed Defaults' to install the standard chart." />
+                    <NoRecords art="folder" colSpan={6} message="No accounts found. Click 'Seed Defaults' to install the standard chart." />
                 )}
                 {isLoading && (
                     <tr>

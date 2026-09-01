@@ -18,7 +18,7 @@ import { useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect } from "@components/ui";
+import { Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
 
 interface Quotation {
     id: string;
@@ -319,11 +319,7 @@ const QuotationList: React.FC = () => {
                     />
                 ))}
                 {!isLoading && quotations.length === 0 && (
-                    <tr key="no-quotations">
-                        <td className="text-center py-2 text-gray-950  font-semibold" colSpan={6}>
-                            No Quotations Found
-                        </td>
-                    </tr>
+                    <EmptyStateRow colSpan={6} art="invoice" title="No Quotations Found" />
                 )}
                 {isLoading && (
                     <tr key="table-loader">

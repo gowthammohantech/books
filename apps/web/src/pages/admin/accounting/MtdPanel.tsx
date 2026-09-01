@@ -360,7 +360,7 @@ export default function MtdPanel() {
             </thead>
             <tbody>
               {obligations.length === 0 ? (
-                <NoRecords
+                <NoRecords art="checking-boxes"
                   colSpan={5}
                   message="No obligations loaded. Use “Refresh obligations” to fetch VAT periods."
                 />

@@ -14,7 +14,7 @@ import type { Action } from "@components/admin/tableActions";
 import SubmitButton from "@components/admin/SubmitButton";
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import InputField from "@components/admin/InputField";
-import { Badge, type BadgeColor, Button, PageSizeSelect } from "@components/ui";
+import { Badge, type BadgeColor, Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 import PermissionGuard from "@components/admin/PermissionGuard";
 import ProjectMembersPanel from "@components/admin/project/ProjectMembersPanel";
@@ -222,7 +222,7 @@ const Projects: React.FC = () => {
                     ))
                 }
                 {!isLoading && items.length === 0 && (
-                    <tr><td className="text-center py-4 font-semibold text-gray-500" colSpan={6}>No Projects Found</td></tr>
+                    <EmptyStateRow colSpan={6} art="folder" title="No Projects Found" />
                 )}
                 {isLoading && (
                     <tr key="loader"><td className="text-center py-2 font-semibold" colSpan={6}><LoaderSpinner /></td></tr>

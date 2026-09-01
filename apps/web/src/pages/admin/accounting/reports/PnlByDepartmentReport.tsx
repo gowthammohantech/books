@@ -9,7 +9,7 @@ import type { RootState } from '@store/index';
 import { PageHeader } from '@/context/PageHeaderContext';
 import DateInput from '@components/admin/DateInput';
 import LoaderSpinner from '@components/admin/LoaderSpinner';
-import { Button, Checkbox } from '@components/ui';
+import { Button, Checkbox, EmptyStateRow } from "@components/ui";
 import { ymdStringToDate, dateToYmdString } from '@utils/converters';
 
 function isoDate(d: Date): string {
@@ -112,9 +112,7 @@ export default function PnlByDepartmentReport() {
         <td className="p-3 font-semibold text-gray-900" colSpan={columns.length + 2}>{title}</td>
       </tr>
       {rows.length === 0 && (
-        <tr>
-          <td className="p-3 text-gray-400 italic" colSpan={columns.length + 2}>No activity in this period</td>
-        </tr>
+        <EmptyStateRow colSpan={columns.length + 2} art="analysis" title="No activity in this period" />
       )}
       {rows.map((r) => (
         <tr key={r.accountId} className="border-b border-gray-100">

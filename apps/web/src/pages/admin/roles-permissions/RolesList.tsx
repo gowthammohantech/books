@@ -18,7 +18,7 @@ import PermissionGuard from "@components/admin/PermissionGuard";
 import type { PermissionAction } from "@models/permissions";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import SubmitButton from "@components/admin/SubmitButton";
-import { Button, PageSizeSelect } from "@components/ui";
+import { Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 
 interface PaginationData {
@@ -256,9 +256,7 @@ const RolesList: React.FC = () => {
                 ))}
 
                 {!isLoading && !roles.length &&
-                    <tr>
-                        <td colSpan={8} className="text-center text-gray-950  py-2 font-semibold">No Roles Found</td>
-                    </tr>
+                    <EmptyStateRow colSpan={8} art="people-search" title="No Roles Found" />
                 }
 
                 {isLoading && (

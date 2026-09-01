@@ -19,7 +19,7 @@ import type { Pagination } from "@models/common";
 import Switch from "@components/admin/Switch";
 import ExpenseCategoryFormModal from "@pages/admin/finance-and-accounting/ExpenseCategoryFormModal";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, FormField, PageSizeSelect } from "@components/ui";
+import { Button, FormField, PageSizeSelect, EmptyStateRow } from "@components/ui";
 
 interface ExpenseResponse {
     success: boolean;
@@ -210,9 +210,7 @@ const ExpenseCategoryList: React.FC = () => {
                 ))}
 
                 {!isLoading && expenseCategories && expenseCategories.length === 0 && (
-                    <tr>
-                        <td colSpan={8} className="text-center text-foreground py-2 font-semibold">No Records Found</td>
-                    </tr>
+                    <EmptyStateRow colSpan={8} art="folder" title="No Records Found" />
                 )}
 
                 {isLoading && (

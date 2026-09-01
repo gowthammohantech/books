@@ -20,7 +20,7 @@ import LoaderSpinner from "@components/admin/LoaderSpinner";
 import SubmitButton from "@components/admin/SubmitButton";
 import ProfileCard from "@components/admin/ProfileImage";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect } from "@components/ui";
+import { Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
 
 interface PaginationData {
     total: number;
@@ -244,11 +244,7 @@ const InventoryList: React.FC = () => {
                 ))}
                 {
                     !isLoading && inventories.length === 0 && (
-                        <tr key="no-quotations">
-                            <td className="text-center py-2 text-gray-950  font-semibold" colSpan={10}>
-                                No Items Found
-                            </td>
-                        </tr>
+                        <EmptyStateRow colSpan={10} art="empty" title="No Items Found" />
                     )
                 }
 

@@ -154,7 +154,7 @@ export default function CustomerStatement() {
                         <td className="px-4 py-3 text-right">{money(section.openingBalance)}</td>
                       </tr>
                       {section.lines.length === 0 ? (
-                        <NoRecords colSpan={6} message="No transactions in this period" />
+                        <NoRecords art="cash-payment" colSpan={6} message="No transactions in this period" />
                       ) : (
                         section.lines.map((line, idx) => {
                           running = running + line.debit - line.credit;

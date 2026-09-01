@@ -160,7 +160,7 @@ const LeaveApprovals: React.FC = () => {
                             </tr>
                         )}
                         {!isLoading && requests.length === 0 && (
-                            <NoRecords colSpan={6} message="No leave requests awaiting approval." />
+                            <NoRecords art="checking-boxes" colSpan={6} message="No leave requests awaiting approval." />
                         )}
                         {!isLoading &&
                             requests.map((r) => (

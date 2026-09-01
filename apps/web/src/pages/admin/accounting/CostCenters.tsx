@@ -14,7 +14,7 @@ import type { Action } from "@components/admin/tableActions";
 import SubmitButton from "@components/admin/SubmitButton";
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import InputField from "@components/admin/InputField";
-import { Badge, Button, Checkbox, PageSizeSelect, Select, Switch } from "@components/ui";
+import { Badge, Button, Checkbox, PageSizeSelect, Select, Switch, EmptyStateRow } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 import { invalidateCostCenters, type CostCenterType } from "@hooks/useCostCenters";
 
@@ -336,7 +336,7 @@ const CostCenters: React.FC = () => {
                     ))
                 }
                 {!isLoading && items.length === 0 && (
-                    <tr><td className="text-center py-4 font-semibold text-gray-500" colSpan={8}>No Profit Centers Found</td></tr>
+                    <EmptyStateRow colSpan={8} art="analysis" title="No Profit Centers Found" />
                 )}
                 {isLoading && (
                     <tr key="loader"><td className="text-center py-2 font-semibold" colSpan={8}><LoaderSpinner /></td></tr>

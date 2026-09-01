@@ -13,6 +13,8 @@ import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/context/PageHeaderContext";
 import { themeColor } from "@lib/designTokens";
 
+import { EmptyState } from "@components/ui";
+
 interface BalanceTrend {
     bankCurrentTotal: number;
     bankLastTotal: number;
@@ -310,12 +312,12 @@ const Banking: React.FC = () => {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={3} className="py-8 px-6 text-center">
-                                        <div className="flex flex-col items-center justify-center text-gray-500">
-                                            <LandmarkIcon className="w-12 h-12 text-gray-300 mb-2" />
-                                            <p className="font-medium">No bank accounts found</p>
-                                            <p className="text-sm mt-1">Add your first bank account to get started</p>
-                                        </div>
+                                    <td colSpan={3} className="p-0">
+                                        <EmptyState
+                                            art="cash-payment"
+                                            title="No bank accounts found"
+                                            description="Add your first bank account to get started"
+                                        />
                                     </td>
                                 </tr>
                             )}

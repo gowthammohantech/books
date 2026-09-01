@@ -4,6 +4,9 @@ export type { ButtonProps, ButtonVariant, ButtonSize } from "./Button";
 export { default as Card } from "./Card";
 export type { CardProps } from "./Card";
 
+export { default as EmptyState, EmptyStateRow } from "./EmptyState";
+export type { EmptyStateProps, EmptyStateRowProps, EmptyStateSize } from "./EmptyState";
+
 export { default as Badge } from "./Badge";
 export type { BadgeProps, BadgeColor, BadgeVariant } from "./Badge";
 

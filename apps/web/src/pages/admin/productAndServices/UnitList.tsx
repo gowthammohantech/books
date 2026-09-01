@@ -19,8 +19,7 @@ import Switch from "@components/admin/Switch";
 import SubmitButton from "@components/admin/SubmitButton";
 import DynamicCustomFields from "@components/admin/DynamicCustomFields";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect } from "@components/ui";
-
+import { Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
 // Define the shape of your data
 interface Unit {
     id: string;
@@ -318,11 +317,7 @@ const UnitList: FC = () => {
                 )}
 
                 {!isLoading && units.length === 0 && (
-                    <tr>
-                        <td colSpan={5} className="text-center py-2 text-gray-500 font-semibold">
-                            No Units Found
-                        </td>
-                    </tr>
+                    <EmptyStateRow colSpan={5} art="empty" title="No Units Found" />
                 )}
                 {isLoading && (
                     <tr key="table-loader">

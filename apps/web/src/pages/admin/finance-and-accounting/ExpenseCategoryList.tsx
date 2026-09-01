@@ -21,8 +21,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchExpenseCategories } from "@api/expenseCategoryApi";
 import { useDebounce } from "@hooks/useDebounce";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, FormField, PageSizeSelect } from "@components/ui";
-
+import { Button, FormField, PageSizeSelect, EmptyStateRow } from "@components/ui";
 
 interface FilterParams {
     search?: string;
@@ -185,9 +184,7 @@ const ExpenseCategoryList: React.FC = () => {
                 ))}
 
                 {!isLoading && expenseCategories && expenseCategories.length === 0 && (
-                    <tr>
-                        <td colSpan={8} className="text-center text-gray-800  py-2 font-semibold">No Records Found</td>
-                    </tr>
+                    <EmptyStateRow colSpan={8} art="folder" title="No Records Found" />
                 )}
 
                 {isLoading && (

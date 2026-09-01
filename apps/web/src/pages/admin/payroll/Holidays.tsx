@@ -16,7 +16,7 @@ import SubmitButton from "@components/admin/SubmitButton";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import PermissionGuard from "@components/admin/PermissionGuard";
-import { Button, Badge } from "@components/ui";
+import { Button, Badge, EmptyStateRow } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 import useDateFormatter from "@hooks/useDateFormatter";
 import { hasPermission } from "@utils/hasPermission";
@@ -210,7 +210,7 @@ const Holidays: React.FC = () => {
                     ))
                 }
                 {!isLoading && items.length === 0 && (
-                    <tr><td className="text-center py-4 font-semibold text-gray-500" colSpan={5}>No Holidays Found</td></tr>
+                    <EmptyStateRow colSpan={5} art="checking-boxes" title="No Holidays Found" />
                 )}
                 {isLoading && (
                     <tr key="loader"><td className="text-center py-2 font-semibold" colSpan={5}><LoaderSpinner /></td></tr>

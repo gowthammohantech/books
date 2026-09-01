@@ -241,7 +241,7 @@ const ActivityLogList: React.FC = () => {
           </Fragment>
         ))}
         {!isLoading && !logs.length && (
-          <NoRecords colSpan={6} message="No activity found" />
+          <NoRecords art="checking-boxes" colSpan={6} message="No activity found" />
         )}
         {isLoading && (
           <tr key="table-loader">

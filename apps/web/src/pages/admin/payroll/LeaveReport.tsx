@@ -192,7 +192,7 @@ const LeaveReport: React.FC = () => {
                                 </thead>
                                 <tbody>
                                     {(summary?.byType ?? []).length === 0 ? (
-                                        <NoRecords colSpan={2} message="No data for the selected filters." />
+                                        <NoRecords art="analysis" colSpan={2} message="No data for the selected filters." />
                                     ) : (
                                         (summary?.byType ?? []).map((r) => (
                                             <tr key={r.leaveTypeId} className="border-b border-border hover:bg-gray-50">
@@ -225,7 +225,7 @@ const LeaveReport: React.FC = () => {
                                 </thead>
                                 <tbody>
                                     {(summary?.byEmployee ?? []).length === 0 ? (
-                                        <NoRecords colSpan={2} message="No data for the selected filters." />
+                                        <NoRecords art="analysis" colSpan={2} message="No data for the selected filters." />
                                     ) : (
                                         (summary?.byEmployee ?? []).map((r) => (
                                             <tr key={r.employeeUserId} className="border-b border-border hover:bg-gray-50">

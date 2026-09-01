@@ -442,7 +442,7 @@ const MyLeave: React.FC = () => {
                                     </td>
                                 </tr>
                             ) : requests.length === 0 ? (
-                                <NoRecords colSpan={6} message="No leave requests yet." />
+                                <NoRecords art="checking-boxes" colSpan={6} message="No leave requests yet." />
                             ) : (
                                 requests.map((r) => (
                                     <tr key={r.id} className="border-b border-border hover:bg-gray-50 align-top">
