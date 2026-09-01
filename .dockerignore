@@ -37,4 +37,9 @@ apps/web/vitest.config.ts
 **/*.md
 documentation
 docker
-scripts
+
+# scripts/ is NOT repo furniture: the shared packages' build script runs
+# ../../scripts/write-esm-package-marker.mjs, so both Dockerfiles need that one
+# file in the context. Everything else here is dev-only (smoke.sh).
+scripts/*
+!scripts/write-esm-package-marker.mjs

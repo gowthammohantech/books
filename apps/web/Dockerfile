@@ -14,17 +14,22 @@ COPY apps/web/package.json apps/web/
 COPY apps/api/package.json apps/api/
 COPY packages/validation/package.json packages/validation/
 COPY packages/enums/package.json packages/enums/
+COPY packages/money/package.json packages/money/
 # --legacy-peer-deps now comes from the root .npmrc (React 19 peer ranges),
 # and `npm ci` replaces `npm install` because there is one lockfile again.
-RUN npm ci --workspace=@elixirbooks/web --workspace=@elixirbooks/validation --workspace=@elixirbooks/enums --include-workspace-root \
+RUN npm ci --workspace=@elixirbooks/web --workspace=@elixirbooks/validation --workspace=@elixirbooks/enums --workspace=@elixirbooks/money --include-workspace-root \
       --no-audit --no-fund --loglevel=warn
 
 COPY tsconfig.base.json ./
-COPY scripts scripts
+# Only the ESM marker script — the shared packages' build invokes it. The rest
+# of scripts/ is dev-only and excluded by .dockerignore.
+COPY scripts/write-esm-package-marker.mjs scripts/
 COPY packages packages
 COPY apps/web apps/web
 # Shared packages first — the SPA imports their built ESM output.
+# enums before money: money imports the enums build output, not its source.
 RUN npm run build --workspace=@elixirbooks/enums \
+ && npm run build --workspace=@elixirbooks/money \
  && npm run build --workspace=@elixirbooks/validation
 
 # Build args passed from docker-compose (or the shell env) override .env at

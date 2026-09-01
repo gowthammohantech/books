@@ -16,7 +16,8 @@ COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 COPY packages/validation/package.json packages/validation/
 COPY packages/enums/package.json packages/enums/
-RUN npm ci --workspace=@elixirbooks/api --workspace=@elixirbooks/validation --workspace=@elixirbooks/enums --include-workspace-root --omit=dev \
+COPY packages/money/package.json packages/money/
+RUN npm ci --workspace=@elixirbooks/api --workspace=@elixirbooks/validation --workspace=@elixirbooks/enums --workspace=@elixirbooks/money --include-workspace-root --omit=dev \
       --no-audit --no-fund --loglevel=warn
 
 # --- Dev dependencies ---------------------------------------------------------
@@ -25,18 +26,22 @@ RUN npm ci --workspace=@elixirbooks/api --workspace=@elixirbooks/validation --wo
 # devDependencies — which is where typescript, ts-node and nodemon now live.
 FROM deps AS dev-deps
 WORKDIR /repo
-RUN npm ci --workspace=@elixirbooks/api --workspace=@elixirbooks/validation --workspace=@elixirbooks/enums --include-workspace-root \
+RUN npm ci --workspace=@elixirbooks/api --workspace=@elixirbooks/validation --workspace=@elixirbooks/enums --workspace=@elixirbooks/money --include-workspace-root \
       --no-audit --no-fund --loglevel=warn
 
 # --- Compile ------------------------------------------------------------------
 FROM dev-deps AS build
 WORKDIR /repo
 COPY tsconfig.base.json ./
-COPY scripts scripts
+# Only the ESM marker script — the shared packages' build invokes it. The rest
+# of scripts/ is dev-only and excluded by .dockerignore.
+COPY scripts/write-esm-package-marker.mjs scripts/
 COPY packages packages
 COPY apps/api apps/api
 # Shared packages first — apps/api imports their built output, not their source.
+# enums before money: money imports the enums build output, not its source.
 RUN npm run build --workspace=@elixirbooks/enums \
+ && npm run build --workspace=@elixirbooks/money \
  && npm run build --workspace=@elixirbooks/validation
 # The Prisma client has to exist before tsc: the generated types are what most
 # of the source is checked against.
@@ -62,6 +67,8 @@ COPY --from=build --chown=app:app /repo/packages/validation/package.json /repo/p
 COPY --from=build --chown=app:app /repo/packages/validation/dist /repo/packages/validation/dist
 COPY --from=build --chown=app:app /repo/packages/enums/package.json /repo/packages/enums/package.json
 COPY --from=build --chown=app:app /repo/packages/enums/dist /repo/packages/enums/dist
+COPY --from=build --chown=app:app /repo/packages/money/package.json /repo/packages/money/package.json
+COPY --from=build --chown=app:app /repo/packages/money/dist /repo/packages/money/dist
 
 # Compiled output, plus the two things it reads at runtime: the Prisma schema
 # and migrations (the entrypoint and boot bootstrap run `migrate deploy`), and
