@@ -51,8 +51,11 @@ describe('bucketDueWindow', () => {
   it('windows are contiguous — no due date falls between two buckets', () => {
     const d1 = bucketDueWindow(asOf, 'd1_30');
     const d31 = bucketDueWindow(asOf, 'd31_60');
-    const dayAfter = new Date(`${d31.dueEndDate}T00:00:00`);
-    dayAfter.setDate(dayAfter.getDate() + 1);
+    // UTC on both sides, for the same reason shiftDays is: parsing at local
+    // midnight and formatting with toISOString mixes two calendars, and this
+    // assertion would then fail everywhere except UTC.
+    const dayAfter = new Date(`${d31.dueEndDate}T00:00:00Z`);
+    dayAfter.setUTCDate(dayAfter.getUTCDate() + 1);
     expect(dayAfter.toISOString().slice(0, 10)).toBe(d1.dueStartDate);
   });
 });
