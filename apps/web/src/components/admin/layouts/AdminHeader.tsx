@@ -10,6 +10,7 @@ import { useAgentPanel } from '@context/AgentPanelContext';
 import NotificationBell from './NotificationBell';
 import { buildCommands } from '@lib/commandPalette';
 import { resolveBreadcrumb } from '@lib/breadcrumb';
+import lixiLogo from '@assets/images/lixi-logo.png';
 
 /**
  * The top bar.
@@ -148,11 +149,22 @@ const AdminHeader = () => {
                         : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
                         }`}
                 >
-                    <span
-                        aria-hidden="true"
-                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${isAgentAvailable ? 'bg-success' : 'bg-muted-foreground/50'
-                            }`}
-                    />
+                    {/* The mark carries the identity, the dot the status: the
+                        dot rides the mark's corner so the pill still fits the
+                        same slot it did as a bare dot + label. */}
+                    <span className="relative flex shrink-0">
+                        <img
+                            src={lixiLogo}
+                            alt=""
+                            aria-hidden="true"
+                            className="h-5 w-5 rounded-full"
+                        />
+                        <span
+                            aria-hidden="true"
+                            className={`absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full ring-2 ring-card ${isAgentAvailable ? 'bg-success' : 'bg-muted-foreground/50'
+                                }`}
+                        />
+                    </span>
                     Lixi
                 </button>
             </div>
