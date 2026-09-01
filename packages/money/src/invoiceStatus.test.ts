@@ -70,9 +70,11 @@ describe('deriveInvoiceDisplayStatus', () => {
   });
 
   it('a credit-noted PAST-DUE invoice reads PAID, not "Delayed Payment"', () => {
-    // The bug this fixes. The old frontend derivation had no creditNoted term,
-    // so balance was totalAmount - totalPaid = 100, it saw a past due date, and
-    // rendered DELAYED — while the aging report treated the invoice as settled.
+    // The old frontend derivation had no creditNoted term: balance was
+    // totalAmount - totalPaid = 100, it saw a past due date, and returned
+    // DELAYED. Live, that was masked by the backend refreshing the stored status
+    // to PAID (which the derivation short-circuits on); this asserts the answer
+    // is right from the numbers alone, without depending on that.
     expect(
       deriveInvoiceDisplayStatus({
         status: 'SENT',

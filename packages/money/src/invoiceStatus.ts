@@ -13,10 +13,16 @@
  * reverse that GL posting, so aging (GL-reconciled) nets cancelled CNs too.
  *
  * The frontend previously had its own copy of this derivation
- * (apps/web/src/utils/invoiceStatus.ts) that took only totalAmount and totalPaid
- * — it had no credit-note term at all — so a credit-noted, past-due invoice
- * rendered "Delayed Payment" while the aging report considered it settled.
- * Sharing this is what lets both sides answer the same question.
+ * (apps/web/src/utils/invoiceStatus.ts) taking only totalAmount and totalPaid,
+ * with no credit-note term at all. In practice that was masked: the backend
+ * refreshes the invoice's STORED status on every credit-note write (see
+ * recomputeInvoiceStatus, called from createCreditNote/updateCreditNote/
+ * deleteCreditNote), and the display derivation short-circuits on a stored PAID.
+ *
+ * So this is defence in depth rather than a live bug fix. Sharing it means the
+ * badge is right from the numbers alone, instead of only while the stored status
+ * happens to be fresh — which matters for rows written before that refresh
+ * existed, since nothing backfills them.
  */
 import type { InvoiceStatus } from '@elixirbooks/enums';
 
@@ -101,9 +107,9 @@ export interface InvoiceDisplayInput {
   /**
    * Non-deleted credit notes against this invoice.
    *
-   * Optional because not every caller has it, but omitting it means the balance
-   * below ignores credit notes — which is precisely the bug this field exists to
-   * close. Callers that can supply it should.
+   * Optional because not every caller has it. Omitting it means the balance
+   * below ignores credit notes, which makes the result depend on the stored
+   * status being fresh. Callers that can supply it should.
    */
   creditNoted?: Decimal | number | string | null;
   /** Injectable for tests; defaults to the real clock. */
