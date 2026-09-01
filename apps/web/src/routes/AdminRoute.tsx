@@ -204,7 +204,7 @@ const AdminRoute = () => {
                     <Route path="/invoices/create-invoice" element={<><Seo title="New Invoice" /><CreateInvoice /></>} />
                     <Route path="/invoices/edit-invoice/:invoiceId" element={<><Seo title="Edit Invoice" /><EditInvoice /></>} />
                     <Route path="/invoices/email/:invoiceId" element={<><Seo title="Email Invoice" /><EmailInvoice /></>} />
-                    <Route path="/invoice-templates" element={<><Seo title="Invoice Templates" /><InvoiceTemplateList /></>} />
+                    {/* /invoice-templates is a settings catalogue entry — it lives in the settings shell below. */}
                     <Route path="/recurring-invoices" element={<><Seo title="Recurring Invoices" /><RecurringInvoiceList /></>} />
                     <Route path="/view-invoice/:id" element={<><Seo title="Invoice" /><ViewInvoice /></>} />
                 </Route>
@@ -398,17 +398,8 @@ const AdminRoute = () => {
                 </Route>
                 <Route path="/ai/extractions" element={<><Seo title="AI Extractions" /><ExtractionHistory /></>} />
 
-                {/* Activity Log */}
-                <Route element={<ProtectedRoute moduleSlug="activity-log" action="view" />}>
-                  <Route path="/activity-log" element={<><Seo title="Activity Log" /><ActivityLogList /></>} />
-                </Route>
-
-                {/* Roles & Permissions */}
-                <Route element={<ProtectedRoute moduleSlug="manage-users" action="view" />}>
-                    <Route path="/users" element={<><Seo title="Users" /><UserList /></>} />
-                    <Route path="/roles" element={<><Seo title="Roles" /><RolesList /></>} />
-                    <Route path="/roles/permissions/:id" element={<><Seo title="Role Permissions" /><RolePermissions /></>} />
-                </Route>
+                {/* Activity Log, Users and Roles & Permissions are settings
+                    catalogue entries — they live in the settings shell below. */}
 
                 {/* Reports Center — the index of every report. Ungated: it only
                     ever lists the reports the viewer's permissions allow, and
@@ -508,6 +499,26 @@ const AdminRoute = () => {
                     <Route path="/settings/ledger-setup" element={<><Seo title="Ledger Setup" /><LedgerSetupWizard /></>} />
                     <Route path="/settings/document-defaults" element={<><Seo title="Document Defaults" /><DocumentDefaultsPage /></>} />
                     <Route path="/settings/transaction-categories" element={<><Seo title="Transaction Categories" /><TransactionCategoriesPage /></>} />
+                </Route>
+
+                {/* Users & Roles. These keep their pre-shell paths so existing
+                    deep links and roleLanding.ts stay valid — only the parent
+                    layout changed. /roles/permissions/:id must stay with
+                    /roles or the detail page breaks out of the shell. */}
+                <Route element={<ProtectedRoute moduleSlug="manage-users" action="view" />}>
+                    <Route path="/users" element={<><Seo title="Users" /><UserList /></>} />
+                    <Route path="/roles" element={<><Seo title="Roles" /><RolesList /></>} />
+                    <Route path="/roles/permissions/:id" element={<><Seo title="Role Permissions" /><RolePermissions /></>} />
+                </Route>
+
+                {/* Activity Log */}
+                <Route element={<ProtectedRoute moduleSlug="activity-log" action="view" />}>
+                    <Route path="/activity-log" element={<><Seo title="Activity Log" /><ActivityLogList /></>} />
+                </Route>
+
+                {/* PDF Templates */}
+                <Route element={<ProtectedRoute moduleSlug="invoices" action="view" />}>
+                    <Route path="/invoice-templates" element={<><Seo title="Invoice Templates" /><InvoiceTemplateList /></>} />
                 </Route>
 
                 {/* Unguarded settings pages, relocated as-is: their access

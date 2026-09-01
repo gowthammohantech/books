@@ -169,9 +169,12 @@ const ReportCenter = () => {
 
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
                 {/* Left rail */}
+                {/* Pinned from `lg` up: sticky resolves against AdminLayout's
+                    scrolling <main>, and the max-height keeps a rail taller
+                    than the viewport scrolling on its own instead of clipping. */}
                 <nav
                     aria-label="Report views"
-                    className="w-full shrink-0 rounded-xl border border-border bg-card p-3 shadow-sm lg:w-64"
+                    className="w-full shrink-0 rounded-xl border border-border bg-card p-3 shadow-sm lg:sticky lg:top-0 lg:max-h-[calc(100vh-5rem)] lg:w-52 lg:overflow-y-auto"
                 >
                     <ul className="space-y-1">
                         {FIXED_VIEWS.map((fixed) => (

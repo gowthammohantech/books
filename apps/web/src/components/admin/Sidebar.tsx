@@ -9,7 +9,6 @@ import {
     Settings,
 } from "lucide-react";
 import { useSelector } from "react-redux";
-import { assetUrl } from "@utils/assetUrl";
 import BottomBar from "./layouts/BottomBar";
 import { resolveCompanyLogo } from "@utils/companyLogo";
 import { navItems, canView, canCreate } from "@lib/navigation";
@@ -377,25 +376,38 @@ const Sidebar = ({
             className={`bg-sidebar text-sidebar-foreground flex flex-col h-screen transition-all duration-300 ease-in-out z-0 border-r border-sidebar-border ${isOpen ? "w-60" : "w-24"
                 }`}
         >
-            <div className="p-4 flex items-center h-12">
-                {systemSettings?.company?.favicon && (
-                    <img
-                        src={assetUrl(systemSettings?.company?.favicon)}
-                        alt="Logo"
-                        className={`h-6 w-6 ${isOpen ? "hidden" : ""}`}
-                    />
-                )}
-                <span
+            {/* Only one branding image is rendered per state. Hiding the wide
+                site logo with opacity instead left an ~8rem phantom element
+                inside the w-24 collapsed rail, pushing the icon out of sight.
+                resolveCompanyLogo treats "" (the fresh-install default) as
+                unset, so the collapsed icon always has something to show. */}
+            <div
+                className={`p-4 flex items-center h-12 ${isOpen ? "" : "justify-center"
+                    }`}
+            >
+                <button
+                    type="button"
                     onClick={() => navigate("/dashboard")}
-                    className={`text-xl font-medium ml-2 text-gray-950 transition-opacity duration-200 whitespace-nowrap cursor-pointer ${isOpen ? "opacity-100" : "opacity-0"
-                        }`}
+                    aria-label="Go to dashboard"
+                    className="flex cursor-pointer items-center"
                 >
-                    <img
-                        src={resolveCompanyLogo(systemSettings?.company?.siteLogo)}
-                        alt="Logo"
-                        className="w-32"
-                    />
-                </span>
+                    {isOpen ? (
+                        <img
+                            src={resolveCompanyLogo(systemSettings?.company?.siteLogo)}
+                            alt="Logo"
+                            className="w-32"
+                        />
+                    ) : (
+                        <img
+                            src={resolveCompanyLogo(
+                                systemSettings?.company?.favicon ||
+                                systemSettings?.company?.siteLogo,
+                            )}
+                            alt="Logo"
+                            className="h-6 w-6 object-contain"
+                        />
+                    )}
+                </button>
             </div>
             <nav className="flex-1 px-3 py-2 overflow-y-auto overflow-x-hidden">
                 {filterNavItems.map((item, index) => {

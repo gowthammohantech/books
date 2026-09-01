@@ -65,13 +65,16 @@ const SettingsTopBar = ({ onClose }: { onClose: () => void }) => {
             </h1>
             <div className="flex items-center gap-2">
                 {actions}
+                {/* Icon only: the label lives in aria-label/title so the
+                    control is still announced and still names itself on hover. */}
                 <button
                     type="button"
                     onClick={onClose}
-                    className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    aria-label="Close settings"
+                    title="Close Settings"
+                    className="flex cursor-pointer items-center rounded-md p-1.5 text-destructive transition-colors hover:bg-destructive/10"
                 >
                     <X size={16} />
-                    <span>Close Settings</span>
                 </button>
             </div>
         </header>

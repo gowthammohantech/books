@@ -54,12 +54,9 @@ export const navItems: NavItemType[] = [
                 title: "Recurring Invoices",
                 slug: "recurring-invoices",
             },
-            {
-                type: "link",
-                to: "/invoice-templates",
-                title: "Invoice Templates",
-                slug: "invoices",
-            },
+            // Invoice/PDF Templates is a Settings catalogue entry
+            // (Customization > PDF Templates) and opens in the settings shell,
+            // so it is not duplicated here.
             {
                 type: "link",
                 to: "/credit-notes",
@@ -507,38 +504,17 @@ export const navItems: NavItemType[] = [
         title: "Reports",
         slug: "reports",
     },
+    // Users, Roles & Permissions and Activity Log used to sit in an
+    // "Administration" group here, duplicating the Settings catalogue's
+    // Users & Roles card. They now live only under Settings, which leaves AI
+    // Extractions as the sole entry — a top-level link rather than a
+    // one-child collapsible.
     {
-        type: "collapsible",
-        id: "administration",
+        type: "link",
+        to: "/ai/extractions",
         icon: <MdSecurity size={16} />,
-        title: "Administration",
-        slug: "manage-users",
-        children: [
-            {
-                type: "link",
-                to: "/users",
-                title: "Users",
-                slug: "manage-users",
-            },
-            {
-                type: "link",
-                to: "/roles",
-                title: "Roles & Permissions",
-                slug: "manage-users",
-            },
-            {
-                type: "link",
-                to: "/activity-log",
-                title: "Activity Log",
-                slug: "activity-log",
-            },
-            {
-                type: "link",
-                to: "/ai/extractions",
-                title: "AI Extractions",
-                slug: "ai",
-            },
-        ],
+        title: "AI Extractions",
+        slug: "ai",
     },
 ];
 
