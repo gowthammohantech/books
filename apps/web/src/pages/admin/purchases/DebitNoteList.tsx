@@ -20,7 +20,7 @@ import LoaderSpinner from "@components/admin/LoaderSpinner";
 import useDateFormatter from "@hooks/useDateFormatter";
 import ProfileCard from "@components/admin/ProfileImage";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, FormField, PageSizeSelect } from "@components/ui";
+import { Button, FormField, PageSizeSelect, EmptyStateRow } from "@components/ui";
 
 interface DebitNoteList {
     id: string;
@@ -231,11 +231,7 @@ const DebitNoteList: FC = () => {
                 ))}
 
                 {!isLoading && debitNotes.length === 0 && (
-                    <tr>
-                        <td colSpan={8} className="text-center py-4 text-gray-950  font-semibold">
-                            No debit notes found
-                        </td>
-                    </tr>
+                    <EmptyStateRow colSpan={8} art="invoice" title="No debit notes found" />
                 )}
 
                 {isLoading && (

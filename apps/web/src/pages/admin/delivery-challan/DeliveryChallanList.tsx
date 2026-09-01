@@ -20,7 +20,7 @@ import { useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect } from "@components/ui";
+import { Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
 
 interface DeliveryChallanList {
     id: string;
@@ -228,11 +228,7 @@ const DeliveryChallanList: React.FC = () => {
                     />
                 ))}
                 {!isLoading && deliveryChallans && deliveryChallans.length === 0 && (
-                    <tr key="no-quotations">
-                        <td className="text-center py-2 text-gray-950  font-semibold" colSpan={10}>
-                            No Delivery Challans Found
-                        </td>
-                    </tr>
+                    <EmptyStateRow colSpan={10} art="invoice" title="No Delivery Challans Found" />
                 )}
 
                 {isLoading && (

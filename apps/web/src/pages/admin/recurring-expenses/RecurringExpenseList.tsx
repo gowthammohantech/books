@@ -15,7 +15,7 @@ import NoRecords from "@components/admin/NoRecords";
 import useDateFormatter from "@hooks/useDateFormatter";
 import type { RecurringExpenseSummary, ChildExpenseSummary } from "@models/recurringExpense";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Badge, Button, FormField, PageSizeSelect } from "@components/ui";
+import { Badge, Button, FormField, PageSizeSelect, EmptyState } from "@components/ui";
 
 interface PaginationData {
     total: number;
@@ -242,7 +242,7 @@ const RecurringExpenseList: React.FC = () => {
                     />
                 ))}
                 {!isLoading && !recurringExpenses.length &&
-                    <NoRecords colSpan={11} message="No recurring expenses found" />
+                    <NoRecords art="cash-payment" colSpan={11} message="No recurring expenses found" />
                 }
                 {isLoading && (
                     <tr key="table-loader">
@@ -279,7 +279,7 @@ const RecurringExpenseList: React.FC = () => {
                         </h3>
                         {childrenLoading && <LoaderSpinner />}
                         {!childrenLoading && children.length === 0 && (
-                            <p className="text-sm text-muted-foreground">No children yet.</p>
+                            <EmptyState size="compact" art="folder" title="No expenses generated yet" />
                         )}
                         {!childrenLoading && children.length > 0 && (
                             <table className="w-full text-sm">

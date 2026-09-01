@@ -24,6 +24,8 @@ import { WORK_QUEUES } from '@lib/workQueues';
 import { useWorkQueues } from '@hooks/useWorkQueues';
 import { useAgentPanel } from '@context/AgentPanelContext';
 import { themeColor } from "@lib/designTokens";
+import { EmptyStateRow } from "@components/ui";
+
 interface AgingBuckets {
     current: number;
     days30: number;
@@ -421,12 +423,7 @@ const DashboardPage: React.FC = () => {
                             />
                         ))}
                         {!dashboardData.lastFiveCustomers.length && (
-                            <tr>
-                                <td colSpan={6} className="text-center py-6 text-gray-500 font-medium">
-                                    <Users className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                                    No customers found
-                                </td>
-                            </tr>
+                            <EmptyStateRow colSpan={6} art="people-search" title="No customers found" />
                         )}
                     </Table>
                 </div>
@@ -468,12 +465,7 @@ const DashboardPage: React.FC = () => {
                             />
                         ))}
                         {!dashboardData.lastFiveSuppliers.length && (
-                            <tr>
-                                <td colSpan={6} className="text-center py-6 text-gray-500 font-medium">
-                                    <Truck className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                                    No suppliers found
-                                </td>
-                            </tr>
+                            <EmptyStateRow colSpan={6} art="people-search" title="No suppliers found" />
                         )}
                     </Table>
                 </div>
@@ -522,12 +514,7 @@ const DashboardPage: React.FC = () => {
 
                     {/* Empty State */}
                     {!dashboardData.lastFiveInvoices?.length && (
-                        <tr>
-                            <td colSpan={6} className="text-center py-8 text-gray-500 font-medium">
-                                <Receipt className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                                No invoices found
-                            </td>
-                        </tr>
+                        <EmptyStateRow colSpan={6} art="invoice" title="No invoices found" />
                     )}
                 </Table>
             </div>
@@ -560,12 +547,7 @@ const DashboardPage: React.FC = () => {
                             />
                         ))}
                         {!dashboardData.lastFivePayments.length && (
-                            <tr>
-                                <td colSpan={6} className="text-center py-6 text-gray-500 font-medium">
-                                    <Receipt className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                                    No payments found
-                                </td>
-                            </tr>
+                            <EmptyStateRow colSpan={6} art="cash-payment" title="No payments found" />
                         )}
                     </Table>
                 </div>
@@ -607,12 +589,7 @@ const DashboardPage: React.FC = () => {
                             />
                         ))}
                         {!dashboardData.lastFivePurchases.length && (
-                            <tr>
-                                <td colSpan={6} className="text-center py-6 text-gray-500 font-medium">
-                                    <ShoppingCart className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                                    No purchases found
-                                </td>
-                            </tr>
+                            <EmptyStateRow colSpan={6} art="invoice" title="No purchases found" />
                         )}
                     </Table>
                 </div>

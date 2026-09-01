@@ -18,6 +18,8 @@ import { PageHeader } from '@/context/PageHeaderContext';
 import DashboardSwitcher from '@components/admin/DashboardSwitcher';
 import { themeColor } from "@lib/designTokens";
 
+import { EmptyStateRow } from "@components/ui";
+
 interface MonthPoint { key: string; label: string; sales: number; expenses: number; }
 interface PlanItem { id: string; label: string; amount: number; date: string | null; frequency?: string | null; }
 interface Planning {
@@ -129,7 +131,7 @@ const AccountsDashboard: React.FC = () => {
                     <Table headers={["#", "Invoice", "Amount", "Date"]}>
                         {plan?.upcomingRecurringInvoices?.length ? plan.upcomingRecurringInvoices.map((it, i) => (
                             <TableRow key={it.id} index={i + 1} row={it} columns={[it.label, format(n(it.amount)), it.date ? formatDate(it.date, dateFmt) : '-']} />
-                        )) : <tr><td colSpan={4} className="text-center py-4 text-gray-400">None scheduled</td></tr>}
+                        )) : <EmptyStateRow colSpan={4} art="cash-payment" title="None scheduled" />}
                     </Table>
                 </div>
                 <div className="bg-white border border-border rounded-xl shadow-sm p-4">
@@ -137,7 +139,7 @@ const AccountsDashboard: React.FC = () => {
                     <Table headers={["#", "Invoice", "Amount", "Due"]}>
                         {plan?.upcomingDueInvoices?.length ? plan.upcomingDueInvoices.map((it, i) => (
                             <TableRow key={it.id} index={i + 1} row={it} columns={[it.label, format(n(it.amount)), it.date ? formatDate(it.date, dateFmt) : '-']} />
-                        )) : <tr><td colSpan={4} className="text-center py-4 text-gray-400">None due</td></tr>}
+                        )) : <EmptyStateRow colSpan={4} art="cash-payment" title="None due" />}
                     </Table>
                 </div>
                 <div className="bg-white border border-border rounded-xl shadow-sm p-4">
@@ -145,7 +147,7 @@ const AccountsDashboard: React.FC = () => {
                     <Table headers={["#", "Expense", "Amount", "Date"]}>
                         {plan?.upcomingRecurringExpenses?.length ? plan.upcomingRecurringExpenses.map((it, i) => (
                             <TableRow key={it.id} index={i + 1} row={it} columns={[it.label, format(n(it.amount)), it.date ? formatDate(it.date, dateFmt) : '-']} />
-                        )) : <tr><td colSpan={4} className="text-center py-4 text-gray-400">None scheduled</td></tr>}
+                        )) : <EmptyStateRow colSpan={4} art="cash-payment" title="None scheduled" />}
                     </Table>
                 </div>
             </div>

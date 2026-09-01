@@ -22,6 +22,8 @@ import { PageHeader } from '@/context/PageHeaderContext';
 import DashboardSwitcher from '@components/admin/DashboardSwitcher';
 import { themeColor } from "@lib/designTokens";
 
+import { EmptyStateRow } from "@components/ui";
+
 interface AgingBuckets { current: number; days30: number; days60: number; days90: number; beyond90: number; }
 interface TopDebtor { customerId: string; customerName: string; outstanding: number; oldestInvoiceDays: number; }
 interface GraphItem { month: string; purchases: number; sales: number; }
@@ -134,7 +136,7 @@ const SalesDashboard: React.FC = () => {
                                 <InvoiceStatusBadge status={inv.status} />,
                                 formatDate(inv.createdAt, dateFmt),
                             ]} />
-                        )) : <tr><td colSpan={6} className="text-center py-4 text-gray-400">No invoices</td></tr>}
+                        )) : <EmptyStateRow colSpan={6} art="invoice" title="No invoices" />}
                     </Table>
                 </div>
                 <div className="bg-white border border-border rounded-xl shadow-sm p-4">
@@ -146,7 +148,7 @@ const SalesDashboard: React.FC = () => {
                                 format(p.amount || 0),
                                 <PaymentModeBadge mode={p.payment_method?.name || '-'} />,
                             ]} />
-                        )) : <tr><td colSpan={4} className="text-center py-4 text-gray-400">No payments</td></tr>}
+                        )) : <EmptyStateRow colSpan={4} art="invoice" title="No payments" />}
                     </Table>
                 </div>
             </div>

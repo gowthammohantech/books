@@ -17,6 +17,7 @@ import { ymdStringToDate, dateToYmdString } from '@utils/converters';
 import GrantCreditModal from './GrantCreditModal';
 import { themeColor } from "@lib/designTokens";
 
+import { EmptyState } from "@components/ui";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 const CONTACTS_URL = `${Constants.API_BASE_URL}/admin/contacts`;
@@ -402,7 +403,7 @@ function StatementTab({ contactId }: { contactId: string }) {
       {error && <p className="text-destructive">{error}</p>}
 
       {data && data.byCurrency.length === 0 && (
-        <p className="text-gray-400">No transactions in this period.</p>
+        <EmptyState size="compact" art="cash-payment" title="No transactions in this period" />
       )}
 
       {data &&
@@ -494,7 +495,7 @@ function AccountHistoryTab({ contactId, token }: { contactId: string; token: str
   if (loading) return <p className="text-gray-500 py-4">Loading…</p>;
   if (error) return <p className="text-destructive py-4">{error}</p>;
   const safeItems = Array.isArray(items) ? items : [];
-  if (safeItems.length === 0) return <p className="text-gray-400 py-4">No history found.</p>;
+  if (safeItems.length === 0) return <EmptyState size="compact" art="checking-boxes" title="No history found" />;
 
   return (
     <table className="w-full text-sm border-collapse">
@@ -535,7 +536,7 @@ function NotesTab({ contact }: { contact: Contact | null }) {
       {contact.notes ? (
         <p className="text-sm text-gray-700 whitespace-pre-wrap">{contact.notes}</p>
       ) : (
-        <p className="text-gray-400 text-sm">No notes.</p>
+        <EmptyState size="compact" art="folder" title="No notes yet" />
       )}
     </div>
   );

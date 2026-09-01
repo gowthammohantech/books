@@ -21,8 +21,7 @@ import SubmitButton from "@components/admin/SubmitButton";
 import DynamicCustomFields from "@components/admin/DynamicCustomFields";
 import ImageCropperUpload from "@components/common/ImageCropperUpload";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect } from "@components/ui";
-
+import { Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
 // Interface for the brand data
 interface Brand {
     id: string;
@@ -348,9 +347,7 @@ const BrandList: FC = () => {
                 ))}
 
                 {!isLoading && brands.length === 0 &&
-                    <tr>
-                        <td colSpan={tableHeaders.length} className="text-center py-4 font-semibold">No brands found.</td>
-                    </tr>
+                    <EmptyStateRow colSpan={tableHeaders.length} art="empty" title="No brands found." />
                 }
 
                 {isLoading && (

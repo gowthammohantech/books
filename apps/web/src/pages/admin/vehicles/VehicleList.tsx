@@ -238,7 +238,7 @@ const VehicleList: React.FC = () => {
                     />
                 ))}
                 {!isLoading && !vehicles.length &&
-                    <NoRecords colSpan={8} message="No vehicles found" />
+                    <NoRecords art="empty" colSpan={8} message="No vehicles found" />
                 }
                 {isLoading && (
                     <tr key="table-loader">

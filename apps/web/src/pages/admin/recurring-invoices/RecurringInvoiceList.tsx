@@ -12,7 +12,7 @@ import TableRow from "@components/admin/TableRow";
 import PaginationWrapper from "@components/admin/PaginationWrapper";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import NoRecords from "@components/admin/NoRecords";
-import { Badge, PageSizeSelect } from "@components/ui";
+import { Badge, PageSizeSelect, EmptyState } from "@components/ui";
 import type { BadgeColor } from "@components/ui";
 import type { Action } from "@components/admin/tableActions";
 import useDateFormatter from "@hooks/useDateFormatter";
@@ -309,7 +309,7 @@ const RecurringInvoiceList: React.FC = () => {
                     />
                 ))}
                 {!isLoading && !schedules.length &&
-                    <NoRecords colSpan={9} message="No recurring schedules found" />
+                    <NoRecords art="invoice" colSpan={9} message="No recurring schedules found" />
                 }
                 {isLoading && (
                     <tr key="table-loader">
@@ -348,7 +348,7 @@ const RecurringInvoiceList: React.FC = () => {
                         </h3>
                         {occurrencesLoading && <LoaderSpinner />}
                         {!occurrencesLoading && occurrences.length === 0 && (
-                            <p className="text-sm text-gray-500">No invoices generated yet.</p>
+                            <EmptyState size="compact" art="invoice" title="No invoices generated yet" />
                         )}
                         {!occurrencesLoading && occurrences.length > 0 && (
                             <table className="w-full text-sm">

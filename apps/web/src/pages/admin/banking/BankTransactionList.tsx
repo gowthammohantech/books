@@ -28,7 +28,6 @@ import PaginationWrapper from "@components/admin/PaginationWrapper";
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import ExportButton from "@components/admin/ExportButton";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
-import NoRecords from "@components/admin/NoRecords";
 import DateInput from "@components/admin/DateInput";
 import Modal from "@components/admin/Modal";
 import { ymdStringToDate, dateToYmdString } from "@utils/converters";
@@ -42,7 +41,7 @@ import type {
 import { BANK_TXN_RELATED_TYPE_LABEL, canOfferExplain, isBankTxnPaymentBorn } from "@/types/bankTransaction";
 import ExplainTransactionForm from "./ExplainTransactionForm";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Badge, Button, fieldControlClasses, FormField, PageSizeSelect, Select } from "@components/ui";
+import { Badge, Button, fieldControlClasses, FormField, PageSizeSelect, Select, EmptyStateRow } from "@components/ui";
 
 interface PaginationData {
     total: number;
@@ -1133,27 +1132,31 @@ const BankTransactionList: React.FC = () => {
                         </React.Fragment>
                     ))}
                 {!isLoading && rows.length === 0 && counts.all === 0 && (
-                    <tr>
-                        <td colSpan={tableHeaders.length} className="px-4 py-10 text-center">
-                            <p className="text-sm text-gray-600 font-medium">No bank transactions yet</p>
-                            <p className="mt-1 text-sm text-gray-500">
-                                Import a bank statement to get started.
-                            </p>
+                    <EmptyStateRow
+                        colSpan={tableHeaders.length}
+                        size="full"
+                        art="cash-payment"
+                        title="No bank transactions yet"
+                        description="Import a bank statement to get started."
+                        action={
                             <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                className="mt-3"
                                 leftIcon={<Upload size={14} />}
                                 onClick={() => setImportStep("upload")}
                             >
                                 Import CSV
                             </Button>
-                        </td>
-                    </tr>
+                        }
+                    />
                 )}
                 {!isLoading && rows.length === 0 && counts.all > 0 && (
-                    <NoRecords colSpan={tableHeaders.length} message="No bank transactions found" />
+                    <EmptyStateRow
+                        colSpan={tableHeaders.length}
+                        art="file-searching"
+                        title="No bank transactions match these filters"
+                    />
                 )}
                 {isLoading && (
                     <tr key="table-loader">

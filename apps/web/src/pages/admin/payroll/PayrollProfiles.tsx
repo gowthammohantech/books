@@ -15,7 +15,7 @@ import Modal from "@components/admin/Modal";
 import SubmitButton from "@components/admin/SubmitButton";
 import Switch from "@components/admin/Switch";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button } from "@components/ui";
+import { Button, EmptyStateRow } from "@components/ui";
 
 const PAYROLL_PROFILES_URL = `${Constants.API_BASE_URL}/admin/payroll/profiles`;
 
@@ -281,9 +281,7 @@ const PayrollProfiles: React.FC = () => {
                 ))}
 
                 {!isLoading && profiles.length === 0 && (
-                    <tr>
-                        <td colSpan={6} className="text-center text-gray-800 py-2 font-semibold">No Records Found</td>
-                    </tr>
+                    <EmptyStateRow colSpan={6} art="people-search" title="No Records Found" />
                 )}
 
                 {isLoading && (

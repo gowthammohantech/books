@@ -238,7 +238,7 @@ const AccountingPeriods: React.FC = () => {
                     />
                 ))}
                 {!isLoading && periods.length === 0 && (
-                    <NoRecords colSpan={7} message="No accounting periods. Click 'Add Period' to create one." />
+                    <NoRecords art="checking-boxes" colSpan={7} message="No accounting periods. Click 'Add Period' to create one." />
                 )}
                 {isLoading && (
                     <tr>

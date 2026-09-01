@@ -2,6 +2,8 @@ import { usePurchaseActivity } from '@hooks/usePurchaseActivity';
 import type { PurchaseActivityEntry } from '@hooks/usePurchaseActivity';
 import useDateFormatter from '@hooks/useDateFormatter';
 
+import { EmptyState } from "@components/ui";
+
 interface PurchaseActivityTimelineProps {
     purchaseId: string;
 }
@@ -57,7 +59,7 @@ const PurchaseActivityTimeline: React.FC<PurchaseActivityTimelineProps> = ({ pur
                 {loading ? (
                     <p className="text-sm text-muted-foreground text-center py-4">Loading activity…</p>
                 ) : entries.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-4">No activity yet.</p>
+                    <EmptyState size="compact" art="checking-boxes" title="No activity yet" />
                 ) : (
                     <ol className="relative border-l border-border ml-2 space-y-0">
                         {entries.map((entry, idx) => (

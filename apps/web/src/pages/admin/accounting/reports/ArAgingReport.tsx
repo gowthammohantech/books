@@ -142,7 +142,7 @@ export default function ArAgingReport() {
               </thead>
               <tbody>
                 {data.rows.length === 0 ? (
-                  <NoRecords colSpan={5} message="No outstanding receivables as of this date." />
+                  <NoRecords art="analysis" colSpan={5} message="No outstanding receivables as of this date." />
                 ) : (
                   data.rows.map((row) => (
                     <tr key={row.id} className="border-b border-border hover:bg-gray-50">

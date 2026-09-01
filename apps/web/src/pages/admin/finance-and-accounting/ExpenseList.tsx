@@ -23,7 +23,7 @@ import InvoiceStatusBadge from "@components/admin/InvoiceStatusBadge";
 import { useQuery } from "@tanstack/react-query";
 import { fetchModuleHierarchy, fetchCustomFieldsByModule } from "@api/customFieldTypeApi";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, FormField, PageSizeSelect, Select } from "@components/ui";
+import { Button, FormField, PageSizeSelect, Select, EmptyStateRow } from "@components/ui";
 
 interface Pagination {
     total: number;
@@ -340,9 +340,7 @@ const ExpenseList: React.FC = () => {
                 ))}
 
                 {!isPageLoading && expenses && expenses.length === 0 && (
-                    <tr>
-                        <td colSpan={tableHeaders.length} className="text-center text-gray-500 py-6 font-medium">No Records Found</td>
-                    </tr>
+                    <EmptyStateRow colSpan={tableHeaders.length} art="cash-payment" title="No Records Found" />
                 )}
 
                 {isPageLoading && (

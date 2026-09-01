@@ -20,7 +20,7 @@ import InputField from "@components/admin/InputField";
 import type { SyntheticEvent } from "react";
 import useDateFormatter from "@hooks/useDateFormatter";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect } from "@components/ui";
+import { Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
 
 interface IAccount {
     id: string;
@@ -266,7 +266,7 @@ const Budgets: React.FC = () => {
                     ))
                 }
                 {!isLoading && budgets.length === 0 && (
-                    <tr><td className="text-center py-4 font-semibold text-gray-500" colSpan={6}>No Budgets Found</td></tr>
+                    <EmptyStateRow colSpan={6} art="analysis" title="No Budgets Found" />
                 )}
                 {isLoading && (
                     <tr key="loader"><td className="text-center py-2 text-gray-950 font-semibold" colSpan={6}><LoaderSpinner /></td></tr>

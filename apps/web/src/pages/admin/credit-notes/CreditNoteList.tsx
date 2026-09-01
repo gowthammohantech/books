@@ -243,7 +243,7 @@ const CreditNoteList: React.FC = () => {
                     />
                 ))}
                 {!isLoading && invoices && invoices.length === 0 && (
-                    <NoRecords colSpan={7} message="No credit notes found" />
+                    <NoRecords art="invoice" colSpan={7} message="No credit notes found" />
                 )}
 
                 {isLoading && (

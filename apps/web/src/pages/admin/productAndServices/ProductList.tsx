@@ -21,8 +21,7 @@ import type { RootState } from "@store/index";
 import Switch from "@components/admin/Switch";
 import ProfileCard from "@components/admin/ProfileImage";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Badge, Button, PageSizeSelect } from "@components/ui";
-
+import { Badge, Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
 // Define interfaces for nested and main objects
 interface Brand {
     id: string;
@@ -310,7 +309,7 @@ const ProductList: FC = () => {
                     />
                 ))
                 }
-                {!isLoading && products.length === 0 && <tr><td colSpan={9} className="text-center py-4">No items found.</td></tr>}
+                {!isLoading && products.length === 0 && <EmptyStateRow colSpan={9} art="empty" title="No items found." />}
 
                 {isLoading && (
                     <tr key="table-loader">

@@ -259,7 +259,7 @@ const MyMoney: React.FC = () => {
                     </thead>
                     <tbody>
                       {data.salary.runEntries.length === 0
-                        ? <NoRecords colSpan={4} message={`No payroll runs for ${data.taxYear.label}`} />
+                        ? <NoRecords art="cash-payment" colSpan={4} message={`No payroll runs for ${data.taxYear.label}`} />
                         : data.salary.runEntries.map((e, i) => (
                           <tr key={i} className={trClass}>
                             <td className={tdClass}>{fmtDate(e.date)}</td>
@@ -300,7 +300,7 @@ const MyMoney: React.FC = () => {
                     </thead>
                     <tbody>
                       {data.salary.entries.length === 0
-                        ? <NoRecords colSpan={3} message={`No direct salary payments for ${data.taxYear.label}`} />
+                        ? <NoRecords art="cash-payment" colSpan={3} message={`No direct salary payments for ${data.taxYear.label}`} />
                         : data.salary.entries.map((e, i) => (
                           <tr key={i} className={trClass}>
                             <td className={tdClass}>{fmtDate(e.date)}</td>
@@ -340,7 +340,7 @@ const MyMoney: React.FC = () => {
                     </thead>
                     <tbody>
                       {data.dividends.entries.length === 0
-                        ? <NoRecords colSpan={3} message={`No dividends recorded for ${data.taxYear.label}`} />
+                        ? <NoRecords art="cash-payment" colSpan={3} message={`No dividends recorded for ${data.taxYear.label}`} />
                         : data.dividends.entries.map((e, i) => (
                           <tr key={i} className={trClass}>
                             <td className={tdClass}>{fmtDate(e.date)}</td>
@@ -386,7 +386,7 @@ const MyMoney: React.FC = () => {
                     </thead>
                     <tbody>
                       {data.directorLoan.entries.length === 0
-                        ? <NoRecords colSpan={4} message={`No director loan transactions for ${data.taxYear.label}`} />
+                        ? <NoRecords art="cash-payment" colSpan={4} message={`No director loan transactions for ${data.taxYear.label}`} />
                         : data.directorLoan.entries.map((e, i) => (
                           <tr key={i} className={trClass}>
                             <td className={tdClass}>{fmtDate(e.date)}</td>
@@ -429,7 +429,7 @@ const MyMoney: React.FC = () => {
                     </thead>
                     <tbody>
                       {data.shareCapital.entries.length === 0
-                        ? <NoRecords colSpan={3} message={`No share capital entries for ${data.taxYear.label}`} />
+                        ? <NoRecords art="cash-payment" colSpan={3} message={`No share capital entries for ${data.taxYear.label}`} />
                         : data.shareCapital.entries.map((e, i) => (
                           <tr key={i} className={trClass}>
                             <td className={tdClass}>{fmtDate(e.date)}</td>
@@ -476,7 +476,7 @@ const MyMoney: React.FC = () => {
                     </thead>
                     <tbody>
                       {data.expensesOwed.entries.length === 0
-                        ? <NoRecords colSpan={4} message={`No expense entries for ${data.taxYear.label}`} />
+                        ? <NoRecords art="cash-payment" colSpan={4} message={`No expense entries for ${data.taxYear.label}`} />
                         : data.expensesOwed.entries.map((e, i) => (
                           <tr key={i} className={trClass}>
                             <td className={tdClass}>{fmtDate(e.date)}</td>

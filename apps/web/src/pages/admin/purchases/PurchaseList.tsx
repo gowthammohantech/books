@@ -25,7 +25,7 @@ import ProfileCard from "@components/admin/ProfileImage";
 import { useQuery } from "@tanstack/react-query";
 import { fetchModuleHierarchy, fetchCustomFieldsByModule } from "@api/customFieldTypeApi";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, FormField, PageSizeSelect } from "@components/ui";
+import { Button, FormField, PageSizeSelect, EmptyStateRow } from "@components/ui";
 
 interface Purchase {
     id: string;
@@ -345,11 +345,7 @@ const PurchaseList: FC = () => {
                 ))}
 
                 {!isPageLoading && purchases.length === 0 && (
-                    <tr>
-                        <td colSpan={tableHeaders.length} className="text-center py-4 text-gray-950  font-semibold">
-                            No purchases found
-                        </td>
-                    </tr>
+                    <EmptyStateRow colSpan={tableHeaders.length} art="invoice" title="No purchases found" />
                 )}
 
                 {isPageLoading && (

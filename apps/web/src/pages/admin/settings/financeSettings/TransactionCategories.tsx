@@ -308,7 +308,7 @@ params: { limit: 500 }
 
             {/* Grouped tables */}
             {categories.length === 0 ? (
-                <NoRecords colSpan={TABLE_HEADERS.length + 1} />
+                <NoRecords art="folder" colSpan={TABLE_HEADERS.length + 1} />
             ) : (
                 <div className="space-y-6">
                     {CATEGORY_GROUP_VALUES.map((group) => {

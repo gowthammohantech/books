@@ -344,7 +344,7 @@ const LeaveTypes: React.FC = () => {
                         ))
                     }
                     {!isLoading && types.length === 0 && (
-                        <NoRecords colSpan={6} message="No leave types found." />
+                        <NoRecords art="folder" colSpan={6} message="No leave types found." />
                     )}
                     {isLoading && (
                         <tr key="loader"><td colSpan={6} className="text-center py-4"><LoaderSpinner /></td></tr>

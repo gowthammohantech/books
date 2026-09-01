@@ -91,7 +91,7 @@ const SectionTable = ({ type, docs, onApprove, onReject, actionLoadingId, format
                     </thead>
                     <tbody>
                         {docs.length === 0 ? (
-                            <NoRecords colSpan={5} message={`No pending ${label.toLowerCase()} approvals.`} />
+                            <NoRecords art="checking-boxes" colSpan={5} message={`No pending ${label.toLowerCase()} approvals.`} />
                         ) : (
                             docs.map((doc, idx) => {
                                 const isActing = actionLoadingId === doc.id;

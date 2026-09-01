@@ -212,7 +212,7 @@ const TimesheetApprovals: React.FC = () => {
                             </tr>
                         )}
                         {!isLoading && timesheets.length === 0 && (
-                            <NoRecords colSpan={5} message="No timesheets awaiting approval." />
+                            <NoRecords art="checking-boxes" colSpan={5} message="No timesheets awaiting approval." />
                         )}
                         {!isLoading &&
                             timesheets.map((ts) => (
@@ -326,7 +326,7 @@ const TimesheetApprovals: React.FC = () => {
                                 </thead>
                                 <tbody>
                                     {(detail?.entries ?? []).length === 0 && (
-                                        <NoRecords colSpan={5} message="No time entries for this week." />
+                                        <NoRecords art="checking-boxes" colSpan={5} message="No time entries for this week." />
                                     )}
                                     {(detail?.entries ?? []).map((e) => (
                                         <tr key={e.id} className="border-b border-border hover:bg-gray-50">

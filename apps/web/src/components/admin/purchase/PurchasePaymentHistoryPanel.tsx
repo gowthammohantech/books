@@ -7,7 +7,7 @@ import { useSupplierPayments } from '@hooks/useSupplierPayments';
 import type { SupplierPaymentRow } from '@hooks/useSupplierPayments';
 import useDateFormatter from '@hooks/useDateFormatter';
 import Constants from '@constants/api';
-import { Button, Badge, FormField, fieldControlClasses } from '@components/ui';
+import { Button, Badge, FormField, fieldControlClasses, EmptyState } from "@components/ui";
 
 interface PurchasePaymentHistoryPanelProps {
     purchaseId: string;
@@ -130,7 +130,7 @@ const PurchasePaymentHistoryPanel: React.FC<PurchasePaymentHistoryPanelProps> = 
                 {loading ? (
                     <div className="p-6 text-center text-sm text-gray-500">Loading payments…</div>
                 ) : payments.length === 0 ? (
-                    <div className="p-6 text-center text-sm text-gray-400">No payments recorded.</div>
+                    <EmptyState size="compact" art="cash-payment" title="No payments recorded" />
                 ) : (
                     <table className="min-w-full text-sm divide-y divide-gray-200">
                         <thead className="bg-gray-50">

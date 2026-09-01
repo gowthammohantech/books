@@ -29,3 +29,9 @@ To review the full dependency lists:
 
 - Backend: `apps/api/package.json`
 - Frontend: `apps/web/package.json`
+
+## Third-Party Assets
+
+Bundled material that is not a package dependency — currently the empty-state
+illustrations, which are used under a licence requiring attribution — is
+credited in `NOTICE.md`.

@@ -10,7 +10,7 @@ import Modal from "../Modal";
 import DateInput from "../DateInput";
 import SearchableDropdown from "../SearchableDropdown";
 import LoaderSpinner from "../LoaderSpinner";
-import { Button, Card, Badge } from "@components/ui";
+import { Button, Card, Badge, EmptyState } from "@components/ui";
 import { useCurrencies } from "@hooks/useCurrencies";
 import type { ProjectMember, ProjectMemberRole } from "@models/timeTracking";
 
@@ -346,7 +346,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                     {loadingMembers ? (
                         <div className="py-6 text-center"><LoaderSpinner /></div>
                     ) : members.length === 0 ? (
-                        <p className="py-4 text-center text-sm font-medium text-gray-500">No members yet.</p>
+                        <EmptyState size="compact" art="people-search" title="No members yet" />
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">

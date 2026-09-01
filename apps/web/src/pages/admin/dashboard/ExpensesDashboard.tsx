@@ -16,6 +16,8 @@ import { useCurrencyFormatter } from '@hooks/useCurrencyFormatter';
 import { PageHeader } from '@/context/PageHeaderContext';
 import DashboardSwitcher from '@components/admin/DashboardSwitcher';
 
+import { EmptyStateRow } from "@components/ui";
+
 interface ByCategory { name: string; total: number; }
 interface ProfitLoss {
     costOfGoodsSold: { total: number };
@@ -104,7 +106,7 @@ const ExpensesDashboard: React.FC = () => {
                     <Table headers={["#", "Category", "Amount"]}>
                         {cats.length > 0 ? cats.map((c, i) => (
                             <TableRow key={c.name + i} index={i + 1} row={c} columns={[c.name, format(n(c.total))]} />
-                        )) : <tr><td colSpan={3} className="text-center py-4 text-gray-400">No category data</td></tr>}
+                        )) : <EmptyStateRow colSpan={3} art="cash-payment" title="No category data" />}
                     </Table>
                 </div>
                 <div className="bg-white border border-border rounded-xl shadow-sm p-4">
@@ -120,7 +122,7 @@ const ExpensesDashboard: React.FC = () => {
                                 e.paymentMode?.name || '-',
                                 e.expenseDate ? formatDate(e.expenseDate, dateFmt) : '-',
                             ]} />
-                        )) : <tr><td colSpan={5} className="text-center py-4 text-gray-400">No expenses</td></tr>}
+                        )) : <EmptyStateRow colSpan={5} art="cash-payment" title="No expenses" />}
                     </Table>
                 </div>
             </div>

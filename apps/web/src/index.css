@@ -398,3 +398,92 @@ button {
   color: var(--popover-foreground);
   border-bottom: 1px solid var(--border) !important;
 }
+
+/* ---------------------------------------------------------------------------
+   Empty-state illustrations.
+
+   The artwork is inlined SVG (see `utils/illustrations.ts` for why), and the
+   fetch script rewrites Storyset's group ids into `data-part` attributes, so
+   the named pieces of each drawing are addressable from here. Storyset's own
+   animated export is generated in their editor and cannot be downloaded, so
+   the motion is ours.
+
+   It is deliberately slight. These sit in accounting tables that a user reads
+   for minutes at a time; anything more assertive than a drift becomes an
+   irritation by the second screen. Translate only — no transform-origin to get
+   wrong, and nothing that can blur a vector.
+
+   Written inside `prefers-reduced-motion: no-preference` rather than as an
+   override, so "no opinion recorded" resolves to stillness rather than relying
+   on a later rule to switch motion back off.
+--------------------------------------------------------------------------- */
+
+.eb-illustration > svg {
+  width: 100%;
+  height: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .eb-illustration [data-part="character"],
+  .eb-illustration [data-part="character-1"] {
+    animation: eb-illustration-float 6s ease-in-out infinite;
+  }
+
+  .eb-illustration [data-part="character-2"] {
+    animation: eb-illustration-float 6s ease-in-out infinite;
+    animation-delay: -3s;
+  }
+
+  .eb-illustration [data-part="shadow"] {
+    animation: eb-illustration-shadow 6s ease-in-out infinite;
+  }
+
+  /* The props each drawing carries — a folder, an invoice, a device. Slower
+     and offset, so the scene breathes rather than bobbing in unison. */
+  .eb-illustration [data-part="box"],
+  .eb-illustration [data-part="boxes"],
+  .eb-illustration [data-part="bubble-speech"],
+  .eb-illustration [data-part="data-sheet"],
+  .eb-illustration [data-part="device"],
+  .eb-illustration [data-part="folder"],
+  .eb-illustration [data-part="invoice"],
+  .eb-illustration [data-part="notification"],
+  .eb-illustration [data-part="people"],
+  .eb-illustration [data-part="window-no-data"] {
+    animation: eb-illustration-drift 9s ease-in-out infinite;
+  }
+}
+
+@keyframes eb-illustration-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Counter to the float: as the subject rises the shadow eases the other way,
+   which is what stops the drawing looking like it is sliding up a wall. */
+@keyframes eb-illustration-shadow {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(2px);
+    opacity: 0.75;
+  }
+}
+
+@keyframes eb-illustration-drift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}

@@ -22,7 +22,7 @@ import ProfileCard from "@components/admin/ProfileImage";
 import { useQuery } from "@tanstack/react-query";
 import { fetchModuleHierarchy, fetchCustomFieldsByModule } from "@api/customFieldTypeApi";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, FormField, PageSizeSelect } from "@components/ui";
+import { Button, FormField, PageSizeSelect, EmptyStateRow } from "@components/ui";
 import { setTenantValue } from "@utils/tenantStorage";
 
 interface PurchaseOrder {
@@ -286,11 +286,7 @@ const PurchaseOrderList: FC = () => {
                 ))}
 
                 {!isPageLoading && purchaseOrders.length === 0 && (
-                    <tr>
-                        <td colSpan={tableHeaders.length} className="text-center py-4 text-gray-950  font-semibold">
-                            No purchase orders found
-                        </td>
-                    </tr>
+                    <EmptyStateRow colSpan={tableHeaders.length} art="invoice" title="No purchase orders found" />
                 )}
 
                 {isPageLoading && (

@@ -112,7 +112,7 @@ export default function SupplierBalances() {
               </thead>
               <tbody>
                 {!hasRows ? (
-                  <NoRecords colSpan={4} message="No suppliers with payable activity found." />
+                  <NoRecords art="cash-payment" colSpan={4} message="No suppliers with payable activity found." />
                 ) : (
                   <>
                     {rows.map((row) => (

@@ -164,7 +164,7 @@ const JournalEntryList: React.FC = () => {
                     />
                 ))}
                 {!isLoading && entries.length === 0 && (
-                    <NoRecords colSpan={8} message="No journal entries yet." />
+                    <NoRecords art="folder" colSpan={8} message="No journal entries yet." />
                 )}
                 {isLoading && (
                     <tr>

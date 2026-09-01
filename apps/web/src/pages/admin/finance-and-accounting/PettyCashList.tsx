@@ -19,7 +19,7 @@ import type { Pagination } from "@models/common";
 import PaginationWrapper from "@components/admin/PaginationWrapper";
 import PaymentModeBadge from "@components/admin/PaymentModeBadge";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect } from "@components/ui";
+import { Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
 
 interface ExpenseResponse {
     success: boolean;
@@ -266,9 +266,7 @@ const PettyCashList: React.FC = () => {
                 })}
 
                 {!isLoading && transactions && transactions.length === 0 && (
-                    <tr>
-                        <td colSpan={8} className="text-center text-gray-800  py-2 font-semibold">No Records Found</td>
-                    </tr>
+                    <EmptyStateRow colSpan={8} art="cash-payment" title="No Records Found" />
                 )}
 
                 {isLoading && (

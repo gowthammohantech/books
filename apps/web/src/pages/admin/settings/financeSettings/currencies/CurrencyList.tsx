@@ -18,7 +18,7 @@ import LoaderSpinner from "@components/admin/LoaderSpinner";
 import type { PermissionAction } from "@models/permissions";
 import { hasPermission } from "@utils/hasPermission";
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
-import { Button, FormField, PageSizeSelect } from "@components/ui";
+import { Button, FormField, PageSizeSelect, EmptyStateRow } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 
 interface Currency {
@@ -232,9 +232,7 @@ const CurrencyList: React.FC = () => {
                     />
                 ))}
                 {!isLoading && !currencies.length &&
-                    <tr>
-                        <td colSpan={6} className="text-center text-muted-foreground py-2  font-semibold">No currencies found</td>
-                    </tr>
+                    <EmptyStateRow colSpan={6} art="cash-payment" title="No currencies found" />
                 }
 
                 {isLoading && (

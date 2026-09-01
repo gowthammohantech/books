@@ -18,7 +18,7 @@ import DeleteConfirmationModal from '@components/admin/DeleteConfirmationModal';
 import ExportButton from '@components/admin/ExportButton';
 import { hasPermission } from '@utils/hasPermission';
 import { PageHeader } from '@/context/PageHeaderContext';
-import { Button, Badge } from '@components/ui';
+import { Button, Badge, EmptyState } from "@components/ui";
 
 const CONTACTS_URL = `${Constants.API_BASE_URL}/admin/contacts`;
 
@@ -370,7 +370,7 @@ const ContactList: React.FC = () => {
                         </div>
                     )}
                     {!isLoading && contacts.length === 0 && (
-                        <p className="text-center text-gray-500 py-8">No contacts found.</p>
+                        <EmptyState art="people-search" title="No contacts found" />
                     )}
                     {!isLoading && contacts.length > 0 && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -448,7 +448,7 @@ const ContactList: React.FC = () => {
                         />
                     ))}
                     {!isLoading && contacts.length === 0 && (
-                        <NoRecords colSpan={tableHeaders.length} message="No contacts found" />
+                        <NoRecords art="people-search" colSpan={tableHeaders.length} message="No contacts found" />
                     )}
                     {isLoading && (
                         <tr key="table-loader">

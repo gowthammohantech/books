@@ -22,8 +22,7 @@ import useDateFormatter from '@hooks/useDateFormatter';
 import ProfileCard from '@components/admin/ProfileImage';
 import type { Pagination } from '@models/common';
 import { PageHeader } from '@/context/PageHeaderContext';
-import { Button, FormField, PageSizeSelect } from "@components/ui";
-
+import { Button, FormField, PageSizeSelect, EmptyStateRow } from "@components/ui";
 // --- INTERFACES ---
 
 interface SupplierPayment {
@@ -203,7 +202,7 @@ const SupplierPayments: FC = () => {
                     />
                 ))}
                 {!isLoading && supplierPayments.length === 0 && (
-                    <tr><td colSpan={7} className="text-center py-4 text-foreground font-semibold">No supplier payments found</td></tr>
+                    <EmptyStateRow colSpan={7} art="cash-payment" title="No supplier payments found" />
                 )}
 
                 {isLoading && (

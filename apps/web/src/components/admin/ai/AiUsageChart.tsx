@@ -25,6 +25,8 @@ import Constants from '@constants/api';
 import type { RootState } from '@store/index';
 import { themeColor } from "@lib/designTokens";
 
+import { EmptyState } from "@components/ui";
+
 interface UsageDay {
   date: string;
   callsExtraction: number;
@@ -128,9 +130,11 @@ export default function AiUsageChart() {
         ) : loading ? (
           <div className="py-12 text-center text-sm text-gray-400">Loading usage…</div>
         ) : !hasAnyCalls ? (
-          <div className="py-12 text-center text-sm text-gray-400">
-            No AI usage yet. Scan a bill or chat with the co-pilot to see activity here.
-          </div>
+          <EmptyState
+            art="analysis"
+            title="No AI usage yet"
+            description="Scan a bill or chat with the co-pilot to see activity here."
+          />
         ) : (
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">

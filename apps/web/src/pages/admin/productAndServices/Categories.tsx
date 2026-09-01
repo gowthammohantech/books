@@ -21,8 +21,7 @@ import SubmitButton from "@components/admin/SubmitButton";
 import DynamicCustomFields from "@components/admin/DynamicCustomFields";
 import ImageCropperUpload from "@components/common/ImageCropperUpload";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect } from "@components/ui";
-
+import { Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
 // Interface for the Category data object
 interface Category {
     id: string;
@@ -335,9 +334,7 @@ const CategoryList: FC = () => {
                 ))}
 
                 {!isLoading && categories.length === 0 &&
-                    <tr>
-                        <td colSpan={tableHeader.length} className="text-center py-4 font-semibold">No brands found.</td>
-                    </tr>
+                    <EmptyStateRow colSpan={tableHeader.length} art="folder" title="No categories found." />
                 }
 
                 {isLoading && (
