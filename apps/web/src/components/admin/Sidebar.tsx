@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
+    ChevronRight,
     Plus,
     LifeBuoy,
     PanelLeftClose,
@@ -26,19 +27,29 @@ import type { NavLinkItem } from "@models/sidebar";
 import type { PermissionSet } from "@models/permissions";
 
 /**
- * Two-column navigation: a module rail, and a panel listing the selected
- * module's destinations.
+ * A module rail whose children open in a flyout OVER the page.
  *
- * This replaced a tree of nested accordions. The problem it solves is specific
- * to the size of this nav: Accounts Management alone holds sixteen entries
- * across two nested menus, so expanding it pushed every module below it off
- * screen, and switching modules re-scrolled the whole rail. Here the rail never
- * moves and never grows - only the panel's contents change - so the thing you
- * are aiming at stays where it was. navModules.ts does the flattening.
+ * This replaced a tree of nested accordions. The problem is specific to the
+ * size of this nav: Accounts Management alone holds fourteen entries, so
+ * expanding it pushed every module below it off screen, and
+ * the thing you were aiming at moved while you aimed at it. A flyout fixes that
+ * for free — nothing in the rail moves when a module opens, because the
+ * children are not in the rail. navModules.ts does the flattening.
  *
- * Widths: 64px rail + 224px panel open, 64px rail alone collapsed. Collapsed,
- * the panel comes back as a flyout on hover, focus or click, so nothing is
- * unreachable at either width.
+ * The two widths differ only in whether the rail shows labels:
+ *
+ *   expanded   240px, icon + label + count, bands captioned
+ *   collapsed  64px, icon alone, bands reduced to a hairline
+ *
+ * Both open the SAME flyout on hover, focus or click. An earlier revision
+ * docked the children as a second 224px column when expanded, which made the
+ * expanded state a different interaction from the collapsed one — two
+ * behaviours to learn, and the wide state was the worse of the two. One
+ * mechanism at both widths is the point.
+ *
+ * The flyout is a DOM child of the row container even though it renders
+ * outside it: `mouseleave` follows the DOM, not the pixels, so moving the
+ * pointer from a rail row into the flyout is not a leave.
  */
 
 const PANEL_ROW = "flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition-colors";
@@ -72,44 +83,67 @@ const AddButton = ({ to, title }: { to: string; title: string }) => (
     </Link>
 );
 
-const RailButton = ({
+const ModuleRow = ({
     navModule,
     isActive,
+    isExpanded,
     count,
-    onSelect,
     onPeek,
 }: {
     navModule: NavModule;
     isActive: boolean;
+    isExpanded: boolean;
     count: number;
-    onSelect: () => void;
     onPeek: (element: HTMLElement) => void;
 }) => {
     const label = count > 0 ? `${navModule.title} (${count} waiting)` : navModule.title;
+    const hasChildren = navModule.sections.length > 0;
+
     const classes = cn(
-        "relative flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
+        "relative flex items-center rounded-xl transition-colors",
+        isExpanded ? "h-10 w-full gap-2.5 px-2.5" : "h-10 w-10 justify-center",
         isActive
             ? "bg-sidebar-accent text-sidebar-primary"
             : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
     );
 
-    // The count is a dot here, not a number: at 40px a two-digit pill crowds the
-    // icon out, and the exact figure is one row away on the panel leaf that owns
-    // it. The ring keeps it legible where it overlaps the glyph.
     const body = (
         <>
-            {navModule.icon}
-            {count > 0 && (
-                <span
-                    aria-hidden="true"
-                    className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary ring-2 ring-sidebar"
-                />
+            <span className="relative flex shrink-0 items-center justify-center">
+                {navModule.icon}
+                {/* Collapsed, the count is a dot: at 40px a two-digit pill
+                    crowds the icon out, and the figure itself is one row away
+                    in the flyout. Expanded, there is room for the number. */}
+                {!isExpanded && count > 0 && (
+                    <span
+                        aria-hidden="true"
+                        className="absolute -right-1.5 -top-1.5 h-2 w-2 rounded-full bg-primary ring-2 ring-sidebar"
+                    />
+                )}
+            </span>
+            {isExpanded && (
+                <>
+                    <span className="min-w-0 flex-1 truncate text-left text-sm font-medium">
+                        {navModule.title}
+                    </span>
+                    <NavBadge count={count} />
+                    {/* Points at where the children will appear — to the side,
+                        not below. A chevron-down here would promise an
+                        accordion that is not coming. */}
+                    {hasChildren && (
+                        <ChevronRight
+                            size={14}
+                            aria-hidden="true"
+                            className="shrink-0 text-sidebar-foreground/40"
+                        />
+                    )}
+                </>
             )}
         </>
     );
 
     return (
-        <div className="relative flex justify-center py-0.5">
+        <div className={cn("relative flex py-0.5", isExpanded ? "px-2" : "justify-center")}>
             {/* Inset marker rather than the old border-l-4: it reads as the rail
                 pointing at the module instead of the row growing a border. */}
             {isActive && (
@@ -121,11 +155,10 @@ const RailButton = ({
             {navModule.to ? (
                 <Link
                     to={navModule.to}
-                    title={label}
+                    title={isExpanded ? undefined : label}
                     aria-label={label}
                     aria-current={isActive ? "page" : undefined}
                     className={classes}
-                    onClick={onSelect}
                     onMouseEnter={(event) => onPeek(event.currentTarget)}
                     onFocus={(event) => onPeek(event.currentTarget)}
                 >
@@ -134,14 +167,12 @@ const RailButton = ({
             ) : (
                 <button
                     type="button"
-                    title={label}
+                    title={isExpanded ? undefined : label}
                     aria-label={label}
                     aria-current={isActive ? "true" : undefined}
+                    aria-haspopup={hasChildren ? "menu" : undefined}
                     className={cn(classes, "cursor-pointer")}
-                    onClick={(event) => {
-                        onSelect();
-                        onPeek(event.currentTarget);
-                    }}
+                    onClick={(event) => onPeek(event.currentTarget)}
                     onMouseEnter={(event) => onPeek(event.currentTarget)}
                     onFocus={(event) => onPeek(event.currentTarget)}
                 >
@@ -186,10 +217,7 @@ const PanelRow = ({
     </div>
 );
 
-/**
- * The selected module's destinations, flat. Shared by the docked panel and the
- * collapsed rail's flyout so the two cannot drift.
- */
+/** A module's destinations, flat. The body of the flyout at either width. */
 const ModulePanel = ({
     navModule,
     activeRoute,
@@ -284,16 +312,7 @@ const Sidebar = ({
         [modules, pathname]
     );
 
-    // The panel follows the route, but a rail click can move it somewhere else
-    // without navigating: looking inside a module before committing to a page
-    // is the whole point of a rail you cannot expand.
-    const [selectedId, setSelectedId] = useState<string | null>(null);
-    useEffect(() => setSelectedId(null), [pathname]);
-
-    const shownId = selectedId ?? active?.moduleId ?? modules[0]?.id;
-    const shown = modules.find((navModule) => navModule.id === shownId) ?? modules[0];
-
-    // Collapsed, the panel becomes a flyout anchored to the rail item. Fixed
+    // The children live in a flyout anchored to the row that opened it. Fixed
     // rather than absolute: the rail scrolls, and an absolutely placed flyout
     // would be clipped by its own scroll container.
     const [peek, setPeek] = useState<{ id: string; top: number; left: number } | null>(null);
@@ -302,7 +321,13 @@ const Sidebar = ({
 
     const openPeek = useCallback(
         (navModule: NavModule, element: HTMLElement) => {
-            if (isOpen) return;
+            // A module that is only a link (Dashboard, Fixed Assets, Reports)
+            // has nothing to fly out; an empty panel would be a promise of
+            // content that never arrives.
+            if (navModule.sections.length === 0) {
+                setPeek(null);
+                return;
+            }
             const rows = navModule.sections.reduce(
                 (total, section) => total + section.items.length + (section.caption ? 1 : 0),
                 0
@@ -315,13 +340,14 @@ const Sidebar = ({
                 top: Math.max(8, Math.min(rect.top - 8, window.innerHeight - height - 16)),
             });
         },
-        [isOpen]
+        []
     );
 
     // A flyout that outlives what opened it is a stray menu: close it when the
-    // rail is docked open again, when the route changes, and on Escape.
+    // rail changes width (the anchor coordinates go stale), when the route
+    // changes, and on Escape.
     useEffect(() => {
-        if (isOpen) setPeek(null);
+        setPeek(null);
     }, [isOpen]);
     useEffect(() => setPeek(null), [pathname]);
     useEffect(() => {
@@ -337,7 +363,7 @@ const Sidebar = ({
         <aside
             className={cn(
                 "z-0 flex h-screen flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out",
-                isOpen ? "w-72" : "w-16"
+                isOpen ? "w-60" : "w-16"
             )}
         >
             {/* Product identity, not company identity - the company moved to
@@ -407,83 +433,109 @@ const Sidebar = ({
                 </button>
             </div>
 
-            {/* Rail and panel share this row; the flyout lives here too, so
-                moving the pointer from a rail icon into it is not a leave. */}
+            {/* The flyout is rendered inside this container on purpose: it is
+                positioned outside the sidebar, but mouseleave follows the DOM,
+                so crossing from a row into the flyout does not close it. */}
             <div
-                className="relative flex min-h-0 flex-1"
+                className="relative flex min-h-0 flex-1 flex-col"
                 onMouseLeave={closePeek}
             >
-                <div className="flex w-16 shrink-0 flex-col border-r border-sidebar-border">
-                    <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                        {modules.map((navModule, index) => (
+                <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {modules.map((navModule, index) => {
+                        const startsBand =
+                            index === 0 || navModule.band !== modules[index - 1].band;
+                        return (
                             <div key={navModule.id}>
-                                {/* Bands survive as a hairline. At 64px a caption
-                                    would truncate to nothing useful, and the
-                                    grouping is what the caption was carrying. */}
-                                {index > 0 && navModule.band !== modules[index - 1].band && (
-                                    <div aria-hidden="true" className="mx-3 my-1.5 h-px bg-sidebar-border" />
-                                )}
-                                <RailButton
+                                {/* Expanded, the band is a caption. Collapsed, a
+                                    hairline: at 64px a caption truncates to
+                                    nothing useful, and the grouping is all the
+                                    caption was carrying anyway. */}
+                                {startsBand &&
+                                    (isOpen ? (
+                                        <p
+                                            className={cn(
+                                                "px-4 pb-1 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/60",
+                                                index > 0 && "pt-3"
+                                            )}
+                                        >
+                                            {navModule.band}
+                                        </p>
+                                    ) : (
+                                        index > 0 && (
+                                            <div
+                                                aria-hidden="true"
+                                                className="mx-3 my-1.5 h-px bg-sidebar-border"
+                                            />
+                                        )
+                                    ))}
+                                <ModuleRow
                                     navModule={navModule}
-                                    isActive={navModule.id === shownId}
+                                    isActive={navModule.id === active?.moduleId}
+                                    isExpanded={isOpen}
                                     count={countFor(moduleRoutes(navModule), badges)}
-                                    onSelect={() => setSelectedId(navModule.id)}
                                     onPeek={(element) => openPeek(navModule, element)}
                                 />
                             </div>
-                        ))}
-                    </nav>
+                        );
+                    })}
+                </nav>
 
-                    {/* Settings and Get Help stay in the rail rather than the
-                        panel: the panel's contents change with the selected
-                        module, and these two have to be reachable from all of
-                        them - and at both widths. */}
-                    <div className="shrink-0 border-t border-sidebar-border py-1">
-                        {[
-                            { to: "/settings", icon: <Settings size={16} />, label: "Settings" },
-                            { to: "/help", icon: <LifeBuoy size={16} />, label: "Get Help" },
-                        ].map((entry) => (
-                            <div key={entry.to} className="flex justify-center py-0.5">
-                                <Link
-                                    to={entry.to}
-                                    title={entry.label}
-                                    aria-label={entry.label}
-                                    onMouseEnter={closePeek}
-                                    className="flex h-10 w-10 items-center justify-center rounded-xl text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                                >
-                                    {entry.icon}
-                                </Link>
-                            </div>
-                        ))}
-                        <div className="flex justify-center py-0.5">
-                            <button
-                                type="button"
-                                onClick={onToggle}
+                {/* Settings and Get Help are pinned rather than filed under a
+                    module: they have to be reachable from every one of them,
+                    and at both widths. */}
+                <div className="shrink-0 border-t border-sidebar-border py-1">
+                    {[
+                        { to: "/settings", icon: <Settings size={16} />, label: "Settings" },
+                        { to: "/help", icon: <LifeBuoy size={16} />, label: "Get Help" },
+                    ].map((entry) => (
+                        <div
+                            key={entry.to}
+                            className={cn("flex py-0.5", isOpen ? "px-2" : "justify-center")}
+                        >
+                            <Link
+                                to={entry.to}
+                                title={isOpen ? undefined : entry.label}
+                                aria-label={entry.label}
                                 onMouseEnter={closePeek}
-                                aria-expanded={isOpen}
-                                aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
-                                title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
-                                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                onFocus={closePeek}
+                                className={cn(
+                                    "flex h-10 items-center rounded-xl text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                                    isOpen ? "w-full gap-2.5 px-2.5" : "w-10 justify-center"
+                                )}
                             >
-                                {isOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
-                            </button>
+                                <span className="shrink-0">{entry.icon}</span>
+                                {isOpen && (
+                                    <span className="truncate text-sm font-medium">{entry.label}</span>
+                                )}
+                            </Link>
                         </div>
+                    ))}
+                    <div className={cn("flex py-0.5", isOpen ? "px-2" : "justify-center")}>
+                        <button
+                            type="button"
+                            onClick={onToggle}
+                            onMouseEnter={closePeek}
+                            onFocus={closePeek}
+                            aria-expanded={isOpen}
+                            aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+                            title={isOpen ? undefined : "Expand sidebar"}
+                            className={cn(
+                                "flex h-10 cursor-pointer items-center rounded-xl text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                                isOpen ? "w-full gap-2.5 px-2.5" : "w-10 justify-center"
+                            )}
+                        >
+                            <span className="shrink-0">
+                                {isOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+                            </span>
+                            {isOpen && <span className="truncate text-sm font-medium">Collapse</span>}
+                        </button>
                     </div>
                 </div>
 
-                {isOpen && shown && (
-                    <div className="flex min-w-0 flex-1 flex-col pt-2">
-                        <ModulePanel
-                            navModule={shown}
-                            activeRoute={active?.to ?? null}
-                            permissions={permissions}
-                            badges={badges}
-                        />
-                    </div>
-                )}
-
-                {!isOpen && peek && peekModule && (
+                {peek && peekModule && (
                     <div
+                        role="menu"
+                        aria-label={peekModule.panelTitle}
                         className="fixed z-50 flex w-56 flex-col rounded-xl border border-sidebar-border bg-sidebar py-2 shadow-xl"
                         style={{ top: peek.top, left: peek.left, maxHeight: "70vh" }}
                     >
