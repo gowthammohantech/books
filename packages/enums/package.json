@@ -12,7 +12,9 @@
       "require": "./dist/cjs/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "generate": "node scripts/generate.mjs",
     "build": "tsc -p tsconfig.cjs.json && tsc -p tsconfig.esm.json && node ../../scripts/write-esm-package-marker.mjs dist/esm",
@@ -22,6 +24,6 @@
   },
   "devDependencies": {
     "typescript": "~5.6.3",
-    "vitest": "~2.1.9"
+    "vitest": "^4.1.11"
   }
 }
