@@ -51,11 +51,17 @@ variables:
 
   imageTag: 'stage-kanakku-ui-$(Build.BuildNumber)'
 
-  # Baked into the bundle at build time. apps/web/Dockerfile deliberately has
-  # NO default for this (an empty value means same-origin, which only works
-  # behind the compose nginx /api proxy), so staging must pass the API host
-  # explicitly here.
-  viteApiBaseUrl: 'https://elixirbooks-kanaku-api-cagqg6fng5dtazbc.southeastasia-01.azurewebsites.net'
+  # The API this deployment talks to. It is NOT baked into the bundle: nginx in
+  # the web container proxies /api and /uploads to it at runtime, so the browser
+  # only ever calls the web origin and CORS never enters the picture. The Host
+  # header and SNI sent upstream are derived from this value, which is what App
+  # Service routes on.
+  apiOrigin: 'https://elixirbooks-kanaku-api-cagqg6fng5dtazbc.southeastasia-01.azurewebsites.net'
+
+  # Empty on purpose: an empty VITE_API_BASE_URL makes the SPA call a relative
+  # /api, which the proxy above serves. Set it to an absolute URL only to bypass
+  # the proxy, and then clear apiOrigin.
+  viteApiBaseUrl: ''
   viteDemoMode: 'false'
 
 pool:
@@ -132,4 +138,9 @@ stages:
               azureSubscription: '$(azureServiceConnection)'
               appName: '$(webAppName)'
               containers: '$(ACR_LOGIN_SERVER)/$(ACR_REPOSITORY):$(imageTag)'
-              appSettings: '-WEBSITES_PORT 80'
+              # API_ORIGIN is read at container start by
+              # apps/web/docker-entrypoint.d/15-render-nginx-conf.sh, which
+              # renders the nginx /api and /uploads proxy from it. It must
+              # never name a host that only exists inside compose (`api:3001`):
+              # this container runs alone.
+              appSettings: '-WEBSITES_PORT 80 -API_ORIGIN $(apiOrigin)'

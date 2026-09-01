@@ -47,7 +47,11 @@ RUN VITE_DEMO_MODE=$VITE_DEMO_MODE VITE_API_BASE_URL=$VITE_API_BASE_URL \
 # --- Serve stage -------------------------------------------------------------
 FROM nginx:1.27-alpine AS runner
 
-COPY apps/web/nginx.conf /etc/nginx/nginx.conf
+# The config is a template: the API proxy blocks are rendered at container
+# start from API_ORIGIN, so the image also boots where no `api` host exists.
+COPY apps/web/nginx.conf.template /etc/nginx/nginx.conf.template
+COPY apps/web/docker-entrypoint.d/ /docker-entrypoint.d/
+RUN chmod +x /docker-entrypoint.d/*.sh
 COPY --from=build /repo/apps/web/dist /usr/share/nginx/html
 
 EXPOSE 80
