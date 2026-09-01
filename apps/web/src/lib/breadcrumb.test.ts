@@ -14,7 +14,7 @@ describe('resolveBreadcrumb', () => {
     });
 
     it('puts a top-level destination under the root', () => {
-        expect(labels('/contacts')).toEqual(['Dashboard', 'Contacts']);
+        expect(labels('/contacts')).toEqual(['Dashboard', 'Parties']);
     });
 
     it('files a report under the Reports Center, not under a menu', () => {
@@ -34,7 +34,7 @@ describe('resolveBreadcrumb', () => {
         // walk resolves both to "Inventory".
         expect(labels('/inventory/cost-layers')).toEqual([
             'Dashboard',
-            'Inventory Management',
+            'Inventory',
             'Cost Layers (FIFO)',
         ]);
     });
@@ -42,13 +42,13 @@ describe('resolveBreadcrumb', () => {
     it('follows a viewer route home to the list it belongs to', () => {
         expect(labels('/view-invoice/abc-123')).toEqual([
             'Dashboard',
-            'Sales Management',
+            'Sales',
             'Invoices',
         ]);
     });
 
     it('carries a detail route up to its list page', () => {
-        expect(labels('/contacts/edit/42')).toEqual(['Dashboard', 'Contacts']);
+        expect(labels('/contacts/edit/42')).toEqual(['Dashboard', 'Parties']);
     });
 
     it('links the root crumb and leaves the rest as text', () => {

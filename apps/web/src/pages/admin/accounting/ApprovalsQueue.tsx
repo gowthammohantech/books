@@ -224,7 +224,7 @@ const ApprovalsQueue: React.FC = () => {
             <PageHeader
                 title={
                     <span className="flex flex-col">
-                        <span>Approvals Queue</span>
+                        <span>Approvals</span>
                         {!isLoading && (
                             <span className="text-xs font-normal text-gray-500">
                                 {totalPending === 0

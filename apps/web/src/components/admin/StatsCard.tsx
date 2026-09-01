@@ -1,4 +1,4 @@
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { AnimatedIcon } from "@components/icons";
 import type { FC, ReactNode } from "react";
 
 type Accent =
@@ -26,9 +26,22 @@ interface StatsCardProps {
     accent?: Accent; // fixed category accent for the icon badge; defaults to "primary"
     /** Small caption clarifying the value's time window, e.g. "This month". */
     period?: string;
+    /** Washes the whole card in the accent's soft tone instead of only the
+     * icon badge. The dashboard's KPI row reads as four coloured panels;
+     * everywhere else a card on white is the right default, so this is opt-in. */
+    tinted?: boolean;
 }
 
 // Static class map so Tailwind JIT can see every utility (no runtime interpolation).
+const ACCENT_CARD: Record<Accent, string> = {
+    primary: "bg-accent border-accent",
+    success: "bg-success-soft border-success-soft",
+    info: "bg-info-soft border-info-soft",
+    warning: "bg-warning-soft border-warning-soft",
+    teal: "bg-teal-soft border-teal-soft",
+    danger: "bg-destructive-soft border-destructive-soft",
+};
+
 const ACCENT_CHIP: Record<Accent, string> = {
     primary: "bg-accent text-primary",
     success: "bg-success-soft text-success-strong",
@@ -38,13 +51,16 @@ const ACCENT_CHIP: Record<Accent, string> = {
     danger: "bg-destructive-soft text-destructive-strong",
 };
 
-const StatsCard: FC<StatsCardProps> = ({ title, value, difference, icon, accent, period }) => {
+const StatsCard: FC<StatsCardProps> = ({ title, value, difference, icon, accent, period, tinted }) => {
     const hasDifference = difference !== undefined;
     const isPositive = (difference ?? 0) >= 0;
     const resolvedAccent: Accent = accent ?? "primary";
 
     return (
-        <div className="relative bg-white border border-border rounded-xl shadow-sm hover:shadow-md transition-all p-4">
+        <div
+            className={`relative border rounded-xl shadow-sm hover:shadow-md transition-all p-4 ${tinted ? ACCENT_CARD[resolvedAccent] : "bg-white border-border"
+                }`}
+        >
             {/* Top: title + icon */}
             <div className="flex justify-between items-center">
                 <div>
@@ -75,9 +91,9 @@ const StatsCard: FC<StatsCardProps> = ({ title, value, difference, icon, accent,
                             }`}
                     >
                         {isPositive ? (
-                            <ArrowUpRight className="w-3 h-3 mr-1" />
+                            <AnimatedIcon name="trend-up" size={12} className="mr-1" />
                         ) : (
-                            <ArrowDownLeft className="w-3 h-3 mr-1" />
+                            <AnimatedIcon name="trend-down" size={12} className="mr-1" />
                         )}
                         {(difference as number).toFixed()}%
                     </span>
