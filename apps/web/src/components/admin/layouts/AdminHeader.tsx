@@ -42,15 +42,19 @@ const AdminHeader = () => {
             <div className="flex items-center space-x-2">
                 {/* Command palette trigger. A search-box shape rather than an icon
                     button: the shortcut is only discoverable if something on screen
-                    advertises it, and this is where people look for search. */}
+                    advertises it, and this is where people look for search. Given a
+                    real field's width from lg up, where the label and hint appear;
+                    below that it stays the compact icon button it has to be. */}
                 <button
                     onClick={openCommandPalette}
                     aria-label="Search pages, invoices, contacts and items"
                     aria-keyshortcuts="Control+K Meta+K"
-                    className="flex items-center gap-2 rounded-lg border border-border bg-muted/60 px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+                    className="flex items-center gap-2 rounded-lg border border-border bg-muted/60 px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer lg:w-72 lg:justify-between xl:w-96"
                 >
-                    <Search className="w-4 h-4" />
-                    <span className="hidden lg:inline">Search…</span>
+                    <span className="flex items-center gap-2">
+                        <Search className="w-4 h-4" />
+                        <span className="hidden lg:inline">Search…</span>
+                    </span>
                     <kbd className="hidden lg:inline rounded border border-border bg-card px-1.5 py-0.5 text-[11px] font-medium">
                         {shortcutHint}
                     </kbd>
