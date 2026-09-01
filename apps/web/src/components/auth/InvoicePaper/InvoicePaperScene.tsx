@@ -34,10 +34,19 @@ import {
 } from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
+import { loadBrandLogo } from "@utils/brandLogo";
+
 import {
+    FOV,
+    SHEET_HEIGHT,
+    SHEET_WIDTH,
+    MAX_YAW,
     clampTilt,
+    clampTurn,
     damp,
+    frustumHeightAt,
     pickTextureSize,
+    solveSheetPlacement,
     stepInertia,
 } from "./invoicePaperSupport";
 import { createInvoiceTexture } from "./invoiceTexture";
@@ -60,59 +69,27 @@ interface PaperUniforms {
     uCurl: { value: number };
     uRipple: { value: number };
     uAccent: { value: Color };
-    uGold: { value: Color };
-    uPointer: { value: Vector2 };
-    uPointerReach: { value: number };
-    uPointerDepth: { value: number };
-    uHover: { value: number };
     uIntensity: { value: number };
     uStockScatter: { value: number };
 }
 
-const FOV = 35;
-const HALF_FOV = (FOV * Math.PI) / 360;
-const SHEET_WIDTH = 1;
-const SHEET_HEIGHT = 1.414;
-/** Share of the panel's height the sheet should occupy at rest. */
-const HEIGHT_FILL = 0.66;
-/** …and the most of its width it may take, for tall narrow panels. */
-const WIDTH_FILL = 0.78;
-/**
- * Where the sheet's centre sits across the panel, 0 = left edge, 1 = right.
- *
- * Off-centre because the panel's copy is left-aligned: dead centre puts the
- * headline straight across the middle of the invoice and neither survives it.
- * Pushed right, the sheet's busiest half — the item table and the totals — is
- * in the clear, and AuthShell's scrim covers the overlap that is left.
- */
-const SHEET_CENTER_X = 0.66;
 const BACKDROP_DEPTH = 6;
 
-const BASE_YAW = -0.22;
+// Every one of these has to fit inside MAX_YAW/MAX_TILT with room to spare,
+// or the sheet spends its time pinned against the clamp instead of drifting.
+// BASE + IDLE + POINTER is 25.7 deg of yaw against a 35 deg wall.
+const BASE_YAW = -0.16;
 const BASE_PITCH = 0.09;
 const IDLE_YAW = (8 * Math.PI) / 180;
 const IDLE_PITCH = (3.5 * Math.PI) / 180;
-const POINTER_YAW = 0.3;
-const POINTER_PITCH = 0.16;
+// Halved. At 0.3 the cursor alone drove the yaw past the readable envelope,
+// so the invoice blurred simply because someone moved the mouse over it.
+const POINTER_YAW = 0.15;
+const POINTER_PITCH = 0.1;
 const FOLLOW = 0.08;
 /** Screen pixels → radians, while dragging. */
 const DRAG_YAW = 0.007;
 const DRAG_PITCH = 0.005;
-
-/**
- * How far back the camera has to sit for the sheet to fill the panel.
- *
- * Solved rather than hard-coded because the panel is half a viewport: its
- * aspect runs from about 0.4 on a tall 1024px window to 1.4 on an ultrawide,
- * and a fixed distance either crops the sheet at one end of that range or
- * strands it in the middle of the panel at the other.
- */
-const cameraDistance = (aspect: number): number => {
-    const forHeight = SHEET_HEIGHT / HEIGHT_FILL / (2 * Math.tan(HALF_FOV));
-    const forWidth =
-        SHEET_WIDTH / WIDTH_FILL / Math.max(aspect, 0.2) / (2 * Math.tan(HALF_FOV));
-    return Math.max(forHeight, forWidth);
-};
 
 /**
  * The panel, plus a soft glow behind where the sheet hangs.
@@ -163,7 +140,6 @@ const InvoicePaperScene = ({
         const uniforms = uniformsRef.current;
         if (!uniforms) return;
         uniforms.uAccent.value.set(accent);
-        uniforms.uGold.value.set(gold);
         uniforms.uIntensity.value = intensity;
     }, [accent, gold, background, intensity]);
 
@@ -225,12 +201,17 @@ const InvoicePaperScene = ({
         scene.add(backdrop);
 
         let textureSize = pickTextureSize(window.devicePixelRatio, true);
+        // Null on the first bake and filled in below. The letterhead falls back
+        // to a typeset monogram until the PNG decodes, which is the only way
+        // this effect stays synchronous — see the note at the top of it.
+        let brandLogo: HTMLImageElement | null = null;
         const geometry = new PlaneGeometry(SHEET_WIDTH, SHEET_HEIGHT, 96, 128);
         const material = new MeshPhysicalMaterial({
             map: createInvoiceTexture({
                 renderer,
                 size: textureSize,
                 gold: initial.gold,
+                logo: brandLogo,
             }),
             transmission: 1,
             thickness: 0.35,
@@ -245,11 +226,6 @@ const InvoicePaperScene = ({
             uCurl: { value: 0.055 },
             uRipple: { value: 0.012 },
             uAccent: { value: new Color(initial.accent) },
-            uGold: { value: new Color(initial.gold) },
-            uPointer: { value: new Vector2() },
-            uPointerReach: { value: 2.2 },
-            uPointerDepth: { value: -1.1 },
-            uHover: { value: 0 },
             uIntensity: { value: initial.intensity },
             uStockScatter: { value: 0.86 },
         };
@@ -281,20 +257,17 @@ const InvoicePaperScene = ({
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.setSize(width, height, false);
             camera.aspect = aspect;
-            camera.position.z = cameraDistance(aspect);
+
+            // Both the camera distance and the sheet's slide right are solved
+            // in invoicePaperSupport, which owns no `three` and so can be
+            // tested — including the assertion that matters most here, that
+            // the sheet is wide enough on screen for its own print to be read.
+            const { distance, offsetX, visibleWidth } = solveSheetPlacement(width, height);
+            camera.position.z = distance;
             camera.updateProjectionMatrix();
+            sheet.position.x = offsetX;
 
-            const visibleWidth = 2 * Math.tan(HALF_FOV) * camera.position.z * aspect;
-            // Never so far right that the sheet leaves the frustum: on a
-            // narrow panel there is no room to move and it stays centred.
-            const room = Math.max(visibleWidth / 2 - SHEET_WIDTH * 0.62, 0);
-            sheet.position.x = Math.min(
-                visibleWidth * (SHEET_CENTER_X - 0.5),
-                room,
-            );
-
-            const backdropHeight =
-                2 * Math.tan(HALF_FOV) * (camera.position.z + BACKDROP_DEPTH);
+            const backdropHeight = frustumHeightAt(camera.position.z + BACKDROP_DEPTH);
             backdrop.scale.set(backdropHeight * aspect, backdropHeight, 1);
             // The glow follows the sheet, or it lights an empty corner. Moved
             // by shifting the texture rather than the plane: the plane is sized
@@ -314,16 +287,37 @@ const InvoicePaperScene = ({
                     renderer,
                     size: textureSize,
                     gold: propsRef.current.gold,
+                    logo: brandLogo,
                 });
                 material.needsUpdate = true;
             }
         };
 
+        // The letterhead, once the PNG has decoded. A `.then` rather than an
+        // `await`: everything above it has already run, so there is no window
+        // in which a StrictMode remount could find a half-built scene. Guarded
+        // on `disposed` because this can land after teardown, and assigning a
+        // texture to a disposed material is a leak with no symptom.
+        let disposed = false;
+        loadBrandLogo().then((logo) => {
+            if (disposed || !logo) return;
+            brandLogo = logo;
+            material.map?.dispose();
+            material.map = createInvoiceTexture({
+                renderer,
+                size: textureSize,
+                gold: propsRef.current.gold,
+                logo,
+            });
+            material.needsUpdate = true;
+        });
+
         // --- Interaction ---------------------------------------------------
+        // Drives the sheet's lean toward the cursor, and nothing else. It
+        // used to also position a gold specular light, which is what tinted
+        // the whole invoice — see the note in paperShaders.ts.
         const pointer = new Vector2();
         const pointerTarget = new Vector2();
-        let hover = 0;
-        let hoverTarget = 0;
         let mode: "idle" | "drag" | "fling" = "idle";
         let yaw = BASE_YAW;
         let pitch = BASE_PITCH;
@@ -348,7 +342,6 @@ const InvoicePaperScene = ({
                 ((event.clientX - rect.left) / rect.width) * 2 - 1,
                 -(((event.clientY - rect.top) / rect.height) * 2 - 1),
             );
-            hoverTarget = 1;
             if (mode !== "drag") return;
             // The per-move delta *is* the velocity handed to the fling: a
             // pointer that stops before release leaves a delta of zero, so
@@ -357,8 +350,10 @@ const InvoicePaperScene = ({
             pitchVelocity = (event.clientY - lastClientY) * DRAG_PITCH;
             lastClientX = event.clientX;
             lastClientY = event.clientY;
-            yaw += yawVelocity;
-            pitch = clampTilt(pitch + pitchVelocity);
+            ({ yaw, pitch } = clampTurn(
+                clampTilt(yaw + yawVelocity, MAX_YAW),
+                clampTilt(pitch + pitchVelocity),
+            ));
         };
 
         const endDrag = (event: PointerEvent) => {
@@ -370,7 +365,6 @@ const InvoicePaperScene = ({
         };
 
         const onPointerLeave = () => {
-            hoverTarget = 0;
             pointerTarget.set(0, 0);
         };
 
@@ -396,25 +390,23 @@ const InvoicePaperScene = ({
 
             pointer.x = damp(pointer.x, pointerTarget.x, FOLLOW, dt);
             pointer.y = damp(pointer.y, pointerTarget.y, FOLLOW, dt);
-            uniforms.uPointer.value.copy(pointer);
-            hover = damp(hover, hoverTarget, FOLLOW, dt);
-            uniforms.uHover.value = hover;
 
             if (mode === "fling") {
                 const spun = stepInertia({ value: yaw, velocity: yawVelocity });
                 const tipped = stepInertia({ value: pitch, velocity: pitchVelocity });
-                yaw = spun.value;
-                yawVelocity = spun.velocity;
-                pitch = clampTilt(tipped.value);
-                pitchVelocity = tipped.velocity;
-                if (yawVelocity === 0 && pitchVelocity === 0) {
-                    // Wrapping to the equivalent angle in (-π, π] before the
-                    // idle damping takes over. Three full turns of a fling
-                    // would otherwise be unwound one slow frame at a time,
-                    // which reads as the sheet rewinding itself.
-                    yaw = Math.atan2(Math.sin(yaw), Math.cos(yaw));
-                    mode = "idle";
-                }
+                const held = clampTurn(
+                    clampTilt(spun.value, MAX_YAW),
+                    clampTilt(tipped.value),
+                );
+                // Velocity dies on contact with the wall rather than pressing
+                // into it. Kept, a fling into the clamp spends a second of
+                // damping while the sheet sits still — it reads as a freeze,
+                // and the idle drift cannot take back over until it decays.
+                yawVelocity = held.yaw === spun.value ? spun.velocity : 0;
+                pitchVelocity = held.pitch === tipped.value ? tipped.velocity : 0;
+                yaw = held.yaw;
+                pitch = held.pitch;
+                if (yawVelocity === 0 && pitchVelocity === 0) mode = "idle";
             } else if (mode === "idle") {
                 const targetYaw =
                     BASE_YAW + Math.sin(elapsed * 0.35) * IDLE_YAW + pointer.x * POINTER_YAW;
@@ -422,8 +414,10 @@ const InvoicePaperScene = ({
                     BASE_PITCH +
                     Math.sin(elapsed * 0.23) * IDLE_PITCH -
                     pointer.y * POINTER_PITCH;
-                yaw = damp(yaw, targetYaw, FOLLOW, dt);
-                pitch = clampTilt(damp(pitch, targetPitch, FOLLOW, dt));
+                ({ yaw, pitch } = clampTurn(
+                    clampTilt(damp(yaw, targetYaw, FOLLOW, dt), MAX_YAW),
+                    clampTilt(damp(pitch, targetPitch, FOLLOW, dt)),
+                ));
             }
 
             sheet.rotation.set(pitch, yaw, 0);
@@ -464,6 +458,7 @@ const InvoicePaperScene = ({
         syncLoop();
 
         return () => {
+            disposed = true;
             if (frame !== 0) cancelAnimationFrame(frame);
             resizeObserver.disconnect();
             intersectionObserver.disconnect();
