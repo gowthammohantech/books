@@ -32,7 +32,6 @@ import StatsCard from '@components/admin/StatsCard';
 import { WORK_QUEUES } from '@lib/workQueues';
 import { useWorkQueues } from '@hooks/useWorkQueues';
 import { useAgentPanel } from '@context/AgentPanelContext';
-import { useCommandPalette } from '@context/CommandPaletteContext';
 import { themeColor } from '@lib/designTokens';
 import { EmptyState, EmptyStateRow } from '@components/ui';
 
@@ -134,7 +133,6 @@ const DashboardPage: React.FC = () => {
     // beside it can never show different numbers.
     const { counts: queueCounts } = useWorkQueues();
     const { isAvailable: isAgentAvailable, open: openAgent } = useAgentPanel();
-    const { open: openPalette } = useCommandPalette();
 
     const [dashboardData, setDashboardData] =
         useState<DashboardData>(EMPTY_DASHBOARD);
@@ -283,30 +281,12 @@ const DashboardPage: React.FC = () => {
                 </button>
             </PageHeader>
 
-            {/* Ask before you hunt. The field is a button, not an input: the
-                command palette is already the app's search-and-take-action
-                surface, and two search boxes that behave differently is one
-                search box too many. */}
             <div className="mt-6 flex flex-col items-center text-center">
                 <h2 className="text-2xl font-semibold text-foreground">
                     {getGreeting()},{' '}
                     <span className="text-primary">{activeTenant?.name ?? 'there'}</span>
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                    One question away from getting things done.
-                </p>
-                <button
-                    type="button"
-                    onClick={openPalette}
-                    className="mt-4 flex w-full max-w-xl items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 text-left text-sm text-muted-foreground shadow-sm transition-colors hover:border-primary cursor-pointer"
-                >
-                    <Search className="w-4 h-4 shrink-0" />
-                    <span className="flex-1">Search, ask, or take action...</span>
-                    <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium">
-                        Ctrl K
-                    </kbd>
-                </button>
-                <p className="mt-3 text-xs text-muted-foreground">
+                <p className="mt-2 text-xs text-muted-foreground">
                     {[
                         formatDate(time, dateFormat),
                         formattedTime,
