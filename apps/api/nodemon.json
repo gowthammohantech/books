@@ -1,0 +1,16 @@
+{
+  "watch": [
+    "."
+  ],
+  "ext": "ts,js,json",
+  "ignore": [
+    "dist/**",
+    "coverage/**",
+    "uploads/**",
+    "tests/**",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "node_modules/**"
+  ],
+  "exec": "node -r ts-node/register server.ts"
+}

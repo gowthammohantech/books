@@ -65,8 +65,8 @@ smoke:
 
 seed:
 	# Postgres baseline seed (currencies, date/time formats, timezones, module
-	# hierarchy, custom-field types). The old node seed*.js scripts targeted the
-	# now-removed MongoDB and are intentionally not run here.
+	# hierarchy, custom-field types). This is the only seed path — the legacy
+	# node seed*.js scripts targeted MongoDB and have been deleted.
 	$(COMPOSE) exec api npx prisma db seed
 
 ps:
@@ -77,4 +77,11 @@ ps:
 #           release/elixirbooks-mobile-addon-v$(VERSION).zip
 # Example:  make package VERSION=2.1.0
 package:
+	@if [ ! -f scripts/package-release.sh ]; then \
+	  echo "make package: scripts/package-release.sh is not in this repository."; \
+	  echo "The target and its documentation predate the script; nothing has ever"; \
+	  echo "produced the release/*.zip artefacts it describes. Add the script, or"; \
+	  echo "drop this target and the 'package' lines from the help text above."; \
+	  exit 1; \
+	fi
 	bash scripts/package-release.sh $(VERSION)

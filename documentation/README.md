@@ -1,91 +1,73 @@
-# Elixir Books — Documentation Index
+# Elixir Books — Documentation
 
-Elixir Books is a self-hosted invoicing and accounting application distributed as a
-Docker Compose stack (Node.js API + React SPA + PostgreSQL). You own your data
-and deploy it on any Linux server or VPS.
+Elixir Books is a self-hosted invoicing and accounting application, distributed as a
+Docker Compose stack (Express 5 API + React 19 SPA + PostgreSQL 16). One install
+hosts several workspaces, each with its own data, members and settings.
+
+Docs are grouped by who reads them. Start with the group that matches what you are
+doing; the root [`README.md`](../README.md) covers the workspace layout and the
+day-to-day build commands.
 
 ---
 
-## Documentation
+## [operations/](operations/) — running an install
 
-| File | What it covers |
+For whoever deploys and looks after a server. Read in this order for a first install.
+
+| Doc | What it covers |
 |---|---|
-| [installation.md](installation.md) | Quick-start (Docker), detailed install, TLS, smoke test |
-| [configuration.md](configuration.md) | Full environment variable reference, rebuild vs restart rules |
-| [first-run.md](first-run.md) | Admin registration, company setup, ledger setup, roles, demo mode |
-| [integrations.md](integrations.md) | SMTP, Razorpay, Stripe, AI (BYOK), WhatsApp CRM |
-| [backup-restore-upgrade.md](backup-restore-upgrade.md) | Backups, restore, upgrade flow, rollback |
-| [troubleshooting.md](troubleshooting.md) | FAQs and common failure modes |
+| [installation.md](operations/installation.md) | Quick start, detailed install, TLS, smoke test |
+| [deployment.md](operations/deployment.md) | Condensed production checklist — prerequisites through backups |
+| [configuration.md](operations/configuration.md) | Every `docker/.env` variable, and which changes need a rebuild vs a restart |
+| [first-run.md](operations/first-run.md) | Admin registration, company setup, ledger setup, roles, demo mode |
+| [integrations.md](operations/integrations.md) | SMTP, Razorpay, Stripe, AI (BYOK), WhatsApp CRM |
+| [backup-restore-upgrade.md](operations/backup-restore-upgrade.md) | Backups, restore, upgrade flow, rollback |
+| [troubleshooting.md](operations/troubleshooting.md) | Common failure modes and their fixes |
 
-The original [`DEPLOYMENT.md`](../DEPLOYMENT.md) at the repo root is also
-included in the package and contains a concise production checklist.
+`installation.md` and `deployment.md` overlap by design: the first walks you through
+a first install, the second is the checklist to re-read before going to production.
 
----
+## [development/](development/) — working on the code
 
-## Features
-
-**Documents**
-- Invoices (recurring, templates, public payment links)
-- Quotations / Estimates
-- Credit notes and debit notes
-- Delivery challans
-- Purchase orders and purchase bills
-- Expenses with receipt attachments (FIFO/WAC valuation)
-
-**Finance**
-- Double-entry ledger engine with six country accounting packs: India (IN), EU, UK (UK), US, Australia (AU), New Zealand (NZ)
-- Opening-balance cutover wizard (Settings → Finance → Ledger Setup)
-- Profit & Loss, Balance Sheet, Trial Balance statements
-- AR/AP aging reports
-- Budgets and cost centers
-- Fixed assets register
-- Per-document multi-currency (customers and suppliers each carry an independent currency; ExchangeRate table for expense FX conversion)
-
-**Payments**
-- Razorpay and Stripe (BYOK — bring your own keys; webhook signature verification)
-- Offline payment recording
-
-**Operations**
-- 12+ reports (transaction, tax, dimension/P&L, aging, bank reconciliation)
-- Inventory with FIFO and WAC costing
-- Maker-checker approvals workflow (off by default)
-- Roles and permissions (5 default roles: Admin, Vendor, Staff, Maintainer, Supplier)
-- Custom fields on most entities
-- Recurring invoices and recurring expenses (cron-driven)
-- Invoice and quotation reminder emails
-
-**Integrations**
-- SMTP email (or Resend) — configurable in-app
-- AI document extraction and chat (BYOK Claude or OpenAI; mock fallback when no key)
-- WhatsApp CRM bridge (server-to-server customer sync + SSO)
-- GST filing reports (India)
-- Signatures
-
----
-
-## System Requirements
-
-| Component | Minimum |
+| Doc | What it covers |
 |---|---|
-| CPU | 2 vCPU |
-| RAM | 4 GB |
-| Disk | 20 GB (plus upload storage) |
-| OS | Linux (any modern distro) |
-| Docker Engine | 24+ |
-| Docker Compose plugin | v2 (`docker compose`, not legacy `docker-compose`) |
-| PostgreSQL | 16 (provided by the compose stack — no separate install needed) |
-| Node.js | 20 (inside the API container — no host install needed) |
-| Ports | 80 and 443 reachable for web + TLS |
+| [running-locally.md](development/running-locally.md) | Hot-reload dev loop (API + SPA on the host), and the full Docker alternative |
+| [monorepo-migration.md](development/monorepo-migration.md) | What the workspace + JS→TS migration changed, and why each decision went the way it did |
 
-No MongoDB or Redis install is required. Both are optional opt-in services
-described in [configuration.md](configuration.md).
+## [architecture/](architecture/) — how the system is shaped
+
+| Doc | What it covers |
+|---|---|
+| [erd.dbml](architecture/erd.dbml) | Entity-relationship diagram, 101 tables and 82 enums. Generated from `apps/api/prisma/schema.prisma`; paste into [dbdiagram.io](https://dbdiagram.io) to render |
+
+## [product/](product/) — scope and roadmap
+
+Point-in-time audits of branch `pc-cc`, taken 2026-08-31. Planning artefacts, not a
+record of current state — nothing regenerates them, so re-verify against `master`
+before acting on anything in them.
+
+| Doc | What it covers |
+|---|---|
+| [current-modules.md](product/current-modules.md) | What ships today, and what is missing relative to a full ERP |
+| [modules-to-modify.md](product/modules-to-modify.md) | Existing modules that are incomplete, drifted or duplicated, ranked P0–P2 |
+| [erp-roadmap.md](product/erp-roadmap.md) | Proposed modules and phasing to reach ERP scope — a proposal to confirm, not agreed scope |
 
 ---
 
-## Support and License
+## Elsewhere in the repository
 
-- **Support**: Raise a ticket via the CodeCanyon item page. Include your Elixir Books
-  version (`/api/healthz` reports it), OS, Docker Engine version, and the
-  relevant section of `make logs` output.
-- **License**: See [../LICENSE.md](../LICENSE.md).
-- **Changelog**: See [../CHANGELOG.md](../CHANGELOG.md).
+| Path | What |
+|---|---|
+| [`../README.md`](../README.md) | Workspace layout, build and test commands, `make` targets |
+| [`../CHANGELOG.md`](../CHANGELOG.md) | Release history |
+| [`../LICENSE.md`](../LICENSE.md) | Licence |
+| [`../apps/api/DEPLOYMENT.md`](../apps/api/DEPLOYMENT.md) | Backend-specific notes — boot-time migrations, baseline seed, contact backfill |
+| [`../docker/.env.example`](../docker/.env.example) | The configuration template every install starts from |
+
+---
+
+## Support
+
+Raise a ticket via the CodeCanyon item page. Include your Elixir Books version
+(`/api/healthz` reports it), your OS and Docker Engine version, and the relevant
+section of `make logs` output.

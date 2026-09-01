@@ -1,0 +1,20 @@
+{
+  "//": "Type-checks the vitest suite. Tests use the vi.mock() + top-level `await import()` pattern, which requires an ESM `module` setting; the app itself stays CommonJS (see tsconfig.json) because server.js require()s it.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "es2022",
+    "noEmit": true
+  },
+  "include": [
+    "types/**/*.d.ts",
+    "tests/**/*.ts",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "uploads"
+  ]
+}

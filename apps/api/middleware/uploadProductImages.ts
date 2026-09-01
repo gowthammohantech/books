@@ -1,0 +1,37 @@
+import path from 'path';
+
+import multer from 'multer';
+
+import { destinationFor } from '../lib/uploadPaths';
+
+// Storage settings: per-workspace, uploads/t/<tenantId>/products/.
+const storage = multer.diskStorage({
+  destination: destinationFor('products'),
+  filename: function (_req, file, cb) {
+    const ext = path.extname(file.originalname);
+    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9) + ext;
+    cb(null, uniqueName);
+  },
+});
+
+// File filter remains the same
+const fileFilter: multer.Options['fileFilter'] = (_req, file, cb) => {
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only JPG, PNG, and WEBP are allowed.'));
+  }
+};
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+});
+
+// Use .any() so product_image, gallery_images, and dynamic customField_<id>
+// file uploads all pass through to the controller.
+export const uploadProductFields = upload.any();

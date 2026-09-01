@@ -1,12 +1,23 @@
 name: $(Date:yyyyMMdd).$(Rev:r)
 
+# The API image builds from the REPOSITORY ROOT (npm workspaces keep a single
+# lockfile there), so the triggers cover the shared workspace files too — a
+# change to packages/* or the root manifests changes the image.
 trigger:
   branches:
     include:
       - dev
   paths:
     include:
-      - elixirbooks-typescript-backend/**
+      - apps/api/**
+      - packages/**
+      - scripts/**
+      - package.json
+      - package-lock.json
+      - tsconfig.base.json
+      - turbo.json
+      - .npmrc
+      - .dockerignore
       - azure-pipelines-api.yml
 
 pr:
@@ -15,7 +26,15 @@ pr:
       - dev
   paths:
     include:
-      - elixirbooks-typescript-backend/**
+      - apps/api/**
+      - packages/**
+      - scripts/**
+      - package.json
+      - package-lock.json
+      - tsconfig.base.json
+      - turbo.json
+      - .npmrc
+      - .dockerignore
       - azure-pipelines-api.yml
 
 variables:
@@ -50,8 +69,10 @@ stages:
         command: buildAndPush
         containerRegistry: '$(acrServiceConnection)'
         repository: '$(ACR_REPOSITORY)'
-        dockerfile: 'elixirbooks-typescript-backend/Dockerfile'
-        buildContext: 'elixirbooks-typescript-backend'
+        dockerfile: 'apps/api/Dockerfile'
+        # Repo root: the Dockerfile copies the root lockfile and every workspace
+        # manifest so `npm ci` is reproducible.
+        buildContext: '$(Build.SourcesDirectory)'
         tags: |
           $(invoicingImageTag)
 
