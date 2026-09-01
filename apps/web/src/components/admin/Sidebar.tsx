@@ -1,6 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { NavLink, useLocation, useNavigate, Link } from "react-router-dom";
-import { ChevronDown, Plus, LifeBuoy } from "lucide-react";
+import {
+    ChevronDown,
+    Plus,
+    LifeBuoy,
+    PanelLeftClose,
+    PanelLeftOpen,
+} from "lucide-react";
 import { useSelector } from "react-redux";
 import { assetUrl } from "@utils/assetUrl";
 import BottomBar from "./layouts/BottomBar";
@@ -27,6 +33,17 @@ const getSubLinkClasses = ({ isActive }: { isActive: boolean }) =>
         : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground border-l-4 border-transparent"
     }`;
 
+// Collapsed, the rail is not icon-only: every entry keeps its label, stacked
+// under the icon as a small caption. Anything wider than the rail truncates
+// rather than wrapping, so every row stays the same height.
+const getRowLayoutClasses = (isSidebarOpen: boolean) =>
+    isSidebarOpen ? "flex items-center" : "flex w-full flex-col items-center gap-1";
+
+const getRowLabelClasses = (isSidebarOpen: boolean) =>
+    isSidebarOpen
+        ? "ml-2 font-medium whitespace-nowrap"
+        : "text-[11px] leading-tight truncate w-full text-center font-medium";
+
 
 // --- NavItem Component (for top-level links) ---
 const NavItem = ({
@@ -50,15 +67,14 @@ const NavItem = ({
 
     return (
         <div className="relative group">
-            <NavLink to={to} className={getLinkClasses({ isActive })}>
-                <div className="flex items-center">
+            <NavLink
+                to={to}
+                className={getLinkClasses({ isActive })}
+                title={!isSidebarOpen ? title : undefined}
+            >
+                <div className={getRowLayoutClasses(isSidebarOpen)}>
                     {icon}
-                    <span
-                        className={`ml-2 transition-opacity font-medium duration-300 whitespace-nowrap ${isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-                            }`}
-                    >
-                        {title}
-                    </span>
+                    <span className={getRowLabelClasses(isSidebarOpen)}>{title}</span>
                 </div>
             </NavLink>
             {isSidebarOpen && addPath && canCreate(slug, permissions) && (
@@ -139,15 +155,11 @@ const CollapsibleNavItem = ({
                 onClick={() => onToggle(id)}
                 className={`flex items-center justify-between w-full text-sm font-medium rounded-lg transition-colors duration-300 text-left ${paddingClass} ${activeClass}`}
                 aria-expanded={isOpen}
+                title={!isSidebarOpen ? title : undefined}
             >
-                <div className="flex items-center">
+                <div className={getRowLayoutClasses(isSidebarOpen)}>
                     {icon}
-                    <span
-                        className={`ml-2 transition-opacity duration-300 whitespace-nowrap font-medium ${isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-                            }`}
-                    >
-                        {title}
-                    </span>
+                    <span className={getRowLabelClasses(isSidebarOpen)}>{title}</span>
                 </div>
                 {isSidebarOpen && (
                     <ChevronDown
@@ -274,7 +286,13 @@ const findPathToId = (items: NavItemType[], targetId: string): string[] => {
 };
 
 // --- Main Sidebar Component ---
-const Sidebar = ({ isOpen }: { isOpen: boolean }) => {
+const Sidebar = ({
+    isOpen,
+    onToggle,
+}: {
+    isOpen: boolean;
+    onToggle: () => void;
+}) => {
     const { pathname } = useLocation();
     const navigate = useNavigate();
 
@@ -355,7 +373,7 @@ const Sidebar = ({ isOpen }: { isOpen: boolean }) => {
 
     return (
         <aside
-            className={`bg-sidebar text-sidebar-foreground flex flex-col h-screen transition-all duration-300 ease-in-out z-0 border-r border-sidebar-border ${isOpen ? "w-60" : "w-20"
+            className={`bg-sidebar text-sidebar-foreground flex flex-col h-screen transition-all duration-300 ease-in-out z-0 border-r border-sidebar-border ${isOpen ? "w-60" : "w-24"
                 }`}
         >
             <div className="p-4 flex items-center h-12">
@@ -428,14 +446,34 @@ const Sidebar = ({ isOpen }: { isOpen: boolean }) => {
                     className={getLinkClasses}
                     title={!isOpen ? "Get Help" : undefined}
                 >
-                    <LifeBuoy size={16} />
-                    <span
-                        className={`ml-2 transition-opacity font-medium duration-300 whitespace-nowrap ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-                            }`}
-                    >
-                        Get Help
-                    </span>
+                    <div className={getRowLayoutClasses(isOpen)}>
+                        <LifeBuoy size={16} />
+                        <span className={getRowLabelClasses(isOpen)}>Get Help</span>
+                    </div>
                 </NavLink>
+            </div>
+            {/* The collapse control belongs to the sidebar it drives, not the
+                header: pinned here it keeps the same spot at either width. */}
+            <div className="px-3 pb-1 overflow-x-hidden">
+                <button
+                    type="button"
+                    onClick={onToggle}
+                    aria-expanded={isOpen}
+                    aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+                    className={`flex items-center w-full p-2 my-1 text-sm font-medium rounded-md transition-colors duration-200 cursor-pointer border-l-4 border-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${isOpen ? "" : "justify-center"
+                        }`}
+                >
+                    {isOpen ? (
+                        <PanelLeftClose size={16} />
+                    ) : (
+                        <PanelLeftOpen size={16} />
+                    )}
+                    {isOpen && (
+                        <span className="ml-2 font-medium whitespace-nowrap">
+                            Collapse
+                        </span>
+                    )}
+                </button>
             </div>
             <BottomBar isSidebarOpen={isOpen} />
         </aside>

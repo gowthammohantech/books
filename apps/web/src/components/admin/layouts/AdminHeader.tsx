@@ -1,4 +1,4 @@
-import { LogOut, User, Menu, UserCircle, Search } from 'lucide-react';
+import { LogOut, User, UserCircle, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
@@ -8,13 +8,8 @@ import { assetUrl } from '@utils/assetUrl';
 import { usePageHeader } from '../../../context/PageHeaderContext';
 import { useCommandPalette } from '../../../context/CommandPaletteContext';
 import TenantSwitcher from '../TenantSwitcher';
-interface HeaderProps {
-    toggleSidebar: () => void;
-    /** Drives the toggle button's accessible name and aria-expanded state. */
-    isSidebarOpen?: boolean;
-}
 
-const AdminHeader = ({ toggleSidebar, isSidebarOpen = true }: HeaderProps) => {
+const AdminHeader = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
     const { user } = useSelector((state: RootState) => state.auth);
     // Page-supplied title + action buttons (null when no page sets them).
@@ -37,14 +32,6 @@ const AdminHeader = ({ toggleSidebar, isSidebarOpen = true }: HeaderProps) => {
     return (
         <header className="flex items-center justify-between px-4 py-1 bg-card shadow relative z-30">
             <div className="flex items-center min-w-0 gap-3">
-                <button
-                    onClick={toggleSidebar}
-                    aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-                    aria-expanded={isSidebarOpen}
-                    className="text-gray-500 focus:outline-none cursor-pointer shrink-0"
-                >
-                    <Menu className="w-6 h-6" />
-                </button>
                 {pageTitle && (
                     <h1 className="text-lg md:text-xl font-semibold text-gray-800 truncate">
                         {pageTitle}
