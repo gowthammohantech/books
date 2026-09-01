@@ -24,6 +24,8 @@
  */
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
 
+import { loadBrandLogo } from "@utils/brandLogo";
+
 import { createInvoiceCanvas } from "./invoiceCanvas";
 import { decideRenderMode, pickTextureSize } from "./invoicePaperSupport";
 import type { InvoiceRenderMode } from "./invoicePaperSupport";
@@ -93,21 +95,29 @@ const StaticInvoice = ({ gold, background }: { gold: string; background: string 
         // is a handle, and it can be given back.
         let url: string | null = null;
         let cancelled = false;
-        createInvoiceCanvas({
-            size: pickTextureSize(window.devicePixelRatio, window.innerWidth >= 1024),
-            gold,
-        }).toBlob((blob) => {
-            if (!blob) return;
-            const created = URL.createObjectURL(blob);
-            // toBlob is async, so the scene chunk may already have arrived and
-            // unmounted this. Hand the handle straight back rather than
-            // stranding it.
-            if (cancelled) {
-                URL.revokeObjectURL(created);
-                return;
-            }
-            url = created;
-            setSrc(created);
+        // Waiting for the logo rather than baking twice: unlike the scene, this
+        // path has no texture to swap and would have to rebuild the blob and
+        // re-point the <img>, which is a visible flash of a different
+        // letterhead. It is a cached decode of a 23 kB PNG.
+        loadBrandLogo().then((logo) => {
+            if (cancelled) return;
+            createInvoiceCanvas({
+                size: pickTextureSize(window.devicePixelRatio, window.innerWidth >= 1024),
+                gold,
+                logo,
+            }).toBlob((blob) => {
+                if (!blob) return;
+                const created = URL.createObjectURL(blob);
+                // toBlob is async, so the scene chunk may already have arrived
+                // and unmounted this. Hand the handle straight back rather than
+                // stranding it.
+                if (cancelled) {
+                    URL.revokeObjectURL(created);
+                    return;
+                }
+                url = created;
+                setSrc(created);
+            });
         });
         return () => {
             cancelled = true;
@@ -121,11 +131,11 @@ const StaticInvoice = ({ gold, background }: { gold: string; background: string 
         // Pushed right, and sized, to land where the scene puts the sheet:
         // swapping between the two on a reduced-motion toggle should change
         // how the sheet behaves, not where it is.
-        <div className="flex h-full w-full items-center justify-end overflow-hidden pr-[9%]">
+        <div className="flex h-full w-full items-center justify-end overflow-hidden pr-[7%]">
             <img
                 src={src}
                 alt=""
-                className="h-[66%] w-auto rounded-sm"
+                className="h-[58%] w-auto rounded-sm"
                 style={{
                     transform: "perspective(1200px) rotateY(-14deg) rotateX(6deg)",
                     boxShadow: `0 40px 80px -20px ${background}, 0 0 0 1px rgba(255,255,255,0.08)`,

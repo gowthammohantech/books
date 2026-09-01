@@ -69,11 +69,6 @@ export const paperFragmentChunks = {
         #include <common>
 
         uniform vec3 uAccent;
-        uniform vec3 uGold;
-        uniform vec2 uPointer;
-        uniform float uPointerReach;
-        uniform float uPointerDepth;
-        uniform float uHover;
         uniform float uIntensity;
         uniform float uStockScatter;
 
@@ -132,8 +127,13 @@ export const paperFragmentChunks = {
         // Curl shading, from the analytic normal: the parts of the sheet
         // turning away from the viewer take less light, which is what makes
         // the cosh curl readable as a shape rather than as a warped image.
+        // Curl shading, kept deliberately shallow. At a 0.62 floor the parts of
+        // the sheet turning away lost nearly 40% of their value, and since the
+        // print is the sheet that came off the ink as much as the stock — a
+        // shaded invoice is an unreadable one. 0.86 still gives the cosh curl a
+        // readable shape without dimming a single line of type out of contrast.
         float facing = saturate( dot( normal, viewDir ) );
-        vec3 stock = inkTexel.rgb * mix( 0.62, 1.0, facing );
+        vec3 stock = inkTexel.rgb * mix( 0.86, 1.0, facing );
 
         float scatter = mix( uStockScatter, 1.0, inkMask * uIntensity );
         vec3 paperColor = mix( outgoingLight, stock, scatter );
@@ -142,22 +142,6 @@ export const paperFragmentChunks = {
         // and it is what stops the silhouette dissolving into a dark panel.
         float fresnel = pow( saturate( 1.0 - abs( dot( normal, viewDir ) ) ), 3.0 );
         paperColor += uAccent * fresnel * 0.45 * uIntensity;
-
-        // Hover hotspot. uPointer arrives in NDC and is lifted to a view-space
-        // position between the camera and the sheet — uPointerDepth is
-        // negative, view space looks down -z. Close, not distant: a light
-        // parked behind the camera barely changes direction as the cursor
-        // crosses the panel, and the lobe washes over the whole sheet instead
-        // of travelling across it. From here the specular lobe is driven by
-        // the analytic normal out of the vertex stage, so it rides the curl
-        // rather than sliding over a flat plane.
-        vec3 lightPos = vec3( uPointer * uPointerReach, uPointerDepth );
-        vec3 lightDir = normalize( lightPos + vViewPosition );
-        vec3 halfDir = normalize( lightDir + viewDir );
-        float lobe = pow( max( dot( normal, halfDir ), 0.0 ), 48.0 );
-        // Gained up: a sheet is not a mirror, so N·H peaks well short of 1
-        // and at unity gain the hotspot is there but easy to miss.
-        paperColor += uGold * lobe * uHover * uIntensity * 1.7;
 
         gl_FragColor = vec4( paperColor, diffuseColor.a );
     `,
