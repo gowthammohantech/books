@@ -5,7 +5,7 @@ import type { RegisterFormData } from "@models/register";
 
 import Constants from "@constants/api";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@store/index";
 import { registerUser } from "@store/auth/authSlice";
@@ -161,12 +161,12 @@ const AdminRegister: React.FC = () => {
                         This instance is not accepting new workspaces. Ask an administrator to
                         invite you, or sign in if you already have an account.
                     </p>
-                    <a
-                        href="/signin"
+                    <Link
+                        to="/signin"
                         className="inline-block px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90"
                     >
                         Go to sign in
-                    </a>
+                    </Link>
                 </div>
             </div>
         );
@@ -356,6 +356,13 @@ const AdminRegister: React.FC = () => {
                         </button>
                     </div>
                 </form>
+
+                <p className="mt-6 text-center text-sm text-muted-foreground">
+                    Already have an account?{" "}
+                    <Link to="/signin" className="font-medium text-primary hover:underline">
+                        Sign in
+                    </Link>
+                </p>
             </div>
         </div>
     );

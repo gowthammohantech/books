@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Copy, Check } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { loginUser } from "../../../store/auth/authSlice";
@@ -197,6 +197,13 @@ const LoginPage: React.FC = () => {
             {isLoading ? "Logging in..." : "Login"}
           </button>
         </form>
+
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Don&apos;t have an account?{" "}
+          <Link to="/signup" className="font-medium text-primary hover:underline">
+            Sign up
+          </Link>
+        </p>
 
         {/* Demo credentials — only shown when VITE_DEMO_MODE=true */}
         {DEMO_MODE && (
