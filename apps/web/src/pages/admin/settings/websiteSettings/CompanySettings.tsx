@@ -371,7 +371,7 @@ const CompanySettings: React.FC = () => {
         <div className="p-6 max-w-4xl mx-auto">
             <PageHeader title="Company Settings">
                 <Button type="button" variant="white"
-                    onClick={() => navigate("/admin/dashboard")}>
+                    onClick={() => navigate("/dashboard")}>
                     Cancel
                 </Button>
                 {hasPermission(permissions, 'website-settings', 'edit') &&

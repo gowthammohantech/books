@@ -218,7 +218,7 @@ const ExtractionHistory: FC = () => {
                       {
                         label: 'open',
                         icon: <CheckCircle2 className="text-green-500 hover:text-green-700" size={16} />,
-                        onClick: (j: Job) => navigate(`/admin/purchases/view/${j.resultingPurchaseId}`),
+                        onClick: (j: Job) => navigate(`/purchases/view/${j.resultingPurchaseId}`),
                       },
                     ]
                   : []),

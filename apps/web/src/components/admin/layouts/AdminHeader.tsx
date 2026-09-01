@@ -124,7 +124,7 @@ const AdminHeader = ({ toggleSidebar, isSidebarOpen = true }: HeaderProps) => {
                             </div>
                             <div className="py-1" role="none">
                                 <Link
-                                    to="/admin/settings/profile"
+                                    to="/settings/profile"
                                     className="flex items-center px-4 py-2 text-sm text-popover-foreground hover:bg-accent hover:text-accent-foreground rounded-md mx-2 transition-colors duration-200"
                                     role="menuitem"
                                 >

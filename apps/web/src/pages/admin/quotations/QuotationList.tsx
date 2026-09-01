@@ -87,7 +87,7 @@ const QuotationList: React.FC = () => {
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
     const handleNewQuotationClick = () => {
-        navigate("/admin/quotations/new");
+        navigate("/quotations/new");
     }
 
     const handleSearch = (value: string) => {
@@ -219,10 +219,10 @@ const QuotationList: React.FC = () => {
         setIsStatusModalOpen(true);
     }
     const handleSendMailClick = (item: Quotation) => {
-        navigate(`/admin/quotations/email/${item.id}`);
+        navigate(`/quotations/email/${item.id}`);
     }
     const handleViewClick = (item: Quotation) => {
-        navigate(`/admin/view-quotation/${item.id}`);
+        navigate(`/view-quotation/${item.id}`);
     }
     const handleStatusUpdate = async () => {
         if (!itemToupdateStatus) return;
@@ -239,7 +239,7 @@ const QuotationList: React.FC = () => {
         }
     }
     const handleEditClick = (item: Quotation) => {
-        navigate(`/admin/quotations/edit/${item.id}`);
+        navigate(`/quotations/edit/${item.id}`);
     }
     const handleDeleteClick = (item: Quotation) => {
         setItemToDelete(item);
@@ -315,7 +315,7 @@ const QuotationList: React.FC = () => {
                             <StatusBadge status={quotation.status} />,
                         ]}
                         actions={getTableActions(quotation)}
-                        onRowClick={(item) => navigate(`/admin/view-quotation/${item.id}`)}
+                        onRowClick={(item) => navigate(`/view-quotation/${item.id}`)}
                     />
                 ))}
                 {!isLoading && quotations.length === 0 && (

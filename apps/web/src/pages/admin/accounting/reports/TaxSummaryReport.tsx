@@ -112,7 +112,7 @@ export default function TaxSummaryReport() {
           <section className="border rounded p-4">
             <h2 className="font-medium mb-2">Outward Taxes (collected on sales)</h2>
             {renderRows(data.outwardTaxes, {
-              to: '/admin/invoices',
+              to: '/invoices',
               params: { startDate: from, endDate: to, invoiceType: 'INVOICE' },
               title: 'View source invoices',
             })}
@@ -120,7 +120,7 @@ export default function TaxSummaryReport() {
               <span>Total Outward</span>
               <span>
                 <DrillLink
-                  to="/admin/invoices"
+                  to="/invoices"
                   params={{ startDate: from, endDate: to, invoiceType: 'INVOICE' }}
                   title="View source invoices"
                 >
@@ -133,7 +133,7 @@ export default function TaxSummaryReport() {
           <section className="border rounded p-4">
             <h2 className="font-medium mb-2">Inward Taxes (paid on purchases)</h2>
             {renderRows(data.inwardTaxes, {
-              to: '/admin/purchases',
+              to: '/purchases',
               params: { startDate: from, endDate: to },
               title: 'View source purchases',
             })}
@@ -141,7 +141,7 @@ export default function TaxSummaryReport() {
               <span>Total Inward</span>
               <span>
                 <DrillLink
-                  to="/admin/purchases"
+                  to="/purchases"
                   params={{ startDate: from, endDate: to }}
                   title="View source purchases"
                 >

@@ -11,7 +11,7 @@
  *   - Default CompanySettings tied to that admin
  *
  * After this seed the frontend skips /register and /setup and lands at
- * /admin/login directly. Customers running a clean install should NOT run
+ * /signin directly. Customers running a clean install should NOT run
  * this script — they should go through the onboarding flow instead.
  *
  * Idempotent — re-running updates the demo admin's password without
@@ -118,7 +118,7 @@ async function main(): Promise<void> {
 
   console.log(`Demo admin seeded: ${admin.email}`);
   console.log(`Password: ${DEMO_PASSWORD}`);
-  console.log(`Login at: http://localhost:8080/admin/login`);
+  console.log(`Login at: http://localhost:8080/signin`);
 }
 
 main()

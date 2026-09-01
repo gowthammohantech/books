@@ -112,7 +112,7 @@ export const useEntitySearch = (query: string) => {
                 subtitle: [invoice.customer?.name, invoice.status]
                     .filter(Boolean)
                     .join(" · "),
-                path: `/admin/view-invoice/${invoice.id}`
+                path: `/view-invoice/${invoice.id}`
             }));
         };
 
@@ -128,7 +128,7 @@ export const useEntitySearch = (query: string) => {
                 type: "contact" as const,
                 title: contactName(contact),
                 subtitle: [contact.email, contact.mobile].filter(Boolean).join(" · "),
-                path: `/admin/contacts/${contact.id}`
+                path: `/contacts/${contact.id}`
             }));
         };
 
@@ -144,7 +144,7 @@ export const useEntitySearch = (query: string) => {
                 type: "product" as const,
                 title: product.name ?? "Item",
                 subtitle: [product.code, product.item_type].filter(Boolean).join(" · "),
-                path: `/admin/products/view/${product.id}`
+                path: `/products/view/${product.id}`
             }));
         };
 

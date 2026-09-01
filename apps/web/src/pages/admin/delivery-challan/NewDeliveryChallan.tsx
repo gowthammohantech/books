@@ -686,7 +686,7 @@ const NewDeliveryChallan: React.FC = () => {
             });
 
             toast.success('Delivery Challan created successfully.');
-            navigate('/admin/delivery-challans');
+            navigate('/delivery-challans');
         } catch (error: any) {
             if (error.response?.status !== 200 && error.response?.data?.errors) {
                 setFormErrors(error.response.data.errors);
@@ -1105,7 +1105,7 @@ const NewDeliveryChallan: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => navigate('/admin/delivery-challans')}>Cancel</Button>
+                    <Button variant="white" onClick={() => navigate('/delivery-challans')}>Cancel</Button>
                     <SubmitButton isDisabled={isSaving} isLoading={isSaving} mode='create' />
                 </div>
 

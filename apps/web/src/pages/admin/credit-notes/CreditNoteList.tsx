@@ -90,7 +90,7 @@ const CreditNoteList: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isDeleting, setIsDeleting] = useState<boolean>(false);
     const handleNewCreditNoteClick = () => {
-        navigate("/admin/credit-notes/new");
+        navigate("/credit-notes/new");
     }
 
     const handleSearch = (value: string) => {
@@ -172,7 +172,7 @@ const CreditNoteList: React.FC = () => {
     }
 
     const handleEditClick = (item: Invoice) => {
-        navigate(`/admin/credit-notes/edit/${item.id}`);
+        navigate(`/credit-notes/edit/${item.id}`);
     }
     const handleDeleteClick = (item: Invoice) => {
         setItemToDelete(item);
@@ -239,7 +239,7 @@ const CreditNoteList: React.FC = () => {
                             <InvoiceStatusBadge status={invoice.status} />
                         ]}
                         actions={canEdit || canDelete ? tableActions : undefined}
-                        onRowClick={(item) => navigate(`/admin/credit-notes/view/${item.id}`)}
+                        onRowClick={(item) => navigate(`/credit-notes/view/${item.id}`)}
                     />
                 ))}
                 {!isLoading && invoices && invoices.length === 0 && (

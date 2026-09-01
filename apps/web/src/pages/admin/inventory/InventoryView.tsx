@@ -112,7 +112,7 @@ const InventoryView: React.FC = () => {
         return (
             <div className="space-y-4">
                 <PageHeader title="Inventory Item">
-                    <Button variant="white" onClick={() => navigate("/admin/inventory")}>Back</Button>
+                    <Button variant="white" onClick={() => navigate("/inventory")}>Back</Button>
                 </PageHeader>
                 <Card>
                     <div className="py-10 text-center text-gray-500">Inventory item not found.</div>
@@ -156,7 +156,7 @@ const InventoryView: React.FC = () => {
                 >
                     Download PDF
                 </Button>
-                <Button variant="white" onClick={() => navigate("/admin/inventory")}>
+                <Button variant="white" onClick={() => navigate("/inventory")}>
                     Back
                 </Button>
             </PageHeader>

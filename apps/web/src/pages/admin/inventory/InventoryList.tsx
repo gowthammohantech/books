@@ -106,7 +106,7 @@ const InventoryList: React.FC = () => {
     }, [search, limit, page, token]);
 
     const handleView = (inventory: InventoryData) => {
-        navigate(`/admin/inventory/view/${inventory.id}`);
+        navigate(`/inventory/view/${inventory.id}`);
     }
     const handleStockUpdate = (inventory: InventoryData, type: string) => {
         setFormData(initialFormData);

@@ -132,7 +132,7 @@ const JournalEntryList: React.FC = () => {
                     filename="journal-entries.csv"
                 />
                 <Link
-                    to="/admin/accounting/journal-entries/new"
+                    to="/accounting/journal-entries/new"
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90"
                 >
                     <CirclePlusIcon size={16} /> Add Journal Entry

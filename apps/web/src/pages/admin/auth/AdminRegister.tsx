@@ -162,7 +162,7 @@ const AdminRegister: React.FC = () => {
                         invite you, or sign in if you already have an account.
                     </p>
                     <a
-                        href="/admin/login"
+                        href="/signin"
                         className="inline-block px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90"
                     >
                         Go to sign in

@@ -309,7 +309,7 @@ const RolePermissions: React.FC = () => {
                 <Button
                     type="button"
                     variant="white"
-                    onClick={() => navigate('/admin/roles')}
+                    onClick={() => navigate('/roles')}
                 >
                     Cancel
                 </Button>

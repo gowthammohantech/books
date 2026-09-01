@@ -97,7 +97,7 @@ export default function BalanceSheetReport() {
               <div className="flex justify-between">
                 <span>Cash & Bank</span>
                 <span>
-                  <DrillLink to="/admin/settings/bank-accounts" title="View bank accounts">
+                  <DrillLink to="/settings/bank-accounts" title="View bank accounts">
                     {data.assets.current.cashAndBank.toFixed(2)}
                   </DrillLink>
                 </span>
@@ -106,7 +106,7 @@ export default function BalanceSheetReport() {
                 <span>Accounts Receivable</span>
                 <span>
                   <DrillLink
-                    to="/admin/invoices"
+                    to="/invoices"
                     params={{ endDate: asOf, status: AR_UNPAID_STATUSES, invoiceType: 'INVOICE' }}
                     title="View unpaid invoices"
                   >
@@ -117,7 +117,7 @@ export default function BalanceSheetReport() {
               <div className="flex justify-between">
                 <span>Inventory</span>
                 <span>
-                  <DrillLink to="/admin/inventory" title="View inventory">
+                  <DrillLink to="/inventory" title="View inventory">
                     {data.assets.current.inventory.toFixed(2)}
                   </DrillLink>
                 </span>
@@ -143,7 +143,7 @@ export default function BalanceSheetReport() {
                 <div key={b.id} className="flex justify-between">
                   <span>{b.name}</span>
                   <span>
-                    <DrillLink to="/admin/settings/bank-accounts" title="View bank accounts">
+                    <DrillLink to="/settings/bank-accounts" title="View bank accounts">
                       {b.balance.toFixed(2)}
                     </DrillLink>
                   </span>
@@ -160,7 +160,7 @@ export default function BalanceSheetReport() {
                 <span>Accounts Payable</span>
                 <span>
                   <DrillLink
-                    to="/admin/purchases"
+                    to="/purchases"
                     params={{ endDate: asOf, status: AP_UNPAID_STATUSES }}
                     title="View pending purchases"
                   >

@@ -15,70 +15,70 @@ import type { PermissionSet } from "@models/permissions";
  */
 export const MODULE_LANDING_PATHS: Record<string, { path: string; label: string }> = {
     // Dashboards
-    dashboard: { path: "/admin/dashboard", label: "Dashboard" },
+    dashboard: { path: "/dashboard", label: "Dashboard" },
 
     // Contacts
-    contacts: { path: "/admin/contacts", label: "Contacts" },
+    contacts: { path: "/contacts", label: "Contacts" },
 
     // Sales
-    sales: { path: "/admin/invoices", label: "Sales" },
-    invoices: { path: "/admin/invoices", label: "Invoices" },
-    "recurring-invoices": { path: "/admin/recurring-invoices", label: "Recurring Invoices" },
-    "credit-notes": { path: "/admin/credit-notes", label: "Credit Notes" },
-    quotations: { path: "/admin/quotations", label: "Quotations" },
-    "delivery-challans": { path: "/admin/delivery-challans", label: "Delivery Challans" },
-    vehicles: { path: "/admin/vehicles", label: "Vehicles" },
+    sales: { path: "/invoices", label: "Sales" },
+    invoices: { path: "/invoices", label: "Invoices" },
+    "recurring-invoices": { path: "/recurring-invoices", label: "Recurring Invoices" },
+    "credit-notes": { path: "/credit-notes", label: "Credit Notes" },
+    quotations: { path: "/quotations", label: "Quotations" },
+    "delivery-challans": { path: "/delivery-challans", label: "Delivery Challans" },
+    vehicles: { path: "/vehicles", label: "Vehicles" },
 
     // Purchases
-    purchases: { path: "/admin/purchases", label: "Purchases" },
-    "purchase-list": { path: "/admin/purchases", label: "Purchases" },
-    "purchase-orders": { path: "/admin/purchase-orders", label: "Purchase Orders" },
-    "debit-notes": { path: "/admin/debit-notes", label: "Debit Notes" },
-    "supplier-payments": { path: "/admin/supplier-payments", label: "Supplier Payments" },
+    purchases: { path: "/purchases", label: "Purchases" },
+    "purchase-list": { path: "/purchases", label: "Purchases" },
+    "purchase-orders": { path: "/purchase-orders", label: "Purchase Orders" },
+    "debit-notes": { path: "/debit-notes", label: "Debit Notes" },
+    "supplier-payments": { path: "/supplier-payments", label: "Supplier Payments" },
 
     // Products & Inventory
-    "product-services": { path: "/admin/products", label: "Products" },
-    inventory: { path: "/admin/inventory", label: "Inventory" },
+    "product-services": { path: "/products", label: "Products" },
+    inventory: { path: "/inventory", label: "Inventory" },
 
     // Banking & Finance
-    banking: { path: "/admin/banking", label: "Banking" },
-    "bank-transactions": { path: "/admin/banking/transactions", label: "Bank Transactions" },
-    expenses: { path: "/admin/expenses", label: "Expenses" },
-    "recurring-expenses": { path: "/admin/recurring-expenses", label: "Recurring Expenses" },
-    "payment-transactions": { path: "/admin/payments/transactions", label: "Payment Transactions" },
-    "petty-cash": { path: "/admin/petty-cash", label: "Petty Cash" },
-    "my-money": { path: "/admin/my-money", label: "My Money" },
+    banking: { path: "/banking", label: "Banking" },
+    "bank-transactions": { path: "/banking/transactions", label: "Bank Transactions" },
+    expenses: { path: "/expenses", label: "Expenses" },
+    "recurring-expenses": { path: "/recurring-expenses", label: "Recurring Expenses" },
+    "payment-transactions": { path: "/payments/transactions", label: "Payment Transactions" },
+    "petty-cash": { path: "/petty-cash", label: "Petty Cash" },
+    "my-money": { path: "/my-money", label: "My Money" },
 
     // Payroll
-    payroll: { path: "/admin/payroll/profiles", label: "Payroll" },
-    "time-tracking": { path: "/admin/time-tracking/my-timesheet", label: "Time Tracking" },
-    "time-tracking-others": { path: "/admin/time-tracking/approvals", label: "Timesheet Approvals" },
+    payroll: { path: "/payroll/profiles", label: "Payroll" },
+    "time-tracking": { path: "/time-tracking/my-timesheet", label: "Time Tracking" },
+    "time-tracking-others": { path: "/time-tracking/approvals", label: "Timesheet Approvals" },
 
     // Accounting
-    accounting: { path: "/admin/accounting/chart-of-accounts", label: "Accounting" },
-    "chart-of-accounts": { path: "/admin/accounting/chart-of-accounts", label: "Chart of Accounts" },
-    "journal-entries": { path: "/admin/accounting/journal-entries", label: "Journal Entries" },
+    accounting: { path: "/accounting/chart-of-accounts", label: "Accounting" },
+    "chart-of-accounts": { path: "/accounting/chart-of-accounts", label: "Chart of Accounts" },
+    "journal-entries": { path: "/accounting/journal-entries", label: "Journal Entries" },
 
     // Reports
-    reports: { path: "/admin/reports/sales", label: "Reports" },
-    "transaction-reports": { path: "/admin/reports/sales", label: "Transaction Reports" },
-    "accounting-reports": { path: "/admin/reports/income", label: "Accounting Reports" },
-    "item-reports": { path: "/admin/reports/inventory", label: "Inventory Reports" },
+    reports: { path: "/reports/sales", label: "Reports" },
+    "transaction-reports": { path: "/reports/sales", label: "Transaction Reports" },
+    "accounting-reports": { path: "/reports/income", label: "Accounting Reports" },
+    "item-reports": { path: "/reports/inventory", label: "Inventory Reports" },
 
     // Administration
-    "manage-users": { path: "/admin/users", label: "Administration" },
-    "activity-log": { path: "/admin/activity-log", label: "Activity Log" },
-    ai: { path: "/admin/ai/extractions", label: "AI Extractions" },
+    "manage-users": { path: "/users", label: "Administration" },
+    "activity-log": { path: "/activity-log", label: "Activity Log" },
+    ai: { path: "/ai/extractions", label: "AI Extractions" },
 
     // Settings
-    settings: { path: "/admin/settings/company-settings", label: "Settings" },
-    "website-settings": { path: "/admin/settings/company-settings", label: "General Settings" },
-    "system-settings": { path: "/admin/settings/email-settings", label: "System Settings" },
-    "finance-settings": { path: "/admin/settings/bank-accounts", label: "Finance Settings" },
-    "module-settings": { path: "/admin/settings/module-settings/invoice", label: "Module Settings" },
+    settings: { path: "/settings/company-settings", label: "Settings" },
+    "website-settings": { path: "/settings/company-settings", label: "General Settings" },
+    "system-settings": { path: "/settings/email-settings", label: "System Settings" },
+    "finance-settings": { path: "/settings/bank-accounts", label: "Finance Settings" },
+    "module-settings": { path: "/settings/module-settings/invoice", label: "Module Settings" },
 };
 
-export const UNAUTHORIZED_PATH = "/admin/unauthorized";
+export const UNAUTHORIZED_PATH = "/unauthorized";
 
 const isPermitted = (permission: PermissionSet | undefined): boolean =>
     Boolean(permission && (permission.allowAll || permission.view));

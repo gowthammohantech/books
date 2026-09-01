@@ -346,10 +346,10 @@ export default function TaxReturns() {
                 India GST returns are filed on the dedicated GST filing pages.
               </p>
               <div className="mt-3 flex gap-3 text-sm">
-                <Link className="text-primary hover:underline" to="/admin/accounting/reports/gstr-1">
+                <Link className="text-primary hover:underline" to="/accounting/reports/gstr-1">
                   Go to GSTR-1
                 </Link>
-                <Link className="text-primary hover:underline" to="/admin/accounting/reports/gstr-3b">
+                <Link className="text-primary hover:underline" to="/accounting/reports/gstr-3b">
                   Go to GSTR-3B
                 </Link>
               </div>

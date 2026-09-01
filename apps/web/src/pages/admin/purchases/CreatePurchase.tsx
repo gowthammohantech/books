@@ -1072,7 +1072,7 @@ const CreatePurchase: React.FC = () => {
 
             toast.success('Purchase order saved successfully.');
             isDirtyRef.current = false;
-            navigate('/admin/purchases');
+            navigate('/purchases');
         } catch (error: any) {
             if (error.response?.status !== 200 && error.response?.data?.errors) {
                 setFormErrors(error.response.data.errors);
@@ -1541,7 +1541,7 @@ const CreatePurchase: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => { if (confirmIfDirty(isDirtyRef.current)) navigate('/admin/purchases'); }}>Cancel</Button>
+                    <Button variant="white" onClick={() => { if (confirmIfDirty(isDirtyRef.current)) navigate('/purchases'); }}>Cancel</Button>
                     <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode='create' />
                 </div>
 

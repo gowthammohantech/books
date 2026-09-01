@@ -585,7 +585,7 @@ const ContactCard: React.FC = () => {
         </button>
         <button
           type="button"
-          onClick={() => navigate(`/admin/contacts/edit/${id}`)}
+          onClick={() => navigate(`/contacts/edit/${id}`)}
           className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 text-gray-700"
         >
           <Pencil size={14} />

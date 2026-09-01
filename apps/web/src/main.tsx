@@ -25,10 +25,10 @@ store.dispatch(initializeAuth());
 // should cleanly log the user out and bounce to login, rather than surfacing
 // confusing errors inside forms. Skip when already on the login page.
 //
-// /setup and /register stay on the skip list, though the reason has changed:
-// they were skipped because /admin/login was not a routable path in those
-// router states, which produced a /setup <-> /admin/login flicker. There is one
-// route tree now and /admin/login is always routable, so the flicker is gone -
+// /setup and /signup stay on the skip list, though the reason has changed:
+// they were skipped because the login page was not a routable path in those
+// router states, which produced a /setup <-> login flicker. There is one
+// route tree now and /signin is always routable, so the flicker is gone -
 // but bouncing off these two pages is still wrong. They are where a user
 // completes signup and workspace setup, and a transient 401 there should show
 // inline beside the form rather than discard what they have typed.

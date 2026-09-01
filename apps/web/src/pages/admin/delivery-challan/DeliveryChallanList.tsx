@@ -81,7 +81,7 @@ const DeliveryChallanList: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isDeleting, setIsDeleting] = useState<boolean>(false);
     const handleNewDeliveryChallanClick = () => {
-        navigate("/admin/delivery-challans/new");
+        navigate("/delivery-challans/new");
     }
 
     const handleSearch = (value: string) => {
@@ -157,7 +157,7 @@ const DeliveryChallanList: React.FC = () => {
 
     const tableHeaders = ["#", "Challan ID", "Customer", "Amount", "Created On", "Status", "Actions"];
     const handleEditClick = (item: DeliveryChallanList) => {
-        navigate(`/admin/delivery-challans/edit/${item.id}`);
+        navigate(`/delivery-challans/edit/${item.id}`);
     }
     const handleDeleteClick = (item: DeliveryChallanList) => {
         setItemToDelete(item);
@@ -224,7 +224,7 @@ const DeliveryChallanList: React.FC = () => {
                             <InvoiceStatusBadge status={challan.status} />
                         ]}
                         actions={tableActions}
-                        onRowClick={(item) => navigate(`/admin/delivery-challans/view/${item.id}`)}
+                        onRowClick={(item) => navigate(`/delivery-challans/view/${item.id}`)}
                     />
                 ))}
                 {!isLoading && deliveryChallans && deliveryChallans.length === 0 && (

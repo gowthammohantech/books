@@ -119,7 +119,7 @@ export default function SupplierBalances() {
                       <tr
                         key={row.contactId}
                         className="border-b border-border cursor-pointer hover:bg-gray-50"
-                        onClick={() => navigate(`/admin/contacts/${row.contactId}`)}
+                        onClick={() => navigate(`/contacts/${row.contactId}`)}
                       >
                         <td className="px-4 py-3 text-primary hover:underline">
                           {row.name || '—'}

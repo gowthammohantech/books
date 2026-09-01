@@ -682,7 +682,7 @@ const CreatePurchaseOrder: React.FC = () => {
             });
 
             toast.success('Purchase order saved successfully.');
-            navigate('/admin/purchase-orders');
+            navigate('/purchase-orders');
         } catch (error: any) {
             if (error.response?.status !== 200 && error.response?.data?.errors) {
                 setFormErrors(error.response.data.errors);
@@ -1124,7 +1124,7 @@ const CreatePurchaseOrder: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => navigate('/admin/purchase-orders')}>Cancel</Button>
+                    <Button variant="white" onClick={() => navigate('/purchase-orders')}>Cancel</Button>
                     <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode='create' />
                 </div>
 

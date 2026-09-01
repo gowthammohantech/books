@@ -145,7 +145,7 @@ const PurchaseOrderList: FC = () => {
 
     // Handler to navigate to the 'new purchase order' page
     const handleNewPoClick = () => {
-        navigate("/admin/purchase-orders/new");
+        navigate("/purchase-orders/new");
     };
 
     // Fetch purchase orders whenever search, limit, or page changes
@@ -173,7 +173,7 @@ const PurchaseOrderList: FC = () => {
     };
 
     const handleEditClick = (item: PurchaseOrder) => {
-        navigate(`/admin/purchase-orders/edit/${item.id}`);
+        navigate(`/purchase-orders/edit/${item.id}`);
     };
 
     const handleDeleteClick = (item: PurchaseOrder) => {
@@ -281,7 +281,7 @@ const PurchaseOrderList: FC = () => {
                             ))
                         ]}
                         actions={getTableActions(purchaseOrder)}
-                        onRowClick={(item) => navigate(`/admin/purchase-orders/view/${item.id}`)}
+                        onRowClick={(item) => navigate(`/purchase-orders/view/${item.id}`)}
                     />
                 ))}
 

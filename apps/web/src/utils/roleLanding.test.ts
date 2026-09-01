@@ -22,7 +22,7 @@ describe("resolveLandingPath", () => {
             perm("dashboard", { view: false }),
             perm("invoices", { view: true }),
         ];
-        expect(resolveLandingPath("invoices", permissions)).toBe("/admin/invoices");
+        expect(resolveLandingPath("invoices", permissions)).toBe("/invoices");
     });
 
     it("(b) falls back to the first permitted module when defaultRoute is set but not permitted", () => {
@@ -32,7 +32,7 @@ describe("resolveLandingPath", () => {
             perm("contacts", { view: true }),
         ];
         // defaultRoute points at "invoices" but the role has no view/allowAll there
-        expect(resolveLandingPath("invoices", permissions)).toBe("/admin/contacts");
+        expect(resolveLandingPath("invoices", permissions)).toBe("/contacts");
     });
 
     it("(c) lands on dashboard when no defaultRoute is set and dashboard is permitted", () => {
@@ -40,7 +40,7 @@ describe("resolveLandingPath", () => {
             perm("dashboard", { view: true }),
             perm("invoices", { view: true }),
         ];
-        expect(resolveLandingPath(undefined, permissions)).toBe("/admin/dashboard");
+        expect(resolveLandingPath(undefined, permissions)).toBe("/dashboard");
     });
 
     it("(d) falls back to another permitted module when dashboard is not permitted", () => {
@@ -48,7 +48,7 @@ describe("resolveLandingPath", () => {
             perm("dashboard", { view: false }),
             perm("purchase-list", { allowAll: true }),
         ];
-        expect(resolveLandingPath(undefined, permissions)).toBe("/admin/purchases");
+        expect(resolveLandingPath(undefined, permissions)).toBe("/purchases");
     });
 
     it("(e) returns /admin/unauthorized when nothing is permitted at all", () => {
@@ -65,6 +65,6 @@ describe("resolveLandingPath", () => {
 
     it("ignores a defaultRoute that has no known landing page mapping", () => {
         const permissions = [perm("contacts", { view: true })];
-        expect(resolveLandingPath("not-a-real-module", permissions)).toBe("/admin/contacts");
+        expect(resolveLandingPath("not-a-real-module", permissions)).toBe("/contacts");
     });
 });

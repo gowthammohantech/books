@@ -92,7 +92,7 @@ const ViewQuotation: React.FC = () => {
                 {/* Back Button */}
                 {token &&
                     <button
-                        onClick={() => navigate("/admin/quotations")}
+                        onClick={() => navigate("/quotations")}
                         className="bg-gray-300 hover:bg-gray-400 text-gray-950 px-4 py-2 rounded cursor-pointer"
                     >
                         Back

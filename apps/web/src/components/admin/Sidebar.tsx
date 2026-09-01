@@ -41,10 +41,11 @@ const NavItem = ({
     const { pathname: rawPathname } = useLocation();
     const pathname = resolveSidebarPath(rawPathname);
     const { to, icon, title, slug, addPath, exact } = item;
-    // "/admin" is the collapsed Dashboard entry: keep it lit on every dashboard
-    // view (/admin/dashboard/*) now that the per-view sidebar children are gone.
-    const isActive = to === "/admin"
-        ? pathname === to || pathname.startsWith("/admin/dashboard")
+    // "/" is the Dashboard entry. It is also a prefix of every other route, so
+    // it cannot use the plain startsWith test below — match it exactly, plus the
+    // /dashboard/* views now that the per-view sidebar children are gone.
+    const isActive = to === "/"
+        ? pathname === to || pathname.startsWith("/dashboard")
         : exact ? pathname === to : pathname.startsWith(to);
 
     return (
@@ -84,7 +85,7 @@ const SubNavLinkItem = ({
 
     return (
         <div className="relative group/subitem">
-            <NavLink to={to} end={to === "/admin" || exact} className={getSubLinkClasses}>
+            <NavLink to={to} end={to === "/" || exact} className={getSubLinkClasses}>
                 <span>{title}</span>
             </NavLink>
 
@@ -212,11 +213,11 @@ const CollapsibleNavItem = ({
 
 // --- Helper to find the full path of the active menu ---
 // Some document VIEW routes live outside their list path (e.g.
-// /admin/view-quotation/:id, /admin/view-invoice/:id). Map them to the owning
+// /view-quotation/:id, /view-invoice/:id). Map them to the owning
 // list path so the sidebar highlights the right menu + keeps its group open.
 const SIDEBAR_PATH_ALIASES: ReadonlyArray<readonly [string, string]> = [
-    ["/admin/view-quotation", "/admin/quotations"],
-    ["/admin/view-invoice", "/admin/invoices"],
+    ["/view-quotation", "/quotations"],
+    ["/view-invoice", "/invoices"],
 ];
 const resolveSidebarPath = (pathname: string): string => {
     for (const [from, to] of SIDEBAR_PATH_ALIASES) {
@@ -235,10 +236,10 @@ const findActiveMenuPath = (
                 item.children.some(
                     (child) =>
                         child.type === "link" &&
-                        // "/admin" is the prefix of every admin route — match it
-                        // exactly so the Dashboards group doesn't activate everywhere.
-                        (child.to === "/admin"
-                            ? pathname === "/admin"
+                        // "/" is the prefix of every route — match it exactly
+                        // so the Dashboards group doesn't activate everywhere.
+                        (child.to === "/"
+                            ? pathname === "/"
                             : pathname.startsWith(child.to))
                 )
             ) {
@@ -366,7 +367,7 @@ const Sidebar = ({ isOpen }: { isOpen: boolean }) => {
                     />
                 )}
                 <span
-                    onClick={() => navigate("/admin/dashboard")}
+                    onClick={() => navigate("/dashboard")}
                     className={`text-xl font-medium ml-2 text-gray-950 transition-opacity duration-200 whitespace-nowrap cursor-pointer ${isOpen ? "opacity-100" : "opacity-0"
                         }`}
                 >
@@ -423,7 +424,7 @@ const Sidebar = ({ isOpen }: { isOpen: boolean }) => {
                 scroll position in the nav. */}
             <div className="px-3 pb-1 overflow-x-hidden">
                 <NavLink
-                    to="/admin/help"
+                    to="/help"
                     className={getLinkClasses}
                     title={!isOpen ? "Get Help" : undefined}
                 >

@@ -264,7 +264,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerData = null }) => {
                 });
                 toast.success('Customer created successfully');
             }
-            navigate('/admin/customers');
+            navigate('/customers');
         } catch (error) {
             const axiosError = error as AxiosError<ErrorResponse>;
 
@@ -285,7 +285,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerData = null }) => {
             <PageHeader title={isEditMode ? 'Edit Customer' : 'Add Customer'}>
                 <button
                     type="button"
-                    onClick={() => navigate('/admin/customers')}
+                    onClick={() => navigate('/customers')}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
                 >
                     Cancel

@@ -726,7 +726,7 @@ const EditQuotation: React.FC = () => {
             });
 
             toast.success('Quotation updated successfully.');
-            navigate('/admin/quotations');
+            navigate('/quotations');
         } catch (error: any) {
             if (error.response?.status !== 200 && error.response?.data?.errors) {
                 setFormErrors(error.response.data.errors);
@@ -1172,7 +1172,7 @@ const EditQuotation: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => navigate('/admin/quotations')}>Cancel</Button>
+                    <Button variant="white" onClick={() => navigate('/quotations')}>Cancel</Button>
                     <SubmitButton isDisabled={isSaving} isLoading={isSaving} mode='edit' />
                 </div>
 

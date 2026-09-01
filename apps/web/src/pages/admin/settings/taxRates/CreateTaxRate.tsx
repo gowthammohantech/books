@@ -269,7 +269,7 @@ const TaxRateForm: React.FC<TaxRateFormProps> = ({ taxRateData = null }) => {
                 });
                 toast.success('Tax rate created successfully');
             }
-            navigate('/admin/settings/tax-rates');
+            navigate('/settings/tax-rates');
         } catch (error) {
             const axiosError = error as AxiosError<ErrorResponse>;
             const data = axiosError.response?.data;
@@ -292,7 +292,7 @@ const TaxRateForm: React.FC<TaxRateFormProps> = ({ taxRateData = null }) => {
                 <Button
                     type="button"
                     variant="white"
-                    onClick={() => navigate('/admin/settings/tax-rates')}
+                    onClick={() => navigate('/settings/tax-rates')}
                 >
                     Cancel
                 </Button>

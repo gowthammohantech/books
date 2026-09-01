@@ -265,7 +265,7 @@ const InvoiceActionToolbar: React.FC<InvoiceActionToolbarProps> = ({
             setBusy("DELETE");
             await api.delete(`${Constants.DELETE_INVOICE_URL}/${invoiceId}`);
             toast.success("Invoice deleted");
-            navigate("/admin/invoices");
+            navigate("/invoices");
         } catch (e: any) {
             toast.error(backendError(e) || "Failed to delete invoice");
         } finally {
@@ -288,7 +288,7 @@ const InvoiceActionToolbar: React.FC<InvoiceActionToolbarProps> = ({
             );
             const newId = res.data?.data?.invoice?.id;
             toast.success("Proforma converted to invoice");
-            if (newId) navigate(`/admin/invoices/edit-invoice/${newId}`);
+            if (newId) navigate(`/invoices/edit-invoice/${newId}`);
             else onChanged?.();
         } catch {
             toast.error("Conversion failed");
@@ -314,11 +314,11 @@ const InvoiceActionToolbar: React.FC<InvoiceActionToolbarProps> = ({
     };
 
     // --- navigation --------------------------------------------------------
-    const goEmail = () => navigate(`/admin/invoices/email/${invoiceId}`);
-    const goReminder = () => navigate(`/admin/invoices/email/${invoiceId}?mode=reminder`);
-    const goDuplicate = () => navigate(`/admin/invoices/create-invoice?copyFromId=${invoiceId}`);
-    const goNewInvoice = () => navigate(`/admin/invoices/create-invoice`);
-    const goCreditNote = () => navigate(`/admin/credit-notes/new?invoiceId=${invoiceId}`);
+    const goEmail = () => navigate(`/invoices/email/${invoiceId}`);
+    const goReminder = () => navigate(`/invoices/email/${invoiceId}?mode=reminder`);
+    const goDuplicate = () => navigate(`/invoices/create-invoice?copyFromId=${invoiceId}`);
+    const goNewInvoice = () => navigate(`/invoices/create-invoice`);
+    const goCreditNote = () => navigate(`/credit-notes/new?invoiceId=${invoiceId}`);
 
     // --- status predicates -------------------------------------------------
     const s = (status || "").toUpperCase();

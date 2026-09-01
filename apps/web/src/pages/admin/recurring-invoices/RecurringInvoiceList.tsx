@@ -118,7 +118,7 @@ const RecurringInvoiceList: React.FC = () => {
 
     // Edit the SCHEDULE template (NOT the generated invoice).
     const handleEditClick = (row: RecurringScheduleSummary) => {
-        navigate(`/admin/recurring-schedules/edit/${row.id}`);
+        navigate(`/recurring-schedules/edit/${row.id}`);
     };
 
     const extractMsg = (error: unknown, fallback: string): string =>
@@ -257,7 +257,7 @@ const RecurringInvoiceList: React.FC = () => {
             <PageHeader title="Recurring Invoices">
                 <button
                     type="button"
-                    onClick={() => navigate('/admin/recurring-schedules/new')}
+                    onClick={() => navigate('/recurring-schedules/new')}
                     className="bg-primary hover:bg-primary/90 text-white text-sm font-medium px-4 py-2 rounded-md"
                 >
                     New Recurring Invoice
@@ -289,7 +289,7 @@ const RecurringInvoiceList: React.FC = () => {
                             row.customer
                                 ? (
                                     <Link
-                                        to={`/admin/contacts/${row.customer.id}`}
+                                        to={`/contacts/${row.customer.id}`}
                                         className="text-primary hover:underline"
                                         onClick={(e) => e.stopPropagation()}
                                     >
@@ -368,7 +368,7 @@ const RecurringInvoiceList: React.FC = () => {
                                             <td>
                                                 <Link
                                                     className="text-primary underline"
-                                                    to={`/admin/view-invoice/${o.id}`}
+                                                    to={`/view-invoice/${o.id}`}
                                                 >
                                                     {o.invoiceNumber ?? '—'}
                                                 </Link>

@@ -306,7 +306,7 @@ const DashboardPage: React.FC = () => {
                             Recent Customers
                         </h4>
                         <button
-                            onClick={() => navigate("/admin/customers")}
+                            onClick={() => navigate("/customers")}
                             className="text-sm text-primary hover:text-white hover:bg-primary px-3 py-1 rounded-md flex items-center gap-1 transition-all duration-300">
                             View all <ArrowRight className="w-4 h-4" />
                         </button>
@@ -353,7 +353,7 @@ const DashboardPage: React.FC = () => {
                             Recent Suppliers
                         </h4>
                         <button
-                            onClick={() => navigate("/admin/suppliers")}
+                            onClick={() => navigate("/suppliers")}
                             className="text-sm text-green-600 hover:text-white hover:bg-green-600 px-3 py-1 rounded-md flex items-center gap-1 transition-all duration-300">
                             View all <ArrowRight className="w-4 h-4" />
                         </button>
@@ -399,7 +399,7 @@ const DashboardPage: React.FC = () => {
                         Recent Invoices
                     </h4>
                     <button
-                        onClick={() => navigate("/admin/invoices")}
+                        onClick={() => navigate("/invoices")}
                         className="text-sm text-blue-600 hover:text-white hover:bg-blue-600 px-3 py-1 rounded-md flex items-center gap-1 transition-all duration-300">
                         View all <ArrowRight className="w-4 h-4" />
                     </button>
@@ -492,7 +492,7 @@ const DashboardPage: React.FC = () => {
                             Recent Purchases
                         </h4>
                         <button
-                            onClick={() => navigate("/admin/purchases")}
+                            onClick={() => navigate("/purchases")}
                             className="text-sm text-green-600 hover:text-white hover:bg-green-600 px-3 py-1 rounded-md flex items-center gap-1 transition-all duration-300">
                             View all <ArrowRight className="w-4 h-4" />
                         </button>

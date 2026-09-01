@@ -73,7 +73,7 @@ const EditVehicle: React.FC = () => {
             });
             toast.success('Vehicle deleted successfully');
             setDeleteModalOpen(false);
-            navigate('/admin/vehicles');
+            navigate('/vehicles');
         } catch (error) {
             console.error('Error deleting vehicle:', error);
             toast.error('Failed to delete vehicle.');

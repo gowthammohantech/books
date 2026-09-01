@@ -110,7 +110,7 @@ const DebitNoteList: FC = () => {
 
     // Handler to navigate to the 'new purchase order' page
     const handleNewDebitNoteClick = () => {
-        navigate("/admin/debit-notes/new");
+        navigate("/debit-notes/new");
     };
 
     // Fetch debitNotes whenever search, limit, or page changes
@@ -226,7 +226,7 @@ const DebitNoteList: FC = () => {
                             <StatusBadge status={debitNote.status} />,
                         ]}
                         actions={showActions ? tableActions : undefined}
-                        onRowClick={(item) => navigate(`/admin/debit-notes/view/${item.id}`)}
+                        onRowClick={(item) => navigate(`/debit-notes/view/${item.id}`)}
                     />
                 ))}
 

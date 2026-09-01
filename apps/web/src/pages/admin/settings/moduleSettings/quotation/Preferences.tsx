@@ -142,7 +142,7 @@ const Preferences: React.FC = () => {
     return (
         <div className="space-y-6">
             <PageHeader title="Quotation Preferences">
-                <Button type="button" variant="white" onClick={(_) => navigate('/admin')}>Cancel</Button>
+                <Button type="button" variant="white" onClick={(_) => navigate('/')}>Cancel</Button>
                 <SubmitButton form="quotation-preferences-form" isDisabled={isSubmitting} isLoading={isSubmitting} mode="edit" />
             </PageHeader>
             <form id="quotation-preferences-form" onSubmit={handleSubmit}>
@@ -171,7 +171,7 @@ const Preferences: React.FC = () => {
                             <span className="font-semibold">Customer Notes</span> are now managed under{" "}
                             <button
                                 type="button"
-                                onClick={() => navigate('/admin/settings/document-defaults')}
+                                onClick={() => navigate('/settings/document-defaults')}
                                 className="font-semibold text-primary underline cursor-pointer"
                             >
                                 Settings → Document Defaults

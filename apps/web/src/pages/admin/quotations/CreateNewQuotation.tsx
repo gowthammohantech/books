@@ -727,7 +727,7 @@ const CreateNewQuotation: React.FC = () => {
 
             toast.success('Quotation saved successfully.');
             isDirtyRef.current = false;
-            navigate('/admin/quotations');
+            navigate('/quotations');
         } catch (error: any) {
             if (error.response?.status !== 200 && error.response?.data?.errors) {
                 const serverErrors = error.response.data.errors;
@@ -1157,7 +1157,7 @@ const CreateNewQuotation: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => { if (confirmIfDirty(isDirtyRef.current)) navigate('/admin/quotations'); }}>Cancel</Button>
+                    <Button variant="white" onClick={() => { if (confirmIfDirty(isDirtyRef.current)) navigate('/quotations'); }}>Cancel</Button>
                     <Button
                         disabled={isSaving}
                         onClick={handleSaveAsDraft}

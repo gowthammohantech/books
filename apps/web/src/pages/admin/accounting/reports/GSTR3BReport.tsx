@@ -170,7 +170,7 @@ responseType: 'blob'
             <TaxBlockRow
               block={data['3.1_outwardSupplies']}
               drill={{
-                to: '/admin/invoices',
+                to: '/invoices',
                 params: { startDate: from, endDate: to, invoiceType: 'INVOICE' },
                 title: 'View source invoices'
               }}
@@ -190,7 +190,7 @@ responseType: 'blob'
             <TaxBlockRow
               block={data['4_itcEligible']}
               drill={{
-                to: '/admin/purchases',
+                to: '/purchases',
                 params: { startDate: from, endDate: to },
                 title: 'View source purchases'
               }}

@@ -1,5 +1,4 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import AdminLogin from "@pages/admin/auth/AdminLogin";
 import AdminDashboard from "@pages/admin/AdminDashboard";
 import SalesDashboard from "@pages/admin/dashboard/SalesDashboard";
 import AccountsDashboard from "@pages/admin/dashboard/AccountsDashboard";
@@ -162,8 +161,6 @@ import ContactCard from "@pages/admin/contacts/ContactCard";
 const AdminRoute = () => {
     return (
         <Routes>
-            <Route path="/login" element={<><Seo title="Login" /><AdminLogin /></>} />
-
             <Route element={<AdminLayout />}>
                 {/* Dashboard */}
                 <Route element={<ProtectedRoute moduleSlug="dashboard" action="view" />}>
@@ -242,7 +239,7 @@ const AdminRoute = () => {
 
                 {/* Customers — list redirects to Contacts; detail/edit/statement routes kept for deep links */}
                 <Route element={<ProtectedRoute moduleSlug="customers" action="view" />}>
-                    <Route path="/customers" element={<Navigate to="/admin/contacts" replace />} />
+                    <Route path="/customers" element={<Navigate to="/contacts" replace />} />
                     <Route path="/customers/new" element={<><Seo title="New Customer" /><CustomerForm /></>} />
                     <Route path="/customers/edit/:id" element={<><Seo title="Edit Customer" /><EditCustomer /></>} />
                     <Route path="/customers/:id/statement" element={<><Seo title="Customer Statement" /><CustomerStatement /></>} />
@@ -301,7 +298,7 @@ const AdminRoute = () => {
                     <Route path="/settings/tax-rates/new" element={<><Seo title="New Tax" /><CreateTaxRate /></>} />
                     <Route path="/settings/tax-rates/edit/:id" element={<><Seo title="Edit Tax" /><EditTaxRate /></>} />
                     {/* Tax Groups merged into Taxes (spec 2026-07-12) — old deep links land on Taxes */}
-                    <Route path="/settings/tax-groups" element={<Navigate to="/admin/settings/tax-rates" replace />} />
+                    <Route path="/settings/tax-groups" element={<Navigate to="/settings/tax-rates" replace />} />
                     <Route path="/settings/currencies" element={<><Seo title="Currencies" /><CurrencyList /></>} />
                     <Route path="/settings/ledger-setup" element={<><Seo title="Ledger Setup" /><LedgerSetupWizard /></>} />
                     <Route path="/settings/document-defaults" element={<><Seo title="Document Defaults" /><DocumentDefaultsPage /></>} />
@@ -332,7 +329,7 @@ const AdminRoute = () => {
 
                 {/* Suppliers — list redirects to Contacts */}
                 <Route element={<ProtectedRoute moduleSlug="suppliers" action="view" />}>
-                    <Route path="/suppliers" element={<Navigate to="/admin/contacts" replace />} />
+                    <Route path="/suppliers" element={<Navigate to="/contacts" replace />} />
                 </Route>
 
                 <Route element={<ProtectedRoute moduleSlug="supplier-payments" action="view" />}>

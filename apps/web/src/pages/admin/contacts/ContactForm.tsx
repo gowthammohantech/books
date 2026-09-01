@@ -296,7 +296,7 @@ const ContactForm: React.FC = () => {
                 });
                 toast.success('Contact created successfully');
             }
-            navigate('/admin/contacts');
+            navigate('/contacts');
         } catch (error) {
             const axiosError = error as AxiosError<ErrorResponse>;
             const data = axiosError.response?.data;
@@ -326,7 +326,7 @@ const ContactForm: React.FC = () => {
             <PageHeader title={isEditMode ? 'Edit Contact' : 'New Contact'}>
                 <Button
                     variant="white"
-                    onClick={() => navigate('/admin/contacts')}
+                    onClick={() => navigate('/contacts')}
                 >
                     Cancel
                 </Button>

@@ -144,7 +144,7 @@ const LocalizationSettings: React.FC = () => {
                     variant="white"
                     leftIcon={<X size={16} />}
                     disabled={isLoading || isSaving}
-                    onClick={() => navigate('/admin/dashboard')}
+                    onClick={() => navigate('/dashboard')}
                 >
                     Cancel
                 </Button>

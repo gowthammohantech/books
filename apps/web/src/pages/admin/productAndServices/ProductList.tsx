@@ -133,7 +133,7 @@ const ProductList: FC = () => {
 
     // Action handlers
     const handleEditClick = (product: Product) => {
-        navigate(`/admin/products/edit/${product.id}`);
+        navigate(`/products/edit/${product.id}`);
     };
 
     const handleDeleteClick = (product: Product) => {
@@ -222,7 +222,7 @@ const ProductList: FC = () => {
                 }
                 {hasPermission(permissions, 'product-services', 'create') &&
                     <Button
-                        onClick={() => navigate('/admin/products/new')}
+                        onClick={() => navigate('/products/new')}
                         leftIcon={<CirclePlusIcon size={14} />}
                         className="shadow"
                     >
@@ -306,7 +306,7 @@ const ProductList: FC = () => {
                             <span onClick={(e) => e.stopPropagation()}><Switch name={`status-${product.id}`} checked={product.status} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStausChange(product.id, e.target.checked)} disabled={!hasPermission(permissions, 'product-services', 'edit')} /></span>,
                         ]}
                         actions={canEdit || canDelete ? tableActions : undefined}
-                        onRowClick={(item) => navigate(`/admin/products/view/${item.id}`)}
+                        onRowClick={(item) => navigate(`/products/view/${item.id}`)}
                     />
                 ))
                 }

@@ -809,7 +809,7 @@ const EditDeliveryChallan: React.FC = () => {
             });
 
             toast.success('Delivery Challan updated successfully.');
-            navigate('/admin/delivery-challans');
+            navigate('/delivery-challans');
         } catch (error: any) {
             if (error.response?.status !== 200 && error.response?.data?.errors) {
                 setFormErrors(error.response.data.errors);
@@ -1254,7 +1254,7 @@ const EditDeliveryChallan: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex justify-end mt-4 gap-3">
-                    <Button type='button' variant="white" onClick={() => navigate('/admin/delivery-challans')}>Cancel</Button>
+                    <Button type='button' variant="white" onClick={() => navigate('/delivery-challans')}>Cancel</Button>
                     <SubmitButton isDisabled={isSaving} isLoading={isSaving} mode="edit" />
                 </div>
 

@@ -157,7 +157,7 @@ responseType: 'blob'
                 <div className="text-xs text-gray-500">Total Invoices</div>
                 <div className="font-medium">
                   <DrillLink
-                    to="/admin/invoices"
+                    to="/invoices"
                     params={{ startDate: from, endDate: to, invoiceType: 'INVOICE' }}
                     title="View source invoices"
                   >
@@ -169,7 +169,7 @@ responseType: 'blob'
                 <div className="text-xs text-gray-500">Taxable Value</div>
                 <div className="font-medium">
                   <DrillLink
-                    to="/admin/invoices"
+                    to="/invoices"
                     params={{ startDate: from, endDate: to, invoiceType: 'INVOICE' }}
                     title="View source invoices"
                   >
@@ -181,7 +181,7 @@ responseType: 'blob'
                 <div className="text-xs text-gray-500">CGST</div>
                 <div className="font-medium">
                   <DrillLink
-                    to="/admin/invoices"
+                    to="/invoices"
                     params={{ startDate: from, endDate: to, invoiceType: 'INVOICE' }}
                     title="View source invoices"
                   >
@@ -193,7 +193,7 @@ responseType: 'blob'
                 <div className="text-xs text-gray-500">SGST</div>
                 <div className="font-medium">
                   <DrillLink
-                    to="/admin/invoices"
+                    to="/invoices"
                     params={{ startDate: from, endDate: to, invoiceType: 'INVOICE' }}
                     title="View source invoices"
                   >
@@ -205,7 +205,7 @@ responseType: 'blob'
                 <div className="text-xs text-gray-500">IGST</div>
                 <div className="font-medium">
                   <DrillLink
-                    to="/admin/invoices"
+                    to="/invoices"
                     params={{ startDate: from, endDate: to, invoiceType: 'INVOICE' }}
                     title="View source invoices"
                   >
@@ -217,7 +217,7 @@ responseType: 'blob'
                 <div className="text-xs text-gray-500">CESS</div>
                 <div className="font-medium">
                   <DrillLink
-                    to="/admin/invoices"
+                    to="/invoices"
                     params={{ startDate: from, endDate: to, invoiceType: 'INVOICE' }}
                     title="View source invoices"
                   >
@@ -229,7 +229,7 @@ responseType: 'blob'
                 <div className="text-xs text-gray-500">Total Tax</div>
                 <div className="font-medium">
                   <DrillLink
-                    to="/admin/invoices"
+                    to="/invoices"
                     params={{ startDate: from, endDate: to, invoiceType: 'INVOICE' }}
                     title="View source invoices"
                   >
@@ -269,7 +269,7 @@ responseType: 'blob'
                         <td className="px-3 py-2">{formatDate(r.date)}</td>
                         <td className="px-3 py-2 text-right">
                           <DrillLink
-                            to="/admin/invoices"
+                            to="/invoices"
                             params={{ startDate: from, endDate: to, invoiceType: 'INVOICE' }}
                             title="View source invoices"
                           >
@@ -281,7 +281,7 @@ responseType: 'blob'
                         <td className="px-3 py-2 text-right">{r.igst.toFixed(2)}</td>
                         <td className="px-3 py-2 text-right font-medium">
                           <DrillLink
-                            to="/admin/invoices"
+                            to="/invoices"
                             params={{ startDate: from, endDate: to, invoiceType: 'INVOICE' }}
                             title="View source invoices"
                           >

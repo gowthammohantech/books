@@ -186,7 +186,7 @@ const PurchaseList: FC = () => {
 
     // Handler to navigate to the 'new purchase order' page
     const handleNewPurchaseClick = () => {
-        navigate("/admin/purchases/new");
+        navigate("/purchases/new");
     };
 
     // Fetch purchases whenever search, limit, or page changes
@@ -213,7 +213,7 @@ const PurchaseList: FC = () => {
     };
 
     const handleEditClick = (item: Purchase) => {
-        navigate(`/admin/purchases/edit/${item.id}`);
+        navigate(`/purchases/edit/${item.id}`);
     };
 
     const handleDeleteClick = (item: Purchase) => {
@@ -298,7 +298,7 @@ const PurchaseList: FC = () => {
                 onClose={() => setShowScanBill(false)}
                 onConfirmed={(purchaseId) => {
                     setShowScanBill(false);
-                    navigate(`/admin/purchases/edit/${purchaseId}`);
+                    navigate(`/purchases/edit/${purchaseId}`);
                 }}
             />
 
@@ -340,7 +340,7 @@ const PurchaseList: FC = () => {
                             ))
                         ]}
                         actions={getTableActions(purchase)}
-                        onRowClick={(item) => navigate(`/admin/purchases/view/${item.id}`)}
+                        onRowClick={(item) => navigate(`/purchases/view/${item.id}`)}
                     />
                 ))}
 

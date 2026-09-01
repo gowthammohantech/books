@@ -36,7 +36,7 @@ const LoginPage: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated) {
       const path = activeTenant?.isOwner
-        ? "/admin/dashboard"
+        ? "/dashboard"
         : resolveLandingPath(systemSettings?.defaultRoute, systemSettings?.permissions);
       navigate(path);
     }
@@ -64,7 +64,7 @@ const LoginPage: React.FC = () => {
       // (last used, else oldest membership) and tells us which role the user
       // holds THERE.
       const path = tenant?.isOwner
-        ? "/admin/dashboard"
+        ? "/dashboard"
         : resolveLandingPath(settings?.defaultRoute, settings?.permissions);
       navigate(path);
     }

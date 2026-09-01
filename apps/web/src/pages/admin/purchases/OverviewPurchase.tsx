@@ -129,7 +129,7 @@ const OverviewPurchase: React.FC = () => {
                     type="button"
                     variant="white"
                     size="sm"
-                    onClick={() => navigate("/admin/purchases")}
+                    onClick={() => navigate("/purchases")}
                 >
                     Back
                 </Button>

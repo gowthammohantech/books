@@ -242,7 +242,7 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ vehicleData = null }) => {
                 });
                 toast.success('Vehicle created successfully');
             }
-            navigate('/admin/vehicles');
+            navigate('/vehicles');
         } catch (error) {
             const axiosError = error as AxiosError<ErrorResponse>;
             const data = axiosError.response?.data;
@@ -267,7 +267,7 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ vehicleData = null }) => {
             <PageHeader title={isEditMode ? 'Edit Vehicle' : 'Add Vehicle'}>
                 <Button
                     variant="white"
-                    onClick={() => navigate('/admin/vehicles')}
+                    onClick={() => navigate('/vehicles')}
                 >
                     Cancel
                 </Button>

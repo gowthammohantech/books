@@ -1247,7 +1247,7 @@ const EditInvoice: React.FC = () => {
             });
             toast.success('Invoice updated successfully.');
             isDirtyRef.current = false;
-            navigate('/admin/invoices');
+            navigate('/invoices');
         } catch (error: any) {
             if (error.response?.status !== 200 && error.response?.data?.errors) {
                 setFormErrors(error.response.data.errors);
@@ -1312,7 +1312,7 @@ const EditInvoice: React.FC = () => {
                         >
                             Retry
                         </Button>
-                        <Link to="/admin/invoices" className="text-sm font-medium text-primary hover:underline">
+                        <Link to="/invoices" className="text-sm font-medium text-primary hover:underline">
                             Back to Invoices
                         </Link>
                     </div>
@@ -1376,7 +1376,7 @@ const EditInvoice: React.FC = () => {
                     {invoiceData?.parentInvoice && (
                         <div className="rounded-md bg-info-soft border border-info text-info-strong p-3 mb-4 text-sm">
                             Generated from recurring schedule.{' '}
-                            <a href={`/admin/invoices/edit-invoice/${invoiceData.parentInvoice}`} className="underline">
+                            <a href={`/invoices/edit-invoice/${invoiceData.parentInvoice}`} className="underline">
                                 View parent
                             </a>
                         </div>
@@ -1747,7 +1747,7 @@ const EditInvoice: React.FC = () => {
                                             </Select>
                                             <Button
                                                 variant="white"
-                                                onClick={() => window.open(`/admin/vehicles/new?customerId=${selectedCustomer.id}`, '_blank')}
+                                                onClick={() => window.open(`/vehicles/new?customerId=${selectedCustomer.id}`, '_blank')}
                                                 className="whitespace-nowrap"
                                             >
                                                 + Add vehicle
@@ -2110,7 +2110,7 @@ const EditInvoice: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => { if (confirmIfDirty(isDirtyRef.current)) navigate('/admin/invoices'); }}>{isEditable ? 'Cancel' : 'Back'}</Button>
+                    <Button variant="white" onClick={() => { if (confirmIfDirty(isDirtyRef.current)) navigate('/invoices'); }}>{isEditable ? 'Cancel' : 'Back'}</Button>
                     {isEditable && (
                         <SubmitButton isDisabled={isSubmitting || !!invoiceData?.convertedAt} isLoading={isSubmitting} mode='edit' />
                     )}

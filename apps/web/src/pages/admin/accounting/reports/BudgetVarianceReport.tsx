@@ -138,7 +138,7 @@ export default function BudgetVarianceReport() {
                       <td className="px-4 py-3 text-xs text-muted-foreground">{row.accountType}</td>
                       <td className="px-4 py-3 text-right font-mono">{fmt(row.budget)}</td>
                       <td className="px-4 py-3 text-right font-mono">
-                        <DrillLink to="/admin/accounting/journal-entries" params={{ accountId: row.accountId, from, to }} title="View journal entries for this account">{fmt(row.actual)}</DrillLink>
+                        <DrillLink to="/accounting/journal-entries" params={{ accountId: row.accountId, from, to }} title="View journal entries for this account">{fmt(row.actual)}</DrillLink>
                       </td>
                       <td className={`px-4 py-3 text-right font-mono ${Number(row.variance) < 0 ? 'text-destructive' : 'text-success'}`}>
                         {fmt(row.variance)}

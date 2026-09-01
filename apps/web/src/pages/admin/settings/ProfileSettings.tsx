@@ -327,7 +327,7 @@ const ProfileSettings: React.FC = () => {
                 <Button
                     type="button"
                     variant="white"
-                    onClick={() => navigate("/admin/dashboard")}
+                    onClick={() => navigate("/dashboard")}
                 >
                     Cancel
                 </Button>

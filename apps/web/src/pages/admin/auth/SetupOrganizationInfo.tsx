@@ -235,7 +235,7 @@ const SetupOrganizationInfo: React.FC = () => {
             if (token) dispatch(fetchSystemSettings(token));
             toast.success('Company info updated successfully.');
             //navigate with page refresh to trigger setup status change
-            window.location.replace("/admin/dashboard");
+            window.location.replace("/dashboard");
         } catch (error) {
             toast.error('Failed to update company info.');
         } finally {

@@ -115,16 +115,16 @@ export default function TrialBalanceReport() {
                       <td className="px-4 py-3 text-xs text-muted-foreground">{a.accountType}</td>
                       <td className="px-4 py-3 text-right">
                         {a.totalDebit > 0
-                          ? <DrillLink to="/admin/accounting/journal-entries" params={{ accountId: a.id, to: data.asOf.slice(0, 10) }} title="View journal entries for this account">{a.totalDebit.toFixed(2)}</DrillLink>
+                          ? <DrillLink to="/accounting/journal-entries" params={{ accountId: a.id, to: data.asOf.slice(0, 10) }} title="View journal entries for this account">{a.totalDebit.toFixed(2)}</DrillLink>
                           : '—'}
                       </td>
                       <td className="px-4 py-3 text-right">
                         {a.totalCredit > 0
-                          ? <DrillLink to="/admin/accounting/journal-entries" params={{ accountId: a.id, to: data.asOf.slice(0, 10) }} title="View journal entries for this account">{a.totalCredit.toFixed(2)}</DrillLink>
+                          ? <DrillLink to="/accounting/journal-entries" params={{ accountId: a.id, to: data.asOf.slice(0, 10) }} title="View journal entries for this account">{a.totalCredit.toFixed(2)}</DrillLink>
                           : '—'}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <DrillLink to="/admin/accounting/journal-entries" params={{ accountId: a.id, to: data.asOf.slice(0, 10) }} title="View journal entries for this account">{a.net.toFixed(2)}</DrillLink>
+                        <DrillLink to="/accounting/journal-entries" params={{ accountId: a.id, to: data.asOf.slice(0, 10) }} title="View journal entries for this account">{a.net.toFixed(2)}</DrillLink>
                       </td>
                     </tr>
                   ))
