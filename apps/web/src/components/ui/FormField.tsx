@@ -14,6 +14,7 @@ import {
 export const fieldControlClasses = (invalid = false) =>
   [
     "w-full bg-muted border rounded-md px-3 py-2 text-[13px] text-foreground",
+    "min-h-[2.25rem] coarse:min-h-[2.75rem]",
     "placeholder:text-muted-foreground outline-none transition-colors",
     "focus:ring-1 disabled:opacity-60 disabled:cursor-not-allowed",
     invalid

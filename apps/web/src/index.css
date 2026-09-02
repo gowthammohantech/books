@@ -11,6 +11,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Touch. The app had no `(pointer: coarse)` handling at all — the only @media
+   in the entire UI source was prefers-reduced-motion — so every control was
+   sized for a mouse on every device. */
+@custom-variant coarse (@media (pointer: coarse));
+
 /* ---------------------------------------------------------------------------
    Design tokens.
 
@@ -341,6 +346,53 @@ main {
 
   input[type="number"] {
     -moz-appearance: textfield;
+  }
+
+  /* ---- Hit-target floor -------------------------------------------------
+     A layout audit across 139 routes found a control below the 32px minimum
+     on 646 of 650 route x viewport combinations, spread over 128 distinct
+     class signatures — far too many to fix one call site at a time, and they
+     would only come back. So the floor is enforced once, here.
+
+     `min-block-size`, not padding: padding would inflate a dense table row,
+     whereas a min-height raises the box to exactly the floor and stops. And
+     `:where()`, so the whole thing has zero specificity — any component class
+     still wins, and `[data-hit="tight"]` is the deliberate opt-out.
+
+     The values are rem literals rather than spacing multiples on purpose:
+     they must NOT move when the density scale rescales `--spacing`. That is
+     the entire point of them. */
+  :where(
+      button,
+      [role="button"],
+      a[role="button"],
+      summary,
+      select,
+      textarea,
+      input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"])
+    ):not([data-hit="tight"]) {
+    min-block-size: 2rem;
+  }
+
+  @media (pointer: coarse) {
+    :where(
+        button,
+        [role="button"],
+        a[role="button"],
+        summary,
+        select,
+        textarea,
+        input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"])
+      ):not([data-hit="tight"]) {
+      min-block-size: 2.75rem;
+    }
+
+    /* A 44px checkbox glyph is wrong; a 44px clickable label is right. */
+    :where(label:has(> input[type="checkbox"]), label:has(> input[type="radio"])) {
+      display: flex;
+      align-items: center;
+      min-block-size: 2.75rem;
+    }
   }
 }
 
