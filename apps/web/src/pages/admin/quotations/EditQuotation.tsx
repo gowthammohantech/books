@@ -1,4 +1,5 @@
 import api from '@lib/apiClient';
+import { computeDocumentTotals, type TotalsItem } from '@elixirbooks/money';
 import { computeLineTotals, lineTaxPercent as resolveLineTaxPercent } from '@lib/documentLineMath';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { PlusCircle, Edit3 } from 'lucide-react';
@@ -39,7 +40,6 @@ import { hydrateLineCentres } from '@lib/costCentre';
 import { useCurrencies } from '@hooks/useCurrencies';
 import { PageHeader } from "@/context/PageHeaderContext";
 import { Button } from "@components/ui";
-import { round2 } from '@utils/round2';
 import { useLineItemCustomFields } from '@hooks/useLineItemCustomFields';
 import { validateLineCustomFields } from '@lib/lineCustomFields';
 
@@ -472,17 +472,14 @@ const EditQuotation: React.FC = () => {
 
     // --- DYNAMIC CALCULATIONS ---
     const { subTotal, totalTax, totalDiscount, grandTotal } = useMemo(() => {
-        const totals = quotationFormData.items.reduce((acc, item) => {
-            acc.subTotal += item.rate * item.qty;
-            acc.totalDiscount += item.discount;
-            acc.totalTax += item.tax;
-            return acc;
-        }, { subTotal: 0, totalTax: 0, totalDiscount: 0 });
-        const grand_total = totals.subTotal - totals.totalDiscount + totals.totalTax;
-        const roundedSubTotal = round2(totals.subTotal);
-        const roundedTotalTax = round2(totals.totalTax);
-        const roundedTotalDiscount = round2(totals.totalDiscount);
-        const roundedGrandTotal = round2(grand_total);
+        // Decimal accumulation, and tax on the discounted base — the same code
+        // the server recomputes and persists with, so the figure on screen and
+        // the figure stored derive from one implementation.
+        const totals = computeDocumentTotals(quotationFormData.items as unknown as TotalsItem[]);
+        const roundedSubTotal = totals.subTotal;
+        const roundedTotalTax = totals.totalTax;
+        const roundedTotalDiscount = totals.totalDiscount;
+        const roundedGrandTotal = totals.grandTotal;
         setQuotationFormData(prev => ({ ...prev, subTotal: roundedSubTotal, totalTax: roundedTotalTax, totalDiscount: roundedTotalDiscount, grandTotal: roundedGrandTotal }));
         return { subTotal: roundedSubTotal, totalTax: roundedTotalTax, totalDiscount: roundedTotalDiscount, grandTotal: roundedGrandTotal };
     }, [quotationFormData.items]);
