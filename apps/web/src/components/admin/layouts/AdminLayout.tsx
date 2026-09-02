@@ -74,15 +74,19 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           any page can open it via useCommandPalette(). */}
       <CommandPaletteProvider>
         <AgentPanelProvider>
-          <div className="density-compact flex h-screen bg-background font-sans print:block print:h-auto">
+          <div className="density-compact flex h-dvh overflow-hidden bg-background font-sans print:block print:h-auto print:overflow-visible">
             <div className="print:hidden">
               <Sidebar isOpen={isSidebarOpen} onToggle={toggleSidebar} />
             </div>
-            <div className="flex-1 flex flex-col overflow-hidden print:overflow-visible min-w-0">
+            {/* min-h-0 is load-bearing: a flex child defaults to min-height:auto
+                and refuses to shrink below its content, which silently defeats
+                the overflow-y-auto on <main> below. overflow-hidden masks that
+                today; it stops masking it once children carry flex heights. */}
+            <div className="flex-1 flex flex-col overflow-hidden print:overflow-visible min-w-0 min-h-0">
               <div className="print:hidden">
                 <Header />
               </div>
-              <main ref={mainRef} className="flex-1 overflow-x-hidden overflow-y-auto p-4 print:overflow-visible">
+              <main ref={mainRef} className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto p-3 lg:p-4 print:overflow-visible">
                 {/* Caps line length on wide monitors. Put here rather than in a
                     <PageContainer> every page opts into: with 160 route entries
                     that migration would be 70% done forever. */}

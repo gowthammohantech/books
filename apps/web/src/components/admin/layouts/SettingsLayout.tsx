@@ -196,8 +196,8 @@ const SettingsLayout = () => {
             {/* Same Ctrl/Cmd+K palette as the admin shell: settings pages can
                 still jump anywhere in the app. */}
             <CommandPaletteProvider>
-                <div className="density-compact flex h-screen bg-background font-sans print:block print:h-auto">
-                    <aside className="flex h-screen w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground print:hidden">
+                <div className="density-compact flex h-dvh overflow-hidden bg-background font-sans print:block print:h-auto print:overflow-visible">
+                    <aside className="flex h-full min-h-0 w-56 2xl:w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground print:hidden">
                         <Link
                             to="/settings"
                             className="flex h-12 shrink-0 items-center gap-2 px-4 text-sidebar-foreground hover:text-sidebar-primary"
@@ -303,12 +303,15 @@ const SettingsLayout = () => {
                         </div>
                     </aside>
 
-                    <div className="flex flex-1 flex-col overflow-hidden print:overflow-visible">
+                    {/* min-w-0 was missing here where AdminLayout has it, so a
+                        wide table under /settings/* squeezed the rail instead of
+                        scrolling inside its own container. */}
+                    <div className="flex flex-1 flex-col overflow-hidden print:overflow-visible min-w-0 min-h-0">
                         <SettingsTopBar onClose={() => navigate("/")} />
 
                         <main
                             ref={mainRef}
-                            className="flex-1 overflow-y-auto overflow-x-hidden p-4 print:overflow-visible"
+                            className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 lg:p-4 print:overflow-visible"
                         >
                             <div className="mx-auto w-full max-w-(--content-max)">
                                 <DemoBanner />
