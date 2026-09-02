@@ -32,16 +32,31 @@ const Table = ({ headers, children, fitWidth = false, colWidths }: TableProps) =
       <table
         className={
           "w-full bg-white text-sm text-gray-950 border-collapse border border-gray-100" +
+          // min-w-max is deliberate, and was measured before being kept.
+          // Switching to min-w-full lets cells wrap so the ACTIONS column is
+          // visible without scrolling, but wrapping cost 62px on the invoice
+          // list and turned a page that fit at 1366x768 into one that did not
+          // (ratio 1.00 -> 1.07). The wrapper is already overflow-x-auto, so a
+          // wide table scrolls inside its own container and never widens the
+          // page — verified zero horizontal page overflow across 139 routes.
           (fitWidth ? " table-fixed" : " min-w-max")
         }
       >
+        {/* No sticky header here, deliberately. `position: sticky` resolves
+            against the nearest scrollport, and the wrapper above is
+            overflow-x-auto — which CSS promotes to overflow-y: auto — so the
+            wrapper, not <main>, is that scrollport, and it never scrolls
+            vertically. Measured: with `sticky top-0` the header still moved the
+            full 400px on scroll. Making it work needs the wrapper to own the
+            vertical scroll (a max-height on every table), which is a bigger
+            change than this. */}
         <thead className="bg-gray-100 uppercase text-xs font-semibold text-gray-900">
           <tr>
             {headers.map((header, idx) => (
               <th
                 key={idx}
                 className={
-                  "px-4 py-3 text-left border-b border-gray-100" +
+                  "px-3 py-2 text-left border-b border-gray-100" +
                   (fitWidth ? ` ${colWidths?.[idx] ?? ""}` : "")
                 }
               >
