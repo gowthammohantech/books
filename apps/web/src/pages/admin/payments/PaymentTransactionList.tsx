@@ -228,7 +228,7 @@ const PaymentTransactionList: React.FC = () => {
                     />
                 ))}
                 {!isLoading && !visibleTransactions.length &&
-                    <NoRecords colSpan={7} message="No payment transactions found" />
+                    <NoRecords art="cash-payment" colSpan={7} message="No payment transactions found" />
                 }
                 {isLoading && (
                     <tr key="table-loader">

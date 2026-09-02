@@ -3,7 +3,7 @@ import { BarChart2 } from "lucide-react";
 import type { NavItemType } from "@models/sidebar";
 import type { PermissionSet } from "@models/permissions";
 import { navItems, canCreate, canView } from "./navigation";
-import { settingsBands } from "./settingsCatalogue";
+import { allSettingsGroups } from "./settingsCatalogue";
 import { reports } from "./reportCatalogue";
 
 /**
@@ -66,11 +66,11 @@ const SYNONYMS: Record<string, string[]> = {
 /**
  * Routable destinations the sidebar does not list.
  *
- * Some are deliberate omissions from the menu (the alternate dashboards are
- * reached from the DashboardSwitcher; Profile from the avatar menu), others
- * simply never got a menu entry. A palette that cannot reach them is a palette
- * with holes in it, so they are declared here — with the same permission slug
- * their route guard in AdminRoute uses, so gating still matches the app.
+ * Some are deliberate omissions from the menu (Profile from the avatar menu),
+ * others simply never got a menu entry. A palette that cannot reach them is a
+ * palette with holes in it, so they are declared here — with the same
+ * permission slug their route guard in AdminRoute uses, so gating still
+ * matches the app.
  *
  * `slug: null` means the destination is ungated for any signed-in user.
  */
@@ -85,35 +85,6 @@ type ExtraCommand = Omit<Command, "icon"> & { slug: string | null };
 const REPORT_ICON: ReactNode = createElement(BarChart2, { size: 16 });
 
 const EXTRA_COMMANDS: ReadonlyArray<ExtraCommand> = [
-    // Alternate dashboard views — sidebar shows only the single "Dashboard"
-    // entry and expects you to use the on-page switcher to reach these.
-    {
-        id: "nav:/dashboard/sales",
-        kind: "navigate",
-        title: "Sales Dashboard",
-        group: "Dashboard",
-        path: "/dashboard/sales",
-        slug: "dashboard",
-        keywords: ["sales & invoices", "overview"],
-    },
-    {
-        id: "nav:/dashboard/accounts",
-        kind: "navigate",
-        title: "Accounts Dashboard",
-        group: "Dashboard",
-        path: "/dashboard/accounts",
-        slug: "dashboard",
-        keywords: ["accounts & p&l", "pnl", "overview"],
-    },
-    {
-        id: "nav:/dashboard/expenses",
-        kind: "navigate",
-        title: "Expenses Dashboard",
-        group: "Dashboard",
-        path: "/dashboard/expenses",
-        slug: "dashboard",
-        keywords: ["spending", "overview"],
-    },
     {
         id: "nav:/expense-categories",
         kind: "navigate",
@@ -352,28 +323,25 @@ export const buildCommands = (
             });
         }
 
-        for (const band of settingsBands) {
-            for (const group of band.groups) {
-                for (const link of group.links) {
-                    if (link.slug !== null && !canView(link.slug, permissions)) {
-                        continue;
-                    }
-                    push({
-                        id: `nav:${link.to}`,
-                        kind: "navigate",
-                        title: link.title,
-                        group: `Settings › ${group.title}`,
-                        path: link.to,
-                        icon: group.icon,
-                        keywords: [
-                            "settings",
-                            band.title,
-                            group.title,
-                            link.to,
-                            ...(SYNONYMS[link.to] ?? []),
-                        ],
-                    });
+        for (const group of allSettingsGroups) {
+            for (const link of group.links) {
+                if (link.slug !== null && !canView(link.slug, permissions)) {
+                    continue;
                 }
+                push({
+                    id: `nav:${link.to}`,
+                    kind: "navigate",
+                    title: link.title,
+                    group: `Settings › ${group.title}`,
+                    path: link.to,
+                    icon: group.icon,
+                    keywords: [
+                        "settings",
+                        group.title,
+                        link.to,
+                        ...(SYNONYMS[link.to] ?? []),
+                    ],
+                });
             }
         }
     }

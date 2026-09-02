@@ -22,8 +22,8 @@ import useDateFormatter from '@hooks/useDateFormatter';
 import ProfileCard from '@components/admin/ProfileImage';
 import type { Pagination } from '@models/common';
 import { PageHeader } from '@/context/PageHeaderContext';
-import { Button, FormField, PageSizeSelect } from "@components/ui";
-
+import { Button, FormField, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 // --- INTERFACES ---
 
 interface SupplierPayment {
@@ -157,6 +157,12 @@ const SupplierPayments: FC = () => {
     const from = (pagination.page - 1) * pagination.limit + 1;
     const to = Math.min(pagination.page * pagination.limit, pagination.total);
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && supplierPayments.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Supplier Payments">
@@ -168,54 +174,68 @@ const SupplierPayments: FC = () => {
                     </Button>
                 )}
             </PageHeader>
-
-            {/* Search and Filter Section */}
-            <div className="flex justify-between items-center">
-                <FormField
-                    type="text"
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    containerClassName="w-full md:w-64"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.supplierPayments}
+                    action={hasPermission(permissions, 'supplier-payments', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={handleNewPaymentClick}>
+                            {LIST_EMPTY_STATES.supplierPayments.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
+            ) : (
+                <>
 
-            {/* Payments Table */}
-            <Table headers={tableHeaders}>
-                {!isLoading && supplierPayments.map((payment, index) => (
-                    <TableRow
-                        key={payment.id}
-                        index={from + index}
-                        row={payment}
-                        columns={[
-                            <ProfileCard
-                                imageUrl={payment?.supplier?.profileImage}
-                                name={payment?.supplier?.name ?? ""}
-                            />,
-                            <span className='text-primary'>{payment.paymentId}</span>,
-                            payment.purchase?.purchaseId ?? '-',
-                            formatDate(payment.paymentDate, systemSettings?.dateFormat.format || 'd-m-Y'),
-                            formatPaymentAmount(payment.paidAmount, payment.currencyCode),
-                            <PaymentModeBadge mode={payment.paymentMode ?? 'Petty Cash'} />,
-                        ]}
-                        actions={canDelete ? tableActions : undefined}
+                {/* Search and Filter Section */}
+                <div className="flex justify-between items-center">
+                    <FormField
+                        type="text"
+                        placeholder="Search..."
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        containerClassName="w-full md:w-64"
                     />
-                ))}
-                {!isLoading && supplierPayments.length === 0 && (
-                    <tr><td colSpan={7} className="text-center py-4 text-foreground font-semibold">No supplier payments found</td></tr>
-                )}
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
 
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-2 text-foreground font-semibold" colSpan={7}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-            </Table>
+                {/* Payments Table */}
+                <Table headers={tableHeaders}>
+                    {!isLoading && supplierPayments.map((payment, index) => (
+                        <TableRow
+                            key={payment.id}
+                            index={from + index}
+                            row={payment}
+                            columns={[
+                                <ProfileCard
+                                    imageUrl={payment?.supplier?.profileImage}
+                                    name={payment?.supplier?.name ?? ""}
+                                />,
+                                <span className='text-primary'>{payment.paymentId}</span>,
+                                payment.purchase?.purchaseId ?? '-',
+                                formatDate(payment.paymentDate, systemSettings?.dateFormat.format || 'd-m-Y'),
+                                formatPaymentAmount(payment.paidAmount, payment.currencyCode),
+                                <PaymentModeBadge mode={payment.paymentMode ?? 'Petty Cash'} />,
+                            ]}
+                            actions={canDelete ? tableActions : undefined}
+                        />
+                    ))}
+                    {!isLoading && supplierPayments.length === 0 && (
+                        <EmptyStateRow colSpan={7} art="cash-payment" title="No supplier payments found" />
+                    )}
 
-            <PaginationWrapper count={pagination.totalPages} page={page} from={from} to={to} total={pagination.total} onChange={(_, newPage) => handlePageChange(newPage)} />
+                    {isLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-2 text-foreground font-semibold" colSpan={7}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
+                </Table>
+
+                <PaginationWrapper count={pagination.totalPages} page={page} from={from} to={to} total={pagination.total} onChange={(_, newPage) => handlePageChange(newPage)} />
+                </>
+            )}
+
 
             {/* Modals */}
             {isPaymentModalOpen && (

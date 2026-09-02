@@ -18,8 +18,8 @@ import { useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect } from "@components/ui";
-
+import { Button, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface Quotation {
     id: string;
     quotationId: string;
@@ -274,6 +274,13 @@ const QuotationList: React.FC = () => {
     const from = (pagination.page - 1) * pagination.limit + 1;
     const to = Math.min(pagination.page * pagination.limit, pagination.total);
 
+    /**
+     * No quotations and nothing searched for — a workspace that has never
+     * raised one, not a search that missed. This page has no filters beyond
+     * the search box, so that is the whole test.
+     */
+    const isFirstRun = !isLoading && quotations.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Quotations">
@@ -286,66 +293,75 @@ const QuotationList: React.FC = () => {
                 )}
             </PageHeader>
 
-            {/* Search Input & PageLength */}
-            <div className="flex justify-between items-center">
-                <input
-                    type="text"
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+{isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.quotations}
+                    action={hasPermission(permissions, 'quotations', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={handleNewQuotationClick}>
+                            {LIST_EMPTY_STATES.quotations.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
-            {/* Quotation Table */}
-            <Table headers={tableHeaders}>
-                {!isLoading && quotations && quotations.map((quotation, index) => (
-                    <TableRow
-                        key={quotation.id}
-                        index={(page - 1) * limit + index + 1}
-                        row={quotation}
-                        columns={[
-                            <span className="text-primary">{quotation.quotationId}</span>,
-                            <ProfileCard
-                                imageUrl={quotation.billTo?.image}
-                                name={quotation.billTo?.name}
-                                email={quotation.billTo?.email}
-                            />,
-                            <span className="font-semibold text-gray-950 ">{formatDate(quotation.createdAt, systemSettings?.dateFormat.format || 'd-m-Y')}</span>,
-                            <StatusBadge status={quotation.status} />,
-                        ]}
-                        actions={getTableActions(quotation)}
-                        onRowClick={(item) => navigate(`/view-quotation/${item.id}`)}
+            ) : (
+                <>
+                    {/* Search Input & PageLength */}
+                    <div className="flex justify-between items-center">
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            value={search}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                        />
+                        <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                    </div>
+                    {/* Quotation Table */}
+                    <Table headers={tableHeaders}>
+                        {!isLoading && quotations && quotations.map((quotation, index) => (
+                            <TableRow
+                                key={quotation.id}
+                                index={(page - 1) * limit + index + 1}
+                                row={quotation}
+                                columns={[
+                                    <span className="text-primary">{quotation.quotationId}</span>,
+                                    <ProfileCard
+                                        imageUrl={quotation.billTo?.image}
+                                        name={quotation.billTo?.name}
+                                        email={quotation.billTo?.email}
+                                    />,
+                                    <span className="font-semibold text-gray-950 ">{formatDate(quotation.createdAt, systemSettings?.dateFormat.format || 'd-m-Y')}</span>,
+                                    <StatusBadge status={quotation.status} />,
+                                ]}
+                                actions={getTableActions(quotation)}
+                                onRowClick={(item) => navigate(`/view-quotation/${item.id}`)}
+                            />
+                        ))}
+                        {!isLoading && quotations.length === 0 && (
+                            <EmptyStateRow colSpan={6} art="invoice" title="No Quotations Found" />
+                        )}
+                        {isLoading && (
+                            <tr key="table-loader">
+                                <td className="text-center py-2 text-gray-950  font-semibold" colSpan={6}>
+                                    <LoaderSpinner />
+                                </td>
+                            </tr>
+                        )}
+
+                    </Table>
+
+                    {/* Pagination Component */}
+                    <PaginationWrapper
+                        count={pagination.totalPages}
+                        page={page}
+                        from={from}
+                        to={to}
+                        total={pagination.total}
+                        onChange={(_, newPage) => handlePageChange(newPage)}
+                        paginationVariant="outlined"
+                        paginationShape="rounded"
                     />
-                ))}
-                {!isLoading && quotations.length === 0 && (
-                    <tr key="no-quotations">
-                        <td className="text-center py-2 text-gray-950  font-semibold" colSpan={6}>
-                            No Quotations Found
-                        </td>
-                    </tr>
-                )}
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-2 text-gray-950  font-semibold" colSpan={6}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-
-            </Table>
-
-            {/* Pagination Component */}
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handlePageChange(newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                </>
+            )}
             {/* Delete Quotation */}
             <DeleteConfirmationModal
                 isOpen={showDeleteModal}

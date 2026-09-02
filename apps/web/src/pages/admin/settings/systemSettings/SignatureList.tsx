@@ -17,8 +17,9 @@ import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import { hasPermission } from "@utils/hasPermission";
 import type { PermissionAction } from "@models/permissions";
 import SubmitButton from "@components/admin/SubmitButton";
-import { Button, FormField, PageSizeSelect } from "@components/ui";
+import { Button, FormField, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 // Interface for the form data
 interface SignatureFormData {
     id?: string;
@@ -311,6 +312,12 @@ const SignatureList: FC = () => {
     const from = (pagination.page - 1) * pagination.limit + 1;
     const to = Math.min(pagination.page * pagination.limit, pagination.total);
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && signatures.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Signatures">
@@ -324,62 +331,74 @@ const SignatureList: FC = () => {
                     </Button>
                 }
             </PageHeader>
-
-            {/* Search and Page Length */}
-            <div className="flex justify-between items-center">
-                <FormField
-                    containerClassName="w-full md:w-64"
-                    type="text"
-                    placeholder="Search signatures..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.signatures}
+                    action={hasPermission(permissions, 'system-settings', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={openCreate}>
+                            {LIST_EMPTY_STATES.signatures.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
+            ) : (
+                <>
 
-            {/* Table */}
-            <Table headers={tableHeaders}>
-                {!isLoading && signatures && signatures.length > 0 && signatures.map((sig, index) => (
-                    <TableRow
-                        key={sig.id}
-                        index={from + index}
-                        row={sig}
-                        columns={[
-                            <span className="text-primary">{sig.signatureName}</span>,
-                            <img src={sig.signatureImage} alt={sig.signatureName} className="h-10 w-24 object-cover border rounded-md" />,
-                            <Switch name={`status-${sig.id}`} checked={sig.status} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStatusChange(sig.id, e.target.checked)} disabled={sig.markAsDefault || !hasPermission(permissions, 'system-settings', 'edit')} />,
-                            <Switch name={`status-${sig.id}`} checked={sig.markAsDefault} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDefaultChange(sig.id, e.target.checked)} disabled={sig.markAsDefault || !hasPermission(permissions, 'system-settings', 'edit')} />,
-                        ]}
-                        actions={prepareTableActions(sig)}
+                {/* Search and Page Length */}
+                <div className="flex justify-between items-center">
+                    <FormField
+                        containerClassName="w-full md:w-64"
+                        type="text"
+                        placeholder="Search signatures..."
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
                     />
-                ))}
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
 
-                {!isLoading && signatures && signatures.length === 0 &&
-                    <tr>
-                        <td colSpan={6} className="text-center py-4 text-muted-foreground font-medium">No Signatures Found</td>
-                    </tr>
-                }
+                {/* Table */}
+                <Table headers={tableHeaders}>
+                    {!isLoading && signatures && signatures.length > 0 && signatures.map((sig, index) => (
+                        <TableRow
+                            key={sig.id}
+                            index={from + index}
+                            row={sig}
+                            columns={[
+                                <span className="text-primary">{sig.signatureName}</span>,
+                                <img src={sig.signatureImage} alt={sig.signatureName} className="h-10 w-24 object-cover border rounded-md" />,
+                                <Switch name={`status-${sig.id}`} checked={sig.status} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStatusChange(sig.id, e.target.checked)} disabled={sig.markAsDefault || !hasPermission(permissions, 'system-settings', 'edit')} />,
+                                <Switch name={`status-${sig.id}`} checked={sig.markAsDefault} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleDefaultChange(sig.id, e.target.checked)} disabled={sig.markAsDefault || !hasPermission(permissions, 'system-settings', 'edit')} />,
+                            ]}
+                            actions={prepareTableActions(sig)}
+                        />
+                    ))}
 
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-2 text-foreground font-semibold" colSpan={7}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-            </Table>
+                    {!isLoading && signatures && signatures.length === 0 &&
+                        <EmptyStateRow colSpan={6} art="empty" title="No Signatures Found" />
+                    }
 
-            {/* Pagination */}
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handlePageChange(newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                    {isLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-2 text-foreground font-semibold" colSpan={7}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
+                </Table>
+
+                {/* Pagination */}
+                <PaginationWrapper
+                    count={pagination.totalPages}
+                    page={page}
+                    from={from}
+                    to={to}
+                    total={pagination.total}
+                    onChange={(_, newPage) => handlePageChange(newPage)}
+                    paginationVariant="outlined"
+                    paginationShape="rounded"
+                />
+                </>
+            )}
+
 
             {/* Add/Edit Modal */}
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={isEditMode ? 'Update Signature' : 'Create Signature'}>

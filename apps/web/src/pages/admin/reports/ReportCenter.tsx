@@ -5,7 +5,6 @@ import { formatDistanceToNow } from "date-fns";
 import { Search, Star } from "lucide-react";
 
 import Table from "@components/admin/Table";
-import NoRecords from "@components/admin/NoRecords";
 import { PageHeader } from "@context/PageHeaderContext";
 import { useDebounce } from "@hooks/useDebounce";
 import { useReportPrefs } from "@hooks/useReportPrefs";
@@ -20,6 +19,7 @@ import { canView } from "@lib/navigation";
 import type { RootState } from "@store/index";
 import type { PermissionSet } from "@models/permissions";
 
+import { EmptyStateRow } from "@components/ui";
 /**
  * The Reports Center — the index of every report the app can render.
  *
@@ -251,9 +251,10 @@ const ReportCenter = () => {
 
                     <Table headers={HEADERS} fitWidth colWidths={COL_WIDTHS}>
                         {rows.length === 0 ? (
-                            <NoRecords
+                            <EmptyStateRow
                                 colSpan={HEADERS.length}
-                                message={
+                                art={query.trim() ? "file-searching" : "analysis"}
+                                title={
                                     query.trim()
                                         ? `No reports match “${query.trim()}”`
                                         : "No reports to show here yet"

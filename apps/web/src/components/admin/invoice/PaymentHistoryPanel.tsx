@@ -7,7 +7,7 @@ import { useInvoicePayments } from '@hooks/useInvoicePayments';
 import useDateFormatter from '@hooks/useDateFormatter';
 import Constants from '@constants/api';
 import type { InvoicePaymentRow } from '@models/invoice-payment';
-import { Button, Badge, FormField, fieldControlClasses } from '@components/ui';
+import { Button, Badge, FormField, fieldControlClasses, EmptyState } from "@components/ui";
 
 interface PaymentHistoryPanelProps {
     invoiceId: string;
@@ -129,7 +129,7 @@ const PaymentHistoryPanel: React.FC<PaymentHistoryPanelProps> = ({ invoiceId, on
                 {loading ? (
                     <div className="p-6 text-center text-sm text-gray-500">Loading payments…</div>
                 ) : payments.length === 0 ? (
-                    <div className="p-6 text-center text-sm text-gray-400">No payments recorded.</div>
+                    <EmptyState size="compact" art="cash-payment" title="No payments recorded" />
                 ) : (
                     <table className="min-w-full text-sm divide-y divide-gray-200">
                         <thead className="bg-gray-50">

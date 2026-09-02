@@ -12,8 +12,8 @@ import type { PermissionSet } from "@models/permissions";
  * The nav tree, reshaped for a two-column rail: modules on the left, the
  * selected module's destinations on the right.
  *
- * The tree in navigation.tsx runs two levels deep, and one module (Accounts
- * Management) carries fourteen children. Rendered as accordions that meant
+ * The tree in navigation.tsx runs two levels deep, and one module (Accounts)
+ * carries fourteen children. Rendered as accordions that meant
  * opening a menu pushed everything below it off screen. The shape here is
  * flatter by construction:
  *
@@ -122,11 +122,11 @@ export const buildNavModules = (
 
     // A top-level plain link (Dashboard, Reports, Audit Trail) is a
     // destination, not a menu, so it gets no sections and therefore no flyout.
-    // An earlier revision lent it its band - hovering Audit Trail revealed
-    // Approvals Queue and AI Extractions - but a panel opening over the page
-    // when the row you are pointing at is one click away is a menu you did not
-    // ask for, and the band's siblings are already the rows directly above and
-    // below it in the rail.
+    // An earlier revision lent it its band - hovering Audit Trail revealed the
+    // other Oversight rows - but a panel opening over the page when the row you
+    // are pointing at is one click away is a menu you did not ask for, and the
+    // band's siblings are already the rows directly above and below it in the
+    // rail.
     const modules: NavModule[] = [];
     let band = "";
     for (const item of visible) {
@@ -173,8 +173,7 @@ export const buildNavModules = (
  * sibling's (/banking vs /banking/transactions).
  *
  * "/" is the Dashboard, and it is a prefix of everything, so it is matched by
- * name rather than by prefix - plus the /dashboard/* views, which is where the
- * dashboard switcher actually lands.
+ * name rather than by prefix - plus "/dashboard", which renders the same page.
  */
 export const matchesNavRoute = (
     to: string,
@@ -182,11 +181,7 @@ export const matchesNavRoute = (
     exact?: boolean
 ): boolean => {
     if (to === "/") {
-        return (
-            pathname === "/" ||
-            pathname === "/dashboard" ||
-            pathname.startsWith("/dashboard/")
-        );
+        return pathname === "/" || pathname === "/dashboard";
     }
     if (exact) return pathname === to;
     return pathname === to || pathname.startsWith(`${to}/`);

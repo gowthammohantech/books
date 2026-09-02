@@ -1,20 +1,16 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useMemo, useEffect, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-    ChevronRight,
-    Plus,
-    LifeBuoy,
-    PanelLeftClose,
-    PanelLeftOpen,
-    Settings,
-} from "lucide-react";
+import { ChevronRight, LifeBuoy } from "lucide-react";
 import { useSelector } from "react-redux";
+
+import { AnimatedIcon } from "@components/icons";
 import BottomBar from "./layouts/BottomBar";
 import { cn } from "@lib/cn";
 import { resolveCompanyLogo } from "@utils/companyLogo";
 import { resolveNavPath as resolveSidebarPath } from "@lib/navPaths";
 import { badgesByRoute } from "@lib/workQueues";
 import { useWorkQueues } from "@hooks/useWorkQueues";
+import { useNavFlyout } from "@hooks/useNavFlyout";
 import { canCreate } from "@lib/navigation";
 import {
     buildNavModules,
@@ -79,7 +75,7 @@ const AddButton = ({ to, title }: { to: string; title: string }) => (
         aria-label={`Add new ${title}`}
         className="absolute right-1 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground opacity-0 transition-opacity group-hover/row:opacity-100 focus-visible:opacity-100"
     >
-        <Plus size={14} />
+        <AnimatedIcon name="plus" size={14} />
     </Link>
 );
 
@@ -241,7 +237,7 @@ const ModulePanel = ({
                     title={`Add new ${navModule.title}`}
                     className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-primary"
                 >
-                    <Plus size={15} />
+                    <AnimatedIcon name="plus" size={15} />
                 </Link>
             )}
         </div>
@@ -312,52 +308,29 @@ const Sidebar = ({
         [modules, pathname]
     );
 
-    // The children live in a flyout anchored to the row that opened it. Fixed
-    // rather than absolute: the rail scrolls, and an absolutely placed flyout
-    // would be clipped by its own scroll container.
-    const [peek, setPeek] = useState<{ id: string; top: number; left: number } | null>(null);
+    // The children live in a flyout anchored to the row that opened it, shared
+    // with the settings rail so both open the same way in the same place.
+    const { flyout: peek, openFlyout, closeFlyout: closePeek } = useNavFlyout();
     const peekModule = peek ? modules.find((navModule) => navModule.id === peek.id) : undefined;
-    const closePeek = useCallback(() => setPeek(null), []);
 
     const openPeek = useCallback(
         (navModule: NavModule, element: HTMLElement) => {
             // A module that is only a link (Dashboard, Fixed Assets, Reports)
-            // has nothing to fly out; an empty panel would be a promise of
-            // content that never arrives.
-            if (navModule.sections.length === 0) {
-                setPeek(null);
-                return;
-            }
+            // has no rows, so this opens nothing.
             const rows = navModule.sections.reduce(
                 (total, section) => total + section.items.length + (section.caption ? 1 : 0),
                 0
             );
-            const rect = element.getBoundingClientRect();
-            const height = Math.min(0.7 * window.innerHeight, 56 + rows * 32);
-            setPeek({
-                id: navModule.id,
-                left: rect.right + 8,
-                top: Math.max(8, Math.min(rect.top - 8, window.innerHeight - height - 16)),
-            });
+            openFlyout(navModule.id, element, rows);
         },
-        []
+        [openFlyout]
     );
 
-    // A flyout that outlives what opened it is a stray menu: close it when the
-    // rail changes width (the anchor coordinates go stale), when the route
-    // changes, and on Escape.
+    // The one close the hook cannot know about: the rail changing width leaves
+    // the anchor coordinates pointing at where the row used to be.
     useEffect(() => {
-        setPeek(null);
-    }, [isOpen]);
-    useEffect(() => setPeek(null), [pathname]);
-    useEffect(() => {
-        if (!peek) return;
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape") setPeek(null);
-        };
-        document.addEventListener("keydown", onKeyDown);
-        return () => document.removeEventListener("keydown", onKeyDown);
-    }, [peek]);
+        closePeek();
+    }, [isOpen, closePeek]);
 
     return (
         <aside
@@ -485,7 +458,13 @@ const Sidebar = ({
                     and at both widths. */}
                 <div className="shrink-0 border-t border-sidebar-border py-1">
                     {[
-                        { to: "/settings", icon: <Settings size={16} />, label: "Settings" },
+                        {
+                            to: "/settings",
+                            icon: <AnimatedIcon name="settings" size={16} />,
+                            label: "Settings",
+                        },
+                        // LifeBuoy stays static: a spinning life ring reads as
+                        // loading, which is the one thing Help must not say.
                         { to: "/help", icon: <LifeBuoy size={16} />, label: "Get Help" },
                     ].map((entry) => (
                         <div
@@ -525,7 +504,11 @@ const Sidebar = ({
                             )}
                         >
                             <span className="shrink-0">
-                                {isOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+                                {isOpen ? (
+                                    <AnimatedIcon name="panel-close" size={16} />
+                                ) : (
+                                    <AnimatedIcon name="panel-open" size={16} />
+                                )}
                             </span>
                             {isOpen && <span className="truncate text-sm font-medium">Collapse</span>}
                         </button>
@@ -536,7 +519,7 @@ const Sidebar = ({
                     <div
                         role="menu"
                         aria-label={peekModule.panelTitle}
-                        className="fixed z-50 flex w-56 flex-col rounded-xl border border-sidebar-border bg-sidebar py-2 shadow-xl"
+                        className="fixed z-50 flex w-56 origin-top-left flex-col rounded-xl border border-sidebar-border bg-sidebar py-2 shadow-xl animate-pop-in motion-reduce:animate-none"
                         style={{ top: peek.top, left: peek.left, maxHeight: "70vh" }}
                     >
                         <ModulePanel

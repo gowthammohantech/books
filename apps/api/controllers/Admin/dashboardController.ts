@@ -197,13 +197,18 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
     });
 
     // ---------- LAST 5 PURCHASES ----------
+    // Ten, not five: the dashboard's Latest Purchase table is the only place
+    // these are read now, and it is tall enough for ten rows.
     const lastFivePurchases = await prisma.purchase.findMany({
       where: { tenantId, isDeleted: false },
       orderBy: { createdAt: 'desc' },
-      take: 5,
+      take: 10,
       select: {
         id: true,
         purchaseId: true,
+        purchaseDate: true,
+        taxableAmount: true,
+        totalTax: true,
         totalAmount: true,
         status: true,
         createdAt: true,
@@ -260,6 +265,9 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
       return {
         id: p.id,
         purchaseId: p.purchaseId,
+        purchaseDate: p.purchaseDate,
+        taxableAmount: p.taxableAmount,
+        totalTax: p.totalTax,
         totalAmount: p.totalAmount,
         status: p.status,
         vendor,

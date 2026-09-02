@@ -25,8 +25,8 @@ import ProfileCard from "@components/admin/ProfileImage";
 import { useQuery } from "@tanstack/react-query";
 import { fetchModuleHierarchy, fetchCustomFieldsByModule } from "@api/customFieldTypeApi";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, FormField, PageSizeSelect } from "@components/ui";
-
+import { Button, FormField, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface Purchase {
     id: string;
     purchaseOrderId: string;
@@ -267,6 +267,15 @@ const PurchaseList: FC = () => {
     const from = (pagination.page - 1) * pagination.limit + 1;
     const to = Math.min(pagination.page * pagination.limit, pagination.total);
 
+    /**
+     * No purchases recorded and no filter narrowing the view. ScanBillModal
+     * stays mounted outside this branch — it is opened from the header, and a
+     * first-run user scanning their first bill is exactly the path we want
+     * open.
+     */
+    const isFirstRun =
+        !isPageLoading && purchases.length === 0 && !search && activeFilters.length === 0;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Purchases">
@@ -302,77 +311,86 @@ const PurchaseList: FC = () => {
                 }}
             />
 
-            {/* Search Input & PageLength */}
-            <div className="flex justify-between items-center">
-                <FormField
-                    type="text"
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    containerClassName="w-full md:w-64"
+{isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.purchases}
+                    action={hasPermission(permissions, 'purchase-list', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={handleNewPurchaseClick}>
+                            {LIST_EMPTY_STATES.purchases.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
+            ) : (
+                <>
+                    {/* Search Input & PageLength */}
+                    <div className="flex justify-between items-center">
+                        <FormField
+                            type="text"
+                            placeholder="Search..."
+                            value={search}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            containerClassName="w-full md:w-64"
+                        />
+                        <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                    </div>
 
-            <Table headers={tableHeaders}>
-                {!isPageLoading && purchases && purchases.map((purchase, index) => (
-                    <TableRow
-                        key={purchase.id}
-                        index={(page - 1) * limit + index + 1}
-                        row={purchase}
-                        columns={[
-                            <span className="text-primary">{purchase.purchaseId}</span>,
-                            formatDate(purchase.purchaseDate, systemSettings?.dateFormat.format || 'd-m-Y'),
-                            <ProfileCard
-                                imageUrl={purchase.billTo?.profileImage}
-                                name={purchase.billTo?.name || ''}
-                            />,
-                            formatMoney(purchase.totalAmount, purchase.currencyCode),
-                            <PaymentModeBadge mode={purchase.paymentMode?.slug || purchase.paymentMode?.name || '—'} />,
-                            formatDate(purchase.createdAt, systemSettings?.dateFormat.format || 'd-m-Y'),
-                            <StatusBadge status={purchase.status} />,
+                    <Table headers={tableHeaders}>
+                        {!isPageLoading && purchases && purchases.map((purchase, index) => (
+                            <TableRow
+                                key={purchase.id}
+                                index={(page - 1) * limit + index + 1}
+                                row={purchase}
+                                columns={[
+                                    <span className="text-primary">{purchase.purchaseId}</span>,
+                                    formatDate(purchase.purchaseDate, systemSettings?.dateFormat.format || 'd-m-Y'),
+                                    <ProfileCard
+                                        imageUrl={purchase.billTo?.profileImage}
+                                        name={purchase.billTo?.name || ''}
+                                    />,
+                                    formatMoney(purchase.totalAmount, purchase.currencyCode),
+                                    <PaymentModeBadge mode={purchase.paymentMode?.slug || purchase.paymentMode?.name || '—'} />,
+                                    formatDate(purchase.createdAt, systemSettings?.dateFormat.format || 'd-m-Y'),
+                                    <StatusBadge status={purchase.status} />,
 
-                            // Inject dynamic custom field columns
-                            ...tableCustomFields.map((f: any) => (
-                                <span key={f.id} className="text-gray-600 font-medium">
-                                    {extractCustomFieldValue(purchase, f.fieldSlug || f.id)}
-                                </span>
-                            ))
-                        ]}
-                        actions={getTableActions(purchase)}
-                        onRowClick={(item) => navigate(`/purchases/view/${item.id}`)}
-                    />
-                ))}
+                                    // Inject dynamic custom field columns
+                                    ...tableCustomFields.map((f: any) => (
+                                        <span key={f.id} className="text-gray-600 font-medium">
+                                            {extractCustomFieldValue(purchase, f.fieldSlug || f.id)}
+                                        </span>
+                                    ))
+                                ]}
+                                actions={getTableActions(purchase)}
+                                onRowClick={(item) => navigate(`/purchases/view/${item.id}`)}
+                            />
+                        ))}
 
-                {!isPageLoading && purchases.length === 0 && (
-                    <tr>
-                        <td colSpan={tableHeaders.length} className="text-center py-4 text-gray-950  font-semibold">
-                            No purchases found
-                        </td>
-                    </tr>
-                )}
+                        {!isPageLoading && purchases.length === 0 && (
+                            <EmptyStateRow colSpan={tableHeaders.length} art="invoice" title="No purchases found" />
+                        )}
 
-                {isPageLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-6 text-gray-950  font-semibold" colSpan={tableHeaders.length}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-            </Table>
+                        {isPageLoading && (
+                            <tr key="table-loader">
+                                <td className="text-center py-6 text-gray-950  font-semibold" colSpan={tableHeaders.length}>
+                                    <LoaderSpinner />
+                                </td>
+                            </tr>
+                        )}
+                    </Table>
 
-            {/* Pagination Component */}
-            {!isPageLoading && pagination.totalPages > 1 && (
-                <PaginationWrapper
-                    count={pagination.totalPages}
-                    page={page}
-                    from={from}
-                    to={to}
-                    total={pagination.total}
-                    onChange={(_, newPage) => handlePageChange(newPage)}
-                    paginationVariant="outlined"
-                    paginationShape="rounded"
-                />
+                    {/* Pagination Component */}
+                    {!isPageLoading && pagination.totalPages > 1 && (
+                        <PaginationWrapper
+                            count={pagination.totalPages}
+                            page={page}
+                            from={from}
+                            to={to}
+                            total={pagination.total}
+                            onChange={(_, newPage) => handlePageChange(newPage)}
+                            paginationVariant="outlined"
+                            paginationShape="rounded"
+                        />
+                    )}
+                </>
             )}
 
             {/* Delete Confirmation Modal */}

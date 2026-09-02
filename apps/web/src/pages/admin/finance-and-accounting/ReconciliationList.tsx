@@ -10,7 +10,7 @@ import Switch from "@components/admin/Switch";
 import Table from "@components/admin/Table";
 import TableRow from "@components/admin/TableRow";
 import TransactionTypeBadge from "@components/admin/TransactionTypeBadge";
-import { Button, PageSizeSelect } from "@components/ui";
+import { Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
 import Constants from "@constants/api";
 import { useCurrencyFormatter } from "@hooks/useCurrencyFormatter";
 import useDateFormatter from "@hooks/useDateFormatter";
@@ -396,11 +396,7 @@ const ReconciliationList: React.FC = () => {
                 })}
 
                 {!isLoading && transactions.length === 0 && (
-                    <tr>
-                        <td colSpan={8} className="text-center py-4 text-gray-900 font-semibold">
-                            No transactions found
-                        </td>
-                    </tr>
+                    <EmptyStateRow colSpan={8} art="cash-payment" title="No transactions found" />
                 )}
 
                 {isLoading && (

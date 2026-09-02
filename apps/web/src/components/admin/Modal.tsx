@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { XCircleIcon } from 'lucide-react';
+
+import { AnimatedIcon } from '@components/icons';
 import { confirmIfDirty } from '@hooks/useDirtyGuard';
 
 interface ModalProps {
@@ -119,7 +120,7 @@ const Modal = ({ isOpen, onClose, title, children, size = '2xl', confirmOnClose 
               className="text-gray-500 hover:text-gray-700 cursor-pointer"
               aria-label="Close modal"
             >
-              <XCircleIcon size={24} />
+              <AnimatedIcon name="close-circle" size={24} />
             </button>
           </div>
 

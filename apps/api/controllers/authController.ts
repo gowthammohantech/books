@@ -148,6 +148,20 @@ export async function loadMemberships(userId: string): Promise<MembershipSummary
 }
 
 /**
+ * Provisioning is a lot of writes for one transaction: the tenant, six roles,
+ * a Permission row per module, the owner membership, and the Units, Currencies
+ * and EmailTemplates a fresh workspace starts with. Prisma's default 5s
+ * interactive-transaction budget was not enough for that on a remote database,
+ * and overrunning it aborts the whole signup with P2028 ("Transaction already
+ * closed" / "Transaction not found") — a registration the user sees as a 500.
+ *
+ * The seeders now batch their reads and writes, which brings the work well
+ * inside the default; this ceiling is what keeps a slow or contended database
+ * from failing a signup that is merely slow.
+ */
+const PROVISION_TX_OPTIONS = { timeout: 30_000, maxWait: 10_000 };
+
+/**
  * Provision a complete, usable workspace: the Tenant, its own role set with
  * permissions, the owner membership, and the per-tenant defaults (Units,
  * Currencies, EmailTemplates).
@@ -283,7 +297,7 @@ export async function register(req: Request, res: Response): Promise<void> {
         });
 
         return { user: withRole, tenant: t, membershipId: ownerMembership?.id };
-      }),
+      }, PROVISION_TX_OPTIONS),
     );
 
     const memberships = await loadMemberships(user.id);
@@ -578,11 +592,13 @@ export async function createTenant(req: Request, res: Response): Promise<void> {
     }
 
     const tenant = await runAsSystem(() =>
-      prisma.$transaction((tx) =>
-        provisionTenant(tx as unknown as PrismaClient, {
-          ownerUserId: userId,
-          companyName,
-        }),
+      prisma.$transaction(
+        (tx) =>
+          provisionTenant(tx as unknown as PrismaClient, {
+            ownerUserId: userId,
+            companyName,
+          }),
+        PROVISION_TX_OPTIONS,
       ),
     );
 

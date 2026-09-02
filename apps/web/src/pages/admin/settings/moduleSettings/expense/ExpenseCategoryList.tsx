@@ -19,8 +19,8 @@ import type { Pagination } from "@models/common";
 import Switch from "@components/admin/Switch";
 import ExpenseCategoryFormModal from "@pages/admin/finance-and-accounting/ExpenseCategoryFormModal";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, FormField, PageSizeSelect } from "@components/ui";
-
+import { Button, FormField, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface ExpenseResponse {
     success: boolean;
     message: string;
@@ -165,6 +165,12 @@ const ExpenseCategoryList: React.FC = () => {
     const from = (pagination.page - 1) * pagination.limit + 1;
     const to = Math.min(pagination.page * pagination.limit, pagination.total);
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && expenseCategories.length === 0;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Expense Categories">
@@ -178,64 +184,76 @@ const ExpenseCategoryList: React.FC = () => {
                     </Button>
                 }
             </PageHeader>
-
-            {/* Search Input & PageLength */}
-            <div className="flex justify-between items-center">
-                <FormField
-                    type="text"
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => handleFilterChange('search', e.target.value)}
-                    containerClassName="w-full md:w-64"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.expenseCategories}
+                    action={hasPermission(permissions, 'expenses', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={() => { handleCreateClick(); }}>
+                            {LIST_EMPTY_STATES.expenseCategories.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={(size) => handleFilterChange('limit', size)} />
-            </div>
+            ) : (
+                <>
 
-            <Table headers={tableHeaders}>
-                {!isLoading && expenseCategories && expenseCategories.map((category, index) => (
-                    <TableRow
-                        key={category.id}
-                        row={category}
-                        index={index + 1}
-                        columns={[
-                            <span className="text-primary">{category.title}</span>,
-                            category.description && category.description.length > 50 ? `${category.description.substring(0, 50)}...` : category.description,
-                            <div>
-                                <Switch name={`status-${category.id}`} checked={category.status} onChange={() => handleStatusChange(category)} />
-                            </div>,
-                            formatDate(category.createdAt, systemSettings?.dateFormat.format || 'd-m-Y'),
-                        ]}
-                        actions={allowedActions && allowedActions.length > 0 ? allowedActions : undefined}
+                {/* Search Input & PageLength */}
+                <div className="flex justify-between items-center">
+                    <FormField
+                        type="text"
+                        placeholder="Search..."
+                        value={search}
+                        onChange={(e) => handleFilterChange('search', e.target.value)}
+                        containerClassName="w-full md:w-64"
                     />
-                ))}
+                    <PageSizeSelect value={limit} onChange={(size) => handleFilterChange('limit', size)} />
+                </div>
 
-                {!isLoading && expenseCategories && expenseCategories.length === 0 && (
-                    <tr>
-                        <td colSpan={8} className="text-center text-foreground py-2 font-semibold">No Records Found</td>
-                    </tr>
-                )}
+                <Table headers={tableHeaders}>
+                    {!isLoading && expenseCategories && expenseCategories.map((category, index) => (
+                        <TableRow
+                            key={category.id}
+                            row={category}
+                            index={index + 1}
+                            columns={[
+                                <span className="text-primary">{category.title}</span>,
+                                category.description && category.description.length > 50 ? `${category.description.substring(0, 50)}...` : category.description,
+                                <div>
+                                    <Switch name={`status-${category.id}`} checked={category.status} onChange={() => handleStatusChange(category)} />
+                                </div>,
+                                formatDate(category.createdAt, systemSettings?.dateFormat.format || 'd-m-Y'),
+                            ]}
+                            actions={allowedActions && allowedActions.length > 0 ? allowedActions : undefined}
+                        />
+                    ))}
 
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-2 text-foreground font-semibold" colSpan={8}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
+                    {!isLoading && expenseCategories && expenseCategories.length === 0 && (
+                        <EmptyStateRow colSpan={8} art="folder" title="No Records Found" />
+                    )}
 
-            </Table>
+                    {isLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-2 text-foreground font-semibold" colSpan={8}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
 
-            {/* Pagination Component */}
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handleFilterChange('page', newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                </Table>
+
+                {/* Pagination Component */}
+                <PaginationWrapper
+                    count={pagination.totalPages}
+                    page={page}
+                    from={from}
+                    to={to}
+                    total={pagination.total}
+                    onChange={(_, newPage) => handleFilterChange('page', newPage)}
+                    paginationVariant="outlined"
+                    paginationShape="rounded"
+                />
+                </>
+            )}
+
 
             {/* Expense Form Modal */}
             {isModalOpen &&

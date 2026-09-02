@@ -259,7 +259,7 @@ responseType: 'blob'
                 </thead>
                 <tbody>
                   {data.b2b.length === 0 ? (
-                    <NoRecords colSpan={9} message="No B2B invoices in period." />
+                    <NoRecords art="analysis" colSpan={9} message="No B2B invoices in period." />
                   ) : (
                     data.b2b.map((r, i) => (
                       <tr key={i} className="border-b border-border">
@@ -310,7 +310,7 @@ responseType: 'blob'
                 </thead>
                 <tbody>
                   {data.b2c.length === 0 ? (
-                    <NoRecords colSpan={4} message="No B2C invoices in period." />
+                    <NoRecords art="analysis" colSpan={4} message="No B2C invoices in period." />
                   ) : (
                     data.b2c.map((r, i) => (
                       <tr key={i} className="border-b border-border">

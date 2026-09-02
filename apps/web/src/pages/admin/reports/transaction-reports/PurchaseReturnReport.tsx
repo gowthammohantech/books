@@ -21,7 +21,8 @@ import { useSelector } from "react-redux";
 import { useSearchParams } from "react-router-dom";
 import { PageHeader } from "@/context/PageHeaderContext";
 import { themeColor } from "@lib/designTokens";
-import { PageSizeSelect } from "@components/ui";
+import { PageSizeSelect, EmptyStateRow } from "@components/ui";
+
 interface PurchaseReturnReportResponse {
     success: boolean;
     message: string;
@@ -193,9 +194,7 @@ params
                 ))}
 
                 {!isLoading && purchaseReturnReport.length === 0 && (
-                    <tr>
-                        <td colSpan={8} className="text-center py-4 text-gray-600 font-semibold">No records found</td>
-                    </tr>
+                    <EmptyStateRow colSpan={8} art="analysis" title="No records found" />
                 )}
 
                 {isLoading && (

@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Check } from "lucide-react";
 
 import InvoicePaper from "@components/auth/InvoicePaper/InvoicePaper";
+import { BRAND_MARK, logoCropStyle } from "@utils/brandLogo";
 
 /**
  * The frame around /signup and /signin.
@@ -112,28 +113,46 @@ const AuthShell = ({
                     draggable across the whole panel. */}
                 <InvoicePaper className="absolute inset-0" {...palette} />
 
-                {/* The copy is left-aligned and the sheet is pushed right, but
-                    at this width they still meet in the middle. This grounds
-                    the text without putting a box around it — and it stops
-                    before the item table, so the half of the invoice worth
-                    reading stays crisp. Later in the DOM than the canvas and
-                    earlier than the copy, which is all the ordering it needs. */}
+                {/* The copy is left-aligned and the sheet is pushed right. At
+                    1024 they still meet, so this grounds the text without
+                    putting a box around it.
+
+                    Two things it must not do, both of which it did. It runs
+                    42% of the panel, not 80%: solveSheetPlacement puts the
+                    sheet's left edge at 48% of the panel on a 1920 window and
+                    42.5% on a 1440 one, so the fade now reaches transparent
+                    before the paper starts and lays no shade on the invoice at
+                    either. Below that it does overlap, because at 1024 the
+                    panel is 512px wide and there is nowhere for the sheet to
+                    go. And it is pointer-events-none: it sits above the canvas
+                    in paint order, so without that it ate every drag aimed at
+                    the sheet and the invoice was decoration you could not
+                    touch. */}
                 <div
                     aria-hidden="true"
-                    className="absolute inset-y-0 left-0 w-4/5 bg-gradient-to-r from-primary via-primary/80 to-transparent"
+                    className="pointer-events-none absolute inset-y-0 left-0 w-[42%] bg-gradient-to-r from-primary via-primary/60 to-transparent"
                 />
 
                 <span className="relative z-10 flex items-center gap-2.5 pointer-events-none">
+                    {/* The chevron mark, not the full lockup: "Elixir Book" is
+                        set in type right beside it and the lockup carries its
+                        own wordmark, so the lockup would print the name twice.
+                        The white chip stays — the mark's navy and blue strokes
+                        are close enough to bg-primary to disappear against it. */}
                     <span
                         aria-hidden="true"
-                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-foreground text-primary text-xs font-bold"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-foreground"
                     >
-                        EB
+                        <span style={logoCropStyle(BRAND_MARK, 22)} />
                     </span>
                     <span className="font-semibold">Elixir Book</span>
                 </span>
 
-                <div className="relative z-10 max-w-md pointer-events-none">
+                {/* 25rem, not Tailwind's max-w-md. The copy ends at 40px + this
+                    width and the sheet's left edge lands at 468px on a 1920
+                    window, so max-w-md's 448 put the last words of the
+                    paragraph flush against the paper. 400 clears it by 28. */}
+                <div className="relative z-10 max-w-[25rem] pointer-events-none">
                     <h1 className="text-4xl font-bold leading-tight">
                         One system for procurement, sales, stock and the books.
                     </h1>

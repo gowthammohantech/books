@@ -55,7 +55,7 @@ const DOCUMENT_TABS: ReadonlyArray<{ label: string; entityType: string }> = [
     { label: "Voucher", entityType: "JournalEntry" },
     { label: "Payments", entityType: "InvoicePayment" },
     { label: "Stock", entityType: "Inventory" },
-    { label: "Contacts", entityType: "Contact" },
+    { label: "Parties", entityType: "Contact" },
 ];
 
 const ActivityLogList: React.FC = () => {
@@ -241,7 +241,7 @@ const ActivityLogList: React.FC = () => {
           </Fragment>
         ))}
         {!isLoading && !logs.length && (
-          <NoRecords colSpan={6} message="No activity found" />
+          <NoRecords art="checking-boxes" colSpan={6} message="No activity found" />
         )}
         {isLoading && (
           <tr key="table-loader">

@@ -91,7 +91,7 @@ const SectionTable = ({ type, docs, onApprove, onReject, actionLoadingId, format
                     </thead>
                     <tbody>
                         {docs.length === 0 ? (
-                            <NoRecords colSpan={5} message={`No pending ${label.toLowerCase()} approvals.`} />
+                            <NoRecords art="checking-boxes" colSpan={5} message={`No pending ${label.toLowerCase()} approvals.`} />
                         ) : (
                             docs.map((doc, idx) => {
                                 const isActing = actionLoadingId === doc.id;
@@ -224,7 +224,7 @@ const ApprovalsQueue: React.FC = () => {
             <PageHeader
                 title={
                     <span className="flex flex-col">
-                        <span>Approvals Queue</span>
+                        <span>Approvals</span>
                         {!isLoading && (
                             <span className="text-xs font-normal text-gray-500">
                                 {totalPending === 0

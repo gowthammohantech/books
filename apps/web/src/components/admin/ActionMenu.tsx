@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { MoreVertical } from 'lucide-react';
+
+import { AnimatedIcon } from '@components/icons';
 import { useSelector } from 'react-redux';
 import { filterByPermission, type Action } from '@components/admin/tableActions';
 import type { RootState } from '@store/index';
@@ -46,7 +47,7 @@ export const ActionMenu = <T,>({ row, actions: rawActions }: ActionMenuProps<T>)
     <div
       ref={menuRef}
       style={{ top: `${position.top}px`, left: `${position.left}px` }}
-      className="fixed min-w-[128px] bg-white rounded-md shadow-lg border border-gray-200 z-50"
+      className="fixed min-w-[128px] bg-white rounded-md shadow-lg border border-gray-200 z-50 animate-pop-in motion-reduce:animate-none"
     >
       <ul>
         {actions.map((action) => {
@@ -80,7 +81,7 @@ export const ActionMenu = <T,>({ row, actions: rawActions }: ActionMenuProps<T>)
         onClick={() => setIsOpen(!isOpen)}
         className="p-1 rounded-full hover:bg-gray-200 transition-colors "
       >
-        <MoreVertical size={20} className="text-gray-600 cursor-pointer" />
+        <AnimatedIcon name="more-vertical" size={20} className="text-gray-600 cursor-pointer" />
       </button>
       {isOpen && createPortal(Menu, document.body)}
     </>

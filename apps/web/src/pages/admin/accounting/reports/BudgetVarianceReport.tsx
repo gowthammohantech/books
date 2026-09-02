@@ -129,7 +129,7 @@ export default function BudgetVarianceReport() {
             </thead>
             <tbody>
               {data.rows.length === 0 ? (
-                <NoRecords colSpan={7} message="No budget data found for this period." />
+                <NoRecords art="analysis" colSpan={7} message="No budget data found for this period." />
               ) : (
                 <>
                   {data.rows.map((row) => (

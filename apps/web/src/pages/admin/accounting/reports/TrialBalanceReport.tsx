@@ -106,7 +106,7 @@ export default function TrialBalanceReport() {
               </thead>
               <tbody>
                 {data.accounts.length === 0 ? (
-                  <NoRecords colSpan={6} message="No accounts found for this date." />
+                  <NoRecords art="analysis" colSpan={6} message="No accounts found for this date." />
                 ) : (
                   data.accounts.map((a) => (
                     <tr key={a.id} className="border-b border-border">

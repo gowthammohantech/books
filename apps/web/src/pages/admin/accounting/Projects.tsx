@@ -14,11 +14,12 @@ import type { Action } from "@components/admin/tableActions";
 import SubmitButton from "@components/admin/SubmitButton";
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import InputField from "@components/admin/InputField";
-import { Badge, type BadgeColor, Button, PageSizeSelect } from "@components/ui";
+import { Badge, type BadgeColor, Button, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 import PermissionGuard from "@components/admin/PermissionGuard";
 import ProjectMembersPanel from "@components/admin/project/ProjectMembersPanel";
 
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 const PROJECT_STATUSES = ["active", "inactive", "completed"] as const;
 type ProjectStatus = typeof PROJECT_STATUSES[number];
 
@@ -175,6 +176,12 @@ const Projects: React.FC = () => {
 
     const tableHeaders = ["#", "Code", "Name", "Status", "Members & Billing", "Actions"];
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && items.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Projects">
@@ -182,63 +189,75 @@ const Projects: React.FC = () => {
                     New Project
                 </Button>
             </PageHeader>
-
-            <div className="flex flex-col md:flex-row justify-between gap-4">
-                <input
-                    type="text"
-                    placeholder="Search projects..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.projects}
+                    action={<Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={openCreate}>
+                        {LIST_EMPTY_STATES.projects.cta}
+                    </Button>}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
+            ) : (
+                <>
 
-            <Table headers={tableHeaders}>
-                {!isLoading && items.length > 0 &&
-                    items.map((item, index) => (
-                        <TableRow
-                            key={item.id}
-                            row={item}
-                            index={index + 1}
-                            columns={[
-                                <span className="text-primary font-mono">{item.code}</span>,
-                                item.name,
-                                <Badge color={statusBadgeColor(item.status)} className="capitalize">{item.status}</Badge>,
-                                <PermissionGuard moduleSlug="time-tracking-others" action="edit" fallback={<span className="text-gray-300">—</span>}>
-                                    <Button
-                                        variant="white"
-                                        size="sm"
-                                        leftIcon={<Users size={14} />}
-                                        onClick={() => setMembersProjectId(item.id)}
-                                    >
-                                        Members & Billing
-                                    </Button>
-                                </PermissionGuard>,
-                            ]}
-                            actions={tableActions}
-                            onRowClick={(item) => openEdit(item)}
-                        />
-                    ))
-                }
-                {!isLoading && items.length === 0 && (
-                    <tr><td className="text-center py-4 font-semibold text-gray-500" colSpan={6}>No Projects Found</td></tr>
-                )}
-                {isLoading && (
-                    <tr key="loader"><td className="text-center py-2 font-semibold" colSpan={6}><LoaderSpinner /></td></tr>
-                )}
-            </Table>
+                <div className="flex flex-col md:flex-row justify-between gap-4">
+                    <input
+                        type="text"
+                        placeholder="Search projects..."
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
 
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handlePageChange(newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                <Table headers={tableHeaders}>
+                    {!isLoading && items.length > 0 &&
+                        items.map((item, index) => (
+                            <TableRow
+                                key={item.id}
+                                row={item}
+                                index={index + 1}
+                                columns={[
+                                    <span className="text-primary font-mono">{item.code}</span>,
+                                    item.name,
+                                    <Badge color={statusBadgeColor(item.status)} className="capitalize">{item.status}</Badge>,
+                                    <PermissionGuard moduleSlug="time-tracking-others" action="edit" fallback={<span className="text-gray-300">—</span>}>
+                                        <Button
+                                            variant="white"
+                                            size="sm"
+                                            leftIcon={<Users size={14} />}
+                                            onClick={() => setMembersProjectId(item.id)}
+                                        >
+                                            Members & Billing
+                                        </Button>
+                                    </PermissionGuard>,
+                                ]}
+                                actions={tableActions}
+                                onRowClick={(item) => openEdit(item)}
+                            />
+                        ))
+                    }
+                    {!isLoading && items.length === 0 && (
+                        <EmptyStateRow colSpan={6} art="folder" title="No Projects Found" />
+                    )}
+                    {isLoading && (
+                        <tr key="loader"><td className="text-center py-2 font-semibold" colSpan={6}><LoaderSpinner /></td></tr>
+                    )}
+                </Table>
+
+                <PaginationWrapper
+                    count={pagination.totalPages}
+                    page={page}
+                    from={from}
+                    to={to}
+                    total={pagination.total}
+                    onChange={(_, newPage) => handlePageChange(newPage)}
+                    paginationVariant="outlined"
+                    paginationShape="rounded"
+                />
+                </>
+            )}
+
 
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={isEditMode ? "Edit Project" : "Add New Project"} size="md">
                 <form onSubmit={handleSubmit} className="space-y-4">

@@ -33,7 +33,6 @@ import {
   Pencil,
   Plus,
   Send,
-  Sparkles,
   Trash2,
   X
 } from 'lucide-react';
@@ -41,6 +40,7 @@ import {
 import Constants from '@constants/api';
 import type { RootState } from '@store/index';
 import { useAiChatStream, type ToolEvent } from '@hooks/useAiChatStream';
+import lixiLogo from '@assets/images/lixi-logo.png';
 
 interface AiChatPanelProps {
   onClose: () => void;
@@ -241,9 +241,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ onClose }) => {
     >
         {/* Header */}
         <div className="flex items-center gap-2 border-b border-gray-200 px-4 py-3">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 text-white">
-            <Sparkles size={16} />
-          </span>
+          <img src={lixiLogo} alt="" aria-hidden="true" className="h-8 w-8 shrink-0 rounded-lg" />
 
           <div className="min-w-0 flex-1">
             {editingTitle ? (
@@ -363,9 +361,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ onClose }) => {
         <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
           {!hasContent && (
             <div className="flex h-full flex-col items-center justify-center text-center">
-              <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white">
-                <Sparkles size={22} />
-              </span>
+              <img src={lixiLogo} alt="" aria-hidden="true" className="mb-3 h-12 w-12 rounded-2xl" />
               <h3 className="text-sm font-semibold text-gray-800">Ask about your finances</h3>
               <p className="mb-4 mt-1 max-w-xs text-xs text-gray-500">
                 Grounded in your real ledger data — never made-up numbers.

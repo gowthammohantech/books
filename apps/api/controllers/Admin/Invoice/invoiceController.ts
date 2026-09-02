@@ -920,7 +920,10 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
             where: { id: productId, tenantId },
             select: { item_type: true, valuationMethod: true },
           });
-          if (product?.item_type === 'Service') continue;
+          // ...and never for a line that resolves to no Product at all. The
+          // productId fallback above accepts a client-side row id, and booking a
+          // movement against one violates Inventory's productId FK (P2003).
+          if (!product || product.item_type === 'Service') continue;
 
           // Compute COGS from pre-adjustment state (WAC only; FIFO avgCost=0 → cogs=0 as documented).
           if (product?.valuationMethod !== 'FIFO') {
@@ -1566,7 +1569,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
             where: { id: productId, tenantId },
             select: { item_type: true },
           });
-          if (product?.item_type === 'Service') continue;
+          if (!product || product.item_type === 'Service') continue;
           // Receive back at the current avgCost so reversing the issue leaves the
           // WAC average unchanged (a receipt at avg is a blend no-op).
           const invRow = await tx.inventory.findFirst({
@@ -1599,7 +1602,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
             where: { id: productId, tenantId },
             select: { item_type: true },
           });
-          if (product?.item_type === 'Service') continue;
+          if (!product || product.item_type === 'Service') continue;
           await applyStockAdjustment(tx as unknown as Parameters<typeof applyStockAdjustment>[0], {
             productId,
             tenantId,
@@ -2501,7 +2504,7 @@ export async function deleteInvoice(req: Request, res: Response): Promise<void> 
             where: { id: productId, tenantId },
             select: { item_type: true },
           });
-          if (product?.item_type === 'Service') continue;
+          if (!product || product.item_type === 'Service') continue;
           // Bug 4: restore at a valuation-neutral cost — the reversing stock_in
           // must not dilute WAC (restocking at 0 blends the average toward 0) nor
           // create a 0-cost FIFO layer. Mirrors the avgCost-neutral revert used by
@@ -3035,7 +3038,7 @@ export async function convertProformaToInvoice(req: Request, res: Response): Pro
           where: { id: productId, tenantId },
           select: { item_type: true, valuationMethod: true },
         });
-        if (product?.item_type === 'Service') continue;
+        if (!product || product.item_type === 'Service') continue;
         // Compute COGS from pre-adjustment state (WAC only; FIFO avgCost=0 → cogs=0).
         if (product?.valuationMethod !== 'FIFO') {
           const invForCogs = await tx.inventory.findFirst({
