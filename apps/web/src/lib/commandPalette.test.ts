@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { buildCommands, highlightRanges, rankCommands } from './commandPalette';
 import type { NavItemType } from '@models/sidebar';
 import type { PermissionSet } from '@models/permissions';
+import { navItems } from './navigation';
+import { applyModulePreferences, withIncluded } from './setupModules';
 
 const perm = (slug: string, over: Partial<PermissionSet> = {}): PermissionSet => ({
     id: `p-${slug}`, roleId: 'r1', moduleId: `m-${slug}`, moduleName: slug, moduleSlug: slug,
@@ -106,6 +108,53 @@ describe('coverage of the real sidebar tree', () => {
 
     it('covers the whole tree, not a truncated slice of it', () => {
         expect(superAdminCommands.length).toBeGreaterThan(100);
+    });
+});
+
+describe('module preferences', () => {
+    // The palette used to decide whether to append the report and settings
+    // catalogues by testing `items === navItems`. A module-filtered tree is a
+    // COPY of the real tree, so that identity test failed and every report and
+    // settings destination silently vanished from the palette. The
+    // `includeCatalogues` flag exists to say so explicitly.
+    const filtered = applyModulePreferences(navItems, withIncluded(['sales']));
+
+    it('keeps the report and settings catalogues when handed a filtered tree', () => {
+        const titles = buildCommands([], filtered, true).map((c) => c.title);
+        expect(titles).toContain('Company Settings');
+        expect(titles).toContain('Email Settings');
+        // A report that lives only in the report catalogue, never in navItems.
+        expect(titles).toContain('Trial Balance');
+    });
+
+    it('would drop them without the flag - which is why the flag is passed', () => {
+        const titles = buildCommands([], filtered).map((c) => c.title);
+        expect(titles).not.toContain('Company Settings');
+    });
+
+    it('stops offering a module the workspace switched off', () => {
+        // Assert on PATHS, not titles. "Purchase Orders" is also the name of a
+        // Settings > Module Settings page (/settings/module-settings/
+        // purchase-order), which is a settings destination and stays reachable
+        // no matter which operational modules are switched off.
+        const paths = buildCommands([], filtered, true).map((c) => c.path);
+        expect(paths).toContain('/invoices');
+        expect(paths).not.toContain('/purchase-orders');
+        expect(paths).not.toContain('/purchases');
+        expect(paths).not.toContain('/payroll/pay-runs');
+    });
+
+    it('keeps the Settings pages of a switched-off module - Settings is its own area', () => {
+        const paths = buildCommands([], filtered, true).map((c) => c.path);
+        expect(paths).toContain('/settings/module-settings/purchase-order');
+    });
+
+    it('still appends the catalogues by default for the unfiltered tree', () => {
+        // applyModulePreferences returns navItems by reference when there is no
+        // preference, so the historic default keeps working untouched.
+        expect(applyModulePreferences(navItems, null)).toBe(navItems);
+        expect(buildCommands([], applyModulePreferences(navItems, null)).map((c) => c.title))
+            .toContain('Company Settings');
     });
 });
 

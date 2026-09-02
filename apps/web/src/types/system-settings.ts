@@ -73,6 +73,9 @@ export interface SystemSettings {
     invoiceTemplate: InvoiceTemplate;
     invoicePrefix: string;
     invoiceNumberType: 'auto' | 'manual';
+    /** Modules chosen in setup. Absent/null = never chosen = show everything.
+     *  Read through `useEnabledModules`, which narrows it to known keys. */
+    enabledModules?: string[] | null;
     /** Per-role configurable post-login landing page (moduleSlug). Backend
      *  defaults this to "dashboard" when the role hasn't set one. */
     defaultRoute?: string;

@@ -12,6 +12,9 @@ import {
     Users,
 } from "lucide-react";
 import { useDebounce } from "@hooks/useDebounce";
+import { useEnabledModules } from "@hooks/useEnabledModules";
+import { navItems } from "@lib/navigation";
+import { applyModulePreferences } from "@lib/setupModules";
 import { useEntitySearch, entityLabel } from "@hooks/useEntitySearch";
 import { useRecentCommands } from "@hooks/useRecentCommands";
 import {
@@ -97,9 +100,14 @@ const CommandPalette = ({ isOpen, onClose }: CommandPaletteProps) => {
         isOpen ? debouncedQuery : ""
     );
 
+    // Same module preference the sidebar applies, so the palette cannot offer
+    // what the rail has hidden. `true` keeps the report and settings
+    // catalogues, which the filtered tree would otherwise lose - see
+    // buildCommands' `includeCatalogues`.
+    const enabledModules = useEnabledModules();
     const commands = useMemo(
-        () => buildCommands(permissions ?? []),
-        [permissions, user]
+        () => buildCommands(permissions ?? [], applyModulePreferences(navItems, enabledModules), true),
+        [permissions, user, enabledModules]
     );
 
     const sections = useMemo<PaletteSection[]>(() => {

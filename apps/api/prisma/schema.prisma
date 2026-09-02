@@ -422,6 +422,17 @@ enum ConversationStatus {
   expired
 }
 
+/// What this company DOES, asked once during onboarding.
+///
+/// Nullable on CompanySettings because every workspace that existed before the
+/// setup wizard was never asked. It drives the module preset the wizard offers
+/// and nothing else — it grants no access and gates no route.
+enum BusinessType {
+  MANUFACTURING
+  TRADING
+  SERVICES
+}
+
 enum TaxRegime {
   GST_INDIA
   VAT_GENERIC
@@ -2127,6 +2138,13 @@ model CompanySettings {
   // additive / backward-compatible; reverse-charge (B2B) and domestic behaviour are
   // unaffected.
   ossRegistered Boolean @default(false)
+
+  // What kind of business this is, captured by the setup wizard. Null = never
+  // asked (every workspace predating the wizard). A durable attribute of the
+  // company, not a UI preference — the module SELECTION it seeds lives in
+  // GeneralSetting under key 'enabledModules', because that one is a
+  // preference and needs an "unset" state a text[] cannot express.
+  businessType BusinessType?
 
   // Tax registration identifiers (tenant-level). Nullable / additive — null = not registered.
   gstin       String? // India GSTIN (also used by e-invoicing)

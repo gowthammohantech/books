@@ -4,7 +4,7 @@ import AdminRoute from "./AdminRoute";
 import AdminLogin from "@pages/admin/auth/AdminLogin";
 import AdminRegister from "@pages/admin/auth/AdminRegister";
 import AdminLogout from "@pages/admin/auth/AdminLogout";
-import SetupOrganizationInfo from "@pages/admin/auth/SetupOrganizationInfo";
+import SetupWizard from "@pages/admin/auth/setup/SetupWizard";
 import SsoLanding from "@pages/admin/auth/SsoLanding";
 import WorkspacePicker from "@pages/admin/auth/WorkspacePicker";
 import PublicInvoiceViewer from "@pages/public/PublicInvoiceViewer";
@@ -100,7 +100,7 @@ const AppRoutes = () => {
                     path="/setup"
                     element={
                         isAuthenticated ? (
-                            <><Seo title="Set up your workspace" /><SetupOrganizationInfo /></>
+                            <><Seo title="Set up your workspace" /><SetupWizard /></>
                         ) : (
                             <Navigate to="/signin" replace />
                         )

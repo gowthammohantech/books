@@ -52,6 +52,11 @@ const AdminHeader = () => {
     const permissions = systemSettings?.permissions;
     // Same flattened tree the palette searches, so the breadcrumb can never name
     // a destination the menu hides from this role.
+    // Deliberately the FULL tree, unlike the sidebar and the palette: this list
+    // feeds resolveBreadcrumb and nothing else. Module preferences hide rows,
+    // they do not block routes, so a bookmark or a shared link into a
+    // switched-off module still renders - and it should still get a breadcrumb
+    // rather than an empty top bar.
     const commands = useMemo(() => buildCommands(permissions ?? []), [permissions]);
     const crumbs = useMemo(
         () => resolveBreadcrumb(pathname, commands),

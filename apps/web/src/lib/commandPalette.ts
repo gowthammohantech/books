@@ -205,7 +205,18 @@ const EXTRA_COMMANDS: ReadonlyArray<ExtraCommand> = [
  */
 export const buildCommands = (
     permissions: PermissionSet[],
-    items: NavItemType[] = navItems
+    items: NavItemType[] = navItems,
+    /**
+     * Append the report and settings catalogues, the app's other two nav
+     * sources. Defaults to "yes, when handed the real tree", which is how this
+     * used to be decided implicitly.
+     *
+     * It has to be overridable now that a caller may hand in a FILTERED copy of
+     * the real tree (setupModules.applyModulePreferences). That copy is a
+     * different array, so the identity test below would silently drop every
+     * report and settings destination from the palette.
+     */
+    includeCatalogues: boolean = items === navItems
 ): Command[] => {
     const out: Command[] = [];
     const seen = new Set<string>();
@@ -285,12 +296,13 @@ export const buildCommands = (
     //
     // Only for the real tree. A caller that supplies its own `items` is
     // exercising the flattener against a fixture and should get exactly the
-    // destinations it declared, not the app's.
+    // destinations it declared, not the app's - unless it says otherwise, which
+    // is what a module-filtered real tree does.
     //
     // Pushed last so a hand-written EXTRA_COMMANDS entry wins the id: those
     // carry better palette labels ("Account Settings" over the catalogue's
     // in-context "General") and their own synonyms.
-    if (items === navItems) {
+    if (includeCatalogues) {
         // The report catalogue is the app's third nav source. The sidebar's
         // Reports accordion collapsed into a single link to the Reports Center,
         // which took twelve destinations out of `navItems` — and the seventeen

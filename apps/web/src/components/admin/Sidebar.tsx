@@ -11,7 +11,9 @@ import { resolveNavPath as resolveSidebarPath } from "@lib/navPaths";
 import { badgesByRoute } from "@lib/workQueues";
 import { useWorkQueues } from "@hooks/useWorkQueues";
 import { useNavFlyout } from "@hooks/useNavFlyout";
-import { canCreate } from "@lib/navigation";
+import { canCreate, navItems } from "@lib/navigation";
+import { applyModulePreferences } from "@lib/setupModules";
+import { useEnabledModules } from "@hooks/useEnabledModules";
 import {
     buildNavModules,
     findActiveNavRoute,
@@ -302,7 +304,14 @@ const Sidebar = ({
     const subtitle =
         activeTenant?.name?.trim() || systemSettings?.company?.companyName?.trim() || "";
 
-    const modules = useMemo(() => buildNavModules(permissions), [permissions]);
+    // The workspace's own module choice from setup, on top of the role's
+    // permissions. A preference, not a permission: the routes still resolve, so
+    // a bookmark into a hidden module keeps working.
+    const enabledModules = useEnabledModules();
+    const modules = useMemo(
+        () => buildNavModules(permissions, applyModulePreferences(navItems, enabledModules)),
+        [permissions, enabledModules]
+    );
     const active = useMemo(
         () => findActiveNavRoute(modules, resolveSidebarPath(pathname)),
         [modules, pathname]

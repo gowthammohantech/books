@@ -546,7 +546,15 @@ export async function session(req: Request, res: Response): Promise<void> {
         setup: {
           // The per-tenant replacement for the old install-wide
           // `company_settings` flag: has THIS workspace been through /setup?
-          companySettingsComplete: !!companySettings,
+          //
+          // The NAME, not the row. `applyPack` upserts a placeholder
+          // CompanySettings with `companyName: ''` so a fresh tenant does not
+          // trip P2025 (lib/ledger/applyPack.ts), and it is reachable from the
+          // settings page as well as from setup. Keying on row existence let
+          // that placeholder lift the gate and drop the user into a workspace
+          // with a blank company. A tenant that genuinely finished setup always
+          // has a name — updateCompanySetup 400s without one.
+          companySettingsComplete: !!companySettings?.companyName?.trim(),
         },
         permissions,
       },

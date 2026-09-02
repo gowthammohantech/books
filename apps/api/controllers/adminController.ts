@@ -33,7 +33,11 @@ export async function getCountries(req: Request, res: Response): Promise<void> {
   try {
     const search = (req.query.search as string) ?? '';
     const where: Prisma.CountryWhereInput = {};
-    const select = { id: true, name: true };
+    // iso2 is additive: the setup wizard picks which tax-registration field to
+    // show (GSTIN / VAT / ABN / NZ GST) from the country, and it has to do so
+    // before the country pack has derived a taxRegime to key off. Existing
+    // consumers map id/name and ignore the extra key.
+    const select = { id: true, name: true, iso2: true };
 
     if (search) {
       where.name = { contains: search, mode: 'insensitive' };

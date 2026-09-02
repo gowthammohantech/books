@@ -22,6 +22,7 @@ const OUT = resolve(here, '../src/generated.ts');
 const ENUMS = [
   'AccountType',
   'BankTransactionRelatedType',
+  'BusinessType',
   'BankTransactionType',
   'CategoryAppliesTo',
   'GatewayKind',

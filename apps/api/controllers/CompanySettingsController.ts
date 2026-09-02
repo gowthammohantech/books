@@ -12,6 +12,23 @@ import { resolvePackCode } from '../lib/ledger/resolvePackCode';
 import { seedTransactionCategoriesForUser } from '../prisma/seedTransactionCategories';
 import { ensureDefaultTaxGroup } from '../lib/tax/ensureDefaultTaxGroup';
 import { parseVatNumber } from '../lib/euVat';
+import {
+  BUSINESS_TYPE_VALUES,
+  parseSetupModuleKeys,
+  type BusinessType,
+} from '@elixirbooks/enums';
+
+/**
+ * Where the setup wizard's module selection lives.
+ *
+ * A GeneralSetting row, not a CompanySettings column: the meaningful states are
+ * "never chosen" (every workspace older than the wizard) and "chose this list",
+ * and only an absent row expresses the first one honestly.
+ */
+const ENABLED_MODULES_KEY = 'enabledModules';
+
+/** Local alias so the validation below reads as a list, not a Prisma import. */
+const BUSINESS_TYPES = BUSINESS_TYPE_VALUES;
 
 /**
  * Structural validation for the tenant tax identifiers. Empty/null/undefined are
@@ -454,6 +471,7 @@ export async function updateCompanySettings(req: Request, res: Response): Promis
       'companyBanner',
       'fax',
       'taxRegime',
+      'businessType',
       'countryId',
       'stateId',
       'publicBaseUrl',
@@ -751,6 +769,7 @@ export async function getBasicDetails(req: Request, res: Response): Promise<void
       invoiceTemplate,
       invoicePrefixSetting,
       invoiceNumberTypeSetting,
+      enabledModulesSetting,
     ] = await Promise.all([
       prisma.currency.findFirst({
         where: { tenantId, isDeleted: false, isDefault: true },
@@ -778,6 +797,9 @@ export async function getBasicDetails(req: Request, res: Response): Promise<void
       }),
       prisma.generalSetting.findUnique({ where: { tenantId_key: { tenantId, key: 'invoicePrefix' } } }),
       prisma.generalSetting.findUnique({ where: { tenantId_key: { tenantId, key: 'invoiceNumberType' } } }),
+      prisma.generalSetting.findUnique({
+        where: { tenantId_key: { tenantId, key: ENABLED_MODULES_KEY } },
+      }),
     ]);
 
     const defaultValues = {
@@ -849,6 +871,11 @@ export async function getBasicDetails(req: Request, res: Response): Promise<void
         ? invoiceNumberTypeSetting.value
         : 'auto';
 
+    // The setup wizard's module selection. NULL, not [], when the row is
+    // absent: the sidebar reads null as "this workspace never chose, show
+    // everything", and an empty array would read as "show nothing".
+    const enabledModules = parseSetupModuleKeys(enabledModulesSetting?.value);
+
     let processedCompanySettings: Record<string, unknown> | null = null;
     if (companySettings) {
       processedCompanySettings = cleanObject(
@@ -917,6 +944,7 @@ export async function getBasicDetails(req: Request, res: Response): Promise<void
         defaultValues.invoiceTemplate,
       invoicePrefix,
       invoiceNumberType,
+      enabledModules,
     };
 
     res.status(200).json({
@@ -943,29 +971,77 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
   try {
     const tenantId = requireTenantId(req);
 
-    const user = await prisma.user.findUnique({ where: { id: tenantId } });
-    if (!user) {
-      res.status(404).json({ success: false, message: 'User not found' });
-      return;
-    }
+    // The ACTING USER, not the tenant. These two ids coincide only for the
+    // FIRST workspace: provisionTenant reuses the owner's user id there, while
+    // POST /api/auth/tenants mints an ordinary uuid (authController.createTenant
+    // says so explicitly). Looking the user up by tenantId therefore 404'd every
+    // workspace after the first — and since a freshly provisioned tenant has no
+    // CompanySettings row, /setup is exactly where it gets sent, so the second
+    // workspace could never be completed at all.
+    //
+    // The row is consulted only for fallback contact details on the create
+    // branch below, so a miss is not fatal and must not 404.
+    const user = await prisma.user.findUnique({ where: { id: requireActingUserId(req) } });
 
     const {
       companyName,
       address,
       country,
       state,
+      stateId,
       city,
       pincode,
       currencyId,
       timezoneId,
       dateFormatId,
+      businessType,
+      gstin,
+      vatNumber,
+      abn,
+      nzGstNumber,
     } = req.body as Record<string, string | undefined>;
 
-    if (!companyName || !country || !state || !city) {
+    // `enabledModules` is the one array in the payload, so it is read
+    // separately rather than through the string-typed destructure above.
+    const enabledModules = (req.body as Record<string, unknown>).enabledModules;
+
+    // City is NOT required. The wizard's company step asks for name, tax id and
+    // state; address, city and pincode are the kind of detail a new workspace
+    // rarely has to hand on day one and can fill in later under Settings >
+    // Company. State stays required — it decides GST place-of-supply in India.
+    if (!companyName || !country || !state) {
       res.status(400).json({
         success: false,
-        message: 'Company Name, Country, State, and City are required.',
+        message: 'Company Name, Country and State are required.',
       });
+      return;
+    }
+
+    if (businessType !== undefined && businessType !== null && businessType !== '') {
+      if (!BUSINESS_TYPES.includes(businessType as (typeof BUSINESS_TYPES)[number])) {
+        res.status(400).json({
+          success: false,
+          message: `Invalid business type. Expected one of: ${BUSINESS_TYPES.join(', ')}.`,
+        });
+        return;
+      }
+    }
+
+    const parsedModules = parseSetupModuleKeys(enabledModules);
+    if (parsedModules === null && enabledModules !== undefined) {
+      res.status(400).json({
+        success: false,
+        message: 'enabledModules must be an array of known module keys.',
+      });
+      return;
+    }
+
+    // Same loose format checks the settings page applies. gstin is deliberately
+    // not among them (see validateTaxIdentifiers) — a company mid-registration
+    // must still be able to finish setup.
+    const taxIdError = validateTaxIdentifiers({ vatNumber, abn, nzGstNumber });
+    if (taxIdError) {
+      res.status(400).json({ success: false, message: taxIdError });
       return;
     }
 
@@ -986,6 +1062,20 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
     const countryRow = country
       ? await prisma.country.findUnique({ where: { id: country } })
       : null;
+    // Same treatment for the state the wizard's dropdown sends. Without this a
+    // stale or bogus id reaches Postgres as an FK violation and surfaces as a
+    // raw 500 — the exact bug companySettingsController.fkValidation covers for
+    // the settings page.
+    const stateRow = stateId
+      ? await prisma.state.findUnique({ where: { id: stateId } })
+      : null;
+    if (stateId && !stateRow) {
+      res.status(400).json({
+        success: false,
+        message: 'Selected state was not found. Pick it again from the list.',
+      });
+      return;
+    }
 
     if (currencyId && !currency) throw new Error('Invalid Currency selected.');
     if (timezoneId && !timezone) throw new Error('Invalid Timezone selected.');
@@ -1010,10 +1100,18 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
             companyName: companyName!,
             address: address ?? companySettings.address,
             country: country!,
-            ...(countryRow ? { countryId: country! } : {}),
             state: state!,
-            city: city!,
+            // City is optional now, so an omitted one must not blank a value
+            // the workspace already had.
+            city: city ?? companySettings.city,
             pincode: pincode ?? companySettings.pincode,
+            ...(countryRow ? { countryId: country! } : {}),
+            ...(stateRow ? { stateId: stateId! } : {}),
+            ...(businessType ? { businessType: businessType as BusinessType } : {}),
+            ...(gstin !== undefined ? { gstin: gstin || null } : {}),
+            ...(vatNumber !== undefined ? { vatNumber: vatNumber || null } : {}),
+            ...(abn !== undefined ? { abn: abn || null } : {}),
+            ...(nzGstNumber !== undefined ? { nzGstNumber: nzGstNumber || null } : {}),
             ...(companyLogoUrl ? { siteLogo: companyLogoUrl } : {}),
           },
         });
@@ -1021,14 +1119,20 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
         companySettings = await tx.companySettings.create({
           data: {
             companyName: companyName!,
-            email: user.email || 'info@example.com',
-            phone: user.phone || '9876543212',
+            email: user?.email || 'info@example.com',
+            phone: user?.phone || '9876543212',
             address: address ?? '',
             country: country!,
-            ...(countryRow ? { countryId: country! } : {}),
             state: state!,
-            city: city!,
+            city: city ?? '',
             pincode: pincode ?? '',
+            ...(countryRow ? { countryId: country! } : {}),
+            ...(stateRow ? { stateId: stateId! } : {}),
+            ...(businessType ? { businessType: businessType as BusinessType } : {}),
+            ...(gstin !== undefined ? { gstin: gstin || null } : {}),
+            ...(vatNumber !== undefined ? { vatNumber: vatNumber || null } : {}),
+            ...(abn !== undefined ? { abn: abn || null } : {}),
+            ...(nzGstNumber !== undefined ? { nzGstNumber: nzGstNumber || null } : {}),
             siteLogo: companyLogoUrl ?? '',
             tenantId,
           },
@@ -1066,6 +1170,29 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
             startWeek: 'Monday',
             isActive: true,
           },
+        });
+      }
+
+      // The module selection from step 3.
+      //
+      // A GeneralSetting row rather than a CompanySettings column, because an
+      // ABSENT row is the honest way to say "this workspace was never asked" —
+      // which is true of every workspace predating the wizard, and means "show
+      // everything". A text[] column would default to '{}' and make that
+      // indistinguishable from "switched every module off".
+      //
+      // Inside the transaction so a workspace can never end up with a company
+      // profile but no module preference, or the reverse.
+      if (parsedModules) {
+        await tx.generalSetting.upsert({
+          where: { tenantId_key: { tenantId, key: ENABLED_MODULES_KEY } },
+          create: {
+            tenantId,
+            key: ENABLED_MODULES_KEY,
+            groupSlug: 'onboarding',
+            value: parsedModules,
+          },
+          update: { value: parsedModules },
         });
       }
 

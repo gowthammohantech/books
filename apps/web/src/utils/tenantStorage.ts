@@ -45,6 +45,10 @@ export const NAMESPACE = "eb";
 export const TENANT_SCOPED_KEYS = [
     "systemSettings",
     "setupStatus",
+    // The setup wizard's in-progress answers. Per workspace for the same reason
+    // as setupStatus: someone configuring their second company must not be
+    // shown the first one's half-finished form.
+    "setupDraft",
     "nextInvoiceNo",
     "defaultNextInvNo",
     "nextPurchaseOrderId",

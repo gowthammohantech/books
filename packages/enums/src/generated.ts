@@ -34,6 +34,18 @@ export const BANK_TRANSACTION_RELATED_TYPE_VALUES = [
   'MANUAL',
 ] as const satisfies readonly BankTransactionRelatedType[];
 
+/** Mirrors the Prisma `BusinessType` enum. */
+export type BusinessType =
+  | 'MANUFACTURING'
+  | 'TRADING'
+  | 'SERVICES';
+
+export const BUSINESS_TYPE_VALUES = [
+  'MANUFACTURING',
+  'TRADING',
+  'SERVICES',
+] as const satisfies readonly BusinessType[];
+
 /** Mirrors the Prisma `BankTransactionType` enum. */
 export type BankTransactionType =
   | 'DEPOSIT'
