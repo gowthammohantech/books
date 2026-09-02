@@ -50,8 +50,13 @@ re-litigate settled decisions and churn good code. Already complete:
   `@elixirbooks/money` unified rounding that disagreed with the server on ~1 line in 825.
 - **An HTTP client.** `apps/web/src/lib/apiClient.ts` — one axios instance, base URL, a
   token-attaching request interceptor, and the 401 handler moved off the global axios default.
-  It replaced 303 hand-written `Authorization` headers. **There is exactly one raw `axios.*`
-  request left in the app, and it is `axios.create()` inside that file.**
+  It replaced 303 hand-written `Authorization` headers. Adoption is near-total: 566 `api.*` calls
+  across 207 files, and no `axios.get`/`axios.post`-style call anywhere else. **Correction to an
+  earlier draft of this document, which claimed only `axios.create()` remained:
+  `pages/admin/settings/ProfileSettings.tsx` still makes 4 requests using the bare *call form*
+  `axios(url, {…})` at `:102`, `:142`, `:159`, `:177`. A `grep` for `axios.get(` does not find
+  them.** They ride the global axios default, so they have **no interceptor** — which makes their
+  hand-written `Bearer` headers load-bearing, not redundant. See §10.8.
 
 **Phase 5 stopped at a line it documented.** `apiClient.ts:15-19`:
 
@@ -732,20 +737,33 @@ The seams being rewritten have no tests. Add them **first**.
 
 *Check: `npm run test`.*
 
-### Stage 1 — free wins, no new abstractions (3–4 commits)
+### Stage 1 — free wins and defect repair (~21 commits)
 
-Pure deletion and defect repair. Nothing here depends on any later stage.
+Deletion and defect repair; no new abstraction beyond one testable maths module. Nothing here
+depends on a later stage. It is larger than the "3–4 commits" an earlier draft estimated, because
+§10.3 turned out to include a data-corruption path that needs a backend fix and a backfill.
 
-- **Wire `computeDocumentTotals`** from `@elixirbooks/money` into the 13 form pages; delete the local
-  copies. **This fixes the defects in §10.1 and §10.2.** Pin the behaviour with tests first.
-- Delete the 284 redundant `Bearer` headers and the `useSelector(token)` calls they force.
-- Delete dead weight: `joi` (api), `nodemailer` (web), `ui/Radio.tsx`, `types/js-cookie.d.ts`.
-- `<ActivityTimeline>` (the two copies differ by 2 import lines).
-- Migrate `AccountSettings.tsx`'s 4 raw `fetch` calls onto `api` — they are the last hand-rolled
-  auth in the app and they bypass the global 401 handler.
+Ordered. Two constraints are hard: the `ProfileSettings`/`AccountSettings` move must precede the
+`Bearer` sweep (§10.8 — those headers are load-bearing), and the per-line handlers must be fixed
+before `computeDocumentTotals` is adopted (§10.1 — adopting first leaves the footer disagreeing with
+the rows).
 
-*Check: `npm run test`; manually create an invoice, a quotation and a delivery challan with a line
-discount and confirm totals and amount-in-words agree across all three.*
+1. Dead weight: `joi` (api), `nodemailer` (web), `components/admin/RowRadioButtonsGroup.tsx`, and
+   `types/js-cookie.d.ts` **together with** adding `@types/js-cookie`. Not `ui/Radio.tsx` — see §10.5.
+2. Move `ProfileSettings.tsx` (4 bare `axios()`) and `AccountSettings.tsx` (4 raw `fetch`) onto `api`.
+3. Delete the 282 redundant `Bearer` headers and the 33 `useSelector(token)` lines they orphan —
+   never the 54 files where `token` is also a guard, an argument or a dependency.
+4. `<ActivityTimeline>` (the two copies differ by 2 imports and 4 renames).
+5. Make `deliveryChallanController` and `recurringScheduleController` server-authoritative, with the
+   two missing `serverTotals` suites, then backfill historic rows (dry-run by default).
+6. Fix `numberToWords` to round internally — one line that fixes five PDF templates (§10.2).
+7. Extract the per-line maths into a testable `lib/` module, fix the 18 group-(b) handlers, then
+   adopt `computeDocumentTotals` across all 14 pages.
+
+*Check: `npm run test`; create an invoice, a quotation, a purchase order and a delivery challan,
+each with a percentage line discount **that exceeds the line subtotal**, and confirm rows agree with
+the footer, the screen agrees with what is persisted, and amount-in-words matches on create, after
+edit, and on the printed PDF.*
 
 ### Stage 2 — backend primitives (3 commits)
 
@@ -944,11 +962,38 @@ quotation / purchase / purchase order / debit note (create AND update)"*. **No f
 imports `computeDocumentTotals`, `lineGross`, `lineDiscount` or `lineTaxableBase`.** Thirteen pages
 re-implement the maths. 10.2 and 10.3 are consequences.
 
+**Adoption alone does not fix 10.3, and that matters for sequencing.** All 14 form pages store a
+line's `tax` as a computed *amount* and none carries a `taxRate`, so `lineTax`
+(`documentTotals.ts:152-166`) falls into its *legacy bare-amount branch* and **preserves whatever
+the page computed**. (`tax_group_id` and `tax_rate_id` are declared on `TotalsItem` but never read —
+the backend attaches `taxRate` via `resolveItemTaxRates`; nothing on the frontend does.) Dropping
+`computeDocumentTotals` into a page with the 10.3 bug would clamp its **discount** while leaving its
+**tax** inflated, so the footer would disagree with the rows. The per-line handlers have to be fixed
+first; adoption is only mechanical afterwards.
+
 This is the same failure mode Phase 5 documented for rounding: an honour-system invariant, held by a
 comment, that had already broken. `CreateInvoice.tsx:582-587` even carries the comment claiming
 consistency with the backend's `lineDiscount` — while four sibling pages do something else.
 
-### 10.2 Amount-in-words disagrees between create and edit
+### 10.2 Amount-in-words prints "undefined" on every PDF with a fractional total
+
+`utils/converters.ts:43-67` `numberToWords` has **no decimal handling at all** — no paise/cents
+branch, Indian crore/lakh numbering only. Given a fractional amount, `num %= 100` leaves a float and
+`numToWordsBelow100` indexes its `ones` array with it. Run it and see:
+
+```
+numberToWords(145.67)  ->  "One Hundred Forty undefined"
+                                            ^ ones[5.6699999999999875]
+```
+
+Five print/PDF templates pass the raw persisted `Decimal(18,4)` straight in —
+`InvoiceTemplateA.tsx:213`, `InvoiceTemplateB.tsx:216`, `InvoiceTemplateA5Landscape.tsx:159`,
+`QuotationTemplate.tsx:154`, `ChallanTemplateA.tsx:143` — so **every printed document whose total is
+not a whole number renders "undefined" in its amount-in-words line.** The fix is one `Math.round`
+inside `numberToWords`; the 13 call sites that already round are only accidentally shielded.
+
+The rounding rule also disagrees between screens. `Math.floor` on **2** pages
+(`CreateInvoice.tsx:666`, `RecurringScheduleForm.tsx:472`), `Math.round` on **12**:
 
 | File | Line | Code |
 |---|---|---|
@@ -959,12 +1004,15 @@ consistency with the backend's `lineDiscount` — while four sibling pages do so
 | `purchases/CreatePurchaseOrder.tsx` | 450 | `Math.round(grandTotal)` |
 | `purchases/CreateDebitNote.tsx` | 540 | `Math.round(grandTotal)` *(and the variable is spelled `grandTotalInterger`)* |
 | `delivery-challan/NewDeliveryChallan.tsx` | 481 | `Math.round(grandTotal)` |
+| …and 6 more | | `EditQuotation:517`, `CreatePurchase:908`, `EditPurchase:810`, `EditPurchaseOrder:585`, `EditCreditNote:517`, `EditDeliveryChallan:583` |
 
-An invoice for **100.60** prints "One Hundred" in words on the create screen and "One Hundred and
-One" after an edit — the same document, two different printed amounts. Every other document type
-rounds. Only invoice-create floors.
+An invoice for **100.60** prints "One Hundred" in words on the create screen and "One Hundred One"
+after an edit — the same document, two different printed amounts. Separately,
+`CreateDebitNote.tsx:539` guards with `if (grandTotal && grandTotal <= 0)`, which short-circuits at
+zero and falls through to `numberToWords(0)` → lowercase `"zero"`, where every other page renders
+`"Zero"`.
 
-### 10.3 Delivery challans and purchase orders compute line tax on the wrong base
+### 10.3 Six form pages compute line tax on the wrong base — and for two document types that corrupts data
 
 `CreateInvoice.tsx:578-596` clamps the discount to the line subtotal and computes tax on the
 **discounted** base. `NewDeliveryChallan.tsx:412-430` and `CreatePurchaseOrder.tsx:378-391` do
@@ -980,8 +1028,28 @@ const totalTax           = taxPerUnit * qty;
 
 Two consequences: a discount larger than the line total produces a **negative line**, and any
 discounted line is **taxed on the undiscounted amount**. `packages/money`'s `lineDiscount` clamps to
-`[0, gross]` and taxes the discounted base; the server recomputes and persists its own totals, so the
-user sees one number and the database stores another.
+`[0, gross]` and taxes the discounted base.
+
+**Six pages share this shape**, not two: `EditQuotation`, `CreatePurchaseOrder`,
+`EditPurchaseOrder`, `EditCreditNote`, `NewDeliveryChallan`, `EditDeliveryChallan` — three handlers
+each (`handleEditingItemChange`, `handleInLineItemChange`, `handleNewProductCreated`), 18 in total.
+`RecurringScheduleForm` is a hybrid: correct when a tax rate resolves, this shape when none does
+(`:381-385`, `:405`).
+
+**And for two of those document types it is not a display bug.** Six controllers recompute totals
+server-side, so a wrong client figure is discarded. Two do not:
+
+| Controller | Behaviour |
+|---|---|
+| `deliveryChallanController.ts:104-107` (create), `:474-483` (update) | Persists `body.subTotal` / `body.totalDiscount` / `body.totalTax` / `body.grandTotal` **verbatim**. Its validator checks only item name/rate/qty, and the **update route carries no validator at all** |
+| `recurringScheduleController.ts:162-163`, `:319-320` | Same. And `lib/recurring/runner.ts:139-140` copies a schedule's stored `TotalAmount`/`totalTax` onto **every invoice it generates**, bypassing the authoritative invoice path |
+
+This is the exact failure mode `documentTotals.ts`'s own header says it exists to prevent — *"the
+legacy document controllers persisted client-supplied subTotal/totalTax/grandTotal verbatim"*. There
+are `*.serverTotals.test.ts` suites for invoice, purchase and credit note and **none** for these
+two: the server-authoritative work covered six document types and missed these. So a delivery
+challan or recurring schedule created with a discounted line stores an inflated tax **permanently**,
+and a bad schedule keeps minting bad invoices.
 
 ### 10.4 `extractCustomFieldValue` has drifted
 
@@ -995,8 +1063,8 @@ else.
 |---|---|
 | `joi` ^17.13.3 | A production dependency of `apps/api`, **never imported**. All validation is `express-validator` |
 | `nodemailer` 9.1.0 | A production dependency of **`apps/web`**, 0 references. It is a Node library; it cannot run in a browser |
-| `ui/Radio.tsx` | 0 consumers (2,566 bytes) |
-| `types/js-cookie.d.ts` | A one-line `declare module 'js-cookie';` that makes `Cookies` fully `any` — js-cookie ships its own types, and this shim suppresses them |
+| `components/admin/RowRadioButtonsGroup.tsx` | 0 consumers. **Correction to an earlier draft, which named `ui/Radio.tsx` here: that one is live.** `RadioGroup` is imported from the `@components/ui` barrel by `pages/dev/TokenGallery.tsx:14` and rendered at `:365`; TokenGallery is routed (`main.tsx:66-73`, lazy, dev-only at `/_tokens`) and `tsc -b` covers all of `src`, so deleting it breaks the build |
+| `types/js-cookie.d.ts` | A one-line `declare module 'js-cookie';` that makes `Cookies` fully `any`. **Correction to an earlier draft, which said js-cookie ships its own types: it does not.** `js-cookie@3.0.8` declares no `types`/`typings`, and `@types/js-cookie` is absent from the lockfile — so deleting the shim alone yields 8 × TS7016. The fix is to delete it **and** add `@types/js-cookie` |
 | `types/bank-transaction.ts` + `types/bankTransaction.ts` | Two files, two naming conventions, one domain |
 
 ### 10.6 Cosmetic drift
@@ -1012,6 +1080,16 @@ interceptor seam"*. **That premise stopped being true when `lib/apiClient.ts` la
 may still be the right call, but the reason recorded for it is now wrong. §9's manual checks note
 what would have to replace that guarantee if the reload were ever dropped: an explicit query-cache
 reset on tenant switch.
+
+### 10.8 Four requests bypass the shared client — and their auth headers are load-bearing
+
+`pages/admin/settings/ProfileSettings.tsx:102,142,159,177` use the bare call form
+`axios(url, {…})` against `/admin/profile`, `/admin/countries`, `/admin/states`, `/admin/cities`.
+Because that is the global axios default and not `lib/apiClient`, they have no request interceptor
+and no 401 handler. Their hand-written `Bearer` headers are therefore the only thing authenticating
+them — **deleting those headers as "redundant" would send all four unauthenticated.** They must move
+to `api.get` first. `AccountSettings.tsx` hits the same four endpoints with raw `fetch` (4 sites)
+and is the same story.
 
 ---
 
@@ -1033,4 +1111,10 @@ grep -rhoa 'Bearer \${' --include=*.ts --include=*.tsx . | wc -l                
 grep -cEa '^\s+[A-Z0-9_]+:' constants/api.ts                                     # 417 keys
 grep -oEa '\$\{A?P?I?_?BASE_URL\}[^`]*' constants/api.ts | sort -u | wc -l       # 252 URLs
 grep -rla 'computeDocumentTotals' --include=*.ts --include=*.tsx . | wc -l       # 0  ← §10.1
+
+# §10.2 — the PDF "undefined". Any fractional amount reproduces it.
+node -e "const o=['','one','two','three','four','five','six','seven','eight','nine'];
+         const t=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+         let n=145.67; n%=1000; n%=100;
+         console.log(t[Math.floor(n/10)] + ' ' + o[n%10]);"    # -> "forty undefined"
 ```
