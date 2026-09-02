@@ -59,6 +59,12 @@ RUN addgroup -S app && adduser -S app -G app
 
 # Production dependency tree only — no typescript, no ts-node.
 COPY --from=deps /repo/node_modules /repo/node_modules
+# Not everything hoists. Six packages resolve to versions that conflict with the
+# root tree — geoip-lite and quill among them, plus the async/glob/iconv-lite
+# copies geoip-lite pulls — so npm nests them here instead. Copying only the
+# hoisted tree left `require('geoip-lite')` in authController with nothing to
+# find, and the container died on boot with MODULE_NOT_FOUND.
+COPY --from=deps /repo/apps/api/node_modules /repo/apps/api/node_modules
 COPY --from=deps /repo/package.json /repo/package-lock.json /repo/.npmrc /repo/
 COPY --from=deps /repo/apps/api/package.json /repo/apps/api/package.json
 # Workspace packages are symlinked into node_modules, so their built output has
