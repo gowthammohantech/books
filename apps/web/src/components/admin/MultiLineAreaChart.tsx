@@ -1,5 +1,6 @@
 import React from "react";
 import Chart from "react-apexcharts";
+import { ChartFrame } from "../ui";
 import { themeColor } from "@lib/designTokens";
 
 interface Props {
@@ -73,7 +74,15 @@ const MultiLineAreaChart: React.FC<Props> = ({
         legend: { show: true },
     };
 
-    return <Chart options={options} series={series} type="area" height={300} />;
+    // Height comes from the frame, not a literal: 300px was a third of a
+    // laptop pane on its own.
+    return (
+        <ChartFrame minH="11rem" vh="26vh" maxH="18.75rem">
+            {({ height }) => (
+                <Chart options={options} series={series} type="area" height={height} width="100%" />
+            )}
+        </ChartFrame>
+    );
 };
 
 export default MultiLineAreaChart;

@@ -211,7 +211,7 @@ const ExpenseView: React.FC = () => {
                             <iframe
                                 src={attachment}
                                 title="Expense attachment"
-                                className="w-full h-[600px] rounded-md border border-border"
+                                className="w-full h-[clamp(20rem,60vh,45rem)] rounded-md border border-border"
                             />
                             <a
                                 href={attachment}

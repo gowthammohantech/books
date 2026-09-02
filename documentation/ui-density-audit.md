@@ -73,7 +73,7 @@ dock (a `lg:w-[420px]` sibling column) left every chart at its old width.
 | `components/common/ImageCropperUpload.tsx` | 195 | `h-72` (288px) | aspect-ratio box |
 | `pages/admin/productAndServices/ViewProduct.tsx` | 90, 153 | `h-64`, `max-h-56` | aspect-ratio / viewport-bounded |
 | `pages/admin/finance-and-accounting/ReconciliationList.tsx` | 282 | `max-h-60` (240px) | `max-h-[min(15rem,35vh)]` |
-| 17 files (invoice/quotation/purchase/credit-note/challan forms) | notes & terms textareas | `h-48` (192px) | `h-[clamp(6rem,18vh,12rem)]` |
+
 
 ### Deliberately not changed
 
@@ -81,6 +81,8 @@ dock (a `lg:w-[420px]` sibling column) left every chart at its old width.
 |---|---|
 | `utils/brandLogo.ts` | Crop arithmetic against a fixed source bitmap, not CSS. |
 | `components/print/ThermalReceipt.tsx` (58/80mm), `InvoiceTemplateA5Landscape.tsx` (`200mm`) | Physical paper sizes. A receipt roll is not a viewport. |
+| The 11 `h-48` signature pads (`canvasProps={{ className: 'w-full h-48' }}`) in the invoice / quotation / purchase / credit-note / challan forms | Initially slated for a clamp, on the assumption they were notes & terms textareas. They are `<canvas>` elements: react-signature-canvas maps CSS pixels to the backing bitmap, so a clamped height desyncs the pen from the cursor. They are also 192px, under the 200px threshold, and a signature needs room to be drawn. Left alone. |
+| `max-h-48` on the product dropdown (`InvoiceTableRow.tsx`), `CustomFieldForm.tsx`, `FixedAssets.tsx` | Already the correct pattern — a `max-h` cap on a scrollable list is what a dropdown should do. |
 | `pages/admin/invoices/EmailInvoice.tsx` | px inside emailed HTML strings — email clients need them. |
 | `--shadow-*` offsets, 1px borders | Hairlines must stay physical. |
 | `pages/errors/NotFound.tsx` | Already `vw`-based; only the caps were trimmed. |

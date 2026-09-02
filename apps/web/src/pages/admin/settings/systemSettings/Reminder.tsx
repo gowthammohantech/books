@@ -1586,7 +1586,7 @@ const Reminder = () => {
                                             ref={quillEditorRef}
                                             value={formData.body}
                                             onChange={handleBodyChange}
-                                            height="300px"
+                                            height="clamp(9rem,24vh,18.75rem)"
                                         />
                                     </div>
                                 </div>
@@ -1855,7 +1855,7 @@ const Reminder = () => {
                                             ref={manualQuillEditorRef}
                                             value={manualFormData.body}
                                             onChange={handleManualBodyChange}
-                                            height="300px"
+                                            height="clamp(9rem,24vh,18.75rem)"
                                         />
                                     </div>
                                 </div>
@@ -2224,7 +2224,7 @@ const Reminder = () => {
                                             ref={purchaseQuillEditorRef}
                                             value={purchaseFormData.body}
                                             onChange={handlePurchaseBodyChange}
-                                            height="300px"
+                                            height="clamp(9rem,24vh,18.75rem)"
                                         />
                                     </div>
                                 </div>
