@@ -335,8 +335,13 @@ const Sidebar = ({
     return (
         <aside
             className={cn(
-                "z-0 flex h-screen flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out",
-                isOpen ? "w-60" : "w-16"
+                // h-full, not h-screen: as a flex child of an h-dvh row,
+                // h-screen double-specifies the height and breaks print:block.
+                "z-0 flex h-full min-h-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out",
+                // Narrower below 2xl, where content width is scarcest: 194px
+                // open at the compact density, widening to 216px on a large
+                // monitor (w-54 / w-60 against --spacing: 0.225rem).
+                isOpen ? "w-54 2xl:w-60" : "w-16"
             )}
         >
             {/* Product identity, not company identity - the company moved to
