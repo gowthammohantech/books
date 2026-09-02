@@ -96,7 +96,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[13px] font-medium ${config.className}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[0.8125rem] font-medium ${config.className}`}
     >
       {config.label}
       {config.icon}

@@ -484,7 +484,7 @@ const SetupOrganizationInfo: React.FC = () => {
                             <button
                                 type="submit"
                                 disabled={isSaving}
-                                className={`flex items-center justify-center gap-2 w-[320px] max-w-full px-6 bg-primary hover:bg-primary/90 text-white font-medium text-sm py-3 rounded-lg transition-all duration-200 shadow-sm ${isSaving ? "opacity-60 cursor-not-allowed" : ""
+                                className={`flex items-center justify-center gap-2 w-[20rem] max-w-full px-6 bg-primary hover:bg-primary/90 text-white font-medium text-sm py-3 rounded-lg transition-all duration-200 shadow-sm ${isSaving ? "opacity-60 cursor-not-allowed" : ""
                                     }`}
                             >
                                 {isSaving ? (

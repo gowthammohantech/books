@@ -97,7 +97,7 @@ const NotificationBell = () => {
                     <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
                         <p className="text-sm font-semibold text-foreground">Needs attention</p>
                         {total > 0 && (
-                            <span className="rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-semibold leading-none text-primary-foreground">
+                            <span className="rounded-full bg-primary px-1.5 py-0.5 text-[0.6875rem] font-semibold leading-none text-primary-foreground">
                                 {total > 99 ? '99+' : total}
                             </span>
                         )}
@@ -124,7 +124,7 @@ const NotificationBell = () => {
                                         {queue.module}
                                     </span>
                                 </span>
-                                <span className="shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-semibold leading-none text-primary-foreground">
+                                <span className="shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[0.6875rem] font-semibold leading-none text-primary-foreground">
                                     {queue.count > 99 ? '99+' : queue.count}
                                 </span>
                             </Link>

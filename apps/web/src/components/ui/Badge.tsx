@@ -21,7 +21,7 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 const BASE =
-  "inline-flex items-center gap-1 text-[13px] font-medium px-2 py-0.5 rounded-md";
+  "inline-flex items-center gap-1 text-[0.8125rem] font-medium px-2 py-0.5 rounded-md";
 
 // Static, fully-spelled class strings so Tailwind v4 JIT can detect them.
 // (Never interpolate e.g. `bg-${color}-soft`.)

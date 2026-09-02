@@ -393,7 +393,7 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                         <div className="inline-flex items-center gap-2">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-semibold uppercase tracking-wide bg-success-soft text-success-strong">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-[0.6875rem] font-semibold uppercase tracking-wide bg-success-soft text-success-strong">
                                 Linked to source
                             </span>
                         </div>
@@ -437,7 +437,7 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
         <div className="space-y-4 rounded-xl border border-border bg-white p-4">
             <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold text-foreground">Explain Transaction</h3>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-semibold uppercase tracking-wide ${STATUS_PILL[txn.explainStatus].cls}`}>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[0.6875rem] font-semibold uppercase tracking-wide ${STATUS_PILL[txn.explainStatus].cls}`}>
                     {STATUS_PILL[txn.explainStatus].label}
                 </span>
             </div>

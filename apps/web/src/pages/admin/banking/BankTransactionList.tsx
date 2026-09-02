@@ -952,7 +952,7 @@ const BankTransactionList: React.FC = () => {
                                             {explainStatusLabel(tx.explainStatus)}
                                         </Badge>
                                         {tx.autoPosted && (
-                                            <Badge color="info" variant="soft" className="self-start text-[10px] px-2 py-0.5">
+                                            <Badge color="info" variant="soft" className="self-start text-[0.6875rem] px-2 py-0.5">
                                                 Auto-posted
                                             </Badge>
                                         )}
@@ -963,7 +963,7 @@ const BankTransactionList: React.FC = () => {
                                             <Badge
                                                 color="info"
                                                 variant="soft"
-                                                className="max-w-full self-start gap-1 truncate text-[10px] px-2 py-0.5"
+                                                className="max-w-full self-start gap-1 truncate text-[0.6875rem] px-2 py-0.5"
                                                 title={`Linked: ${tx.relatedType && tx.relatedType !== 'MANUAL' ? BANK_TXN_RELATED_TYPE_LABEL[tx.relatedType] : 'source document'}`}
                                             >
                                                 <LinkIcon size={10} className="shrink-0" />
@@ -978,7 +978,7 @@ const BankTransactionList: React.FC = () => {
                                                 >
                                                     {tx.proposal.label}
                                                 </span>
-                                                <Badge color="primary" variant="soft" className="self-start text-[10px] px-2 py-0.5">
+                                                <Badge color="primary" variant="soft" className="self-start text-[0.6875rem] px-2 py-0.5">
                                                     {tx.proposal.confidence ?? "—"}
                                                     {tx.proposal.score !== null &&
                                                         tx.proposal.score !== undefined &&

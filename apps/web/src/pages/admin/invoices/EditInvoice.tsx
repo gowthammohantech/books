@@ -1560,7 +1560,7 @@ const EditInvoice: React.FC = () => {
                                                     value={selected.url}
                                                     onChange={(e) => setPaymentOptionUrl(m.name, e.target.value)}
                                                     placeholder={`Payment URL for ${m.name}`}
-                                                    className={`flex-1 min-w-[220px] ${fieldControlClasses(false)}`}
+                                                    className={`flex-1 min-w-[13.75rem] ${fieldControlClasses(false)}`}
                                                 />
                                             )}
                                         </div>
@@ -1579,7 +1579,7 @@ const EditInvoice: React.FC = () => {
                                                 type="url"
                                                 value={o.url}
                                                 onChange={(e) => setPaymentOptionUrl(o.name, e.target.value)}
-                                                className={`flex-1 min-w-[220px] ${fieldControlClasses(false)}`}
+                                                className={`flex-1 min-w-[13.75rem] ${fieldControlClasses(false)}`}
                                             />
                                         </div>
                                     ))}

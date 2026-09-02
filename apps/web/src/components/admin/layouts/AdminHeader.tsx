@@ -129,7 +129,7 @@ const AdminHeader = () => {
                         <AnimatedIcon name="search" size={16} />
                         <span className="hidden lg:inline">Search…</span>
                     </span>
-                    <kbd className="hidden lg:inline rounded border border-border bg-card px-1.5 py-0.5 text-[11px] font-medium">
+                    <kbd className="hidden lg:inline rounded border border-border bg-card px-1.5 py-0.5 text-[0.6875rem] font-medium">
                         {shortcutHint}
                     </kbd>
                 </button>

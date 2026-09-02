@@ -37,7 +37,7 @@ const BASE =
 // under the minimum already, without any density work.
 const SIZES: Record<ButtonSize, string> = {
   sm: "text-xs px-2.5 py-1.5 min-h-[2rem] coarse:min-h-[2.75rem]",
-  md: "text-[13px] px-3 py-2 min-h-[2.25rem] coarse:min-h-[2.75rem]",
+  md: "text-[0.8125rem] px-3 py-2 min-h-[2.25rem] coarse:min-h-[2.75rem]",
   lg: "text-sm px-4 py-2.5 min-h-[2.5rem] coarse:min-h-[2.75rem]",
   icon: "p-2 min-h-[2rem] min-w-[2rem] coarse:min-h-[2.75rem] coarse:min-w-[2.75rem]",
 };

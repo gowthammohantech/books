@@ -160,7 +160,7 @@ export default function PnlByDimensionReport() {
       </div>
 
       <div className="flex flex-wrap items-end gap-4 mb-6 print:hidden">
-        <div className="min-w-[200px]">
+        <div className="min-w-[12.5rem]">
           <SearchableDropdown
             label={dimension === 'cost-center' ? 'Cost Center' : 'Project'}
             value={selected}

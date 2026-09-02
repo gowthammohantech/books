@@ -104,7 +104,7 @@ const Tabs = ({
               variant === "segmented"
                 ? [
                     "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md",
-                    "text-[13px] font-medium transition-colors",
+                    "text-[0.8125rem] font-medium transition-colors",
                     "disabled:opacity-60 disabled:cursor-not-allowed",
                     selected
                       ? "bg-white text-primary shadow-sm"

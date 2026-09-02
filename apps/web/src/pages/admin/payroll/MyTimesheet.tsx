@@ -514,7 +514,7 @@ const MyTimesheet: React.FC = () => {
                                 <th className="px-4 py-2 text-left sticky left-0 bg-gray-100 z-10" />
                                 <th
                                     colSpan={7}
-                                    className="px-2 py-2 text-center text-[10px] font-semibold tracking-wide text-gray-500"
+                                    className="px-2 py-2 text-center text-[0.6875rem] font-semibold tracking-wide text-gray-500"
                                 >
                                     Hours per day
                                 </th>
@@ -531,15 +531,15 @@ const MyTimesheet: React.FC = () => {
                                     return (
                                         <th
                                             key={iso}
-                                            className="px-2 py-3 text-center border-b border-border min-w-[88px] align-top"
+                                            className="px-2 py-3 text-center border-b border-border min-w-[5.5rem] align-top"
                                         >
                                             <div>{DAY_LABELS[i]}</div>
-                                            <div className="text-[10px] font-normal text-gray-400">
+                                            <div className="text-[0.6875rem] font-normal text-gray-400">
                                                 {d.getDate()}/{d.getMonth() + 1}
                                             </div>
                                             {holiday && (
                                                 <div
-                                                    className="mt-1 inline-block rounded bg-amber-100 text-amber-700 text-[9px] font-medium normal-case px-1.5 py-0.5 leading-tight"
+                                                    className="mt-1 inline-block rounded bg-amber-100 text-amber-700 text-[0.6875rem] font-medium normal-case px-1.5 py-0.5 leading-tight"
                                                     title={`Holiday — ${holiday}`}
                                                 >
                                                     Holiday — {holiday}
@@ -547,7 +547,7 @@ const MyTimesheet: React.FC = () => {
                                             )}
                                             {leave && (
                                                 <div
-                                                    className="mt-1 inline-block rounded bg-sky-100 text-sky-700 text-[9px] font-medium normal-case px-1.5 py-0.5 leading-tight"
+                                                    className="mt-1 inline-block rounded bg-sky-100 text-sky-700 text-[0.6875rem] font-medium normal-case px-1.5 py-0.5 leading-tight"
                                                     title={`${leave.leaveTypeName}${
                                                         leave.portion === 'FULL'
                                                             ? ''
@@ -617,7 +617,7 @@ const MyTimesheet: React.FC = () => {
                                                     />
                                                     <div className="flex items-center gap-1">
                                                         <label
-                                                            className="flex items-center gap-0.5 text-[10px] text-gray-500"
+                                                            className="flex items-center gap-0.5 text-[0.6875rem] text-gray-500"
                                                             title="Billable"
                                                         >
                                                             <input

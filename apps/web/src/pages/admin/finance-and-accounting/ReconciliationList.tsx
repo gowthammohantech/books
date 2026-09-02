@@ -261,7 +261,7 @@ const ReconciliationList: React.FC = () => {
                 <div className="flex items-center gap-4">
                     <div className="relative" ref={dropdownRef}>
                         <button
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer min-w-[280px] justify-between"
+                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer min-w-[17.5rem] justify-between"
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                         >
                             <div className="text-left">
