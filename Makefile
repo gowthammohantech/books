@@ -2,7 +2,7 @@ COMPOSE := docker compose --env-file docker/.env -f docker/docker-compose.yml
 COMPOSE_DEV := $(COMPOSE) -f docker/docker-compose.override.yml
 SHELL := /bin/bash
 
-.PHONY: help env up up-dev up-redis down down-clean logs build rebuild-web rebuild-api smoke seed ps package
+.PHONY: help env up up-dev up-redis down down-clean logs build rebuild-web rebuild-api smoke seed seed-company seed-company-docker ps package
 
 VERSION ?= 1.0.0
 
@@ -20,6 +20,9 @@ help:
 	@echo "  rebuild-api      Rebuild + restart ONLY the api container (apply backend changes + migrations)"
 	@echo "  smoke            Run scripts/smoke.sh against running stack"
 	@echo "  seed             Run the Postgres baseline seed inside the api container"
+	@echo "  seed-company     Seed one company with data for every module (dry run unless CONFIRM=yes)"
+	@echo "                   e.g. make seed-company COMPANY=\"Acme Ltd\" CREATE=1 CONFIRM=yes"
+	@echo "  seed-company-docker  Same, but inside the running api container"
 	@echo "  ps               docker compose ps"
 	@echo "  package          Build CodeCanyon release zips (default VERSION=1.0.0)"
 	@echo "  package VERSION=x.y.z  Build release zips with specific version"
@@ -68,6 +71,24 @@ seed:
 	# hierarchy, custom-field types). This is the only seed path — the legacy
 	# node seed*.js scripts targeted MongoDB and have been deleted.
 	$(COMPOSE) exec api npx prisma db seed
+
+# Seed one company (tenant) with realistic data across every module.
+#
+# DRY RUN BY DEFAULT: without CONFIRM=yes this reports the company it resolved
+# and the rows it WOULD delete, and writes nothing. Seeding an existing
+# workspace wipes its business data first, so that default is deliberate.
+#
+#   make seed-company COMPANY="Acme Ltd"                    # dry run
+#   make seed-company COMPANY="Acme Ltd" CREATE=1 CONFIRM=yes
+#   make seed-company COMPANY=acme-ltd CONFIRM=yes
+COMPANY ?=
+seed-company:
+	@test -n "$(COMPANY)" || { echo 'Set COMPANY, e.g. make seed-company COMPANY="Acme Ltd"'; exit 1; }
+	python scripts/seed_company.py --company "$(COMPANY)" $(if $(CREATE),--create,) $(if $(filter yes,$(CONFIRM)),--confirm,)
+
+seed-company-docker:
+	@test -n "$(COMPANY)" || { echo 'Set COMPANY, e.g. make seed-company-docker COMPANY="Acme Ltd"'; exit 1; }
+	python scripts/seed_company.py --docker --company "$(COMPANY)" $(if $(CREATE),--create,) $(if $(filter yes,$(CONFIRM)),--confirm,)
 
 ps:
 	$(COMPOSE) ps

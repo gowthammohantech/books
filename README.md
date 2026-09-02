@@ -57,6 +57,51 @@ Two things worth knowing before the first run:
 CI (`.github/workflows/ci.yml`) runs the same four commands against a PostgreSQL service on every
 pull request.
 
+## Seeding a company with demo data
+
+To fill a workspace with realistic data across every module — customers, invoices with real
+double-entry postings, purchases, expenses, banking, fixed assets, payroll, recurring schedules —
+point the seeder at a company by id, name or slug:
+
+```bash
+python scripts/seed_company.py --list                          # what workspaces exist
+python scripts/seed_company.py --company "Acme Ltd" --create   # DRY RUN: reports, writes nothing
+python scripts/seed_company.py --company "Acme Ltd" --create --confirm
+python scripts/seed_company.py --company acme-ltd --confirm    # reseed an existing one
+```
+
+`--create` provisions the workspace first, through the same `provisionTenant` code path signup
+uses, so a seeded company is indistinguishable from a registered one. The owner is
+`owner@<slug>.seed.local` with password `Demo123$` unless `--owner-email` / `--owner-password`
+say otherwise.
+
+The Python script is only a front door: it resolves nothing itself and never opens a database
+connection. Everything lives in `apps/api/prisma/seedCompany.ts`, which is equally usable on its
+own (`npm run prisma:seed:company --workspace=@elixirbooks/api -- --company "Acme Ltd"`), or via
+`make seed-company COMPANY="Acme Ltd" CREATE=1 CONFIRM=yes`.
+
+**This is destructive, and that is why `--confirm` exists.** Seeding an existing workspace wipes
+its business data first — invoices, purchases, contacts, accounts, journal entries and every
+non-owner staff user — because the engine reseeds rather than merges. Without `--confirm` you get
+a dry run naming the workspace it resolved and counting the rows it would delete. A name matching
+more than one workspace is refused outright rather than guessed at (exit 3); pass the id instead.
+
+Only `--country IN` is supported. `lib/ledger/packs` has charts of accounts for six countries, but
+the seeded *content* is India-specific (GST regime, CGST/SGST/IGST rates, Indian addresses), so
+any other country would staple a foreign chart of accounts onto Indian documents.
+
+Two checks are worth running afterwards, and both take a workspace or run across all of them:
+
+```bash
+cd apps/api
+npm run prisma:check:tenant   # no foreign key crosses a workspace boundary
+npm run prisma:check:ledger   # every entry balances, and nothing that should have posted didn't
+```
+
+The second matters more than it looks. `lib/ledger/postingGate.ts` silently declines to post any
+document dated before the workspace's go-live date — no error, no log — so a document can exist
+with no ledger entry behind it and nothing will tell you.
+
 ## Running with Docker
 
 ```bash

@@ -64,7 +64,18 @@ export async function post(tx: LedgerTx, input: PostingInput): Promise<{ id: str
   const dimPatch: Record<string, string | null> = {};
   if (input.costCenterId !== undefined) dimPatch.costCenterId = input.costCenterId ?? null;
   if (input.projectId !== undefined) dimPatch.projectId = input.projectId ?? null;
-  const linesWithDims = lines.map((l) => ({ ...dimPatch, ...l }));
+  //
+  // `tenantId` is set on every line explicitly rather than left to the tenant
+  // guard's nested-create stamping. That stamping only happens in `enforce`
+  // mode: in `warn` — the shipped default (lib/tenantGuard.ts) — the guard
+  // computes its decision, logs it, and hands the caller's arguments through
+  // untouched, so the required JournalLine.tenantId would never be written and
+  // the create fails with "Argument `tenant` is missing". Posting must not
+  // depend on which mode the guard happens to be in, and any caller holding a
+  // plain PrismaClient (the seeders) has no guard at all. The value is the
+  // parent entry's own tenant, which is exactly what checkTenantIntegrity.ts
+  // asserts about this column.
+  const linesWithDims = lines.map((l) => ({ ...dimPatch, ...l, tenantId: input.tenantId }));
 
   try {
     return await tx.journalEntry.create({
@@ -126,6 +137,8 @@ export async function reverse(tx: LedgerTx, entryId: string): Promise<{ id: stri
     // the trial balance nets to zero, but every by-dimension report filters on
     // costCenterId and so never sees the untagged reversing leg.
     costCenterId: l.costCenterId, projectId: l.projectId,
+    // Same reason as the forward posting above: set explicitly, not stamped.
+    tenantId: original.tenantId,
   }));
 
   return tx.journalEntry.create({

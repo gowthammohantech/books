@@ -17,7 +17,7 @@
  *   npm run prisma:seed:demo:full
  */
 
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
 
 import { PrismaClient, Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -31,6 +31,12 @@ import {
   postSupplierPayment,
   postExpense,
   postCreditNoteIssued,
+  postDebitNoteIssued,
+  postSaleCogs,
+  postReturnCogs,
+  postAssetAcquisition,
+  postDepreciation,
+  postAssetDisposal,
   type PostingTx,
 } from '../lib/ledger/ledgerPosting';
 import { post } from '../lib/ledger/postingEngine';
@@ -71,11 +77,40 @@ function record(k: string, n: number): void {
 // Phase 1: WIPE
 // ===========================================================================
 
-async function wipe(tenantId: string): Promise<void> {
+async function wipe(tenantId: string, ownerUserId: string, tenantSlug: string): Promise<void> {
   console.log(`Phase 1: wiping existing demo data for tenantId=${tenantId}`);
 
   // --- Payments / refunds (deepest first) ---------------------------------
   await prisma.refund.deleteMany({ where: { tenantId } });
+
+  // --- Modules added alongside the per-company seeder ----------------------
+  // Deepest FK first within this set. These run early because nothing already
+  // in the wipe depends on them, and several (accountCreditEntry,
+  // recurringInvoiceSchedule) hold FKs to Contact, which is deleted much later.
+  // CostCenter is last of the group: every document reference to it is
+  // onDelete SetNull, so it can go while those documents still exist.
+  await prisma.payRunLine.deleteMany({ where: { tenantId } });
+  await prisma.payRun.deleteMany({ where: { tenantId } });
+  await prisma.payrollProfile.deleteMany({ where: { tenantId } });
+  await prisma.customFieldValue.deleteMany({ where: { tenantId } });
+  await prisma.customField.deleteMany({ where: { tenantId } });
+  await prisma.accountCreditEntry.deleteMany({ where: { tenantId } });
+  // Schedules reference Signature, so they go first.
+  await prisma.recurringInvoiceSchedule.deleteMany({ where: { tenantId } });
+  await prisma.signature.deleteMany({ where: { tenantId } });
+  await prisma.invoiceTemplate.deleteMany({ where: { tenantId } });
+  await prisma.inventoryCostLayer.deleteMany({ where: { tenantId } });
+  await prisma.fixedAsset.deleteMany({ where: { tenantId } });
+  await prisma.exchangeRate.deleteMany({ where: { tenantId } });
+  await prisma.explanationHint.deleteMany({ where: { tenantId } });
+  await prisma.conversation.deleteMany({ where: { tenantId } });
+  await prisma.mtdConfig.deleteMany({ where: { tenantId } });
+  await prisma.paymentLinkMethod.deleteMany({ where: { tenantId } });
+  await prisma.emailSettings.deleteMany({ where: { tenantId } });
+  await prisma.localization.deleteMany({ where: { tenantId } });
+  await prisma.generalSetting.deleteMany({ where: { tenantId } });
+  await prisma.tenantApiKey.deleteMany({ where: { tenantId } });
+  await prisma.costCenter.deleteMany({ where: { tenantId } });
 
   // InvoicePayment references PaymentTransaction; null it before deleting txns
   await prisma.invoicePayment.updateMany({
@@ -100,20 +135,19 @@ async function wipe(tenantId: string): Promise<void> {
     where: { bankAccount: { tenantId } },
   });
 
-  // --- PettyCash transactions + PettyCash (global; wipe demo-prefixed rows) ---
-  // PettyCash has no tenantId FK. We scope by demo "remarks" prefix on transactions
-  // (DEMO-PC-...) and by deleting any PettyCash row that has only demo transactions
-  // attached. Simpler: nuke any PettyCash row whose transactions all start with
-  // "DEMO-PC-" remarks. To stay safe across re-runs we also clear orphan rows
-  // tagged via openingBalance + a sentinel description we don't add. In practice
-  // PettyCash is small and only ever populated by this seed, so we wipe all
-  // transactions with DEMO remarks then delete any PettyCash row left with zero
-  // transactions and a demo-shaped opening balance.
+  // --- PettyCash transactions + PettyCash --------------------------------
+  // Both deletes are scoped by tenantId. They did not used to be, on the
+  // premise that "PettyCash is only ever populated by this seed" — true while
+  // there was one demo workspace, false the moment this seeder can be aimed at
+  // any company. Unscoped, `transactions: { none: {} }` deletes every OTHER
+  // tenant's empty PettyCash row as a side effect of seeding this one.
+  // PettyCash.tenantId is nullable (backfilled by migration), so a legacy row
+  // with a null tenant is left alone rather than guessed at.
   await prisma.pettyCashTransaction.deleteMany({
-    where: { remarks: { startsWith: 'DEMO-PC' } },
+    where: { tenantId, remarks: { startsWith: 'DEMO-PC' } },
   });
   await prisma.pettyCash.deleteMany({
-    where: { transactions: { none: {} } },
+    where: { tenantId, transactions: { none: {} } },
   });
 
   // --- Purchase chain ------------------------------------------------------
@@ -137,7 +171,7 @@ async function wipe(tenantId: string): Promise<void> {
   });
   // Reminders link to customer/invoice/quotation but in practice we delete by user
   await prisma.reminder.deleteMany({
-    where: { OR: [{ createdBy: tenantId }, { targetCustomerRel: { tenantId } }] },
+    where: { OR: [{ createdBy: ownerUserId }, { targetCustomerRel: { tenantId } }] },
   });
 
   // --- Expenses: children first, then parents -----------------------------
@@ -183,9 +217,11 @@ async function wipe(tenantId: string): Promise<void> {
   await prisma.inventory.deleteMany({ where: { tenantId } });
   // Products are global (no tenantId FK). We delete products we created with the
   // "DEMO_" code prefix so re-runs don't trip the unique constraint. First drop
-  // ANY inventory still referencing those products (possibly under other users
-  // from prior test runs) so the product delete doesn't trip the FK.
-  await prisma.inventory.deleteMany({ where: { product: { code: { startsWith: 'DEMO-' } } } });
+  // ANY inventory of THIS tenant still referencing those products (they linger
+  // from prior test runs) so the product delete doesn't trip the FK. The
+  // tenantId filter matters: 'DEMO-' is not a per-tenant namespace, so without
+  // it this reaches into every other company that has seeded products.
+  await prisma.inventory.deleteMany({ where: { tenantId, product: { code: { startsWith: 'DEMO-' } } } });
   await prisma.product.deleteMany({ where: { tenantId, code: { startsWith: 'DEMO-' } } });
 
   // --- TaxRate (user-scoped) ----------------------------------------------
@@ -254,17 +290,40 @@ async function wipe(tenantId: string): Promise<void> {
   // so clear those rows for the staff first (they accumulate from logins) or
   // the user delete violates the LoginActivity_userId_fkey constraint.
   //
-  // `id: { not: tenantId }` keeps the demo OWNER: this is a data reset, and
+  // `id: { not: ownerUserId }` keeps the OWNER: this is a data reset, and
   // seedAll re-creates the owner's rows around the existing account.
-  const demoStaffWhere = {
-    id: { not: tenantId },
-    memberships: { some: { tenantId } },
-  };
-  await prisma.loginActivity.deleteMany({ where: { user: demoStaffWhere } });
-  await prisma.tenantMembership.deleteMany({
-    where: { tenantId, user: { id: { not: tenantId } } },
+  //
+  // The ids are resolved UP FRONT because membership is the only thing that
+  // identifies these users, and the membership rows are deleted below. Filtering
+  // the user delete on `memberships: { some: { tenantId } }` after that delete
+  // matches nothing, so the staff users survived the wipe and the next run died
+  // on their primary key. Resolve first, then delete by id.
+  //
+  // Matched by membership OR by the deterministic `<slug>-emp-` id this seeder
+  // assigns. Membership alone is not enough: a run that fails after the
+  // membership delete but before the user delete strands these users with no
+  // membership at all, and every later run then fails on their primary key with
+  // no way to recover short of deleting them by hand.
+  const demoStaff = await prisma.user.findMany({
+    where: {
+      id: { not: ownerUserId },
+      OR: [
+        { memberships: { some: { tenantId } } },
+        { id: { startsWith: `${tenantSlug}-emp-` } },
+      ],
+    },
+    select: { id: true },
   });
-  await prisma.user.deleteMany({ where: demoStaffWhere });
+  const demoStaffIds = demoStaff.map((u) => u.id);
+  if (demoStaffIds.length) {
+    await prisma.loginActivity.deleteMany({ where: { userId: { in: demoStaffIds } } });
+  }
+  await prisma.tenantMembership.deleteMany({
+    where: { tenantId, user: { id: { not: ownerUserId } } },
+  });
+  if (demoStaffIds.length) {
+    await prisma.user.deleteMany({ where: { id: { in: demoStaffIds } } });
+  }
 
   // --- AI feature data (cluster H, slice H.4) ------------------------------
   // Messages cascade-delete with their session, but we delete explicitly so
@@ -407,7 +466,12 @@ async function ensureContact(
   return row.id;
 }
 
-async function seedAll(tenantId: string): Promise<void> {
+async function seedAll(
+  tenantId: string,
+  ownerUserId: string,
+  tenantSlug: string,
+  companyName: string,
+): Promise<void> {
   console.log('Phase 2: seeding demo data');
 
   // The ledger engine + applyPack take a structural Prisma slice. Mirror the
@@ -421,7 +485,7 @@ async function seedAll(tenantId: string): Promise<void> {
   await prisma.companySettings.upsert({
     where: { tenantId },
     update: {
-      companyName: 'Demo Company',
+      companyName,
       email: 'support@example.com',
       phone: '+91-9876543210',
       address: '123 MG Road',
@@ -433,10 +497,10 @@ async function seedAll(tenantId: string): Promise<void> {
       countryId: 'c-india',
       publicBaseUrl: 'http://localhost:8080',
       merchantUpiId: 'demo@upi',
-      merchantName: 'Demo Company',
+      merchantName: companyName,
     },
     create: {
-      companyName: 'Demo Company',
+      companyName,
       email: 'support@example.com',
       phone: '+91-9876543210',
       address: '123 MG Road',
@@ -448,7 +512,7 @@ async function seedAll(tenantId: string): Promise<void> {
       countryId: 'c-india',
       publicBaseUrl: 'http://localhost:8080',
       merchantUpiId: 'demo@upi',
-      merchantName: 'Demo Company',
+      merchantName: companyName,
       tenantId,
     },
   });
@@ -1009,7 +1073,7 @@ async function seedAll(tenantId: string): Promise<void> {
         TotalAmount: D(totalAmount),
         vat: D(totalTax),
         tenantId,
-        billFrom: tenantId,
+        billFrom: ownerUserId,
         billTo: customer.id,
         invoiceType: spec.invoiceType ?? 'INVOICE',
         bankId: banks[0].id,
@@ -1031,6 +1095,26 @@ async function seedAll(tenantId: string): Promise<void> {
         total: String(totalAmount),
         tax: String(totalTax),
       });
+
+      // COGS. Revenue was being recognised without any matching cost, so every
+      // gross-margin and P&L figure in the seeded books was simply the sale
+      // price. postSaleCogs has existed all along and was never called.
+      // Services carry no inventory cost, so only stocked Products contribute.
+      const cogs = round2(
+        spec.items.reduce((sum, it) => {
+          const prod = products.find((pr) => pr.id === it.productId);
+          if (!prod || prod.type !== 'Product') return sum;
+          return sum + it.qty * prod.buy;
+        }, 0),
+      );
+      if (cogs > 0) {
+        await postSaleCogs(ledgerTx, {
+          tenantId,
+          invoiceId: inv.id,
+          date: invDate,
+          cost: String(cogs),
+        });
+      }
     }
 
     // Invoice payments for PAID and PARTIALLY_PAID — create the row AND post GL.
@@ -1044,7 +1128,7 @@ async function seedAll(tenantId: string): Promise<void> {
           bankId: banks[0].id,
           received_on: new Date(invDate.getTime() + 5 * 24 * 60 * 60 * 1000),
           notes: 'Full payment received via bank transfer.',
-          received_by: tenantId,
+          received_by: ownerUserId,
         },
       });
       await postInvoicePayment(ledgerTx, {
@@ -1067,7 +1151,7 @@ async function seedAll(tenantId: string): Promise<void> {
           bankId: banks[1].id,
           received_on: new Date(invDate.getTime() + 3 * 24 * 60 * 60 * 1000),
           notes: 'Partial payment (50%).',
-          received_by: tenantId,
+          received_by: ownerUserId,
         },
       });
       await postInvoicePayment(ledgerTx, {
@@ -1103,7 +1187,7 @@ async function seedAll(tenantId: string): Promise<void> {
       TotalAmount: D(rpTotal),
       vat: D(rpTax),
       tenantId,
-      billFrom: tenantId,
+      billFrom: ownerUserId,
       billTo: customers[3].id,
       bankId: banks[0].id,
       isRecurring: true,
@@ -1138,7 +1222,7 @@ async function seedAll(tenantId: string): Promise<void> {
         bankId: banks[0].id,
         received_on: rpPayDate,
         notes: 'Recurring parent — full payment.',
-        received_by: tenantId,
+        received_by: ownerUserId,
       },
     });
     await postInvoicePayment(ledgerTx, {
@@ -1171,7 +1255,7 @@ async function seedAll(tenantId: string): Promise<void> {
         TotalAmount: D(rpTotal),
         vat: D(rpTax),
         tenantId,
-        billFrom: tenantId,
+        billFrom: ownerUserId,
         billTo: customers[3].id,
         bankId: banks[0].id,
         parentInvoice: recurringParent.id,
@@ -1195,7 +1279,7 @@ async function seedAll(tenantId: string): Promise<void> {
         bankId: banks[0].id,
         received_on: childPayDate,
         notes: 'Recurring monthly payment.',
-        received_by: tenantId,
+        received_by: ownerUserId,
       },
     });
     await postInvoicePayment(ledgerTx, {
@@ -1270,8 +1354,8 @@ async function seedAll(tenantId: string): Promise<void> {
         balanceAmount: statuses[i] === 'paid' || statuses[i] === 'completed' ? D(0) : statuses[i] === 'partially_paid' ? D(round2(total / 2)) : D(total),
         bankId: banks[i % banks.length].id,
         tenantId,
-        billFrom: tenantId,
-        billTo: tenantId,
+        billFrom: ownerUserId,
+        billTo: ownerUserId,
         notes: `Demo purchase from ${supplier.name}.`,
       },
     });
@@ -1316,7 +1400,7 @@ async function seedAll(tenantId: string): Promise<void> {
           paidAmount: payAmount,
           dueAmount: statuses[i] === 'partially_paid' ? round2(total / 2) : 0,
           notes: `Payment to ${supplier.name}.`,
-          createdBy: tenantId,
+          createdBy: ownerUserId,
         },
       });
       await postSupplierPayment(ledgerTx, {
@@ -1567,7 +1651,7 @@ async function seedAll(tenantId: string): Promise<void> {
         TotalAmount: D(totalAmount),
         vat: D(totalTax),
         tenantId,
-        billFrom: tenantId,
+        billFrom: ownerUserId,
         billTo: customer.id,
         bankId: banks[0].id,
         notes: 'Auto-generated by full demo seed.',
@@ -1625,7 +1709,7 @@ async function seedAll(tenantId: string): Promise<void> {
         bankId: banks[0].id,
         notes: 'Auto-generated by full demo seed.',
         tenantId,
-        billFrom: tenantId,
+        billFrom: ownerUserId,
         billTo: inv.customerId,
         appliedToInvoice: inv.id,
         appliedDate: new Date(inv.date.getTime() + 15 * 24 * 60 * 60 * 1000),
@@ -1641,6 +1725,17 @@ async function seedAll(tenantId: string): Promise<void> {
         date: cnDate,
         total: String(total),
         tax: String(tax),
+      });
+      // The mirror of postSaleCogs on the invoice: returned goods go back into
+      // stock at cost and the original COGS is unwound. Without it a return
+      // credits revenue but leaves the cost of the returned item expensed, so
+      // margin stays understated forever. The note is a one-line adjustment
+      // against products[0], which is a stocked Product.
+      await postReturnCogs(ledgerTx, {
+        tenantId,
+        creditNoteId: cn.id,
+        date: cnDate,
+        cost: String(round2(products[0].buy)),
       });
     }
     creditNoteCount++;
@@ -1688,7 +1783,7 @@ async function seedAll(tenantId: string): Promise<void> {
         notes: 'Auto-generated by full demo seed.',
         termsAndCondition: 'Please verify goods at delivery.',
         tenantId,
-        billFrom: tenantId,
+        billFrom: ownerUserId,
         billTo: inv.customerId,
         receivedBy: dcStatuses[i] === 'DELIVERED' ? 'Customer Representative' : '',
         receivedDate: dcStatuses[i] === 'DELIVERED' ? new Date(inv.date.getTime() + 2 * 24 * 60 * 60 * 1000) : null,
@@ -1741,8 +1836,8 @@ async function seedAll(tenantId: string): Promise<void> {
         TotalAmount: D(total),
         bankId: banks[i % banks.length].id,
         tenantId,
-        billFrom: tenantId,
-        billTo: tenantId,
+        billFrom: ownerUserId,
+        billTo: ownerUserId,
         notes: `Demo PO for ${pProduct.name}.`,
         termsAndCondition: 'Delivery within 21 days.',
       },
@@ -1763,7 +1858,7 @@ async function seedAll(tenantId: string): Promise<void> {
     const taxable = round2(pur.total * 0.13);
     const tax = round2(taxable * 0.18);
     const total = round2(taxable + tax);
-    await prisma.debitNote.create({
+    const dn = await prisma.debitNote.create({
       data: {
         debitNoteId: `DEMO-DN-${String(i + 1).padStart(6, '0')}`,
         purchaseId: pur.id,
@@ -1797,9 +1892,24 @@ async function seedAll(tenantId: string): Promise<void> {
         bankId: banks[0].id,
         notes: `Debit note against ${pur.purchaseId}: ${pur.supplierName}.`,
         tenantId,
-        createdBy: tenantId,
-        billFrom: tenantId,
+        createdBy: ownerUserId,
+        billFrom: ownerUserId,
       },
+    });
+    // Debit notes used to be written with NO ledger entry — the row existed, the
+    // supplier balance moved in the UI, and the GL never heard about it. The
+    // posting helper has always been there (lib/ledger/ledgerPosting.ts); it was
+    // simply never called. inventoryNet/expenseNet must sum with tax to the
+    // total or postDebitNoteIssued's assertSplit rejects it; this adjustment is
+    // entirely against stock, so expenseNet is zero.
+    await postDebitNoteIssued(ledgerTx, {
+      tenantId,
+      debitNoteId: dn.id,
+      date: dn.debitNoteDate ?? pur.date,
+      total: String(total),
+      tax: String(tax),
+      inventoryNet: String(taxable),
+      expenseNet: '0',
     });
     debitNoteCount++;
   }
@@ -1809,8 +1919,14 @@ async function seedAll(tenantId: string): Promise<void> {
   // PettyCash (1 cashbook + 8 transactions) — mix of ADD (top-ups) & SPEND
   // -------------------------------------------------------------------------
   const pcOpening = 5000;
+  // tenantId is set explicitly. PettyCash.tenantId is nullable (it was
+  // backfilled by migration rather than made required), and this create used to
+  // omit it — leaving a row owned by nobody, which checkTenantIntegrity flags
+  // because its transactions DO carry a tenant, and which the tenant-scoped
+  // wipe cannot match, so one orphan accumulated per run.
   const pcRow = await prisma.pettyCash.create({
     data: {
+      tenantId,
       openingBalance: D(pcOpening),
       currentBalance: D(pcOpening),
       asOnDate: daysAgo(60),
@@ -1956,7 +2072,7 @@ async function seedAll(tenantId: string): Promise<void> {
           relatedId: inv.id,
           explainStatus: 'EXPLAINED',
           isReconciled: txIdx % 3 !== 0,
-          reconciledBy: txIdx % 3 !== 0 ? tenantId : null,
+          reconciledBy: txIdx % 3 !== 0 ? ownerUserId : null,
           reconciliationDate: txIdx % 3 !== 0 ? new Date(inv.date.getTime() + 6 * 24 * 60 * 60 * 1000) : null,
         },
       });
@@ -1990,7 +2106,7 @@ async function seedAll(tenantId: string): Promise<void> {
         relatedId: rp.paymentId,
         explainStatus: 'EXPLAINED',
         isReconciled: true,
-        reconciledBy: tenantId,
+        reconciledBy: ownerUserId,
       },
     });
     bankBalances[bankId] = after;
@@ -2024,7 +2140,7 @@ async function seedAll(tenantId: string): Promise<void> {
         relatedId: e.id,
         explainStatus: 'EXPLAINED',
         isReconciled: i % 2 === 0,
-        reconciledBy: i % 2 === 0 ? tenantId : null,
+        reconciledBy: i % 2 === 0 ? ownerUserId : null,
       },
     });
     bankBalances[bankId] = after;
@@ -2087,7 +2203,7 @@ async function seedAll(tenantId: string): Promise<void> {
         relatedType: 'MANUAL',
         explainStatus: 'EXPLAINED',
         isReconciled: i < 4,
-        reconciledBy: i < 4 ? tenantId : null,
+        reconciledBy: i < 4 ? ownerUserId : null,
       },
     });
     bankBalances[bankId] = after;
@@ -2202,7 +2318,7 @@ async function seedAll(tenantId: string): Promise<void> {
     data: { tenantId, name: 'April 2026', startDate: aprStart, endDate: aprEnd, isLocked: false },
   });
   await prisma.accountingPeriod.create({
-    data: { tenantId, name: 'March 2026', startDate: marStart, endDate: marEnd, isLocked: true, lockedAt: daysAgo(20), lockedBy: tenantId },
+    data: { tenantId, name: 'March 2026', startDate: marStart, endDate: marEnd, isLocked: true, lockedAt: daysAgo(20), lockedBy: ownerUserId },
   });
   record('accountingPeriods', 2);
 
@@ -2543,14 +2659,19 @@ async function seedAll(tenantId: string): Promise<void> {
   // -------------------------------------------------------------------------
 
   // --- Demo staff users (employees) ----------------------------------------
-  // Tenant membership is resolved as `id == tenant OR ownerId == tenant` (see
-  // projectMemberController.isTenantStaff), so each employee gets
-  // `ownerId = tenantId` (the owner) and `user_type = 2` (staff).
+  // Staff are put in the workspace by their TenantMembership below, which is
+  // what both sign-in and the staff list read.
+  //
+  // Ids and emails are namespaced by tenant slug because User.email is
+  // GLOBALLY unique (schema.prisma, `email String @unique`) and User.id is a
+  // primary key: the fixed 'demo-emp-1' / '...@demo.elixirbooks.local' values
+  // this used to hardcode are fine for exactly one workspace and throw P2002 on
+  // the second. Nothing outside this block refers to those literals.
   const staffPassword = await bcrypt.hash('Demo123$', 10);
   const employeeSpecs = [
-    { id: 'demo-emp-1', firstName: 'Priya', lastName: 'Sharma', email: 'priya.sharma@demo.elixirbooks.local' },
-    { id: 'demo-emp-2', firstName: 'Arjun', lastName: 'Patel', email: 'arjun.patel@demo.elixirbooks.local' },
-    { id: 'demo-emp-3', firstName: 'Meera', lastName: 'Iyer', email: 'meera.iyer@demo.elixirbooks.local' },
+    { id: `${tenantSlug}-emp-1`, firstName: 'Priya', lastName: 'Sharma', email: `priya.sharma@${tenantSlug}.seed.local` },
+    { id: `${tenantSlug}-emp-2`, firstName: 'Arjun', lastName: 'Patel', email: `arjun.patel@${tenantSlug}.seed.local` },
+    { id: `${tenantSlug}-emp-3`, firstName: 'Meera', lastName: 'Iyer', email: `meera.iyer@${tenantSlug}.seed.local` },
   ];
   const employeeIds: string[] = [];
   // The MEMBERSHIP is what puts these people in the workspace. Creating the
@@ -2635,7 +2756,7 @@ async function seedAll(tenantId: string): Promise<void> {
     // Website Redesign (PRJ-001)
     // The demo admin/owner is also a member+manager so their own My Timesheet
     // grid + Approvals are populated when logged in as admin@demo.
-    { tenantId, projectId: ttProjects[0].id, employeeUserId: tenantId, role: 'MANAGER', billingRate: D(150) },
+    { tenantId, projectId: ttProjects[0].id, employeeUserId: ownerUserId, role: 'MANAGER', billingRate: D(150) },
     { tenantId, projectId: ttProjects[0].id, employeeUserId: employeeIds[0], role: 'MANAGER', billingRate: D(140) },
     { tenantId, projectId: ttProjects[0].id, employeeUserId: employeeIds[1], role: 'MEMBER', billingRate: D(110) },
     { tenantId, projectId: ttProjects[0].id, employeeUserId: employeeIds[2], role: 'MEMBER', billingRate: D(95) },
@@ -2676,7 +2797,7 @@ async function seedAll(tenantId: string): Promise<void> {
       weekStartDate: mondayUTC,
       status: 'APPROVED',
       submittedAt: weekDay(5),
-      approvedById: tenantId,
+      approvedById: ownerUserId,
       approvedAt: weekDay(5),
     },
   });
@@ -2776,7 +2897,7 @@ async function seedAll(tenantId: string): Promise<void> {
       status: 'APPROVED',
       reason: 'Family vacation',
       totalDays: D(lr1.totalDays),
-      approvedById: tenantId,
+      approvedById: ownerUserId,
       approvedAt: weekDay(7),
       days: {
         create: lr1.days.map((d) => ({
@@ -2831,6 +2952,564 @@ async function seedAll(tenantId: string): Promise<void> {
   record('leaveRequests', leaveRequestCount);
   record('leaveRequestDays', leaveRequestDayCount);
 
+  // =========================================================================
+  // Modules that previously seeded nothing
+  //
+  // Everything below fills a table the demo dataset never populated, so the
+  // screens that read them rendered empty however much other data existed.
+  // Each block is dependency-ordered against what came before it and, where the
+  // module has a ledger consequence, posts it rather than leaving the books
+  // describing a different company from the one the UI shows.
+  // =========================================================================
+
+  // --- Cost centres --------------------------------------------------------
+  // `numberPrefix` + `nextNumber` are what lib/costCenterNumbering.ts issues
+  // per-centre document series from, so at least one centre carries them.
+  const costCentreSpecs = [
+    { code: 'CC-SALES', name: 'Sales & Marketing', type: 'PROFIT' as const, numberPrefix: 'SAL' },
+    { code: 'CC-OPS', name: 'Operations', type: 'BOTH' as const, numberPrefix: null },
+    { code: 'CC-ADMIN', name: 'Administration', type: 'COST' as const, numberPrefix: null },
+  ];
+  const costCentres: { id: string; code: string }[] = [];
+  for (const c of costCentreSpecs) {
+    const row = await prisma.costCenter.create({
+      data: {
+        tenantId,
+        code: c.code,
+        name: c.name,
+        description: `${c.name} cost centre`,
+        type: c.type,
+        isActive: true,
+        numberPrefix: c.numberPrefix,
+        nextNumber: 1,
+      },
+    });
+    costCentres.push({ id: row.id, code: row.code });
+  }
+  record('costCenters', costCentres.length);
+
+  // Dimension reports filter on costCenterId, so untagged documents make every
+  // by-department report empty. Tag a spread of real documents rather than
+  // creating standalone rows nothing points at.
+  let taggedDocs = 0;
+  for (let i = 0; i < createdInvoices.length; i += 1) {
+    await prisma.invoice.update({
+      where: { id: createdInvoices[i].id },
+      data: { costCenterId: costCentres[i % costCentres.length].id },
+    });
+    taggedDocs += 1;
+  }
+  const seededExpenses = await prisma.expense.findMany({
+    where: { tenantId },
+    select: { id: true },
+  });
+  for (let i = 0; i < seededExpenses.length; i += 1) {
+    await prisma.expense.update({
+      where: { id: seededExpenses[i].id },
+      data: { costCenterId: costCentres[(i + 1) % costCentres.length].id },
+    });
+    taggedDocs += 1;
+  }
+  record('dimensionTaggedDocs', taggedDocs);
+
+  // --- Exchange rates ------------------------------------------------------
+  // One rate per non-base currency per month over the seeded window, so
+  // multi-currency documents and FX revaluation have something to resolve.
+  const fxSpecs = [
+    { code: 'USD', rate: 83.2 },
+    { code: 'EUR', rate: 90.4 },
+    { code: 'GBP', rate: 105.7 },
+    { code: 'AED', rate: 22.6 },
+  ];
+  let fxCount = 0;
+  for (const fx of fxSpecs) {
+    for (const monthsBack of [0, 1, 2]) {
+      const asOf = daysAgo(monthsBack * 30);
+      await prisma.exchangeRate.create({
+        data: {
+          tenantId,
+          fromCurrency: fx.code,
+          toCurrency: 'INR',
+          // Drift the rate a little per month so charts are not flat lines.
+          rate: D(round2(fx.rate * (1 + (monthsBack - 1) * 0.012))),
+          asOfDate: asOf,
+        },
+      });
+      fxCount += 1;
+    }
+  }
+  record('exchangeRates', fxCount);
+
+  // --- Fixed assets --------------------------------------------------------
+  // Four assets spanning the whole lifecycle so depreciation, disposal-at-gain
+  // and disposal-at-loss all have a row to exercise. Each one posts: acquiring
+  // an asset without postAssetAcquisition leaves the balance sheet missing it.
+  //
+  // Every acquisition date MUST fall on or after goLiveDate (daysAgo(400)).
+  // lib/ledger/postingGate.ts silently returns false for anything earlier — no
+  // error, no entry — so an asset acquired "18 months ago" was created, then
+  // depreciated and disposed against a FIXED_ASSET balance it had never been
+  // capitalised into. Ages are capped at 12 months for that reason; the
+  // lifecycle spread comes from useful life instead.
+  const assetSpecs = [
+    { name: 'Dell PowerEdge Server', cost: 480000, life: 60, ageMonths: 2, dispose: null },
+    { name: 'Office Furniture Set', cost: 165000, life: 84, ageMonths: 8, dispose: null },
+    { name: 'Delivery Van (Tata Ace)', cost: 720000, life: 96, ageMonths: 11, dispose: 'gain' as const },
+    { name: 'Laptop Fleet (10 units)', cost: 950000, life: 36, ageMonths: 12, dispose: 'loss' as const },
+  ];
+  let assetCount = 0;
+  let deprPostings = 0;
+  for (const a of assetSpecs) {
+    const acquisitionDate = daysAgo(a.ageMonths * 30);
+    const monthly = round2(a.cost / a.life);
+    const monthsElapsed = Math.min(a.ageMonths, a.life);
+    const accumulated = round2(monthly * monthsElapsed);
+    const disposalDate = a.dispose ? daysAgo(10) : null;
+    const netBook = round2(a.cost - accumulated);
+    // Proceeds above net book value realise a gain, below it a loss.
+    const proceeds = a.dispose === 'gain' ? round2(netBook * 1.25) : a.dispose === 'loss' ? round2(netBook * 0.6) : null;
+
+    const asset = await prisma.fixedAsset.create({
+      data: {
+        tenantId,
+        name: a.name,
+        cost: D(a.cost),
+        salvageValue: D(0),
+        usefulLifeMonths: a.life,
+        method: 'straight-line',
+        acquisitionDate,
+        accumulatedDepreciation: D(accumulated),
+        lastDepreciatedOn: daysAgo(15),
+        status: a.dispose ? 'disposed' : 'active',
+        disposalDate,
+        disposalProceeds: proceeds === null ? null : D(proceeds),
+      },
+    });
+    assetCount += 1;
+
+    await postAssetAcquisition(ledgerTx, {
+      tenantId,
+      assetId: asset.id,
+      date: acquisitionDate,
+      cost: String(a.cost),
+    });
+
+    // Three monthly charges rather than the whole life: enough for the
+    // depreciation schedule to render, without hundreds of entries. The event
+    // key is `depr.<period>`, so each period posts exactly once.
+    for (let m = 0; m < 3; m += 1) {
+      const when = daysAgo(15 + m * 30);
+      // Never charge depreciation before the asset existed.
+      if (when < acquisitionDate) continue;
+      await postDepreciation(ledgerTx, {
+        tenantId,
+        assetId: asset.id,
+        date: when,
+        amount: String(monthly),
+        period: `${when.getUTCFullYear()}-${String(when.getUTCMonth() + 1).padStart(2, '0')}`,
+      });
+      deprPostings += 1;
+    }
+
+    if (a.dispose && disposalDate && proceeds !== null) {
+      await postAssetDisposal(ledgerTx, {
+        tenantId,
+        assetId: asset.id,
+        date: disposalDate,
+        cost: String(a.cost),
+        accumulatedDepreciation: String(accumulated),
+        grossProceeds: String(proceeds),
+        tax: '0',
+      });
+    }
+  }
+  record('fixedAssets', assetCount);
+  record('depreciationPostings', deprPostings);
+
+  // --- FIFO cost layers ----------------------------------------------------
+  // Backs the COGS postings now made on every invoice. Without layers the
+  // valuation report has no basis to work from.
+  let layerCount = 0;
+  for (const prod of products.filter((p) => p.type === 'Product')) {
+    for (const [idx, qty] of [40, 25].entries()) {
+      await prisma.inventoryCostLayer.create({
+        data: {
+          tenantId,
+          productId: prod.id,
+          qtyRemaining: D(qty),
+          // Later layers cost slightly more, so FIFO and WAC differ visibly.
+          unitCost: D(round2(prod.buy * (1 + idx * 0.04))),
+          receivedAt: daysAgo(70 - idx * 25),
+        },
+      });
+      layerCount += 1;
+    }
+  }
+  record('inventoryCostLayers', layerCount);
+
+  // --- Document presentation ----------------------------------------------
+  await prisma.invoiceTemplate.create({
+    data: { tenantId, default_invoice_template: 'template1' },
+  });
+  record('invoiceTemplates', 1);
+
+  // A 1x1 transparent PNG: a real data URL the UI can render without shipping
+  // a binary fixture into the repo.
+  const blankPng =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+  for (const sig of ['Authorised Signatory', 'Finance Manager']) {
+    await prisma.signature.create({
+      data: { tenantId, signatureName: sig, signatureImage: blankPng, markAsDefault: sig.startsWith('Authorised') },
+    });
+  }
+  record('signatures', 2);
+
+  // --- Reminders -----------------------------------------------------------
+  // Covers before/after/duedate timings and both enabled and disabled states,
+  // which is what the reminder list needs in order to show its filters working.
+  const reminderSpecs = [
+    { name: 'Invoice due in 3 days', timing: 'before' as const, days: 3, enabled: true, status: 'active' as const },
+    { name: 'Invoice due today', timing: 'duedate' as const, days: 0, enabled: true, status: 'active' as const },
+    { name: 'Invoice 7 days overdue', timing: 'after' as const, days: 7, enabled: true, status: 'active' as const },
+    { name: 'Invoice 30 days overdue (paused)', timing: 'after' as const, days: 30, enabled: false, status: 'inactive' as const },
+  ];
+  for (const [i, r] of reminderSpecs.entries()) {
+    await prisma.reminder.create({
+      data: {
+        tenantId,
+        name: r.name,
+        type: 'automatic',
+        remindDays: r.days,
+        remindTiming: r.timing,
+        remindEvent: 'due_date',
+        isEnabled: r.enabled,
+        emailConfig: {
+          subject: `Reminder: invoice {{invoice_number}}`,
+          body: 'Dear {{customer_name}}, invoice {{invoice_number}} for {{amount}} is {{status}}.',
+        } as unknown as Prisma.InputJsonValue,
+        targetInvoice: createdInvoices[i % createdInvoices.length].id,
+        targetContactId: customerContactIds[i % customerContactIds.length],
+        createdBy: ownerUserId,
+        status: r.status,
+      },
+    });
+  }
+  record('reminders', reminderSpecs.length);
+
+  // --- Refunds -------------------------------------------------------------
+  // Against the captured gateway transactions seeded earlier: one full, one
+  // partial, so the refund list shows both shapes.
+  const capturedTxns = await prisma.paymentTransaction.findMany({
+    where: { tenantId },
+    select: { id: true, amount: true },
+    take: 2,
+  });
+  let refundCount = 0;
+  for (const [i, t] of capturedTxns.entries()) {
+    const amt = i === 0 ? Number(t.amount) : round2(Number(t.amount) / 2);
+    await prisma.refund.create({
+      data: {
+        tenantId,
+        paymentTransactionId: t.id,
+        amount: D(amt),
+        reason: i === 0 ? 'Order cancelled by customer' : 'Partial goods returned',
+        status: 'CAPTURED',
+      },
+    });
+    refundCount += 1;
+  }
+  record('refunds', refundCount);
+
+  // --- Account credit ------------------------------------------------------
+  // A grant and a redemption against the same contact, so the running balance
+  // is non-trivial rather than a single row.
+  const creditContactId = customerContactIds[0];
+  await prisma.accountCreditEntry.create({
+    data: {
+      tenantId,
+      contactId: creditContactId,
+      type: 'GRANT',
+      amount: D(15000),
+      reason: 'Goodwill credit for delayed delivery',
+      createdById: ownerUserId,
+    },
+  });
+  await prisma.accountCreditEntry.create({
+    data: {
+      tenantId,
+      contactId: creditContactId,
+      type: 'REDEMPTION',
+      amount: D(5500),
+      reason: 'Applied against invoice',
+      createdById: ownerUserId,
+    },
+  });
+  record('accountCreditEntries', 2);
+
+  // --- Custom fields -------------------------------------------------------
+  // FieldType and Module ids are generated, not fixed, so both are resolved by
+  // slug. A field with no values is invisible in the UI, so each one is
+  // populated on a real record.
+  const fieldTypes = await prisma.fieldType.findMany({ select: { id: true, slug: true } });
+  const ftBySlug = Object.fromEntries(fieldTypes.map((f) => [f.slug, f.id]));
+  const modules = await prisma.module.findMany({ select: { id: true, moduleSlug: true } });
+  const modBySlug = Object.fromEntries(modules.map((m) => [m.moduleSlug, m.id]));
+
+  const customFieldSpecs = [
+    { moduleSlug: 'invoices', label: 'Purchase Order Ref', slug: 'po_ref', type: 'text', value: 'PO-88213' },
+    { moduleSlug: 'customers', label: 'Account Manager', slug: 'account_manager', type: 'text', value: 'Priya Sharma' },
+    { moduleSlug: 'invoices', label: 'Delivery Date', slug: 'delivery_date', type: 'datepicker', value: daysAgo(5).toISOString().slice(0, 10) },
+  ];
+  let cfCount = 0;
+  let cfvCount = 0;
+  for (const spec of customFieldSpecs) {
+    const moduleId = modBySlug[spec.moduleSlug];
+    const fieldTypeId = ftBySlug[spec.type];
+    if (!moduleId || !fieldTypeId) continue;
+    const cf = await prisma.customField.create({
+      data: {
+        tenantId,
+        moduleId,
+        labelName: spec.label,
+        fieldSlug: spec.slug,
+        fieldTypeId,
+        isMandatory: false,
+        status: 'Active',
+      },
+    });
+    cfCount += 1;
+    await prisma.customFieldValue.create({
+      data: {
+        tenantId,
+        customFieldId: cf.id,
+        module: spec.moduleSlug === 'invoices' ? 'invoice' : 'customer',
+        recordId: spec.moduleSlug === 'invoices' ? createdInvoices[0].id : customers[0].id,
+        value: spec.value,
+      },
+    });
+    cfvCount += 1;
+  }
+  record('customFields', cfCount);
+  record('customFieldValues', cfvCount);
+
+  // --- Settings ------------------------------------------------------------
+  // GeneralSetting rows are created lazily on first write by the controllers,
+  // so a workspace nobody has clicked through has none — and the invoice
+  // numbering path reads three of them.
+  const generalSettings: { key: string; value: Prisma.InputJsonValue }[] = [
+    { key: 'invoicePrefix', value: 'INV-' },
+    { key: 'nextInvoiceNo', value: 1001 },
+    { key: 'invoiceNumberType', value: 'auto' },
+    { key: 'proformaPrefix', value: 'PRO-' },
+    { key: 'quotationPrefix', value: 'QUO-' },
+  ];
+  for (const g of generalSettings) {
+    await prisma.generalSetting.upsert({
+      where: { tenantId_key: { tenantId, key: g.key } },
+      update: { value: g.value },
+      create: { tenantId, key: g.key, value: g.value },
+    });
+  }
+  record('generalSettings', generalSettings.length);
+
+  await prisma.localization.create({
+    data: {
+      tenantId,
+      dateFormatId: 'df-dmy-slash',
+      timeFormatId: 'tf-24h',
+      timezoneId: 'tz-ist',
+      isActive: true,
+    },
+  });
+  record('localizations', 1);
+
+  await prisma.emailSettings.create({
+    data: {
+      tenantId,
+      provider_type: 'SMTP',
+      smtpHost: 'smtp.example.com',
+      smtpPort: '587',
+      smtpUsername: 'no-reply@example.com',
+      smtpFromEmail: 'no-reply@example.com',
+      smtpFromName: companyName,
+      smtp_status: true,
+    },
+  });
+  record('emailSettings', 1);
+
+  for (const m of ['Bank Transfer', 'UPI', 'Card']) {
+    await prisma.paymentLinkMethod.create({ data: { tenantId, name: m, enabled: true } });
+  }
+  record('paymentLinkMethods', 3);
+
+  // --- Bank explain hints --------------------------------------------------
+  // Maps a payee string to the category the explain screen should propose, so
+  // auto-explain has prior knowledge to match against instead of guessing cold.
+  const hintSpecs = [
+    { payee: 'amazon web services', txType: 'expense' },
+    { payee: 'indian oil', txType: 'expense' },
+    { payee: 'bsnl broadband', txType: 'expense' },
+  ];
+  for (const h of hintSpecs) {
+    await prisma.explanationHint.upsert({
+      where: { tenantId_payeeKey: { tenantId, payeeKey: h.payee } },
+      update: { transactionTypeKey: h.txType, hitCount: 3 },
+      create: { tenantId, payeeKey: h.payee, transactionTypeKey: h.txType, hitCount: 3 },
+    });
+  }
+  record('explanationHints', hintSpecs.length);
+
+  // --- MTD (UK Making Tax Digital) ----------------------------------------
+  await prisma.mtdConfig.create({
+    data: { tenantId, vrn: '123456789', enabled: false },
+  });
+  record('mtdConfigs', 1);
+
+  // --- Conversations -------------------------------------------------------
+  for (const [i, cid] of customerContactIds.slice(0, 2).entries()) {
+    await prisma.conversation.create({
+      data: {
+        tenantId,
+        sessionId: `${tenantSlug}-conv-${i + 1}`,
+        status: i === 0 ? 'active' : 'completed',
+        documentType: 'invoice',
+        context: { contactId: cid } as unknown as Prisma.InputJsonValue,
+      },
+    });
+  }
+  record('conversations', 2);
+
+  // --- Recurring invoice schedules ----------------------------------------
+  // All four resting states, so the schedule list shows what each looks like.
+  const schedSpecs = [
+    { name: 'Monthly retainer — Zenith', status: 'ACTIVE' as const, freq: 'month' as const, never: true },
+    { name: 'Weekly support hours', status: 'PAUSED' as const, freq: 'week' as const, never: false },
+    { name: 'Annual licence renewal', status: 'DRAFT' as const, freq: 'year' as const, never: false },
+    { name: 'Quarterly maintenance (ended)', status: 'ENDED' as const, freq: 'month' as const, never: false },
+  ];
+  let schedCount = 0;
+  for (const [i, sp] of schedSpecs.entries()) {
+    const taxable = round2(12000 + i * 3500);
+    const tax = round2(taxable * 0.18);
+    await prisma.recurringInvoiceSchedule.create({
+      data: {
+        tenantId,
+        name: sp.name,
+        contactId: customerContactIds[i % customerContactIds.length],
+        items: [
+          {
+            productId: products[0].id,
+            productName: products[0].name,
+            description: sp.name,
+            qty: 1,
+            rate: taxable,
+            discount: 0,
+            taxableAmount: taxable,
+            taxes: [{ taxRateId: taxRateByName['IGST 18%'].id, name: 'IGST 18%', kind: 'IGST', percent: 18, amount: tax }],
+            totalTax: tax,
+            lineTotal: round2(taxable + tax),
+          },
+        ] as unknown as Prisma.InputJsonValue,
+        taxableAmount: D(taxable),
+        totalTax: D(tax),
+        TotalAmount: D(round2(taxable + tax)),
+        repeatEvery: sp.freq,
+        startOn: daysAgo(120),
+        endsOn: sp.never ? null : daysAgo(-90),
+        neverExpire: sp.never,
+        status: sp.status,
+        nextRunDate: sp.status === 'ACTIVE' ? daysAgo(-7) : null,
+        lastRunDate: sp.status === 'ENDED' ? daysAgo(35) : null,
+        occurrencesCount: sp.status === 'ENDED' ? 4 : sp.status === 'ACTIVE' ? 3 : 0,
+        billFrom: ownerUserId,
+      },
+    });
+    schedCount += 1;
+  }
+  record('recurringSchedules', schedCount);
+
+  // --- Payroll -------------------------------------------------------------
+  // Profiles for the staff seeded above, then three months of pay runs in the
+  // three states a run can rest in.
+  let profileCount = 0;
+  for (const [i, empId] of employeeIds.entries()) {
+    await prisma.payrollProfile.create({
+      data: {
+        tenantId,
+        employeeUserId: empId,
+        defaultGross: D(round2((600000 + i * 120000) / 12)),
+        payFrequency: 'MONTHLY',
+        isActive: true,
+      },
+    });
+    profileCount += 1;
+  }
+  record('payrollProfiles', profileCount);
+
+  const payRunSpecs = [
+    { monthsBack: 2, status: 'FINALIZED' as const },
+    { monthsBack: 1, status: 'FINALIZED' as const },
+    { monthsBack: 0, status: 'DRAFT' as const },
+    { monthsBack: 3, status: 'VOID' as const },
+  ];
+  let payRunCount = 0;
+  let payLineCount = 0;
+  for (const pr of payRunSpecs) {
+    const periodStart = daysAgo(pr.monthsBack * 30 + 30);
+    const periodEnd = daysAgo(pr.monthsBack * 30);
+    const run = await prisma.payRun.create({
+      data: {
+        tenantId,
+        taxYearLabel: '2025-26',
+        taxMonth: ((periodEnd.getUTCMonth() + 9) % 12) + 1,
+        periodStart,
+        periodEnd,
+        status: pr.status,
+        finalizedAt: pr.status === 'FINALIZED' ? periodEnd : null,
+        voidedAt: pr.status === 'VOID' ? periodEnd : null,
+      },
+    });
+    payRunCount += 1;
+    for (const [i, empId] of employeeIds.entries()) {
+      const gross = round2(50000 + i * 10000);
+      const tax = round2(gross * 0.12);
+      const ni = round2(gross * 0.04);
+      await prisma.payRunLine.create({
+        data: {
+          tenantId,
+          payRunId: run.id,
+          employeeUserId: empId,
+          gross: D(gross),
+          deductions: D(round2(tax + ni)),
+          net: D(round2(gross - tax - ni)),
+          deductionLines: [
+            { name: 'Income Tax', amount: tax },
+            { name: 'Employee NIC', amount: ni },
+          ] as unknown as Prisma.InputJsonValue,
+        },
+      });
+      payLineCount += 1;
+    }
+  }
+  record('payRuns', payRunCount);
+  record('payRunLines', payLineCount);
+
+  // --- API key -------------------------------------------------------------
+  // Deliberately REVOKED. The list screen needs a row, but a demo database
+  // shipping a live credential whose secret is in the source is worse than an
+  // empty table; a revoked key renders identically and authenticates nothing.
+  await prisma.tenantApiKey.create({
+    data: {
+      tenantId,
+      name: 'Legacy integration (revoked)',
+      keyHash: createHash('sha256').update(`${tenantSlug}-demo-revoked-key`).digest('hex'),
+      prefix: 'eb_demo',
+      revokedAt: daysAgo(20),
+      createdBy: ownerUserId,
+    },
+  });
+  record('apiKeys', 1);
+
   // -------------------------------------------------------------------------
   // Transaction-category catalog — seed INLINE for the demo tenant so banking
   // explain/reconcile dropdowns are populated without relying on a reboot.
@@ -2846,6 +3525,37 @@ async function seedAll(tenantId: string): Promise<void> {
 // Main
 // ===========================================================================
 
+/**
+ * Seed the full demo dataset into ONE workspace.
+ *
+ * Exported so prisma/seedCompany.ts can aim the same engine at any company
+ * rather than re-implementing it. `ownerUserId` is a real User id, used for
+ * every column that is a foreign key to User — billFrom, billTo, received_by,
+ * createdBy, reconciledBy, approvedById, lockedBy, employeeUserId. It is
+ * deliberately NOT assumed to equal `tenantId`: those are independent ids, and
+ * on the demo account they are different values.
+ *
+ * `tenantSlug` namespaces the handful of values that are globally unique rather
+ * than unique per tenant (staff User ids and emails), so a second company can
+ * be seeded without colliding with the first.
+ */
+export async function seedDemoFull(opts: {
+  tenantId: string;
+  ownerUserId: string;
+  tenantSlug: string;
+  /** Written to CompanySettings.companyName. Defaults to the demo name. */
+  companyName?: string;
+}): Promise<Record<string, number>> {
+  await wipe(opts.tenantId, opts.ownerUserId, opts.tenantSlug);
+  await seedAll(
+    opts.tenantId,
+    opts.ownerUserId,
+    opts.tenantSlug,
+    opts.companyName ?? 'Demo Company',
+  );
+  return counts;
+}
+
 async function main(): Promise<void> {
   const adminUser = await prisma.user.findUnique({ where: { email: DEMO_EMAIL } });
   if (!adminUser) {
@@ -2854,27 +3564,29 @@ async function main(): Promise<void> {
     );
   }
 
-  // The demo workspace deliberately reuses the demo admin's User.id as its
-  // Tenant.id (prisma/seed-demo.ts creates it that way). That is LOAD-BEARING
-  // here: this file writes `tenantId` into `billFrom`, `received_by`,
-  // `createdBy` and `reconciledBy`, all of which are foreign keys to User. It
-  // is correct only while the two ids are the same value, so assert it rather
-  // than let a future change surface as thirty confusing FK violations.
-  const tenantId = adminUser.id;
-  const demoTenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
-  if (!demoTenant) {
+  // The workspace is whichever tenant this account OWNS, read from its
+  // membership — the same idiom seedAllTenantDefaults uses (prisma/seedTenant.ts).
+  //
+  // This used to assert `Tenant.id === adminUser.id` on the theory that the
+  // demo workspace reused the admin's User.id as its Tenant.id. It never did:
+  // seed-demo.ts pins the tenant to 'demo-tenant-1' and the user to
+  // 'demo-admin-1', so the assertion could not pass and this seeder could not
+  // run. The ids are simply unrelated, and the seeder now treats them that way.
+  const ownerMembership = await prisma.tenantMembership.findFirst({
+    where: { userId: adminUser.id, isOwner: true },
+    select: { tenant: { select: { id: true, slug: true } } },
+  });
+  if (!ownerMembership?.tenant) {
     throw new Error(
-      `The demo workspace must have Tenant.id === the demo admin's User.id (${tenantId}). ` +
-        'This seeder writes that id into User foreign keys (billFrom, received_by, ' +
-        'createdBy), so they must be the same row. Re-run `npm run prisma:seed:demo`.',
+      `${DEMO_EMAIL} exists but owns no workspace. Run \`npm run prisma:seed:demo\` first.`,
     );
   }
+  const { id: tenantId, slug: tenantSlug } = ownerMembership.tenant;
 
   console.log(`Full demo seed for tenantId=${tenantId} (${DEMO_EMAIL})`);
   console.log('-'.repeat(60));
 
-  await wipe(tenantId);
-  await seedAll(tenantId);
+  await seedDemoFull({ tenantId, ownerUserId: adminUser.id, tenantSlug });
 
   console.log('-'.repeat(60));
   console.log('Demo data summary:');
@@ -2886,11 +3598,15 @@ async function main(): Promise<void> {
   console.log('Login at:  http://localhost:8080/signin');
 }
 
-main()
-  .catch((err) => {
-    console.error('Full demo seed failed:', err);
-    process.exit(1);
-  })
-  .finally(async () => {
-    void prisma.$disconnect();
-  });
+// Guarded: seedCompany.ts imports seedDemoFull from this module, and an
+// unguarded main() would fire the whole demo seed on import.
+if (require.main === module) {
+  main()
+    .catch((err) => {
+      console.error('Full demo seed failed:', err);
+      process.exit(1);
+    })
+    .finally(async () => {
+      void prisma.$disconnect();
+    });
+}
