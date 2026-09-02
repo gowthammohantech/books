@@ -87,7 +87,7 @@ const ViewProduct: FC = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
+            <div className="flex items-center justify-center h-[clamp(11rem,26vh,16rem)]">
                 <LoaderSpinner />
             </div>
         );
@@ -150,7 +150,7 @@ const ViewProduct: FC = () => {
                                 <img
                                     src={product.product_image}
                                     alt={product.name}
-                                    className="max-h-56 w-auto object-contain"
+                                    className="max-h-[min(14rem,30vh)] w-auto object-contain"
                                 />
                             ) : (
                                 <span className="py-16 text-sm text-gray-400">No image</span>

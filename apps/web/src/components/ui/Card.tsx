@@ -15,6 +15,9 @@ export interface CardProps
   footer?: ReactNode;
 }
 
+// One step down from p-5 / px-5 py-4. Card is the most-reused surface in the
+// app, so this is the single highest-leverage padding change available — and
+// it compounds with the --spacing rescale rather than duplicating it.
 const BASE = "bg-card border border-border rounded-xl shadow-sm";
 
 const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
@@ -38,7 +41,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
     <Component ref={ref} className={`${BASE} ${className}`} {...rest}>
       {hasHeader &&
         (header ?? (
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             {title ? (
               <div className="text-base font-semibold text-foreground">
                 {title}
@@ -49,9 +52,9 @@ const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
             {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
           </div>
         ))}
-      <div className={padded ? "p-5" : undefined}>{children}</div>
+      <div className={padded ? "p-4" : undefined}>{children}</div>
       {footer ? (
-        <div className="px-5 py-4 border-t border-border">{footer}</div>
+        <div className="px-4 py-3 border-t border-border">{footer}</div>
       ) : null}
     </Component>
   );

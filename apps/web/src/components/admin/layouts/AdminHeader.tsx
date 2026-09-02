@@ -58,8 +58,11 @@ const AdminHeader = () => {
         [pathname, commands],
     );
 
+    // h-12 rather than padding-derived: the bar used to change height as the
+    // breadcrumb wrapped or the page-actions slot filled, which made the
+    // content pane a different height on every route.
     return (
-        <header className="flex items-center justify-between gap-3 px-4 py-2 bg-card border-b border-border relative z-30">
+        <header className="flex h-12 shrink-0 items-center justify-between gap-3 px-4 bg-card border-b border-border relative z-30">
             <div className="flex min-w-0 items-center gap-3">
                 {/* The trail is derived from the nav tree, so an unlisted route
                     (a create form, a detail page) yields nothing rather than a
@@ -126,7 +129,7 @@ const AdminHeader = () => {
                         <AnimatedIcon name="search" size={16} />
                         <span className="hidden lg:inline">Search…</span>
                     </span>
-                    <kbd className="hidden lg:inline rounded border border-border bg-card px-1.5 py-0.5 text-[11px] font-medium">
+                    <kbd className="hidden lg:inline rounded border border-border bg-card px-1.5 py-0.5 text-[0.6875rem] font-medium">
                         {shortcutHint}
                     </kbd>
                 </button>

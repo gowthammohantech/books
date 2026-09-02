@@ -434,7 +434,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ onClose }) => {
               {isStreaming ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
             </button>
           </div>
-          <p className="mt-1.5 text-center text-[10px] text-gray-400">
+          <p className="mt-1.5 text-center text-[0.6875rem] text-gray-400">
             Enter to send · Shift+Enter for a new line · ≈ $0.005 / reply
           </p>
         </div>

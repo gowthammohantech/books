@@ -60,7 +60,7 @@ export default function PublicQuotationViewer() {
     <div className="max-w-3xl mx-auto p-6 bg-white text-sm text-gray-600 print:p-0">
       {logoSrc && (
         <div className="mb-4">
-          <img src={logoSrc} alt={company?.companyName || 'logo'} className="h-12 max-w-[180px] object-contain" />
+          <img src={logoSrc} alt={company?.companyName || 'logo'} className="h-12 max-w-[11.25rem] object-contain" />
         </div>
       )}
       <div className="flex justify-between items-center mb-4 print:hidden">

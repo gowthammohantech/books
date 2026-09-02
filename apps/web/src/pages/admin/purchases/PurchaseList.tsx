@@ -288,7 +288,7 @@ const PurchaseList: FC = () => {
                             leftIcon={<Sparkles size={14} />}>
                             Scan Bill
                         </Button>
-                        <span className="text-[11px] text-gray-400 whitespace-nowrap">≈ $0.003 / scan</span>
+                        <span className="text-[0.6875rem] text-gray-400 whitespace-nowrap">≈ $0.003 / scan</span>
                     </div>
                 )}
                 {hasPermission(permissions, 'purchase-list', 'create') &&

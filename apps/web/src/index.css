@@ -11,6 +11,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Touch. The app had no `(pointer: coarse)` handling at all — the only @media
+   in the entire UI source was prefers-reduced-motion — so every control was
+   sized for a mouse on every device. */
+@custom-variant coarse (@media (pointer: coarse));
+
 /* ---------------------------------------------------------------------------
    Design tokens.
 
@@ -247,6 +252,41 @@
   --text-sm: 0.875rem;
 }
 
+/* ---------------------------------------------------------------------------
+   Density scale.
+
+   Tailwind v4 compiles every spacing utility to calc(var(--spacing) * n), and
+   resolves var(--spacing) at use time, through inheritance. So a class on a
+   subtree rescales all of them inside it — no theme rebuild, no touching the
+   ~1,400 call sites that use p-4 / gap-4 / mt-6.
+
+   0.225rem is 0.9x the 0.25rem default. The factor is bounded below by the
+   control heights it must not break: at 0.9, h-9 lands on 32.4px, still over
+   the 32px hit-target floor. (The floor in @layer base is written in rem
+   literals precisely so it cannot be dragged under by this.)
+
+   Scoped to the admin shells rather than :root on purpose:
+     - login, signup, the setup wizard and the marketing pages keep the
+       roomier default; they are not dense screens and are not the bug.
+     - print output is unaffected.
+     - it can be toggled at runtime, which is how the before/after screenshots
+       are taken from a single build.
+
+   The body:has() rule exists because Modal portals to document.body, as do
+   sonner toasts and the sidebar flyouts. Without it a dialog would keep the
+   default spacing while the page behind it was compact.
+
+   --content-max caps line length on wide monitors; see the layouts.
+--------------------------------------------------------------------------- */
+:root {
+  --content-max: 105rem;
+}
+
+.density-compact,
+body:has(.density-compact) {
+  --spacing: 0.225rem;
+}
+
 /* Motion that does not need JavaScript.
    The dividing line for animated icons: whole-element transforms live here,
    where they cost nothing and honour motion-reduce for free. Only per-path
@@ -342,6 +382,53 @@ main {
   input[type="number"] {
     -moz-appearance: textfield;
   }
+
+  /* ---- Hit-target floor -------------------------------------------------
+     A layout audit across 139 routes found a control below the 32px minimum
+     on 646 of 650 route x viewport combinations, spread over 128 distinct
+     class signatures — far too many to fix one call site at a time, and they
+     would only come back. So the floor is enforced once, here.
+
+     `min-block-size`, not padding: padding would inflate a dense table row,
+     whereas a min-height raises the box to exactly the floor and stops. And
+     `:where()`, so the whole thing has zero specificity — any component class
+     still wins, and `[data-hit="tight"]` is the deliberate opt-out.
+
+     The values are rem literals rather than spacing multiples on purpose:
+     they must NOT move when the density scale rescales `--spacing`. That is
+     the entire point of them. */
+  :where(
+      button,
+      [role="button"],
+      a[role="button"],
+      summary,
+      select,
+      textarea,
+      input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"])
+    ):not([data-hit="tight"]) {
+    min-block-size: 2rem;
+  }
+
+  @media (pointer: coarse) {
+    :where(
+        button,
+        [role="button"],
+        a[role="button"],
+        summary,
+        select,
+        textarea,
+        input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"])
+      ):not([data-hit="tight"]) {
+      min-block-size: 2.75rem;
+    }
+
+    /* A 44px checkbox glyph is wrong; a 44px clickable label is right. */
+    :where(label:has(> input[type="checkbox"]), label:has(> input[type="radio"])) {
+      display: flex;
+      align-items: center;
+      min-block-size: 2.75rem;
+    }
+  }
 }
 
 @layer components {
@@ -380,7 +467,10 @@ main {
   }
 
   .ProseMirror {
-    min-height: 250px;
+    /* Was a flat 250px. In a pane that is only ~820px tall, an editor that
+       refuses to go below 250px is a quarter of the screen before a single
+       character is typed. */
+    min-height: clamp(8rem, 22vh, 15.625rem);
   }
 }
 

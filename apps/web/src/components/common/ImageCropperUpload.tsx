@@ -173,7 +173,7 @@ const ImageCropperUpload: React.FC<ImageCropperUploadProps> = ({
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
             className={
               autoDetectAspect
-                ? 'h-20 w-auto max-w-[220px] rounded-md object-contain border border-gray-200 bg-gray-50'
+                ? 'h-20 w-auto max-w-[13.75rem] rounded-md object-contain border border-gray-200 bg-gray-50'
                 : 'h-20 w-20 rounded-md object-cover border border-gray-200'
             }
           />
@@ -192,7 +192,7 @@ const ImageCropperUpload: React.FC<ImageCropperUploadProps> = ({
       <Modal isOpen={isModalOpen} onClose={handleCancel} title="Crop Image" size="lg">
         <div className="flex flex-col gap-4">
           {/* Cropper area — react-easy-crop needs a relative+sized parent */}
-          <div className="relative w-full h-72 bg-gray-100 rounded-md overflow-hidden">
+          <div className="relative w-full h-[clamp(12rem,32vh,18rem)] bg-gray-100 rounded-md overflow-hidden">
             {cropSrc && (
               <Cropper
                 image={cropSrc}

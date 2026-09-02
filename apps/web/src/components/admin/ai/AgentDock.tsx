@@ -35,7 +35,7 @@ const AgentDock: FC = () => {
                 onClick={close}
                 aria-hidden="true"
             />
-            <aside className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[420px] flex-col bg-card shadow-2xl lg:static lg:z-auto lg:h-screen lg:w-[420px] lg:shrink-0 lg:border-l lg:border-border lg:shadow-none">
+            <aside className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[26.25rem] flex-col bg-card shadow-2xl lg:static lg:z-auto lg:h-screen lg:w-[26.25rem] lg:shrink-0 lg:border-l lg:border-border lg:shadow-none">
                 <AiChatPanel onClose={close} />
             </aside>
         </>

@@ -171,7 +171,7 @@ const LeaveApprovals: React.FC = () => {
                                     <td className="px-4 py-3 text-gray-700">
                                         {r.leaveType?.name ?? '—'}
                                         {r.leaveType && !r.leaveType.paid && (
-                                            <span className="ml-1 text-[10px] uppercase text-gray-400">
+                                            <span className="ml-1 text-[0.6875rem] uppercase text-gray-400">
                                                 Unpaid
                                             </span>
                                         )}

@@ -13,8 +13,8 @@ const NotFound: React.FC = () => {
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" aria-hidden="true" />
 
             {/* Playful ambient background */}
-            <div className="absolute top-1/4 left-1/4 w-[50vw] h-[50vw] max-w-[500px] max-h-[500px] bg-chart-3/20 rounded-full blur-[120px] pointer-events-none mix-blend-multiply" aria-hidden="true" />
-            <div className="absolute bottom-1/4 right-1/4 w-[40vw] h-[40vw] max-w-[400px] max-h-[400px] bg-indigo-400/20 rounded-full blur-[100px] pointer-events-none mix-blend-multiply" aria-hidden="true" />
+            <div className="absolute top-1/4 left-1/4 w-[50vw] h-[50vw] max-w-[31.25rem] max-h-[31.25rem] bg-chart-3/20 rounded-full blur-[120px] pointer-events-none mix-blend-multiply" aria-hidden="true" />
+            <div className="absolute bottom-1/4 right-1/4 w-[40vw] h-[40vw] max-w-[25rem] max-h-[25rem] bg-indigo-400/20 rounded-full blur-[100px] pointer-events-none mix-blend-multiply" aria-hidden="true" />
 
             <div className="relative z-10 max-w-2xl w-full text-center flex flex-col items-center">
 

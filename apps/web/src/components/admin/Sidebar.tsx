@@ -63,7 +63,7 @@ const countFor = (routes: string[], badges: Record<string, number>): number =>
 
 const NavBadge = ({ count }: { count: number }) =>
     count > 0 ? (
-        <span className="ml-auto shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-semibold leading-none text-primary-foreground">
+        <span className="ml-auto shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[0.6875rem] font-semibold leading-none text-primary-foreground">
             {count > 99 ? "99+" : count}
         </span>
     ) : null;
@@ -246,7 +246,7 @@ const ModulePanel = ({
                 <div key={section.caption ?? `direct-${index}`} className={index > 0 ? "mt-3" : ""}>
                     {/* The old third accordion level, demoted to a caption. */}
                     {section.caption && (
-                        <p className="px-2.5 pb-1 pt-1 text-[11px] font-medium uppercase tracking-wider text-sidebar-foreground/40">
+                        <p className="px-2.5 pb-1 pt-1 text-[0.6875rem] font-medium uppercase tracking-wider text-sidebar-foreground/40">
                             {section.caption}
                         </p>
                     )}
@@ -335,8 +335,13 @@ const Sidebar = ({
     return (
         <aside
             className={cn(
-                "z-0 flex h-screen flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out",
-                isOpen ? "w-60" : "w-16"
+                // h-full, not h-screen: as a flex child of an h-dvh row,
+                // h-screen double-specifies the height and breaks print:block.
+                "z-0 flex h-full min-h-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out",
+                // Narrower below 2xl, where content width is scarcest: 194px
+                // open at the compact density, widening to 216px on a large
+                // monitor (w-54 / w-60 against --spacing: 0.225rem).
+                isOpen ? "w-54 2xl:w-60" : "w-16"
             )}
         >
             {/* Product identity, not company identity - the company moved to
@@ -395,7 +400,7 @@ const Sidebar = ({
                                         Elixir Book
                                     </span>
                                     {subtitle && (
-                                        <span className="truncate text-[11px] leading-tight text-sidebar-foreground/60">
+                                        <span className="truncate text-[0.6875rem] leading-tight text-sidebar-foreground/60">
                                             {subtitle}
                                         </span>
                                     )}

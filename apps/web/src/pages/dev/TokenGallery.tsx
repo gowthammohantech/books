@@ -53,7 +53,7 @@ function Swatch({ name, className }: { name: string; className: string }) {
   return (
     <div className="space-y-1">
       <div className={`h-12 rounded-md border border-border ${className}`} />
-      <div className="font-mono text-[11px] leading-tight text-muted-foreground">{name}</div>
+      <div className="font-mono text-[0.6875rem] leading-tight text-muted-foreground">{name}</div>
     </div>
   );
 }
@@ -239,9 +239,9 @@ export default function TokenGallery() {
                 <div
                   className={`flex h-16 w-24 items-center justify-center bg-primary text-primary-foreground ${r}`}
                 >
-                  <span className="font-mono text-[11px]">{r.replace("rounded-", "")}</span>
+                  <span className="font-mono text-[0.6875rem]">{r.replace("rounded-", "")}</span>
                 </div>
-                <div className="font-mono text-[11px] text-muted-foreground">{r}</div>
+                <div className="font-mono text-[0.6875rem] text-muted-foreground">{r}</div>
               </div>
             ))}
           </div>
@@ -249,7 +249,7 @@ export default function TokenGallery() {
             {SHADOWS.map((s) => (
               <div key={s} className="space-y-1">
                 <div className={`h-16 w-24 rounded-lg bg-card ${s}`} />
-                <div className="font-mono text-[11px] text-muted-foreground">{s}</div>
+                <div className="font-mono text-[0.6875rem] text-muted-foreground">{s}</div>
               </div>
             ))}
           </div>
@@ -259,7 +259,7 @@ export default function TokenGallery() {
           <div className="space-y-3 rounded-xl border border-border bg-card p-5">
             {BUTTON_VARIANTS.map((v) => (
               <div key={v} className="flex flex-wrap items-center gap-3">
-                <span className="w-28 shrink-0 font-mono text-[11px] text-muted-foreground">
+                <span className="w-28 shrink-0 font-mono text-[0.6875rem] text-muted-foreground">
                   {v}
                 </span>
                 {BUTTON_SIZES.map((s) => (
@@ -305,7 +305,7 @@ export default function TokenGallery() {
               <tbody>
                 {BADGE_COLORS.map((c) => (
                   <tr key={c} className="border-b border-border last:border-0">
-                    <td className="p-2 font-mono text-[11px] text-muted-foreground">{c}</td>
+                    <td className="p-2 font-mono text-[0.6875rem] text-muted-foreground">{c}</td>
                     {BADGE_VARIANTS.map((v) => (
                       <td key={v} className="p-2">
                         <Badge color={c} variant={v}>

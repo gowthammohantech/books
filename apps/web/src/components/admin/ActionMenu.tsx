@@ -47,7 +47,7 @@ export const ActionMenu = <T,>({ row, actions: rawActions }: ActionMenuProps<T>)
     <div
       ref={menuRef}
       style={{ top: `${position.top}px`, left: `${position.left}px` }}
-      className="fixed min-w-[128px] bg-white rounded-md shadow-lg border border-gray-200 z-50 animate-pop-in motion-reduce:animate-none"
+      className="fixed min-w-[8rem] bg-white rounded-md shadow-lg border border-gray-200 z-50 animate-pop-in motion-reduce:animate-none"
     >
       <ul>
         {actions.map((action) => {

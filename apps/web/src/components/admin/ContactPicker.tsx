@@ -257,7 +257,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
                     className="z-[1000] bg-white border border-gray-200 rounded-md shadow-lg"
                     style={{ position: 'fixed', top: menuRect.top + 4, left: menuRect.left, width: menuRect.width }}
                 >
-                    <ul className="max-h-72 overflow-y-auto overscroll-contain">
+                    <ul className="max-h-[min(18rem,40vh)] overflow-y-auto overscroll-contain">
                         {loading && (
                             <li className="p-2 flex items-center gap-2 text-sm text-gray-500">
                                 <Loader2 size={14} className="animate-spin" /> Loading...

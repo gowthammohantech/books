@@ -23,3 +23,10 @@ node_modules
 # Build output
 dist
 dist-ssr
+e2e/__artifacts__/storageState.json
+e2e/__artifacts__/report.json
+test-results/
+# Layout-harness screenshots. The machine-checkable evidence (metrics.json) is
+# committed; the PNGs are ~8MB per run and are reproducible with
+# `npm run test:layout`, so they stay out of history.
+e2e/__artifacts__/**/*.png

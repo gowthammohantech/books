@@ -32,11 +32,14 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const BASE =
   "inline-flex items-center justify-center gap-1.5 font-semibold rounded-md transition disabled:opacity-60 disabled:cursor-not-allowed";
 
+// Heights are rem literals, not spacing multiples, so the density scale cannot
+// pull a control under the 32px floor. `sm` was measuring ~30px before this —
+// under the minimum already, without any density work.
 const SIZES: Record<ButtonSize, string> = {
-  sm: "text-xs px-2.5 py-1.5",
-  md: "text-[13px] px-3 py-2",
-  lg: "text-sm px-4 py-2.5",
-  icon: "p-2",
+  sm: "text-xs px-2.5 py-1.5 min-h-[2rem] coarse:min-h-[2.75rem]",
+  md: "text-[0.8125rem] px-3 py-2 min-h-[2.25rem] coarse:min-h-[2.75rem]",
+  lg: "text-sm px-4 py-2.5 min-h-[2.5rem] coarse:min-h-[2.75rem]",
+  icon: "p-2 min-h-[2rem] min-w-[2rem] coarse:min-h-[2.75rem] coarse:min-w-[2.75rem]",
 };
 
 const VARIANTS: Record<ButtonVariant, string> = {
