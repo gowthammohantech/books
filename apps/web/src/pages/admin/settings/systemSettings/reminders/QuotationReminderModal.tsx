@@ -463,7 +463,7 @@ const QuotationReminderModal: React.FC<Props> = ({ isOpen, onClose, editingRemin
                             ref={purchaseQuillEditorRef}
                             value={quotationFormData.body}
                             onChange={handleQuotationBodyChange}
-                            height="300px"
+                            height="clamp(9rem,24vh,18.75rem)"
                         />
                     </div>
                     {formErrors.body && <p className="text-xs text-destructive mt-1">{formErrors.body}</p>}

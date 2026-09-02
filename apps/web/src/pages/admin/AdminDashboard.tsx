@@ -15,6 +15,7 @@ import {
 import { useMemo, useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import Chart from 'react-apexcharts';
+import { ChartFrame } from '../../components/ui';
 import Table from '@components/admin/Table';
 import type {
     PurchaseStats,
@@ -400,29 +401,34 @@ const DashboardPage: React.FC = () => {
                     <p className="text-xs text-muted-foreground">Purchases per month</p>
                     {spendings.length > 0 ? (
                         <>
-                            <Chart
-                                type="bar"
-                                height={260}
-                                series={[{ name: 'Spendings', data: spendings }]}
-                                options={{
-                                    chart: {
-                                        toolbar: { show: false },
-                                        foreColor: themeColor('muted-foreground'),
-                                    },
-                                    colors: [themeColor('primary')],
-                                    plotOptions: {
-                                        bar: { columnWidth: '45%', borderRadius: 6 },
-                                    },
-                                    dataLabels: { enabled: false },
-                                    grid: {
-                                        borderColor: themeColor('border'),
-                                        strokeDashArray: 4,
-                                    },
-                                    xaxis: { categories: months, axisTicks: { show: false } },
-                                    yaxis: { labels: { formatter: (v: number) => format(v) } },
-                                    tooltip: { y: { formatter: (v: number) => format(v) } },
-                                }}
-                            />
+                            <ChartFrame minH="10rem" vh="22vh" maxH="16.25rem">
+                                {({ height }) => (
+                                <Chart
+                                    type="bar"
+                                    height={height}
+                                    width="100%"
+                                    series={[{ name: 'Spendings', data: spendings }]}
+                                    options={{
+                                        chart: {
+                                            toolbar: { show: false },
+                                            foreColor: themeColor('muted-foreground'),
+                                        },
+                                        colors: [themeColor('primary')],
+                                        plotOptions: {
+                                            bar: { columnWidth: '45%', borderRadius: 6 },
+                                        },
+                                        dataLabels: { enabled: false },
+                                        grid: {
+                                            borderColor: themeColor('border'),
+                                            strokeDashArray: 4,
+                                        },
+                                        xaxis: { categories: months, axisTicks: { show: false } },
+                                        yaxis: { labels: { formatter: (v: number) => format(v) } },
+                                        tooltip: { y: { formatter: (v: number) => format(v) } },
+                                    }}
+                                />
+                                )}
+                            </ChartFrame>
                             <p className="mt-2 border-t border-border pt-2 text-sm text-muted-foreground">
                                 Current spend:{' '}
                                 <span className="font-mono tabular-nums font-semibold text-foreground">
@@ -556,32 +562,39 @@ const DashboardPage: React.FC = () => {
                     <h3 className="self-start text-lg font-semibold text-foreground">
                         Total Value
                     </h3>
-                    <Chart
-                        type="radialBar"
-                        height={260}
-                        width={260}
-                        series={[collectionRate]}
-                        options={{
-                            colors: [themeColor('primary')],
-                            plotOptions: {
-                                radialBar: {
-                                    hollow: { size: '62%' },
-                                    track: { background: themeColor('muted') },
-                                    dataLabels: {
-                                        name: { show: false },
-                                        value: {
-                                            offsetY: 8,
-                                            fontSize: '28px',
-                                            fontWeight: 700,
-                                            color: themeColor('foreground'),
-                                            formatter: (v: number) => `${Math.round(v)}%`,
+                    {/* aspect={1} keeps the gauge circular: its width used to be
+                        pinned at 260px, so it neither shrank on a narrow column
+                        nor grew on a wide one. */}
+                    <ChartFrame aspect={1} minH="9rem" vh="20vh" maxH="16.25rem">
+                        {({ height }) => (
+                        <Chart
+                            type="radialBar"
+                            height={height}
+                            width={height}
+                            series={[collectionRate]}
+                            options={{
+                                colors: [themeColor('primary')],
+                                plotOptions: {
+                                    radialBar: {
+                                        hollow: { size: '62%' },
+                                        track: { background: themeColor('muted') },
+                                        dataLabels: {
+                                            name: { show: false },
+                                            value: {
+                                                offsetY: 8,
+                                                fontSize: '28px',
+                                                fontWeight: 700,
+                                                color: themeColor('foreground'),
+                                                formatter: (v: number) => `${Math.round(v)}%`,
+                                            },
                                         },
                                     },
                                 },
-                            },
-                            stroke: { lineCap: 'round' },
-                        }}
-                    />
+                                stroke: { lineCap: 'round' },
+                            }}
+                        />
+                        )}
+                    </ChartFrame>
                     <p className="text-sm text-muted-foreground">
                         Of everything invoiced, this much has been collected.
                     </p>

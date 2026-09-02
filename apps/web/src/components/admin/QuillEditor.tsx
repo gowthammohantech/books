@@ -13,7 +13,7 @@ export interface QuillEditorRef {
     getQuillInstance: () => Quill | null;
 }
 
-const QuillEditor = forwardRef<QuillEditorRef, QuillEditorProps>(({ value = '', onChange, height = '200px' }, ref) => {
+const QuillEditor = forwardRef<QuillEditorRef, QuillEditorProps>(({ value = '', onChange, height = 'clamp(7rem,20vh,12.5rem)' }, ref) => {
     const editorRef = useRef<HTMLDivElement>(null);
     const quillInstance = useRef<Quill | null>(null);
 
@@ -59,7 +59,10 @@ const QuillEditor = forwardRef<QuillEditorRef, QuillEditorProps>(({ value = '', 
         }
     }, [value]);
 
-    return <div ref={editorRef} style={{ height, minHeight: '200px' }} />;
+    // The floor is a clamp too: a flat 200px min-height meant the editor could
+    // never give way on a short viewport, which is the same bug as the fixed
+    // height it sat under.
+    return <div ref={editorRef} style={{ height, minHeight: 'clamp(6rem,16vh,12.5rem)' }} />;
 });
 
 QuillEditor.displayName = 'QuillEditor';

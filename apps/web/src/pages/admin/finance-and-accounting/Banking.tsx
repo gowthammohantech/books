@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Banknote, ChevronDown, ChevronUp, HandCoinsIcon, LandmarkIcon, TrendingDown, TrendingUp } from "lucide-react";
 import Chart from "react-apexcharts";
+import { ChartFrame } from "../../../components/ui";
 import { useCurrencyFormatter } from "@hooks/useCurrencyFormatter";
 import { toast } from "sonner";
 import type { BankAccount } from "@models/bank-account";
@@ -237,7 +238,11 @@ const Banking: React.FC = () => {
                 {/* Chart */}
                 {showChart &&
                     <div className="transition-all duration-300">
-                        <Chart options={options} series={series} type="line" height={300} />
+                        <ChartFrame minH="11rem" vh="26vh" maxH="18.75rem">
+                            {({ height }) => (
+                                <Chart options={options} series={series} type="line" height={height} width="100%" />
+                            )}
+                        </ChartFrame>
                     </div>
                 }
             </div>

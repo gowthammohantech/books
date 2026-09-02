@@ -34,7 +34,15 @@ const RULES = [
     pattern: /(?<![\w-])(min-|max-)?h-\[(\d+)px\]/g,
     // A `min-height` reserves space unconditionally, so it bites at a lower
     // value than a `height` does; below these it is control sizing, not layout.
-    filter: (m) => Number(m[2]) >= (m[1] === "min-" ? 120 : 200),
+    filter: (m, line) => {
+      // A max-height that caps an already-responsive height is good practice,
+      // not a fixed height — e.g. `h-[50vw] max-h-[500px]` on a decorative
+      // blob. Only flag the cap when nothing else on the element is fluid.
+      if (m[1] === "max-" && /\b(?:min-|max-)?h-\[[^\]]*(?:vh|vw|dvh|svh|%|clamp\()/.test(line)) {
+        return false;
+      }
+      return Number(m[2]) >= (m[1] === "min-" ? 120 : 200);
+    },
   },
   {
     id: "large-scale-height",
@@ -105,7 +113,7 @@ for (const file of files) {
       re.lastIndex = 0;
       while ((m = re.exec(line)) !== null) {
         if (m[0] === "") { re.lastIndex++; continue; }
-        if (!rule.filter || rule.filter(m)) hits.push(m[0]);
+        if (!rule.filter || rule.filter(m, line)) hits.push(m[0]);
       }
       if (hits.length) {
         findings.get(rule.id).push({ file: relative(ROOT, file), line: i + 1, hits: [...new Set(hits)] });

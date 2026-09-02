@@ -192,7 +192,7 @@ const ImageCropperUpload: React.FC<ImageCropperUploadProps> = ({
       <Modal isOpen={isModalOpen} onClose={handleCancel} title="Crop Image" size="lg">
         <div className="flex flex-col gap-4">
           {/* Cropper area — react-easy-crop needs a relative+sized parent */}
-          <div className="relative w-full h-72 bg-gray-100 rounded-md overflow-hidden">
+          <div className="relative w-full h-[clamp(12rem,32vh,18rem)] bg-gray-100 rounded-md overflow-hidden">
             {cropSrc && (
               <Cropper
                 image={cropSrc}

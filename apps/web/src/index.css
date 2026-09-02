@@ -432,7 +432,10 @@ main {
   }
 
   .ProseMirror {
-    min-height: 250px;
+    /* Was a flat 250px. In a pane that is only ~820px tall, an editor that
+       refuses to go below 250px is a quarter of the screen before a single
+       character is typed. */
+    min-height: clamp(8rem, 22vh, 15.625rem);
   }
 }
 

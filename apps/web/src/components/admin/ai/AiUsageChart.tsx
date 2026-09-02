@@ -7,6 +7,7 @@
  * AI settings page below the config form.
  */
 import api from '@lib/apiClient';
+import { ChartFrame } from '../../ui';
 import { useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
@@ -136,7 +137,8 @@ export default function AiUsageChart() {
             description="Scan a bill or chat with the co-pilot to see activity here."
           />
         ) : (
-          <div className="h-64 w-full">
+          <ChartFrame minH="10rem" vh="22vh" maxH="16rem">
+            {() => (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={usage} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={themeColor("border")} />
@@ -169,7 +171,8 @@ export default function AiUsageChart() {
                 />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+            )}
+          </ChartFrame>
         )}
       </div>
     </div>

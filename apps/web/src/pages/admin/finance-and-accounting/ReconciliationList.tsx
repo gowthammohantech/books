@@ -279,7 +279,7 @@ const ReconciliationList: React.FC = () => {
                         </button>
 
                         {isDropdownOpen && (
-                            <div className="absolute top-full left-0 mt-1 w-full max-w-md bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                            <div className="absolute top-full left-0 mt-1 w-full max-w-md bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-[min(15rem,35vh)] overflow-y-auto">
                                 {bankAccounts && bankAccounts.length > 0 ? (
                                     bankAccounts.map((account) => {
                                         const formattedBankName = `${account.accountHoldername} - ${account.bankName}`;

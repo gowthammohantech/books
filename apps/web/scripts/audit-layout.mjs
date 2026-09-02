@@ -93,8 +93,14 @@ export const AUDIT_SOURCE = String.raw`(() => {
         record(el, p, v.trim(), 'inline');
       }
     }
+    // The height attribute is only a layout signal on HTML elements. Inside
+    // SVG it is geometry, and a chart library emits it *derived* from the size
+    // it was given — so a responsive chart reports a different value at every
+    // viewport and would be flagged forever. Excluding the SVG namespace is
+    // the same instinct as the img exclusion, generalised.
     const attr = el.getAttribute('height');
-    if (attr && /^\d+$/.test(attr) && +attr >= MIN_PX && el.tagName !== 'IMG') {
+    const isSvg = el.namespaceURI === 'http://www.w3.org/2000/svg';
+    if (attr && /^\d+$/.test(attr) && +attr >= MIN_PX && el.tagName !== 'IMG' && !isSvg) {
       record(el, 'height-attr', attr, 'attr');
     }
   }

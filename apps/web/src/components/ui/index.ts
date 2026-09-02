@@ -3,6 +3,8 @@ export type { ButtonProps, ButtonVariant, ButtonSize } from "./Button";
 
 export { default as Card } from "./Card";
 export type { CardProps } from "./Card";
+export { default as ChartFrame } from "./ChartFrame";
+export type { ChartFrameProps, ChartFrameSize } from "./ChartFrame";
 
 export { default as EmptyState, EmptyStateRow, EmptyStateHero } from "./EmptyState";
 export type {
