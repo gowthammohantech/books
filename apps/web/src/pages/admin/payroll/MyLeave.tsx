@@ -469,12 +469,12 @@ const MyLeave: React.FC = () => {
                                                 {r.status}
                                             </Badge>
                                             {r.status === 'REJECTED' && r.rejectionNote && (
-                                                <div className="mt-1 text-xs text-destructive max-w-[220px]">
+                                                <div className="mt-1 text-xs text-destructive max-w-[13.75rem]">
                                                     {r.rejectionNote}
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="px-4 py-3 text-gray-600 max-w-[240px]">
+                                        <td className="px-4 py-3 text-gray-600 max-w-[15rem]">
                                             {r.reason || <span className="text-gray-300">—</span>}
                                         </td>
                                         <td className="px-4 py-3 text-right">

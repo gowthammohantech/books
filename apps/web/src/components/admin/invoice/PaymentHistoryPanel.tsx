@@ -171,7 +171,7 @@ const PaymentHistoryPanel: React.FC<PaymentHistoryPanelProps> = ({ invoiceId, on
                                     <td className="px-3 py-2 whitespace-nowrap">{p.reference ?? '-'}</td>
 
                                     {/* Notes */}
-                                    <td className="px-3 py-2 max-w-[180px] truncate" title={p.notes ?? undefined}>
+                                    <td className="px-3 py-2 max-w-[11.25rem] truncate" title={p.notes ?? undefined}>
                                         {p.notes || '-'}
                                     </td>
 

@@ -100,7 +100,7 @@ function PaymentLinkMethodsSection() {
             <FormField
               defaultValue={m.defaultUrl ?? ''}
               onBlur={(e) => (e.target.value.trim() || null) !== m.defaultUrl && patch(m.id, { defaultUrl: e.target.value.trim() || null })}
-              containerClassName="flex-1 min-w-[220px]"
+              containerClassName="flex-1 min-w-[13.75rem]"
               placeholder="Default URL (optional)"
             />
             <label className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -135,7 +135,7 @@ function PaymentLinkMethodsSection() {
         <FormField
           value={newUrl}
           onChange={(e) => setNewUrl(e.target.value)}
-          containerClassName="flex-1 min-w-[220px]"
+          containerClassName="flex-1 min-w-[13.75rem]"
           placeholder="Default URL (optional)"
         />
         <Button

@@ -288,7 +288,7 @@ const CommandPalette = ({ isOpen, onClose }: CommandPaletteProps) => {
                                 className="shrink-0 animate-spin text-muted-foreground"
                             />
                         )}
-                        <kbd className="shrink-0 rounded border border-border px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                        <kbd className="shrink-0 rounded border border-border px-1.5 py-0.5 text-[0.6875rem] font-medium text-muted-foreground">
                             Esc
                         </kbd>
                     </div>
@@ -304,7 +304,7 @@ const CommandPalette = ({ isOpen, onClose }: CommandPaletteProps) => {
 
                         {sections.map((section) => (
                             <div key={section.label} className="mb-1">
-                                <p className="px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                <p className="px-4 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground">
                                     {section.label}
                                 </p>
                                 {section.items.map((item) => {
@@ -388,7 +388,7 @@ const CommandPalette = ({ isOpen, onClose }: CommandPaletteProps) => {
                         ))}
                     </div>
 
-                    <div className="flex items-center gap-4 border-t border-border bg-muted/50 px-4 py-2 text-[11px] text-muted-foreground">
+                    <div className="flex items-center gap-4 border-t border-border bg-muted/50 px-4 py-2 text-[0.6875rem] text-muted-foreground">
                         <span className="flex items-center gap-1">
                             <kbd className="rounded border border-border bg-card px-1">↑</kbd>
                             <kbd className="rounded border border-border bg-card px-1">↓</kbd>

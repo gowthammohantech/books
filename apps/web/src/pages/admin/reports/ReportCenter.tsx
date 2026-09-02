@@ -187,7 +187,7 @@ const ReportCenter = () => {
                                 >
                                     <span>{fixed.label}</span>
                                     {fixed.id !== "home" && (
-                                        <span className="text-[11px] text-muted-foreground">
+                                        <span className="text-[0.6875rem] text-muted-foreground">
                                             {fixed.id === "favorites"
                                                 ? favoriteCount
                                                 : recentCount}
@@ -198,7 +198,7 @@ const ReportCenter = () => {
                         ))}
                     </ul>
 
-                    <h2 className="mt-4 mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <h2 className="mt-4 mb-2 px-2 text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground">
                         Report Category
                     </h2>
                     <ul className="space-y-1">
@@ -211,7 +211,7 @@ const ReportCenter = () => {
                                     className={railRowClasses(view === category)}
                                 >
                                     <span>{category}</span>
-                                    <span className="text-[11px] text-muted-foreground">
+                                    <span className="text-[0.6875rem] text-muted-foreground">
                                         {countsByCategory.get(category) ?? 0}
                                     </span>
                                 </button>

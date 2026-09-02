@@ -77,7 +77,7 @@ const DynamicCustomFields: React.FC<DynamicCustomFieldsProps> = ({
 
     if (isLoading) {
         return (
-            <div className="bg-white p-4 rounded-lg border border-gray-200 mt-4 flex items-center justify-center min-h-[100px]">
+            <div className="bg-white p-4 rounded-lg border border-gray-200 mt-4 flex items-center justify-center min-h-[6.25rem]">
                 <LoaderSpinner />
             </div>
         );

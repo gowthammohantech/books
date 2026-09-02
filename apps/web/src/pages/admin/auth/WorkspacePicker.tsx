@@ -133,7 +133,7 @@ const WorkspacePicker = () => {
                                 {membership.name}
                             </span>
                             {membership.plan && (
-                                <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-accent-foreground">
+                                <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[0.6875rem] font-medium uppercase tracking-wide text-accent-foreground">
                                     {membership.plan}
                                 </span>
                             )}
@@ -178,7 +178,7 @@ const WorkspacePicker = () => {
                 <span className="flex items-center gap-2.5">
                     <span
                         aria-hidden="true"
-                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary-foreground text-primary text-[11px] font-bold"
+                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary-foreground text-primary text-[0.6875rem] font-bold"
                     >
                         EB
                     </span>

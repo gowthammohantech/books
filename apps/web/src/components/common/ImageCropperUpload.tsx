@@ -173,7 +173,7 @@ const ImageCropperUpload: React.FC<ImageCropperUploadProps> = ({
             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
             className={
               autoDetectAspect
-                ? 'h-20 w-auto max-w-[220px] rounded-md object-contain border border-gray-200 bg-gray-50'
+                ? 'h-20 w-auto max-w-[13.75rem] rounded-md object-contain border border-gray-200 bg-gray-50'
                 : 'h-20 w-20 rounded-md object-cover border border-gray-200'
             }
           />

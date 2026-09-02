@@ -85,7 +85,7 @@ const Dropdown: React.FC<{ label: string; icon: React.ReactNode; children: React
             </Button>
             {open && (
                 <div
-                    className="absolute z-30 mt-1 min-w-[210px] rounded-xl border border-border bg-white py-1 shadow-lg"
+                    className="absolute z-30 mt-1 min-w-[13.125rem] rounded-xl border border-border bg-white py-1 shadow-lg"
                     onClick={() => setOpen(false)}
                 >
                     {children}

@@ -37,7 +37,7 @@ export interface ChartFrameProps {
  * 2. **Stale charts.** ApexCharts only auto-resizes on `window.resize`. Every
  *    container-width change that is not a window resize left the chart at its
  *    old width — collapsing the sidebar (`w-60` <-> `w-16`), or opening the
- *    agent dock, which mounts a `lg:w-[420px]` sibling column. Fixed heights
+ *    agent dock, which mounts a `lg:w-[26.25rem]` sibling column. Fixed heights
  *    masked this; fluid ones would not have.
  *
  * The remount-on-resize is deliberate. `react-apexcharts` exposes no chart
