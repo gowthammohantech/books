@@ -102,7 +102,7 @@ Everything lives in [`documentation/`](documentation/), grouped by audience — 
 |---|---|
 | [`documentation/operations/`](documentation/operations/) | [installation.md](documentation/operations/installation.md) — install, configure, TLS, backups, troubleshooting |
 | [`documentation/development/`](documentation/development/) | [running-locally.md](documentation/development/running-locally.md) — the hot-reload dev loop, without Docker |
-| [`documentation/architecture/`](documentation/architecture/) | [erd.dbml](documentation/architecture/erd.dbml) — the entity-relationship diagram |
+| [`documentation/architecture/`](documentation/architecture/) | [erd.dbml](documentation/architecture/erd.dbml) — the entity-relationship diagram; [refactor-proposal.md](documentation/architecture/refactor-proposal.md) — the staged refactor plan |
 | [`documentation/product/`](documentation/product/) | [current-modules.md](documentation/product/current-modules.md) — scope audits and the ERP roadmap (dated, re-verify before use) |
 
 ## Features

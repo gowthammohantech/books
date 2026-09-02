@@ -39,6 +39,7 @@ a first install, the second is the checklist to re-read before going to producti
 | Doc | What it covers |
 |---|---|
 | [erd.dbml](architecture/erd.dbml) | Entity-relationship diagram, 101 tables and 82 enums. Generated from `apps/api/prisma/schema.prisma`; paste into [dbdiagram.io](https://dbdiagram.io) to render |
+| [refactor-proposal.md](architecture/refactor-proposal.md) | Assessment of the current backend and frontend architecture, and a staged plan to move to class-based services, repositories and API clients. Point-in-time against `bc0cebd` — re-verify its counts before acting |
 
 ## [product/](product/) — scope and roadmap
 
