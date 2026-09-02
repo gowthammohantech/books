@@ -297,6 +297,42 @@ docker compose --env-file docker/.env -f docker/docker-compose.yml \
 
 ---
 
+## Delivery Challan or Recurring Schedule Totals Look Wrong
+
+Documents created before v2.10 can carry an overstated tax, and — where a line
+discount was larger than the line itself — a negative total. Two form screens
+taxed `rate x qty` instead of the discounted amount and never clamped a
+discount to its line, and until that release the API stored whatever those
+screens sent for these two document types. Every other document type recomputed
+its own totals and was unaffected.
+
+Recurring schedules are worth repairing promptly: the scheduler copies a
+schedule's stored total onto each invoice it generates, so an unrepaired
+schedule keeps producing wrong invoices.
+
+Check what would change — this writes nothing:
+
+```bash
+docker compose exec api node dist/prisma/backfillDocumentTotals.js
+```
+
+It lists every row whose stored figures disagree with its own line items, with
+the delta. If the report looks right, apply it:
+
+```bash
+docker compose exec api node dist/prisma/backfillDocumentTotals.js --apply
+```
+
+Idempotent — a second run reports nothing to do. It leaves `roundOff` alone (a
+deliberate presentational adjustment) and skips rows with no line items, since
+there is nothing to recompute from.
+
+**It does not touch invoices already generated from a bad schedule.** Those are
+accounting records with ledger postings behind them; correcting one means
+issuing a credit note or a journal, not rewriting the row.
+
+---
+
 ## Re-run the Baseline Seed
 
 If you suspect lookup data (currencies, roles, modules) is missing:

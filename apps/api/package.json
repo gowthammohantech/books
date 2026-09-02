@@ -28,6 +28,7 @@
     "prisma:backfill:contact-fks": "ts-node prisma/backfillContactFks.ts",
     "prisma:backfill:contacts": "ts-node prisma/migrateContacts.ts && ts-node prisma/backfillContactFks.ts",
     "prisma:backfill:ledger": "ts-node prisma/backfillLedgerInit.ts",
+    "prisma:backfill:document-totals": "ts-node prisma/backfillDocumentTotals.ts",
     "prisma:backfill:disposal-accounts": "ts-node prisma/backfillDisposalAccounts.ts",
     "prisma:backfill:employee-payable": "ts-node prisma/backfillEmployeePayableAccount.ts",
     "prisma:clear:demo": "ts-node prisma/clear-demo.ts",
