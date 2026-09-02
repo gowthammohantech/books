@@ -83,7 +83,12 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 <Header />
               </div>
               <main ref={mainRef} className="flex-1 overflow-x-hidden overflow-y-auto p-4 print:overflow-visible">
-                {children || <Outlet />}
+                {/* Caps line length on wide monitors. Put here rather than in a
+                    <PageContainer> every page opts into: with 160 route entries
+                    that migration would be 70% done forever. */}
+                <div className="mx-auto w-full max-w-(--content-max)">
+                  {children || <Outlet />}
+                </div>
               </main>
             </div>
             {/* Cluster H — slice H.3. A sibling column rather than an overlay:
