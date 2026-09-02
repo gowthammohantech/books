@@ -11,7 +11,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "lint:tokens": "node scripts/check-legacy-tokens.mjs",
-    "gen:icons": "node scripts/gen-icon-variants.mjs"
+    "gen:icons": "node scripts/gen-icon-variants.mjs",
+    "lint:layout": "node scripts/check-fixed-heights.mjs",
+    "test:layout": "playwright test"
   },
   "dependencies": {
     "@elixirbooks/enums": "*",
@@ -67,6 +69,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.1.13",
     "@types/lodash": "^4.17.20",
