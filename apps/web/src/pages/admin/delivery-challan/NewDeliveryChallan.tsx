@@ -1,4 +1,5 @@
 import api from '@lib/apiClient';
+import { computeDocumentTotals, type TotalsItem } from '@elixirbooks/money';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Edit, PlusCircle } from 'lucide-react';
 import DateInput from '@components/admin/DateInput';
@@ -34,7 +35,6 @@ import CurrencySelect from '@components/admin/CurrencySelect';
 import CostCenterSelect from '@components/admin/CostCenterSelect';
 import { useCurrencies } from '@hooks/useCurrencies';
 import { useDocumentDefaults } from '@hooks/useDocumentDefaults';
-import { round2 } from '@utils/round2';
 import { PageHeader } from "@/context/PageHeaderContext";
 import { Button } from '@components/ui';
 import { useLineItemCustomFields } from '@hooks/useLineItemCustomFields';
@@ -440,17 +440,14 @@ const NewDeliveryChallan: React.FC = () => {
 
     // --- DYNAMIC CALCULATIONS ---
     const { subTotal, totalTax, totalDiscount, grandTotal } = useMemo(() => {
-        const totals = invoiceFormData.items.reduce((acc, item) => {
-            acc.subTotal += item.rate * item.qty;
-            acc.totalDiscount += item.discount;
-            acc.totalTax += item.tax;
-            return acc;
-        }, { subTotal: 0, totalTax: 0, totalDiscount: 0 });
-        const grand_total = totals.subTotal - totals.totalDiscount + totals.totalTax;
-        const roundedSubTotal = round2(totals.subTotal);
-        const roundedTotalTax = round2(totals.totalTax);
-        const roundedTotalDiscount = round2(totals.totalDiscount);
-        const roundedGrandTotal = round2(grand_total);
+        // Decimal accumulation, and tax on the discounted base — the same code
+        // the server recomputes and persists with, so the figure on screen and
+        // the figure stored derive from one implementation.
+        const totals = computeDocumentTotals(invoiceFormData.items as unknown as TotalsItem[]);
+        const roundedSubTotal = totals.subTotal;
+        const roundedTotalTax = totals.totalTax;
+        const roundedTotalDiscount = totals.totalDiscount;
+        const roundedGrandTotal = totals.grandTotal;
         setInvoiceFormData(prev => ({ ...prev, subTotal: roundedSubTotal, totalTax: roundedTotalTax, totalDiscount: roundedTotalDiscount, grandTotal: roundedGrandTotal }));
         return { subTotal: roundedSubTotal, totalTax: roundedTotalTax, totalDiscount: roundedTotalDiscount, grandTotal: roundedGrandTotal };
     }, [invoiceFormData.items]);
