@@ -306,7 +306,7 @@ const DashboardPage: React.FC = () => {
                 and how many documents it took. Amounts, not document counts —
                 counts live in the queue tiles below, where each one comes with
                 somewhere to go. */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 w-full">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-4 mt-6 w-full">
                 <StatsCard
                     title="Total Amount"
                     period="Outstanding"
@@ -374,7 +374,7 @@ const DashboardPage: React.FC = () => {
 
             {/* What is waiting for someone. */}
             {activeQueues.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 w-full">
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(18rem,1fr))] gap-4 mt-4 w-full">
                     {activeQueues.map((queue) => (
                         <button
                             key={queue.key}

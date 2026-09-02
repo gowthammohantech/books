@@ -309,8 +309,10 @@ const SettingsLayout = () => {
                             ref={mainRef}
                             className="flex-1 overflow-y-auto overflow-x-hidden p-4 print:overflow-visible"
                         >
-                            <DemoBanner />
-                            <Outlet />
+                            <div className="mx-auto w-full max-w-(--content-max)">
+                                <DemoBanner />
+                                <Outlet />
+                            </div>
                         </main>
                     </div>
                 </div>

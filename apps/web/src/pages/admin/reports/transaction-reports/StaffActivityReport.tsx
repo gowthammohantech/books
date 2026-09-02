@@ -101,7 +101,7 @@ params
     return (
         <div className="space-y-4">
             <PageHeader title="Staff Activity" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(15rem,1fr))] gap-6">
                 <StatsCard
                     title="Invoices Created"
                     period={periodCaption}
