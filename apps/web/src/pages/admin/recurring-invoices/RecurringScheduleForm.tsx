@@ -469,7 +469,7 @@ const RecurringScheduleForm: React.FC = () => {
 
     const totalInWords = useMemo(() => {
         if (grandTotal <= 0) return 'Zero';
-        return numberToWords(Math.floor(grandTotal));
+        return numberToWords(grandTotal);
     }, [grandTotal]);
 
     const docCurrencyCode = formData.currencyCode || defaultCurrencyCode;

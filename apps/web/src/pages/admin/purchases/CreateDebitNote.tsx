@@ -524,9 +524,8 @@ const CreateDebitNote: React.FC = () => {
     }, [debitNoteFormData.items]);
 
     const totalInWords = useMemo(() => {
-        if (grandTotal && grandTotal <= 0) return 'Zero';
-        const grandTotalInterger = Math.round(grandTotal);
-        return numberToWords(grandTotalInterger);
+        if (grandTotal <= 0) return 'Zero';
+        return numberToWords(grandTotal);
     }, [grandTotal]);
 
     // Derive the document-level currency symbol from the selected currencyCode

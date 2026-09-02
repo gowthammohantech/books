@@ -502,8 +502,7 @@ const EditQuotation: React.FC = () => {
 
     const totalInWords = useMemo(() => {
         if (grandTotal <= 0) return 'Zero';
-        const grandTotalInteger = Math.round(grandTotal);
-        return numberToWords(grandTotalInteger);
+        return numberToWords(grandTotal);
     }, [grandTotal]);
 
     const selectedManualSignatureImage = useMemo(() => {

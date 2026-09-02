@@ -470,8 +470,7 @@ const NewDeliveryChallan: React.FC = () => {
 
     const totalInWords = useMemo(() => {
         if (grandTotal <= 0) return 'Zero';
-        const grandTotalInteger = Math.round(grandTotal);
-        return numberToWords(grandTotalInteger);
+        return numberToWords(grandTotal);
     }, [grandTotal]);
 
     // Derive the document-level currency symbol from the selected currencyCode

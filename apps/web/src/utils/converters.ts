@@ -40,7 +40,27 @@ function numToWordsBelow100(n: number): string {
     return tens[Math.floor(n / 10)] + (n % 10 ? " " + ones[n % 10] : "");
 }
 
-export const numberToWords = (num: number): string => {
+/**
+ * An amount in words, Indian numbering (crore / lakh).
+ *
+ * Rounds to a whole unit before doing anything else. That guard is load-bearing,
+ * not defensive tidying: the arithmetic below is `num %= 100` and `ones[n % 10]`,
+ * and a fractional input leaves a fractional index, so `ones[5.67]` is
+ * `undefined`. numberToWords(145.67) used to return "One Hundred Forty
+ * undefined", and five print templates pass a persisted Decimal(18,4) straight
+ * in — so every PDF whose total was not a whole number printed that.
+ *
+ * Rounding here rather than at each call site also settles a disagreement
+ * between them: some floored, most rounded, so the same document could be
+ * described two ways on two screens.
+ *
+ * There is deliberately no paise/cents clause — none of the callers has ever
+ * shown one, and inventing a unit name would be wrong for the non-Indian tenants
+ * this is also rendered for.
+ */
+export const numberToWords = (value: number): string => {
+    let num = Math.round(Number(value) || 0);
+    if (num < 0) num = Math.abs(num);
     if (num === 0) return "zero";
 
     const words: string[] = [];

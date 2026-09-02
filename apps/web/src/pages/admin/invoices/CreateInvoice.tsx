@@ -656,8 +656,7 @@ const CreateInvoice: React.FC = () => {
 
     const totalInWords = useMemo(() => {
         if (grandTotal <= 0) return 'Zero';
-        const grandTotalInteger = Math.floor(grandTotal);
-        return numberToWords(grandTotalInteger);
+        return numberToWords(grandTotal);
     }, [grandTotal]);
 
     // Derive the document-level currency symbol from the selected currencyCode
