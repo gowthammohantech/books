@@ -104,14 +104,6 @@ if [ -n "$api_origin" ]; then
       proxy_read_timeout 60s;
       client_max_body_size 25m;
     }
-
-    # Uploaded assets (served directly by api today; will move to
-    # S3-compatible later)
-    location /uploads/ {$proxy_resolve
-      proxy_pass $proxy_target;
-      proxy_http_version 1.1;$proxy_sni
-      proxy_set_header Host $proxy_host;
-    }
 PROXY
 )
 else

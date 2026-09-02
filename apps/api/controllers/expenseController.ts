@@ -39,6 +39,7 @@ import { shouldPost } from '../lib/ledger/postingGate';
 import { resolveExpenseFxRate, type FxGuardDb } from '../lib/ledger/expenseFxGuard';
 import { toBaseAmount } from '../lib/ledger/money';
 import { isTenantMember } from '../lib/tenantMembers';
+import { signedUrlFor } from '../lib/blobStorage';
 
 type Tx = Prisma.TransactionClient;
 
@@ -64,10 +65,6 @@ function asNumber(value: unknown, fallback = 0): number {
   if (value === null || value === undefined || value === '') return fallback;
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
-}
-
-function buildBaseUrl(req: Request): string {
-  return `${req.protocol}://${req.get('host')}/`;
 }
 
 interface CustomFieldInput {
@@ -833,8 +830,6 @@ export async function getAllExpenses(
       customValueMap[expId][val.customFieldId] = val.value;
     });
 
-    const baseUrl = buildBaseUrl(req);
-
     const formattedExpenses = expenses.map((exp) => {
       const customFieldsObject: Record<string, unknown> = {};
       tableFields.forEach((field) => {
@@ -877,7 +872,7 @@ export async function getAllExpenses(
         paymentStatus: exp.paymentStatus,
         description: exp.description,
         attachment: exp.attachment
-          ? `${baseUrl}${exp.attachment.replace(/\\/g, '/')}`
+          ? signedUrlFor(exp.attachment.replace(/\\/g, '/'))
           : null,
         createdBy: tenantOwner(exp.tenant)
           ? { id: tenantOwner(exp.tenant)!.id, name: `${tenantOwner(exp.tenant)!.firstName ?? ''} ${tenantOwner(exp.tenant)!.lastName ?? ''}`.trim() }
@@ -999,8 +994,6 @@ export async function getExpenseById(
       customFieldResponse[field.fieldSlug] = valueMap[field.id] ?? null;
     });
 
-    const baseUrl = buildBaseUrl(req);
-
     res.status(200).json({
       success: true,
       message: 'Expense retrieved successfully',
@@ -1042,7 +1035,7 @@ export async function getExpenseById(
         paymentStatus: expense.paymentStatus,
         description: expense.description,
         attachment: expense.attachment
-          ? `${baseUrl}${expense.attachment.replace(/\\/g, '/')}`
+          ? signedUrlFor(expense.attachment.replace(/\\/g, '/'))
           : null,
         createdBy: tenantOwner(expense.tenant)
           ? { id: tenantOwner(expense.tenant)!.id, name: `${tenantOwner(expense.tenant)!.firstName ?? ''} ${tenantOwner(expense.tenant)!.lastName ?? ''}`.trim() }

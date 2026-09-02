@@ -24,7 +24,6 @@ coverage/
 docker/.env
 
 # Runtime data
-uploads/
 
 # Logs
 logs/

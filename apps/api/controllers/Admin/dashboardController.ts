@@ -7,6 +7,7 @@ import { requireTenantId, UnauthorizedError } from '../../lib/tenantScope';
 import { contactViewWhere } from '../../lib/contacts/contactRole';
 import { creditNoteTotalsByInvoice } from '../../lib/reports/aging';
 import { computeWorkQueues } from '../../lib/workQueues';
+import { signedUrlFor } from '../../lib/blobStorage';
 
 // The canonical "real invoice" statuses — a DRAFT is not yet a sale and a
 // CANCELLED invoice was reversed, so neither contributes to sales/due KPIs.
@@ -40,7 +41,7 @@ function toNum(value: unknown): number {
 
 function imageUrl(baseUrl: string, image: string | null | undefined): string {
   if (!image) return '';
-  return `${baseUrl}/${image.replace(/\\/g, '/')}`;
+  return signedUrlFor(image.replace(/\\/g, '/'));
 }
 
 /**

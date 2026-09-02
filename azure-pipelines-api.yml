@@ -104,4 +104,12 @@ stages:
               azureSubscription: '$(azureServiceConnection)'
               appName: '$(apiWebAppName)'
               containers: '$(ACR_LOGIN_SERVER)/$(ACR_REPOSITORY):$(invoicingImageTag)'
-              appSettings: '-WEBSITES_PORT 3001'
+              # AZURE_STORAGE_CONNECTION_STRING holds an account key, so it is a
+              # pipeline SECRET variable, not a literal here. Set it in the
+              # variable group / pipeline UI with "Keep this value secret" on.
+              # Uploads have no disk fallback: without it every upload fails.
+              appSettings: >-
+                -WEBSITES_PORT 3001
+                -AZURE_STORAGE_CONNECTION_STRING "$(AZURE_STORAGE_CONNECTION_STRING)"
+                -AZURE_STORAGE_CONTAINER "uploads"
+                -AZURE_STORAGE_SAS_TTL_MINUTES "60"

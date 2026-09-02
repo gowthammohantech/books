@@ -1,6 +1,3 @@
-import fs from 'fs';
-import path from 'path';
-
 import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import type { CompanySettings, Permission, Module, GeneralSetting } from '@prisma/client';
@@ -12,6 +9,7 @@ import { resolvePackCode } from '../lib/ledger/resolvePackCode';
 import { seedTransactionCategoriesForUser } from '../prisma/seedTransactionCategories';
 import { ensureDefaultTaxGroup } from '../lib/tax/ensureDefaultTaxGroup';
 import { parseVatNumber } from '../lib/euVat';
+import { deleteObject, signedUrlFor } from '../lib/blobStorage';
 import { PROVISION_TX_OPTIONS } from '../lib/tenantProvisioning';
 
 /**
@@ -60,20 +58,11 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
   return false;
 }
 
-function deleteOldFile(filePath: string | null | undefined): void {
-  if (!filePath) return;
-  try {
-    const fullPath = path.join(__dirname, '..', filePath);
-    if (fs.existsSync(fullPath)) {
-      fs.unlinkSync(fullPath);
-    }
-  } catch (err) {
-    console.error('Error deleting old file:', err);
-  }
-}
-
-function buildBaseUrl(req: Request): string {
-  return `${req.protocol}://${req.get('host')}`;
+// Replacing a logo orphans the previous blob, so drop it. Fire-and-forget:
+// deleteObject never throws, and the settings update should not fail because a
+// stale image could not be removed.
+function deleteOldFile(key: string | null | undefined): void {
+  void deleteObject(key);
 }
 
 const IMAGE_FIELDS = ['siteLogo', 'favicon', 'companyLogo', 'companyBanner'] as const;
@@ -87,16 +76,13 @@ interface CompanySettingsResponse extends Omit<CompanySettings, never> {
   };
 }
 
-function decorateImageUrls(
-  settings: CompanySettings,
-  baseUrl: string,
-): Record<string, unknown> {
+function decorateImageUrls(settings: CompanySettings): Record<string, unknown> {
   const out: Record<string, unknown> = { ...settings };
   for (const field of IMAGE_FIELDS) {
     const value = settings[field];
     if (value) {
       const cleanedPath = String(value).replace(/^[\\/]+/, '');
-      out[field] = `${baseUrl}/${cleanedPath.replace(/\\/g, '/')}`;
+      out[field] = signedUrlFor(cleanedPath.replace(/\\/g, '/'));
     }
   }
   return out;
@@ -253,8 +239,7 @@ export async function getCompanySettings(req: Request, res: Response): Promise<v
       return;
     }
 
-    const baseUrl = buildBaseUrl(req);
-    const settingsData = decorateImageUrls(settings, baseUrl) as unknown as CompanySettingsResponse;
+    const settingsData = decorateImageUrls(settings) as unknown as CompanySettingsResponse;
 
     // Resolve referenced country/state/city by id (stored as plain strings in
     // schema; original Mongoose populated by ObjectId).
@@ -437,7 +422,7 @@ export async function updateCompanySettings(req: Request, res: Response): Promis
           if (currentSettings && currentSettings[field]) {
             deleteOldFile(currentSettings[field]);
           }
-          updates[field] = `/uploads/company/${uploaded[0].filename}`;
+          updates[field] = uploaded[0].path;
         }
       }
     }
@@ -578,8 +563,7 @@ export async function updateCompanySettings(req: Request, res: Response): Promis
       },
     });
 
-    const baseUrl = buildBaseUrl(req);
-    const settingsData = decorateImageUrls(settings, baseUrl);
+    const settingsData = decorateImageUrls(settings);
 
     // Best-effort ledger onboarding (apply country pack + seed tx categories +
     // default tax group). Shared with the setup wizard; idempotent + non-fatal.
@@ -601,14 +585,7 @@ export async function updateCompanySettings(req: Request, res: Response): Promis
       for (const fileType of Object.keys(files)) {
         const arr = files[fileType];
         if (arr && arr[0]) {
-          const filePath = path.join(
-            __dirname,
-            '../uploads/company',
-            arr[0].filename,
-          );
-          if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-          }
+          await deleteObject(arr[0].path);
         }
       }
     }
@@ -693,8 +670,6 @@ export async function getBasicDetails(req: Request, res: Response): Promise<void
       res.status(400).json({ message: 'User ID is required' });
       return;
     }
-
-    const baseUrl = buildBaseUrl(req);
 
     const user = await prisma.user.findUnique({ where: { id: actingUserId } });
     if (!user) {
@@ -862,7 +837,7 @@ export async function getBasicDetails(req: Request, res: Response): Promise<void
       ) as Record<string, unknown>;
       for (const key of IMAGE_FIELDS) {
         const raw = (companySettings as unknown as Record<string, unknown>)[key];
-        processedCompanySettings[key] = raw ? `${baseUrl}${raw}` : '';
+        processedCompanySettings[key] = typeof raw === 'string' && raw ? (signedUrlFor(raw) ?? '') : '';
       }
     }
 
@@ -999,7 +974,7 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
 
     let companyLogoUrl: string | null = null;
     if (req.file) {
-      companyLogoUrl = `/uploads/company/${req.file.filename}`;
+      companyLogoUrl = req.file.path;
     }
 
     let companySettings = await prisma.companySettings.findUnique({ where: { tenantId } });
@@ -1096,12 +1071,11 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
     // idempotent + non-fatal so it can never break setup completion.
     await autoInitLedgerForUser(tenantId);
 
-    const baseUrl = buildBaseUrl(req);
     const responseData = {
       companySettings: {
         ...result.companySettings,
         companyLogo: result.companySettings.companyLogo
-          ? `${baseUrl}${result.companySettings.companyLogo}`
+          ? signedUrlFor(result.companySettings.companyLogo)
           : null,
       },
       localization: result.localization
@@ -1135,19 +1109,10 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
     if (handleUnauthorized(res, err)) return;
     console.error('Error updating company setup:', err);
 
+    // The upload succeeded but the update did not, so the blob it wrote is
+    // orphaned. Remove it rather than leaving a file nothing references.
     if (req.file) {
-      try {
-        const filePath = path.join(
-          __dirname,
-          '../uploads/company',
-          req.file.filename,
-        );
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
-        }
-      } catch (fileError) {
-        console.error('Error cleaning up file:', fileError);
-      }
+      await deleteObject(req.file.path);
     }
 
     res.status(500).json({

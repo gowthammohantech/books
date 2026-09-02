@@ -67,7 +67,6 @@ app.use(
 );
 app.use(express.json());
 app.use(auditContextMiddleware); // audit: carry actor context into Prisma writes
-app.use('/uploads', express.static('uploads'));
 
 app.get('/api/healthz', (_req, res) => {
   res.status(200).json({
@@ -195,6 +194,24 @@ void (async function bootstrap(): Promise<void> {
         `       Underlying error: ${reason(err)}\n`,
     );
     process.exit(1);
+  }
+
+  // -------------------------------------------------------------------------
+  // Storage. Every upload in the product lands in one blob container, and
+  // Azurite does not create containers implicitly -- so without this the first
+  // upload against a fresh dev stack fails with a 404 that reads like a bug in
+  // the upload code rather than a missing container.
+  //
+  // Non-fatal, unlike the schema guard: a server with no storage still serves
+  // every read path in the product, and the failure it does produce (on upload)
+  // names its own cause.
+  // -------------------------------------------------------------------------
+  try {
+    const { ensureContainer, CONTAINER_NAME } = await import('./lib/blobStorage');
+    await ensureContainer();
+    console.log(`[boot] blob container "${CONTAINER_NAME}" ready.`);
+  } catch (err) {
+    console.error('[boot] blob storage unavailable (uploads will fail):', reason(err));
   }
 
   if (process.env.SEED_ON_BOOT !== 'false') {

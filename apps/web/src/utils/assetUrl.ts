@@ -1,28 +1,23 @@
 import Constants from '@constants/api';
 
 /**
- * Resolve a server-provided image/upload URL against the API origin the browser
- * actually reaches (`VITE_API_BASE_URL`).
+ * Resolve a server-provided image/upload URL into something the browser can load.
  *
- * The backend stamps absolute URLs using the request host. Behind a reverse
- * proxy that doesn't forward the original Host, that host can be the API's
- * internal address (e.g. 127.0.0.1:5000), which the browser can't load. This
- * keeps only the path and re-bases it onto the known-reachable origin, so it
- * works in every deployment (docker, dev, proxied prod). Relative paths are
- * prefixed the same way.
+ * Uploads live in Azure Blob Storage now, and the API hands back a signed,
+ * time-limited URL that is absolute and carries a `?sv=...&sig=...` query. Those
+ * are already reachable and must be returned UNTOUCHED — the signature covers
+ * the blob path, so rewriting the origin or dropping the query invalidates it.
+ *
+ * The rebasing below is for the relative paths a few older responses still
+ * return; it prefixes the API origin the browser actually reaches, the way this
+ * helper always did.
  */
 export function assetUrl(url?: string | null): string {
   if (!url) return '';
+  // Absolute already — a signed blob URL, or anything else fully qualified.
+  if (/^https?:\/\//i.test(url)) return url;
   const base = (Constants.BASE_URL || '').replace(/\/$/, '');
-  let path = url;
-  try {
-    // Absolute URL — discard the (possibly unreachable) origin, keep the path.
-    path = new URL(url).pathname;
-  } catch {
-    // Not absolute — treat as a path as-is.
-  }
-  if (!/^https?:\/\//i.test(path) && !path.startsWith('/')) path = `/${path}`;
-  return base + path;
+  return base + (url.startsWith('/') ? url : `/${url}`);
 }
 
 export default assetUrl;

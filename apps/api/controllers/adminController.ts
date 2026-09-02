@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
 import { requireTenantId, requireActingUserId, UnauthorizedError } from '../lib/tenantScope';
+import { signedUrlFor } from '../lib/blobStorage';
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -120,7 +121,7 @@ export async function getProfile(req: Request, res: Response): Promise<void> {
     res.json({
       ...userWithoutPassword,
       profileImageUrl: user.profileImage
-        ? `${req.protocol}://${req.get('host')}/${user.profileImage}`
+        ? signedUrlFor(user.profileImage)
         : null,
     });
   } catch (err) {
@@ -174,7 +175,7 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
     }
 
     if (req.file) {
-      updateData.profileImage = `uploads/${req.file.filename}`;
+      updateData.profileImage = req.file.path;
     }
 
     try {
@@ -188,7 +189,7 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
         user: {
           ...updatedUser,
           profileImageUrl: updatedUser.profileImage
-            ? `${req.protocol}://${req.get('host')}/${updatedUser.profileImage}`
+            ? signedUrlFor(updatedUser.profileImage)
             : null,
         },
       });

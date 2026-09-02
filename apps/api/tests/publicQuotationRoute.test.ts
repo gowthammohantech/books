@@ -40,6 +40,15 @@ vi.mock('../lib/prisma', () => {
   return { prisma: client, prismaUnscoped: client };
 });
 
+// Uploads live in blob storage and reach the viewer as a signed, expiring URL.
+// Stubbed rather than signed for real so the assertions can be about WHICH KEY
+// gets signed -- that is the part this route decides -- instead of a signature
+// that changes every run.
+vi.mock('../lib/blobStorage', () => ({
+  signedUrlFor: (key: string | null | undefined) =>
+    key ? `https://blob.test/uploads/${key}?sig=stub` : null,
+}));
+
 const VALID_TOKEN = 'a'.repeat(64);
 
 function baseQuotation(overrides: Record<string, unknown> = {}) {
@@ -98,7 +107,7 @@ beforeEach(() => {
     abn: null,
     nzGstNumber: null,
     taxRegime: 'NONE',
-    siteLogo: '/uploads/company/logo.png',
+    siteLogo: 't/tenant-1/company/logo.png',
   });
 });
 
@@ -188,13 +197,15 @@ describe('GET /api/public/quotations/:token', () => {
     expect(item).not.toHaveProperty('purchase_price');
   });
 
-  it('resolves siteLogo to an absolute URL off the request host', async () => {
+  it('resolves siteLogo to a signed blob URL', async () => {
     mockQuotationFindUnique.mockResolvedValue(baseQuotation());
     const app = await buildApp();
     const res = await request(app).get(`/api/public/quotations/${VALID_TOKEN}`);
 
-    expect(res.body.data.invoice.company.siteLogo).toMatch(
-      /^http:\/\/127\.0\.0\.1:\d+\/uploads\/company\/logo\.png$/,
+    // The stored value is a blob KEY; the route signs it rather than stamping
+    // the request host onto it, which is what used to break behind a proxy.
+    expect(res.body.data.invoice.company.siteLogo).toBe(
+      'https://blob.test/uploads/t/tenant-1/company/logo.png?sig=stub',
     );
   });
 

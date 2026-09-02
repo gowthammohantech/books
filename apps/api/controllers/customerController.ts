@@ -1,5 +1,3 @@
-import fs from 'fs';
-
 import type { Request, Response } from 'express';
 import type { Customer, Prisma } from '@prisma/client';
 import { validationResult } from 'express-validator';
@@ -8,6 +6,7 @@ import { parse } from 'csv-parse/sync';
 import { prisma } from '../lib/prisma';
 import { resolveDefaultCurrencyCode } from '../lib/defaultCurrency';
 import { tenantScope, requireTenantId, UnauthorizedError } from '../lib/tenantScope';
+import { deleteObject, signedUrlFor } from '../lib/blobStorage';
 
 interface CustomerResponse {
   id: string;
@@ -43,8 +42,7 @@ const ZERO_TOTALS: InvoiceTotals = {
 };
 
 function formatCustomer(c: Customer, totals: InvoiceTotals): CustomerResponse {
-  const baseUrl = process.env.BASE_URL ?? '';
-  const imageUrl = c.image ? `${baseUrl}/${c.image.replace(/\\/g, '/')}` : null;
+  const imageUrl = c.image ? signedUrlFor(c.image.replace(/\\/g, '/')) : null;
   return {
     id: c.id,
     name: c.name,
@@ -67,13 +65,8 @@ function formatCustomer(c: Customer, totals: InvoiceTotals): CustomerResponse {
   };
 }
 
-function tryUnlink(filePath: string | undefined): void {
-  if (!filePath) return;
-  try {
-    fs.unlinkSync(filePath);
-  } catch (err) {
-    console.warn('Could not unlink upload', filePath, err);
-  }
+function tryUnlink(key: string | undefined): void {
+  void deleteObject(key);
 }
 
 function parseMaybeJson(v: unknown): Prisma.InputJsonValue {

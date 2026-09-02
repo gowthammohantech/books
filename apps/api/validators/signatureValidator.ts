@@ -1,15 +1,14 @@
-import fs from 'fs';
-
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { body, validationResult, ValidationChain } from 'express-validator';
 
-function tryUnlink(filePath: string | undefined): void {
-  if (!filePath) return;
-  try {
-    fs.unlinkSync(filePath);
-  } catch {
-    /* ignore */
-  }
+import { deleteObject } from '../lib/blobStorage';
+
+// The upload is already in blob storage by the time this validator runs -- it
+// sits behind persistUploads in the route -- so a rejection here leaves an
+// orphan unless it is removed. Fire-and-forget: deleteObject swallows its own
+// failures, and the 422 is what the caller is waiting on.
+function tryUnlink(key: string | undefined): void {
+  void deleteObject(key);
 }
 
 function formatValidationErrors(errorsArr: unknown[]): Record<string, string> {

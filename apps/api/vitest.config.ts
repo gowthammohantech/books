@@ -5,7 +5,13 @@ export default defineConfig({
     environment: 'node',
     globals: false,
     clearMocks: true,
-    include: ['tests/**/*.test.ts', 'lib/**/*.spec.ts', 'controllers/**/*.spec.ts', 'prisma/**/*.spec.ts'],
+    include: [
+      'tests/**/*.test.ts',
+      'lib/**/*.spec.ts',
+      'controllers/**/*.spec.ts',
+      'middleware/**/*.spec.ts',
+      'prisma/**/*.spec.ts',
+    ],
     // Register ts-node before test files run so that plain-JS CJS controllers
     // (e.g. externalController.js) can require TS source files at test time.
     setupFiles: ['./tests/setup-tsnode.ts'],

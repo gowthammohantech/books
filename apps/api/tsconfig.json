@@ -28,7 +28,6 @@
     "node_modules",
     "dist",
     "coverage",
-    "uploads",
     "tests",
     "**/*.test.ts",
     "**/*.spec.ts"

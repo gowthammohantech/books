@@ -1,5 +1,3 @@
-import fs from 'fs';
-
 import type { Request, Response } from 'express';
 import type { UserGender } from '@prisma/client';
 import { Prisma } from '@prisma/client';
@@ -8,6 +6,7 @@ import { prisma } from '../lib/prisma';
 import { hashPassword } from '../utils/password';
 import { requireTenantId } from '../lib/tenantScope';
 import { OWNER_ROLE_NAME } from '../lib/defaultRoles';
+import { deleteObject, signedUrlFor } from '../lib/blobStorage';
 
 /**
  * True when the target user is an owner of THIS workspace and the only one.
@@ -38,13 +37,8 @@ async function membershipIn(tenantId: string, userId: string) {
   });
 }
 
-function tryUnlink(filePath: string | undefined): void {
-  if (!filePath) return;
-  try {
-    fs.unlinkSync(filePath);
-  } catch (err) {
-    console.warn('Could not unlink upload', filePath, err);
-  }
+function tryUnlink(key: string | undefined): void {
+  void deleteObject(key);
 }
 
 export async function createStaffUser(req: Request, res: Response): Promise<void> {
@@ -154,7 +148,7 @@ export async function createStaffUser(req: Request, res: Response): Promise<void
         email: newUser.email,
         role: role.roleName,
         profileImage: newUser.profileImage
-          ? `${req.protocol}://${req.get('host')}/${newUser.profileImage.replace(/\\/g, '/')}`
+          ? signedUrlFor(newUser.profileImage.replace(/\\/g, '/'))
           : null,
       },
     });
@@ -244,7 +238,7 @@ export async function listStaffUsers(req: Request, res: Response): Promise<void>
       roleid: user.memberships[0]?.role?.id ?? '',
       roleName: user.memberships[0]?.role?.roleName ?? 'N/A',
       profileImage: user.profileImage
-        ? `${req.protocol}://${req.get('host')}/${user.profileImage.replace(/\\/g, '/')}`
+        ? signedUrlFor(user.profileImage.replace(/\\/g, '/'))
         : null,
       createdAt: user.createdAt,
     }));
@@ -394,9 +388,7 @@ export async function updateStaffUser(req: Request, res: Response): Promise<void
 
     // Update profile image if a new one is uploaded
     if (req.file) {
-      if (user.profileImage && fs.existsSync(user.profileImage)) {
-        fs.unlinkSync(user.profileImage);
-      }
+      await deleteObject(user.profileImage);
       data.profileImage = req.file.path;
     }
 

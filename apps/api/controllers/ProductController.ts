@@ -6,6 +6,7 @@ import { resolveDefaultCurrencyCode } from '../lib/defaultCurrency';
 import { requireTenantId, requireActingUserId } from '../lib/tenantScope';
 import { insertCustomFieldValues, readCustomFieldValues } from '../lib/customFieldValues';
 import { resolveProductTaxRate } from '../lib/tax/resolveProductTaxRate';
+import { signedUrlFor } from '../lib/blobStorage';
 
 // uploadProductFields now uses .any() to accept customField_<id> uploads too.
 // req.files is a flat Express.Multer.File[] array; extract named fields manually.
@@ -16,15 +17,17 @@ function extractProductFiles(req: Request): {
 } {
   const filesArray = (req.files as Express.Multer.File[]) ?? [];
   const mainFile = filesArray.find((f) => f.fieldname === 'product_image');
-  const product_image = mainFile ? `/uploads/products/${mainFile.filename}` : null;
+  const product_image = mainFile ? mainFile.path : null;
   const gallery_images = filesArray
     .filter((f) => f.fieldname === 'gallery_images')
-    .map((f) => `/uploads/products/${f.filename}`);
+    .map((f) => f.path);
   return { filesArray, product_image, gallery_images };
 }
 
+// The blob key persistUploads stamped onto the file. Stored as-is: a signed URL
+// is minted from it at response time and never persisted.
 function uploadPath(file?: Express.Multer.File): string | null {
-  return file ? `/uploads/products/${file.filename}` : null;
+  return file ? file.path : null;
 }
 
 // A product always needs a unique `code` (machine identity, decoupled from the
@@ -649,8 +652,7 @@ interface ListQuery {
 
 function buildImageUrl(req: Request, image: string | null): string | null {
   if (!image) return null;
-  const baseUrl = `${req.protocol}://${req.get('host')}/`;
-  return `${baseUrl}uploads/${image.replace(/\\/g, '/')}`;
+  return signedUrlFor(image.replace(/\\/g, '/'));
 }
 
 export async function getAllProductCategories(req: Request, res: Response): Promise<void> {

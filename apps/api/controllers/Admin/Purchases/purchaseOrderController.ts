@@ -35,6 +35,7 @@ import { currentActorId } from '../../../lib/actor';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import { sendMail } from '../../../utils/mailer';
+import { signedUrlFor } from '../../../lib/blobStorage';
 
 type Tx = Prisma.TransactionClient;
 
@@ -112,7 +113,7 @@ function formatSupplierParty(
     phone: s.supplier_phone || null,
     ...(withAddress ? { address: null } : {}),
     profileImage: s.profileImage
-      ? `${baseUrl}${s.profileImage.replace(/\\/g, '/')}`
+      ? signedUrlFor(s.profileImage.replace(/\\/g, '/'))
       : '',
   };
 }
@@ -487,8 +488,6 @@ export async function listUsersByType(req: Request, res: Response): Promise<void
       orderBy: { createdAt: 'desc' },
     });
 
-    const baseUrl = buildBaseUrl(req);
-
     res.status(200).json({
       success: true,
       count: users.length,
@@ -500,7 +499,7 @@ export async function listUsersByType(req: Request, res: Response): Promise<void
         phone: user.phone,
         user_type: user.user_type,
         profileImage: user.profileImage
-          ? `${baseUrl}${user.profileImage.replace(/\\/g, '/')}`
+          ? signedUrlFor(user.profileImage.replace(/\\/g, '/'))
           : null,
         address: user.address,
         balance: Number(user.balance),
@@ -536,8 +535,6 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const baseUrl = buildBaseUrl(req);
-
     const responseData = {
       id: user.id,
       firstName: user.firstName,
@@ -546,7 +543,7 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
       phone: user.phone,
       user_type: user.user_type,
       profileImage: user.profileImage
-        ? `${baseUrl}${user.profileImage.replace(/\\/g, '/')}`
+        ? signedUrlFor(user.profileImage.replace(/\\/g, '/'))
         : null,
       address: user.address,
       country: user.countryId,
@@ -852,13 +849,11 @@ export async function getUserSignatures(req: Request, res: Response): Promise<vo
       take: search ? undefined : 10,
     });
 
-    const baseUrl = buildBaseUrl(req);
-
     const formattedSignatures = signatures.map((sig) => ({
       id: sig.id,
       signatureName: sig.signatureName,
       signatureImage: sig.signatureImage
-        ? `${baseUrl}${sig.signatureImage.replace(/\\/g, '/')}`
+        ? signedUrlFor(sig.signatureImage.replace(/\\/g, '/'))
         : null,
       status: sig.status,
       markAsDefault: sig.markAsDefault,
@@ -1034,7 +1029,7 @@ export async function listPurchaseOrders(req: Request, res: Response): Promise<v
     const formattedOrders = await Promise.all(
       purchaseOrders.map(async (order) => {
         const signatureImage = order.signatureImage
-          ? `${baseUrl}${order.signatureImage.replace(/\\/g, '/')}`
+          ? signedUrlFor(order.signatureImage.replace(/\\/g, '/'))
           : null;
 
         // Contact-aware: prefer contact (new path) over supplier (legacy).
@@ -1068,7 +1063,7 @@ export async function listPurchaseOrders(req: Request, res: Response): Promise<v
                   email: order.billToUser.email || null,
                   phone: order.billToUser.phone || null,
                   profileImage: order.billToUser.profileImage
-                    ? `${baseUrl}${order.billToUser.profileImage.replace(/\\/g, '/')}`
+                    ? signedUrlFor(order.billToUser.profileImage.replace(/\\/g, '/'))
                     : '',
                 }
               : null;
@@ -1346,7 +1341,7 @@ export async function getPurchaseOrderById(req: Request, res: Response): Promise
         phone: user.phone || null,
         address: user.address || null,
         profileImage: user.profileImage
-          ? `${baseUrl}${user.profileImage.replace(/\\/g, '/')}`
+          ? signedUrlFor(user.profileImage.replace(/\\/g, '/'))
           : '',
       };
     };
@@ -1356,7 +1351,7 @@ export async function getPurchaseOrderById(req: Request, res: Response): Promise
       signature = {
         name: purchaseOrder.signatureName,
         image: purchaseOrder.signatureImage
-          ? `${baseUrl}${purchaseOrder.signatureImage.replace(/\\/g, '/')}`
+          ? signedUrlFor(purchaseOrder.signatureImage.replace(/\\/g, '/'))
           : null,
       };
     } else if (purchaseOrder.sign_type === 'digitalSignature' && purchaseOrder.signature) {
@@ -1364,7 +1359,7 @@ export async function getPurchaseOrderById(req: Request, res: Response): Promise
         id: purchaseOrder.signature.id,
         name: purchaseOrder.signature.signatureName,
         image: purchaseOrder.signature.signatureImage
-          ? `${baseUrl}${purchaseOrder.signature.signatureImage.replace(/\\/g, '/')}`
+          ? signedUrlFor(purchaseOrder.signature.signatureImage.replace(/\\/g, '/'))
           : null,
       };
     }

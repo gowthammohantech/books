@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { requireTenantId } from '../lib/tenantScope';
 import { insertCustomFieldValues, readCustomFieldValues } from '../lib/customFieldValues';
+import { signedUrlFor } from '../lib/blobStorage';
 
 // Brand is tenant-owned as of P4: two companies may each have a brand called
 // "Acme", so brand_name is unique per tenant rather than per install.
@@ -14,7 +15,7 @@ function withImageUrl<T extends { brand_image: string | null }>(req: Request, b:
   return {
     ...b,
     brandImageUrl: b.brand_image
-      ? `${req.protocol}://${req.get('host')}/uploads/${b.brand_image}`
+      ? signedUrlFor(b.brand_image)
       : null,
   };
 }
@@ -30,7 +31,7 @@ export async function createBrand(req: Request, res: Response): Promise<void> {
     // Support both upload.single() (req.file) and upload.any() (req.files array)
     const filesArray = (req.files as Express.Multer.File[] | undefined) ?? [];
     const imageFile = req.file ?? filesArray.find((f) => f.fieldname === 'brand_image');
-    const brand_image = imageFile ? imageFile.filename : null;
+    const brand_image = imageFile ? imageFile.path : null;
 
     const tenantId = requireTenantId(req);
 
@@ -151,7 +152,7 @@ export async function updateBrand(req: Request, res: Response): Promise<void> {
     if (status !== undefined) {
       data.status = typeof status === 'string' ? status === 'true' : status;
     }
-    if (imageFile) data.brand_image = imageFile.filename;
+    if (imageFile) data.brand_image = imageFile.path;
 
     const brand = await prisma.$transaction(async (tx) => {
       const updated = await tx.brand.update({

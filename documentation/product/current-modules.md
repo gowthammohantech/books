@@ -178,7 +178,7 @@ corresponding domain concept. Grouped by how badly it blocks the ERP label.
 | **Logistics & shipping** | No shipment, carrier, tracking, or freight models. `DeliveryChallan` is a printable document, not a fulfilment record. |
 | **Project accounting** | `Project` and `CostCenter` are reporting dimensions only. No WBS, milestone billing, percentage-of-completion revenue, or budget-vs-actual burn. |
 | **Subscription / recurring revenue** | `RecurringInvoiceSchedule` covers repeat billing. No plan catalogue, usage metering, proration, dunning, or MRR/churn reporting. |
-| **Document management** | `uploads/` is a flat folder. No document model, versioning, or attachment-to-record linkage. |
+| **Document management** | Files live in a per-workspace blob container, but there is still no document model, versioning, or attachment-to-record linkage — paths are denormalized string columns on the owning row. |
 | **Notification engine** | `NotificationType`, `NotificationTag`, and `NotificationTypeTag` models exist but are vestigial. No in-app inbox, no delivery preferences. Reminders are cron plus email only. |
 
 ### Tier 3 — Vertical and maturity gaps

@@ -32,6 +32,7 @@ import {
 } from '../../../lib/ledger/voidPaymentEffects';
 import { explainedBankFields } from '../../../lib/moneyFlow/explainedBankFields';
 import { shouldPost } from '../../../lib/ledger/postingGate';
+import { signedUrlFor } from '../../../lib/blobStorage';
 
 type Tx = Prisma.TransactionClient;
 
@@ -87,10 +88,6 @@ function asNumber(value: unknown, fallback = 0): number {
   if (value === null || value === undefined || value === '') return fallback;
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
-}
-
-function buildBaseUrl(req: Request): string {
-  return `${req.protocol}://${req.get('host')}/`;
 }
 
 function formatDateShort(d: Date | null | undefined): string | null {
@@ -223,7 +220,7 @@ export async function createSupplierPayment(
     const pmtCurrencyCode = typeof bodyRaw.currencyCode === 'string' && bodyRaw.currencyCode ? bodyRaw.currencyCode : undefined;
     const pmtExchangeRate = bodyRaw.exchangeRate != null ? toDecimal(bodyRaw.exchangeRate) : undefined;
 
-    const attachment = req.file ? `uploads/${req.file.filename}` : null;
+    const attachment = req.file ? req.file.path : null;
 
     if (!sourceType || !['BANK', 'PETTY_CASH'].includes(sourceType)) {
       res.status(400).json({
@@ -680,8 +677,6 @@ export async function listSupplierPayments(
       }),
     ]);
 
-    const baseUrl = buildBaseUrl(req);
-
     const formattedPayments = payments.map((p) => {
       // Contact-first party resolution: prefer the payment's own unified Contact,
       // then its legacy Supplier, then fall back to the PURCHASE's party — a
@@ -698,7 +693,7 @@ export async function listSupplierPayments(
             email: directContact.email || null,
             phone: directContact.mobile || directContact.telephone || null,
             profileImage: directContact.image
-              ? `${baseUrl}${directContact.image.replace(/\\/g, '/')}`
+              ? signedUrlFor(directContact.image.replace(/\\/g, '/'))
               : '',
           }
         : directSupplier
@@ -708,7 +703,7 @@ export async function listSupplierPayments(
               email: directSupplier.supplier_email || null,
               phone: directSupplier.supplier_phone || null,
               profileImage: directSupplier.profileImage
-                ? `${baseUrl}${directSupplier.profileImage.replace(/\\/g, '/')}`
+                ? signedUrlFor(directSupplier.profileImage.replace(/\\/g, '/'))
                 : '',
             }
           : null;
@@ -728,7 +723,7 @@ export async function listSupplierPayments(
         const cleanPath = p.attachment.replace(/\\/g, '/');
         attachmentUrl = cleanPath.startsWith('http')
           ? cleanPath
-          : `${baseUrl}${cleanPath}`;
+          : signedUrlFor(cleanPath);
       }
 
       const bank =
@@ -863,7 +858,7 @@ export async function updateSupplierPayment(
 
     let attachment = existingPayment.attachment;
     if (req.file) {
-      attachment = `uploads/${req.file.filename}`;
+      attachment = req.file.path;
     }
 
     const newPaidAmount = asNumber(paidAmount, Number(existingPayment.paidAmount));

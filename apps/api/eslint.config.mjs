@@ -9,7 +9,6 @@ export default tseslint.config(
       'dist/**',
       'coverage/**',
       'prisma/migrations/**',
-      'uploads/**',
     ],
   },
   ...tseslint.configs.recommended,

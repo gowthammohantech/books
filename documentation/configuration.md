@@ -67,6 +67,30 @@ for details.
 | `SMTP_PASS` | No | — | SMTP password | `app-password` |
 | `SMTP_FROM` | No | — | Sender address shown on outgoing mail | `Elixir Books <billing@example.com>` |
 
+### API — Object Storage Variables (Runtime)
+
+Every uploaded file — company logos, favicons, signatures, product images,
+avatars, expense and supplier-payment receipts, and the source bills fed to AI
+extraction — is stored in an Azure Blob container. **Nothing is written to the
+container's filesystem**, which is why an App Service redeploy no longer loses
+uploads and why two API instances see the same files.
+
+The container is **private**. Files reach the browser as signed URLs the API
+mints per response and which expire after `AZURE_STORAGE_SAS_TTL_MINUTES`; they
+are never served by the API and never stored in the database (the database holds
+the blob key). A URL that leaks therefore stops working on its own.
+
+Locally the `azurite` service stands in for the real thing, using the
+well-known development account baked into `docker/.env.example`.
+
+| Variable | Required | Default | Purpose | Example |
+|---|---|---|---|---|
+| `AZURE_STORAGE_CONNECTION_STRING` | **Yes** | — | Connection string for the storage account. Must include `AccountKey=` — that key is what signs the read URLs. Uploads fail without this; there is no disk fallback. | `DefaultEndpointsProtocol=https;AccountName=…;AccountKey=…` |
+| `AZURE_STORAGE_CONTAINER` | No | `uploads` | Container that holds every file. Created on boot if missing. | `uploads` |
+| `AZURE_STORAGE_SAS_TTL_MINUTES` | No | `60` | How long a signed read URL stays valid. A tab left open longer shows broken images until reloaded. | `60` |
+| `AZURE_STORAGE_PUBLIC_ENDPOINT` | No | — | The blob endpoint the **browser** reaches, when it differs from the one the API uses. Under compose the API talks to `azurite:10000` (resolvable only inside the docker network) while the browser needs `localhost:10000`. **Leave empty in Azure.** | `http://localhost:10000/devstoreaccount1` |
+| `AZURITE_PORT` | No | `10000` | Host port the `azurite` service publishes. Must match the port in `AZURE_STORAGE_PUBLIC_ENDPOINT`. Local only. | `10000` |
+
 ### API — Integration Variables (Runtime)
 
 | Variable | Required | Default | Purpose | Example |
@@ -143,8 +167,9 @@ The stack defines these services in `docker/docker-compose.yml`:
 | Service | Always starts | Profile | Notes |
 |---|---|---|---|
 | `postgres` | Yes | — | PostgreSQL 16. Data persisted in `elixirbooks-pg-data` volume. |
-| `api` | Yes | — | Node.js 20 API. Uploads persisted in `elixirbooks-uploads` volume. |
-| `web` | Yes | — | nginx serving the React SPA + proxying `/api` and `/uploads` to `api`. |
+| `api` | Yes | — | Node.js 20 API. Uploads go to blob storage, not to disk. |
+| `web` | Yes | — | nginx serving the React SPA + proxying `/api` to `api`. Uploads are loaded straight from blob storage, not proxied. |
+| `azurite` | Yes | — | Local stand-in for Azure Blob Storage. Publishes port 10000 because the browser loads uploads from it directly. |
 | `redis` | No | `redis` | Start with `make up-redis`. |
 | `worker` | No | `redis` | Async job worker (same image as `api`). Starts alongside Redis. |
 | `mongo` | No | `mongo` | Legacy. Start with `docker compose --profile mongo up -d`. |
@@ -154,6 +179,6 @@ Docker volumes created by the stack:
 | Volume | Contents |
 |---|---|
 | `elixirbooks_elixirbooks-pg-data` | All PostgreSQL data |
-| `elixirbooks_elixirbooks-uploads` | Invoice logos, expense receipt attachments, company logos |
+| `elixirbooks_elixirbooks-azurite-data` | Local blob storage: company logos, signatures, product images, expense receipt attachments |
 | `elixirbooks_elixirbooks-redis-data` | Redis persistence (redis profile only) |
 | `elixirbooks_elixirbooks-mongo-data` | MongoDB data (mongo profile only) |

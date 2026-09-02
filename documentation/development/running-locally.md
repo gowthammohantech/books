@@ -188,5 +188,11 @@ npm test             # vitest
 - To point a host-side API at the *compose* Postgres instead of a standalone
   container, add `ports: ["5432:5432"]` to the `postgres` service and use
   `localhost:5432` in `DATABASE_URL`.
-- Uploads live in the `elixirbooks-uploads` volume (Option B) or `./uploads`
-  (Option A, gitignored).
+- **Uploads need Azurite.** They are not written to disk in either option: the
+  API stores every file in a blob container and hands the browser a signed URL.
+  Option B starts `azurite` as part of the stack. For Option A (API on the host),
+  start just that service and point the API at it on localhost:
+  ```bash
+  docker compose --env-file docker/.env -f docker/docker-compose.yml up -d azurite
+  ```
+  `apps/api/.env` already carries the matching development connection string.

@@ -154,13 +154,14 @@ Two things hold all state — back both up regularly:
     exec -T postgres pg_dump -U elixirbooks elixirbooks | gzip > elixirbooks-$(date +%F).sql.gz
   ```
   Restore: `gunzip -c backup.sql.gz | docker compose ... exec -T postgres psql -U elixirbooks elixirbooks`.
-- **Uploaded files** — volume `elixirbooks-uploads` (invoice logos, attachments, etc.):
-  ```bash
-  docker run --rm -v elixirbooks_elixirbooks-uploads:/data -v "$PWD":/backup alpine \
-    tar czf /backup/uploads-$(date +%F).tar.gz -C /data .
-  ```
+- **Uploaded files** — the blob container named by `AZURE_STORAGE_CONTAINER`.
+  There is no volume to tar: enable soft delete, versioning and point-in-time
+  restore on the storage account instead. See
+  [backup-restore-upgrade.md](backup-restore-upgrade.md).
 
-Automate both with a daily cron and copy them off-box.
+Automate the database dump with a daily cron and copy it off-box. Restore the
+two together — rows hold blob keys, so a database and a container restored to
+different moments disagree about which files exist.
 
 ---
 

@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
+import { signedUrlFor } from '../lib/blobStorage';
 
 // =============================================================================
 // Shared helpers
@@ -302,7 +303,7 @@ export async function getInvoiceSalesReport(req: Request, res: Response): Promis
                 category: product.category?.category_name ?? '-',
                 sellingPrice: Number(product.selling_price),
                 image: product.product_image
-                  ? `${process.env.BASE_URL}${product.product_image}`
+                  ? signedUrlFor(product.product_image)
                   : '',
                 soldQuantity: 0,
                 revenue: 0,
@@ -334,7 +335,7 @@ export async function getInvoiceSalesReport(req: Request, res: Response): Promis
                 email: invoice.contact.email || '',
                 phone: invoice.contact.mobile || invoice.contact.telephone || '',
                 image: invoice.contact.image
-                  ? `${process.env.BASE_URL}/${invoice.contact.image}`
+                  ? signedUrlFor(invoice.contact.image)
                   : '',
               }
             : {
@@ -342,7 +343,7 @@ export async function getInvoiceSalesReport(req: Request, res: Response): Promis
                 email: invoice.billToCustomer?.email || '',
                 phone: invoice.billToCustomer?.phone || '',
                 image: invoice.billToCustomer?.image
-                  ? `${process.env.BASE_URL}/${invoice.billToCustomer.image}`
+                  ? signedUrlFor(invoice.billToCustomer.image)
                   : '',
               },
           amount: totalAmount || 0,
@@ -366,7 +367,7 @@ export async function getInvoiceSalesReport(req: Request, res: Response): Promis
               revenue:
                 item.amount || (item.qty ?? 0) * (item.rate ?? 0) || 0,
               image: product?.product_image
-                ? `${process.env.BASE_URL}${product.product_image}`
+                ? signedUrlFor(product.product_image)
                 : '',
             };
           }),
@@ -595,7 +596,7 @@ export async function getCreditNoteSalesReport(req: Request, res: Response): Pro
                 category: product.category?.category_name ?? '-',
                 sellingPrice: Number(product.selling_price),
                 image: product.product_image
-                  ? `${process.env.BASE_URL}${product.product_image}`
+                  ? signedUrlFor(product.product_image)
                   : '',
                 returnedQuantity: 0,
                 refundAmount: 0,
@@ -615,7 +616,7 @@ export async function getCreditNoteSalesReport(req: Request, res: Response): Pro
                 email: note.contact.email || '',
                 phone: note.contact.mobile || note.contact.telephone || '',
                 image: note.contact.image
-                  ? `${process.env.BASE_URL}/${note.contact.image}`
+                  ? signedUrlFor(note.contact.image)
                   : '',
               }
             : {
@@ -623,7 +624,7 @@ export async function getCreditNoteSalesReport(req: Request, res: Response): Pro
                 email: note.billToCustomer?.email || '',
                 phone: note.billToCustomer?.phone || '',
                 image: note.billToCustomer?.image
-                  ? `${process.env.BASE_URL}/${note.billToCustomer.image}`
+                  ? signedUrlFor(note.billToCustomer.image)
                   : '',
               },
           refundAmount: Number(note.totalAmount ?? 0) || 0,
@@ -644,7 +645,7 @@ export async function getCreditNoteSalesReport(req: Request, res: Response): Pro
               refundAmount:
                 item.amount || (item.qty ?? 0) * (item.rate ?? 0) || 0,
               image: product?.product_image
-                ? `${process.env.BASE_URL}${product.product_image}`
+                ? signedUrlFor(product.product_image)
                 : '',
             };
           }),
@@ -867,7 +868,7 @@ export async function getPurchaseReport(req: Request, res: Response): Promise<vo
                 email: purchase.contact.email ?? null,
                 phone: purchase.contact.mobile ?? purchase.contact.telephone ?? null,
                 image: purchase.contact.image
-                  ? `${process.env.BASE_URL}/${purchase.contact.image}`
+                  ? signedUrlFor(purchase.contact.image)
                   : '',
               }
             : purchase.supplier
@@ -876,7 +877,7 @@ export async function getPurchaseReport(req: Request, res: Response): Promise<vo
                 email: purchase.supplier.supplier_email,
                 phone: purchase.supplier.supplier_phone,
                 image: purchase.supplier.profileImage
-                  ? `${process.env.BASE_URL}/${purchase.supplier.profileImage}`
+                  ? signedUrlFor(purchase.supplier.profileImage)
                   : '',
               }
             : null,
@@ -894,7 +895,7 @@ export async function getPurchaseReport(req: Request, res: Response): Promise<vo
               quantity: item.qty || 0,
               amount: item.amount || 0,
               image: product?.product_image
-                ? `${process.env.BASE_URL}${product.product_image}`
+                ? signedUrlFor(product.product_image)
                 : '',
             };
           }),
@@ -1093,7 +1094,7 @@ export async function getPurchaseOrderReport(req: Request, res: Response): Promi
                 email: order.contact.email ?? null,
                 phone: order.contact.mobile ?? order.contact.telephone ?? null,
                 image: order.contact.image
-                  ? `${process.env.BASE_URL}/${order.contact.image}`
+                  ? signedUrlFor(order.contact.image)
                   : '',
               }
             : order.billToUser
@@ -1102,7 +1103,7 @@ export async function getPurchaseOrderReport(req: Request, res: Response): Promi
                 email: order.billToUser.email,
                 phone: order.billToUser.phone,
                 image: order.billToUser.profileImage
-                  ? `${process.env.BASE_URL}/${order.billToUser.profileImage}`
+                  ? signedUrlFor(order.billToUser.profileImage)
                   : '',
               }
             : null,
@@ -1118,7 +1119,7 @@ export async function getPurchaseOrderReport(req: Request, res: Response): Promi
               quantity: item.qty || 0,
               amount: item.amount || 0,
               image: product?.product_image
-                ? `${process.env.BASE_URL}${product.product_image}`
+                ? signedUrlFor(product.product_image)
                 : '',
             };
           }),
@@ -1375,7 +1376,7 @@ export async function getDebitNoteReport(req: Request, res: Response): Promise<v
                 quantity: 0,
                 totalAmount: 0,
                 image: product.product_image
-                  ? `${process.env.BASE_URL}${product.product_image}`
+                  ? signedUrlFor(product.product_image)
                   : '',
               };
             }
@@ -1393,7 +1394,7 @@ export async function getDebitNoteReport(req: Request, res: Response): Promise<v
                 email: party.email,
                 phone: party.phone,
                 image: party.image
-                  ? `${process.env.BASE_URL}/${party.image}`
+                  ? signedUrlFor(party.image)
                   : '',
               }
             : null,
@@ -1409,7 +1410,7 @@ export async function getDebitNoteReport(req: Request, res: Response): Promise<v
               quantity: item.qty || 0,
               amount: item.amount || 0,
               image: product?.product_image
-                ? `${process.env.BASE_URL}${product.product_image}`
+                ? signedUrlFor(product.product_image)
                 : '',
             };
           }),
@@ -1608,7 +1609,7 @@ export async function getQuotationSalesReport(req: Request, res: Response): Prom
                 email: quotation.contact.email ?? null,
                 phone: quotation.contact.mobile ?? quotation.contact.telephone ?? null,
                 image: quotation.contact.image
-                  ? `${process.env.BASE_URL}/${quotation.contact.image}`
+                  ? signedUrlFor(quotation.contact.image)
                   : '',
               }
             : quotation.billToCustomer
@@ -1617,7 +1618,7 @@ export async function getQuotationSalesReport(req: Request, res: Response): Prom
                 email: quotation.billToCustomer.email,
                 phone: quotation.billToCustomer.phone,
                 image: quotation.billToCustomer.image
-                  ? `${process.env.BASE_URL}/${quotation.billToCustomer.image}`
+                  ? signedUrlFor(quotation.billToCustomer.image)
                   : '',
               }
             : null,
@@ -1634,7 +1635,7 @@ export async function getQuotationSalesReport(req: Request, res: Response): Prom
               quantity: item.qty || 0,
               amount: item.amount || 0,
               image: product?.product_image
-                ? `${process.env.BASE_URL}${product.product_image}`
+                ? signedUrlFor(product.product_image)
                 : '',
             };
           }),

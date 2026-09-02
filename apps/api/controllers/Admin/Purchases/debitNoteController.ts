@@ -42,6 +42,7 @@ import { applyStockAdjustment, resolveRestockUnitCost } from '../../../lib/inven
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import { sendMail } from '../../../utils/mailer';
+import { signedUrlFor } from '../../../lib/blobStorage';
 
 type Tx = Prisma.TransactionClient;
 
@@ -633,8 +634,6 @@ export async function getAllDebitNotes(req: Request, res: Response): Promise<voi
       }),
     ]);
 
-    const baseUrl = process.env.BASE_URL || '';
-
     const formattedDebitNotes = rows.map((note) => {
       // Contact-aware: prefer contact (new path) over legacy supplier.
       const vendor = note.contact
@@ -651,7 +650,7 @@ export async function getAllDebitNotes(req: Request, res: Response): Promise<voi
               name: note.supplier.supplier_name,
               email: note.supplier.supplier_email || null,
               phone: note.supplier.supplier_phone || null,
-              profileImage: note.supplier.profileImage ? `${baseUrl}/${note.supplier.profileImage}` : '',
+              profileImage: note.supplier.profileImage ? signedUrlFor(note.supplier.profileImage) : '',
             }
           : null;
 
@@ -668,7 +667,7 @@ export async function getAllDebitNotes(req: Request, res: Response): Promise<voi
         ? {
             id: note.createdByUser.id,
             name: `${note.createdByUser.firstName || ''} ${note.createdByUser.lastName || ''}`.trim(),
-            profileImage: note.createdByUser.profileImage ? `${baseUrl}${note.createdByUser.profileImage}` : null,
+            profileImage: note.createdByUser.profileImage ? signedUrlFor(note.createdByUser.profileImage) : null,
           }
         : null;
 
@@ -676,7 +675,7 @@ export async function getAllDebitNotes(req: Request, res: Response): Promise<voi
         ? {
             id: note.approvedByUser.id,
             name: `${note.approvedByUser.firstName || ''} ${note.approvedByUser.lastName || ''}`.trim(),
-            profileImage: note.approvedByUser.profileImage ? `${baseUrl}${note.approvedByUser.profileImage}` : null,
+            profileImage: note.approvedByUser.profileImage ? signedUrlFor(note.approvedByUser.profileImage) : null,
           }
         : null;
 
@@ -703,7 +702,7 @@ export async function getAllDebitNotes(req: Request, res: Response): Promise<voi
         paymentMode,
         sign_type: note.sign_type || 'none',
         signatureName: note.signatureName || null,
-        signatureImage: note.signatureImage ? `${baseUrl}${note.signatureImage}` : null,
+        signatureImage: note.signatureImage ? signedUrlFor(note.signatureImage) : null,
         notes: note.notes || null,
         currencyCode: note.currencyCode ?? null, // C.1
         taxTreatment: note.taxTreatment ?? null, // C.2
@@ -782,8 +781,6 @@ export async function getDebitNoteById(req: Request, res: Response): Promise<voi
       res.status(404).json({ success: false, message: 'Debit note not found' });
       return;
     }
-
-    const baseUrl = process.env.BASE_URL || '';
 
     // Contact-aware: prefer contact (new path) over legacy supplier.
     const vendor = debitNote.contact
@@ -895,7 +892,7 @@ export async function getDebitNoteById(req: Request, res: Response): Promise<voi
       termsAndCondition: debitNote.termsAndCondition || null,
       sign_type: debitNote.sign_type || 'none',
       signatureId: debitNote.signatureId || null,
-      signatureImage: debitNote.signatureImage ? `${baseUrl}${debitNote.signatureImage}` : null,
+      signatureImage: debitNote.signatureImage ? signedUrlFor(debitNote.signatureImage) : null,
       signatureName: debitNote.signatureName || null,
       checkNumber: debitNote.checkNumber || null,
       currencyCode: debitNote.currencyCode ?? null, // C.1
@@ -1164,7 +1161,7 @@ export async function updateDebitNoteStatus(req: Request, res: Response): Promis
       sign_type: updated.sign_type,
       signatureName: updated.signatureName,
       signatureImage: updated.signatureImage
-        ? `${process.env.BASE_URL || 'http://127.0.0.1:5000'}/${updated.signatureImage.replace(/\\/g, '/')}`
+        ? signedUrlFor(updated.signatureImage.replace(/\\/g, '/'))
         : null,
       updatedAt: updated.updatedAt,
     };

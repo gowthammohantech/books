@@ -1,19 +1,16 @@
-import path from 'path';
-
 import multer from 'multer';
 
-import { destinationFor } from '../lib/uploadPaths';
+import { persistUploads } from './persistUploads';
 
-// Per-workspace: uploads/t/<tenantId>/company/. This is the company logo
-// uploaded during /setup, so it is the FIRST file a new workspace writes.
-const storage = multer.diskStorage({
-  destination: destinationFor('company'),
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname)); // unique name
-  },
-});
+// The company logo uploaded during /setup, so it is the FIRST file a new
+// workspace writes -- and it is written before the workspace exists, so
+// blobKeyFor's no-tenant fallback puts it under a bare `company/` prefix.
+const upload = multer({ storage: multer.memoryStorage() });
 
-const upload = multer({ storage });
+/** Parse the setup logo field, then persist it to blob storage. */
+export const uploadSetupSingle = (field: string) => [
+  upload.single(field),
+  persistUploads('company'),
+];
 
 export default upload;

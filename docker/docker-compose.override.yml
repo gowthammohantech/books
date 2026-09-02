@@ -32,6 +32,5 @@ services:
       # npm nested anything there.
       - /repo/node_modules
       - /repo/apps/api/node_modules
-      - elixirbooks-uploads:/repo/apps/api/uploads
     environment:
       NODE_ENV: development

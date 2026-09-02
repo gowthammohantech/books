@@ -133,16 +133,28 @@ describe('the requireUserId alias is gone', () => {
   });
 });
 
-describe('uploads are written per workspace', () => {
-  it('no multer middleware hard-codes a flat destination', () => {
-    // All five now go through lib/uploadPaths.destinationFor, which resolves
-    // the directory per request. A literal path here is a file that lands in
-    // the shared tree regardless of who uploaded it.
+describe('uploads go to blob storage, per workspace', () => {
+  it('no multer middleware writes to disk', () => {
+    // All five uploaders use memoryStorage and hand the buffer to
+    // middleware/persistUploads, which writes it under the caller's workspace
+    // prefix. diskStorage here is a file on an ephemeral container filesystem
+    // that no other instance can see -- and one served, if at all, without auth.
     const offenders = FILES.filter(
-      ({ rel, code }) =>
-        rel.startsWith('middleware/') &&
-        /cb\(\s*null\s*,\s*['"`]uploads/.test(code),
+      ({ rel, code }) => rel.startsWith('middleware/') && /diskStorage/.test(code),
     ).map((f) => f.rel);
-    expect(offenders, 'use destinationFor() from lib/uploadPaths').toEqual([]);
+    expect(offenders, 'use multer.memoryStorage() + persistUploads()').toEqual([]);
+  });
+
+  it('every multer parser is paired with the blob write that follows it', () => {
+    // A parser exported on its own is an upload endpoint whose bytes are
+    // dropped on the floor: the controller reads file.path and finds nothing.
+    const parsers = FILES.filter(
+      ({ rel, code }) => rel.startsWith('middleware/') && /multer\(/.test(code),
+    );
+    const offenders = parsers
+      .filter(({ code }) => !/persistUploads\(/.test(code))
+      .map((f) => f.rel);
+    expect(parsers.length).toBeGreaterThan(0);
+    expect(offenders, 'pair the multer instance with persistUploads()').toEqual([]);
   });
 });

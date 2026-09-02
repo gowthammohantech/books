@@ -29,7 +29,6 @@ coverage/
 # Yarn
 .yarn/cache/
 .pnp.*
-uploads/
 
 # TypeScript incremental build cache (slice 0.1a)
 *.tsbuildinfo

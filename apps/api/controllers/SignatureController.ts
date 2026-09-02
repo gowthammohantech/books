@@ -1,11 +1,10 @@
-import fs from 'fs';
-
 import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 import type { Signature } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
 import { tenantScope, requireTenantId, UnauthorizedError } from '../lib/tenantScope';
+import { deleteObject, signedUrlFor } from '../lib/blobStorage';
 
 interface SignatureResponse {
   id: string;
@@ -19,16 +18,11 @@ interface SignatureResponse {
 
 function buildImageUrl(req: Request, imagePath: string | null | undefined): string | null {
   if (!imagePath) return null;
-  return `${req.protocol}://${req.get('host')}/${imagePath.replace(/\\/g, '/')}`;
+  return signedUrlFor(imagePath.replace(/\\/g, '/'));
 }
 
-function tryUnlink(filePath: string | undefined): void {
-  if (!filePath) return;
-  try {
-    fs.unlinkSync(filePath);
-  } catch (err) {
-    console.warn('Could not unlink upload', filePath, err);
-  }
+function tryUnlink(key: string | undefined): void {
+  void deleteObject(key);
 }
 
 function handleUnauthorized(res: Response, err: unknown): boolean {

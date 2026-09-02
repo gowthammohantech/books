@@ -57,6 +57,7 @@ import { explainedBankFields } from '../../../lib/moneyFlow/explainedBankFields'
 import { applyStockAdjustment } from '../../../lib/inventory/stockAdjust';
 import { initialApprovalStatus, shouldPostOnCreate } from '../../../lib/ledger/approvals';
 import { currentActorId } from '../../../lib/actor';
+import { signedUrlFor } from '../../../lib/blobStorage';
 
 type Tx = Prisma.TransactionClient;
 
@@ -316,7 +317,7 @@ function formatSupplierParty(
     phone: s.supplier_phone || null,
     ...(withAddress ? { address: null } : {}),
     profileImage: s.profileImage
-      ? `${baseUrl}${s.profileImage.replace(/\\/g, '/')}`
+      ? signedUrlFor(s.profileImage.replace(/\\/g, '/'))
       : '',
   };
 }
@@ -356,7 +357,7 @@ function formatPartyDetails(
     phone: u.phone || null,
     ...(withAddress ? { address: u.address ?? null } : {}),
     profileImage: u.profileImage
-      ? `${baseUrl}${u.profileImage.replace(/\\/g, '/')}`
+      ? signedUrlFor(u.profileImage.replace(/\\/g, '/'))
       : '',
   };
 }
@@ -1637,7 +1638,7 @@ export async function getAllPurchases(req: Request, res: Response): Promise<void
 
     const formattedPurchases = purchases.map((purchase) => {
       const signatureImageUrl = purchase.signatureImage
-        ? `${baseUrl}${purchase.signatureImage.replace(/\\/g, '/')}`
+        ? signedUrlFor(purchase.signatureImage.replace(/\\/g, '/'))
         : null;
 
       const signatureDetails =
@@ -2147,7 +2148,7 @@ export async function getPurchaseById(req: Request, res: Response): Promise<void
       signatureDetails = {
         name: purchase.signatureName || null,
         image: purchase.signatureImage
-          ? `${baseUrl}${purchase.signatureImage.replace(/\\/g, '/')}`
+          ? signedUrlFor(purchase.signatureImage.replace(/\\/g, '/'))
           : null,
         type: 'eSignature',
       };
@@ -2156,7 +2157,7 @@ export async function getPurchaseById(req: Request, res: Response): Promise<void
         id: purchase.signature.id,
         name: purchase.signature.signatureName || null,
         image: purchase.signature.signatureImage
-          ? `${baseUrl}${purchase.signature.signatureImage.replace(/\\/g, '/')}`
+          ? signedUrlFor(purchase.signature.signatureImage.replace(/\\/g, '/'))
           : null,
         createdAt: purchase.signature.createdAt,
         type: 'digitalSignature',
@@ -3049,21 +3050,12 @@ export async function sendPurchaseEmail(req: Request, res: Response): Promise<vo
       html: htmlContent,
     };
 
-    if (sendAttachment) {
-      const pdfPath = `${process.env.PURCHASE_UPLOAD_PATH || './uploads/purchases'}/${purchaseId}.pdf`;
-      // Only attach if the PDF exists; skip gracefully if it hasn't been generated
-      const fs = await import('fs');
-      if (fs.existsSync(pdfPath)) {
-        mailOptions.attachments = [
-          {
-            filename: `Purchase-${purchaseId}.pdf`,
-            path: pdfPath,
-          },
-        ];
-      } else {
-        console.warn(`Purchase PDF not found at ${pdfPath}; sending email without attachment`);
-      }
-    }
+    // `sendAttachment` used to look for a PDF on local disk. Nothing in the
+    // product has ever written one -- PDFs are generated in the browser -- so
+    // the lookup could only ever miss, and it was the last filesystem read left
+    // after uploads moved to blob storage. The flag is still accepted and still
+    // means "attach the document"; wiring it up needs server-side rendering
+    // that does not exist yet.
 
     await sendMail(mailOptions);
 

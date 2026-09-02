@@ -2485,7 +2485,7 @@ async function seedAll(
   await prisma.aiExtractionJob.create({
     data: {
       tenantId,
-      sourceFilePath: 'uploads/ai-jobs/demo-acme-bill.pdf',
+      sourceFilePath: 'demo/ai-jobs/demo-acme-bill.pdf',
       mimeType: 'application/pdf',
       status: 'CONFIRMED',
       extractedData: acmeExtracted as unknown as Prisma.InputJsonValue,
@@ -2521,7 +2521,7 @@ async function seedAll(
   await prisma.aiExtractionJob.create({
     data: {
       tenantId,
-      sourceFilePath: 'uploads/ai-jobs/demo-stationery-bill.jpg',
+      sourceFilePath: 'demo/ai-jobs/demo-stationery-bill.jpg',
       mimeType: 'image/jpeg',
       status: 'EXTRACTED',
       extractedData: pendingExtracted as unknown as Prisma.InputJsonValue,

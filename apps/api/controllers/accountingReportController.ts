@@ -8,6 +8,7 @@ import {
   UnauthorizedError,
 } from '../lib/tenantScope';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
+import { signedUrlFor } from '../lib/blobStorage';
 
 // =============================================================================
 // Helpers
@@ -216,7 +217,7 @@ export async function getIncomeStats(req: Request, res: Response): Promise<void>
           name: partyName,
           email: party?.email || legacy?.email || '',
           phone: party?.mobile || party?.telephone || legacy?.phone || '',
-          image: partyImage ? `${process.env.BASE_URL ?? ''}/${partyImage}` : '',
+          image: partyImage ? signedUrlFor(partyImage) : '',
         },
         paidDate: payment.received_on,
         amount: formatAmount(asNumber(payment.amount, 0)),

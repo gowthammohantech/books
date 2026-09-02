@@ -7,6 +7,7 @@ import { razorpayGateway } from '../lib/paymentGateways/razorpayGateway';
 import { stripeGateway } from '../lib/paymentGateways/stripeGateway';
 import { decryptConfigSecrets, gatewaySecretKeys } from '../lib/configSecret';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
+import { signedUrlFor } from '../lib/blobStorage';
 import { ipKey } from '../lib/rateLimitKey';
 
 const router = Router();
@@ -21,18 +22,14 @@ const limiter = rateLimit({
   message: { success: false, message: 'Too many requests' },
 });
 
-function buildBaseUrl(req: Request): string {
-  return `${req.protocol}://${req.get('host')}`;
-}
-
 // Resolves the same siteLogo the authenticated app shows (CompanySettingsController's
 // decorateImageUrls): a stored relative path becomes an absolute URL off this request's
 // host; empty/absent stays null. Public pages have no redux/settings fetch of their own,
 // so the logo must ride along in this payload.
-function resolveSiteLogo(siteLogo: string | null | undefined, baseUrl: string): string | null {
+function resolveSiteLogo(siteLogo: string | null | undefined): string | null {
   if (!siteLogo) return null;
   const cleanedPath = siteLogo.replace(/^[\\/]+/, '').replace(/\\/g, '/');
-  return `${baseUrl}/${cleanedPath}`;
+  return signedUrlFor(cleanedPath);
 }
 
 interface PublicStoredItem {
@@ -152,7 +149,7 @@ router.get('/invoices/:token', limiter, async (req: Request, res: Response) => {
           }
         : null,
       company: company
-        ? { ...company, siteLogo: resolveSiteLogo(company.siteLogo, buildBaseUrl(req)) }
+        ? { ...company, siteLogo: resolveSiteLogo(company.siteLogo) }
         : null,
     };
 
@@ -232,7 +229,7 @@ router.get('/quotations/:token', limiter, async (req: Request, res: Response) =>
       notes: quotation.notes || null,
       termsAndCondition: quotation.termsAndCondition || null,
       company: company
-        ? { ...company, siteLogo: resolveSiteLogo(company.siteLogo, buildBaseUrl(req)) }
+        ? { ...company, siteLogo: resolveSiteLogo(company.siteLogo) }
         : null,
     };
 

@@ -45,6 +45,7 @@ import {
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import { sendMail } from '../../../utils/mailer';
+import { signedUrlFor } from '../../../lib/blobStorage';
 
 type Tx = Prisma.TransactionClient;
 
@@ -72,10 +73,6 @@ function asNumber(value: unknown, fallback = 0): number {
   if (value === null || value === undefined) return fallback;
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
-}
-
-function buildBaseUrl(req: Request): string {
-  return `${req.protocol}://${req.get('host')}/`;
 }
 
 function formatDateShort(d: Date | null | undefined): string | null {
@@ -476,8 +473,6 @@ export async function getAllCreditNotes(req: Request, res: Response): Promise<vo
       ];
     }
 
-    const baseUrl = buildBaseUrl(req);
-
     const [total, rows] = await Promise.all([
       prisma.creditNote.count({ where }),
       prisma.creditNote.findMany({
@@ -528,7 +523,7 @@ export async function getAllCreditNotes(req: Request, res: Response): Promise<vo
             email: note.customer.email || null,
             phone: note.customer.phone || null,
             billingAddress: note.customer.billingAddress || null,
-            image: note.customer.image ? `${baseUrl}${note.customer.image.replace(/\\/g, '/')}` : '',
+            image: note.customer.image ? signedUrlFor(note.customer.image.replace(/\\/g, '/')) : '',
           }
         : null;
       const billFrom = note.billFromUser
@@ -538,7 +533,7 @@ export async function getAllCreditNotes(req: Request, res: Response): Promise<vo
             email: note.billFromUser.email || null,
             phone: note.billFromUser.phone || null,
             address: note.billFromUser.address || null,
-            image: note.billFromUser.profileImage ? `${baseUrl}${note.billFromUser.profileImage.replace(/\\/g, '/')}` : '',
+            image: note.billFromUser.profileImage ? signedUrlFor(note.billFromUser.profileImage.replace(/\\/g, '/')) : '',
           }
         : null;
       const billTo = note.billToContact
@@ -559,7 +554,7 @@ export async function getAllCreditNotes(req: Request, res: Response): Promise<vo
             phone: note.billToCustomer.phone || null,
             billingAddress: note.billToCustomer.billingAddress || null,
             shippingAddress: note.billToCustomer.shippingAddress || null,
-            image: note.billToCustomer.image ? `${baseUrl}${note.billToCustomer.image.replace(/\\/g, '/')}` : '',
+            image: note.billToCustomer.image ? signedUrlFor(note.billToCustomer.image.replace(/\\/g, '/')) : '',
           }
         : null;
       const invoice = note.invoice
@@ -591,7 +586,7 @@ export async function getAllCreditNotes(req: Request, res: Response): Promise<vo
       if (note.sign_type === 'eSignature') {
         signature = {
           name: note.signatureName || null,
-          image: note.signatureImage ? `${baseUrl}${note.signatureImage.replace(/\\/g, '/')}` : null,
+          image: note.signatureImage ? signedUrlFor(note.signatureImage.replace(/\\/g, '/')) : null,
         };
       } else if (note.sign_type === 'digitalSignature') {
         signature = { signatureId: note.signatureId || null };
@@ -666,7 +661,6 @@ export async function getCreditNoteById(req: Request, res: Response): Promise<vo
   try {
     const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
-    const baseUrl = buildBaseUrl(req);
 
     const note = await prisma.creditNote.findFirst({
       where: { id, tenantId },
@@ -706,13 +700,13 @@ export async function getCreditNoteById(req: Request, res: Response): Promise<vo
     if (note.sign_type === 'eSignature') {
       signature = {
         name: note.signatureName || null,
-        image: note.signatureImage ? `${baseUrl}${note.signatureImage.replace(/\\/g, '/')}` : null,
+        image: note.signatureImage ? signedUrlFor(note.signatureImage.replace(/\\/g, '/')) : null,
       };
     } else if (note.sign_type === 'digitalSignature' && note.signature) {
       signature = {
         id: note.signature.id,
         name: note.signature.signatureName || null,
-        image: note.signature.signatureImage ? `${baseUrl}${note.signature.signatureImage.replace(/\\/g, '/')}` : null,
+        image: note.signature.signatureImage ? signedUrlFor(note.signature.signatureImage.replace(/\\/g, '/')) : null,
         createdAt: formatDateShort(note.signature.createdAt),
       };
     }

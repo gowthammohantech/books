@@ -6,7 +6,6 @@
   "ignore": [
     "dist/**",
     "coverage/**",
-    "uploads/**",
     "tests/**",
     "**/*.spec.ts",
     "**/*.test.ts",

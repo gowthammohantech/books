@@ -1,9 +1,9 @@
-import fs from 'fs';
-
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { body, validationResult, ValidationChain } from 'express-validator';
 
 import { PHONE_REGEX, PHONE_ERROR } from '@elixirbooks/validation';
+
+import { deleteObject } from '../lib/blobStorage';
 
 const validateAndCheckImage: RequestHandler = (
   req: Request,
@@ -14,11 +14,7 @@ const validateAndCheckImage: RequestHandler = (
   if (req.file) {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
     if (!allowedTypes.includes(req.file.mimetype)) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch {
-        /* noop */
-      }
+      void deleteObject(req.file.path);
       res.status(422).json({
         message: 'Validation failed',
         errors: { profileImage: 'Only JPEG and PNG images are allowed' },
@@ -27,11 +23,7 @@ const validateAndCheckImage: RequestHandler = (
     }
 
     if (req.file.size > 2 * 1024 * 1024) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch {
-        /* noop */
-      }
+      void deleteObject(req.file.path);
       res.status(422).json({
         message: 'Validation failed',
         errors: { profileImage: 'Image size must be less than 2MB' },
@@ -43,13 +35,7 @@ const validateAndCheckImage: RequestHandler = (
   // Handle field validation errors
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    if (req.file?.path) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch {
-        /* noop */
-      }
-    }
+    void deleteObject(req.file?.path);
 
     const formattedErrors: Record<string, string> = {};
     for (const err of errors.array()) {

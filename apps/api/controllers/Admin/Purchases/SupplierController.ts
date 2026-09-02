@@ -1,6 +1,3 @@
-import fs from 'fs';
-import path from 'path';
-
 import type { Request, Response } from 'express';
 import type { Supplier, SupplierBalanceType } from '@prisma/client';
 import { Prisma } from '@prisma/client';
@@ -8,6 +5,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../../lib/prisma';
 import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
 import { requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
+import { deleteObject, signedUrlFor } from '../../../lib/blobStorage';
 
 // -----------------------------------------------------------------------------
 // Helpers
@@ -21,31 +19,20 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
   return false;
 }
 
-function tryUnlink(filePath: string | undefined | null): void {
-  if (!filePath) return;
-  try {
-    const fullPath = path.isAbsolute(filePath)
-      ? filePath
-      : path.join(process.cwd(), filePath);
-    if (fs.existsSync(fullPath)) {
-      fs.unlinkSync(fullPath);
-    }
-  } catch (err) {
-    console.warn('Could not unlink file', filePath, err);
-  }
+// Fire-and-forget, as the filesystem version was: deleteObject swallows its own
+// failures, so a blob that is already gone never turns a successful update into
+// a failed request.
+function tryUnlink(key: string | undefined | null): void {
+  void deleteObject(key);
 }
 
-// Build a full URL from a stored filename (just the basename, no path prefix).
-// Mirrors the Brand controller pattern: stored value is filename only,
-// URL is <protocol>://<host>/uploads/<filename>.
-function buildImageUrl(req: Request, filename: string | null | undefined): string | null {
-  if (filename) {
-    return `${req.protocol}://${req.get('host')}/uploads/${filename}`;
-  }
+// Sign the stored blob key for this response. Mirrors the Brand controller:
+// the column holds a key, never a URL, because a signed URL expires.
+function buildImageUrl(_req: Request, key: string | null | undefined): string | null {
   // No logo: return null (matches the Brand controller). The frontend's
   // ProfileCard renders an initials avatar when imageUrl is null, so there's
-  // no request to a non-existent /uploads/default-profile.jpg (which 404'd).
-  return null;
+  // no request for a default-profile image that does not exist.
+  return signedUrlFor(key);
 }
 
 function asNumber(value: unknown, fallback = 0): number {
@@ -113,7 +100,7 @@ export async function createSupplier(req: Request, res: Response): Promise<void>
       return;
     }
 
-    const profileImageFilename = req.file ? req.file.filename : null;
+    const profileImageFilename = req.file ? req.file.path : null;
 
     const supplier = await prisma.$transaction(async (tx) => {
       return tx.supplier.create({
@@ -300,7 +287,7 @@ export async function updateSupplier(req: Request, res: Response): Promise<void>
 
     // Preserve-or-replace: only overwrite stored filename when a new file is uploaded.
     if (req.file) {
-      data.profileImage = req.file.filename;
+      data.profileImage = req.file.path;
     }
     // If no new file, leave data.profileImage unset → Prisma skips the column → existing value preserved.
 

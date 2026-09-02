@@ -72,6 +72,7 @@ import {
 } from '../../../lib/invoiceOutstanding';
 import { creditNoteTotalsByInvoice, netInvoiceOutstanding } from '../../../lib/reports/aging';
 import { currentActorId } from '../../../lib/actor';
+import { signedUrlFor } from '../../../lib/blobStorage';
 
 type Tx = Prisma.TransactionClient;
 
@@ -407,12 +408,12 @@ function formatCustomer(c: CustomerLite | null | undefined, baseUrl: string, wit
     name: c.name || '',
     email: c.email || null,
     phone: c.phone || null,
-    image: c.image ? `${baseUrl}${c.image.replace(/\\/g, '/')}` : '',
+    image: c.image ? signedUrlFor(c.image.replace(/\\/g, '/')) : '',
     ...(withBillingAddress ? { billingAddress: c.billingAddress ?? null } : {}),
   };
 }
 
-function formatBillFromUser(u: UserLite | null | undefined, baseUrl: string) {
+function formatBillFromUser(u: UserLite | null | undefined) {
   if (!u) return null;
   return {
     id: u.id,
@@ -420,7 +421,7 @@ function formatBillFromUser(u: UserLite | null | undefined, baseUrl: string) {
     email: u.email || null,
     phone: u.phone || null,
     address: u.address || null,
-    image: u.profileImage ? `${baseUrl}${u.profileImage.replace(/\\/g, '/')}` : '',
+    image: u.profileImage ? signedUrlFor(u.profileImage.replace(/\\/g, '/')) : '',
   };
 }
 
@@ -436,12 +437,12 @@ function formatBank(b: BankLite | null | undefined) {
   };
 }
 
-function formatSignature(invoice: Invoice & { signature?: SignatureLite | null }, baseUrl: string) {
+function formatSignature(invoice: Invoice & { signature?: SignatureLite | null }) {
   if (invoice.sign_type === 'eSignature') {
     return {
       name: invoice.signatureName || null,
       image: invoice.signatureImage
-        ? `${baseUrl}${invoice.signatureImage.replace(/\\/g, '/')}`
+        ? signedUrlFor(invoice.signatureImage.replace(/\\/g, '/'))
         : null,
     };
   }
@@ -450,7 +451,7 @@ function formatSignature(invoice: Invoice & { signature?: SignatureLite | null }
       id: invoice.signature.id,
       name: invoice.signature.signatureName || null,
       image: invoice.signature.signatureImage
-        ? `${baseUrl}${invoice.signature.signatureImage.replace(/\\/g, '/')}`
+        ? signedUrlFor(invoice.signature.signatureImage.replace(/\\/g, '/'))
         : null,
     };
   }
@@ -1183,21 +1184,12 @@ export async function sendInvoiceEmail(req: Request, res: Response): Promise<voi
       html: htmlContent,
     };
 
-    if (sendAttachment) {
-      const pdfPath = `${process.env.INVOICE_UPLOAD_PATH || './uploads/invoices'}/${invoiceId}.pdf`;
-      // Only attach if the PDF exists; skip gracefully if it hasn't been generated
-      const fs = await import('fs');
-      if (fs.existsSync(pdfPath)) {
-        mailOptions.attachments = [
-          {
-            filename: `Invoice-${invoiceId}.pdf`,
-            path: pdfPath,
-          },
-        ];
-      } else {
-        console.warn(`Invoice PDF not found at ${pdfPath}; sending email without attachment`);
-      }
-    }
+    // `sendAttachment` used to look for a PDF on local disk. Nothing in the
+    // product has ever written one -- PDFs are generated in the browser -- so
+    // the lookup could only ever miss, and it was the last filesystem read left
+    // after uploads moved to blob storage. The flag is still accepted and still
+    // means "attach the document"; wiring it up needs server-side rendering
+    // that does not exist yet.
 
     await sendMail(mailOptions);
 
@@ -1795,7 +1787,7 @@ export async function getInvoice(req: Request, res: Response): Promise<void> {
       lastPaymentDate: paymentAgg._max.received_on ?? null,
       items: invoice.items,
       itemsCount: Array.isArray(invoice.items) ? invoice.items.length : 0,
-      billFrom: formatBillFromUser(invoice.billFromUser, baseUrl),
+      billFrom: formatBillFromUser(invoice.billFromUser),
       // Contact-aware: prefer billToContact; fall back to legacy billToCustomer.
       billToContactId: invoice.billToContactId ?? null,
       billTo: billToContactForDisplay ?? formatCustomer(invoice.billToCustomer, baseUrl, true),
@@ -1812,7 +1804,7 @@ export async function getInvoice(req: Request, res: Response): Promise<void> {
       stopped: invoice.isRecurring ? invoice.stopped : null,
       nextRecurringDate: invoice.isRecurring ? invoice.nextRecurringDate : null,
       sign_type: invoice.sign_type,
-      signature: formatSignature(invoice, baseUrl),
+      signature: formatSignature(invoice),
       customFields: customFieldsObject,
       currencyCode: invoice.currencyCode ?? null, // C.1
       taxTreatment: invoice.taxTreatment ?? null, // C.2
@@ -2071,7 +2063,7 @@ async function buildInvoiceList(
       lastPaymentDate: formatDateShort(totalPaidInfo.lastPaymentDate),
       items: invoice.items,
       itemsCount: Array.isArray(invoice.items) ? invoice.items.length : 0,
-      billFrom: formatBillFromUser(invoice.billFromUser, baseUrl),
+      billFrom: formatBillFromUser(invoice.billFromUser),
       billToContactId: invoice.billToContactId ?? null,
       billTo: billToContactForDisplay ?? formatCustomer(invoice.billToCustomer, baseUrl, true),
       bank: formatBank(invoice.bank),
@@ -2084,7 +2076,7 @@ async function buildInvoiceList(
       isRecurring: invoice.isRecurring,
       sign_type: invoice.sign_type,
       signature: invoice.sign_type === 'eSignature'
-        ? { name: invoice.signatureName, image: invoice.signatureImage ? `${baseUrl}${invoice.signatureImage.replace(/\\/g, '/')}` : null }
+        ? { name: invoice.signatureName, image: invoice.signatureImage ? signedUrlFor(invoice.signatureImage.replace(/\\/g, '/')) : null }
         : null,
       customFields: customFieldsObject,
       currencyCode: invoice.currencyCode ?? null, // C.1

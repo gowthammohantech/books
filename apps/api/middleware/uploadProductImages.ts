@@ -1,18 +1,10 @@
-import path from 'path';
-
 import multer from 'multer';
 
-import { destinationFor } from '../lib/uploadPaths';
+import { persistUploads } from './persistUploads';
 
-// Storage settings: per-workspace, uploads/t/<tenantId>/products/.
-const storage = multer.diskStorage({
-  destination: destinationFor('products'),
-  filename: function (_req, file, cb) {
-    const ext = path.extname(file.originalname);
-    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9) + ext;
-    cb(null, uniqueName);
-  },
-});
+// Held in memory until persistUploads writes it to the `products/` prefix in
+// blob storage. Nothing lands on this container's filesystem.
+const storage = multer.memoryStorage();
 
 // File filter remains the same
 const fileFilter: multer.Options['fileFilter'] = (_req, file, cb) => {
@@ -34,4 +26,4 @@ const upload = multer({
 
 // Use .any() so product_image, gallery_images, and dynamic customField_<id>
 // file uploads all pass through to the controller.
-export const uploadProductFields = upload.any();
+export const uploadProductFields = [upload.any(), persistUploads('products')];

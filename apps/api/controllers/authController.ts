@@ -17,6 +17,7 @@ import {
   provisionTenant,
   PROVISION_TX_OPTIONS,
 } from '../lib/tenantProvisioning';
+import { signedUrlFor } from '../lib/blobStorage';
 
 /**
  * The system bootstrap account (prisma/seed.ts). It exists only as an FK target
@@ -317,7 +318,7 @@ export async function login(req: Request, res: Response): Promise<void> {
       user: {
         ...safeUser,
         profileImageUrl: user.profileImage
-          ? `${req.protocol}://${req.get('host')}/${user.profileImage}`
+          ? signedUrlFor(user.profileImage)
           : null,
       },
       tenant: {
@@ -448,7 +449,7 @@ export async function session(req: Request, res: Response): Promise<void> {
         user: {
           ...user,
           profileImageUrl: user.profileImage
-            ? `${req.protocol}://${req.get('host')}/${user.profileImage}`
+            ? signedUrlFor(user.profileImage)
             : null,
         },
         tenant: {

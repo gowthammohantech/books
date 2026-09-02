@@ -19,8 +19,6 @@
 **/.DS_Store
 
 # Runtime data, never baked into an image
-apps/api/uploads/*
-!apps/api/uploads/.gitkeep
 apps/api/ssl.key
 apps/api/ssl.crt
 

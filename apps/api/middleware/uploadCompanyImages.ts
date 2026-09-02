@@ -1,21 +1,11 @@
-import path from 'path';
-
 import type { NextFunction, Request, Response } from 'express';
 import multer from 'multer';
 
-import { destinationFor } from '../lib/uploadPaths';
+import { persistUploads } from './persistUploads';
 
-// Per-workspace: uploads/t/<tenantId>/company/. The directory is created on
-// demand by destinationFor, so there is no startup mkdir here any more - a
-// fixed directory made at module load cannot depend on the request.
-const companyStorage = multer.diskStorage({
-  destination: destinationFor('company'),
-  filename: function (_req, file, cb) {
-    const ext = path.extname(file.originalname);
-    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1e9) + ext;
-    cb(null, uniqueName);
-  },
-});
+// Held in memory until persistUploads writes it to the `company/` prefix in
+// blob storage. Nothing lands on this container's filesystem.
+const companyStorage = multer.memoryStorage();
 
 const companyFileFilter: multer.Options['fileFilter'] = (_req, file, cb) => {
   const allowedTypes = [
@@ -46,12 +36,15 @@ const uploadCompany = multer({
 });
 
 // Handle multiple company image fields
-export const uploadCompanyFields = uploadCompany.fields([
-  { name: 'siteLogo', maxCount: 1 },
-  { name: 'favicon', maxCount: 1 },
-  { name: 'companyLogo', maxCount: 1 },
-  { name: 'companyBanner', maxCount: 1 },
-]);
+export const uploadCompanyFields = [
+  uploadCompany.fields([
+    { name: 'siteLogo', maxCount: 1 },
+    { name: 'favicon', maxCount: 1 },
+    { name: 'companyLogo', maxCount: 1 },
+    { name: 'companyBanner', maxCount: 1 },
+  ]),
+  persistUploads('company'),
+];
 
 /**
  * Per-route upload error handler, kept for the routes that wire it explicitly.

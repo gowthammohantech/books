@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { requireTenantId } from '../lib/tenantScope';
 import { insertCustomFieldValues, readCustomFieldValues } from '../lib/customFieldValues';
+import { signedUrlFor } from '../lib/blobStorage';
 
 // Category is a global lookup table — no tenantId column, so tenantScope()
 // does not apply here.
@@ -14,7 +15,7 @@ function withImageUrl<T extends { category_image: string | null }>(req: Request,
   return {
     ...c,
     categoryImageUrl: c.category_image
-      ? `${req.protocol}://${req.get('host')}/uploads/${c.category_image}`
+      ? signedUrlFor(c.category_image)
       : null,
   };
 }
@@ -31,7 +32,7 @@ export async function createCategory(req: Request, res: Response): Promise<void>
     // Support both upload.single() (req.file) and upload.any() (req.files array)
     const filesArray = (req.files as Express.Multer.File[] | undefined) ?? [];
     const imageFile = req.file ?? filesArray.find((f) => f.fieldname === 'category_image');
-    const category_image = imageFile ? imageFile.filename : null;
+    const category_image = imageFile ? imageFile.path : null;
 
     const tenantId = requireTenantId(req);
 
@@ -155,7 +156,7 @@ export async function updateCategory(req: Request, res: Response): Promise<void>
     if (status !== undefined) {
       data.status = typeof status === 'string' ? status === 'true' : status;
     }
-    if (imageFile) data.category_image = imageFile.filename;
+    if (imageFile) data.category_image = imageFile.path;
 
     const category = await prisma.$transaction(async (tx) => {
       const updated = await tx.category.update({

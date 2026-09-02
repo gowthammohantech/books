@@ -239,27 +239,47 @@ is enabled.
 
 ## Where Are the Uploaded Files?
 
-Uploaded files (logos, receipt attachments) are stored in the
-`elixirbooks_elixirbooks-uploads` Docker volume, mounted into the API container
-at `/app/uploads`. The API serves them at `/uploads/<filename>` (proxied
-through nginx at the same path).
+Uploaded files (logos, signatures, receipt attachments, AI source bills) are
+**not on disk**. They live in an Azure Blob container -- Azurite locally, a real
+storage account in Azure -- named by `AZURE_STORAGE_CONTAINER` (default
+`uploads`).
 
-To list the contents of the volume:
+The container is private. The API never serves a file; it returns a signed URL
+that expires after `AZURE_STORAGE_SAS_TTL_MINUTES` (default 60), and the browser
+loads the file straight from blob storage. What the database stores is the blob
+**key**, e.g. `t/<tenantId>/company/1734…-42.png` -- the `t/<tenantId>/` prefix is
+what keeps two companies' files apart.
 
-```bash
-docker run --rm \
-  -v elixirbooks_elixirbooks-uploads:/data \
-  alpine ls -lRh /data
-```
-
-To copy a file out of the volume:
+To list what is in the container:
 
 ```bash
-docker run --rm \
-  -v elixirbooks_elixirbooks-uploads:/data \
-  -v "$PWD":/out \
-  alpine cp /data/company/logo.png /out/logo.png
+az storage blob list --container-name uploads --output table   --connection-string "$AZURE_STORAGE_CONNECTION_STRING"
 ```
+
+To copy one file out:
+
+```bash
+az storage blob download --container-name uploads   --name "t/<tenantId>/company/logo.png" --file ./logo.png   --connection-string "$AZURE_STORAGE_CONNECTION_STRING"
+```
+
+Locally, Azurite's data sits in the `elixirbooks_elixirbooks-azurite-data`
+volume; `make down-clean` destroys it along with the database.
+
+### An image renders as broken
+
+Most often the signed URL simply expired -- reload the page and the API mints a
+fresh one. If it persists, check in order:
+
+1. `AZURE_STORAGE_PUBLIC_ENDPOINT` must name the endpoint the **browser** can
+   reach. Under compose the API talks to `azurite:10000`, which does not resolve
+   in a browser; the variable rewrites the URL onto `localhost:10000`. A signed
+   URL whose host is `azurite` means this is unset.
+2. The `azurite` service must be running and its port published (`docker compose
+   ps`). The browser connects to it directly, so an unpublished port breaks
+   every image even though the API is fine.
+3. A row written before this migration holds an old filesystem path
+   (`uploads/…`) rather than a blob key. Those files were not migrated -- re-upload
+   the image.
 
 ---
 

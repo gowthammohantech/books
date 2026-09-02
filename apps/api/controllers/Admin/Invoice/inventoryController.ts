@@ -6,6 +6,7 @@ import {
   tenantScope,
   requireTenantId,
   UnauthorizedError, requireActingUserId } from '../../../lib/tenantScope';
+import { signedUrlFor } from '../../../lib/blobStorage';
 
 type Tx = Prisma.TransactionClient;
 
@@ -97,8 +98,6 @@ export async function listInventory(req: Request, res: Response): Promise<void> 
       }),
     ]);
 
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
-
     const inventoryList = inventories.map((inv) => ({
       id: inv.id,
       productId: inv.productId,
@@ -114,7 +113,7 @@ export async function listInventory(req: Request, res: Response): Promise<void> 
             purchase_price: Number(inv.product.purchase_price),
             alert_quantity: inv.product.alert_quantity,
             product_image: inv.product.product_image
-              ? `${baseUrl}${inv.product.product_image}`
+              ? signedUrlFor(inv.product.product_image)
               : null,
             unit_name: inv.product.unit?.short_name ?? null,
             status: inv.product.status,

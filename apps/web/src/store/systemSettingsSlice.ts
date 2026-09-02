@@ -14,11 +14,13 @@ const initialState: SystemSettingsState = {
     data: null
 }
 
-// Re-base company image URLs onto the reachable API origin. The backend stamps
-// absolute URLs from the request host, which behind a proxy can be an internal
-// address (e.g. 127.0.0.1:5000) the browser can't load. Doing it here fixes
-// every consumer (sidebar, invoice/quotation/PO templates, login) at once, and
-// also repairs stale URLs read back from storage.
+// Pass company image URLs through assetUrl, which now returns a signed blob URL
+// unchanged and only rebases the relative paths older responses still carry.
+//
+// NOTE these values are cached in localStorage and rehydrated on boot, so a
+// cached URL can outlive its signature. App.tsx re-fetches settings right after
+// hydrating, which replaces them before anything renders for long; a tab left
+// open past the TTL shows broken logos until it is reloaded.
 const normalizeSettings = (data: any) => {
     if (data?.company) {
         for (const key of ["siteLogo", "favicon", "companyLogo"] as const) {

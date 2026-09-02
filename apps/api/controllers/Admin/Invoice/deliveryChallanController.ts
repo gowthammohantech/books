@@ -17,6 +17,7 @@ import {
 } from '../../../lib/lineDimensions';
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
+import { signedUrlFor } from '../../../lib/blobStorage';
 
 type Tx = Prisma.TransactionClient;
 
@@ -44,10 +45,6 @@ function asNumber(value: unknown, fallback = 0): number {
   if (value === null || value === undefined) return fallback;
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
-}
-
-function buildBaseUrl(req: Request): string {
-  return `${req.protocol}://${req.get('host')}/`;
 }
 
 function formatDateShort(d: Date | null | undefined): string | null {
@@ -583,8 +580,6 @@ export async function getDeliveryChallans(req: Request, res: Response): Promise<
       ];
     }
 
-    const baseUrl = buildBaseUrl(req);
-
     const contactSelect = { select: { id: true, firstName: true, lastName: true, organisation: true, email: true, mobile: true } };
 
     const [total, rows] = await Promise.all([
@@ -624,7 +619,7 @@ export async function getDeliveryChallans(req: Request, res: Response): Promise<
             email: challan.customer.email || null,
             phone: challan.customer.phone || null,
             billingAddress: challan.customer.billingAddress || null,
-            image: challan.customer.image ? `${baseUrl}${challan.customer.image.replace(/\\/g, '/')}` : '',
+            image: challan.customer.image ? signedUrlFor(challan.customer.image.replace(/\\/g, '/')) : '',
           }
         : null);
       const billFrom = challan.billFromUser
@@ -634,7 +629,7 @@ export async function getDeliveryChallans(req: Request, res: Response): Promise<
             email: challan.billFromUser.email || null,
             phone: challan.billFromUser.phone || null,
             address: challan.billFromUser.address || null,
-            image: challan.billFromUser.profileImage ? `${baseUrl}${challan.billFromUser.profileImage.replace(/\\/g, '/')}` : '',
+            image: challan.billFromUser.profileImage ? signedUrlFor(challan.billFromUser.profileImage.replace(/\\/g, '/')) : '',
           }
         : null;
       // Prefer billToContact for billTo display; fall back to legacy billToCustomer
@@ -656,7 +651,7 @@ export async function getDeliveryChallans(req: Request, res: Response): Promise<
             phone: challan.billToCustomer.phone || null,
             billingAddress: challan.billToCustomer.billingAddress || null,
             shippingAddress: challan.billToCustomer.shippingAddress || null,
-            image: challan.billToCustomer.image ? `${baseUrl}${challan.billToCustomer.image.replace(/\\/g, '/')}` : '',
+            image: challan.billToCustomer.image ? signedUrlFor(challan.billToCustomer.image.replace(/\\/g, '/')) : '',
           }
         : null);
       const invoice = challan.invoice
@@ -724,7 +719,6 @@ export async function getDeliveryChallans(req: Request, res: Response): Promise<
 export async function getDeliveryChallanById(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params as { id: string };
-    const baseUrl = buildBaseUrl(req);
 
     const contactSelectById = { select: { id: true, firstName: true, lastName: true, organisation: true, email: true, mobile: true } };
 
@@ -777,13 +771,13 @@ export async function getDeliveryChallanById(req: Request, res: Response): Promi
     if (challan.sign_type === 'eSignature') {
       signature = {
         name: challan.signatureName || null,
-        image: challan.signatureImage ? `${baseUrl}${challan.signatureImage.replace(/\\/g, '/')}` : null,
+        image: challan.signatureImage ? signedUrlFor(challan.signatureImage.replace(/\\/g, '/')) : null,
       };
     } else if (challan.sign_type === 'digitalSignature' && challan.signature) {
       signature = {
         id: challan.signature.id,
         name: challan.signature.signatureName || null,
-        image: challan.signature.signatureImage ? `${baseUrl}${challan.signature.signatureImage.replace(/\\/g, '/')}` : null,
+        image: challan.signature.signatureImage ? signedUrlFor(challan.signature.signatureImage.replace(/\\/g, '/')) : null,
         createdAt: formatDateShort(challan.signature.createdAt),
       };
     }

@@ -180,7 +180,7 @@ on this branch, is the start of it.
 | Webhooks | Subscription model, delivery log, retry with backoff, signing secret |
 | Event bus | Internal domain events, so modules stop calling each other directly |
 | Notification engine | In-app inbox, per-user delivery preferences, multi-channel fan-out — replaces the vestigial `NotificationType` models |
-| Document management | `Document` model with versioning, polymorphic record linkage, and access control; replaces the flat `uploads/` folder |
+| Document management | `Document` model with versioning, polymorphic record linkage, and access control; replaces the blob keys denormalized onto owner rows |
 | Report engine | Dataset definitions with shared filter, group, drill-down, and saved-view runtime — see `modules-to-modify.md` §11 |
 | Workflow engine | Generalised from the accounting-only `ApprovalsQueue` — see §7 |
 | Scheduled jobs UI | Cron runners are currently code-only, with no visibility or retry |

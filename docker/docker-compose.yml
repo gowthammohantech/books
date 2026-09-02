@@ -48,13 +48,54 @@ services:
       SMTP_PASS: ${SMTP_PASS}
       SMTP_FROM: ${SMTP_FROM}
       REDIS_URL: ${REDIS_URL:-}
-    volumes:
-      - elixirbooks-uploads:/repo/apps/api/uploads
+      # Object storage for every upload in the product (logos, signatures,
+      # receipts, AI source bills). Azurite locally; a real storage account in
+      # Azure. Nothing is written to this container's filesystem.
+      AZURE_STORAGE_CONNECTION_STRING: ${AZURE_STORAGE_CONNECTION_STRING}
+      AZURE_STORAGE_CONTAINER: ${AZURE_STORAGE_CONTAINER:-uploads}
+      AZURE_STORAGE_SAS_TTL_MINUTES: ${AZURE_STORAGE_SAS_TTL_MINUTES:-60}
+      # The blob endpoint the BROWSER can reach, when it differs from the one
+      # this container uses. Signed URLs are rewritten onto it before they go
+      # out. Leave unset in Azure.
+      AZURE_STORAGE_PUBLIC_ENDPOINT: ${AZURE_STORAGE_PUBLIC_ENDPOINT:-}
     networks:
       - elixirbooks
     depends_on:
       postgres:
         condition: service_healthy
+      azurite:
+        condition: service_started
+
+  # Local stand-in for Azure Blob Storage. Not optional: every upload in the
+  # product goes here, so the lean stack includes it.
+  #
+  # Port 10000 is PUBLISHED because the signed URLs the SPA receives point at
+  # it directly -- the browser loads uploads from Azurite, not through the API.
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    restart: unless-stopped
+    # --skipApiVersionCheck: @azure/storage-blob sends a service API version
+    # newer than the one Azurite pins to, and Azurite rejects it outright
+    # ("The API version ... is not supported by Azurite") -- which fails every
+    # upload the moment the SDK is bumped. Skipping the check is Microsoft's own
+    # workaround and keeps the API code identical against Azurite and the real
+    # service; the alternative is pinning a service version in application code
+    # for the sake of the emulator.
+    command:
+      - "azurite-blob"
+      - "--blobHost"
+      - "0.0.0.0"
+      - "--blobPort"
+      - "10000"
+      - "--location"
+      - "/data"
+      - "--skipApiVersionCheck"
+    ports:
+      - "${AZURITE_PORT:-10000}:10000"
+    volumes:
+      - elixirbooks-azurite-data:/data
+    networks:
+      - elixirbooks
 
   web:
     build:
@@ -67,9 +108,10 @@ services:
     restart: unless-stopped
     environment:
       # Read at container start by docker-entrypoint.d/15-render-nginx-conf.sh.
-      # Set => nginx proxies /api and /uploads to the api service (same-origin
-      # SPA). Unset => nginx serves the SPA only, which is what standalone
-      # deploys of this image need.
+      # Set => nginx proxies /api to the api service (same-origin SPA).
+      # Unset => nginx serves the SPA only, which is what standalone deploys of
+      # this image need. Uploads are NOT proxied: they are loaded straight from
+      # blob storage using the signed URLs the API returns.
       API_ORIGIN: ${API_ORIGIN:-http://api:3001}
     ports:
       - "${WEB_PORT:-8080}:80"
@@ -123,7 +165,7 @@ services:
 volumes:
   elixirbooks-pg-data:
   elixirbooks-redis-data:
-  elixirbooks-uploads:
+  elixirbooks-azurite-data:
 
 networks:
   elixirbooks:

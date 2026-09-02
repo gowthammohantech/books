@@ -1,10 +1,8 @@
-import fs from 'fs';
-import path from 'path';
-
 import type { Request, Response } from 'express';
 
 import { prisma } from '../lib/prisma';
 import { requireTenantId } from '../lib/tenantScope';
+import { deleteObject } from '../lib/blobStorage';
 import { hashPassword, comparePassword } from '../utils/password';
 
 /**
@@ -92,16 +90,7 @@ export async function deleteAccount(req: Request, res: Response): Promise<void> 
       return;
     }
 
-    if (user.profileImage) {
-      const profileImagePath = path.join(__dirname, '../public', user.profileImage);
-      if (fs.existsSync(profileImagePath)) {
-        try {
-          fs.unlinkSync(profileImagePath);
-        } catch (fileErr) {
-          console.warn('Could not unlink profile image', profileImagePath, fileErr);
-        }
-      }
-    }
+    await deleteObject(user.profileImage);
 
     await prisma.user.delete({ where: { id: userId } });
 

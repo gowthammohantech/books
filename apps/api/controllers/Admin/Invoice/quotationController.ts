@@ -28,6 +28,7 @@ import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import { sendMail } from '../../../utils/mailer';
+import { signedUrlFor } from '../../../lib/blobStorage';
 
 type Tx = Prisma.TransactionClient;
 
@@ -55,10 +56,6 @@ function asNumber(value: unknown, fallback = 0): number {
   if (value === null || value === undefined) return fallback;
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
-}
-
-function buildBaseUrl(req: Request): string {
-  return `${req.protocol}://${req.get('host')}/`;
 }
 
 interface IncomingItem {
@@ -370,7 +367,6 @@ export async function createQuotation(req: Request, res: Response): Promise<void
 export async function getQuotationById(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params as { id: string };
-    const baseUrl = buildBaseUrl(req);
 
     const quotation = await prisma.quotation.findFirst({
       where: { id, isDeleted: false },
@@ -409,7 +405,7 @@ export async function getQuotationById(req: Request, res: Response): Promise<voi
           name: quotation.customer.name || '',
           email: quotation.customer.email || null,
           phone: quotation.customer.phone || null,
-          image: quotation.customer.image ? `${baseUrl}${quotation.customer.image.replace(/\\/g, '/')}` : '',
+          image: quotation.customer.image ? signedUrlFor(quotation.customer.image.replace(/\\/g, '/')) : '',
           billingAddress: quotation.customer.billingAddress || null,
         }
       : null);
@@ -421,7 +417,7 @@ export async function getQuotationById(req: Request, res: Response): Promise<voi
           email: quotation.billFromUser.email || null,
           phone: quotation.billFromUser.phone || null,
           profileImage: quotation.billFromUser.profileImage
-            ? `${baseUrl}${quotation.billFromUser.profileImage.replace(/\\/g, '/')}`
+            ? signedUrlFor(quotation.billFromUser.profileImage.replace(/\\/g, '/'))
             : '',
           address: quotation.billFromUser.address || null,
           user_type: quotation.billFromUser.user_type || 1,
@@ -448,7 +444,7 @@ export async function getQuotationById(req: Request, res: Response): Promise<voi
           email: quotation.billToCustomer.email || null,
           phone: quotation.billToCustomer.phone || null,
           image: quotation.billToCustomer.image
-            ? `${baseUrl}${quotation.billToCustomer.image.replace(/\\/g, '/')}`
+            ? signedUrlFor(quotation.billToCustomer.image.replace(/\\/g, '/'))
             : '',
           billingAddress: quotation.billToCustomer.billingAddress || null,
         }
@@ -466,7 +462,7 @@ export async function getQuotationById(req: Request, res: Response): Promise<voi
       : null;
 
     const signatureImage = quotation.signatureImage
-      ? `${baseUrl}${quotation.signatureImage.replace(/\\/g, '/')}`
+      ? signedUrlFor(quotation.signatureImage.replace(/\\/g, '/'))
       : null;
 
     let signature: Record<string, unknown> | null = null;
@@ -477,7 +473,7 @@ export async function getQuotationById(req: Request, res: Response): Promise<voi
         id: quotation.signature.id,
         name: quotation.signature.signatureName || null,
         image: quotation.signature.signatureImage
-          ? `${baseUrl}${quotation.signature.signatureImage.replace(/\\/g, '/')}`
+          ? signedUrlFor(quotation.signature.signatureImage.replace(/\\/g, '/'))
           : null,
       };
     }
@@ -820,8 +816,6 @@ export async function listQuotations(req: Request, res: Response): Promise<void>
       ];
     }
 
-    const baseUrl = buildBaseUrl(req);
-
     const [total, rows] = await Promise.all([
       prisma.quotation.count({ where }),
       prisma.quotation.findMany({
@@ -873,7 +867,7 @@ export async function listQuotations(req: Request, res: Response): Promise<void>
             email: quotation.customer.email || null,
             phone: quotation.customer.phone || null,
             image: quotation.customer.image
-              ? `${baseUrl}${quotation.customer.image.replace(/\\/g, '/')}`
+              ? signedUrlFor(quotation.customer.image.replace(/\\/g, '/'))
               : '',
           }
         : null);
@@ -894,7 +888,7 @@ export async function listQuotations(req: Request, res: Response): Promise<void>
             email: quotation.billToCustomer.email || null,
             phone: quotation.billToCustomer.phone || null,
             image: quotation.billToCustomer.image
-              ? `${baseUrl}${quotation.billToCustomer.image.replace(/\\/g, '/')}`
+              ? signedUrlFor(quotation.billToCustomer.image.replace(/\\/g, '/'))
               : '',
             billingAddress: quotation.billToCustomer.billingAddress || null,
           }
@@ -909,7 +903,7 @@ export async function listQuotations(req: Request, res: Response): Promise<void>
           }
         : null;
       const signatureImage = quotation.signatureImage
-        ? `${baseUrl}${quotation.signatureImage.replace(/\\/g, '/')}`
+        ? signedUrlFor(quotation.signatureImage.replace(/\\/g, '/'))
         : null;
       let signature: Record<string, unknown> | null = null;
       if (quotation.sign_type === 'eSignature') {
@@ -1059,14 +1053,14 @@ interface AllCustomersQuery {
   status?: string;
 }
 
-function formatCustomerSummary(customer: Customer, baseUrl: string) {
+function formatCustomerSummary(customer: Customer) {
   return {
     id: customer.id,
     name: customer.name,
     email: customer.email,
     phone: customer.phone,
     status: customer.status,
-    image: customer.image ? `${baseUrl}${customer.image.replace(/\\/g, '/')}` : null,
+    image: customer.image ? signedUrlFor(customer.image.replace(/\\/g, '/')) : null,
     billingAddress: customer.billingAddress,
     shippingAddress: customer.shippingAddress,
     createdAt: customer.createdAt,
@@ -1077,7 +1071,6 @@ function formatCustomerSummary(customer: Customer, baseUrl: string) {
 export async function getAllCustomers(req: Request, res: Response): Promise<void> {
   try {
     const { search = '', status } = req.query as AllCustomersQuery;
-    const baseUrl = buildBaseUrl(req);
 
     const where: Prisma.CustomerWhereInput = { isDeleted: false };
     if (status === 'Active' || status === 'Inactive') where.status = status;
@@ -1098,7 +1091,7 @@ export async function getAllCustomers(req: Request, res: Response): Promise<void
       success: true,
       message: 'Customers fetched successfully',
       data: {
-        customers: customers.map((c) => formatCustomerSummary(c, baseUrl)),
+        customers: customers.map((c) => formatCustomerSummary(c)),
         count: customers.length,
       },
     });
@@ -1202,21 +1195,12 @@ export async function sendQuotationEmailAndUpdateStatus(req: Request, res: Respo
       html: htmlContent,
     };
 
-    if (sendAttachment) {
-      const pdfPath = `${process.env.QUOTATION_UPLOAD_PATH || './uploads/quotations'}/${quotationId}.pdf`;
-      // Only attach if the PDF exists; skip gracefully if it hasn't been generated
-      const fs = await import('fs');
-      if (fs.existsSync(pdfPath)) {
-        mailOptions.attachments = [
-          {
-            filename: `Quotation-${quotationId}.pdf`,
-            path: pdfPath,
-          },
-        ];
-      } else {
-        console.warn(`Quotation PDF not found at ${pdfPath}; sending email without attachment`);
-      }
-    }
+    // `sendAttachment` used to look for a PDF on local disk. Nothing in the
+    // product has ever written one -- PDFs are generated in the browser -- so
+    // the lookup could only ever miss, and it was the last filesystem read left
+    // after uploads moved to blob storage. The flag is still accepted and still
+    // means "attach the document"; wiring it up needs server-side rendering
+    // that does not exist yet.
 
     // Send first — only persist status change on success
     await sendMail(mailOptions);

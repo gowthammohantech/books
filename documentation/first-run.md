@@ -26,7 +26,7 @@ After registration, the onboarding flow prompts you to create your company
 profile. Fill in:
 
 - Company name, address, phone, and email
-- Logo (uploaded file, stored in the `elixirbooks-uploads` volume)
+- Logo (uploaded file, stored in the blob container, not on disk)
 - Tax identification numbers relevant to your jurisdiction
 
 These settings are editable later under **Settings → Company Settings**.
@@ -155,9 +155,11 @@ make down-clean
 make up
 ```
 
-The `down-clean` target removes the `elixirbooks-pg-data` and `elixirbooks-uploads`
-volumes. This is irreversible — ensure you have a backup if there is any
-data worth keeping.
+The `down-clean` target removes the `elixirbooks-pg-data` and
+`elixirbooks-azurite-data` volumes — the database and, locally, every uploaded
+file. This is irreversible — ensure you have a backup if there is any data worth
+keeping. (In a real deployment the uploads live in the storage account, which
+`down-clean` cannot touch.)
 
 ---
 

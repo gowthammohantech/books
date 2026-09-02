@@ -7,6 +7,7 @@ import {
   requireTenantId,
   UnauthorizedError,
 } from '../lib/tenantScope';
+import { signedUrlFor } from '../lib/blobStorage';
 
 // =============================================================================
 // Helpers
@@ -337,7 +338,7 @@ export async function getInventoryReport(req: Request, res: Response): Promise<v
           currencyCode: product.currencyCode ?? null,
           alertQuantity: product.alert_quantity,
           thumbnail: product.product_image
-            ? `${process.env.BASE_URL ?? ''}${product.product_image}`
+            ? signedUrlFor(product.product_image)
             : null,
           unit: product.unit ? product.unit.unit_name : null,
           categoryName: product.category ? product.category.category_name : '',
@@ -526,7 +527,7 @@ export async function getBestSellerReport(req: Request, res: Response): Promise<
               : 'N/A',
           payment_mode: 'Cash',
           image: product.product_image
-            ? `${process.env.BASE_URL ?? ''}${product.product_image}`
+            ? signedUrlFor(product.product_image)
             : '',
         };
       });
@@ -680,7 +681,7 @@ export async function getLowStockReport(req: Request, res: Response): Promise<vo
       currencyCode: product.currencyCode ?? null,
       alertQuantity: product.alert_quantity,
       thumbnail: product.product_image
-        ? `${process.env.BASE_URL ?? ''}${product.product_image}`
+        ? signedUrlFor(product.product_image)
         : '',
       unit: product.unit ? product.unit.unit_name : null,
       categoryName: product.category?.category_name ?? '',
@@ -800,7 +801,7 @@ export async function getOutStockReport(req: Request, res: Response): Promise<vo
       currencyCode: product.currencyCode ?? null,
       alertQuantity: product.alert_quantity,
       thumbnail: product.product_image
-        ? `${process.env.BASE_URL ?? ''}${product.product_image}`
+        ? signedUrlFor(product.product_image)
         : '',
       unit: product.unit ? product.unit.unit_name : null,
       categoryName: product.category?.category_name ?? '',
@@ -1052,7 +1053,7 @@ export async function getStockHistoryReport(req: Request, res: Response): Promis
         soldQuantity: item.soldQuantity,
         defectiveQuantity: item.defectiveQuantity,
         finalQuantity: item.finalQuantity,
-        image: item.image ? `${process.env.BASE_URL ?? ''}${item.image}` : '',
+        image: item.image ? signedUrlFor(item.image) : '',
       })),
       pagination: {
         page: pageN,

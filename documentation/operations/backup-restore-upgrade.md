@@ -4,14 +4,21 @@
 
 ## What Needs to Be Backed Up
 
-Two Docker volumes hold all persistent state:
+Persistent state lives in two places:
 
-| Volume | Contents |
+| Where | Contents |
 |---|---|
-| `elixirbooks_elixirbooks-pg-data` | The entire PostgreSQL database (all invoices, customers, settings, transactions) |
-| `elixirbooks_elixirbooks-uploads` | Uploaded files: invoice and company logos, expense receipt attachments |
+| `elixirbooks_elixirbooks-pg-data` (volume) | The entire PostgreSQL database (all invoices, customers, settings, transactions) |
+| The blob container named by `AZURE_STORAGE_CONTAINER` | Uploaded files: company logos, signatures, product images, expense receipt attachments, AI source bills |
 
-Back up both volumes. Losing either without a restore path means data loss.
+Back up both. Losing either without a restore path means data loss — and note
+that the two are coupled: database rows store blob **keys**, so a database
+restored to a different point than the container will reference files that are
+missing (broken images) or orphaned (files nothing points at).
+
+In local development the blob container is Azurite, whose data sits in the
+`elixirbooks_elixirbooks-azurite-data` volume. Dev uploads are not usually worth
+backing up; if you want to, use the volume recipe below with that volume name.
 
 ---
 
@@ -38,19 +45,29 @@ ls -lh elixirbooks-$(date +%F).sql.gz
 
 ## Backing Up Uploaded Files
 
-The uploads volume is backed up using a temporary Alpine container that
-has access to the volume:
+Uploaded files are no longer on disk, so there is no volume to tar. Back up the
+storage account instead - its own durability options are stronger than a nightly
+tarball:
+
+- **Soft delete** (blobs and containers) retains deleted files for a retention
+  window, which covers the common accident of a wrong bulk delete.
+- **Versioning** keeps the previous content of an overwritten blob.
+- **Point-in-time restore** rolls the container back to an earlier moment, which
+  is the option that pairs with a PostgreSQL restore.
+- **Geo-redundancy** (GRS/RA-GRS) covers loss of the region.
+
+Turn these on for the storage account once, in the portal or with
+`az storage account blob-service-properties update`. Nothing in this repo
+configures them for you.
+
+To take an explicit copy anyway - before a risky migration, say:
 
 ```bash
-docker run --rm \
-  -v elixirbooks_elixirbooks-uploads:/data \
-  -v "$PWD":/backup \
-  alpine \
-  tar czf /backup/uploads-$(date +%F).tar.gz -C /data .
+az storage blob download-batch \
+  --source uploads \
+  --destination ./uploads-backup-$(date +%F) \
+  --connection-string "$AZURE_STORAGE_CONNECTION_STRING"
 ```
-
-Note: the volume name is prefixed with the compose project name (`elixirbooks_`).
-If you changed the compose project name, adjust accordingly.
 
 ---
 
@@ -62,12 +79,11 @@ Add a daily cron job on the host. Example crontab entry (runs at 02:00):
 0 2 * * * cd /path/to/elixirbooks && \
   docker compose --env-file docker/.env -f docker/docker-compose.yml \
     exec -T postgres pg_dump -U elixirbooks elixirbooks \
-    | gzip > /backups/elixirbooks-$(date +\%F).sql.gz && \
-  docker run --rm \
-    -v elixirbooks_elixirbooks-uploads:/data \
-    -v /backups:/backup \
-    alpine tar czf /backup/uploads-$(date +\%F).tar.gz -C /data .
+    | gzip > /backups/elixirbooks-$(date +\%F).sql.gz
 ```
+
+Only the database needs a cron job. Uploaded files are covered by the storage
+account's soft-delete / versioning / point-in-time settings described above.
 
 Replace `/path/to/elixirbooks` with your actual repo root and `/backups` with
 your backup destination.
@@ -113,12 +129,17 @@ docker compose --env-file docker/.env -f docker/docker-compose.yml up -d api
 
 ## Restoring Uploaded Files
 
+Use the storage account's point-in-time restore, choosing a moment as close as
+possible to the database dump you restored - the rows hold blob keys, so the two
+have to agree about which files exist.
+
+If you took an explicit copy, upload it back:
+
 ```bash
-docker run --rm \
-  -v elixirbooks_elixirbooks-uploads:/data \
-  -v /path/to/backup:/backup \
-  alpine \
-  sh -c "cd /data && tar xzf /backup/uploads-2026-01-15.tar.gz"
+az storage blob upload-batch \
+  --destination uploads \
+  --source ./uploads-backup-2026-01-15 \
+  --connection-string "$AZURE_STORAGE_CONNECTION_STRING"
 ```
 
 ---
@@ -138,8 +159,9 @@ The API container's entrypoint automatically runs `prisma migrate deploy`
 on boot, so any new database migrations are applied without manual
 intervention.
 
-**Back up before upgrading.** Run the PostgreSQL and uploads backup commands
-above before pulling new code, especially for significant version bumps.
+**Back up before upgrading.** Take the PostgreSQL dump above before pulling new
+code, especially for significant version bumps. Uploaded files are covered by the
+storage account's retention settings and need no separate step.
 
 ### Frontend-only config change
 

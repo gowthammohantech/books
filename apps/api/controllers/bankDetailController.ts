@@ -15,6 +15,7 @@ import {
   UnauthorizedError,
 } from '../lib/tenantScope';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
+import { signedUrlFor } from '../lib/blobStorage';
 
 // -----------------------------------------------------------------------------
 // Helpers
@@ -1090,7 +1091,6 @@ export async function getBankTransactionDetails(
       return;
     }
 
-    const baseUrl = process.env.BASE_URL ?? '';
     let relatedData: unknown = null;
 
     switch (transaction.relatedType) {
@@ -1115,7 +1115,7 @@ export async function getBankTransactionDetails(
                   email: owner.email || '',
                   phone: owner.phone || '',
                   profileImage: owner.profileImage
-                    ? `${baseUrl}/${owner.profileImage}`
+                    ? signedUrlFor(owner.profileImage)
                     : '',
                 }
               : null;
@@ -1140,7 +1140,7 @@ export async function getBankTransactionDetails(
               category,
               description: expense.description || '',
               attachment: expense.attachment
-                ? `${baseUrl}/${expense.attachment}`
+                ? signedUrlFor(expense.attachment)
                 : '',
               sourceType: expense.sourceType,
               bank: expense.bank
@@ -1217,7 +1217,7 @@ export async function getBankTransactionDetails(
                 payment.supplier?.supplier_phone ||
                 null;
               const rawImage = payment.supplier?.profileImage || directContact?.image;
-              const supplierProfileImage = rawImage ? `${baseUrl}/${rawImage}` : '';
+              const supplierProfileImage = rawImage ? signedUrlFor(rawImage) : '';
               relatedData = {
                 ...payment,
                 supplierId: {

@@ -83,11 +83,6 @@ COPY --chown=app:app apps/api/docker-entrypoint.sh /repo/apps/api/docker-entrypo
 # hoisted root node_modules, which is why that whole tree is copied above.
 RUN npx prisma generate
 
-# uploads must exist and be writable by the app user (compose mounts a volume
-# here). Subdirectories are needed by the multer-based controllers.
-RUN mkdir -p /repo/apps/api/uploads/products /repo/apps/api/uploads/company \
-    && chown -R app:app /repo/apps/api/uploads
-
 RUN sed -i 's/\r$//' docker-entrypoint.sh && chmod +x docker-entrypoint.sh
 
 USER app

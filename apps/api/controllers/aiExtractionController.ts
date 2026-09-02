@@ -1,6 +1,3 @@
-import fs from 'fs/promises';
-import path from 'path';
-
 import type { Request, Response } from 'express';
 import type { Prisma } from '@prisma/client';
 
@@ -11,6 +8,7 @@ import { normalizeBillExtraction, type BillExtractionResult } from '../lib/aiPro
 import { getProviderForUser } from '../lib/aiProviders/registry';
 import { logAiUsage } from '../lib/aiUsage';
 import { tenantOwnerUserId } from '../lib/actor';
+import { deleteObject } from '../lib/blobStorage';
 
 /**
  * AI bill extraction controller (Cluster H, slice H.2).
@@ -50,10 +48,9 @@ export async function extractBill(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const sourceFilePath = path.relative(
-      path.join(__dirname, '..'),
-      req.file.path,
-    );
+    // The blob key persistUploads stamped on the file. Kept so the extraction
+    // history page can re-view the bill.
+    const sourceFilePath = req.file.path;
 
     // Create PENDING row first so we have an id to write back to even if
     // the provider blows up. Errors get persisted into the same row.
@@ -71,8 +68,7 @@ export async function extractBill(req: Request, res: Response): Promise<void> {
     let costUsd = 0;
     try {
       const provider = req.aiProvider ?? (await getProviderForUser(tenantId, { requireEnabled: true }));
-      const fileBuffer = await fs.readFile(req.file.path);
-      const result = await provider.extractDocument(fileBuffer, req.file.mimetype);
+      const result = await provider.extractDocument(req.file.buffer, req.file.mimetype);
       extracted = normalizeBillExtraction(result.fields);
       rawResponse = result.rawResponse;
       costUsd = result.costUsd ?? 0;
@@ -433,18 +429,8 @@ export async function discardJob(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Best-effort source file cleanup.
-    if (job.sourceFilePath) {
-      const absolutePath = path.isAbsolute(job.sourceFilePath)
-        ? job.sourceFilePath
-        : path.join(__dirname, '..', job.sourceFilePath);
-      try {
-        await fs.unlink(absolutePath);
-      } catch (fsErr) {
-        // File might already be gone; not fatal.
-        console.warn('aiExtraction.discardJob: failed to delete source file', absolutePath, fsErr);
-      }
-    }
+    // Best-effort source cleanup: a discarded job's bill has no reader left.
+    await deleteObject(job.sourceFilePath);
 
     const updated = await prisma.aiExtractionJob.update({
       where: { id: job.id },

@@ -26,8 +26,8 @@ import * as dashboardController from '../controllers/Admin/dashboardController';
 import { uploadCompanyFields, handleUploadError } from '../middleware/uploadCompanyImages';
 import protect from '../middleware/authMiddleware';
 import { requirePermission, type PermCheck } from '../middleware/requirePermission';
-import upload from '../middleware/upload';
-import setup from '../middleware/setup';
+import { uploadSingle, uploadAny } from '../middleware/upload';
+import { uploadSetupSingle } from '../middleware/setup';
 import { uploadProductFields } from '../middleware/uploadProductImages';
 import { createUnitValidator, updateUnitValidator } from '../validators/unitsValidator';
 import { createBrandValidator, updateBrandValidator } from '../validators/brandValidator';
@@ -110,7 +110,7 @@ import * as aiConfigController from '../controllers/aiConfigController';
 import * as aiExtractionController from '../controllers/aiExtractionController';
 import * as aiChatController from '../controllers/aiChatController';
 import * as aiUsageController from '../controllers/aiUsageController';
-import uploadAiJobs from '../middleware/uploadAiJobs';
+import { uploadAiJobSingle } from '../middleware/uploadAiJobs';
 import { requireAiEnabled } from '../middleware/requireAiEnabled';
 import { aiRateLimit } from '../middleware/aiRateLimit';
 import * as agingController from '../controllers/agingController';
@@ -160,27 +160,27 @@ router.get('/country/:id', protect, requirePermission('finance-settings', 'view'
 router.get('/state/:id', protect, requirePermission('finance-settings', 'view'), adminController.getStateById);
 router.get('/city/:id', protect, requirePermission('finance-settings', 'view'), adminController.getCityById);
 router.get('/profile', protect, adminController.getProfile); /* self */
-router.put('/profile', protect, upload.single('profileImage'), updateProfileValidator, adminController.updateProfile); /* self */
+router.put('/profile', protect, uploadSingle('profileImage'), updateProfileValidator, adminController.updateProfile); /* self */
 
 //Unit routes
 router.get('/units', protect, requirePermission('product-services', 'view'), UnitsController.getUnits);
-router.post('/units', protect, requirePermission('product-services', 'create'), upload.any(), createUnitValidator, UnitsController.createUnit);
+router.post('/units', protect, requirePermission('product-services', 'create'), uploadAny(), createUnitValidator, UnitsController.createUnit);
 router.get('/units/:id', protect, requirePermission('product-services', 'view'), UnitsController.getUnitById);
-router.put('/units/:id', protect, requirePermission('product-services', 'edit'), upload.any(), updateUnitValidator, UnitsController.updateUnit);
+router.put('/units/:id', protect, requirePermission('product-services', 'edit'), uploadAny(), updateUnitValidator, UnitsController.updateUnit);
 router.delete('/units/:id', protect, requirePermission('product-services', 'delete'), UnitsController.deleteUnit);
 
 //Brand routes
 router.get('/brands', protect, requirePermission('product-services', 'view'), BrandsController.getAllBrands);
-router.post('/brands', protect, requirePermission('product-services', 'create'), upload.any(), createBrandValidator, BrandsController.createBrand);
+router.post('/brands', protect, requirePermission('product-services', 'create'), uploadAny(), createBrandValidator, BrandsController.createBrand);
 router.get('/brands/:id', protect, requirePermission('product-services', 'view'), BrandsController.getBrandById);
-router.put('/brands/:id', protect, requirePermission('product-services', 'edit'), upload.any(), updateBrandValidator, BrandsController.updateBrand);
+router.put('/brands/:id', protect, requirePermission('product-services', 'edit'), uploadAny(), updateBrandValidator, BrandsController.updateBrand);
 router.delete('/brands/:id', protect, requirePermission('product-services', 'delete'), BrandsController.deleteBrand);
 
 //Category routes
 router.get('/categories', protect, requirePermission('product-services', 'view'), CategoryController.getAllCategories);
-router.post('/categories', protect, requirePermission('product-services', 'create'), upload.any(), createCategoryValidator, CategoryController.createCategory);
+router.post('/categories', protect, requirePermission('product-services', 'create'), uploadAny(), createCategoryValidator, CategoryController.createCategory);
 router.get('/categories/:id', protect, requirePermission('product-services', 'view'), CategoryController.getCategoryById);
-router.put('/categories/:id', protect, requirePermission('product-services', 'edit'), upload.any(), updateCategoryValidator, CategoryController.updateCategory);
+router.put('/categories/:id', protect, requirePermission('product-services', 'edit'), uploadAny(), updateCategoryValidator, CategoryController.updateCategory);
 router.delete('/categories/:id', protect, requirePermission('product-services', 'delete'), CategoryController.deleteCategory);
 
 // Tax Rate routes
@@ -217,27 +217,27 @@ router.get('/product-units', protect, requirePermission('product-services', 'vie
 router.get('/product-taxes', protect, requirePermission('product-services', 'view'), ProductController.getAllTaxGroups);
 
 //suppliers routes
-router.post('/suppliers', protect, requirePermission('suppliers', 'create'), upload.single('profileImage'), createSupplierValidator, SupplierController.createSupplier);
+router.post('/suppliers', protect, requirePermission('suppliers', 'create'), uploadSingle('profileImage'), createSupplierValidator, SupplierController.createSupplier);
 router.get('/suppliers', protect, requirePermission(['suppliers', 'expenses'], 'view'), SupplierController.listSuppliers);
 router.get('/suppliers/:id', protect, requirePermission('suppliers', 'view'), SupplierController.getSupplierById);
-router.put('/suppliers/:id', protect, requirePermission('suppliers', 'edit'), upload.single('profileImage'), SupplierController.updateSupplier);
+router.put('/suppliers/:id', protect, requirePermission('suppliers', 'edit'), uploadSingle('profileImage'), SupplierController.updateSupplier);
 router.delete('/suppliers/:id', protect, requirePermission('suppliers', 'delete'), SupplierController.deleteSupplier);
 //debitnote
-router.post('/debitnote', protect, requirePermission('debit-notes', 'create'), upload.single('signatureImage'), debitNoteValidator, debitNoteController.createDebitNote);
+router.post('/debitnote', protect, requirePermission('debit-notes', 'create'), uploadSingle('signatureImage'), debitNoteValidator, debitNoteController.createDebitNote);
 router.get('/debitnote', protect, requirePermission('debit-notes', 'view'), debitNoteController.getAllDebitNotes);
-router.put('/debitnote', protect, requirePermission('debit-notes', 'edit'), upload.single('signatureImage'), debitNoteController.createDebitNote);
+router.put('/debitnote', protect, requirePermission('debit-notes', 'edit'), uploadSingle('signatureImage'), debitNoteController.createDebitNote);
 router.get('/debitnote/:id', protect, requirePermission('debit-notes', 'view'), debitNoteController.getDebitNoteById);
 router.delete('/debitnote/:id', protect, requirePermission('debit-notes', 'delete'), debitNoteController.deleteDebitNote);
 
 //supplierpayment
-router.post('/supplierpayments', protect, requirePermission('supplier-payments', 'create'), upload.single('attachment'), supplierPaymentValidator, supplierPaymentController.createSupplierPayment);
+router.post('/supplierpayments', protect, requirePermission('supplier-payments', 'create'), uploadSingle('attachment'), supplierPaymentValidator, supplierPaymentController.createSupplierPayment);
 router.get('/supplierpayments', protect, requirePermission('supplier-payments', 'view'), supplierPaymentController.listSupplierPayments);
-router.put('/supplierpayments/:id', protect, requirePermission('supplier-payments', 'edit'), upload.single('attachment'), supplierPaymentController.updateSupplierPayment);
+router.put('/supplierpayments/:id', protect, requirePermission('supplier-payments', 'edit'), uploadSingle('attachment'), supplierPaymentController.updateSupplierPayment);
 router.delete('/supplierpayments/:id', protect, requirePermission('supplier-payments', 'delete'), supplierPaymentController.deleteSupplierPayment);
 
 //purchase
-router.post('/purchases', protect, requirePermission('purchase-list', 'create'), upload.single('signatureImage'), purchaseValidator, purchaseController.createPurchase);
-router.put('/purchases/:id', protect, requirePermission('purchase-list', 'edit'), upload.single('signatureImage'), purchaseController.updatePurchase);
+router.post('/purchases', protect, requirePermission('purchase-list', 'create'), uploadSingle('signatureImage'), purchaseValidator, purchaseController.createPurchase);
+router.put('/purchases/:id', protect, requirePermission('purchase-list', 'edit'), uploadSingle('signatureImage'), purchaseController.updatePurchase);
 router.get('/purchases', protect, requirePermission('purchase-list', 'view'), purchaseController.getAllPurchases);
 router.get('/purchases/:id', protect, requirePermission(['purchase-list', 'debit-notes'], 'view'), purchaseController.getPurchaseById);
 router.delete('/purchases/:id', protect, requirePermission('purchase-list', 'delete'), purchaseController.deletePurchase);
@@ -250,10 +250,10 @@ router.post('/purchases/payments/:paymentId/void', protect, requirePermission('p
 router.post('/purchases/mail', protect, requirePermission('purchase-list', 'edit'), purchaseController.sendPurchaseEmail);
 
 //purchaseOrder
-router.post('/purchase-order', protect, requirePermission('purchase-orders', 'create'), upload.single('signatureImage'), purchaseOrderValidator, purchaseOrderController.createPurchaseOrder);
+router.post('/purchase-order', protect, requirePermission('purchase-orders', 'create'), uploadSingle('signatureImage'), purchaseOrderValidator, purchaseOrderController.createPurchaseOrder);
 router.get('/purchase-orders', protect, requirePermission('purchase-orders', 'view'), purchaseOrderController.listPurchaseOrders);
 router.get('/purchase-orders/:id', protect, requirePermission('purchase-orders', 'view'), purchaseOrderController.getPurchaseOrderById);
-router.put('/purchase-orders/:id', protect, requirePermission('purchase-orders', 'edit'), upload.single('signatureImage'), updatePurchaseOrderValidator, purchaseOrderController.updatePurchaseOrder);
+router.put('/purchase-orders/:id', protect, requirePermission('purchase-orders', 'edit'), uploadSingle('signatureImage'), updatePurchaseOrderValidator, purchaseOrderController.updatePurchaseOrder);
 router.delete('/purchase-orders/:id', protect, requirePermission('purchase-orders', 'delete'), purchaseOrderController.deletePurchaseOrder);
 router.get('/purchase-minimal', protect, requirePermission('purchase-orders', 'view'), purchaseOrderController.listPurchaseOrdersMinimal);
 
@@ -265,9 +265,9 @@ router.get('/bankdetailsrecent', protect, requirePermission([...DOCUMENT_MODULES
 router.get('/signaturesrecent', protect, requirePermission([...DOCUMENT_MODULES, 'general-settings'], 'view'), purchaseOrderController.getUserSignatures);
 router.get('/tax-group-details', protect, requirePermission([...DOCUMENT_MODULES, 'finance-settings'], 'view'), purchaseOrderController.getAllTaxGroupsDetails);
 //signature
-router.post('/signatures', protect, requirePermission('general-settings', 'create'), upload.single('signatureImage'), createSignatureValidator, SignatureController.createSignature);
+router.post('/signatures', protect, requirePermission('general-settings', 'create'), uploadSingle('signatureImage'), createSignatureValidator, SignatureController.createSignature);
 router.get('/signatures', protect, requirePermission('general-settings', 'view'), SignatureController.getUserSignatures);
-router.put('/signatures/:signatureId', protect, requirePermission('general-settings', 'edit'), upload.single('signatureImage'), updateSignatureValidator, SignatureController.updateSignature);
+router.put('/signatures/:signatureId', protect, requirePermission('general-settings', 'edit'), uploadSingle('signatureImage'), updateSignatureValidator, SignatureController.updateSignature);
 router.delete('/signatures/:signatureId', protect, requirePermission('general-settings', 'delete'), SignatureController.deleteSignature);
 router.patch('/signatures/set-default/:signatureId', protect, requirePermission('general-settings', 'edit'), SignatureController.setAsDefaultSignature);
 router.patch('/signatures/status/:signatureId', protect, requirePermission('general-settings', 'edit'), SignatureController.updateSignatureStatus);
@@ -346,7 +346,7 @@ router.put('/company-details/:tenantId', protect, requirePermission('website-set
 // (actually editing company settings) stays Settings-gated.
 router.get('/company-details/:tenantId', protect, requirePermission([...DOCUMENT_MODULES, 'website-settings'], 'view'), CompanySettings.getCompanySettings);
 router.get('/system-settings', protect, CompanySettings.getBasicDetails); /* self */
-router.patch('/company/setup', protect, requirePermission('website-settings', 'edit'), setup.single('siteLogo'), CompanySettings.updateCompanySetup);
+router.patch('/company/setup', protect, requirePermission('website-settings', 'edit'), uploadSetupSingle('siteLogo'), CompanySettings.updateCompanySetup);
 // Also powers per-document numbering config (e.g. the invoice/quotation
 // number-format modal) — additionally allow anyone who can edit a document
 // type through, so staff don't need Settings access just to configure their
@@ -384,8 +384,8 @@ router.put('/document-defaults', protect, requirePermission('general-settings', 
  *       201:
  *         description: Customer created
  */
-router.post('/customers', protect, requirePermission('customers', 'create'), upload.single('image'), createCustomerValidator, customerController.createCustomer);
-router.put('/customers/:id', protect, requirePermission('customers', 'edit'), upload.single('image'), customerController.updateCustomer);
+router.post('/customers', protect, requirePermission('customers', 'create'), uploadSingle('image'), createCustomerValidator, customerController.createCustomer);
+router.put('/customers/:id', protect, requirePermission('customers', 'edit'), uploadSingle('image'), customerController.updateCustomer);
 
 /**
  * @swagger
@@ -478,10 +478,10 @@ router.get('/localizations', protect, requirePermission('general-settings', 'vie
 router.get('/settings-dropdown', protect, localizationController.getSettingsDropdownList); /* self */
 
 //Quotation
-router.post('/quotations', protect, requirePermission('quotations', 'create'), upload.single('signatureImage'), quotationValidator, quotationController.createQuotation);
+router.post('/quotations', protect, requirePermission('quotations', 'create'), uploadSingle('signatureImage'), quotationValidator, quotationController.createQuotation);
 router.get('/quotations', protect, requirePermission('quotations', 'view'), quotationController.listQuotations);
 router.get('/quotations/:id', protect, requirePermission('quotations', 'view'), quotationController.getQuotationById);
-router.put('/quotations/:id', protect, requirePermission('quotations', 'edit'), upload.single('signatureImage'), updateQuotationValidator, quotationController.updateQuotation);
+router.put('/quotations/:id', protect, requirePermission('quotations', 'edit'), uploadSingle('signatureImage'), updateQuotationValidator, quotationController.updateQuotation);
 router.delete('/quotations/:id', protect, requirePermission('quotations', 'delete'), quotationController.deleteQuotation);
 router.get('/quotations', protect, requirePermission('quotations', 'view'), quotationController.listQuotations);
 router.get('/customers-all', protect, requirePermission('customers', 'view'), quotationController.getAllCustomers);
@@ -515,7 +515,7 @@ router.get('/invoice-templates', protect, requirePermission('general-settings', 
  *       201:
  *         description: Invoice created
  */
-router.post('/invoices', protect, requirePermission('invoices', 'create'), upload.single('signatureImage'), createInvoiceValidator, invoiceController.createInvoice);
+router.post('/invoices', protect, requirePermission('invoices', 'create'), uploadSingle('signatureImage'), createInvoiceValidator, invoiceController.createInvoice);
 router.post('/invoices/mail', protect, requirePermission('invoices', 'edit'), invoiceController.sendInvoiceEmail);
 router.post('/invoices/update-status', protect, requirePermission('invoices', 'edit'), invoiceController.updateInvoiceStatus);
 router.post('/invoices/:id/mark-sent', protect, requirePermission('invoices', 'edit'), invoiceController.markInvoiceSent);
@@ -544,9 +544,9 @@ router.get('/invoices/next-number', protect, requirePermission('invoices', 'view
 router.get('/invoices', protect, requirePermission('invoices', 'view'), invoiceController.getAllInvoices);
 router.get('/invoices/:id', protect, requirePermission(['invoices', 'credit-notes', 'delivery-challans'], 'view'), invoiceController.getInvoice);
 router.get('/invoices/details/:id', protect, requirePermission('invoices', 'view'), invoiceController.getInvoice);
-router.put('/invoices/:id', protect, requirePermission('invoices', 'edit'), upload.single('signatureImage'), invoiceController.updateInvoice);
+router.put('/invoices/:id', protect, requirePermission('invoices', 'edit'), uploadSingle('signatureImage'), invoiceController.updateInvoice);
 router.delete('/invoices/:id', protect, requirePermission('invoices', 'delete'), invoiceController.deleteInvoice);
-router.post('/quotation-convert-to-invoice/:quotationId', protect, requirePermission('invoices', 'edit'), upload.single('signatureImage'), invoiceController.convertQuotationToInvoice);
+router.post('/quotation-convert-to-invoice/:quotationId', protect, requirePermission('invoices', 'edit'), uploadSingle('signatureImage'), invoiceController.convertQuotationToInvoice);
 router.post('/invoices/:id/convert-to-invoice', protect, requirePermission('invoices', 'edit'), invoiceController.convertProformaToInvoice);
 router.post('/invoice/payment', protect, requirePermission('invoices', 'create'), invoiceController.recordInvoicePayment);
 router.post('/invoices-minimal', protect, requirePermission(['invoices', 'banking', 'credit-notes', 'delivery-challans'], 'view'), invoiceController.listInvoicesMinimal);
@@ -596,17 +596,17 @@ router.get("/notification-types", protect, requirePermission('general-settings',
 
 
 //credit notes
-router.post('/credit-notes', protect, requirePermission('credit-notes', 'create'), upload.single('signatureImage'), createCreditNoteValidator, creditNoteController.createCreditNote);
+router.post('/credit-notes', protect, requirePermission('credit-notes', 'create'), uploadSingle('signatureImage'), createCreditNoteValidator, creditNoteController.createCreditNote);
 router.get('/credit-notes', protect, requirePermission(['credit-notes', 'banking'], 'view'), creditNoteController.getAllCreditNotes);
 router.get('/credit-notes/:id', protect, requirePermission('credit-notes', 'view'), creditNoteController.getCreditNoteById);
-router.put('/credit-notes/:id', protect, requirePermission('credit-notes', 'edit'), upload.single('signatureImage'), creditNoteController.updateCreditNote);
+router.put('/credit-notes/:id', protect, requirePermission('credit-notes', 'edit'), uploadSingle('signatureImage'), creditNoteController.updateCreditNote);
 router.delete('/credit-notes/:id', protect, requirePermission('credit-notes', 'delete'), creditNoteController.deleteCreditNote);
 
 //delivery challan
-router.post('/delivery-challan', protect, requirePermission('delivery-challans', 'create'), upload.single('signatureImage'), createDeliveryChallanValidator, deliveryChallanController.createDeliveryChallan);
+router.post('/delivery-challan', protect, requirePermission('delivery-challans', 'create'), uploadSingle('signatureImage'), createDeliveryChallanValidator, deliveryChallanController.createDeliveryChallan);
 router.get('/delivery-challan', protect, requirePermission('delivery-challans', 'view'), deliveryChallanController.getDeliveryChallans);
 router.get('/delivery-challan/:id', protect, requirePermission('delivery-challans', 'view'), deliveryChallanController.getDeliveryChallanById);
-router.put('/delivery-challan/:id', protect, requirePermission('delivery-challans', 'edit'), upload.single('signatureImage'), deliveryChallanController.updateDeliveryChallan);
+router.put('/delivery-challan/:id', protect, requirePermission('delivery-challans', 'edit'), uploadSingle('signatureImage'), deliveryChallanController.updateDeliveryChallan);
 router.delete('/delivery-challan/:id', protect, requirePermission('delivery-challans', 'delete'), deliveryChallanController.deleteDeliveryChallan);
 
 //inventory
@@ -615,8 +615,8 @@ router.get('/inventory/history/:id', protect, requirePermission('inventory', 'vi
 router.post('/inventory', protect, requirePermission('inventory', 'create'), inventoryController.updateStock);
 
 //staff
-router.post('/staff', protect, requirePermission('roles-permissions', 'create'), upload.single('profileImage'), createStaffValidator, userController.createStaffUser);
-router.put('/staff/:id', protect, requirePermission('roles-permissions', 'edit'), upload.single('profileImage'), userController.updateStaffUser);
+router.post('/staff', protect, requirePermission('roles-permissions', 'create'), uploadSingle('profileImage'), createStaffValidator, userController.createStaffUser);
+router.put('/staff/:id', protect, requirePermission('roles-permissions', 'edit'), uploadSingle('profileImage'), userController.updateStaffUser);
 router.get('/staff', protect, requirePermission(['roles-permissions', 'payroll', 'time-tracking', 'time-tracking-others'], 'view'), userController.listStaffUsers);
 router.delete('/staff/:id', protect, requirePermission('roles-permissions', 'delete'), userController.deleteStaffUser);
 
@@ -669,10 +669,10 @@ router.get('/dashboard/accounts-planning', protect, requirePermission('dashboard
 router.get('/work-queues', protect, requirePermission('dashboard', 'view'), dashboardController.getWorkQueues);
 
 //expense
-router.post("/expenses", protect, requirePermission('expenses', 'create'), upload.single("attachment"), createExpenseValidator, expenseController.createExpense);
+router.post("/expenses", protect, requirePermission('expenses', 'create'), uploadSingle("attachment"), createExpenseValidator, expenseController.createExpense);
 router.get("/expenses", protect, requirePermission('expenses', 'view'), expenseController.getAllExpenses);
 router.get("/expenses/:id", protect, requirePermission('expenses', 'view'), expenseController.getExpenseById);
-router.put("/expenses/:id", protect, requirePermission('expenses', 'edit'), upload.single("attachment"), expenseController.updateExpense);
+router.put("/expenses/:id", protect, requirePermission('expenses', 'edit'), uploadSingle("attachment"), expenseController.updateExpense);
 router.delete("/expenses/:id", protect, requirePermission('expenses', 'delete'), expenseController.deleteExpense);
 
 // Recurring expenses (slice C.2)
@@ -891,7 +891,7 @@ router.post(
   requirePermission('ai', 'create'),
   requireAiEnabled,
   aiRateLimit,
-  uploadAiJobs.single('bill'),
+  uploadAiJobSingle('bill'),
   aiExtractionController.extractBill,
 );
 router.get('/ai/extract-bill', protect, requirePermission('ai', 'view'), aiExtractionController.listJobs);
