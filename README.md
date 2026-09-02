@@ -23,8 +23,10 @@ An npm workspace. `apps/*` are the two deployables; `packages/*` are shared betw
 
 ## Development
 
-Requires **Node 20+** and **npm 10+** (see `.nvmrc`). Task running is Turborepo, so every command
-below covers all five workspaces in dependency order.
+Requires **Node 20+** and **npm 10+** (see `.nvmrc`). One `npm ci` at the repository root
+installs every workspace — there is a single lockfile, and `npm install` inside `apps/api` or
+`apps/web` would write a second one and break the `@elixirbooks/*` symlinks. Task running is
+Turborepo, so every command below covers all five workspaces in dependency order.
 
 ```bash
 npm ci
@@ -34,7 +36,7 @@ npm run test
 npm run build
 ```
 
-Two things worth knowing before the first run:
+Three things worth knowing before the first run:
 
 - **The backend suite needs a reachable database.** Three suites reach `lib/actor.ts` unmocked and
   issue a real query, so start Postgres and apply migrations first. Without one, exactly those
@@ -49,6 +51,12 @@ Two things worth knowing before the first run:
 
   Turbo caches test results, so `npm run test` can replay a green run from cache even with the
   database down. Use `npx turbo run test --force` when you actually want them re-executed.
+
+- **Nested `node_modules` under `apps/api/` and `apps/web/` are normal.** npm hoists what it
+  can to the root and nests only the packages whose versions conflict there — `geoip-lite` and
+  `quill` among them. The root install creates those directories; they are not a sign that
+  someone installed inside an app. `apps/api/Dockerfile` has to copy both trees for the same
+  reason.
 
 - **Build the shared packages before type-checking an app on its own.** `npm run typecheck` at the
   root handles the ordering; running `npx vitest` or `tsc` directly inside `apps/api` or

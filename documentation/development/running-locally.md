@@ -19,6 +19,31 @@ The app runs entirely on Postgres/Prisma — it is the sole datastore.
 
 ---
 
+## Install dependencies (once)
+
+One install, at the repository root:
+
+```bash
+npm ci
+```
+
+This is an npm workspace with a single `package-lock.json`, so the root install
+covers all five workspaces in one resolution pass.
+
+**Never run `npm install` inside `apps/api` or `apps/web`.** It writes a second
+lockfile that drifts from the root one, and it replaces the `@elixirbooks/*`
+symlinks — which point at the local `packages/*` sources — with registry lookups
+that resolve to nothing.
+
+Nested `node_modules` under `apps/api/` and `apps/web/` are expected: npm hoists
+what it can to the root and nests only packages whose versions conflict there
+(`geoip-lite` and `quill` among them). The root install creates those; they are
+not evidence that anyone installed inside an app.
+
+Option B needs none of this — the images install inside the build.
+
+---
+
 ## Option A — Hot-reload dev (recommended for day-to-day work)
 
 ### 1. Start Postgres
@@ -62,11 +87,11 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 ### 3. Run the API
 
+Run both from the repository root:
+
 ```bash
-cd apps/api
-npm install          # not `npm ci` — the lockfile is out of sync with package.json
-npm run prisma:generate
-npm run dev          # nodemon → ts-node server.ts → http://localhost:3001
+npm run prisma:generate --workspace=@elixirbooks/api
+npm run dev --workspace=@elixirbooks/api    # nodemon → ts-node server.ts → http://localhost:3001
 ```
 
 First boot handles all schema and data setup itself. The bootstrap in
@@ -99,9 +124,7 @@ VITE_DEMO_MODE=false
 ### 5. Run the SPA
 
 ```bash
-cd apps/web
-npm install
-npm run dev          # Vite → http://localhost:3000
+npm run dev --workspace=@elixirbooks/web    # Vite → http://localhost:3000
 ```
 
 Port `3000` is already in the API's CORS allowlist (along with `5173` and `8080`),
@@ -166,12 +189,13 @@ Other targets:
 
 ## Checks before pushing
 
-Run in either repo:
+Run at the repository root — Turborepo fans each one out across all five
+workspaces in dependency order:
 
 ```bash
-npm run typecheck    # backend only
+npm run typecheck
 npm run lint
-npm test             # vitest
+npm run test
 ```
 
 ---
@@ -180,8 +204,9 @@ npm test             # vitest
 
 - **Don't mix Options A and B against one database.** The compose Postgres lives on
   a different named volume from the standalone dev container.
-- **`npm install`, not `npm ci`** in the backend — the committed lockfile is out of
-  sync with `package.json` (the Dockerfile does the same).
+- **`npm ci` at the root, never `npm install` inside an app** — see
+  [Install dependencies](#install-dependencies-once). Both Dockerfiles do the
+  same thing from a root build context.
 - **The Redis worker is an opt-in compose profile.** `make up-redis` starts it.
 - **Vite env vars are build-time.** Changing `VITE_*` requires restarting the dev
   server (Option A) or rebuilding the web image (Option B).
