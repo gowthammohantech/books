@@ -1,4 +1,5 @@
 import api from '@lib/apiClient';
+import { computeDocumentTotals, type TotalsItem } from '@elixirbooks/money';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { PlusCircle, Edit3 } from 'lucide-react';
 import DateInput from '@components/admin/DateInput';
@@ -868,17 +869,14 @@ const CreatePurchase: React.FC = () => {
     // 5. CALCULATIONS
     // ==========================================
     const { subTotal, totalTax, totalDiscount, grandTotal } = useMemo(() => {
-        const totals = purchaseFormData.items.reduce((acc, item) => {
-            acc.subTotal += item.rate * item.qty;
-            acc.totalDiscount += item.discount;
-            acc.totalTax += item.tax;
-            return acc;
-        }, { subTotal: 0, totalTax: 0, totalDiscount: 0 });
-        const grand_total = totals.subTotal - totals.totalDiscount + totals.totalTax;
-        const roundedSubTotal = round2(totals.subTotal);
-        const roundedTotalTax = round2(totals.totalTax);
-        const roundedTotalDiscount = round2(totals.totalDiscount);
-        const roundedGrandTotal = round2(grand_total);
+        // Decimal accumulation, and tax on the discounted base — the same code
+        // the server recomputes and persists with, so the figure on screen and
+        // the figure stored derive from one implementation.
+        const totals = computeDocumentTotals(purchaseFormData.items as unknown as TotalsItem[]);
+        const roundedSubTotal = totals.subTotal;
+        const roundedTotalTax = totals.totalTax;
+        const roundedTotalDiscount = totals.totalDiscount;
+        const roundedGrandTotal = totals.grandTotal;
 
         setTimeout(() => {
             setPurchaseFormData(prev => {
