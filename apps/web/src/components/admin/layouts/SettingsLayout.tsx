@@ -196,7 +196,7 @@ const SettingsLayout = () => {
             {/* Same Ctrl/Cmd+K palette as the admin shell: settings pages can
                 still jump anywhere in the app. */}
             <CommandPaletteProvider>
-                <div className="flex h-screen bg-background font-sans print:block print:h-auto">
+                <div className="density-compact flex h-screen bg-background font-sans print:block print:h-auto">
                     <aside className="flex h-screen w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground print:hidden">
                         <Link
                             to="/settings"
