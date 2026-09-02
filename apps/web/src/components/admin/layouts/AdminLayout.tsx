@@ -7,6 +7,7 @@ import AgentDock from '../ai/AgentDock';
 import { PageHeaderProvider } from '../../../context/PageHeaderContext';
 import { CommandPaletteProvider } from '../../../context/CommandPaletteContext';
 import { AgentPanelProvider } from '../../../context/AgentPanelContext';
+import DrawerOutlet from '../../../routes/DrawerOutlet';
 
 interface AdminLayoutProps {
   children?: ReactNode;
@@ -35,6 +36,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const mainRef = useRef<HTMLElement>(null);
 
   // Scroll the main content area back to the top on every route change.
+  //
+  // A create drawer opening does NOT count as one: this reads the location the
+  // primary route tree is rendered at (see AdminRoute), which stays on the list
+  // while a drawer is over it. Scrolling the list to the top would lose the row
+  // the user was working from.
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0 });
   }, [pathname]);
@@ -104,6 +110,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <div className="print:hidden">
               <AgentDock />
             </div>
+
+            {/* The create flows. Mounted here rather than beside the router so
+                they sit inside the three providers above, like any other page.
+                It renders nothing unless the URL is a create route. */}
+            <DrawerOutlet shell="admin" />
           </div>
         </AgentPanelProvider>
       </CommandPaletteProvider>

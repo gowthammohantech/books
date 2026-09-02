@@ -10,8 +10,7 @@ import InputField from '@components/admin/InputField';
 import CurrencySelect from '@components/admin/CurrencySelect';
 import { useCurrencies } from '@hooks/useCurrencies';
 import FullPageLoader from '@components/admin/FullPageLoader';
-import { PageHeader } from '@/context/PageHeaderContext';
-import { Button, Badge } from '@components/ui';
+import { Badge, Button, FormSection, RouteDrawer } from '@components/ui';
 import { Save } from 'lucide-react';
 import useDateFormatter from '@hooks/useDateFormatter';
 
@@ -322,31 +321,33 @@ const ContactForm: React.FC = () => {
     // ── Render ────────────────────────────────────────────────────────────────
 
     return (
-        <>
-            <PageHeader title={isEditMode ? 'Edit Contact' : 'New Contact'}>
-                <Button
-                    variant="white"
-                    onClick={() => navigate('/contacts')}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    type="submit"
-                    form="contact-form"
-                    disabled={isSubmitting}
-                    leftIcon={<Save size={16} />}
-                >
-                    {isEditMode ? 'Save Changes' : 'Create'}
-                </Button>
-            </PageHeader>
-            <div className="p-6 bg-white rounded-xl shadow-sm border border-border">
+        <RouteDrawer
+            title={isEditMode ? 'Edit Contact' : 'New Contact'}
+            actions={
+                <>
+                    <Button
+                        variant="white"
+                        onClick={() => navigate('/contacts')}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="submit"
+                        form="contact-form"
+                        disabled={isSubmitting}
+                        isLoading={isSubmitting}
+                        leftIcon={<Save size={16} />}
+                    >
+                        {isEditMode ? 'Save Changes' : 'Create'}
+                    </Button>
+                </>
+            }
+        >
+            <div>
                 <form id="contact-form" className="space-y-8" onSubmit={handleSubmit}>
 
                     {/* ── Identity ──────────────────────────────────────────── */}
-                    <section>
-                        <h3 className="text-lg font-semibold leading-6 text-gray-950 border-b border-gray-200 pb-2 mb-6">
-                            Identity
-                        </h3>
+                    <FormSection title="Identity">
                         {formErrors.identity && (
                             <p className="mb-4 text-sm text-destructive">{formErrors.identity}</p>
                         )}
@@ -391,13 +392,10 @@ const ContactForm: React.FC = () => {
                                 </label>
                             </div>
                         </div>
-                    </section>
+                    </FormSection>
 
                     {/* ── Communications ────────────────────────────────────── */}
-                    <section>
-                        <h3 className="text-lg font-semibold leading-6 text-gray-950 border-b border-gray-200 pb-2 mb-6">
-                            Communications
-                        </h3>
+                    <FormSection title="Communications">
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-6">
                             <InputField
                                 id="contactEmail"
@@ -438,13 +436,10 @@ const ContactForm: React.FC = () => {
                                 error={formErrors.mobile}
                             />
                         </div>
-                    </section>
+                    </FormSection>
 
                     {/* ── Address ───────────────────────────────────────────── */}
-                    <section>
-                        <h3 className="text-lg font-semibold leading-6 text-gray-950 border-b border-gray-200 pb-2 mb-6">
-                            Address
-                        </h3>
+                    <FormSection title="Address">
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-6">
                             <InputField
                                 id="contactAddressLine1"
@@ -535,13 +530,10 @@ const ContactForm: React.FC = () => {
                                 error={formErrors.country}
                             />
                         </div>
-                    </section>
+                    </FormSection>
 
                     {/* ── Invoicing ─────────────────────────────────────────── */}
-                    <section>
-                        <h3 className="text-lg font-semibold leading-6 text-gray-950 border-b border-gray-200 pb-2 mb-6">
-                            Invoicing
-                        </h3>
+                    <FormSection title="Invoicing">
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-6">
                             <InputField
                                 id="contactPaymentTermDays"
@@ -650,13 +642,10 @@ const ContactForm: React.FC = () => {
                                 </label>
                             </div>
                         </div>
-                    </section>
+                    </FormSection>
 
                     {/* ── Currency ──────────────────────────────────────────── */}
-                    <section>
-                        <h3 className="text-lg font-semibold leading-6 text-gray-950 border-b border-gray-200 pb-2 mb-6">
-                            Currency
-                        </h3>
+                    <FormSection title="Currency">
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-6">
                             <div className="sm:col-span-2">
                                 <CurrencySelect
@@ -665,13 +654,10 @@ const ContactForm: React.FC = () => {
                                 />
                             </div>
                         </div>
-                    </section>
+                    </FormSection>
 
                     {/* ── Status ────────────────────────────────────────────── */}
-                    <section>
-                        <h3 className="text-lg font-semibold leading-6 text-gray-950 border-b border-gray-200 pb-2 mb-6">
-                            Status
-                        </h3>
+                    <FormSection title="Status">
                         <div className="grid grid-cols-1 gap-6 sm:grid-cols-6">
                             <div className="sm:col-span-2">
                                 <label htmlFor="contactStatus" className="block text-sm font-medium text-gray-700">
@@ -688,13 +674,13 @@ const ContactForm: React.FC = () => {
                                 </select>
                             </div>
                         </div>
-                    </section>
+                    </FormSection>
 
                 </form>
             </div>
 
             {isFetching && <FullPageLoader />}
-        </>
+        </RouteDrawer>
     );
 };
 

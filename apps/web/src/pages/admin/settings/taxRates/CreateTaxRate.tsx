@@ -8,8 +8,7 @@ import type { RootState } from '@store/index';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { TaxRegime, TaxKind } from '@models/taxRate';
-import { PageHeader } from '@/context/PageHeaderContext';
-import { Button, Card, FormField, Select } from '@components/ui';
+import { Button, Card, FormField, RouteDrawer, Select } from '@components/ui';
 import { Save } from 'lucide-react';
 
 interface TaxRateFormProps {
@@ -283,26 +282,31 @@ const TaxRateForm: React.FC<TaxRateFormProps> = ({ taxRateData = null }) => {
     const showTaxKind = regimeRequiresTaxKind(formData.regime);
 
     return (
-        <div>
-            <PageHeader title={isEditMode ? 'Edit Tax' : 'Add Tax'}>
-                <Button
-                    type="button"
-                    variant="white"
-                    onClick={() => navigate('/settings/tax-rates')}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    type="submit"
-                    form="tax-rate-form"
-                    variant="primary"
-                    disabled={isSubmitting}
-                    isLoading={isSubmitting}
-                    leftIcon={<Save size={16} />}
-                >
-                    {isEditMode ? 'Save Changes' : 'Create'}
-                </Button>
-            </PageHeader>
+        <RouteDrawer
+            title={isEditMode ? 'Edit Tax' : 'Add Tax'}
+            width="narrow"
+            actions={
+                <>
+                    <Button
+                        type="button"
+                        variant="white"
+                        onClick={() => navigate('/settings/tax-rates')}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="submit"
+                        form="tax-rate-form"
+                        variant="primary"
+                        disabled={isSubmitting}
+                        isLoading={isSubmitting}
+                        leftIcon={<Save size={16} />}
+                    >
+                        {isEditMode ? 'Save Changes' : 'Create'}
+                    </Button>
+                </>
+            }
+        >
             <form id="tax-rate-form" onSubmit={handleSubmit}>
                 <Card
                     padded={false}
@@ -414,7 +418,7 @@ const TaxRateForm: React.FC<TaxRateFormProps> = ({ taxRateData = null }) => {
                 </Card>
 
             </form>
-        </div>
+        </RouteDrawer>
     );
 };
 

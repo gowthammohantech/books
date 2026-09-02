@@ -8,7 +8,7 @@ import Constants from '@constants/api';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import CurrencySelect from '@components/admin/CurrencySelect';
-import { PageHeader } from '@/context/PageHeaderContext';
+import { Button, FormSection, RouteDrawer } from '@components/ui';
 import { useCurrencies } from '@hooks/useCurrencies';
 import { isValidPhone, isValidPostalCode, PHONE_ERROR, POSTAL_CODE_ERROR } from '@elixirbooks/validation';
 
@@ -278,28 +278,31 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerData = null }) => {
     };
 
     return (
-        <div className="p-6 bg-white  rounded-xl shadow-sm border border-border ">
-            <PageHeader title={isEditMode ? 'Edit Customer' : 'Add Customer'}>
-                <button
-                    type="button"
-                    onClick={() => navigate('/customers')}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
-                >
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    form="customer-form"
-                    disabled={isSubmitting}
-                    className="px-4 py-2 text-sm font-medium text-white bg-primary border border-transparent rounded-md shadow-sm hover:bg-primary/90 focus:outline-none flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                    <Save size={16} />
-                    {isEditMode ? 'Save Changes' : 'Create'}
-                </button>
-            </PageHeader>
+        <RouteDrawer
+            title={isEditMode ? 'Edit Customer' : 'Add Customer'}
+            actions={
+                <>
+                    <Button
+                        type="button"
+                        variant="white"
+                        onClick={() => navigate('/customers')}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="submit"
+                        form="customer-form"
+                        disabled={isSubmitting}
+                        isLoading={isSubmitting}
+                        leftIcon={<Save size={16} />}
+                    >
+                        {isEditMode ? 'Save Changes' : 'Create'}
+                    </Button>
+                </>
+            }
+        >
             <form id="customer-form" className="space-y-8" onSubmit={handleSubmit}>
-                <section>
-                    <h3 className="text-lg font-semibold leading-6 text-gray-950  border-b border-gray-200  pb-2 mb-6">Basic Details</h3>
+                <FormSection title="Basic Details">
                     <div className="mb-6 flex items-center gap-5">
                         <ImageCropperUpload
                             value={formData.imagePreview || undefined}
@@ -337,13 +340,11 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerData = null }) => {
                             />
                         </div>
                     </div>
-                </section>
+                </FormSection>
 
-                <section className="grid grid-cols-1 gap-x-8 gap-y-10 lg:grid-cols-2">
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-center border-b border-gray-200  pb-2">
-                            <h3 className="text-lg font-semibold leading-6 text-gray-950 ">Billing Address</h3>
-                        </div>
+                <div className="grid grid-cols-1 gap-x-8 gap-y-10 lg:grid-cols-2">
+                    <FormSection title="Billing Address">
+                      <div className="space-y-6">
                         <InputField id="billingName" label="Name" value={formData.billingName} onChange={e => handleFormChange('billingName', e.target.value)} placeholder="Enter Name" required error={formErrors.billingName} />
                         <InputField id="billingAddress1" label="Address Line 1" value={formData.billingAddressLine1} onChange={e => handleFormChange('billingAddressLine1', e.target.value)} placeholder="Enter Address Line 1" required error={formErrors.billingAddressLine1} />
                         <InputField id="billingAddress2" label="Address Line 2" value={formData.billingAddressLine2} onChange={e => handleFormChange('billingAddressLine2', e.target.value)} placeholder="Enter Address Line 2" error={formErrors.billingAddressLine2} />
@@ -355,16 +356,18 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerData = null }) => {
                             <InputField id="billingCity" label="City" value={formData.billingCity} onChange={e => handleFormChange('billingCity', e.target.value)} placeholder="Enter City" required error={formErrors.billingCity} />
                             <InputField id="billingPincode" type='text' label="Pincode" maxLength={12} value={formData.billingPincode} onChange={e => handleFormChange('billingPincode', e.target.value)} placeholder="Enter Pincode" required error={formErrors.billingPincode} />
                         </div>
-                    </div>
+                      </div>
+                    </FormSection>
 
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-center border-b border-gray-200  pb-2">
-                            <h3 className="text-lg font-semibold leading-6 text-gray-950 ">Shipping Address</h3>
-                            {/* FIX: Added onClick handler */}
-                            <button type="button" onClick={handleCopyAddress} className="text-sm font-medium text-primary hover:text-primary">
+                    <FormSection
+                        title="Shipping Address"
+                        actions={
+                            <Button type="button" variant="link" size="sm" onClick={handleCopyAddress}>
                                 ⎘ Copy From Billing
-                            </button>
-                        </div>
+                            </Button>
+                        }
+                    >
+                      <div className="space-y-6">
                         <InputField id="shippingName" label="Name" placeholder="Enter Name" required value={formData.shippingName} onChange={e => handleFormChange('shippingName', e.target.value)} error={formErrors.shippingName} />
                         <InputField id="shippingAddress1" label="Address Line 1" value={formData.shippingAddressLine1} onChange={e => handleFormChange('shippingAddressLine1', e.target.value)} placeholder="Enter Address Line 1" required error={formErrors.shippingAddressLine1} />
                         <InputField id="shippingAddress2" label="Address Line 2" value={formData.shippingAddressLine2} onChange={e => handleFormChange('shippingAddressLine2', e.target.value)} placeholder="Enter Address Line 2" error={formErrors.shippingAddressLine2} />
@@ -376,11 +379,11 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerData = null }) => {
                             <InputField id="shippingCity" label="City" value={formData.shippingCity} onChange={e => handleFormChange('shippingCity', e.target.value)} placeholder="Enter City" required error={formErrors.shippingCity} />
                             <InputField id="shippingPincode" type='text' label="Pincode" maxLength={12} value={formData.shippingPincode} onChange={e => handleFormChange('shippingPincode', e.target.value)} placeholder="Enter Pincode" required error={formErrors.shippingPincode} />
                         </div>
-                    </div>
-                </section>
+                      </div>
+                    </FormSection>
+                </div>
 
-                <section>
-                    <h3 className="text-lg font-semibold leading-6 text-gray-950  border-b border-gray-200  pb-2 mb-6">Banking Details (Optional)</h3>
+                <FormSection title="Banking Details (Optional)">
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
                         <InputField id="bankName" label="Bank Name" value={formData.bankName} onChange={e => handleFormChange('bankName', e.target.value)} placeholder="Enter Bank Name" error={formErrors.bankName} />
                         <InputField id="bankBranch" label="Branch" value={formData.branch} onChange={e => handleFormChange('branch', e.target.value)} placeholder="Enter Branch Name" error={formErrors.branch} />
@@ -390,10 +393,10 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerData = null }) => {
                         <InputField id="bankAccountNumber" label="Account Number" value={formData.accountNumber} onChange={e => handleFormChange('accountNumber', e.target.value)} placeholder="Enter Account Number" error={formErrors.accountNumber} />
                         <InputField id="bankIfsc" label="IFSC" value={formData.IFSC} onChange={e => handleFormChange('IFSC', e.target.value)} placeholder="Enter IFSC Code" error={formErrors.IFSC} />
                     </div>
-                </section>
+                </FormSection>
 
             </form>
-        </div>
+        </RouteDrawer>
     );
 };
 

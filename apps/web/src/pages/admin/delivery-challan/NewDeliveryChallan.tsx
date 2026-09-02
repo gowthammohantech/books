@@ -35,8 +35,7 @@ import CostCenterSelect from '@components/admin/CostCenterSelect';
 import { useCurrencies } from '@hooks/useCurrencies';
 import { useDocumentDefaults } from '@hooks/useDocumentDefaults';
 import { round2 } from '@utils/round2';
-import { PageHeader } from "@/context/PageHeaderContext";
-import { Button } from '@components/ui';
+import { Button, RouteDrawer } from '@components/ui';
 import { useLineItemCustomFields } from '@hooks/useLineItemCustomFields';
 import { validateLineCustomFields } from '@lib/lineCustomFields';
 import { computeLineTotals, lineTaxPercent as resolveLineTaxPercent } from '@lib/documentLineMath';
@@ -710,10 +709,16 @@ const NewDeliveryChallan: React.FC = () => {
     }
 
     return (
-        <div className="md:p-4 min-h-screen border border-gray-200 rounded">
-            <form onSubmit={saveDeliveryChallan}>
-                <div className="max-w-7xl mx-auto space-y-4">
-                    <PageHeader title="New Delivery Challan" />
+        <RouteDrawer
+            title="New Delivery Challan"
+            actions={
+                <>
+                    <Button variant="white" onClick={() => navigate('/delivery-challans')}>Cancel</Button>
+                    <SubmitButton isDisabled={isSaving} isLoading={isSaving} mode='create' />
+                </>
+            }
+        >
+            <form className="space-y-4" onSubmit={saveDeliveryChallan}>
                     {/* Header */}
                     <div className="flex justify-end items-center mb-2">
                         <img src={resolveCompanyLogo(systemSettings?.company?.siteLogo)} alt="" className='w-32 h-auto' />
@@ -816,7 +821,7 @@ const NewDeliveryChallan: React.FC = () => {
                             />
                         </div>
                     </div>
-                </div>
+                
                 {/* Tax Treatment */}
                 <div className="bg-white p-4 rounded-lg border border-gray-200">
                     <div className="flex items-center gap-4 flex-wrap">
@@ -991,7 +996,7 @@ const NewDeliveryChallan: React.FC = () => {
                     )}
                 </Modal>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                     {/* Left Side: Tabs */}
                     <div>
@@ -1079,11 +1084,6 @@ const NewDeliveryChallan: React.FC = () => {
                         ))}
                     </div>
                 </div>
-                <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => navigate('/delivery-challans')}>Cancel</Button>
-                    <SubmitButton isDisabled={isSaving} isLoading={isSaving} mode='create' />
-                </div>
-
                 <Modal isOpen={isSignatureModalOpen} onClose={() => setSignatureModalOpen(false)} title="Draw Signature">
                     <div className="p-4">
                         <div className="bg-white border border-gray-400">
@@ -1139,7 +1139,7 @@ const NewDeliveryChallan: React.FC = () => {
             />
 
             {isFetching && <FullPageLoader />}
-        </div>
+                </RouteDrawer>
     );
 };
 

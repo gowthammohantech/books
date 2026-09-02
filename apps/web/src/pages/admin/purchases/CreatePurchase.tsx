@@ -40,8 +40,7 @@ import { recomputeLineTaxesByIds, recomputeLineTaxesFromComponents, appendLineTa
 import { round2 } from '@utils/round2';
 import type { Contact } from '@models/contact';
 import ContactPicker from '@components/admin/ContactPicker';
-import { Button, FormField, Select, fieldControlClasses } from '@components/ui';
-import { PageHeader } from "@/context/PageHeaderContext";
+import { Button, FormField, RouteDrawer, Select, fieldControlClasses } from '@components/ui';
 
 interface PurchaseLineItem {
     id: string;
@@ -1083,11 +1082,18 @@ const CreatePurchase: React.FC = () => {
     // 7. RENDER
     // ==========================================
     return (
-        <div className="md:p-4 min-h-screen border border-gray-200  rounded">
-            <form onSubmit={savePurchaseOrder}>
-                <div className="max-w-7xl mx-auto space-y-4">
+        <RouteDrawer
+            title="New Purchase"
+            confirmOnClose={isDirtyRef.current}
+            actions={
+                <>
+                    <Button variant="white" onClick={() => { if (confirmIfDirty(isDirtyRef.current)) navigate('/purchases'); }}>Cancel</Button>
+                    <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode='create' />
+                </>
+            }
+        >
+            <form className="space-y-4" onSubmit={savePurchaseOrder}>
 
-                    <PageHeader title="New Purchase" />
                     {/* Header */}
                     <div className="flex justify-end items-center mb-2">
                         <img src={resolveCompanyLogo(systemSettings?.company?.siteLogo)} alt="" className='w-32 h-auto' />
@@ -1312,7 +1318,7 @@ const CreatePurchase: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                </div>
+                
 
                 {/* Edit Product Modal */}
                 <Modal isOpen={isEditProductModalOpen} onClose={() => setIsEditProductModalOpen(false)} title={`Edit: ${editingItem?.name}`}>
@@ -1414,7 +1420,7 @@ const CreatePurchase: React.FC = () => {
                     )}
                 </Modal>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                     {/* Left Side: Tabs */}
                     <div>
@@ -1527,11 +1533,6 @@ const CreatePurchase: React.FC = () => {
                         ))}
                     </div>
                 </div>
-                <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => { if (confirmIfDirty(isDirtyRef.current)) navigate('/purchases'); }}>Cancel</Button>
-                    <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode='create' />
-                </div>
-
                 <Modal isOpen={isSignatureModalOpen} onClose={() => setSignatureModalOpen(false)} title="Draw Signature">
                     <div className="p-4">
                         <div className="bg-white border border-gray-400">
@@ -1595,7 +1596,7 @@ const CreatePurchase: React.FC = () => {
                 }}
             />
             {isFetching && <FullPageLoader />}
-        </div>
+                </RouteDrawer>
     );
 };
 

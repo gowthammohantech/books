@@ -34,8 +34,7 @@ import CostCenterSelect from '@components/admin/CostCenterSelect';
 import { useCurrencies } from '@hooks/useCurrencies';
 import { useDocumentDefaults } from '@hooks/useDocumentDefaults';
 import { useDirtyGuard, confirmIfDirty } from '@hooks/useDirtyGuard';
-import { PageHeader } from "@/context/PageHeaderContext";
-import { Button } from "@components/ui";
+import { Button, RouteDrawer } from '@components/ui';
 import { round2 } from '@utils/round2';
 import { useLineItemCustomFields } from '@hooks/useLineItemCustomFields';
 import { validateLineCustomFields } from '@lib/lineCustomFields';
@@ -775,11 +774,30 @@ const CreateNewQuotation: React.FC = () => {
         setIsProductModalOpen(true);
     }
     return (
-        <div className="md:p-4 min-h-screen border border-gray-200  rounded">
-            <form>
-                <div className="max-w-7xl mx-auto space-y-4">
+        <RouteDrawer
+            title="New Quotation"
+            confirmOnClose={isDirtyRef.current}
+            actions={
+                <>
+                    <Button variant="white" onClick={() => { if (confirmIfDirty(isDirtyRef.current)) navigate('/quotations'); }}>Cancel</Button>
+                    <Button
+                    disabled={isSaving}
+                    onClick={handleSaveAsDraft}
+                    >
+                    Save as Draft
+                    </Button>
+                    <Button
+                    disabled={isSaving}
+                    onClick={handleSaveAndSend}
+                    leftIcon={<Mail size={16} />}
+                    >
+                    Save & Send
+                    </Button>
+                </>
+            }
+        >
+            <form className="space-y-4">
 
-                    <PageHeader title="New Quotation" />
 
                     {/* Header */}
                     <div className="flex justify-end items-center mb-2">
@@ -958,7 +976,7 @@ const CreateNewQuotation: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                </div>
+                
 
                 {/* Edit Product Modal */}
                 <Modal isOpen={isEditProductModalOpen} onClose={() => setIsEditProductModalOpen(false)} title={`Edit: ${editingItem?.name}`}>
@@ -1055,7 +1073,7 @@ const CreateNewQuotation: React.FC = () => {
                     )}
                 </Modal>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                     {/* Left Side: Tabs */}
                     <div>
@@ -1143,23 +1161,6 @@ const CreateNewQuotation: React.FC = () => {
                         ))}
                     </div>
                 </div>
-                <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => { if (confirmIfDirty(isDirtyRef.current)) navigate('/quotations'); }}>Cancel</Button>
-                    <Button
-                        disabled={isSaving}
-                        onClick={handleSaveAsDraft}
-                    >
-                        Save as Draft
-                    </Button>
-                    <Button
-                        disabled={isSaving}
-                        onClick={handleSaveAndSend}
-                        leftIcon={<Mail size={16} />}
-                    >
-                        Save & Send
-                    </Button>
-                </div>
-
                 <Modal isOpen={isSignatureModalOpen} onClose={() => setSignatureModalOpen(false)} title="Draw Signature">
                     <div className="p-4">
                         <div className="bg-white border border-gray-400">
@@ -1215,7 +1216,7 @@ const CreateNewQuotation: React.FC = () => {
             />
 
             {isFetching && <FullPageLoader />}
-        </div>
+                </RouteDrawer>
     );
 };
 
