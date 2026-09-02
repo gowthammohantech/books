@@ -91,28 +91,37 @@ export async function seedTenantDefaults(
   createdBy: string,
   db: TenantSeedDb = prisma,
 ): Promise<SeedTenantResult> {
-  let units = 0;
-  for (const u of DEFAULT_UNITS) {
-    const existing = await db.unit.findFirst({
-      where: { tenantId, short_name: u.short_name },
-      select: { id: true },
+  // ONE read and ONE batched write per table, rather than two queries per row.
+  // This seeder runs INSIDE the signup transaction, where a query per row (18
+  // units and currencies, plus the templates below) was ~60 sequential round
+  // trips — enough to exhaust Prisma's 5s interactive-transaction budget on a
+  // remote database and fail the registration with P2028. Idempotency is
+  // unchanged: the rows already present still decide what gets created, and an
+  // existing row is still left exactly as the user left it.
+  const existingUnits = await db.unit.findMany({
+    where: { tenantId, short_name: { in: DEFAULT_UNITS.map((u) => u.short_name) } },
+    select: { short_name: true },
+  });
+  const haveUnits = new Set(existingUnits.map((u) => u.short_name));
+  const missingUnits = DEFAULT_UNITS.filter((u) => !haveUnits.has(u.short_name));
+  if (missingUnits.length > 0) {
+    await db.unit.createMany({
+      data: missingUnits.map((u) => ({ tenantId, ...u, status: true })),
     });
-    if (existing) continue;
-    await db.unit.create({ data: { tenantId, ...u, status: true } });
-    units += 1;
   }
+  const units = missingUnits.length;
 
-  let currencies = 0;
-  for (const c of DEFAULT_CURRENCIES) {
-    // Deliberately NOT filtered by isDeleted: a currency the user removed must
-    // stay removed, and re-creating it here would resurrect it on every boot.
-    const existing = await db.currency.findFirst({
-      where: { tenantId, code: c.code },
-      select: { id: true },
-    });
-    if (existing) continue;
-    await db.currency.create({
-      data: {
+  // Deliberately NOT filtered by isDeleted: a currency the user removed must
+  // stay removed, and re-creating it here would resurrect it on every boot.
+  const existingCurrencies = await db.currency.findMany({
+    where: { tenantId, code: { in: DEFAULT_CURRENCIES.map((c) => c.code) } },
+    select: { code: true },
+  });
+  const haveCurrencies = new Set(existingCurrencies.map((c) => c.code));
+  const missingCurrencies = DEFAULT_CURRENCIES.filter((c) => !haveCurrencies.has(c.code));
+  if (missingCurrencies.length > 0) {
+    await db.currency.createMany({
+      data: missingCurrencies.map((c) => ({
         tenantId,
         name: c.name,
         code: c.code,
@@ -121,10 +130,10 @@ export async function seedTenantDefaults(
         status: true,
         isDeleted: false,
         createdBy,
-      },
+      })),
     });
-    currencies += 1;
   }
+  const currencies = missingCurrencies.length;
 
   const templates = await seedEmailTemplatesForTenant(tenantId, db);
 
