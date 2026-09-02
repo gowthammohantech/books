@@ -53,7 +53,6 @@ type FormErrors = {
 
 const CategoryList: FC = () => {
     // Hooks and State
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     const [searchParams, setSearchParams] = useSearchParams();
@@ -89,7 +88,6 @@ const CategoryList: FC = () => {
             setIsLoading(true);
             const response = await api.get(Constants.FETCH_CATEGORY_LIST_URL, {
                 params: { search, limit, page },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             setCategories(response.data.data.categories || []);
             setPagination(response.data.data.pagination);
@@ -123,9 +121,7 @@ const CategoryList: FC = () => {
     const updateStatus = async (categoryItem: Category) => {
         try {
             const updatedCategory = { ...categoryItem, status: !categoryItem.status };
-            await api.put(`${Constants.UPDATE_CATEGORY_URL}/${categoryItem.id}`, updatedCategory, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.put(`${Constants.UPDATE_CATEGORY_URL}/${categoryItem.id}`, updatedCategory);
             toast.success('Status updated successfully');
             fetchCategories(search, limit, page); // Refetch current page
         } catch (error) {
@@ -144,9 +140,7 @@ const CategoryList: FC = () => {
 
     const handleEditClick = async (categoryItem: Category) => {
         try {
-            const response = await api.get<any>(`${Constants.GET_CATEGORY_URL}/${categoryItem.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get<any>(`${Constants.GET_CATEGORY_URL}/${categoryItem.id}`);
             setCategory(response.data);
             setCustomFields(response.data.customFields || {});
             setIsEditMode(true);
@@ -202,9 +196,7 @@ const CategoryList: FC = () => {
 
         try {
             setIsSubmitting(true);
-            await api[method](url, formData, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api[method](url, formData);
             toast.success(`Category ${isEditMode ? 'updated' : 'added'} successfully`);
             setShowModal(false);
             fetchCategories(search, limit, page); // Refetch current page

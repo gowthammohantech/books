@@ -98,9 +98,7 @@ const OverviewCreditNote: React.FC = () => {
         try {
             setIsLoading(true);
             setNotFound(false);
-            const response = await api.get(`${Constants.FETCH_CREDIT_NOTE_FOR_EDIT_URL}/${creditNoteId}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
-            });
+            const response = await api.get(`${Constants.FETCH_CREDIT_NOTE_FOR_EDIT_URL}/${creditNoteId}`);
             setCreditNote(response.data.data);
         } catch (error) {
             setNotFound(true);

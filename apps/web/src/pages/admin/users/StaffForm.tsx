@@ -4,11 +4,9 @@ import SearchableDropdown from "@components/admin/SearchableDropdown";
 import SubmitButton from "@components/admin/SubmitButton";
 import Constants from "@constants/api";
 import type { StaffFormData, StaffList } from "@models/staff";
-import type { RootState } from "@store/index";
 
 import { Eye, EyeClosed, Image, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import { isValidPhone, PHONE_ERROR } from "@elixirbooks/validation";
 
@@ -41,7 +39,6 @@ interface RoleOptions {
     name: string;
 }
 const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editItem }) => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const [formData, setFormData] = useState<StaffFormData>(initialFormData);
     const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
     const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -75,9 +72,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
     useEffect(() => {
         const fetchRoleOptions = async () => {
             try {
-                const response = await api.get(Constants.FETCH_ALL_ROLES_URL, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const response = await api.get(Constants.FETCH_ALL_ROLES_URL);
                 const roles = response.data.data;
                 if (roles) {
                     const options = roles.map((role: any) => ({
@@ -215,19 +210,11 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                 payload.append('profile_image_removed', 'true');
             }
             if (editItem) {
-                await api.put(`${Constants.UPDATE_STAFF_URL}/${editItem.id}`, payload, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    }
-                })
+                await api.put(`${Constants.UPDATE_STAFF_URL}/${editItem.id}`, payload)
                 toast.success('User updated successfully.');
                 onSuccess();
             } else {
-                await api.post(Constants.CREATE_STAFF_URL, payload, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    }
-                })
+                await api.post(Constants.CREATE_STAFF_URL, payload)
                 toast.success('User created successfully.');
                 onSuccess();
             }

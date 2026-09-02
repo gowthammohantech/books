@@ -199,7 +199,6 @@ const PurchaseList: FC = () => {
             setIsLoading(true);
             const response = await api.get(Constants.GET_PURCHASE_URL, {
                 params: { search: searchParam, limit: limitParam, page: pageParam, ...drillParams },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
 
             setPurchases(response.data.data?.purchases ?? []);

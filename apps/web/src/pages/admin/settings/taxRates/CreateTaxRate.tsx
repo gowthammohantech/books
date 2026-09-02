@@ -119,9 +119,7 @@ const TaxRateForm: React.FC<TaxRateFormProps> = ({ taxRateData = null }) => {
         const fetchCountries = async () => {
             try {
                 setIsLoadingCountries(true);
-                const response = await api.get(Constants.FETCH_COUNTRIES_URL, {
-                    headers: { 'Authorization': `Bearer ${token}` },
-                });
+                const response = await api.get(Constants.FETCH_COUNTRIES_URL);
                 const list: CountryOption[] = (response.data || []).map((c: { id: string; name: string }) => ({
                     id: String(c.id),
                     name: c.name,
@@ -144,9 +142,7 @@ const TaxRateForm: React.FC<TaxRateFormProps> = ({ taxRateData = null }) => {
         const fetchStates = async () => {
             try {
                 setIsLoadingStates(true);
-                const response = await api.get(`${Constants.FETCH_STATES_URL}/${formData.countryId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` },
-                });
+                const response = await api.get(`${Constants.FETCH_STATES_URL}/${formData.countryId}`);
                 const list: StateOption[] = (response.data || []).map((s: { id: string; name: string }) => ({
                     id: String(s.id),
                     name: s.name,
@@ -260,12 +256,12 @@ const TaxRateForm: React.FC<TaxRateFormProps> = ({ taxRateData = null }) => {
 
             if (isEditMode && formData.id) {
                 await api.put(`${Constants.UPDATE_TAX_RATE_URL}/${formData.id}`, payload, {
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' },
                 });
                 toast.success('Tax rate updated successfully');
             } else {
                 await api.post(Constants.CREATE_TAX_RATE_URL, payload, {
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' },
                 });
                 toast.success('Tax rate created successfully');
             }

@@ -107,9 +107,7 @@ const CustomFieldList: React.FC<CustomFieldListProps> = ({ moduleSlug }) => {
 
         try {
             setIsDeleting(true);
-            const response = await api.delete(`${Constants.BASE_URL}/api/admin/custom-fields/${itemToDelete.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.delete(`${Constants.BASE_URL}/api/admin/custom-fields/${itemToDelete.id}`);
 
             if (response.data?.success) {
                 toast.success(response.data.message || "Custom field deleted successfully");
@@ -228,7 +226,6 @@ const CustomFieldList: React.FC<CustomFieldListProps> = ({ moduleSlug }) => {
                     }}
                     moduleId={currentModule.id}
                     customFieldTypes={customFieldTypes}
-                    token={token!}
                     editItem={itemToEdit}
                     allowLineItemPlacement={LINE_ITEM_MODULES.includes(moduleSlug)}
                 />

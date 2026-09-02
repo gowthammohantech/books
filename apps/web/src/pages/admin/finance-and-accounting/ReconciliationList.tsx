@@ -16,13 +16,11 @@ import { useCurrencyFormatter } from "@hooks/useCurrencyFormatter";
 import useDateFormatter from "@hooks/useDateFormatter";
 import type { BankAccount } from "@models/bank-account";
 import type { OptionType, Pagination } from "@models/common";
-import type { RootState } from "@store/index";
 import { formatLocalDateTime } from "@utils/converters";
 import { PageHeader } from "@/context/PageHeaderContext";
 
 import { AlertCircle, CheckCircle, ChevronDown, LandmarkIcon, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -67,7 +65,6 @@ interface FilterParams {
 const ReconciliationList: React.FC = () => {
     const bankId = useParams().bankId;
 
-    const { token } = useSelector((state: RootState) => state.auth);
     const { formatDate } = useDateFormatter();
     const { format } = useCurrencyFormatter();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -123,9 +120,7 @@ const ReconciliationList: React.FC = () => {
 
     const fetchBankAccounts = async () => {
         try {
-            const response = await api.get(Constants.FETCH_BANK_ACCOUNT_WITH_BALANCE_URL, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(Constants.FETCH_BANK_ACCOUNT_WITH_BALANCE_URL);
             const data = response.data.data;
             setBankAccounts(data.bankDetails ?? []);
 
@@ -183,7 +178,6 @@ const ReconciliationList: React.FC = () => {
             setIsLoading(true);
             const response = await api.get(Constants.FETCH_TRANSACTIONS_FOR_RECONCILIATION_URL, {
                 params: filterParams,
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = response.data.data;
             setTransactions(data.transactions ?? []);
@@ -211,8 +205,6 @@ const ReconciliationList: React.FC = () => {
                 transactionId: itemToUpdate?.id,
                 isReconciled: !itemToUpdate?.isReconciled,
                 reconciliationNote: note
-            }, {
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.status === 200) {
                 fetchTransactions();

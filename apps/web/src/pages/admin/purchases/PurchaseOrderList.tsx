@@ -159,7 +159,6 @@ const PurchaseOrderList: FC = () => {
             setIsLoading(true);
             const response = await api.get(Constants.FETCH_PURCHASE_ORDERS_URL, {
                 params: { search: searchParam, limit: limitParam, page: pageParam },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             //set nextPurchaseOrderId to sessionStorage
             if (response.data.data.nextPurchaseOrderId) setTenantValue('nextPurchaseOrderId', response.data.data.nextPurchaseOrderId);

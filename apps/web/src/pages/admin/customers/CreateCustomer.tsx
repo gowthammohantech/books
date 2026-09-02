@@ -5,8 +5,6 @@ import ImageCropperUpload from '@components/common/ImageCropperUpload';
 import InputField from '@components/admin/InputField';
 import type { AxiosError } from 'axios';
 import Constants from '@constants/api';
-import { useSelector } from 'react-redux';
-import type { RootState } from '@store/index';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import CurrencySelect from '@components/admin/CurrencySelect';
@@ -94,7 +92,6 @@ type ErrorResponse = {
 const CustomerForm: React.FC<CustomerFormProps> = ({ customerData = null }) => {
     const [formData, setFormData] = useState<CustomerFormData>(initialFormData);
     const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
-    const { token } = useSelector((state: RootState) => state.auth);
     const [isEditMode, setIsEditMode] = useState(!!customerData);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
@@ -255,12 +252,12 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerData = null }) => {
             if (isEditMode) {
                 _formData.append('id', String(formData.id));
                 await api.put(`${Constants.UPDATE_CUSTOMER_URL}/${formData.id}`, _formData, {
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+                    headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 toast.success('Customer updated successfully');
             } else {
                 await api.post(Constants.CREATE_CUSTOMER_URL, _formData, {
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+                    headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 toast.success('Customer created successfully');
             }

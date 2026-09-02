@@ -53,7 +53,6 @@ const EmailTemplateList: React.FC = () => {
             setIsLoading(true);
             const response = await api.get<TemplateListResponse>(Constants.GET_EMAIL_TEMPLATES_URL, {
                 params: { search, limit, page },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.success && response.data.data?.templates) {
                 setEmailTemplates(response.data.data.templates);
@@ -130,9 +129,7 @@ const EmailTemplateList: React.FC = () => {
     const handleDeleteConfirm = async () => {
         try {
             setIsDeleting(true);
-            const response = await api.delete(`${Constants.DELETE_EMAIL_TEMPLATE_URL}/${deleteItem?.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.delete(`${Constants.DELETE_EMAIL_TEMPLATE_URL}/${deleteItem?.id}`);
             if (response.data.success) {
                 toast.success('Email template deleted successfully.');
                 fetchEmailTemplates();

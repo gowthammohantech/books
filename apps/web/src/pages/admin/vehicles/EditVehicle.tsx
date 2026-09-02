@@ -17,7 +17,6 @@ import { hasPermission } from "@utils/hasPermission";
 const EditVehicle: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
 
@@ -35,9 +34,7 @@ const EditVehicle: React.FC = () => {
     const fetchVehicleData = async (vehicleId: string) => {
         try {
             setIsFetching(true);
-            const response = await api.get(`${Constants.GET_VEHICLE_FOR_EDIT_URL}/${vehicleId}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
-            });
+            const response = await api.get(`${Constants.GET_VEHICLE_FOR_EDIT_URL}/${vehicleId}`);
             const data = response.data?.data?.vehicle;
             if (data) {
                 const formatted: VehicleFormData = {
@@ -68,9 +65,7 @@ const EditVehicle: React.FC = () => {
         if (!id) return;
         try {
             setIsDeleting(true);
-            await api.delete(`${Constants.DELETE_VEHICLE_URL}/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
-            });
+            await api.delete(`${Constants.DELETE_VEHICLE_URL}/${id}`);
             toast.success('Vehicle deleted successfully');
             setDeleteModalOpen(false);
             navigate('/vehicles');

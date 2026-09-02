@@ -111,7 +111,6 @@ const QuotationList: React.FC = () => {
             setIsLoading(true);
             const response = await api.get(Constants.GET_QUOTATIONS_FOR_LIST_URL, {
                 params: { search, limit, page },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = response.data.data;
             if (data.quotations.length > 0) {

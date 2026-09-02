@@ -2,8 +2,6 @@ import api from '@lib/apiClient';
 import { PauseCircle, PlayCircle, PlayIcon, ListIcon } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import Table from "@components/admin/Table";
-import { useSelector } from "react-redux";
-import type { RootState } from "@store/index";
 import Constants from "@constants/api";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -44,7 +42,6 @@ const RecurringExpenseList: React.FC = () => {
     const search = searchParams.get('search') || '';
     const limit = Number(searchParams.get('limit') || 10);
     const page = Number(searchParams.get('page') || 1);
-    const { token } = useSelector((state: RootState) => state.auth);
     const [isLoading, setIsLoading] = useState(false);
     const [busyRowId, setBusyRowId] = useState<string | null>(null);
 
@@ -66,7 +63,6 @@ const RecurringExpenseList: React.FC = () => {
             };
             const response = await api.get(Constants.GET_RECURRING_EXPENSES_URL, {
                 params,
-                headers: { 'Authorization': `Bearer ${token}` },
             });
             setRecurringExpenses(response.data.data?.recurringExpenses || []);
             setPagination(response.data.data?.pagination || { total: 0, page: 1, limit: 10, totalPages: 1 });
@@ -121,8 +117,7 @@ const RecurringExpenseList: React.FC = () => {
             setBusyRowId(row.id);
             const resp = await api.post(
                 `${Constants.RUN_RECURRING_EXPENSE_NOW_URL}/${row.id}/run-recurring-now`,
-                {},
-                { headers: { 'Authorization': `Bearer ${token}` } }
+                {}
             );
             if (resp.status === 201) {
                 const newRef = resp.data?.data?.newReferenceNo ?? '';
@@ -146,8 +141,7 @@ const RecurringExpenseList: React.FC = () => {
         try {
             setChildrenLoading(true);
             const resp = await api.get(
-                `${Constants.GET_EXPENSE_CHILDREN_URL}/${row.id}/children`,
-                { headers: { 'Authorization': `Bearer ${token}` } }
+                `${Constants.GET_EXPENSE_CHILDREN_URL}/${row.id}/children`
             );
             setChildren(resp.data?.data?.children || []);
         } catch (error) {

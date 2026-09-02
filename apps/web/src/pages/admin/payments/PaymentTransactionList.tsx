@@ -2,8 +2,6 @@ import api from '@lib/apiClient';
 import { Eye } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import Table from "@components/admin/Table";
-import { useSelector } from "react-redux";
-import type { RootState } from "@store/index";
 import Constants from "@constants/api";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -72,7 +70,6 @@ const PaymentTransactionList: React.FC = () => {
     const search = searchParams.get('search') || '';
     const limit = Number(searchParams.get('limit') || 10);
     const page = Number(searchParams.get('page') || 1);
-    const { token } = useSelector((state: RootState) => state.auth);
     const { formatDate } = useDateFormatter();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -113,7 +110,6 @@ const PaymentTransactionList: React.FC = () => {
             }
             const response = await api.get(Constants.GET_PAYMENT_TRANSACTIONS_URL, {
                 params,
-                headers: { 'Authorization': `Bearer ${token}` },
             });
             setTransactions(response.data?.data?.paymentTransactions || []);
             setPagination(

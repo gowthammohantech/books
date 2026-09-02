@@ -7,10 +7,8 @@ import { Button, Card, FormField } from "@components/ui";
 import Constants from "@constants/api";
 import { useDebounce } from "@hooks/useDebounce";
 import type { OptionType } from "@models/common";
-import type { RootState } from "@store/index";
 
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -18,7 +16,6 @@ interface FormData {
     quoteSalesPersonRole: string;
 }
 const Preferences: React.FC = () => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const navigate = useNavigate();
     const [formData, setFormData] = useState<FormData>({
         quoteSalesPersonRole: ''
@@ -49,7 +46,6 @@ const Preferences: React.FC = () => {
         try {
             const response = await api.get(Constants.GET_GENERAL_SETTINGS_URL, {
                 params: { groupSlug: 'quotation' },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = response.data.data;
             const settings: { [key: string]: string } = {};
@@ -69,7 +65,6 @@ const Preferences: React.FC = () => {
         try {
             const response = await api.get(Constants.FETCH_ALL_ROLES_URL, {
                 params: { search: debouncedRoleSearch },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = response.data.data;
             if (data) {
@@ -120,9 +115,7 @@ const Preferences: React.FC = () => {
         }
         try {
             setIsSubmitting(true);
-            await api.post(Constants.UPDATE_GENERAL_SETTINGS_URL, payload, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.post(Constants.UPDATE_GENERAL_SETTINGS_URL, payload);
             toast.success('Settings updated successfully.');
         } catch (error) {
             toast.error('Failed to update settings.');

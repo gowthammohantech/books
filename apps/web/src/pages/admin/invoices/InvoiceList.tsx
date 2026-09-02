@@ -257,7 +257,6 @@ const InvoiceList: React.FC = () => {
                     ...(invoiceTypeFilter !== 'all' ? { invoiceType: invoiceTypeFilter } : {}),
                     ...drillParams
                 },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = response.data.data;
             if (data.invoices.length > 0) {

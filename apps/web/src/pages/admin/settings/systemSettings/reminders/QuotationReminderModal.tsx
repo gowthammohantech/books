@@ -4,11 +4,9 @@ import QuillEditor, { type QuillEditorRef } from "@components/admin/QuillEditor"
 import SubmitButton from "@components/admin/SubmitButton";
 import Switch from "@components/admin/Switch";
 import Constants from "@constants/api";
-import type { RootState } from "@store/index";
 
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import { Badge, Button, FormField, Select, fieldControlClasses } from "@components/ui";
 
@@ -51,7 +49,6 @@ const QuotationReminderModal: React.FC<Props> = ({ isOpen, onClose, editingRemin
         body: "<p>Dear %CustomerName%,</p><p>This is a friendly reminder that your quotation <strong>%QuotationNumber%</strong> is approaching its expiry date.</p><p>----------------------------------------------------------------------------------------</p><p><strong>Quotation Date:</strong> %QuotationDate%</p><p><strong>Expiry Date:</strong> %ExpiryDate%</p><p><strong>Total Amount:</strong> %Total%</p><p>----------------------------------------------------------------------------------------</p><p>Please review the quotation and confirm before it expires.</p><p>If you have any questions or need assistance, feel free to contact us.</p><p>Best regards,</p><p>%CompanyName%</p>"
     });
 
-    const { token } = useSelector((state: RootState) => state.auth);
     const [quotationFormData, setQuotationFormData] = useState<QuotationFormData>(prepareInitialFormData());
     const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
     const [placeholders, setPlaceholders] = useState<Placeholder[]>([]);
@@ -227,14 +224,10 @@ const QuotationReminderModal: React.FC<Props> = ({ isOpen, onClose, editingRemin
         try {
             setIsSubmitting(true);
             if (editingReminder) {
-                await api.put(`${Constants.UPDATE_QUOTATION_REMINDER_URL}/${editingReminder.id}`, payload, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await api.put(`${Constants.UPDATE_QUOTATION_REMINDER_URL}/${editingReminder.id}`, payload);
                 toast.success('Quotation reminder updated successfully.');
             } else {
-                await api.post(Constants.CREATE_NEW_QUOTATION_REMINDER_URL, payload, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await api.post(Constants.CREATE_NEW_QUOTATION_REMINDER_URL, payload);
                 toast.success('Quotation reminder created successfully.');
             }
             onClose();

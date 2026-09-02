@@ -54,9 +54,7 @@ export default function EditProduct() {
         const fetchProduct = async () => {
             try {
                 // Type the axios response to expect an IProduct object
-                const response = await api.get<IProduct>(`${Constants.GET_PRODUCT_URL}/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const response = await api.get<IProduct>(`${Constants.GET_PRODUCT_URL}/${id}`);
                 setProduct(response.data);
             } catch (error) {
                 console.error("Failed to fetch product data:", error);

@@ -84,7 +84,6 @@ const SignatureList: FC = () => {
             setIsLoading(true);
             const response = await api.get(Constants.GET_SIGNATURES_URL, {
                 params: { search: currentSearch, limit: currentLimit, page: currentPage },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             setSignatures(response.data.data.signatures);
             if (response.data.data.pagination) setPagination(response.data.data.pagination);
@@ -245,9 +244,7 @@ const SignatureList: FC = () => {
             )
         );
         try {
-            await api.patch(`${Constants.UPDATE_SIGNATURE_STATUS_URL}/${id}`, { status: newStatus }, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.patch(`${Constants.UPDATE_SIGNATURE_STATUS_URL}/${id}`, { status: newStatus });
             toast.success('Status updated successfully');
         } catch (error) {
             toast.error('Failed to update status.');
@@ -262,9 +259,7 @@ const SignatureList: FC = () => {
             )
         );
         try {
-            await api.patch(`${Constants.UPDATE_SIGNATURE_DEFAULT_URL}/${id}`, { markAsDefault: newDefault }, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
+            await api.patch(`${Constants.UPDATE_SIGNATURE_DEFAULT_URL}/${id}`, { markAsDefault: newDefault })
             toast.success('Default signature updated successfully');
         } catch (error) {
             toast.error('Failed to update default.');
@@ -290,12 +285,12 @@ const SignatureList: FC = () => {
             setIsSaving(true);
             if (isEditMode) {
                 await api.put(`${Constants.UPDATE_SIGNATURE_URL}/${formData.id}`, data, {
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+                    headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 toast.success('Signature updated successfully');
             } else {
                 await api.post(Constants.CREATE_SIGNATURE_URL, data, {
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+                    headers: { 'Content-Type': 'multipart/form-data' }
                 });
                 toast.success('Signature created successfully');
             }

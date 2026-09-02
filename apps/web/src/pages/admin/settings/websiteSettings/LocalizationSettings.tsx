@@ -71,9 +71,7 @@ const LocalizationSettings: React.FC = () => {
     const fetchLocalizations = async () => {
         setIsLoading(true);
         try {
-            const response = await api.get(Constants.FETCH_LOCALIZATION_DROPDOWNS_URL, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(Constants.FETCH_LOCALIZATION_DROPDOWNS_URL);
 
             const { dateFormats, timeFormats, timezones, settings } = response.data.data;
 
@@ -122,10 +120,8 @@ const LocalizationSettings: React.FC = () => {
                 startWeek: selectedWeekDay.id,
                 dateFormatId: selectedDateFormat.id,
                 timeFormatId: selectedTimeFormat.id
-            }, {
-                headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (token) dispatch(fetchSystemSettings(token));
+            if (token) dispatch(fetchSystemSettings());
             toast.success('Localization settings updated successfully');
         } catch (error) {
             console.error('Error updating localization settings:', error);

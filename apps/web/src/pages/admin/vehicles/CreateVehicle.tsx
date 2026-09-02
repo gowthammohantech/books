@@ -109,7 +109,6 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ vehicleData = null }) => {
                 setIsLoadingCustomers(true);
                 const response = await api.get(Constants.GET_CUSTOMERS_WITH_SEARCH_URL, {
                     params: { search: debouncedCustomerSearch, limit: 100, page: 1 },
-                    headers: { 'Authorization': `Bearer ${token}` },
                 });
                 const rows: CustomerOption[] = (response.data?.data?.customers || []).map((c: { id: string; name: string; email?: string; phone?: string }) => ({
                     id: c.id,
@@ -233,12 +232,12 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ vehicleData = null }) => {
 
             if (isEditMode && formData.id) {
                 await api.put(`${Constants.UPDATE_VEHICLE_URL}/${formData.id}`, payload, {
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' },
                 });
                 toast.success('Vehicle updated successfully');
             } else {
                 await api.post(Constants.CREATE_VEHICLE_URL, payload, {
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' },
                 });
                 toast.success('Vehicle created successfully');
             }

@@ -42,7 +42,7 @@ const InvoiceTemplateList: React.FC = () => {
             );
             await fetchDefaultTemplate();
             if (token) {
-                dispatch(fetchSystemSettings(token));
+                dispatch(fetchSystemSettings());
             }
             toast.success("Template made default successfully");
         } catch (error) {

@@ -44,9 +44,7 @@ const ReturnPettyCashModal: React.FC<Props> = ({ isOpen, currentBalance, onClose
     useEffect(() => {
         const fetchPaymentModes = async () => {
             try {
-                const response = await api.get(Constants.GET_ALL_PAYMENT_MODES_URL, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const response = await api.get(Constants.GET_ALL_PAYMENT_MODES_URL);
 
                 const data = response.data.data;
                 if (data) {
@@ -72,7 +70,6 @@ const ReturnPettyCashModal: React.FC<Props> = ({ isOpen, currentBalance, onClose
             try {
                 const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.data.data.length > 0) {
                     const formattedBankAccounts = response.data.data.map((item: any) => {
@@ -148,9 +145,7 @@ const ReturnPettyCashModal: React.FC<Props> = ({ isOpen, currentBalance, onClose
         if (!validated()) return false;
         try {
             setIsSaving(true);
-            await api.put(Constants.RETURN_AMOUNT_TO_PETTY_CASH_URL, formData, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.put(Constants.RETURN_AMOUNT_TO_PETTY_CASH_URL, formData);
             toast.success('Petty Cash returned successfully.');
             onSuccess();
         } catch (error) {

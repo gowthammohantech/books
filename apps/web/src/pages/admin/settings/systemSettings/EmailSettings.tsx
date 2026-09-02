@@ -108,7 +108,7 @@ const ProviderCard: React.FC<ProviderCardProps> = ({
 );
 
 const EmailSettings: React.FC = () => {
-    const { token, user } = useSelector((state: RootState) => state.auth);
+    const { user } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     const [formData, setFormData] = useState<EmailSettingsFormData>(initialFormData);
@@ -148,7 +148,6 @@ const EmailSettings: React.FC = () => {
     const fetchConfigurations = async () => {
         const response = await api.get(`${Constants.GET_EMAIL_SETTINGS_URL}`, {
             params: { userId: user?.id },
-            headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = response.data.data;
         setConfigurations(data);
@@ -332,9 +331,7 @@ const EmailSettings: React.FC = () => {
 
         try {
             setIsSaving(true);
-            await api.post(Constants.UPDATE_EMAIL_SETTINGS_URL, payload, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.post(Constants.UPDATE_EMAIL_SETTINGS_URL, payload);
             toast.success('Email settings updated successfully');
             fetchConfigurations();
             setIsConfigurationModalOpen(false);
@@ -355,9 +352,7 @@ const EmailSettings: React.FC = () => {
         };
 
         try {
-            await api.post(Constants.UPDATE_EMAIL_SETTINGS_URL, payload, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.post(Constants.UPDATE_EMAIL_SETTINGS_URL, payload);
             toast.success('Email settings updated successfully');
             fetchConfigurations();
         } catch (error) {

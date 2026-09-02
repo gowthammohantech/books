@@ -67,11 +67,7 @@ const SetupOrganizationInfo: React.FC = () => {
     useEffect(() => {
         const fetchDropdownData = async () => {
             try {
-                const response = await api<SetupDropdownResponse>(Constants.FETCH_SETUP_DROPDOWNS_URL, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                const response = await api<SetupDropdownResponse>(Constants.FETCH_SETUP_DROPDOWNS_URL);
                 const data = response.data.data;
                 const timeZones = data.timezones.map((timezone) => {
                     return {
@@ -113,9 +109,6 @@ const SetupOrganizationInfo: React.FC = () => {
                 const response = await api.get(Constants.FETCH_COUNTRIES_URL, {
                     params: {
                         search: debouncedCountrySearch
-                    },
-                    headers: {
-                        'Authorization': `Bearer ${token}`
                     }
                 })
                 const formattedCountries = response.data.map((country: any) => {
@@ -224,7 +217,6 @@ const SetupOrganizationInfo: React.FC = () => {
             });
             await api.patch(Constants.UPDATE_COMPANY_SETUP_URL, payloadFormData, {
                 headers: {
-                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
                 }
             });
@@ -232,7 +224,7 @@ const SetupOrganizationInfo: React.FC = () => {
             // /setup gate. Per workspace, not per install: the other companies
             // this person belongs to are unaffected either way.
             setCompanySettingsComplete(true);
-            if (token) dispatch(fetchSystemSettings(token));
+            if (token) dispatch(fetchSystemSettings());
             toast.success('Company info updated successfully.');
             //navigate with page refresh to trigger setup status change
             window.location.replace("/dashboard");

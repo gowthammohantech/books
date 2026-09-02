@@ -180,9 +180,7 @@ const EditCreditNote: React.FC = () => {
         const fetchCreditNoteDetails = async () => {
             try {
                 setIsFetching(true);
-                const response = await api.get(`${Constants.FETCH_CREDIT_NOTE_FOR_EDIT_URL}/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const response = await api.get(`${Constants.FETCH_CREDIT_NOTE_FOR_EDIT_URL}/${id}`);
                 const creditNoteDetail = response.data.data;
                 if (creditNoteDetail) {
                     if (creditNoteDetail.invoice) {
@@ -245,9 +243,7 @@ const EditCreditNote: React.FC = () => {
     const handleInvoiceChange = async (option: OptionType) => {
         try {
             setIsFetching(true);
-            const response = await api.get(`${Constants.FETCH_INVOICE_FOR_EDIT_URL}/${option.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(`${Constants.FETCH_INVOICE_FOR_EDIT_URL}/${option.id}`);
             const invoice_data = response.data.data;
             if (invoice_data) {
                 setInvoiceFormData((prev) => ({
@@ -295,10 +291,7 @@ const EditCreditNote: React.FC = () => {
         const fetchInvoicesQuery = async () => {
             try {
                 const response = await api.post(Constants.SEARCH_INVOICES_FOR_CREDIT_NOTE_URL,
-                    { search: debouncedSearchTermInvoice },
-                    {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
+                    { search: debouncedSearchTermInvoice });
                 if (response.data.data.length > 0) {
                     const availableInvoices = response.data.data.filter(
                         (item: any) => invoiceOptions.every((invoice: any) => invoice.id !== item.id)
@@ -319,9 +312,7 @@ const EditCreditNote: React.FC = () => {
     const fetchTaxes = async () => {
         if (!token) return;
         try {
-            const response = await api.get(Constants.FETCH_TAX_GROUPS_URL, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(Constants.FETCH_TAX_GROUPS_URL);
 
             setTaxes(response.data.data);
         } catch (error) {
@@ -335,7 +326,6 @@ const EditCreditNote: React.FC = () => {
             try {
                 const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.data.data.length > 0) {
                     const formattedBankAccounts = response.data.data.map((item: any) => {
@@ -361,7 +351,6 @@ const EditCreditNote: React.FC = () => {
             try {
                 const response = await api.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermSignature },
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.data.data.length > 0) {
                     const formattedSignatures = response.data.data.map((item: any) => {
@@ -386,9 +375,7 @@ const EditCreditNote: React.FC = () => {
         setSelectedAdmin(user);
         try {
             setIsFetching(true);
-            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`);
             //set billFrom to formData
             setInvoiceFormData(prev => ({ ...prev, billFrom: user.id }));
             setCompanyDetails(response.data.data);
@@ -524,9 +511,7 @@ const EditCreditNote: React.FC = () => {
 
     const fetchAdminUsers = async () => {
         try {
-            const response = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(`${Constants.FETCH_USERS_URL}/1`);
             if (response.data.data.length > 0) {
                 const formattedUsers = response.data.data.map((user: any) => ({ id: user.id, name: `${user.firstName} ${user.lastName}` }));
                 setAdminUsers(formattedUsers);
@@ -543,7 +528,6 @@ const EditCreditNote: React.FC = () => {
             try {
                 const response = await api.get(`${Constants.GET_CUSTOMERS_WITH_SEARCH_URL}`, {
                     params: { search: debouncedSearchTermCustomer, limit: 100, page: 1 },
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = response.data.data;
                 if (data.customers.length > 0) {

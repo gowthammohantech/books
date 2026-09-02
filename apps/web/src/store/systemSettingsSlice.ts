@@ -44,12 +44,8 @@ export const hydrateFromStorage = createAsyncThunk("system/hydrate", async () =>
     return normalizeSettings(tenantLocal.getJson<SystemSettings>(tenantId, "systemSettings"));
 });
 
-export const fetchSystemSettings = createAsyncThunk("system/save", async (token: string) => {
-    const response = await api.get(Constants.FETCH_SYSTEM_SETTINGS_URL, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
+export const fetchSystemSettings = createAsyncThunk("system/save", async () => {
+    const response = await api.get(Constants.FETCH_SYSTEM_SETTINGS_URL);
 
     const data = normalizeSettings(response.data.data || null);
     // Key the cache by the workspace the TOKEN names, not by whatever redux

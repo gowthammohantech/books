@@ -55,7 +55,6 @@ interface FormErrors {
 }
 
 const BrandList: FC = () => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     const [searchParams, setSearchParams] = useSearchParams();
@@ -99,7 +98,6 @@ const BrandList: FC = () => {
             setIsLoading(true);
             const response = await api.get(Constants.FETCH_BRAND_LIST_URL, {
                 params: { search, limit, page },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             // Assuming API response is { data: { brands: [], pagination: {} } }
             setBrands(response.data.data.brands || []);
@@ -133,9 +131,7 @@ const BrandList: FC = () => {
     const updateStatus = async (brandToUpdate: Brand): Promise<void> => {
         try {
             const updatedBrand = { ...brandToUpdate, status: !brandToUpdate.status };
-            await api.put(`${Constants.UPDATE_BRAND_URL}/${brandToUpdate.id}`, updatedBrand, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.put(`${Constants.UPDATE_BRAND_URL}/${brandToUpdate.id}`, updatedBrand);
             toast.success('Status updated successfully');
             fetchBrands(search, limit, page); // Refetch current page
         } catch (error) {
@@ -154,9 +150,7 @@ const BrandList: FC = () => {
 
     const handleEditClick = async (brandToEdit: Brand): Promise<void> => {
         try {
-            const response = await api.get<any>(`${Constants.GET_BRAND_URL}/${brandToEdit.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get<any>(`${Constants.GET_BRAND_URL}/${brandToEdit.id}`);
             setBrand(response.data);
             setCustomFields(response.data.customFields || {});
             setIsEditMode(true);
@@ -211,9 +205,7 @@ const BrandList: FC = () => {
                 : Constants.CREATE_BRAND_URL;
             const method = isEditMode ? 'put' : 'post';
 
-            await api[method](url, formData, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api[method](url, formData);
 
             toast.success(`Brand ${isEditMode ? 'updated' : 'added'} successfully`);
             setShowModal(false);

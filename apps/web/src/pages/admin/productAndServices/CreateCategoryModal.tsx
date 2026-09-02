@@ -3,8 +3,6 @@ import { useEffect, useState } from "react";
 import Modal from "@components/admin/Modal";
 import type { AxiosError } from 'axios';
 import Constants from "@constants/api";
-import type { RootState } from "@store/index";
-import { useSelector } from "react-redux";
 import SubmitButton from "@components/admin/SubmitButton";
 import { toast } from "sonner";
 import DynamicCustomFields from "@components/admin/DynamicCustomFields";
@@ -34,7 +32,6 @@ const CreateCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) =>
         category_image: null,
         categoryImageUrl: ''
     });
-    const { token } = useSelector((state: RootState) => state.auth);
     const [formData, setFormData] = useState<CategoryFormData>(setInitialFormData());
     const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -136,7 +133,7 @@ const CreateCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) =>
         try {
             setIsSubmitting(true);
             await api.post(Constants.CREATE_CATEGORY_URL, data, {
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
             toast.success('Category created successfully');
             onSuccess();

@@ -4,10 +4,8 @@ import SearchableDropdown from "@components/admin/SearchableDropdown";
 import SubmitButton from "@components/admin/SubmitButton";
 import Constants from "@constants/api";
 import { useDebounce } from "@hooks/useDebounce";
-import type { RootState } from "@store/index";
 
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import { toast } from "sonner";
 
 interface InventoryModalProps {
@@ -33,7 +31,6 @@ interface InventoryFormData {
 
 const initialFormData: InventoryFormData = { productId: '', quantity: 0, type: '', notes: null };
 const NewInventoryModal: React.FC<InventoryModalProps> = ({ isOpen, onClose, onSuccess }) => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const [products, setProducts] = useState<Options[]>([]);
     const [productSearchInput, setProductSearchInput] = useState<string>("");
     const [selectedProduct, setSelectedProduct] = useState<Options | null>(null);
@@ -51,9 +48,7 @@ const NewInventoryModal: React.FC<InventoryModalProps> = ({ isOpen, onClose, onS
     useEffect(() => {
         const fetchProductsByQuery = async () => {
             try {
-                const response = await api.get(`${Constants.FETCH_PRODUCTS_WITH_SEARCH_URL}?search=${debouncedSearchTerm}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const response = await api.get(`${Constants.FETCH_PRODUCTS_WITH_SEARCH_URL}?search=${debouncedSearchTerm}`);
                 setProducts(response.data.data);
             } catch (error) {
                 console.error('Error fetching products:', error);
@@ -85,9 +80,7 @@ const NewInventoryModal: React.FC<InventoryModalProps> = ({ isOpen, onClose, onS
                 productId: selectedProduct?.id || '',
                 type: 'stock_in',
             };
-            await api.post(Constants.UPDATE_INVENTORY_URL, payload, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.post(Constants.UPDATE_INVENTORY_URL, payload);
             toast.success('Inventory created successfully');
             onSuccess();
             onClose();

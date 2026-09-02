@@ -105,7 +105,6 @@ const DeliveryChallanList: React.FC = () => {
             setIsLoading(true);
             const response = await api.get(Constants.FETCH_DELIVERY_CHALLAN_FOR_LIST_URL, {
                 params: { search, limit, page },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = response.data.data;
             if (data.deliveryChallans.length > 0) {

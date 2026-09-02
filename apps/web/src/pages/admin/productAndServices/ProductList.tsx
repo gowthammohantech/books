@@ -61,7 +61,6 @@ interface ProductPagination {
 const ProductList: FC = () => {
     // Hooks
     const navigate = useNavigate();
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     const [searchParams, setSearchParams] = useSearchParams();
@@ -96,7 +95,6 @@ const ProductList: FC = () => {
                     page,
                     ...(inventoryFilter !== 'all' ? { item_type: inventoryFilter } : {}),
                 },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             setProducts(response.data.data.products || []);
             setPagination(response.data.data.pagination);

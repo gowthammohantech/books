@@ -202,9 +202,7 @@ const NewDeliveryChallan: React.FC = () => {
     const handleInvoiceChange = async (option: OptionType) => {
         try {
             setIsFetching(true);
-            const response = await api.get(`${Constants.FETCH_INVOICE_FOR_EDIT_URL}/${option.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(`${Constants.FETCH_INVOICE_FOR_EDIT_URL}/${option.id}`);
             const invoice_data = response.data.data;
             if (invoice_data) {
                 setInvoiceFormData((prev) => ({
@@ -270,9 +268,7 @@ const NewDeliveryChallan: React.FC = () => {
     const fetchTaxes = async () => {
         if (!token) return;
         try {
-            const response = await api.get(Constants.FETCH_TAX_GROUPS_URL, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(Constants.FETCH_TAX_GROUPS_URL);
 
             setTaxes(response.data.data);
         } catch (error) {
@@ -286,7 +282,6 @@ const NewDeliveryChallan: React.FC = () => {
             try {
                 const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.data.data.length > 0) {
                     const formattedBankAccounts = response.data.data.map((item: any) => {
@@ -312,7 +307,6 @@ const NewDeliveryChallan: React.FC = () => {
             try {
                 const response = await api.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermSignature },
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.data.data.length > 0) {
                     const formattedSignatures = response.data.data.map((item: any) => {
@@ -338,9 +332,7 @@ const NewDeliveryChallan: React.FC = () => {
         setSelectedAdmin(user);
         try {
             setIsFetching(true);
-            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`);
             //set billFrom to formData
             setInvoiceFormData(prev => ({ ...prev, billFrom: user.id }));
             setCompanyDetails(response.data.data);
@@ -492,9 +484,7 @@ const NewDeliveryChallan: React.FC = () => {
 
     const fetchAdminUsers = async () => {
         try {
-            const response = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(`${Constants.FETCH_USERS_URL}/1`);
             if (response.data.data.length > 0) {
                 const formattedUsers = response.data.data.map((user: any) => ({ id: user.id, name: `${user.firstName} ${user.lastName}` }));
                 setAdminUsers(formattedUsers);

@@ -4,10 +4,8 @@ import SubmitButton from "@components/admin/SubmitButton";
 import Switch from "@components/admin/Switch";
 import Constants from "@constants/api";
 import type { ExpenseCategoryFormData, ExpenseCategoryShape } from "@models/expense";
-import type { RootState } from "@store/index";
 
 import { useState } from "react";
-import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import { Button, FormField, fieldControlClasses } from "@components/ui";
 
@@ -38,7 +36,6 @@ const ExpenseCategoryFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess,
         return initialData
 
     };
-    const { token } = useSelector((state: RootState) => state.auth);
     const [formData, setFormData] = useState<ExpenseCategoryFormData>(prepareInitialFormData());
     const [isSaving, setIsSaving] = useState(false);
     const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
@@ -75,15 +72,11 @@ const ExpenseCategoryFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess,
         try {
             setIsSaving(true);
             if (editItem) {
-                const response = await api.put(`${Constants.UPDATE_EXPENSE_CATEGORY_URL}/${editItem.id}`, formData, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const response = await api.put(`${Constants.UPDATE_EXPENSE_CATEGORY_URL}/${editItem.id}`, formData);
                 onSuccess(response.data.data);
                 toast.success(response.data.message);
             } else {
-                const response = await api.post(Constants.CREATE_NEW_EXPENSE_CATEGORY_URL, formData, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const response = await api.post(Constants.CREATE_NEW_EXPENSE_CATEGORY_URL, formData);
                 onSuccess(response.data.data);
                 toast.success(response.data.message);
             }

@@ -101,9 +101,7 @@ const InvoiceNumberConfigModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
             ]
         }
         try {
-            await api.post(Constants.CONFIGURE_INVOICE_NUMBER_URL, payloadData, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.post(Constants.CONFIGURE_INVOICE_NUMBER_URL, payloadData);
 
             if (formData.invoiceNumberType === 'manual') {
                 setTenantValue('nextInvoiceNo', manualNumber);
@@ -111,7 +109,7 @@ const InvoiceNumberConfigModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
                 const formattedNewNumber = formData.prefix + formData.nextNumber;
                 setTenantValue('nextInvoiceNo', formattedNewNumber);
             }
-            if (token) dispatch(fetchSystemSettings(token));
+            if (token) dispatch(fetchSystemSettings());
             toast.success('Configuration updated successfully.');
             onSuccess();
         } catch (error) {

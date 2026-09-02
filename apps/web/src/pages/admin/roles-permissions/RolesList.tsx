@@ -56,7 +56,6 @@ const RolesList: React.FC = () => {
     const search = searchParams.get('search') || '';
     const limit = Number(searchParams.get('limit') || 10);
     const page = Number(searchParams.get('page') || 1);
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     const { formatDate } = useDateFormatter();
@@ -81,7 +80,6 @@ const RolesList: React.FC = () => {
             setIsLoading(true);
             const response = await api.get(Constants.FETCH_ROLES_FOR_LIST_URL, {
                 params: { search, limit, page },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             setRoles(response.data.data.roles || []);
             setPagination(response.data.data.pagination);
@@ -119,9 +117,7 @@ const RolesList: React.FC = () => {
         if (deleteItem) {
             try {
                 setIsDeleting(true);
-                await api.delete(`${Constants.DELETE_ROLE_URL}/${deleteItem.id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await api.delete(`${Constants.DELETE_ROLE_URL}/${deleteItem.id}`);
                 toast.success("Role deleted successfully.");
                 fetchRoles(search, limit, page);
                 setDeleteModalOpen(false);
@@ -152,13 +148,9 @@ const RolesList: React.FC = () => {
         try {
             setIsSaving(true);
             if (editItem) {
-                await api.put(`${Constants.UPDATE_ROLE_URL}/${editItem.id}`, formData, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await api.put(`${Constants.UPDATE_ROLE_URL}/${editItem.id}`, formData);
             } else {
-                await api.post(Constants.CREATE_ROLE_URL, formData, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await api.post(Constants.CREATE_ROLE_URL, formData);
             }
             if (editItem) {
                 toast.success('Role updated successfully.');

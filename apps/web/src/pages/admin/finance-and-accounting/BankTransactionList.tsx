@@ -68,7 +68,6 @@ const BankTransactionList: React.FC = () => {
             setIsLoading(true);
             const response = await api.get<TransactionResponse>(Constants.FETCH_BANK_TRANSACTION_LIST_URL, {
                 params: filterParams,
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = response.data.data;
             if (data.transactions) {
@@ -87,7 +86,6 @@ const BankTransactionList: React.FC = () => {
         try {
             const response = await api.get<BankAccountResponse>(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                 params: { search: debouncedBankSearchKeyword },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = response.data.data;
             if (data) {
@@ -150,7 +148,6 @@ const BankTransactionList: React.FC = () => {
                     setIsFetchingTransactionDetails(true);
                     const response = await api.get(`${Constants.FETCH_TRANSACTION_DETAILS_URL}/${selectedTransaction?.id}`, {
                         params: { id: selectedTransaction?.id },
-                        headers: { 'Authorization': `Bearer ${token}` }
                     });
                     const data = response.data.data;
                     if (data) {

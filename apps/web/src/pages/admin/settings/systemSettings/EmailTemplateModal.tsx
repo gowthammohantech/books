@@ -74,9 +74,7 @@ const EmailTemplateModal: React.FC<TemplateProps> = ({ isOpen, onClose, onSucces
 
     const fetchNotificationTypes = async () => {
         try {
-            const response = await api.get(Constants.GET_ALL_NOTIFICATION_TYPES_URL, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(Constants.GET_ALL_NOTIFICATION_TYPES_URL);
             if (response.data.success && response.data.data) {
                 const notificationTypeOptions = response.data.data.map((notificationType: NotificationTypes) => ({
                     id: notificationType.id,
@@ -108,14 +106,10 @@ const EmailTemplateModal: React.FC<TemplateProps> = ({ isOpen, onClose, onSucces
         try {
             setIsSaving(true);
             if (editItem) {
-                await api.put(`${Constants.UPDATE_EMAIL_TEMPLATE_URL}/${editItem.id}`, formData, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await api.put(`${Constants.UPDATE_EMAIL_TEMPLATE_URL}/${editItem.id}`, formData);
                 toast.success('Email template updated successfully.');
             } else {
-                await api.post(Constants.CREATE_EMAIL_TEMPLATE_URL, formData, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await api.post(Constants.CREATE_EMAIL_TEMPLATE_URL, formData);
                 toast.success('Email template created successfully.');
             }
             onSuccess();

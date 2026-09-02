@@ -311,7 +311,6 @@ const CreateInvoice: React.FC = () => {
         try {
             setIsLoading(true);
             const response = await api.get(Constants.FETCH_NEXT_INVOICE_NO_URL, {
-                headers: { 'Authorization': `Bearer ${token}` },
                 // A centre with its own prefix numbers from its own series, so the
                 // preview has to be asked for that centre or it will disagree with
                 // the number actually issued on save.
@@ -339,9 +338,7 @@ const CreateInvoice: React.FC = () => {
     const fetchTaxes = async () => {
         if (!token) return;
         try {
-            const response = await api.get(Constants.FETCH_TAX_GROUPS_URL, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(Constants.FETCH_TAX_GROUPS_URL);
             setTaxes(response.data.data);
         } catch (error) {
             setTaxes([]);
@@ -407,7 +404,6 @@ const CreateInvoice: React.FC = () => {
                 setBankAccountsLoading(true);
                 const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.data.data.length > 0) {
                     const formattedBankAccounts = response.data.data.map((item: any) => ({
@@ -438,7 +434,6 @@ const CreateInvoice: React.FC = () => {
                 setSignaturesLoading(true);
                 const response = await api.get(Constants.FETCH_SIGNATURES_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermSignature },
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.data.data.length > 0) {
                     const formattedSignatures = response.data.data.map((item: any) => ({
@@ -467,9 +462,7 @@ const CreateInvoice: React.FC = () => {
         setSelectedAdmin(user);
         try {
             setIsFetching(true);
-            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`);
             setInvoiceFormData(prev => ({ ...prev, billFrom: user.id }));
             setCompanyDetails(response.data.data);
         } catch (error) {
@@ -682,9 +675,7 @@ const CreateInvoice: React.FC = () => {
     const fetchAdminUsers = async () => {
         try {
             setAdminUsersLoading(true);
-            const response = await api.get(`${Constants.FETCH_USERS_URL}/1`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(`${Constants.FETCH_USERS_URL}/1`);
             if (response.data.data.length > 0) {
                 const formattedUsers = response.data.data.map((user: any) => ({ id: user.id, name: `${user.firstName} ${user.lastName}` }));
                 setAdminUsers(formattedUsers);

@@ -48,14 +48,14 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     const resultAction = await dispatch(loginUser({ email, password }));
     if (loginUser.fulfilled.match(resultAction)) {
-      const { token, tenant, memberships } = resultAction.payload;
+      const { tenant, memberships } = resultAction.payload;
 
       // Fetch system-settings/permissions with the just-issued token before
       // deciding where to land — relying on the separate App-level boot
       // effect here would race the navigate() below (it keys off state.auth
       // token changing too, with no ordering guarantee against this thunk).
       let settings = systemSettings;
-      const settingsAction = await dispatch(fetchSystemSettings(token));
+      const settingsAction = await dispatch(fetchSystemSettings());
       if (fetchSystemSettings.fulfilled.match(settingsAction)) {
         settings = settingsAction.payload;
       }

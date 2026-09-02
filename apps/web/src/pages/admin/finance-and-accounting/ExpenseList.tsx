@@ -165,7 +165,6 @@ const ExpenseList: React.FC = () => {
             try {
                 const response = await api.get(Constants.GET_SUPPLIERS_URL, {
                     params: { limit: 100, page: 1 },
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.data?.data?.suppliers) {
                     setSupplierFilterOptions(response.data.data.suppliers);
@@ -184,7 +183,6 @@ const ExpenseList: React.FC = () => {
             if (!params.supplierId) delete params.supplierId;
             const response = await api.get<ExpenseResponse>(Constants.FETCH_EXPENSES_FOR_LIST_URL, {
                 params,
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.success && response.data.data.expenses) {
                 setExpenses(response.data.data.expenses);
@@ -224,9 +222,7 @@ const ExpenseList: React.FC = () => {
     const handleDelete = async () => {
         try {
             setIsDeleting(true);
-            const response = await api.delete(`${Constants.DELETE_EXPENSE_URL}/${deleteItem?.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.delete(`${Constants.DELETE_EXPENSE_URL}/${deleteItem?.id}`);
             if (response.data.success) {
                 toast.success(response.data.message);
                 setDeleteModalOpen(false);

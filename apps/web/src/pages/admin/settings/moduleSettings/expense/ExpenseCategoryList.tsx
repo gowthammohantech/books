@@ -35,7 +35,6 @@ interface FilterParams {
     page?: number;
 }
 const ExpenseCategoryList: React.FC = () => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     const { formatDate } = useDateFormatter();
@@ -59,7 +58,6 @@ const ExpenseCategoryList: React.FC = () => {
             setIsLoading(true);
             const response = await api.get<ExpenseResponse>(Constants.FETCH_EXPENSE_CATEGORIES_FOR_LIST_URL, {
                 params: filterParams,
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.data.success && response.data.data.categories) {
                 setExpenseCategories(response.data.data.categories);
@@ -98,9 +96,7 @@ const ExpenseCategoryList: React.FC = () => {
     const handleDelete = async () => {
         try {
             setIsDeleting(true);
-            const response = await api.delete(`${Constants.DELETE_EXPENSE_CATEGORY_URL}/${deleteItem?.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.delete(`${Constants.DELETE_EXPENSE_CATEGORY_URL}/${deleteItem?.id}`);
             if (response.data.success) {
                 toast.success(response.data.message);
                 setDeleteModalOpen(false);
@@ -128,9 +124,7 @@ const ExpenseCategoryList: React.FC = () => {
                 title: item.title,
                 description: item.description
             };
-            await api.put(`${Constants.UPDATE_EXPENSE_CATEGORY_URL}/${item.id}`, formData, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.put(`${Constants.UPDATE_EXPENSE_CATEGORY_URL}/${item.id}`, formData);
             toast.success('Status updated successfully');
         } catch (error) {
             toast.error('Something went wrong');

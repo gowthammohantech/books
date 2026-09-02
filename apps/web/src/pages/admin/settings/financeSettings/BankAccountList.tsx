@@ -84,7 +84,6 @@ const BankAccountList: FC = () => {
                     page: currentPage,
                     ...(showDeleted ? { deleted: 'true' } : {}),
                 },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             setBankAccounts(response.data.data.bankDetails);
             if (response.data.data.pagination) setPagination(response.data.data.pagination);
@@ -180,9 +179,7 @@ const BankAccountList: FC = () => {
             )
         );
         try {
-            await api.patch(`${Constants.UPDATE_BANK_ACCOUNT_STATUS_URL}/${id}`, { status: newStatus }, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.patch(`${Constants.UPDATE_BANK_ACCOUNT_STATUS_URL}/${id}`, { status: newStatus });
             toast.success('Status updated successfully');
             fetchBankAccounts();
         } catch (error) {
@@ -281,14 +278,10 @@ const BankAccountList: FC = () => {
         try {
             setIsSaving(true);
             if (isEditMode) {
-                await api.put(`${Constants.UPDATE_BANK_ACCOUNT_URL}/${formData.id}`, payload, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await api.put(`${Constants.UPDATE_BANK_ACCOUNT_URL}/${formData.id}`, payload);
                 toast.success('Bank account updated successfully');
             } else {
-                await api.post(Constants.CREATE_BANK_ACCOUNT_URL, payload, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await api.post(Constants.CREATE_BANK_ACCOUNT_URL, payload);
                 toast.success('Bank account created successfully');
             }
             fetchBankAccounts();

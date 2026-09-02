@@ -4,8 +4,6 @@ import Modal from "@components/admin/Modal";
 import type { AxiosError } from 'axios';
 import Constants from "@constants/api";
 import { toast } from "sonner";
-import { useSelector } from "react-redux";
-import type { RootState } from "@store/index";
 import SubmitButton from "@components/admin/SubmitButton";
 import type { PaymentMode } from "@models/common";
 
@@ -19,7 +17,6 @@ const CreatePaymentModeModal: React.FC<CreatePaymentModeModalProps> = ({ isOpen,
     const [name, setName] = useState('');
     const [nameError, setNameError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const { token } = useSelector((state: RootState) => state.auth);
 
     useEffect(() => {
         if (isOpen) {
@@ -38,8 +35,7 @@ const CreatePaymentModeModal: React.FC<CreatePaymentModeModalProps> = ({ isOpen,
             setIsSubmitting(true);
             const response = await api.post(
                 Constants.CREATE_PAYMENT_MODE_URL,
-                { name: name.trim() },
-                { headers: { 'Authorization': `Bearer ${token}` } }
+                { name: name.trim() }
             );
             toast.success('Payment mode created successfully.');
             onSuccess(response.data.data);

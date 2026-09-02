@@ -78,7 +78,6 @@ const InvoicePaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, inv
             try {
                 const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.data.data.length > 0) {
                     const formattedBankAccounts = response.data.data.map((item: any) => {
@@ -231,9 +230,7 @@ const InvoicePaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, inv
         };
         try {
             setIsSaving(true);
-            const response = await api.post(Constants.CREATE_INVOICE_PAYMENT_URL, payload, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.post(Constants.CREATE_INVOICE_PAYMENT_URL, payload);
             if (response.data.data) {
                 toast.success('Invoice payment created successfully.');
                 handleOnClose();

@@ -89,7 +89,6 @@ const SupplierPayments: FC = () => {
             setIsLoading(true);
             const response = await api.get(Constants.GET_SUPPLIER_PAYMENTS_URL, {
                 params: { search, limit, page },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             setSupplierPayments(response.data.data.payments ?? []);
             setPagination(response.data.data.pagination ?? { total: 0, page: 1, limit: 10, totalPages: 1 });

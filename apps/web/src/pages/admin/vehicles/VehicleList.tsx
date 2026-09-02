@@ -39,7 +39,6 @@ const VehicleList: React.FC = () => {
     const limit = Number(searchParams.get('limit') || 10);
     const page = Number(searchParams.get('page') || 1);
     const navigate = useNavigate();
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     const [isLoading, setIsLoading] = useState(false);
@@ -102,7 +101,6 @@ const VehicleList: React.FC = () => {
             }
             const response = await api.get(Constants.GET_VEHICLES_FOR_LIST_URL, {
                 params,
-                headers: { 'Authorization': `Bearer ${token}` },
             });
             setVehicles(response.data.data?.vehicles || []);
             setPagination(response.data.data?.pagination || { total: 0, page: 1, limit: 10, totalPages: 1 });
@@ -139,9 +137,7 @@ const VehicleList: React.FC = () => {
         if (!deleteItem) return;
         try {
             setIsDeleting(true);
-            await api.delete(`${Constants.DELETE_VEHICLE_URL}/${deleteItem.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
-            });
+            await api.delete(`${Constants.DELETE_VEHICLE_URL}/${deleteItem.id}`);
             toast.success("Vehicle deleted successfully.");
             fetchVehicles(search, limit, page, statusFilter);
             setDeleteModalOpen(false);

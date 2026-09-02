@@ -16,7 +16,6 @@ interface CustomFieldFormProps {
     onSuccess: () => void;
     moduleId: string;
     customFieldTypes: CustomFieldTypeShape[];
-    token: string;
     editItem?: CustomFieldFormState | null;
     allowLineItemPlacement?: boolean;
 }
@@ -34,7 +33,6 @@ const CustomFieldForm: React.FC<CustomFieldFormProps> = ({
     onSuccess,
     moduleId,
     customFieldTypes,
-    token,
     editItem,
     allowLineItemPlacement = false
 }) => {
@@ -206,7 +204,6 @@ const CustomFieldForm: React.FC<CustomFieldFormProps> = ({
                 : `${Constants.BASE_URL}/api/admin/custom-fields`;
 
             const requestConfig = {
-                headers: { 'Authorization': `Bearer ${token}` }
             };
 
             const response = await (isEditing

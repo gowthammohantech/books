@@ -123,7 +123,6 @@ const DebitNoteList: FC = () => {
             setIsLoading(true);
             const response = await api.get(Constants.FETCH_FOR_DEBIT_NOTE_LIST_URL, {
                 params: { search, limit, page },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             setDebitNotes(response.data.data?.debitNotes ?? []);
             setPagination(response.data.data.pagination ?? { total: 0, page: 1, limit: 10, totalPages: 1 });

@@ -78,7 +78,7 @@ const TaxRateList: React.FC = () => {
     const limit = Number(searchParams.get('limit') || 10);
     const page = Number(searchParams.get('page') || 1);
     const navigate = useNavigate();
-    const { token, user } = useSelector((state: RootState) => state.auth);
+    const { user } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     const [isLoading, setIsLoading] = useState(false);
@@ -142,7 +142,6 @@ const TaxRateList: React.FC = () => {
             }
             const response = await api.get(Constants.GET_TAX_RATES_FOR_LIST_URL, {
                 params,
-                headers: { 'Authorization': `Bearer ${token}` },
             });
             setTaxRates(response.data?.data?.taxRates || []);
             setPagination(response.data?.data?.pagination || { total: 0, page: 1, limit: 10, totalPages: 1 });
@@ -157,9 +156,7 @@ const TaxRateList: React.FC = () => {
     const fetchCompanyRegime = async () => {
         if (!user?.id) return;
         try {
-            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
-            });
+            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`);
             const regime = response.data?.data?.taxRegime as TaxRegime | undefined;
             if (regime && ['GST_INDIA', 'VAT_GENERIC', 'US_SALES_TAX', 'NONE'].includes(regime)) {
                 setCompanyRegime(regime);
@@ -202,9 +199,7 @@ const TaxRateList: React.FC = () => {
         if (!deleteItem) return;
         try {
             setIsDeleting(true);
-            await api.delete(`${Constants.DELETE_TAX_RATE_URL}/${deleteItem.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
-            });
+            await api.delete(`${Constants.DELETE_TAX_RATE_URL}/${deleteItem.id}`);
             toast.success("Tax deleted successfully.");
             fetchTaxRates(search, limit, page, regimeFilter);
             setDeleteModalOpen(false);
@@ -237,7 +232,7 @@ const TaxRateList: React.FC = () => {
                             taxKind: s.taxKind,
                             isActive: true,
                         },
-                        { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } },
+                        { headers: { 'Content-Type': 'application/json' } },
                     ),
                 ),
             );

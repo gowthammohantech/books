@@ -5,9 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Constants from '../../../constants/api';
 import { toast } from "sonner";
 import { Upload, X } from 'lucide-react';
-import { useSelector } from 'react-redux';
 import ImageCropperUpload from '@components/common/ImageCropperUpload';
-import type { RootState } from '../../../store';
 import SubmitButton from '@components/admin/SubmitButton';
 import { useDebounce } from '@hooks/useDebounce';
 import SmartDropdown from '@components/admin/SmartDropdown';
@@ -95,7 +93,6 @@ const NO_UNIT = { id: '', name: '-no unit-' };
 
 export default function ProductForm({ productData }: ProductFormProps) {
     const navigate = useNavigate();
-    const { token } = useSelector((state: RootState) => state.auth);
     const isEditMode = Boolean(productData);
     const { defaultCurrencyCode } = useCurrencies();
 
@@ -153,9 +150,8 @@ export default function ProductForm({ productData }: ProductFormProps) {
 
     useEffect(() => {
         const fetchCategoriesByQuery = async () => {
-            const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await api.get(`${Constants.FETCH_PRODUCT_CATEGORIES_URL}?search=${debouncedCategorySearch}`, { headers });
+                const response = await api.get(`${Constants.FETCH_PRODUCT_CATEGORIES_URL}?search=${debouncedCategorySearch}`);
                 const formattedCategories = response.data.data.map((category: any) => ({
                     id: category.id,
                     name: category.categoryName
@@ -171,9 +167,8 @@ export default function ProductForm({ productData }: ProductFormProps) {
 
     useEffect(() => {
         const fetchBrandsByQuery = async () => {
-            const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await api.get(`${Constants.FETCH_PRODUCT_BRANDS_URL}?search=${debouncedBrandSearch}`, { headers });
+                const response = await api.get(`${Constants.FETCH_PRODUCT_BRANDS_URL}?search=${debouncedBrandSearch}`);
                 const formattedBrands = response.data.data.map((brand: any) => ({
                     id: brand.id,
                     name: brand.brandName
@@ -189,9 +184,8 @@ export default function ProductForm({ productData }: ProductFormProps) {
 
     useEffect(() => {
         const fetchUnitsByQuery = async () => {
-            const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await api.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=${debouncedUnitSearch}`, { headers });
+                const response = await api.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=${debouncedUnitSearch}`);
                 const formattedUnits = response.data.data.map((unit: any) => ({
                     id: unit.id,
                     name: unit.unitName
@@ -208,11 +202,9 @@ export default function ProductForm({ productData }: ProductFormProps) {
     const [taxRateRows, setTaxRateRows] = useState<TaxRate[]>([]);
     useEffect(() => {
         const fetchTaxesByQuery = async () => {
-            const headers = { 'Authorization': `Bearer ${token}` };
             try {
                 const response = await api.get(
                     `${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true&search=${debouncedTaxSearch}`,
-                    { headers },
                 );
                 const rows: TaxRate[] = response.data?.data?.taxRates ?? [];
                 setTaxRateRows(rows);
@@ -421,13 +413,12 @@ export default function ProductForm({ productData }: ProductFormProps) {
 
         try {
             setIsSubmitting(true);
-            const config = { headers: { 'Authorization': `Bearer ${token}` } };
             if (isEditMode) {
-                await api.put(`${Constants.UPDATE_PRODUCT_URL}/${productData?.id}`, submissionData, config);
+                await api.put(`${Constants.UPDATE_PRODUCT_URL}/${productData?.id}`, submissionData);
                 toast.success("Item updated successfully!");
                 navigate('/products');
             } else {
-                await api.post(Constants.CREATE_PRODUCT_URL, submissionData, config);
+                await api.post(Constants.CREATE_PRODUCT_URL, submissionData);
                 toast.success("Item created successfully!");
                 if (wantsAddAnother) {
                     // The No-Tax default effect keys off [taxRateRows, isEditMode], neither
@@ -714,8 +705,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
                 onSuccess={async () => {
                     setIsCategoryCreateModalOpen(false);
                     try {
-                        const headers = { 'Authorization': `Bearer ${token}` };
-                        const response = await api.get(`${Constants.FETCH_PRODUCT_CATEGORIES_URL}?search=`, { headers });
+                        const response = await api.get(`${Constants.FETCH_PRODUCT_CATEGORIES_URL}?search=`);
                         const formatted = response.data.data.map((category: { id: string; categoryName: string }) => ({
                             id: category.id,
                             name: category.categoryName
@@ -736,8 +726,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
                 onSuccess={async () => {
                     setIsCreateBrandModalOpen(false);
                     try {
-                        const headers = { 'Authorization': `Bearer ${token}` };
-                        const response = await api.get(`${Constants.FETCH_PRODUCT_BRANDS_URL}?search=`, { headers });
+                        const response = await api.get(`${Constants.FETCH_PRODUCT_BRANDS_URL}?search=`);
                         const formatted = response.data.data.map((brand: { id: string; brandName: string }) => ({
                             id: brand.id,
                             name: brand.brandName
@@ -758,8 +747,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
                 onSuccess={async () => {
                     setIsCreateUnitModalOpen(false);
                     try {
-                        const headers = { 'Authorization': `Bearer ${token}` };
-                        const response = await api.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=`, { headers });
+                        const response = await api.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=`);
                         const formatted = response.data.data.map((unit: { id: string; unitName: string }) => ({
                             id: unit.id,
                             name: unit.unitName

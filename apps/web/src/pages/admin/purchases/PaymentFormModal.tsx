@@ -1,6 +1,4 @@
 import api from '@lib/apiClient';
-import { useSelector } from "react-redux";
-import type { RootState } from "@store/index";
 import { useEffect, useState, type FC } from "react";
 import axios, { AxiosError } from "axios";
 import Constants from "@constants/api";
@@ -49,7 +47,6 @@ const initialFormData: PaymentFormData = {
     attachment: null
 }
 const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfirm }) => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const [formData, setFormData] = useState<PaymentFormData>(initialFormData);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,9 +77,7 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
 
     const fetchPaymentModes = async () => {
         try {
-            const response = await api.get(Constants.GET_ALL_PAYMENT_MODES_URL, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(Constants.GET_ALL_PAYMENT_MODES_URL);
             setPaymentModeOptions(response.data.data);
         } catch (error) {
             console.error('Error fetching payment modes:', error);
@@ -94,7 +89,6 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
             try {
                 const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.data.data.length > 0) {
                     const formattedBankAccounts = response.data.data.map((item: any) => {
@@ -123,7 +117,6 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
             try {
                 const response = await api.get(Constants.GET_ALL_PENDING_PURCHASES_URL, {
                     params: { search: debouncedPurchaseSearch },
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = response.data.data;
                 if (data) {
@@ -261,7 +254,7 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
         try {
             setIsSubmitting(true);
             await api.post(Constants.CREATE_SUPPLIER_PAYMENT_URL, apiData, {
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
             toast.success('Payment created successfully');
             onConfirm();

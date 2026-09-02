@@ -3,8 +3,6 @@ import { useEffect, useState } from "react";
 import Modal from "./Modal";
 import type { AxiosError } from 'axios';
 import Constants from "@constants/api";
-import type { RootState } from "@store/index";
-import { useSelector } from "react-redux";
 import SubmitButton from "./SubmitButton";
 import { toast } from "sonner";
 import type { Customer } from "@models/customer";
@@ -45,7 +43,6 @@ const CreateCustomerForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => 
             pincode: '',
         },
     });
-    const { token } = useSelector((state: RootState) => state.auth);
     const [formData, setFormData] = useState<CustomerFormData>(setInitialFormData());
     const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -85,11 +82,7 @@ const CreateCustomerForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => 
         if (!validateForm()) return;
         try {
             setIsSubmitting(true);
-            const response = await api.post(Constants.CREATE_CUSTOMER_MINIMAL_URL, formData, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await api.post(Constants.CREATE_CUSTOMER_MINIMAL_URL, formData);
             toast.success("Customer created successfully!");
             onSuccess(response.data.data || {});
         } catch (error) {

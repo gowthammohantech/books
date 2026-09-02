@@ -138,11 +138,7 @@ const CompanySettings: React.FC = () => {
 
     const fetchCompanySettings = async () => {
         try {
-            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await api.get(`${Constants.FETCH_COMPANY_SETTINGS_URL}/${user.id}`);
             const stateIdValue = response.data.data.stateId ?? (response.data.data.state ? response.data.data.state.id : null);
             const countryIdValue = response.data.data.countryId ?? (response.data.data.country ? response.data.data.country.id : null);
             setCompanyFormData(prev => ({
@@ -177,11 +173,7 @@ const CompanySettings: React.FC = () => {
             }));
             //if country available then set it
             if (response.data.data.country) {
-                const countryRes = await api.get(`${Constants.FETCH_COUNTRY_URL}/${response.data.data.country.id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                const countryRes = await api.get(`${Constants.FETCH_COUNTRY_URL}/${response.data.data.country.id}`);
                 const countryData = countryRes.data;
                 const countryObject = { id: countryData.id, name: countryData.name };
 
@@ -189,11 +181,7 @@ const CompanySettings: React.FC = () => {
             }
             //if state available then set it
             if (response.data.data.state) {
-                const stateRes = await api.get(`${Constants.FETCH_STATE_URL}/${response.data.data.state.id}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                const stateRes = await api.get(`${Constants.FETCH_STATE_URL}/${response.data.data.state.id}`);
                 const stateData = stateRes.data;
                 const stateObject = { id: stateData.id, name: stateData.name };
                 setSelectedState(stateObject);
@@ -237,7 +225,6 @@ const CompanySettings: React.FC = () => {
             setLoadingCountries(true);
             const response = await api.get(Constants.FETCH_COUNTRIES_URL, {
                 params: { search: searchTerm },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
 
             const transformedCountries = response.data.map((country: any) => ({
@@ -261,7 +248,6 @@ const CompanySettings: React.FC = () => {
             setLoadingStates(true);
             const response = await api.get(`${Constants.FETCH_STATES_URL}/${countryId}`, {
                 params: { search: searchTerm },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             const transformedStates = response.data.map((state: any) => ({
                 id: String(state.id),
@@ -354,7 +340,7 @@ const CompanySettings: React.FC = () => {
                 }
             );
 
-            if (token) dispatch(fetchSystemSettings(token));
+            if (token) dispatch(fetchSystemSettings());
 
             toast.success("Company settings updated successfully");
         } catch (error) {

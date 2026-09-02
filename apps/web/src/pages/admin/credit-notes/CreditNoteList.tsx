@@ -114,7 +114,6 @@ const CreditNoteList: React.FC = () => {
             setIsLoading(true);
             const response = await api.get(Constants.CREDIT_NOTE_LIST_URL, {
                 params: { search, limit, page },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = response.data.data;
             if (data.creditNotes.length > 0) {

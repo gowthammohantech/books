@@ -73,8 +73,7 @@ const RolePermissions: React.FC = () => {
         const fetchModules = async () => {
             try {
                 const response = await api.get<ModuleListResponse>(
-                    `${Constants.FETCH_MODULES_URL}`,
-                    { headers: { 'Authorization': `Bearer ${token}` } }
+                    `${Constants.FETCH_MODULES_URL}`
                 );
                 setAllModules(response.data.data);
             } catch (error) {
@@ -87,8 +86,7 @@ const RolePermissions: React.FC = () => {
             try {
                 setIsFetching(true);
                 const response = await api.get<RolePermissionsResponse>(
-                    `${Constants.FETCH_ROLE_PERMISSIONS_URL}/${roleId}`,
-                    { headers: { 'Authorization': `Bearer ${token}` } }
+                    `${Constants.FETCH_ROLE_PERMISSIONS_URL}/${roleId}`
                 );
                 setAllRolePermissions(response.data.data);
                 setDefaultRoute(response.data.data.defaultRoute || "dashboard");
@@ -291,9 +289,7 @@ const RolePermissions: React.FC = () => {
                 defaultRoute: defaultRoute
             }
 
-            await api.post(`${Constants.SAVE_PERMISSIONS_URL}`, payloadData, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.post(`${Constants.SAVE_PERMISSIONS_URL}`, payloadData);
             toast.success("Permissions saved successfully.");
 
         } catch (error) {

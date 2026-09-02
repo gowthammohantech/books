@@ -17,7 +17,7 @@ function App() {
       .unwrap()
       .then(() => {
         if (token) {
-          return dispatch(fetchSystemSettings(token));
+          return dispatch(fetchSystemSettings());
         }
       })
       .finally(() => {

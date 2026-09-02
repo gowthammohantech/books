@@ -92,9 +92,7 @@ const OverviewPurchaseOrder: React.FC = () => {
     const fetchPurchaseOrder = useCallback(async (id: string) => {
         try {
             setIsLoading(true);
-            const response = await api.get(`${Constants.FETCH_PURCHASE_ORDER_URL}/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
-            });
+            const response = await api.get(`${Constants.FETCH_PURCHASE_ORDER_URL}/${id}`);
             setPoData(response.data.data);
         } catch (error) {
             console.error('Error fetching purchase order:', error);
@@ -143,7 +141,6 @@ const OverviewPurchaseOrder: React.FC = () => {
             const response = await api.post(
                 Constants.CONVERT_PO_TO_PURCHASE_URL,
                 { purchaseOrderId },
-                { headers: { 'Authorization': `Bearer ${token}` } },
             );
             toast.success('Purchase order converted to purchase successfully.');
             setIsConvertModalOpen(false);

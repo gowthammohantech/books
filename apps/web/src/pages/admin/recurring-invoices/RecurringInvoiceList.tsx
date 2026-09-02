@@ -2,8 +2,6 @@ import api from '@lib/apiClient';
 import { CirclePlusIcon, Edit, PauseCircle, PlayCircle, PlayIcon, ListIcon, StopCircle } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Table from "@components/admin/Table";
-import { useSelector } from "react-redux";
-import type { RootState } from "@store/index";
 import Constants from "@constants/api";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -67,7 +65,6 @@ const RecurringInvoiceList: React.FC = () => {
     const limit = Number(searchParams.get('limit') || 10);
     const page = Number(searchParams.get('page') || 1);
     const navigate = useNavigate();
-    const { token } = useSelector((state: RootState) => state.auth);
     const [isLoading, setIsLoading] = useState(false);
     const [busyRowId, setBusyRowId] = useState<string | null>(null);
 
@@ -89,7 +86,6 @@ const RecurringInvoiceList: React.FC = () => {
             };
             const response = await api.get(Constants.RECURRING_SCHEDULES_URL, {
                 params,
-                headers: { 'Authorization': `Bearer ${token}` },
             });
             setSchedules(response.data.data?.schedules || []);
             setPagination(response.data.data?.pagination || { total: 0, page: 1, limit: 10, totalPages: 1 });
@@ -162,8 +158,7 @@ const RecurringInvoiceList: React.FC = () => {
             setBusyRowId(row.id);
             const resp = await api.post(
                 `${Constants.RECURRING_SCHEDULES_URL}/${row.id}/run-now`,
-                {},
-                { headers: { 'Authorization': `Bearer ${token}` } }
+                {}
             );
             const newNum = resp.data?.data?.invoice?.invoiceNumber ?? '';
             toast.success(newNum ? `Generated invoice ${newNum}` : 'Invoice generated');
@@ -182,8 +177,7 @@ const RecurringInvoiceList: React.FC = () => {
         try {
             setOccurrencesLoading(true);
             const resp = await api.get(
-                `${Constants.RECURRING_SCHEDULES_URL}/${row.id}/occurrences`,
-                { headers: { 'Authorization': `Bearer ${token}` } }
+                `${Constants.RECURRING_SCHEDULES_URL}/${row.id}/occurrences`
             );
             setOccurrences(resp.data?.data?.occurrences || []);
         } catch (error) {

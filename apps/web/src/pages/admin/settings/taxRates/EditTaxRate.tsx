@@ -19,7 +19,6 @@ import { Button } from "@components/ui";
 const EditTaxRate: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
 
@@ -37,9 +36,7 @@ const EditTaxRate: React.FC = () => {
     const fetchTaxRateData = async (taxRateId: string) => {
         try {
             setIsFetching(true);
-            const response = await api.get(`${Constants.GET_TAX_RATE_FOR_EDIT_URL}/${taxRateId}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
-            });
+            const response = await api.get(`${Constants.GET_TAX_RATE_FOR_EDIT_URL}/${taxRateId}`);
             const data = response.data?.data?.taxRate as TaxRate | undefined;
             if (data) {
                 const formatted: TaxRateFormData = {
@@ -66,9 +63,7 @@ const EditTaxRate: React.FC = () => {
         if (!id) return;
         try {
             setIsDeleting(true);
-            await api.delete(`${Constants.DELETE_TAX_RATE_URL}/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
-            });
+            await api.delete(`${Constants.DELETE_TAX_RATE_URL}/${id}`);
             toast.success('Tax rate deleted successfully');
             setDeleteModalOpen(false);
             navigate('/settings/tax-rates');

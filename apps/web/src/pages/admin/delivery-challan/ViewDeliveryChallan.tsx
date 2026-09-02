@@ -24,9 +24,7 @@ const ViewDeliveryChallan: React.FC = () => {
     useEffect(() => {
         const fetchChallanDetails = async () => {
             try {
-                const response = await api.get(`${Constants.FETCH_DELIVERY_CHALLAN_FOR_EDIT_URL}/${challanId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                })
+                const response = await api.get(`${Constants.FETCH_DELIVERY_CHALLAN_FOR_EDIT_URL}/${challanId}`)
                 if (response.data.data) {
                     setChallanDetails(response.data.data);
                 }

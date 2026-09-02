@@ -3,10 +3,8 @@ import Modal from "@components/admin/Modal";
 import Constants from "@constants/api";
 import type { Product, ProductFormData } from "@models/product";
 import type { TaxRate } from "@models/taxRate";
-import type { RootState } from "@store/index";
 
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import SubmitButton from "./SubmitButton";
 import { useDebounce } from "@hooks/useDebounce";
@@ -31,7 +29,6 @@ const initialFormData: ProductFormData = {
 }
 
 const CreateProductForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const [formData, setFormData] = useState<ProductFormData>(initialFormData);
     const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
     const [units, setUnits] = useState<OptionType[]>([]);
@@ -52,9 +49,8 @@ const CreateProductForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
     useEffect(() => {
         const fetchUnitsByQuery = async () => {
             if (!isOpen) return;
-            const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await api.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=${debouncedUnitSearch}`, { headers });
+                const response = await api.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=${debouncedUnitSearch}`);
                 const formattedUnits = response.data.data.map((unit: { id: string; unitName: string }) => ({
                     id: unit.id,
                     name: unit.unitName
@@ -71,11 +67,9 @@ const CreateProductForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
     useEffect(() => {
         const fetchTaxesByQuery = async () => {
             if (!isOpen) return;
-            const headers = { 'Authorization': `Bearer ${token}` };
             try {
                 const response = await api.get(
                     `${Constants.GET_TAX_RATES_FOR_LIST_URL}?limit=100&isActive=true&search=${debouncedTaxSearch}`,
-                    { headers },
                 );
                 const rows: TaxRate[] = response.data?.data?.taxRates ?? [];
                 setTaxes(rows.map((r) => ({ id: r.id, name: `${r.name} (${Number(r.rate)}%)` })));
@@ -115,11 +109,7 @@ const CreateProductForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
             if (formData.description) payloadFormData.append('description', formData.description);
             if (formData.selling_price !== '') payloadFormData.append('selling_price', String(formData.selling_price));
             if (formData.taxRateId) payloadFormData.append('taxRateId', formData.taxRateId);
-            const response = await api.post(Constants.CREATE_PRODUCT_URL, payloadFormData, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await api.post(Constants.CREATE_PRODUCT_URL, payloadFormData);
             toast.success("Item created successfully!");
             onSuccess(response.data.data || {});
         } catch (error: any) {

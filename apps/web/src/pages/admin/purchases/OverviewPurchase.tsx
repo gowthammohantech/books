@@ -36,9 +36,7 @@ const OverviewPurchase: React.FC = () => {
     const fetchPurchase = useCallback(async (id: string) => {
         try {
             setIsLoading(true);
-            const response = await api.get(`${Constants.GET_PURCHASE_DETAILS_URL}/${id}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
-            });
+            const response = await api.get(`${Constants.GET_PURCHASE_DETAILS_URL}/${id}`);
             setPurchaseData(response.data.data);
         } catch (error) {
             // intentional

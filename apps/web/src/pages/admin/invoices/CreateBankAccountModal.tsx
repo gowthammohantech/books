@@ -3,8 +3,6 @@ import { useEffect, useState } from "react";
 import Modal from "@components/admin/Modal";
 import type { AxiosError } from 'axios';
 import Constants from "@constants/api";
-import type { RootState } from "@store/index";
-import { useSelector } from "react-redux";
 import SubmitButton from "@components/admin/SubmitButton";
 import { toast } from "sonner";
 import Switch from "@components/admin/Switch";
@@ -38,7 +36,6 @@ const bankAccountTypes: OptionType[] = [
     { id: "current", name: "Current" },
 ];
 const CreateBankAccountModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
-    const { token } = useSelector((state: RootState) => state.auth);
 
     const setInitialFormData = (): BankAccountFormData => ({
         accountHoldername: "",
@@ -117,9 +114,7 @@ const CreateBankAccountModal: React.FC<Props> = ({ isOpen, onClose, onSuccess })
 
         try {
             setIsSubmitting(true);
-            const response = await api.post(Constants.CREATE_BANK_ACCOUNT_URL, payload, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.post(Constants.CREATE_BANK_ACCOUNT_URL, payload);
             toast.success('Bank account created successfully');
             onSuccess(response.data.data || {});
         } catch (error: any | AxiosError) {

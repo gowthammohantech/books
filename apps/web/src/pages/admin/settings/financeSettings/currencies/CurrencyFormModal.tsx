@@ -68,19 +68,15 @@ const CurrencyFormModal: React.FC<CurrencyFormModalProps> = ({ isOpen, onClose, 
         try {
             setIsSaving(true);
             if (editData) {
-                await api.put(Constants.UPDATE_CURRENCY_URL + `/${editData.id}`, currencyFormData, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await api.put(Constants.UPDATE_CURRENCY_URL + `/${editData.id}`, currencyFormData);
                 toast.success('Currency updated successfully');
                 onSuccess();
             } else {
-                await api.post(Constants.CREATE_NEW_CURRENCY_URL, currencyFormData, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await api.post(Constants.CREATE_NEW_CURRENCY_URL, currencyFormData);
                 toast.success('Currency created successfully');
                 onSuccess();
             }
-            if (token) dispatch(fetchSystemSettings(token));
+            if (token) dispatch(fetchSystemSettings());
         } catch (error) {
             const axiosError = error as AxiosError<{ errors: any }>;
             if (axiosError.response?.data?.errors) {

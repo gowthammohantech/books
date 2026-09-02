@@ -82,7 +82,6 @@ const InventoryList: React.FC = () => {
             setIsLoading(true);
             const response = await api.get(Constants.FETCH_INVENTORY_LIST_URL, {
                 params: { search, limit, page },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = response.data.data;
             if (data.length > 0) {
@@ -132,9 +131,7 @@ const InventoryList: React.FC = () => {
         if (!validateForm()) return;
         try {
             setIsSaving(true);
-            await api.post(Constants.UPDATE_INVENTORY_URL, formData, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.post(Constants.UPDATE_INVENTORY_URL, formData);
             setStockUpdateModalOpen(false);
             setItemToUpdate(null);
             setStockUpdateType('');

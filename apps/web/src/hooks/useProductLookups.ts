@@ -41,9 +41,8 @@ export function useProductLookups(isActive: boolean) {
     useEffect(() => {
         const fetchCategoriesByQuery = async () => {
             if (!isActive) return;
-            const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await api.get(`${Constants.FETCH_PRODUCT_CATEGORIES_URL}?search=${debouncedCategorySearch}`, { headers });
+                const response = await api.get(`${Constants.FETCH_PRODUCT_CATEGORIES_URL}?search=${debouncedCategorySearch}`);
                 const formattedCategories = response.data.data.map((category: any) => ({
                     id: category.id,
                     name: category.categoryName
@@ -60,9 +59,8 @@ export function useProductLookups(isActive: boolean) {
     useEffect(() => {
         const fetchBrandsByQuery = async () => {
             if (!isActive) return;
-            const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await api.get(`${Constants.FETCH_PRODUCT_BRANDS_URL}?search=${debouncedBrandSearch}`, { headers });
+                const response = await api.get(`${Constants.FETCH_PRODUCT_BRANDS_URL}?search=${debouncedBrandSearch}`);
                 const formattedBrands = response.data.data.map((brand: any) => ({
                     id: brand.id,
                     name: brand.brandName
@@ -79,9 +77,8 @@ export function useProductLookups(isActive: boolean) {
     useEffect(() => {
         const fetchUnitsByQuery = async () => {
             if (!isActive) return;
-            const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await api.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=${debouncedUnitSearch}`, { headers });
+                const response = await api.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=${debouncedUnitSearch}`);
                 const formattedUnits = response.data.data.map((unit: any) => ({
                     id: unit.id,
                     name: unit.unitName
@@ -98,9 +95,8 @@ export function useProductLookups(isActive: boolean) {
     useEffect(() => {
         const fetchTaxesByQuery = async () => {
             if (!isActive) return;
-            const headers = { 'Authorization': `Bearer ${token}` };
             try {
-                const response = await api.get(`${Constants.FETCH_PRODUCT_TAXES_URL}?search=${debouncedTaxSearch}`, { headers });
+                const response = await api.get(`${Constants.FETCH_PRODUCT_TAXES_URL}?search=${debouncedTaxSearch}`);
                 const formattedTaxes = response.data.data.map((tax: any) => ({
                     id: tax.id,
                     name: tax.taxGroupName
@@ -127,9 +123,8 @@ export function useProductLookups(isActive: boolean) {
      * with the fresh fetch) and select (grab `[0].id`) in one round trip.
      */
     const refetchCategories = useCallback(async (): Promise<OptionType[]> => {
-        const headers = { 'Authorization': `Bearer ${token}` };
         try {
-            const response = await api.get(`${Constants.FETCH_PRODUCT_CATEGORIES_URL}?search=`, { headers });
+            const response = await api.get(`${Constants.FETCH_PRODUCT_CATEGORIES_URL}?search=`);
             const formatted = response.data.data.map((category: any) => ({ id: category.id, name: category.categoryName }));
             setCategories(formatted);
             return formatted;
@@ -141,9 +136,8 @@ export function useProductLookups(isActive: boolean) {
     }, [token]);
 
     const refetchBrands = useCallback(async (): Promise<OptionType[]> => {
-        const headers = { 'Authorization': `Bearer ${token}` };
         try {
-            const response = await api.get(`${Constants.FETCH_PRODUCT_BRANDS_URL}?search=`, { headers });
+            const response = await api.get(`${Constants.FETCH_PRODUCT_BRANDS_URL}?search=`);
             const formatted = response.data.data.map((brand: any) => ({ id: brand.id, name: brand.brandName }));
             setBrands(formatted);
             return formatted;
@@ -155,9 +149,8 @@ export function useProductLookups(isActive: boolean) {
     }, [token]);
 
     const refetchUnits = useCallback(async (): Promise<OptionType[]> => {
-        const headers = { 'Authorization': `Bearer ${token}` };
         try {
-            const response = await api.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=`, { headers });
+            const response = await api.get(`${Constants.FETCH_PRODUCT_UNITS_URL}?search=`);
             const formatted = response.data.data.map((unit: any) => ({ id: unit.id, name: unit.unitName }));
             setUnits(formatted);
             return formatted;
@@ -169,9 +162,8 @@ export function useProductLookups(isActive: boolean) {
     }, [token]);
 
     const refetchTaxes = useCallback(async (): Promise<OptionType[]> => {
-        const headers = { 'Authorization': `Bearer ${token}` };
         try {
-            const response = await api.get(`${Constants.FETCH_PRODUCT_TAXES_URL}?search=`, { headers });
+            const response = await api.get(`${Constants.FETCH_PRODUCT_TAXES_URL}?search=`);
             const formatted = response.data.data.map((tax: any) => ({ id: tax.id, name: tax.taxGroupName }));
             setTaxes(formatted);
             return formatted;

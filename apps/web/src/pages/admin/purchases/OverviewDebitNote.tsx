@@ -100,9 +100,7 @@ const OverviewDebitNote: React.FC = () => {
         try {
             setIsLoading(true);
             setNotFound(false);
-            const response = await api.get(`${Constants.GET_DEBIT_NOTE_DETAILS_URL}/${debitNoteId}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
-            });
+            const response = await api.get(`${Constants.GET_DEBIT_NOTE_DETAILS_URL}/${debitNoteId}`);
             setDebitNote(response.data.data);
         } catch (error) {
             setNotFound(true);

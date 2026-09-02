@@ -64,7 +64,6 @@ const CurrencyList: React.FC = () => {
             setIsLoading(true);
             const response = await api.get(Constants.GET_CURRENCIES_URL, {
                 params: { search, limit, page },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             setCurrencies(response.data.data.currencies);
             if (response.data.data.pagination) setPagination(response.data.data.pagination);
@@ -88,11 +87,8 @@ const CurrencyList: React.FC = () => {
 
         try {
             await api.patch(`${Constants.UPDATE_CURRENCY_STATUS_URL}/${id}`,
-                { status: newStatus },
-                {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-            if (token) dispatch(fetchSystemSettings(token));
+                { status: newStatus });
+            if (token) dispatch(fetchSystemSettings());
             toast.success('Status updated successfully');
             await fetchCurrencies();
         } catch (error) {
@@ -112,11 +108,8 @@ const CurrencyList: React.FC = () => {
 
         try {
             await api.patch(`${Constants.UPDATE_CURRENCY_STATUS_URL}/${id}`,
-                { isDefault: newStatus, status: newStatus },
-                {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-            if (token) dispatch(fetchSystemSettings(token));
+                { isDefault: newStatus, status: newStatus });
+            if (token) dispatch(fetchSystemSettings());
             toast.success('Default Status updated successfully');
             await fetchCurrencies();
         } catch (error) {
@@ -179,9 +172,7 @@ const CurrencyList: React.FC = () => {
     const handleCurrencyDelete = async () => {
         try {
             setIsDeleting(true);
-            await api.delete(`${Constants.DELETE_CURRENCY_URL}/${deleteData?.id}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.delete(`${Constants.DELETE_CURRENCY_URL}/${deleteData?.id}`);
             toast.success('Currency deleted successfully.');
             setDeleteModalOpen(false);
             await fetchCurrencies();

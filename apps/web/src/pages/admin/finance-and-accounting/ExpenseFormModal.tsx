@@ -133,7 +133,6 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
             try {
                 const response = await api.get(Constants.FETCH_EXPENSE_CATEGORIES_WITH_SEARCH_URL, {
                     params: { search: categorySearchKeyword },
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.data.data.length > 0) {
                     const formattedCategories = response.data.data.map((item: any) => {
@@ -158,7 +157,6 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
             try {
                 const response = await api.get(Constants.FETCH_BANK_ACCOUNTS_WITH_SEARCH_URL, {
                     params: { search: debouncedSearchTermBankAccount },
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.data.data.length > 0) {
                     const formattedBankAccounts = response.data.data.map((item: any) => {
@@ -187,7 +185,6 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
             try {
                 const response = await api.get(Constants.GET_SUPPLIERS_URL, {
                     params: { search: debouncedSupplierSearchKeyword, limit: 100, page: 1 },
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (response.data?.data?.suppliers?.length > 0) {
                     const formattedSuppliers = response.data.data.suppliers.map((item: any) => ({
@@ -225,9 +222,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
 
     const fetchAllPaymentModes = async () => {
         try {
-            const response = await api.get(Constants.GET_ALL_PAYMENT_MODES_URL, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(Constants.GET_ALL_PAYMENT_MODES_URL);
             if (response.data.data) {
                 setPaymentModeOptions(response.data.data);
             }
@@ -420,16 +415,12 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
             });
 
             if (editItem) {
-                await api.put(`${Constants.UPDATE_EXPENSE_URL}/${editItem.id}`, payload, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await api.put(`${Constants.UPDATE_EXPENSE_URL}/${editItem.id}`, payload);
 
                 toast.success('Expense updated successfully');
                 onSuccess();
             } else {
-                await api.post(Constants.CREATE_NEW_EXPENSE_URL, payload, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await api.post(Constants.CREATE_NEW_EXPENSE_URL, payload);
 
                 toast.success('Expense created successfully');
                 onSuccess();

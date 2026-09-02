@@ -40,7 +40,6 @@ const UserList: React.FC = () => {
     const search = searchParams.get('search') || '';
     const limit = Number(searchParams.get('limit') || 10);
     const page = Number(searchParams.get('page') || 1);
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     const { formatDate } = useDateFormatter();
@@ -61,7 +60,6 @@ const UserList: React.FC = () => {
             setIsLoading(true);
             const response = await api.get(Constants.FETCH_STAFF_FOR_LIST_URL, {
                 params: { search, limit, page },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             setStaffs(response.data.data.users || []);
             setPagination(response.data.data.pagination);
@@ -100,9 +98,7 @@ const UserList: React.FC = () => {
     const handleConfirmDelete = async () => {
         if (deleteItem) {
             try {
-                await api.delete(`${Constants.DELETE_STAFF_URL}/${deleteItem.id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                await api.delete(`${Constants.DELETE_STAFF_URL}/${deleteItem.id}`);
                 toast.success("User deleted successfully.");
                 fetchStaffs(search, limit, page);
                 setDeleteModalOpen(false);

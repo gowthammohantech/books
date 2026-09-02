@@ -42,7 +42,6 @@ interface FilterParams {
     page?: number;
 }
 const PettyCashList: React.FC = () => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     const { formatDate } = useDateFormatter();
@@ -63,9 +62,7 @@ const PettyCashList: React.FC = () => {
 
     const fetchPettyCashList = async () => {
         try {
-            const response = await api.get<ExpenseResponse>(Constants.PETTY_CASH_LIST_URL, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get<ExpenseResponse>(Constants.PETTY_CASH_LIST_URL);
             if (response.data.success && response.data.data.pettyCash) {
                 setPettyCashRecords(response.data.data.pettyCash);
                 setCurrentBalance(response.data.data.pettyCash?.currentBalance || 0);
@@ -101,7 +98,6 @@ const PettyCashList: React.FC = () => {
             const response = await api.get<PettyCashTransactionResponse>(Constants.FETCH_PETTYCASH_TRANSACTION_LIST_URL,
                 {
                     params: filterParams,
-                    headers: { 'Authorization': `Bearer ${token}` }
                 });
             if (response.data.data && response.data.data.transactions) {
                 setTransactions(response.data.data.transactions);

@@ -3,8 +3,6 @@ import { useEffect, useState } from "react";
 import Modal from "@components/admin/Modal";
 import type { AxiosError } from 'axios';
 import Constants from "@constants/api";
-import type { RootState } from "@store/index";
-import { useSelector } from "react-redux";
 import SubmitButton from "@components/admin/SubmitButton";
 import { toast } from "sonner";
 import DynamicCustomFields from "@components/admin/DynamicCustomFields";
@@ -32,7 +30,6 @@ const CreateBrandModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
         brand_image: null,
         brandImageUrl: "",
     });
-    const { token } = useSelector((state: RootState) => state.auth);
     const [formData, setFormData] = useState<BrandFormData>(setInitialFormData());
     const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -125,7 +122,7 @@ const CreateBrandModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
         try {
             setIsSubmitting(true);
             await api.post(Constants.CREATE_BRAND_URL, data, {
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
             toast.success('Brand created successfully');
             onSuccess();

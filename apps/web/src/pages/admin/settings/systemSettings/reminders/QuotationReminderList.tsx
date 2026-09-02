@@ -3,10 +3,8 @@ import Switch from "@components/admin/Switch";
 import Table from "@components/admin/Table";
 import TableRow from "@components/admin/TableRow";
 import Constants from "@constants/api";
-import type { RootState } from "@store/index";
 
 import { Edit, Trash2Icon } from "lucide-react";
-import { useSelector } from "react-redux";
 import { Card } from "@components/ui";
 
 interface Props {
@@ -16,7 +14,6 @@ interface Props {
     onDelete?: (id: string) => void;
 }
 const QuotationReminderList: React.FC<Props> = ({ reminders, onSuccess, isEditing, onDelete }) => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const tableActions = [
         {
             label: 'Edit',
@@ -42,9 +39,7 @@ const QuotationReminderList: React.FC<Props> = ({ reminders, onSuccess, isEditin
     }
     const handleStatusChange = async (id: string, newStatus: boolean) => {
         try {
-            await api.patch(`${Constants.API_BASE_URL}/reminders/${id}/toggle`, { isEnabled: newStatus }, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.patch(`${Constants.API_BASE_URL}/reminders/${id}/toggle`, { isEnabled: newStatus });
             onSuccess();
         } catch (error) {
             /* non-fatal: leave prior state in place */
