@@ -13,7 +13,8 @@ import type { RootState } from "@store/index";
 import InvoiceActionToolbar from "@components/admin/invoice/InvoiceActionToolbar";
 import { isInvoiceEditable } from "@utils/invoiceStatus";
 import PaymentHistoryPanel from "@components/admin/invoice/PaymentHistoryPanel";
-import InvoiceActivityTimeline from "@components/admin/invoice/InvoiceActivityTimeline";
+import ActivityTimeline from "@components/admin/ActivityTimeline";
+import { useInvoiceActivity } from "@hooks/useInvoiceActivity";
 import { useInvoicePayments } from "@hooks/useInvoicePayments";
 import { PageHeader } from "@/context/PageHeaderContext";
 import { Button } from "@components/ui";
@@ -30,6 +31,7 @@ const ViewInvoice: React.FC = () => {
 
     // Live payment summary so the toolbar + templates show up-to-date paid/remaining.
     const { summary, refetch: refetchPayments } = useInvoicePayments(invoiceId ?? "");
+    const { entries: activityEntries, loading: activityLoading } = useInvoiceActivity(invoiceId ?? "");
     const { fields: lineFields } = useLineItemCustomFields(reduxToken, "invoices");
 
     const fetchInvoiceDetails = useCallback(async () => {
@@ -140,7 +142,7 @@ const ViewInvoice: React.FC = () => {
             )}
 
             {invoiceId && (
-                <InvoiceActivityTimeline invoiceId={invoiceId} />
+                <ActivityTimeline entries={activityEntries} loading={activityLoading} />
             )}
         </div>
     );

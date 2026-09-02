@@ -1,3 +1,4 @@
+import type { ActivityEntry } from '@models/activity';
 import api from '@lib/apiClient';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -5,16 +6,8 @@ import { useSelector } from 'react-redux';
 import type { RootState } from '@store/index';
 import Constants from '@constants/api';
 
-export interface PurchaseActivityEntry {
-    id: string;
-    action: string;
-    entityType: string;
-    entityId: string;
-    entityLabel: string | null;
-    summary: string | null;
-    userName: string | null;
-    createdAt: string;
-}
+/** @see ActivityEntry — the invoice feed carries the identical shape. */
+export type PurchaseActivityEntry = ActivityEntry;
 
 export function usePurchaseActivity(purchaseId: string) {
     const { token } = useSelector((s: RootState) => s.auth);

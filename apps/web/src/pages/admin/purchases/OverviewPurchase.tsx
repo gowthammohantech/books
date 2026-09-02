@@ -15,7 +15,7 @@ import { useSupplierPayments } from '@hooks/useSupplierPayments';
 import { usePurchaseActivity } from '@hooks/usePurchaseActivity';
 import PurchaseActionToolbar from '@components/admin/purchase/PurchaseActionToolbar';
 import PurchasePaymentHistoryPanel from '@components/admin/purchase/PurchasePaymentHistoryPanel';
-import PurchaseActivityTimeline from '@components/admin/purchase/PurchaseActivityTimeline';
+import ActivityTimeline from '@components/admin/ActivityTimeline';
 import PrintMenu from '@components/print/PrintMenu';
 import { PageHeader } from '@/context/PageHeaderContext';
 import { resolveCompanyLogo } from '@utils/companyLogo';
@@ -26,6 +26,7 @@ import { collectLineCustomColumns, formatLineFieldValue } from '@lib/lineCustomF
 
 const OverviewPurchase: React.FC = () => {
     const { id: purchaseId } = useParams();
+    const { entries: activityEntries, loading: activityLoading, refetch: refetchActivity } = usePurchaseActivity(purchaseId ?? '');
     const { token } = useSelector((state: RootState) => state.auth);
     const [purchaseData, setPurchaseData] = useState<PurchaseShape>();
     const { fields: lineFields } = useLineItemCustomFields(token, 'purchases');
@@ -52,7 +53,6 @@ const OverviewPurchase: React.FC = () => {
     }, [purchaseId, fetchPurchase]);
 
     const { summary, refetch: refetchPayments } = useSupplierPayments(purchaseId ?? '');
-    const { refetch: refetchActivity } = usePurchaseActivity(purchaseId ?? '');
 
     const handleChanged = useCallback(() => {
         if (purchaseId) fetchPurchase(purchaseId);
@@ -327,7 +327,7 @@ const OverviewPurchase: React.FC = () => {
             />
 
             {/* Activity Timeline */}
-            <PurchaseActivityTimeline purchaseId={purchaseId ?? ''} />
+            <ActivityTimeline entries={activityEntries} loading={activityLoading} />
         </>
     );
 }

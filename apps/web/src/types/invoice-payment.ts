@@ -1,3 +1,5 @@
+import type { ActivityEntry } from './activity';
+
 export interface InvoicePaymentDetails {
     id: string,
     invoiceNumber: string,
@@ -61,13 +63,5 @@ export interface InvoicePaymentSummary {
 }
 
 /** A single audit-log entry returned by GET /admin/invoices/:id/activity */
-export interface InvoiceActivityEntry {
-    id: string;
-    action: string;
-    entityType: string;
-    entityId: string;
-    entityLabel: string | null;
-    summary: string | null;
-    userName: string | null;
-    createdAt: string;
-}
+/** @see ActivityEntry — the purchase feed carries the identical shape. */
+export type InvoiceActivityEntry = ActivityEntry;
