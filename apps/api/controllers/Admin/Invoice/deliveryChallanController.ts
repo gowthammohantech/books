@@ -8,6 +8,13 @@ import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
 import { requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 import { applyDocumentTreatment } from '../../../lib/tax/applyTreatment';
+import {
+  computeDocumentTotals,
+  resolveItemTaxRates,
+  warnOnTotalsDivergence,
+  type TotalsItem,
+  type TaxGroupLookupDb,
+} from '../../../lib/documentTotals';
 import { sanitizeLineCustomFields } from '../../../lib/lineCustomFields';
 import {
   resolveLineCostCenterId,
@@ -214,11 +221,28 @@ export async function createDeliveryChallan(req: Request, res: Response): Promis
     const docTreatment: TaxTreatment =
       parseTaxTreatment(body.taxTreatment) ?? contactDefaultTaxTreatment ?? 'STANDARD';
 
-    // Compute supplied totals before enforcement.
-    const finalTaxable = asNumber(body.subTotal, asNumber(body.taxableAmount, 0));
-    const finalDiscount = asNumber(body.totalDiscount, 0);
-    const finalVat = asNumber(body.totalTax, asNumber(body.vat, 0));
-    const finalTotal = asNumber(body.grandTotal, asNumber(body.totalAmount, 0));
+    // Server-authoritative totals. Challan lines carry a flat `tax` amount plus a
+    // tax_group_id / tax_rate_id and no per-line percent, so resolve the rate
+    // first and recompute tax on the DISCOUNTED base — the same two steps
+    // purchase orders take. Client-sent totals are ignored; they are only
+    // compared, so a mis-behaving client shows up in the log rather than in the
+    // database.
+    const itemsWithRates = await resolveItemTaxRates(
+      prisma as unknown as TaxGroupLookupDb,
+      items as TotalsItem[],
+      tenantId,
+    );
+    const serverTotals = computeDocumentTotals(itemsWithRates);
+    warnOnTotalsDivergence(
+      'deliveryChallan',
+      'new',
+      asNumber(body.grandTotal, asNumber(body.totalAmount, NaN)),
+      serverTotals.grandTotal,
+    );
+    const finalTaxable = serverTotals.subTotal;
+    const finalDiscount = serverTotals.totalDiscount;
+    const finalVat = serverTotals.totalTax;
+    const finalTotal = serverTotals.grandTotal;
 
     // Apply treatment: STANDARD is a pass-through; suppressing treatments zero out tax + item taxes.
     // IncomingItem has 'tax' but not 'totalTax'/'taxes'; cast satisfies the generic constraint.
@@ -465,34 +489,53 @@ export async function updateDeliveryChallan(req: Request, res: Response): Promis
     // C3: collect items + totals, apply treatment enforcement together.
     {
       const haveItems = body.items !== undefined;
-      const haveVat = body.totalTax !== undefined || body.vat !== undefined;
-      const haveTotal = body.grandTotal !== undefined || body.totalAmount !== undefined;
-      const haveTaxable = body.subTotal !== undefined || body.taxableAmount !== undefined;
 
+      // Server-authoritative totals (see createDeliveryChallan). Recomputed from
+      // the lines whenever lines are supplied; otherwise the stored figures
+      // stand, because there is nothing new to derive them from. Either way the
+      // client's subTotal/totalTax/grandTotal are never persisted.
       const items = haveItems ? normaliseItems(body.items) : null;
-      const suppliedVat = haveVat
-        ? asNumber(body.totalTax, asNumber(body.vat, Number(existing.vat ?? 0)))
-        : Number(existing.vat ?? 0);
-      const suppliedTotal = haveTotal
-        ? asNumber(body.grandTotal, asNumber(body.totalAmount, Number(existing.totalAmount ?? 0)))
-        : Number(existing.totalAmount ?? 0);
-      const suppliedTaxable = haveTaxable
-        ? asNumber(body.subTotal, asNumber(body.taxableAmount, Number(existing.taxableAmount ?? 0)))
-        : Number(existing.taxableAmount ?? 0);
-      const suppliedDiscount = body.totalDiscount !== undefined
-        ? asNumber(body.totalDiscount, Number(existing.totalDiscount ?? 0))
-        : Number(existing.totalDiscount ?? 0);
+      let suppliedTaxable = Number(existing.taxableAmount ?? 0);
+      let suppliedDiscount = Number(existing.totalDiscount ?? 0);
+      let suppliedVat = Number(existing.vat ?? 0);
+      let suppliedTotal = Number(existing.totalAmount ?? 0);
+
+      if (items) {
+        const itemsWithRates = await resolveItemTaxRates(
+          prisma as unknown as TaxGroupLookupDb,
+          items as TotalsItem[],
+          tenantId,
+        );
+        const serverTotals = computeDocumentTotals(itemsWithRates);
+        warnOnTotalsDivergence(
+          'deliveryChallan',
+          id,
+          asNumber(body.grandTotal, asNumber(body.totalAmount, NaN)),
+          serverTotals.grandTotal,
+        );
+        suppliedTaxable = serverTotals.subTotal;
+        suppliedDiscount = serverTotals.totalDiscount;
+        suppliedVat = serverTotals.totalTax;
+        suppliedTotal = serverTotals.grandTotal;
+      }
 
       const effectiveItems = items ?? (existing.items as unknown as { totalTax?: number; taxes?: { amount?: number }[] | null }[]) ?? [];
       const enforcedDC = applyDocumentTreatment(docTreatment, suppliedVat, effectiveItems as { totalTax?: number; taxes?: { amount?: number }[] | null }[]);
       const enforcedVat = enforcedDC.tax;
       const enforcedTotal = docTreatment === 'STANDARD' ? suppliedTotal : suppliedTaxable + enforcedVat - suppliedDiscount;
 
-      if (haveItems) data.items = enforcedDC.items as unknown as Prisma.InputJsonValue;
-      if (haveTaxable) data.taxableAmount = toDecimal(suppliedTaxable);
-      if (haveVat || docTreatment !== 'STANDARD') data.vat = toDecimal(enforcedVat);
-      if (haveTotal || docTreatment !== 'STANDARD') data.totalAmount = toDecimal(enforcedTotal);
-      if (body.totalDiscount !== undefined) data.totalDiscount = toDecimal(suppliedDiscount);
+      // When lines change, every derived figure is rewritten together — gating
+      // each on whether the client happened to send it would let a recomputed
+      // total land beside a stale discount.
+      if (haveItems) {
+        data.items = enforcedDC.items as unknown as Prisma.InputJsonValue;
+        data.taxableAmount = toDecimal(suppliedTaxable);
+        data.totalDiscount = toDecimal(suppliedDiscount);
+      }
+      if (haveItems || docTreatment !== 'STANDARD') {
+        data.vat = toDecimal(enforcedVat);
+        data.totalAmount = toDecimal(enforcedTotal);
+      }
     }
     if (body.status !== undefined) {
       const next = body.status as DeliveryChallanStatus;

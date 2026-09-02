@@ -18,6 +18,13 @@ import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
 import { sanitizeLineCustomFields } from '../lib/lineCustomFields';
 import {
+  computeDocumentTotals,
+  resolveItemTaxRates,
+  warnOnTotalsDivergence,
+  type TotalsItem,
+  type TaxGroupLookupDb,
+} from '../lib/documentTotals';
+import {
   reanchorOnResume,
   advanceAfterRun,
   type Cadence,
@@ -147,6 +154,25 @@ export async function createSchedule(req: Request, res: Response): Promise<void>
     const requestedStatus = typeof body.status === 'string' ? body.status.toUpperCase() : '';
     const status: ScheduleStatus = requestedStatus === 'DRAFT' ? 'DRAFT' : 'ACTIVE';
 
+    // Server-authoritative totals. A schedule is an invoice TEMPLATE, and
+    // lib/recurring/runner.ts copies these figures onto every invoice it
+    // generates without recomputing — so a wrong total here is not a stale
+    // preview, it is a wrong invoice, repeatedly, for as long as the schedule
+    // runs. Client-sent totals are compared and discarded.
+    const scheduleItems = sanitizeScheduleItems(body.items);
+    const scheduleItemsWithRates = await resolveItemTaxRates(
+      prisma as unknown as TaxGroupLookupDb,
+      (Array.isArray(scheduleItems) ? scheduleItems : []) as TotalsItem[],
+      tenantId,
+    );
+    const scheduleTotals = computeDocumentTotals(scheduleItemsWithRates);
+    warnOnTotalsDivergence(
+      'recurringSchedule',
+      'new',
+      Number(body.TotalAmount ?? NaN),
+      scheduleTotals.grandTotal,
+    );
+
     const created = await prisma.recurringInvoiceSchedule.create({
       data: {
         tenantId,
@@ -157,12 +183,14 @@ export async function createSchedule(req: Request, res: Response): Promise<void>
           typeof body.taxTreatment === 'string'
             ? (body.taxTreatment as Prisma.RecurringInvoiceScheduleCreateInput['taxTreatment'])
             : undefined,
-        items: sanitizeScheduleItems(body.items) as Prisma.InputJsonValue,
-        taxableAmount: toDecimal(body.taxableAmount),
-        totalDiscount: toDecimalOrNull(body.totalDiscount),
-        totalTax: toDecimalOrNull(body.totalTax),
+        items: scheduleItems as Prisma.InputJsonValue,
+        taxableAmount: toDecimal(scheduleTotals.subTotal),
+        totalDiscount: toDecimalOrNull(scheduleTotals.totalDiscount),
+        totalTax: toDecimalOrNull(scheduleTotals.totalTax),
+        // roundOff stays client-supplied: it is a deliberate presentational
+        // adjustment the totals engine knows nothing about.
         roundOff: toDecimalOrNull(body.roundOff),
-        TotalAmount: toDecimal(body.TotalAmount),
+        TotalAmount: toDecimal(scheduleTotals.grandTotal),
         notes: typeof body.notes === 'string' ? body.notes : null,
         termsAndCondition: typeof body.termsAndCondition === 'string' ? body.termsAndCondition : null,
         signatureId: typeof body.signatureId === 'string' ? body.signatureId : null,
@@ -314,12 +342,29 @@ export async function updateSchedule(req: Request, res: Response): Promise<void>
       data.currencyCode = typeof body.currencyCode === 'string' ? body.currencyCode : null;
     if (body.taxTreatment !== undefined && typeof body.taxTreatment === 'string')
       data.taxTreatment = body.taxTreatment as Prisma.RecurringInvoiceScheduleUpdateInput['taxTreatment'];
-    if (body.items !== undefined) data.items = sanitizeScheduleItems(body.items) as Prisma.InputJsonValue;
-    if (body.taxableAmount !== undefined) data.taxableAmount = toDecimal(body.taxableAmount);
-    if (body.totalDiscount !== undefined) data.totalDiscount = toDecimalOrNull(body.totalDiscount);
-    if (body.totalTax !== undefined) data.totalTax = toDecimalOrNull(body.totalTax);
+    // Totals are derived, never accepted (see the create path). They move only
+    // when the lines move, and then all four move together.
+    if (body.items !== undefined) {
+      const nextItems = sanitizeScheduleItems(body.items);
+      const nextItemsWithRates = await resolveItemTaxRates(
+        prisma as unknown as TaxGroupLookupDb,
+        (Array.isArray(nextItems) ? nextItems : []) as TotalsItem[],
+        tenantId,
+      );
+      const nextTotals = computeDocumentTotals(nextItemsWithRates);
+      warnOnTotalsDivergence(
+        'recurringSchedule',
+        id,
+        Number(body.TotalAmount ?? NaN),
+        nextTotals.grandTotal,
+      );
+      data.items = nextItems as Prisma.InputJsonValue;
+      data.taxableAmount = toDecimal(nextTotals.subTotal);
+      data.totalDiscount = toDecimalOrNull(nextTotals.totalDiscount);
+      data.totalTax = toDecimalOrNull(nextTotals.totalTax);
+      data.TotalAmount = toDecimal(nextTotals.grandTotal);
+    }
     if (body.roundOff !== undefined) data.roundOff = toDecimalOrNull(body.roundOff);
-    if (body.TotalAmount !== undefined) data.TotalAmount = toDecimal(body.TotalAmount);
     if (body.notes !== undefined) data.notes = typeof body.notes === 'string' ? body.notes : null;
     if (body.termsAndCondition !== undefined)
       data.termsAndCondition = typeof body.termsAndCondition === 'string' ? body.termsAndCondition : null;
