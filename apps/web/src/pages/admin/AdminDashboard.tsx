@@ -3,71 +3,128 @@ import Constants from '@constants/api';
 import useDateFormatter from '@hooks/useDateFormatter';
 import type { RootState } from '@store/index';
 
-import { Users, ShoppingCart, Truck, Receipt, ArrowRight, BarChart2, BadgeDollarSign, CreditCard, CheckCircle2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import {
+    ArrowRight,
+    BadgeDollarSign,
+    BarChart2,
+    CheckCircle2,
+    CreditCard,
+    Plus,
+    Search,
+} from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import Chart from 'react-apexcharts';
 import Table from '@components/admin/Table';
-import type { CustomersShape, PirchartShape, PurchaseStats, RecentInvoices, RecentPayments, RecentPurchase, SaleStats, SuppliersShape } from '@models/dashboard';
+import type {
+    PurchaseStats,
+    RecentPurchase,
+    SaleStats,
+} from '@models/dashboard';
 import TableRow from '@components/admin/TableRow';
-import InvoiceStatusBadge from '@components/admin/InvoiceStatusBadge';
+import StatusBadge from '@components/admin/StatusBadge';
 import { useCurrencyFormatter } from '@hooks/useCurrencyFormatter';
-import PaymentModeBadge from '@components/admin/PaymentModeBadge';
 import { useNavigate } from 'react-router-dom';
 import LoaderSpinner from '@components/admin/LoaderSpinner';
-import ProfileCard from '@components/admin/ProfileImage';
-import ApexGradientPie from '@components/admin/dashboard/ApexGradientPie';
 import MultiLineAreaChart from '@components/admin/MultiLineAreaChart';
 import { PageHeader } from '@/context/PageHeaderContext';
-import DashboardSwitcher from '@components/admin/DashboardSwitcher';
 import StatsCard from '@components/admin/StatsCard';
 import { WORK_QUEUES } from '@lib/workQueues';
 import { useWorkQueues } from '@hooks/useWorkQueues';
 import { useAgentPanel } from '@context/AgentPanelContext';
-import { themeColor } from "@lib/designTokens";
-interface AgingBuckets {
-    current: number;
-    days30: number;
-    days60: number;
-    days90: number;
-    beyond90: number;
-}
-interface TopDebtor {
-    customerId: string;
-    customerName: string;
-    outstanding: number;
-    oldestInvoiceDays: number;
-}
-interface DashboardData {
-    totalInvoiceCount: number;
-    totalProductCount: number;
-    totalCustomerCount: number;
-    totalSupplierCount: number;
-    lastFiveCustomers: CustomersShape[];
-    lastFiveSuppliers: SuppliersShape[];
-    lastFiveInvoices: RecentInvoices[];
-    lastFivePayments: RecentPayments[];
-    lastFivePurchases: RecentPurchase[];
-    sales: SaleStats;
-    purchases: PurchaseStats;
-    graph1: PirchartShape[];
-    graph2: GraphItem[];
-    agingBuckets?: AgingBuckets;
-    topDebtors?: TopDebtor[];
-}
-interface DashboardDataResponse {
-    data: DashboardData
-}
+import { themeColor } from '@lib/designTokens';
+import { EmptyState, EmptyStateRow } from '@components/ui';
+
 interface GraphItem {
     month: string;
     purchases: number;
     sales: number;
 }
+interface DashboardData {
+    totalInvoiceCount: number;
+    lastFivePurchases: RecentPurchase[];
+    sales: SaleStats;
+    purchases: PurchaseStats;
+    graph2: GraphItem[];
+}
+interface DashboardDataResponse {
+    data: DashboardData;
+}
+
+/** One row of the audit trail, as the Recent Activity feed needs it. */
+interface ActivityItem {
+    id: string;
+    action: 'CREATE' | 'UPDATE' | 'DELETE';
+    entityType: string;
+    entityLabel: string | null;
+    summary: string;
+    userName: string;
+    createdAt: string;
+}
+
+/**
+ * One account's spend against its budget. Numeric fields arrive as strings
+ * (Prisma Decimal), so every read of them goes through Number().
+ */
+interface VarianceRow {
+    accountId: string;
+    accountName: string;
+    budget: string;
+    actual: string;
+    variance: string;
+    favorable: boolean;
+}
+
+const EMPTY_DASHBOARD: DashboardData = {
+    totalInvoiceCount: 0,
+    lastFivePurchases: [],
+    sales: {
+        totalSalesAmount: 0,
+        totalDueAmount: 0,
+        receivedAmount: 0,
+        quotationCount: 0,
+    },
+    purchases: {
+        totalPurchasesAmount: 0,
+        totalPaidPurchases: 0,
+        totalDuePurchases: 0,
+        debitNoteCount: 0,
+    },
+    graph2: [],
+};
+
+/** The series the Business Analytics chart can draw, all derived from graph2. */
+const ANALYTICS_SERIES = ['Revenue', 'Expenses', 'Profit'] as const;
+type AnalyticsSeries = (typeof ANALYTICS_SERIES)[number];
+
+const isoDate = (d: Date) => d.toISOString().slice(0, 10);
+
+const num = (v: string | number | null | undefined) => Number(v ?? 0);
+
+/** CREATE / UPDATE / DELETE, as the feed's leading dot. */
+const ACTION_DOT: Record<ActivityItem['action'], string> = {
+    CREATE: 'bg-success',
+    UPDATE: 'bg-info',
+    DELETE: 'bg-destructive',
+};
+
+/** "2 min ago" — precise enough for a feed, and needs no locale data. */
+const relativeTime = (iso: string): string => {
+    const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} min ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hr ago`;
+    return `${Math.floor(hours / 24)} d ago`;
+};
 
 const DashboardPage: React.FC = () => {
-
-    const { token, activeTenant } = useSelector((state: RootState) => state.auth);
+    const { activeTenant } = useSelector((state: RootState) => state.auth);
+    const { data: systemSettings } = useSelector(
+        (state: RootState) => state.systemSettings
+    );
     const [time, setTime] = useState<Date>(new Date());
-    const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const { formatDate, timeFormat } = useDateFormatter();
     const { format } = useCurrencyFormatter();
     const navigate = useNavigate();
@@ -76,49 +133,14 @@ const DashboardPage: React.FC = () => {
     // beside it can never show different numbers.
     const { counts: queueCounts } = useWorkQueues();
     const { isAvailable: isAgentAvailable, open: openAgent } = useAgentPanel();
-    const [dashboardData, setDashboardData] = useState<DashboardData>({
-        totalInvoiceCount: 0,
-        totalProductCount: 0,
-        totalCustomerCount: 0,
-        totalSupplierCount: 0,
-        lastFiveCustomers: [],
-        lastFiveSuppliers: [],
-        lastFiveInvoices: [],
-        lastFivePayments: [],
-        lastFivePurchases: [],
-        sales: {
-            totalSalesAmount: 0,
-            totalDueAmount: 0,
-            receivedAmount: 0,
-            quotationCount: 0
-        },
-        purchases: {
-            totalPurchasesAmount: 0,
-            totalPaidPurchases: 0,
-            totalDuePurchases: 0,
-            debitNoteCount: 0
-        },
-        graph1: [],
-        graph2: []
-    });
-    let pieChartData: any = [];
-    if (dashboardData.graph1.length > 0) {
-        pieChartData = dashboardData.graph1.map((item) => ({
-            id: item.name,
-            value: item.totalQty,
-            label: item.name
-                .split(" ")
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                .join(" "),
-        }));
-    }
 
-    const purchaseAndSaleChartData: any = [];
-    if (dashboardData.graph2.length > 0) {
-        //2 data set purchase and sale
-        purchaseAndSaleChartData[0] = dashboardData.graph2.map((item) => item.purchases);
-        purchaseAndSaleChartData[1] = dashboardData.graph2.map((item) => item.sales);
-    }
+    const [dashboardData, setDashboardData] =
+        useState<DashboardData>(EMPTY_DASHBOARD);
+    const [activity, setActivity] = useState<ActivityItem[]>([]);
+    const [variance, setVariance] = useState<VarianceRow[]>([]);
+    const [series, setSeries] = useState<AnalyticsSeries>('Revenue');
+    const [purchaseSearch, setPurchaseSearch] = useState('');
+
     useEffect(() => {
         // Set up an interval to update the time every minute
         const timer = setInterval(() => setTime(new Date()), 60000);
@@ -134,17 +156,20 @@ const DashboardPage: React.FC = () => {
     const getGreeting = (): string => {
         const hour = new Date().getHours();
 
-        if (hour < 12) return "Good Morning";
-        if (hour < 18) return "Good Afternoon";
-        return "Good Evening";
+        if (hour < 12) return 'Good Morning';
+        if (hour < 18) return 'Good Afternoon';
+        return 'Good Evening';
     };
+
     // Only queues with something in them. A grid of zeroes is a grid nobody
     // needs to read, which teaches people to stop reading it on the days it
     // does have something.
-    const activeQueues = WORK_QUEUES.filter((queue) => (queueCounts?.[queue.key] ?? 0) > 0);
+    const activeQueues = WORK_QUEUES.filter(
+        (queue) => (queueCounts?.[queue.key] ?? 0) > 0
+    );
     const pendingTotal = activeQueues.reduce(
         (total, queue) => total + (queueCounts?.[queue.key] ?? 0),
-        0,
+        0
     );
     // "3 invoices overdue, 2 bank lines to explain" — the tiles, read out. Built
     // from the same list so it can never name a queue the grid does not show.
@@ -153,49 +178,118 @@ const DashboardPage: React.FC = () => {
         .join(', ')
         .concat('.');
 
+    /**
+     * Three independent sources, settled rather than raced: a tenant with no
+     * budgets set, or a role without the audit trail, should cost the page its
+     * one affected panel and nothing else.
+     */
     const fetchDashboardData = async () => {
-        try {
-            setIsLoading(true);
-            const response = await api.get<DashboardDataResponse>(Constants.GET_DASHBOARD_DATA_URL, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (response.data) {
-                setDashboardData(prev => ({ ...prev, ...response.data.data }));
-            }
-        } catch (error) {
-            /* non-fatal: leave prior state in place */
-        } finally {
-            setIsLoading(false);
-        }
-    }
+        setIsLoading(true);
+        const yearStart = isoDate(new Date(new Date().getFullYear(), 0, 1));
+        const today = isoDate(new Date());
 
+        const [core, logs, budgets] = await Promise.allSettled([
+            api.get<DashboardDataResponse>(Constants.GET_DASHBOARD_DATA_URL),
+            api.get(Constants.GET_ACTIVITY_LOGS_URL, {
+                params: { page: 1, limit: 5 },
+            }),
+            api.get(
+                `${Constants.FETCH_BUDGET_VARIANCE_URL}?from=${yearStart}&to=${today}`
+            ),
+        ]);
+
+        if (core.status === 'fulfilled' && core.value.data?.data) {
+            setDashboardData((prev) => ({ ...prev, ...core.value.data.data }));
+        }
+        if (logs.status === 'fulfilled') {
+            setActivity(logs.value.data?.data?.items ?? []);
+        }
+        if (budgets.status === 'fulfilled') {
+            setVariance(budgets.value.data?.data?.rows ?? []);
+        }
+        setIsLoading(false);
+    };
+
+    const months = dashboardData.graph2.map((item) => item.month);
+
+    /** Revenue / Expenses / Profit, all read off the same monthly rollup. */
+    const analyticsData = useMemo(() => {
+        const rows = dashboardData.graph2;
+        if (series === 'Expenses') return rows.map((r) => r.purchases);
+        if (series === 'Profit') return rows.map((r) => r.sales - r.purchases);
+        return rows.map((r) => r.sales);
+    }, [dashboardData.graph2, series]);
+
+    const spendings = dashboardData.graph2.map((item) => item.purchases);
+    const currentSpend = spendings.length ? spendings[spendings.length - 1] : 0;
+    const peakSpend = spendings.length ? Math.max(...spendings) : 0;
+
+    // Of everything invoiced, how much has actually landed. The one ratio that
+    // says whether the month was good, so it gets the gauge.
+    const collectionRate = dashboardData.sales.totalSalesAmount
+        ? Math.round(
+            (dashboardData.sales.receivedAmount /
+                dashboardData.sales.totalSalesAmount) *
+            100
+        )
+        : 0;
+
+    const visiblePurchases = useMemo(() => {
+        const term = purchaseSearch.trim().toLowerCase();
+        if (!term) return dashboardData.lastFivePurchases;
+        return dashboardData.lastFivePurchases.filter((p) =>
+            [p.purchaseId, p.vendor?.name, p.status]
+                .filter(Boolean)
+                .some((field) => String(field).toLowerCase().includes(term))
+        );
+    }, [dashboardData.lastFivePurchases, purchaseSearch]);
+
+    // Biggest spenders first — a cost panel nobody scrolls should lead with the
+    // lines large enough to be worth acting on.
+    const costRows = useMemo(
+        () =>
+            [...variance]
+                .sort((a, b) => num(b.actual) - num(a.actual))
+                .slice(0, 5),
+        [variance]
+    );
+    const costCeiling = costRows.reduce(
+        (max, row) => Math.max(max, num(row.actual), num(row.budget)),
+        0
+    );
+
+    const dateFormat = systemSettings?.dateFormat.format || 'd-m-Y';
     const formattedTime: string = formatDate(time, timeFormat);
 
     if (isLoading) {
         return (
-            <div className='p-4 md:p-6 bg-gray-50 min-h-full font-sans flex items-center justify-center'>
+            <div className="p-4 md:p-6 bg-background min-h-full font-sans flex items-center justify-center">
                 <LoaderSpinner />
             </div>
         );
     }
+
     return (
-        <div className="px-4 py-2 bg-gray-50 min-h-full font-sans border border-gray-200 rounded-md">
+        <div className="px-4 py-2 bg-background min-h-full font-sans border border-border rounded-md">
             <PageHeader title="Dashboard">
-                <DashboardSwitcher />
+                <button
+                    type="button"
+                    onClick={() => navigate('/invoices/create-invoice')}
+                    className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                >
+                    <Plus className="w-4 h-4" /> Add
+                </button>
             </PageHeader>
 
-            {/* The state of the business, in one line. The illustrated banner
-                this replaces said "Welcome back!" and nothing else — a hero's
-                worth of screen carrying no information. */}
-            <div className="mt-2">
-                <h2 className="text-2xl font-bold text-foreground">
-                    {getGreeting()}. Here&apos;s the state of the business.
+            <div className="mt-6 flex flex-col items-center text-center">
+                <h2 className="text-2xl font-semibold text-foreground">
+                    {getGreeting()},{' '}
+                    <span className="text-primary">{activeTenant?.name ?? 'there'}</span>
                 </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-2 text-xs text-muted-foreground">
                     {[
-                        formatDate(time, systemSettings?.dateFormat.format || 'd-m-Y'),
+                        formatDate(time, dateFormat),
                         formattedTime,
-                        activeTenant?.name,
                         activeTenant?.roleName && `Signed in as ${activeTenant.roleName}`,
                     ]
                         .filter(Boolean)
@@ -203,40 +297,45 @@ const DashboardPage: React.FC = () => {
                 </p>
             </div>
 
-            {/* Money first: what is owed to us, what we owe, and the two halves
-                of sales. Amounts, not document counts — counts live in the
-                queue tiles below, where each one comes with somewhere to go. */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 w-full">
+            {/* Money first: what is owed to us, what we collected, what we spent,
+                and how many documents it took. Amounts, not document counts —
+                counts live in the queue tiles below, where each one comes with
+                somewhere to go. */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 w-full">
                 <StatsCard
-                    title="Receivables"
+                    title="Total Amount"
                     period="Outstanding"
                     value={format(dashboardData.sales.totalDueAmount || 0)}
                     icon={<BadgeDollarSign className="w-5 h-5" />}
-                    accent="warning"
-                    color=""
-                />
-                <StatsCard
-                    title="Payables"
-                    period="Outstanding"
-                    value={format(dashboardData.purchases.totalDuePurchases || 0)}
-                    icon={<CreditCard className="w-5 h-5" />}
-                    accent="danger"
-                    color=""
-                />
-                <StatsCard
-                    title="Sales"
-                    period="All time"
-                    value={format(dashboardData.sales.totalSalesAmount || 0)}
-                    icon={<BarChart2 className="w-5 h-5" />}
                     accent="primary"
+                    tinted
                     color=""
                 />
                 <StatsCard
-                    title="Collected"
+                    title="Income"
                     period="All time"
                     value={format(dashboardData.sales.receivedAmount || 0)}
                     icon={<CheckCircle2 className="w-5 h-5" />}
                     accent="success"
+                    tinted
+                    color=""
+                />
+                <StatsCard
+                    title="Expense"
+                    period="All time"
+                    value={format(dashboardData.purchases.totalPurchasesAmount || 0)}
+                    icon={<CreditCard className="w-5 h-5" />}
+                    accent="danger"
+                    tinted
+                    color=""
+                />
+                <StatsCard
+                    title="Total orders"
+                    period="All time"
+                    value={dashboardData.totalInvoiceCount || 0}
+                    icon={<BarChart2 className="w-5 h-5" />}
+                    accent="teal"
+                    tinted
                     color=""
                 />
             </div>
@@ -279,8 +378,12 @@ const DashboardPage: React.FC = () => {
                             className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-colors hover:border-primary cursor-pointer"
                         >
                             <span>
-                                <span className="block font-medium text-card-foreground">{queue.label}</span>
-                                <span className="block text-sm text-muted-foreground">{queue.module}</span>
+                                <span className="block font-medium text-card-foreground">
+                                    {queue.label}
+                                </span>
+                                <span className="block text-sm text-muted-foreground">
+                                    {queue.module}
+                                </span>
                             </span>
                             <span className="font-mono tabular-nums text-2xl font-bold text-destructive-strong">
                                 {queueCounts?.[queue.key]}
@@ -290,331 +393,313 @@ const DashboardPage: React.FC = () => {
                 </div>
             )}
 
-            {/* Outstanding dues — Aging buckets + Top debtors (slice E.4) */}
-            {dashboardData?.agingBuckets && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="bg-white border border-gray-200 rounded-xl p-4">
-                        <h3 className="text-lg font-semibold text-gray-600 mb-3">Outstanding Dues by Age</h3>
-                        <div className="space-y-2">
-                            {(() => {
-                                const buckets = dashboardData.agingBuckets!;
-                                const rows = [
-                                    { label: 'Current', value: buckets.current, color: 'bg-green-500' },
-                                    { label: '1-30 days', value: buckets.days30, color: 'bg-amber-500' },
-                                    { label: '31-60 days', value: buckets.days60, color: 'bg-orange-500' },
-                                    { label: '61-90 days', value: buckets.days90, color: 'bg-red-400' },
-                                    { label: '90+ days', value: buckets.beyond90, color: 'bg-red-600' },
-                                ];
-                                const total = rows.reduce((s, r) => s + r.value, 0);
-                                return rows.map((b) => {
-                                    const pct = total > 0 ? (b.value / total) * 100 : 0;
-                                    return (
-                                        <div key={b.label}>
-                                            <div className="flex justify-between text-xs text-gray-700">
-                                                <span>{b.label}</span>
-                                                <span>{format(b.value)}</span>
-                                            </div>
-                                            <div className="h-2 bg-gray-100 rounded">
-                                                <div className={`h-2 rounded ${b.color}`} style={{ width: `${pct}%` }} />
-                                            </div>
-                                        </div>
-                                    );
-                                });
-                            })()}
+            {/* Spendings, and the same months read as a trend line. */}
+            <div className="grid grid-cols-1 lg:grid-cols-10 gap-4 mt-4">
+                <div className="lg:col-span-4 bg-card p-4 rounded-xl border border-border">
+                    <h3 className="text-lg font-semibold text-foreground">Spendings</h3>
+                    <p className="text-xs text-muted-foreground">Purchases per month</p>
+                    {spendings.length > 0 ? (
+                        <>
+                            <Chart
+                                type="bar"
+                                height={260}
+                                series={[{ name: 'Spendings', data: spendings }]}
+                                options={{
+                                    chart: {
+                                        toolbar: { show: false },
+                                        foreColor: themeColor('muted-foreground'),
+                                    },
+                                    colors: [themeColor('primary')],
+                                    plotOptions: {
+                                        bar: { columnWidth: '45%', borderRadius: 6 },
+                                    },
+                                    dataLabels: { enabled: false },
+                                    grid: {
+                                        borderColor: themeColor('border'),
+                                        strokeDashArray: 4,
+                                    },
+                                    xaxis: { categories: months, axisTicks: { show: false } },
+                                    yaxis: { labels: { formatter: (v: number) => format(v) } },
+                                    tooltip: { y: { formatter: (v: number) => format(v) } },
+                                }}
+                            />
+                            <p className="mt-2 border-t border-border pt-2 text-sm text-muted-foreground">
+                                Current spend:{' '}
+                                <span className="font-mono tabular-nums font-semibold text-foreground">
+                                    {format(currentSpend)}
+                                </span>{' '}
+                                / {format(peakSpend)} peak
+                            </p>
+                        </>
+                    ) : (
+                        <EmptyState
+                            art="no-data"
+                            size="compact"
+                            title="No spending recorded yet"
+                        />
+                    )}
+                </div>
+
+                <div className="lg:col-span-6 bg-card p-4 rounded-xl border border-border">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h3 className="text-lg font-semibold text-foreground">
+                                Business Analytics
+                            </h3>
+                            <p className="text-xs text-muted-foreground">
+                                {months.length
+                                    ? `${months[0]} – ${months[months.length - 1]}`
+                                    : 'No period'}
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-1 rounded-md border border-border bg-muted p-1">
+                            {ANALYTICS_SERIES.map((name) => (
+                                <button
+                                    key={name}
+                                    type="button"
+                                    onClick={() => setSeries(name)}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${series === name
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'text-muted-foreground hover:bg-card hover:text-foreground'
+                                        }`}
+                                >
+                                    {name}
+                                </button>
+                            ))}
                         </div>
                     </div>
-
-                    <div className="bg-white border border-gray-200 rounded-xl p-4">
-                        <h3 className="text-lg font-semibold text-gray-600 mb-3">Top Debtors</h3>
-                        {dashboardData.topDebtors && dashboardData.topDebtors.length > 0 ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="text-left border-b text-gray-700">
-                                            <th className="py-2">Customer</th>
-                                            <th className="text-right">Outstanding</th>
-                                            <th className="text-right">Oldest (days)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {dashboardData.topDebtors.map((d) => (
-                                            <tr key={d.customerId} className="border-b">
-                                                <td className="py-2 text-gray-800">{d.customerName}</td>
-                                                <td className="text-right text-gray-700">{format(d.outstanding)}</td>
-                                                <td className="text-right text-gray-700">{d.oldestInvoiceDays}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <p className="text-sm text-gray-500 py-4 text-center">No outstanding debtors</p>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* Chart */}
-            <div className="grid grid-cols-10 gap-4 mt-4">
-                <div className="col-span-7 bg-white p-4 rounded-xl border border-gray-200">
-                    <h2 className='text-lg font-semibold text-gray-600'>
-                        Sales by Month
-                    </h2>
                     <MultiLineAreaChart
-                        data={purchaseAndSaleChartData}
-                        seriesNames={["Purchase", "Sales"]}
-                        categories={dashboardData.graph2.map((item) => item.month)}
-                        color={[themeColor("primary"), themeColor("info")]}
+                        data={analyticsData}
+                        seriesNames={[series]}
+                        categories={months}
+                        color={themeColor('primary')}
                     />
-
                 </div>
-                <div className="col-span-3 bg-white p-4 rounded-xl border border-gray-200">
-                    <div className="flex flex-col items-center">
-                        <h2 className="text-lg font-semibold mb-2 text-gray-600">
-                            Top 5 Products by Sales
-                        </h2>
-                        <ApexGradientPie
-                            data={pieChartData.length ? pieChartData : [{ id: "No Data", label: "No Data", value: 1 }]}
-                            height={300}
-                            width={300}
-                            colors={pieChartData.length ? [themeColor("primary"), themeColor("info"), themeColor("success"), themeColor("warning"), themeColor("indigo")] : [themeColor("border")]}
+            </div>
+
+            {/* Latest Purchase */}
+            <div className="bg-card p-4 rounded-xl border border-border mt-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <h3 className="text-lg font-semibold text-foreground">
+                        Latest Purchase
+                    </h3>
+                    <div className="flex items-center gap-2">
+                        <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 w-4 h-4 -translate-y-1/2 text-muted-foreground" />
+                            <input
+                                type="search"
+                                value={purchaseSearch}
+                                onChange={(e) => setPurchaseSearch(e.target.value)}
+                                placeholder="Search"
+                                aria-label="Search the latest purchases"
+                                className="rounded-md border border-border bg-card py-1.5 pl-8 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/purchases')}
+                            className="flex items-center gap-1 rounded-md px-3 py-1.5 text-sm text-primary transition-colors hover:bg-primary hover:text-primary-foreground cursor-pointer"
+                        >
+                            View all <ArrowRight className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+
+                <Table
+                    headers={[
+                        '#',
+                        'Document No',
+                        'Date',
+                        'Party',
+                        'Taxable',
+                        'GST',
+                        'Amount',
+                        'Status',
+                    ]}
+                >
+                    {visiblePurchases.map((purchase, index) => (
+                        <TableRow
+                            key={purchase.id}
+                            row={purchase}
+                            index={index + 1}
+                            columns={[
+                                purchase.purchaseId,
+                                formatDate(
+                                    purchase.purchaseDate ?? purchase.createdAt,
+                                    dateFormat
+                                ),
+                                purchase.vendor?.name ?? '—',
+                                format(num(purchase.taxableAmount)),
+                                format(num(purchase.totalTax)),
+                                format(purchase.totalAmount),
+                                <StatusBadge status={purchase.status} />,
+                            ]}
                         />
-                    </div>
-                </div>
-            </div>
-            {/* Customers & suppliers */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                {/* Customers */}
-                <div className="customers bg-white p-4 rounded-xl border border-gray-200">
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-lg font-semibold text-gray-600 flex items-center gap-3">
-                            <span className="p-2 rounded-full bg-accent border border-accent shadow-sm flex items-center justify-center transition-all duration-300 hover:shadow-md">
-                                <Users className="w-4 h-4 text-primary" />
-                            </span>
-                            Recent Customers
-                        </h4>
-                        <button
-                            onClick={() => navigate("/customers")}
-                            className="text-sm text-primary hover:text-white hover:bg-primary px-3 py-1 rounded-md flex items-center gap-1 transition-all duration-300">
-                            View all <ArrowRight className="w-4 h-4" />
-                        </button>
-                    </div>
-
-
-                    {/* Table */}
-                    <Table headers={["#", "Name", "Phone", "Created On"]}>
-                        {dashboardData.lastFiveCustomers && dashboardData.lastFiveCustomers.map((customer, index) => (
-                            <TableRow
-                                key={customer.id}
-                                row={customer}
-                                index={index + 1}
-                                columns={[
-                                    <ProfileCard
-                                        imageUrl={customer.imageUrl}
-                                        name={customer.name}
-                                        email={customer.email}
-                                    />,
-                                    customer.phone,
-                                    formatDate(customer.createdAt, systemSettings?.dateFormat.format || 'd-m-Y'),
-                                ]}
-                            />
-                        ))}
-                        {!dashboardData.lastFiveCustomers.length && (
-                            <tr>
-                                <td colSpan={6} className="text-center py-6 text-gray-500 font-medium">
-                                    <Users className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                                    No customers found
-                                </td>
-                            </tr>
-                        )}
-                    </Table>
-                </div>
-
-                {/* Suppliers */}
-                <div className="suppliers bg-white p-4 rounded-xl border border-gray-200">
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-lg font-semibold text-gray-600 flex items-center gap-3">
-                            <span className="p-2 rounded-full bg-green-100 border border-green-200 shadow-sm flex items-center justify-center transition-all duration-300 hover:shadow-md">
-                                <Truck className="w-4 h-4 text-green-600" />
-                            </span>
-                            Recent Suppliers
-                        </h4>
-                        <button
-                            onClick={() => navigate("/suppliers")}
-                            className="text-sm text-green-600 hover:text-white hover:bg-green-600 px-3 py-1 rounded-md flex items-center gap-1 transition-all duration-300">
-                            View all <ArrowRight className="w-4 h-4" />
-                        </button>
-                    </div>
-
-
-                    {/* Table */}
-                    <Table headers={["#", "Name", "Phone", "Created On"]}>
-                        {dashboardData.lastFiveSuppliers && dashboardData.lastFiveSuppliers.map((supplier, index) => (
-                            <TableRow
-                                key={supplier.id}
-                                row={supplier}
-                                index={index + 1}
-                                columns={[
-                                    <ProfileCard
-                                        imageUrl={supplier.profileImageUrl}
-                                        name={supplier.name}
-                                        email={supplier.email}
-                                    />,
-                                    supplier.phone,
-                                    formatDate(supplier.createdAt, systemSettings?.dateFormat.format || 'd-m-Y'),
-                                ]}
-                            />
-                        ))}
-                        {!dashboardData.lastFiveSuppliers.length && (
-                            <tr>
-                                <td colSpan={6} className="text-center py-6 text-gray-500 font-medium">
-                                    <Truck className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                                    No suppliers found
-                                </td>
-                            </tr>
-                        )}
-                    </Table>
-                </div>
-            </div>
-            <div className="invoices bg-white rounded-xl bg-white p-4 rounded-xl border border-gray-200 mt-4">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-gray-600 flex items-center gap-3">
-                        <span className="p-2 rounded-full bg-blue-100 border border-blue-200 shadow-sm flex items-center justify-center transition-all duration-300 hover:shadow-md">
-                            <Receipt className="w-4 h-4 text-blue-600" />
-                        </span>
-                        Recent Invoices
-                    </h4>
-                    <button
-                        onClick={() => navigate("/invoices")}
-                        className="text-sm text-blue-600 hover:text-white hover:bg-blue-600 px-3 py-1 rounded-md flex items-center gap-1 transition-all duration-300">
-                        View all <ArrowRight className="w-4 h-4" />
-                    </button>
-                </div>
-
-
-                {/* Table */}
-                <Table headers={["#", "Invoice No", "Customer", "Amount", "Status", "Created On",]}>
-                    {dashboardData.lastFiveInvoices &&
-                        dashboardData.lastFiveInvoices.map((invoice, index) => (
-                            <TableRow
-                                key={invoice.id}
-                                index={index + 1}
-                                row={invoice}
-                                columns={[
-                                    invoice.invoiceNumber,
-                                    <ProfileCard
-                                        imageUrl={invoice.customer?.imageUrl}
-                                        name={invoice.customer?.name ?? "—"}
-                                        email={invoice.customer?.email ?? ""}
-                                    />,
-                                    format(invoice.totalAmount),
-                                    <InvoiceStatusBadge status={invoice.status} />,
-                                    formatDate(
-                                        invoice.createdAt,
-                                        systemSettings?.dateFormat.format || "d-m-Y"
-                                    ),
-                                ]}
-                            />
-                        ))}
-
-                    {/* Empty State */}
-                    {!dashboardData.lastFiveInvoices?.length && (
-                        <tr>
-                            <td colSpan={6} className="text-center py-8 text-gray-500 font-medium">
-                                <Receipt className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                                No invoices found
-                            </td>
-                        </tr>
+                    ))}
+                    {!visiblePurchases.length && (
+                        <EmptyStateRow
+                            colSpan={8}
+                            art="invoice"
+                            title={
+                                purchaseSearch
+                                    ? 'No purchases match that search'
+                                    : 'No purchases found'
+                            }
+                        />
                     )}
                 </Table>
             </div>
-            {/* Recent Transactions & Recent Purchases */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <div className="recent-transactions bg-white p-4 rounded-xl border border-gray-200">
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-lg font-semibold text-gray-600 flex items-center gap-3">
-                            <span className="p-2 rounded-full bg-accent border border-accent shadow-sm flex items-center justify-center transition-all duration-300 hover:shadow-md">
-                                <Receipt className="w-4 h-4 text-primary" />
-                            </span>
-                            Recent Invoice Payments
-                        </h4>
-                    </div>
 
-
-                    {/* Table */}
-                    <Table headers={["#", "Invoice No", "Amount", "Payment Method"]}>
-                        {dashboardData.lastFivePayments && dashboardData.lastFivePayments.map((payment, index) => (
-                            <TableRow
-                                key={payment.id}
-                                row={payment}
-                                index={index + 1}
-                                columns={[
-                                    payment.invoice.invoiceNumber,
-                                    format(payment.invoice.totalAmount),
-                                    <PaymentModeBadge mode={payment.payment_method.name} />
-                                ]}
-                            />
-                        ))}
-                        {!dashboardData.lastFivePayments.length && (
-                            <tr>
-                                <td colSpan={6} className="text-center py-6 text-gray-500 font-medium">
-                                    <Receipt className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                                    No payments found
-                                </td>
-                            </tr>
-                        )}
-                    </Table>
+            {/* Total Value · Recent Activity · Cost Efficiency */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4 mb-4">
+                <div className="bg-card p-4 rounded-xl border border-border flex flex-col items-center text-center">
+                    <h3 className="self-start text-lg font-semibold text-foreground">
+                        Total Value
+                    </h3>
+                    <Chart
+                        type="radialBar"
+                        height={260}
+                        width={260}
+                        series={[collectionRate]}
+                        options={{
+                            colors: [themeColor('primary')],
+                            plotOptions: {
+                                radialBar: {
+                                    hollow: { size: '62%' },
+                                    track: { background: themeColor('muted') },
+                                    dataLabels: {
+                                        name: { show: false },
+                                        value: {
+                                            offsetY: 8,
+                                            fontSize: '28px',
+                                            fontWeight: 700,
+                                            color: themeColor('foreground'),
+                                            formatter: (v: number) => `${Math.round(v)}%`,
+                                        },
+                                    },
+                                },
+                            },
+                            stroke: { lineCap: 'round' },
+                        }}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                        Of everything invoiced, this much has been collected.
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        Last checked {formatDate(time, dateFormat)}
+                    </p>
+                    {isAgentAvailable && (
+                        <button
+                            type="button"
+                            onClick={openAgent}
+                            className="mt-3 rounded-lg border border-border px-3 py-1.5 text-sm text-foreground transition-colors hover:border-primary cursor-pointer"
+                        >
+                            What these stats mean?
+                        </button>
+                    )}
                 </div>
 
-                {/* Purchases */}
-                <div className="purchases bg-white p-4 rounded-xl border border-gray-200 ">
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-lg font-semibold text-gray-600 flex items-center gap-3">
-                            <span className="p-2 rounded-full bg-green-100 border border-green-300 flex items-center justify-center transition-all duration-300 hover:shadow-md">
-                                <ShoppingCart className="w-4 h-4 text-green-600" />
-                            </span>
-                            Recent Purchases
-                        </h4>
+                <div className="bg-card p-4 rounded-xl border border-border">
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-semibold text-foreground">
+                            Recent Activity
+                        </h3>
                         <button
-                            onClick={() => navigate("/purchases")}
-                            className="text-sm text-green-600 hover:text-white hover:bg-green-600 px-3 py-1 rounded-md flex items-center gap-1 transition-all duration-300">
-                            View all <ArrowRight className="w-4 h-4" />
+                            type="button"
+                            onClick={() => navigate('/activity-log')}
+                            className="text-sm text-primary hover:underline cursor-pointer"
+                        >
+                            View All
                         </button>
                     </div>
+                    {activity.length > 0 ? (
+                        <ul className="space-y-3">
+                            {activity.map((item) => (
+                                <li key={item.id} className="flex items-start gap-3">
+                                    <span
+                                        aria-hidden="true"
+                                        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${ACTION_DOT[item.action] ?? 'bg-muted-foreground'
+                                            }`}
+                                    />
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block truncate text-sm text-foreground">
+                                            {item.summary}
+                                        </span>
+                                        <span className="block truncate text-xs text-muted-foreground">
+                                            {item.userName}
+                                        </span>
+                                    </span>
+                                    <span className="shrink-0 text-xs text-muted-foreground">
+                                        {relativeTime(item.createdAt)}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <EmptyState
+                            art="no-data"
+                            size="compact"
+                            title="Nothing has happened yet"
+                        />
+                    )}
+                </div>
 
-
-                    {/* Table */}
-                    <Table headers={["#", "Purchase No", "Supplier", "Amount"]}>
-                        {dashboardData.lastFivePurchases && dashboardData.lastFivePurchases.map((purchase, index) => (
-                            <TableRow
-                                key={purchase.id}
-                                row={purchase}
-                                index={index + 1}
-                                columns={[
-                                    purchase.purchaseId,
-                                    <ProfileCard
-                                        imageUrl={purchase.vendor?.profileImage ?? ""}
-                                        name={purchase.vendor?.name ?? ""}
-                                        email={purchase.vendor?.email ?? ""}
-                                    />,
-                                    format(purchase.totalAmount)
-                                ]}
-                            />
-                        ))}
-                        {!dashboardData.lastFivePurchases.length && (
-                            <tr>
-                                <td colSpan={6} className="text-center py-6 text-gray-500 font-medium">
-                                    <ShoppingCart className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                                    No purchases found
-                                </td>
-                            </tr>
-                        )}
-                    </Table>
+                <div className="bg-card p-4 rounded-xl border border-border">
+                    <h3 className="text-lg font-semibold text-foreground mb-3">
+                        Cost Efficiency
+                    </h3>
+                    {costRows.length > 0 ? (
+                        <div className="space-y-3">
+                            {costRows.map((row) => (
+                                <div key={row.accountId}>
+                                    <div className="flex justify-between gap-2 text-xs">
+                                        <span className="truncate text-foreground">
+                                            {row.accountName}
+                                        </span>
+                                        <span
+                                            className={`font-mono tabular-nums ${row.favorable ? 'text-success' : 'text-destructive'
+                                                }`}
+                                        >
+                                            {format(num(row.actual))}
+                                        </span>
+                                    </div>
+                                    <div className="mt-1 h-2 rounded bg-muted">
+                                        <div
+                                            className={`h-2 rounded ${row.favorable ? 'bg-success' : 'bg-destructive'
+                                                }`}
+                                            style={{
+                                                width: `${costCeiling > 0
+                                                    ? (num(row.actual) / costCeiling) * 100
+                                                    : 0
+                                                    }%`,
+                                            }}
+                                        />
+                                    </div>
+                                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                        {row.favorable ? 'Under' : 'Over'} budget by{' '}
+                                        {format(Math.abs(num(row.variance)))} of{' '}
+                                        {format(num(row.budget))}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <EmptyState
+                            art="no-data"
+                            size="compact"
+                            title="No budgets set"
+                            description="Set a budget and this panel shows what each account is spending against it."
+                            action={
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/accounting/budgets')}
+                                    className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                                >
+                                    Set a budget
+                                </button>
+                            }
+                        />
+                    )}
                 </div>
             </div>
         </div>

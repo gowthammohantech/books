@@ -229,7 +229,7 @@ export default function TallyCheckReport() {
                 </thead>
                 <tbody>
                   {data.bank.length === 0 ? (
-                    <NoRecords colSpan={7} message="No bank accounts found." />
+                    <NoRecords art="analysis" colSpan={7} message="No bank accounts found." />
                   ) : (
                     data.bank.map((b) => {
                       // Row is highlighted red only when a real check we ran diverges

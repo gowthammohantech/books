@@ -21,8 +21,8 @@ import type { RootState } from "@store/index";
 import Switch from "@components/admin/Switch";
 import ProfileCard from "@components/admin/ProfileImage";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Badge, Button, PageSizeSelect } from "@components/ui";
-
+import { Badge, Button, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 // Define interfaces for nested and main objects
 interface Brand {
     id: string;
@@ -211,6 +211,13 @@ const ProductList: FC = () => {
     const from = (pagination.page - 1) * pagination.limit + 1;
     const to = Math.min(pagination.page * pagination.limit, pagination.total);
 
+    /**
+     * No items and no search, with the inventory pills on their neutral 'all'
+     * — so nothing has ever been added, rather than filtered away.
+     */
+    const isFirstRun =
+        !isLoading && products.length === 0 && !search && inventoryFilter === 'all';
+
     return (
         <div className="space-y-4">
             <PageHeader title="Items">
@@ -231,105 +238,118 @@ const ProductList: FC = () => {
                 }
             </PageHeader>
 
-            <div className="flex flex-col md:flex-row justify-between gap-4">
-                <input
-                    type="text"
-                    placeholder="Search by name, code, brand, category..."
-                    value={search}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-1/3    focus:outline-none focus:ring-2 focus:ring-ring text-gray-950"
+{isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.products}
+                    action={hasPermission(permissions, 'product-services', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={() => navigate('/products/new')}>
+                            {LIST_EMPTY_STATES.products.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
-            <div className="flex items-center gap-2">
-                {([
-                    { value: 'all', label: 'All' },
-                    { value: 'Product', label: 'Tracks inventory' },
-                    { value: 'Service', label: 'No inventory' },
-                ] as const).map((opt) => (
-                    <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => handleInventoryFilterChange(opt.value)}
-                        className={
-                            'px-3 py-1 text-sm rounded-full border cursor-pointer ' +
-                            (inventoryFilter === opt.value
-                                ? 'bg-primary text-white border-primary'
-                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50')
+            ) : (
+                <>
+                    <div className="flex flex-col md:flex-row justify-between gap-4">
+                        <input
+                            type="text"
+                            placeholder="Search by name, code, brand, category..."
+                            value={search}
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
+                            className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-1/3    focus:outline-none focus:ring-2 focus:ring-ring text-gray-950"
+                        />
+                        <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {([
+                            { value: 'all', label: 'All' },
+                            { value: 'Product', label: 'Tracks inventory' },
+                            { value: 'Service', label: 'No inventory' },
+                        ] as const).map((opt) => (
+                            <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => handleInventoryFilterChange(opt.value)}
+                                className={
+                                    'px-3 py-1 text-sm rounded-full border cursor-pointer ' +
+                                    (inventoryFilter === opt.value
+                                        ? 'bg-primary text-white border-primary'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50')
+                                }
+                            >
+                                {opt.label}
+                            </button>
+                        ))}
+                    </div>
+                    <Table headers={tableHeaders}>
+                        {!isLoading && products && products.map((product, index) => (
+                            <TableRow
+                                key={product.id}
+                                index={index + 1}
+                                row={product}
+                                columns={[
+                                    <ProfileCard
+                                        imageUrl={product.product_image}
+                                        name={product.name ?? ""}
+                                        email={product.code ?? ""}
+                                    />,
+                                    <Badge color={product.enable_inventory ? 'success' : 'gray'}>
+                                        {product.enable_inventory ? 'Tracked' : '—'}
+                                    </Badge>,
+                                    <p className="capitalize">{product.brand?.brand_name || 'N/A'}</p>,
+                                    <p className="capitalize">{product.category?.category_name || 'N/A'}</p>,
+                                    formatProductPrice(product.selling_price, product.currencyCode),
+                                    (() => {
+                                        // Items that don't track inventory have no stock badge.
+                                        if (!product.enable_inventory) {
+                                            return <span className="text-xs text-gray-400">—</span>;
+                                        }
+                                        const qty = product.stock ?? 0;
+                                        const alertQty = product.alert_quantity ?? 0;
+                                        if (qty === 0) {
+                                            return (
+                                                <Badge color="danger">
+                                                    Out of stock
+                                                </Badge>
+                                            );
+                                        }
+                                        if (qty > 0 && qty <= alertQty) {
+                                            return (
+                                                <Badge color="warning">
+                                                    Low stock
+                                                </Badge>
+                                            );
+                                        }
+                                        return <span className="text-xs text-gray-500">{qty}</span>;
+                                    })(),
+                                    <span onClick={(e) => e.stopPropagation()}><Switch name={`status-${product.id}`} checked={product.status} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStausChange(product.id, e.target.checked)} disabled={!hasPermission(permissions, 'product-services', 'edit')} /></span>,
+                                ]}
+                                actions={canEdit || canDelete ? tableActions : undefined}
+                                onRowClick={(item) => navigate(`/products/view/${item.id}`)}
+                            />
+                        ))
                         }
-                    >
-                        {opt.label}
-                    </button>
-                ))}
-            </div>
-            <Table headers={tableHeaders}>
-                {!isLoading && products && products.map((product, index) => (
-                    <TableRow
-                        key={product.id}
-                        index={index + 1}
-                        row={product}
-                        columns={[
-                            <ProfileCard
-                                imageUrl={product.product_image}
-                                name={product.name ?? ""}
-                                email={product.code ?? ""}
-                            />,
-                            <Badge color={product.enable_inventory ? 'success' : 'gray'}>
-                                {product.enable_inventory ? 'Tracked' : '—'}
-                            </Badge>,
-                            <p className="capitalize">{product.brand?.brand_name || 'N/A'}</p>,
-                            <p className="capitalize">{product.category?.category_name || 'N/A'}</p>,
-                            formatProductPrice(product.selling_price, product.currencyCode),
-                            (() => {
-                                // Items that don't track inventory have no stock badge.
-                                if (!product.enable_inventory) {
-                                    return <span className="text-xs text-gray-400">—</span>;
-                                }
-                                const qty = product.stock ?? 0;
-                                const alertQty = product.alert_quantity ?? 0;
-                                if (qty === 0) {
-                                    return (
-                                        <Badge color="danger">
-                                            Out of stock
-                                        </Badge>
-                                    );
-                                }
-                                if (qty > 0 && qty <= alertQty) {
-                                    return (
-                                        <Badge color="warning">
-                                            Low stock
-                                        </Badge>
-                                    );
-                                }
-                                return <span className="text-xs text-gray-500">{qty}</span>;
-                            })(),
-                            <span onClick={(e) => e.stopPropagation()}><Switch name={`status-${product.id}`} checked={product.status} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStausChange(product.id, e.target.checked)} disabled={!hasPermission(permissions, 'product-services', 'edit')} /></span>,
-                        ]}
-                        actions={canEdit || canDelete ? tableActions : undefined}
-                        onRowClick={(item) => navigate(`/products/view/${item.id}`)}
-                    />
-                ))
-                }
-                {!isLoading && products.length === 0 && <tr><td colSpan={9} className="text-center py-4">No items found.</td></tr>}
+                        {!isLoading && products.length === 0 && <EmptyStateRow colSpan={9} art="empty" title="No items found." />}
 
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-2 text-gray-950  font-semibold" colSpan={9}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-            </Table>
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handlePageChange(newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                        {isLoading && (
+                            <tr key="table-loader">
+                                <td className="text-center py-2 text-gray-950  font-semibold" colSpan={9}>
+                                    <LoaderSpinner />
+                                </td>
+                            </tr>
+                        )}
+                    </Table>
+                    <PaginationWrapper
+                        count={pagination.totalPages}
+                        page={page}
+                        from={from}
+                        to={to}
+                        total={pagination.total}
+                        onChange={(_, newPage) => handlePageChange(newPage)}
+                        paginationVariant="outlined"
+                        paginationShape="rounded"
+                    />
+                </>
+            )}
             <DeleteConfirmationModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setDeleteModalOpen(false)}

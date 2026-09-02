@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+import { AnimatedIcon } from '@components/icons';
 
 import { useWorkQueues } from '@hooks/useWorkQueues';
 import { WORK_QUEUES } from '@lib/workQueues';
@@ -29,6 +30,17 @@ const NotificationBell = () => {
     })).filter((queue) => queue.count > 0);
 
     const total = waiting.reduce((sum, queue) => sum + queue.count, 0);
+
+    // The bell rings when the pile GROWS, and only then. Ringing on every
+    // change would ring at someone for clearing a queue, which is the opposite
+    // of the news; ringing on mount would ring for a backlog they already know
+    // about. So the first observed total is a baseline, not an event.
+    const [ringKey, setRingKey] = useState(0);
+    const lastTotal = useRef(total);
+    useEffect(() => {
+        if (total > lastTotal.current) setRingKey((key) => key + 1);
+        lastTotal.current = total;
+    }, [total]);
 
     // A menu that can only be dismissed by choosing something traps the reader
     // into a navigation they may not want. Mirrors the sidebar footer menu.
@@ -64,7 +76,7 @@ const NotificationBell = () => {
                     : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
             >
-                <Bell size={16} />
+                <AnimatedIcon name="bell" size={16} pulseKey={ringKey} />
                 {total > 0 && (
                     // The exact figure is one row away inside the panel, so the
                     // glyph carries a dot rather than a pill that would have to
@@ -80,7 +92,7 @@ const NotificationBell = () => {
                 <div
                     role="menu"
                     aria-orientation="vertical"
-                    className="absolute right-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-xl border border-border bg-card shadow-lg"
+                    className="absolute right-0 top-full z-50 mt-2 w-72 origin-top-right overflow-hidden rounded-xl border border-border bg-card shadow-lg animate-pop-in motion-reduce:animate-none"
                 >
                     <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
                         <p className="text-sm font-semibold text-foreground">Needs attention</p>

@@ -18,9 +18,10 @@ import PermissionGuard from "@components/admin/PermissionGuard";
 import type { PermissionAction } from "@models/permissions";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import SubmitButton from "@components/admin/SubmitButton";
-import { Button, PageSizeSelect } from "@components/ui";
+import { Button, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface PaginationData {
     total: number;
     page: number;
@@ -186,6 +187,12 @@ const RolesList: React.FC = () => {
     if (allowedActions.length === 0) {
         tableHeaders.pop();
     }
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && roles.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Roles">
@@ -199,88 +206,100 @@ const RolesList: React.FC = () => {
                     </Button>
                 }
             </PageHeader>
-            {/* Search Input & PageLength */}
-            <div className="flex justify-between items-center">
-                <input
-                    type="text"
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.roles}
+                    action={hasPermission(permissions, 'roles-permissions', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={() => { handleCreateClick(); }}>
+                            {LIST_EMPTY_STATES.roles.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
-            {/* Table */}
-            <Table headers={tableHeaders}>
-                {!isLoading && roles && roles.map((role: any, index: number) => (
-                    <TableRow
-                        key={role.id}
-                        index={index + 1}
-                        row={role}
-                        columns={[
-                            <span className="text-primary">{role.roleName}</span>,
-                            formatDate(role.createdAt, systemSettings?.dateFormat.format || "d-y-m"),
-                            allowedActions.length > 0 ? (
-                                <div className="flex gap-3">
-                                    <PermissionGuard moduleSlug="roles-permissions" action="edit">
-                                        <Button
-                                            onClick={() => handleEditClick(role)}
-                                            variant="white"
-                                            leftIcon={<EditIcon size={16} />}
-                                        >
-                                            Edit Role
-                                        </Button>
-                                    </PermissionGuard>
-                                    <PermissionGuard moduleSlug="roles-permissions" action="delete">
-                                        <Button
-                                            onClick={() => handleDeleteClick(role)}
-                                            variant="white"
-                                            leftIcon={<Trash2 size={16} />}
-                                        >
-                                            Delete Role
-                                        </Button>
-                                    </PermissionGuard>
-                                    <PermissionGuard moduleSlug="roles-permissions" action="edit">
-                                        <Button
-                                            onClick={() => handlePermissionsClick(role)}
-                                            variant="white"
-                                            leftIcon={<ShieldUser size={16} />}
-                                        >
-                                            Permissions
-                                        </Button>
-                                    </PermissionGuard>
-                                </div>
-                            ) : null,
-                        ].filter(Boolean)}
+            ) : (
+                <>
+                {/* Search Input & PageLength */}
+                <div className="flex justify-between items-center">
+                    <input
+                        type="text"
+                        placeholder="Search..."
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     />
-                ))}
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
+                {/* Table */}
+                <Table headers={tableHeaders}>
+                    {!isLoading && roles && roles.map((role: any, index: number) => (
+                        <TableRow
+                            key={role.id}
+                            index={index + 1}
+                            row={role}
+                            columns={[
+                                <span className="text-primary">{role.roleName}</span>,
+                                formatDate(role.createdAt, systemSettings?.dateFormat.format || "d-y-m"),
+                                allowedActions.length > 0 ? (
+                                    <div className="flex gap-3">
+                                        <PermissionGuard moduleSlug="roles-permissions" action="edit">
+                                            <Button
+                                                onClick={() => handleEditClick(role)}
+                                                variant="white"
+                                                leftIcon={<EditIcon size={16} />}
+                                            >
+                                                Edit Role
+                                            </Button>
+                                        </PermissionGuard>
+                                        <PermissionGuard moduleSlug="roles-permissions" action="delete">
+                                            <Button
+                                                onClick={() => handleDeleteClick(role)}
+                                                variant="white"
+                                                leftIcon={<Trash2 size={16} />}
+                                            >
+                                                Delete Role
+                                            </Button>
+                                        </PermissionGuard>
+                                        <PermissionGuard moduleSlug="roles-permissions" action="edit">
+                                            <Button
+                                                onClick={() => handlePermissionsClick(role)}
+                                                variant="white"
+                                                leftIcon={<ShieldUser size={16} />}
+                                            >
+                                                Permissions
+                                            </Button>
+                                        </PermissionGuard>
+                                    </div>
+                                ) : null,
+                            ].filter(Boolean)}
+                        />
+                    ))}
 
-                {!isLoading && !roles.length &&
-                    <tr>
-                        <td colSpan={8} className="text-center text-gray-950  py-2 font-semibold">No Roles Found</td>
-                    </tr>
-                }
+                    {!isLoading && !roles.length &&
+                        <EmptyStateRow colSpan={8} art="people-search" title="No Roles Found" />
+                    }
 
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-2 text-gray-950  font-semibold" colSpan={8}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-            </Table>
+                    {isLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-2 text-gray-950  font-semibold" colSpan={8}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
+                </Table>
 
-            {/* Pagination Component */}
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handlePageChange(newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                {/* Pagination Component */}
+                <PaginationWrapper
+                    count={pagination.totalPages}
+                    page={page}
+                    from={from}
+                    to={to}
+                    total={pagination.total}
+                    onChange={(_, newPage) => handlePageChange(newPage)}
+                    paginationVariant="outlined"
+                    paginationShape="rounded"
+                />
+                </>
+            )}
+
 
             {/* Role Modal */}
             <Modal isOpen={isRoleModalOpen} onClose={() => setRoleModalOpen(false)} title={editItem ? 'Edit Role' : 'New Role'}>

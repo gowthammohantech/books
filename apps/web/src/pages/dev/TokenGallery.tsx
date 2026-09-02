@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { PlusIcon, TrashIcon, DownloadIcon } from "lucide-react";
 import {
+  AnimatedIcon,
+  ANIMATED_ICON_NAMES,
+  ICON_REGISTRY,
+} from "@components/icons";
+import {
   Badge,
   Button,
   Card,
@@ -157,6 +162,7 @@ export default function TokenGallery() {
   const [checked, setChecked] = useState(true);
   const [radio, setRadio] = useState("r1");
   const [on, setOn] = useState(true);
+  const [pulse, setPulse] = useState(0);
 
   return (
     <div className="min-h-screen bg-background p-6 text-foreground">
@@ -454,6 +460,125 @@ export default function TokenGallery() {
             </table>
           </div>
         </Section>
+
+        <Section title="Animated icons">
+          <p className="mb-4 max-w-3xl text-sm text-muted-foreground">
+            Each pair is the animated variant beside the raw lucide glyph it
+            replaces. They must look <strong>identical at rest</strong> — a
+            visible difference here is the hover-pop bug that
+            variants.parity.test.ts exists to prevent. Hover a tile to play it.
+          </p>
+
+          <div className="mb-8 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {ANIMATED_ICON_NAMES.map((name) => {
+              const Raw = ICON_REGISTRY[name];
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 text-left hover:bg-muted"
+                >
+                  <AnimatedIcon name={name} size={20} className="text-foreground" />
+                  <Raw size={20} className="text-muted-foreground/40" />
+                  <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground">
+                    {name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <h3 className="mb-2 text-sm font-semibold text-foreground">Sizes (16 / 20 / 24)</h3>
+          <div className="mb-8 flex flex-wrap gap-3">
+            {(["dashboard", "bell", "more-vertical", "accounts", "reports"] as const).map((name) => (
+              <button
+                key={name}
+                type="button"
+                className="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2 hover:bg-muted"
+              >
+                <AnimatedIcon name={name} size={16} />
+                <AnimatedIcon name={name} size={20} />
+                <AnimatedIcon name={name} size={24} />
+              </button>
+            ))}
+          </div>
+
+          <h3 className="mb-2 text-sm font-semibold text-foreground">Trigger resolution</h3>
+          <p className="mb-3 max-w-3xl text-sm text-muted-foreground">
+            The icon listens on its nearest interactive ancestor, so it animates from wherever you
+            actually point. Where there is no such ancestor it must degrade silently to a static
+            glyph — never throw.
+          </p>
+          <div className="mb-8 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-muted"
+            >
+              <AnimatedIcon name="edit" size={16} /> inside a button
+            </button>
+            <a
+              href="#tokens"
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-muted"
+            >
+              <AnimatedIcon name="download" size={16} /> inside an anchor
+            </a>
+            <div className="flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted-foreground">
+              <AnimatedIcon name="refresh" size={16} /> no ancestor — stays still
+            </div>
+            <div
+              data-icon-trigger
+              className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-muted"
+            >
+              <AnimatedIcon name="refresh" size={16} /> opted in with data-icon-trigger
+            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted-foreground">
+              <AnimatedIcon name="chevron-right" size={16} trigger="none" /> trigger=&quot;none&quot;
+              — decorative
+            </div>
+            {/* The SettingsLayout shape. pqoqubbw's upstream components wrap the
+                svg in a <div>, which would make the parser auto-close this <p>. */}
+            <p className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm">
+              <AnimatedIcon name="settings" size={16} /> inside a p — must not break the paragraph
+            </p>
+          </div>
+
+          <h3 className="mb-2 text-sm font-semibold text-foreground">Keyboard &amp; pulse</h3>
+          <p className="mb-3 max-w-3xl text-sm text-muted-foreground">
+            Tab through this row: focus must play the icon exactly as hover does, and moving the
+            pointer away while still focused must not stop it.
+          </p>
+          <div className="mb-6 flex flex-wrap gap-2">
+            {(["dashboard", "purchases", "sales", "accounts", "approvals"] as const).map((name) => (
+              <button
+                key={name}
+                type="button"
+                className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <AnimatedIcon name={name} size={16} />
+                {name}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => setPulse((n) => n + 1)}>
+              Ring the bell (pulseKey)
+            </Button>
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-border">
+              <AnimatedIcon name="bell" size={16} pulseKey={pulse} />
+            </span>
+            <span className="text-sm text-muted-foreground">
+              Plays with no pointer involved — what NotificationBell does when the waiting count
+              goes up.
+            </span>
+          </div>
+
+          <p className="mt-6 max-w-3xl rounded-lg border border-warning/40 bg-warning-soft px-3 py-2 text-sm text-foreground">
+            <strong>Check by hand, because no test can:</strong> turn on the OS &ldquo;reduce
+            motion&rdquo; setting and reload. Every glyph above must look exactly as it does now,
+            and the Network tab must show <strong>no</strong> chunk request for the variants.
+          </p>
+        </Section>
+
       </div>
     </div>
   );

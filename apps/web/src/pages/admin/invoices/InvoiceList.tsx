@@ -25,9 +25,10 @@ import NoRecords from "@components/admin/NoRecords";
 import { useQuery } from "@tanstack/react-query";
 import { fetchModuleHierarchy, fetchCustomFieldsByModule } from "@api/customFieldTypeApi";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Badge, Button, FormField, PageSizeSelect, Select } from "@components/ui";
+import { Badge, Button, FormField, PageSizeSelect, Select, EmptyStateHero } from "@components/ui";
 import { setTenantValue } from "@utils/tenantStorage";
 
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface Invoice {
     id: string;
     invoiceNumber: string;
@@ -350,6 +351,22 @@ const InvoiceList: React.FC = () => {
     const from = (pagination.page - 1) * pagination.limit + 1;
     const to = Math.min(pagination.page * pagination.limit, pagination.total);
 
+    /**
+     * Nothing here, and nothing asked for — so this workspace has never raised
+     * an invoice, rather than having filtered its way to an empty screen.
+     *
+     * The list controller returns a filtered count only, so there is no total
+     * to test against. There does not need to be: with no search, no drill-down
+     * and both selectors neutral, the filtered count IS the unfiltered one.
+     */
+    const isFirstRun =
+        !isPageLoading &&
+        invoices.length === 0 &&
+        !search &&
+        activeFilters.length === 0 &&
+        invoiceTypeFilter === 'all' &&
+        !costCenterId;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Invoices">
@@ -375,114 +392,127 @@ const InvoiceList: React.FC = () => {
                 )}
             </PageHeader>
 
-            <ActiveFilterBanner filters={activeFilters} onClear={clearDrillFilters} />
-
-            {/* Invoice Type Filter Pills */}
-            <div className="flex items-center gap-2 mb-3">
-                {(['all', 'INVOICE', 'PROFORMA'] as const).map((opt) => (
-                    <Button
-                        key={opt}
-                        type="button"
-                        variant={invoiceTypeFilter === opt ? 'soft' : 'white'}
-                        size="sm"
-                        onClick={() => handleInvoiceTypeFilterChange(opt)}
-                    >
-                        {opt === 'all' ? 'All' : opt === 'INVOICE' ? 'Invoices' : 'Proformas'}
-                    </Button>
-                ))}
-            </div>
-
-            {/* Search Input, Profit Center filter & PageLength */}
-            <div className="flex justify-between items-center mb-4 gap-3">
-                <FormField
-                    type="text"
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    containerClassName="w-full md:w-64"
+{isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.invoices}
+                    action={hasPermission(permissions, 'invoices', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={handleNewInvoiceClick}>
+                            {LIST_EMPTY_STATES.invoices.cta}
+                        </Button>
+                    )}
                 />
-                <div className="flex items-center gap-3">
-                    <Select
-                        value={costCenterId}
-                        onChange={(e) => handleCostCenterFilterChange(e.target.value)}
-                        aria-label="Filter by profit center"
-                    >
-                        <option value="">All profit centers</option>
-                        {/* Matches the report's Common / Unallocated column, so the
-                            list and the departmental P&L agree on what "untagged" means. */}
-                        <option value="none">Unassigned</option>
-                        {costCenterOptions.map((c) => (
-                            <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
+            ) : (
+                <>
+                    <ActiveFilterBanner filters={activeFilters} onClear={clearDrillFilters} />
+
+                    {/* Invoice Type Filter Pills */}
+                    <div className="flex items-center gap-2 mb-3">
+                        {(['all', 'INVOICE', 'PROFORMA'] as const).map((opt) => (
+                            <Button
+                                key={opt}
+                                type="button"
+                                variant={invoiceTypeFilter === opt ? 'soft' : 'white'}
+                                size="sm"
+                                onClick={() => handleInvoiceTypeFilterChange(opt)}
+                            >
+                                {opt === 'all' ? 'All' : opt === 'INVOICE' ? 'Invoices' : 'Proformas'}
+                            </Button>
                         ))}
-                    </Select>
-                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-                </div>
-            </div>
+                    </div>
 
-            {/* Invoice Table */}
-            <Table headers={tableHeaders}>
-                {!isPageLoading && invoices && invoices.map((invoice, index) => (
-                    <TableRow
-                        key={invoice.id}
-                        index={(page - 1) * limit + index + 1}
-                        row={invoice}
-                        columns={[
-                            <a href={`/view-invoice/${invoice.id}`} onClick={(e) => e.stopPropagation()} // inline-block + py-1 lifts the hit area to ~26px; as a bare inline link it
-                            // measured 18px tall, under the 24x24 minimum in WCAG 2.2 SC 2.5.8.
-                            className="inline-block py-1 text-primary font-medium cursor-pointer hover:underline">{invoice.invoiceNumber}</a>,
-                            <Badge color={invoice.invoiceType === 'PROFORMA' ? 'info' : 'success'}>
-                                {invoice.invoiceType === 'PROFORMA' ? 'Proforma' : 'Invoice'}
-                            </Badge>,
-                            <ProfileCard
-                                imageUrl={invoice.billTo?.image}
-                                name={invoice.billTo?.name}
-                                email={invoice.billTo?.email}
-                            />,
-                            <span className="font-semibold text-gray-600 ">{formatMoney(invoice.TotalAmount, invoice.currencyCode)}</span>,
-                            <span className="font-semibold text-gray-600 ">{formatMoney(invoice.totalPaid as number ?? 0, invoice.currencyCode)}</span>,
-                            <InvoiceStatusBadge status={invoice.status} dueDate={invoice.dueDate} totalAmount={invoice.TotalAmount} totalPaid={invoice.totalPaid} />,
-                            invoice.costCenter
-                                ? <span className="text-gray-600 font-medium" title={invoice.costCenter.name}>{invoice.costCenter.code}</span>
-                                : <span className="text-gray-400">—</span>,
-                            <span className="font-medium text-gray-600 ">{formatDate(invoice.createdAt as string, systemSettings?.dateFormat.format || 'd-m-Y')}</span>,
+                    {/* Search Input, Profit Center filter & PageLength */}
+                    <div className="flex justify-between items-center mb-4 gap-3">
+                        <FormField
+                            type="text"
+                            placeholder="Search..."
+                            value={search}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            containerClassName="w-full md:w-64"
+                        />
+                        <div className="flex items-center gap-3">
+                            <Select
+                                value={costCenterId}
+                                onChange={(e) => handleCostCenterFilterChange(e.target.value)}
+                                aria-label="Filter by profit center"
+                            >
+                                <option value="">All profit centers</option>
+                                {/* Matches the report's Common / Unallocated column, so the
+                                    list and the departmental P&L agree on what "untagged" means. */}
+                                <option value="none">Unassigned</option>
+                                {costCenterOptions.map((c) => (
+                                    <option key={c.id} value={c.id}>{c.code} — {c.name}</option>
+                                ))}
+                            </Select>
+                            <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                        </div>
+                    </div>
 
-                            // Map over configured custom fields using fieldSlug
-                            ...tableCustomFields.map((f: any) => (
-                                <span key={f.id} className="text-gray-600 font-medium">
-                                    {extractCustomFieldValue(invoice, f.fieldSlug)}
-                                </span>
-                            ))
-                        ]}
-                        actions={getTableActions(invoice)}
-                        onRowClick={(item) => navigate(`/view-invoice/${item.id}`)}
-                    />
-                ))}
+                    {/* Invoice Table */}
+                    <Table headers={tableHeaders}>
+                        {!isPageLoading && invoices && invoices.map((invoice, index) => (
+                            <TableRow
+                                key={invoice.id}
+                                index={(page - 1) * limit + index + 1}
+                                row={invoice}
+                                columns={[
+                                    <a href={`/view-invoice/${invoice.id}`} onClick={(e) => e.stopPropagation()} // inline-block + py-1 lifts the hit area to ~26px; as a bare inline link it
+                                    // measured 18px tall, under the 24x24 minimum in WCAG 2.2 SC 2.5.8.
+                                    className="inline-block py-1 text-primary font-medium cursor-pointer hover:underline">{invoice.invoiceNumber}</a>,
+                                    <Badge color={invoice.invoiceType === 'PROFORMA' ? 'info' : 'success'}>
+                                        {invoice.invoiceType === 'PROFORMA' ? 'Proforma' : 'Invoice'}
+                                    </Badge>,
+                                    <ProfileCard
+                                        imageUrl={invoice.billTo?.image}
+                                        name={invoice.billTo?.name}
+                                        email={invoice.billTo?.email}
+                                    />,
+                                    <span className="font-semibold text-gray-600 ">{formatMoney(invoice.TotalAmount, invoice.currencyCode)}</span>,
+                                    <span className="font-semibold text-gray-600 ">{formatMoney(invoice.totalPaid as number ?? 0, invoice.currencyCode)}</span>,
+                                    <InvoiceStatusBadge status={invoice.status} dueDate={invoice.dueDate} totalAmount={invoice.TotalAmount} totalPaid={invoice.totalPaid} />,
+                                    invoice.costCenter
+                                        ? <span className="text-gray-600 font-medium" title={invoice.costCenter.name}>{invoice.costCenter.code}</span>
+                                        : <span className="text-gray-400">—</span>,
+                                    <span className="font-medium text-gray-600 ">{formatDate(invoice.createdAt as string, systemSettings?.dateFormat.format || 'd-m-Y')}</span>,
 
-                {!isPageLoading && invoices.length === 0 && (
-                    <NoRecords message="No records found" colSpan={tableHeaders.length} />
-                )}
+                                    // Map over configured custom fields using fieldSlug
+                                    ...tableCustomFields.map((f: any) => (
+                                        <span key={f.id} className="text-gray-600 font-medium">
+                                            {extractCustomFieldValue(invoice, f.fieldSlug)}
+                                        </span>
+                                    ))
+                                ]}
+                                actions={getTableActions(invoice)}
+                                onRowClick={(item) => navigate(`/view-invoice/${item.id}`)}
+                            />
+                        ))}
 
-                {isPageLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-4 text-gray-950 font-semibold" colSpan={tableHeaders.length}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-            </Table>
+                        {!isPageLoading && invoices.length === 0 && (
+                            <NoRecords art="invoice" message="No records found" colSpan={tableHeaders.length} />
+                        )}
 
-            {/* Pagination Component */}
-            {!isPageLoading && pagination.totalPages > 1 && (
-                <PaginationWrapper
-                    count={pagination.totalPages}
-                    page={page}
-                    from={from}
-                    to={to}
-                    total={pagination.total}
-                    onChange={(_, newPage) => handlePageChange(newPage)}
-                    paginationVariant="outlined"
-                    paginationShape="rounded"
-                />
+                        {isPageLoading && (
+                            <tr key="table-loader">
+                                <td className="text-center py-4 text-gray-950 font-semibold" colSpan={tableHeaders.length}>
+                                    <LoaderSpinner />
+                                </td>
+                            </tr>
+                        )}
+                    </Table>
+
+                    {/* Pagination Component */}
+                    {!isPageLoading && pagination.totalPages > 1 && (
+                        <PaginationWrapper
+                            count={pagination.totalPages}
+                            page={page}
+                            from={from}
+                            to={to}
+                            total={pagination.total}
+                            onChange={(_, newPage) => handlePageChange(newPage)}
+                            paginationVariant="outlined"
+                            paginationShape="rounded"
+                        />
+                    )}
+                </>
             )}
 
             {/* Delete Invoice */}

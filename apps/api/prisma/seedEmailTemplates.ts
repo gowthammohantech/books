@@ -23,7 +23,7 @@
  *
  * Run: `npx ts-node prisma/seedEmailTemplates.ts` (or via the boot seed flow).
  */
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 import { TEMPLATES } from './data/emailTemplates';
 
@@ -41,41 +41,59 @@ export async function seedEmailTemplatesForTenant(
   tenantId: string,
   db: EmailTemplateSeedDb = prisma,
 ): Promise<SeedEmailTemplatesResult> {
-  let created = 0;
+  // Three queries for the whole library, not three PER TEMPLATE. This runs
+  // inside the signup transaction (see prisma/seedTenant.ts), and a round trip
+  // per template was the largest single contributor to the 5s
+  // interactive-transaction timeout that failed registrations with P2028.
+  const types = await db.notificationType.findMany({
+    where: { slug: { in: TEMPLATES.map((t) => t.typeSlug) } },
+    select: { id: true, slug: true },
+  });
+  const typeIdBySlug = new Map(types.map((t) => [t.slug, t.id]));
+
+  const existing = await db.emailTemplate.findMany({
+    where: { tenantId, title: { in: TEMPLATES.map((t) => t.title) } },
+    select: { notificationTypeId: true, title: true },
+  });
+  // The idempotency key is (tenantId, notificationTypeId, title) — the same
+  // unique index the row-at-a-time findFirst was checking.
+  const key = (typeId: string, title: string) => `${typeId}|${title}`;
+  const have = new Set(existing.map((e) => key(e.notificationTypeId, e.title)));
+
   let skipped = 0;
+  const toCreate: Prisma.EmailTemplateCreateManyInput[] = [];
 
   for (const t of TEMPLATES) {
-    const type = await db.notificationType.findUnique({ where: { slug: t.typeSlug } });
-    if (!type) {
+    const typeId = typeIdBySlug.get(t.typeSlug);
+    if (!typeId) {
       // Notification types are seeded earlier; skip gracefully if missing.
       skipped += 1;
       continue;
     }
-
-    const existing = await db.emailTemplate.findFirst({
-      where: { tenantId, notificationTypeId: type.id, title: t.title },
-    });
-    if (existing) {
+    if (have.has(key(typeId, t.title))) {
       skipped += 1;
       continue;
     }
-
-    await db.emailTemplate.create({
-      data: {
-        tenantId,
-        title: t.title,
-        notificationTypeId: type.id,
-        description: t.description,
-        subject: t.subject,
-        sms_content: t.sms_content,
-        notification_content: t.notification_content,
-        status: 'active',
-      },
+    // Guards against a duplicate inside TEMPLATES itself, which createMany
+    // would turn into a unique-constraint failure rather than a skip.
+    have.add(key(typeId, t.title));
+    toCreate.push({
+      tenantId,
+      title: t.title,
+      notificationTypeId: typeId,
+      description: t.description,
+      subject: t.subject,
+      sms_content: t.sms_content,
+      notification_content: t.notification_content,
+      status: 'active',
     });
-    created += 1;
   }
 
-  return { created, skipped };
+  if (toCreate.length > 0) {
+    await db.emailTemplate.createMany({ data: toCreate });
+  }
+
+  return { created: toCreate.length, skipped };
 }
 
 export async function seedEmailTemplates(): Promise<SeedEmailTemplatesResult> {

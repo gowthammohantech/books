@@ -20,8 +20,8 @@ import InputField from "@components/admin/InputField";
 import type { SyntheticEvent } from "react";
 import useDateFormatter from "@hooks/useDateFormatter";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect } from "@components/ui";
-
+import { Button, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface IAccount {
     id: string;
     name: string;
@@ -229,6 +229,12 @@ const Budgets: React.FC = () => {
 
     const tableHeaders = ["#", "Account", "Period Start", "Period End", "Amount", "Actions"];
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && budgets.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Budgets">
@@ -236,53 +242,65 @@ const Budgets: React.FC = () => {
                     New Budget
                 </Button>
             </PageHeader>
-
-            <div className="flex flex-col md:flex-row justify-between gap-4">
-                <input
-                    type="text"
-                    placeholder="Search budgets..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.budgets}
+                    action={<Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={openCreate}>
+                        {LIST_EMPTY_STATES.budgets.cta}
+                    </Button>}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
+            ) : (
+                <>
 
-            <Table headers={tableHeaders}>
-                {!isLoading && budgets.length > 0 &&
-                    budgets.map((budget, index) => (
-                        <TableRow
-                            key={budget.id}
-                            row={budget}
-                            index={index + 1}
-                            columns={[
-                                <span className="text-primary">{budget.account?.name || budget.accountId}</span>,
-                                formatDate(budget.periodStart, systemSettings?.dateFormat?.format || "d-m-Y"),
-                                formatDate(budget.periodEnd, systemSettings?.dateFormat?.format || "d-m-Y"),
-                                Number(budget.amount).toLocaleString(),
-                            ]}
-                            actions={tableActions}
-                        />
-                    ))
-                }
-                {!isLoading && budgets.length === 0 && (
-                    <tr><td className="text-center py-4 font-semibold text-gray-500" colSpan={6}>No Budgets Found</td></tr>
-                )}
-                {isLoading && (
-                    <tr key="loader"><td className="text-center py-2 text-gray-950 font-semibold" colSpan={6}><LoaderSpinner /></td></tr>
-                )}
-            </Table>
+                <div className="flex flex-col md:flex-row justify-between gap-4">
+                    <input
+                        type="text"
+                        placeholder="Search budgets..."
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
 
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handlePageChange(newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                <Table headers={tableHeaders}>
+                    {!isLoading && budgets.length > 0 &&
+                        budgets.map((budget, index) => (
+                            <TableRow
+                                key={budget.id}
+                                row={budget}
+                                index={index + 1}
+                                columns={[
+                                    <span className="text-primary">{budget.account?.name || budget.accountId}</span>,
+                                    formatDate(budget.periodStart, systemSettings?.dateFormat?.format || "d-m-Y"),
+                                    formatDate(budget.periodEnd, systemSettings?.dateFormat?.format || "d-m-Y"),
+                                    Number(budget.amount).toLocaleString(),
+                                ]}
+                                actions={tableActions}
+                            />
+                        ))
+                    }
+                    {!isLoading && budgets.length === 0 && (
+                        <EmptyStateRow colSpan={6} art="analysis" title="No Budgets Found" />
+                    )}
+                    {isLoading && (
+                        <tr key="loader"><td className="text-center py-2 text-gray-950 font-semibold" colSpan={6}><LoaderSpinner /></td></tr>
+                    )}
+                </Table>
+
+                <PaginationWrapper
+                    count={pagination.totalPages}
+                    page={page}
+                    from={from}
+                    to={to}
+                    total={pagination.total}
+                    onChange={(_, newPage) => handlePageChange(newPage)}
+                    paginationVariant="outlined"
+                    paginationShape="rounded"
+                />
+                </>
+            )}
+
 
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={isEditMode ? "Edit Budget" : "Add New Budget"}>
                 <form onSubmit={handleSubmit} className="space-y-4">

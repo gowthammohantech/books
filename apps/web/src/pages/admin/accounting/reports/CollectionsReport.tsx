@@ -145,7 +145,7 @@ export default function CollectionsReport() {
               </thead>
               <tbody>
                 {rows.length === 0 ? (
-                  <NoRecords colSpan={6} message="No overdue collections as of this date." />
+                  <NoRecords art="analysis" colSpan={6} message="No overdue collections as of this date." />
                 ) : (
                   rows.map((row) => (
                     <tr key={row.id} className="border-b border-border hover:bg-gray-50">

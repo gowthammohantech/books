@@ -21,8 +21,8 @@ import SubmitButton from "@components/admin/SubmitButton";
 import DynamicCustomFields from "@components/admin/DynamicCustomFields";
 import ImageCropperUpload from "@components/common/ImageCropperUpload";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect } from "@components/ui";
-
+import { Button, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 // Interface for the brand data
 interface Brand {
     id: string;
@@ -294,6 +294,12 @@ const BrandList: FC = () => {
     if (allowedActions.length === 0) {
         tableHeaders.pop();
     }
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && brands.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Brands">
@@ -307,71 +313,83 @@ const BrandList: FC = () => {
                     </Button>
                 )}
             </PageHeader>
-
-            <div className="flex flex-col md:flex-row justify-between gap-4">
-                <input
-                    type="text"
-                    placeholder="Search by brand name..."
-                    value={search}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.brands}
+                    action={hasPermission(permissions, 'product-services', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={openCreateBrand}>
+                            {LIST_EMPTY_STATES.brands.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
+            ) : (
+                <>
 
-            <Table headers={tableHeaders}>
-                {!isLoading && brands && brands.map((brandItem, index) => (
-                    <TableRow
-                        key={brandItem.id}
-                        index={index + 1}
-                        row={brandItem}
-                        columns={[
-                            <ProfileCard
-                                imageUrl={brandItem.brandImageUrl}
-                                name={brandItem.brand_name}
-                                primary
-                            />,
-                            <label className="inline-flex items-center cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    className="sr-only peer"
-                                    checked={brandItem.status}
-                                    onChange={() => updateStatus(brandItem)}
-                                />
-                                <div className="relative w-11 h-6 bg-gray-200 peer-checked:bg-primary rounded-full peer-focus:ring-2 peer-focus:ring-ring transition-all duration-300">
-                                    <div className={`absolute top-0.5 left-1 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${brandItem.status ? 'translate-x-full' : ''}`}></div>
-                                </div>
-                            </label>
-                        ]}
-                        actions={allowedActions.length > 0 ? allowedActions : undefined}
+                <div className="flex flex-col md:flex-row justify-between gap-4">
+                    <input
+                        type="text"
+                        placeholder="Search by brand name..."
+                        value={search}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
+                        className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     />
-                ))}
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
 
-                {!isLoading && brands.length === 0 &&
-                    <tr>
-                        <td colSpan={tableHeaders.length} className="text-center py-4 font-semibold">No brands found.</td>
-                    </tr>
-                }
+                <Table headers={tableHeaders}>
+                    {!isLoading && brands && brands.map((brandItem, index) => (
+                        <TableRow
+                            key={brandItem.id}
+                            index={index + 1}
+                            row={brandItem}
+                            columns={[
+                                <ProfileCard
+                                    imageUrl={brandItem.brandImageUrl}
+                                    name={brandItem.brand_name}
+                                    primary
+                                />,
+                                <label className="inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only peer"
+                                        checked={brandItem.status}
+                                        onChange={() => updateStatus(brandItem)}
+                                    />
+                                    <div className="relative w-11 h-6 bg-gray-200 peer-checked:bg-primary rounded-full peer-focus:ring-2 peer-focus:ring-ring transition-all duration-300">
+                                        <div className={`absolute top-0.5 left-1 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${brandItem.status ? 'translate-x-full' : ''}`}></div>
+                                    </div>
+                                </label>
+                            ]}
+                            actions={allowedActions.length > 0 ? allowedActions : undefined}
+                        />
+                    ))}
 
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-2 text-gray-950  font-semibold" colSpan={7}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-            </Table>
+                    {!isLoading && brands.length === 0 &&
+                        <EmptyStateRow colSpan={tableHeaders.length} art="empty" title="No brands found." />
+                    }
 
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handlePageChange(newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                    {isLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-2 text-gray-950  font-semibold" colSpan={7}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
+                </Table>
+
+                <PaginationWrapper
+                    count={pagination.totalPages}
+                    page={page}
+                    from={from}
+                    to={to}
+                    total={pagination.total}
+                    onChange={(_, newPage) => handlePageChange(newPage)}
+                    paginationVariant="outlined"
+                    paginationShape="rounded"
+                />
+                </>
+            )}
+
 
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={isEditMode ? 'Edit Brand' : 'Add New Brand'}>
                 <form onSubmit={handleSubmit} className="space-y-6">

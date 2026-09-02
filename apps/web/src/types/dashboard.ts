@@ -35,6 +35,10 @@ export interface RecentInvoices {
 export interface RecentPurchase {
     id: string;
     purchaseId: string;
+    purchaseDate: string;
+    /** Prisma Decimal - serialised as a string over the wire. */
+    taxableAmount: string | number;
+    totalTax: string | number;
     totalAmount: number;
     status: string;
     vendor : {

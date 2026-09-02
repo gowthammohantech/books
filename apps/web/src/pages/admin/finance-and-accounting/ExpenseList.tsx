@@ -23,8 +23,8 @@ import InvoiceStatusBadge from "@components/admin/InvoiceStatusBadge";
 import { useQuery } from "@tanstack/react-query";
 import { fetchModuleHierarchy, fetchCustomFieldsByModule } from "@api/customFieldTypeApi";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, FormField, PageSizeSelect, Select } from "@components/ui";
-
+import { Button, FormField, PageSizeSelect, Select, EmptyStateRow, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface Pagination {
     total: number;
     page: number;
@@ -277,6 +277,12 @@ const ExpenseList: React.FC = () => {
     const from = (pagination.page - 1) * pagination.limit + 1;
     const to = Math.min(pagination.page * pagination.limit, pagination.total);
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && expenses.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Expenses">
@@ -286,88 +292,100 @@ const ExpenseList: React.FC = () => {
                     </Button>
                 }
             </PageHeader>
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.expenses}
+                    action={hasPermission(permissions, 'expenses', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={() => { handleCreateClick(); }}>
+                            {LIST_EMPTY_STATES.expenses.cta}
+                        </Button>
+                    )}
+                />
+            ) : (
+                <>
 
-            <ActiveFilterBanner filters={activeFilters} onClear={clearDrillFilters} />
+                <ActiveFilterBanner filters={activeFilters} onClear={clearDrillFilters} />
 
-            {/* Search Input & PageLength */}
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2 flex-1 mr-2">
-                    <FormField
-                        type="text"
-                        placeholder="Search..."
-                        value={search}
-                        onChange={(e) => handleFilterChange('search', e.target.value)}
-                        containerClassName="w-full md:w-64"
-                    />
-                    <Select
-                        value={supplierIdFilter}
-                        onChange={(e) => handleFilterChange('supplierId', e.target.value)}
-                        options={[
-                            { value: '', label: 'All Vendors' },
-                            ...supplierFilterOptions.map((s) => ({ value: s.id, label: s.supplier_name })),
-                        ]}
+                {/* Search Input & PageLength */}
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2 flex-1 mr-2">
+                        <FormField
+                            type="text"
+                            placeholder="Search..."
+                            value={search}
+                            onChange={(e) => handleFilterChange('search', e.target.value)}
+                            containerClassName="w-full md:w-64"
+                        />
+                        <Select
+                            value={supplierIdFilter}
+                            onChange={(e) => handleFilterChange('supplierId', e.target.value)}
+                            options={[
+                                { value: '', label: 'All Vendors' },
+                                ...supplierFilterOptions.map((s) => ({ value: s.id, label: s.supplier_name })),
+                            ]}
+                        />
+                    </div>
+                    <PageSizeSelect
+                        value={limit}
+                        onChange={(size) => handleFilterChange('limit', size)}
                     />
                 </div>
-                <PageSizeSelect
-                    value={limit}
-                    onChange={(size) => handleFilterChange('limit', size)}
-                />
-            </div>
 
-            <Table headers={tableHeaders}>
-                {!isPageLoading && expenses && expenses.map((expense, index) => (
-                    <TableRow
-                        key={expense.id}
-                        row={expense}
-                        index={(page - 1) * limit + index + 1}
-                        columns={[
-                            <span className="text-primary font-medium">{expense.expenseId}</span>,
-                            <span className="font-semibold text-gray-700">{format(expense.amount)}</span>,
-                            formatDate(expense.expenseDate, systemSettings?.dateFormat.format || 'd-m-Y'),
-                            <span className="text-gray-700">{expense.supplier?.name ?? '—'}</span>,
-                            <InvoiceStatusBadge status={expense.paymentStatus} />,
-                            formatDate(expense.createdAt, systemSettings?.dateFormat.format || 'd-m-Y'),
+                <Table headers={tableHeaders}>
+                    {!isPageLoading && expenses && expenses.map((expense, index) => (
+                        <TableRow
+                            key={expense.id}
+                            row={expense}
+                            index={(page - 1) * limit + index + 1}
+                            columns={[
+                                <span className="text-primary font-medium">{expense.expenseId}</span>,
+                                <span className="font-semibold text-gray-700">{format(expense.amount)}</span>,
+                                formatDate(expense.expenseDate, systemSettings?.dateFormat.format || 'd-m-Y'),
+                                <span className="text-gray-700">{expense.supplier?.name ?? '—'}</span>,
+                                <InvoiceStatusBadge status={expense.paymentStatus} />,
+                                formatDate(expense.createdAt, systemSettings?.dateFormat.format || 'd-m-Y'),
 
-                            ...tableCustomFields.map((f: any) => (
-                                <span key={f.id} className="text-gray-600 font-medium">
-                                    {extractCustomFieldValue(expense, f.fieldSlug || f.id)}
-                                </span>
-                            ))
-                        ]}
-                        actions={tableActions}
-                        onRowClick={(item) => navigate(`/expenses/view/${item.id}`)}
+                                ...tableCustomFields.map((f: any) => (
+                                    <span key={f.id} className="text-gray-600 font-medium">
+                                        {extractCustomFieldValue(expense, f.fieldSlug || f.id)}
+                                    </span>
+                                ))
+                            ]}
+                            actions={tableActions}
+                            onRowClick={(item) => navigate(`/expenses/view/${item.id}`)}
+                        />
+                    ))}
+
+                    {!isPageLoading && expenses && expenses.length === 0 && (
+                        <EmptyStateRow colSpan={tableHeaders.length} art="cash-payment" title="No Records Found" />
+                    )}
+
+                    {isPageLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-6 text-gray-950 font-semibold" colSpan={tableHeaders.length}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
+
+                </Table>
+
+                {/* Pagination Component */}
+                {!isPageLoading && pagination.totalPages > 1 && (
+                    <PaginationWrapper
+                        count={pagination.totalPages}
+                        page={page}
+                        from={from}
+                        to={to}
+                        total={pagination.total}
+                        onChange={(_, newPage) => handleFilterChange('page', newPage)}
+                        paginationVariant="outlined"
+                        paginationShape="rounded"
                     />
-                ))}
-
-                {!isPageLoading && expenses && expenses.length === 0 && (
-                    <tr>
-                        <td colSpan={tableHeaders.length} className="text-center text-gray-500 py-6 font-medium">No Records Found</td>
-                    </tr>
                 )}
-
-                {isPageLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-6 text-gray-950 font-semibold" colSpan={tableHeaders.length}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-
-            </Table>
-
-            {/* Pagination Component */}
-            {!isPageLoading && pagination.totalPages > 1 && (
-                <PaginationWrapper
-                    count={pagination.totalPages}
-                    page={page}
-                    from={from}
-                    to={to}
-                    total={pagination.total}
-                    onChange={(_, newPage) => handleFilterChange('page', newPage)}
-                    paginationVariant="outlined"
-                    paginationShape="rounded"
-                />
+                </>
             )}
+
 
             {/* Expense Form Modal */}
             {isModalOpen &&

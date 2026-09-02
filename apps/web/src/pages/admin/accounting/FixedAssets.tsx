@@ -19,8 +19,8 @@ import InputField from "@components/admin/InputField";
 import ReactDateInput from "@components/admin/ReactDateInput";
 import useDateFormatter from "@hooks/useDateFormatter";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Badge, Button, PageSizeSelect } from "@components/ui";
-
+import { Badge, Button, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 const DEPRECIATION_METHODS = ["STRAIGHT_LINE"] as const;
 type DepreciationMethod = typeof DEPRECIATION_METHODS[number];
 
@@ -314,6 +314,12 @@ const FixedAssets: React.FC = () => {
 
     const tableHeaders = ["#", "Name", "Cost", "Acquisition Date", "Accumulated Depr.", "Status", "Disposal Proceeds", "Actions"];
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && items.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Fixed Assets">
@@ -330,63 +336,75 @@ const FixedAssets: React.FC = () => {
                     </Button>
                 </div>
             </PageHeader>
-
-            <div className="flex flex-col md:flex-row justify-between gap-4">
-                <input
-                    type="text"
-                    placeholder="Search assets..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.fixedAssets}
+                    action={<Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={openCreate}>
+                        {LIST_EMPTY_STATES.fixedAssets.cta}
+                    </Button>}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
+            ) : (
+                <>
 
-            <Table headers={tableHeaders}>
-                {!isLoading && items.length > 0 &&
-                    items.map((item, index) => (
-                        <TableRow
-                            key={item.id}
-                            row={item}
-                            index={index + 1}
-                            columns={[
-                                <span className="text-primary font-medium">{item.name}</span>,
-                                Number(item.cost).toLocaleString(),
-                                formatDate(item.acquisitionDate, dateFormat),
-                                item.accumulatedDepreciation !== undefined ? Number(item.accumulatedDepreciation).toLocaleString() : "—",
-                                item.status ? (
-                                    <Badge
-                                        color={item.status === "disposed" ? "danger" : item.status === "fully_depreciated" ? "warning" : "success"}
-                                        className="capitalize"
-                                    >
-                                        {item.status.replace(/_/g, " ")}
-                                    </Badge>
-                                ) : "—",
-                                item.disposalProceeds !== undefined ? Number(item.disposalProceeds).toLocaleString() : "—",
-                            ]}
-                            actions={tableActions}
-                            onRowClick={(item) => openEdit(item)}
-                        />
-                    ))
-                }
-                {!isLoading && items.length === 0 && (
-                    <tr><td className="text-center py-4 font-semibold text-gray-500" colSpan={8}>No Fixed Assets Found</td></tr>
-                )}
-                {isLoading && (
-                    <tr key="loader"><td className="text-center py-2 font-semibold" colSpan={8}><LoaderSpinner /></td></tr>
-                )}
-            </Table>
+                <div className="flex flex-col md:flex-row justify-between gap-4">
+                    <input
+                        type="text"
+                        placeholder="Search assets..."
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
 
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handlePageChange(newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                <Table headers={tableHeaders}>
+                    {!isLoading && items.length > 0 &&
+                        items.map((item, index) => (
+                            <TableRow
+                                key={item.id}
+                                row={item}
+                                index={index + 1}
+                                columns={[
+                                    <span className="text-primary font-medium">{item.name}</span>,
+                                    Number(item.cost).toLocaleString(),
+                                    formatDate(item.acquisitionDate, dateFormat),
+                                    item.accumulatedDepreciation !== undefined ? Number(item.accumulatedDepreciation).toLocaleString() : "—",
+                                    item.status ? (
+                                        <Badge
+                                            color={item.status === "disposed" ? "danger" : item.status === "fully_depreciated" ? "warning" : "success"}
+                                            className="capitalize"
+                                        >
+                                            {item.status.replace(/_/g, " ")}
+                                        </Badge>
+                                    ) : "—",
+                                    item.disposalProceeds !== undefined ? Number(item.disposalProceeds).toLocaleString() : "—",
+                                ]}
+                                actions={tableActions}
+                                onRowClick={(item) => openEdit(item)}
+                            />
+                        ))
+                    }
+                    {!isLoading && items.length === 0 && (
+                        <EmptyStateRow colSpan={8} art="empty" title="No Fixed Assets Found" />
+                    )}
+                    {isLoading && (
+                        <tr key="loader"><td className="text-center py-2 font-semibold" colSpan={8}><LoaderSpinner /></td></tr>
+                    )}
+                </Table>
+
+                <PaginationWrapper
+                    count={pagination.totalPages}
+                    page={page}
+                    from={from}
+                    to={to}
+                    total={pagination.total}
+                    onChange={(_, newPage) => handlePageChange(newPage)}
+                    paginationVariant="outlined"
+                    paginationShape="rounded"
+                />
+                </>
+            )}
+
 
             {/* Create / Edit Modal */}
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={isEditMode ? "Edit Fixed Asset" : "Add New Fixed Asset"}>

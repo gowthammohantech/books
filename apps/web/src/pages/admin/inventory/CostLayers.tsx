@@ -12,6 +12,8 @@ import useDateFormatter from "@hooks/useDateFormatter";
 import type { SyntheticEvent } from "react";
 import { PageHeader } from "@/context/PageHeaderContext";
 
+import { EmptyStateRow } from "@components/ui";
+
 interface IProduct {
     id: string;
     name: string;
@@ -126,7 +128,7 @@ const CostLayers: React.FC = () => {
                             ))
                         }
                         {!isLoadingLayers && layers.length === 0 && (
-                            <tr><td className="text-center py-4 font-semibold text-gray-500" colSpan={4}>No Cost Layers Found</td></tr>
+                            <EmptyStateRow colSpan={4} art="empty" title="No Cost Layers Found" />
                         )}
                         {isLoadingLayers && (
                             <tr key="loader"><td className="text-center py-2 font-semibold" colSpan={4}><LoaderSpinner /></td></tr>

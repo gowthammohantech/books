@@ -4,73 +4,80 @@ import { useSelector } from "react-redux";
 
 import { Card } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { canView } from "@lib/navigation";
-import { settingsBands } from "@lib/settingsCatalogue";
-import type { SettingsBand } from "@lib/settingsCatalogue";
+import {
+    accountGroup,
+    visibleGroups,
+    visibleSettingsTabs,
+} from "@lib/settingsCatalogue";
+import type { SettingsGroup } from "@lib/settingsCatalogue";
 import type { RootState } from "@store/index";
-import type { PermissionSet } from "@models/permissions";
 
 /**
- * Drops the destinations this user cannot reach, then any group and band left
- * with nothing in it — an empty card is worse than no card.
+ * The settings landing page: every destination on one screen, grouped.
+ *
+ * It shows both tabs at once on purpose. The rail's tabs exist to shorten a
+ * list you are navigating; this page is the overview you come to when you do
+ * not yet know which half your setting lives in, and hiding half of it behind
+ * a tab would defeat that.
  */
-const visibleBands = (permissions: PermissionSet[]): SettingsBand[] =>
-    settingsBands
-        .map((band) => ({
-            ...band,
-            groups: band.groups
-                .map((group) => ({
-                    ...group,
-                    // `slug: null` is an ungated route: always show it.
-                    links: group.links.filter(
-                        (link) =>
-                            link.slug === null || canView(link.slug, permissions),
-                    ),
-                }))
-                .filter((group) => group.links.length > 0),
-        }))
-        .filter((band) => band.groups.length > 0);
+
+const GroupCard = ({ group }: { group: SettingsGroup }) => (
+    <Card className="h-full">
+        <div className="mb-3 flex items-center gap-2">
+            <span className="text-primary">{group.icon}</span>
+            <h3 className="text-sm font-semibold text-foreground">{group.title}</h3>
+        </div>
+        <ul className="space-y-1">
+            {group.links.map((link) => (
+                <li key={link.to}>
+                    <Link
+                        to={link.to}
+                        className="block rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-primary"
+                    >
+                        {link.title}
+                    </Link>
+                </li>
+            ))}
+        </ul>
+    </Card>
+);
 
 const AllSettings = () => {
     const { data: systemSettings } = useSelector(
         (state: RootState) => state.systemSettings,
     );
-    const permissions = systemSettings?.permissions;
+    const permissions = useMemo(
+        () => systemSettings?.permissions ?? [],
+        [systemSettings?.permissions],
+    );
 
-    const bands = useMemo(() => visibleBands(permissions ?? []), [permissions]);
+    // Same shape as the rail: the tabbed sections, then the user's own
+    // settings as a section of their own.
+    const sections = useMemo(
+        () => [
+            ...visibleSettingsTabs(permissions),
+            ...visibleGroups([accountGroup], permissions).map((group) => ({
+                id: group.id,
+                title: group.title,
+                groups: [group],
+            })),
+        ],
+        [permissions],
+    );
 
     return (
         <>
             <PageHeader title="All Settings" />
 
             <div className="space-y-8">
-                {bands.map((band) => (
-                    <section key={band.id}>
+                {sections.map((section) => (
+                    <section key={section.id}>
                         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                            {band.title}
+                            {section.title}
                         </h2>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                            {band.groups.map((group) => (
-                                <Card key={group.id} className="h-full">
-                                    <div className="mb-3 flex items-center gap-2">
-                                        <span className="text-primary">{group.icon}</span>
-                                        <h3 className="text-sm font-semibold text-foreground">
-                                            {group.title}
-                                        </h3>
-                                    </div>
-                                    <ul className="space-y-1">
-                                        {group.links.map((link) => (
-                                            <li key={link.to}>
-                                                <Link
-                                                    to={link.to}
-                                                    className="block rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-primary"
-                                                >
-                                                    {link.title}
-                                                </Link>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </Card>
+                            {section.groups.map((group) => (
+                                <GroupCard key={group.id} group={group} />
                             ))}
                         </div>
                     </section>

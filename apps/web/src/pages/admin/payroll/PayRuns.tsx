@@ -342,7 +342,7 @@ const PayRuns: React.FC = () => {
                             </thead>
                             <tbody>
                                 {runs.length === 0 ? (
-                                    <NoRecords colSpan={7} message={`No pay runs found for ${filterYear}.`} />
+                                    <NoRecords art="cash-payment" colSpan={7} message={`No pay runs found for ${filterYear}.`} />
                                 ) : (
                                     runs.map((run, idx) => (
                                         <tr
@@ -561,7 +561,7 @@ const PayRuns: React.FC = () => {
                                 })}
 
                                 {editableLines.length === 0 && (
-                                    <NoRecords colSpan={isDraft ? 6 : 5} message="No employee lines in this run." />
+                                    <NoRecords art="cash-payment" colSpan={isDraft ? 6 : 5} message="No employee lines in this run." />
                                 )}
 
                                 {/* Totals row */}

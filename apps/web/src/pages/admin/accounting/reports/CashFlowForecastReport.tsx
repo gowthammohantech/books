@@ -108,7 +108,7 @@ export default function CashFlowForecastReport() {
               </thead>
               <tbody>
                 {data.buckets.length === 0 ? (
-                  <NoRecords colSpan={5} message="No forecast data available for this horizon." />
+                  <NoRecords art="analysis" colSpan={5} message="No forecast data available for this horizon." />
                 ) : (
                   data.buckets.map((bucket) => (
                     <tr key={bucket.monthStart} className="border-b border-border hover:bg-gray-50">

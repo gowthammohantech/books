@@ -19,8 +19,8 @@ import type { Pagination } from "@models/common";
 import PaginationWrapper from "@components/admin/PaginationWrapper";
 import PaymentModeBadge from "@components/admin/PaymentModeBadge";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect } from "@components/ui";
-
+import { Button, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface ExpenseResponse {
     success: boolean;
     message: string;
@@ -122,6 +122,12 @@ const PettyCashList: React.FC = () => {
     const from = (pagination.page - 1) * pagination.limit + 1;
     const to = Math.min(pagination.page * pagination.limit, pagination.total);
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && transactions.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Petty Cash">
@@ -136,161 +142,173 @@ const PettyCashList: React.FC = () => {
                     </div>
                 }
             </PageHeader>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-                {/* Opening Balance */}
-                <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-500/10 to-indigo-500/5 p-4 backdrop-blur-sm border border-indigo-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl transform translate-x-8 -translate-y-6" />
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                            <div className="p-2 rounded-2xl border border-indigo-200 bg-indigo-100 text-primary group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                                <PiggyBank size={18} />
-                            </div>
-                            <h2 className="text-sm font-semibold text-gray-700 group-hover:text-indigo-700 transition-colors">
-                                Opening Balance
-                            </h2>
-                        </div>
-                    </div>
-                    <p className="text-2xl font-bold text-indigo-700 tracking-tight mt-1">
-                        {format(pettyCashRecords?.openingBalance || 0)}
-                    </p>
-                </div>
-
-                {/* Current Balance */}
-                <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-green-500/10 to-green-500/5 p-4 backdrop-blur-sm border border-green-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-full blur-2xl transform translate-x-8 -translate-y-6" />
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                            <div className="p-2 rounded-2xl border border-green-200 bg-green-100 text-green-600 group-hover:bg-green-600 group-hover:text-white transition-colors">
-                                <Wallet size={18} />
-                            </div>
-                            <h2 className="text-sm font-semibold text-gray-700 group-hover:text-green-700 transition-colors">
-                                Current Balance
-                            </h2>
-                        </div>
-                    </div>
-                    <p className="text-2xl font-bold text-green-700 tracking-tight mt-1">
-                        {format(pettyCashRecords?.currentBalance || 0)}
-                    </p>
-                </div>
-
-                {/* As on Date */}
-                <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500/10 to-amber-500/5 p-4 backdrop-blur-sm border border-amber-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl transform translate-x-8 -translate-y-6" />
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                            <div className="p-2 rounded-2xl border border-amber-200 bg-amber-100 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
-                                <CalendarDays size={18} />
-                            </div>
-                            <h2 className="text-sm font-semibold text-gray-700 group-hover:text-amber-700 transition-colors">
-                                As on Date
-                            </h2>
-                        </div>
-                    </div>
-                    <p className="text-2xl font-bold text-amber-700 tracking-tight mt-1">
-                        {formatDate(
-                            pettyCashRecords?.asOnDate || new Date().toISOString(),
-                            systemSettings?.dateFormat.format || "d-m-Y"
-                        )}
-                    </p>
-                </div>
-            </div>
-
-            {/* Search Input & PageLength */}
-            <h4 className="text-lg font-bold mb-2">Petty Cash Transactions</h4>
-            <div className="flex justify-between items-center">
-                <input
-                    type="text"
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => handleFilterChange('search', e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.pettyCash}
+                    action={hasPermission(permissions, 'expenses', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={() => { handleCreateClick(); }}>
+                            {LIST_EMPTY_STATES.pettyCash.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={(size) => handleFilterChange('limit', size)} />
-            </div>
-            <Table headers={tableHeaders}>
-                {!isLoading && transactions && transactions.length > 0 && transactions.map((transaction, index) => {
-                    let transactionType: React.ReactNode = transaction.transactionType ?? "";
+            ) : (
+                <>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                    {/* Opening Balance */}
+                    <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-indigo-500/10 to-indigo-500/5 p-4 backdrop-blur-sm border border-indigo-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl transform translate-x-8 -translate-y-6" />
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 rounded-2xl border border-indigo-200 bg-indigo-100 text-primary group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                    <PiggyBank size={18} />
+                                </div>
+                                <h2 className="text-sm font-semibold text-gray-700 group-hover:text-indigo-700 transition-colors">
+                                    Opening Balance
+                                </h2>
+                            </div>
+                        </div>
+                        <p className="text-2xl font-bold text-indigo-700 tracking-tight mt-1">
+                            {format(pettyCashRecords?.openingBalance || 0)}
+                        </p>
+                    </div>
 
-                    const type = transactionType.toString().toLowerCase();
+                    {/* Current Balance */}
+                    <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-green-500/10 to-green-500/5 p-4 backdrop-blur-sm border border-green-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-full blur-2xl transform translate-x-8 -translate-y-6" />
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 rounded-2xl border border-green-200 bg-green-100 text-green-600 group-hover:bg-green-600 group-hover:text-white transition-colors">
+                                    <Wallet size={18} />
+                                </div>
+                                <h2 className="text-sm font-semibold text-gray-700 group-hover:text-green-700 transition-colors">
+                                    Current Balance
+                                </h2>
+                            </div>
+                        </div>
+                        <p className="text-2xl font-bold text-green-700 tracking-tight mt-1">
+                            {format(pettyCashRecords?.currentBalance || 0)}
+                        </p>
+                    </div>
 
-                    if (type === "add") {
-                        transactionType = <span className="text-green-600 font-semibold">{transaction.transactionType}</span>;
-                    } else if (type === "spend") {
-                        transactionType = <span className="text-red-600 font-semibold">{transaction.transactionType}</span>;
-                    } else if (type === "return") {
-                        transactionType = <span className="text-primary font-semibold">{transaction.transactionType}</span>;
-                    }
+                    {/* As on Date */}
+                    <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500/10 to-amber-500/5 p-4 backdrop-blur-sm border border-amber-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl transform translate-x-8 -translate-y-6" />
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 rounded-2xl border border-amber-200 bg-amber-100 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                                    <CalendarDays size={18} />
+                                </div>
+                                <h2 className="text-sm font-semibold text-gray-700 group-hover:text-amber-700 transition-colors">
+                                    As on Date
+                                </h2>
+                            </div>
+                        </div>
+                        <p className="text-2xl font-bold text-amber-700 tracking-tight mt-1">
+                            {formatDate(
+                                pettyCashRecords?.asOnDate || new Date().toISOString(),
+                                systemSettings?.dateFormat.format || "d-m-Y"
+                            )}
+                        </p>
+                    </div>
+                </div>
 
-                    // Determine what to show in the source column
-                    let sourceInfo = "";
-                    let transactionSourceType = "";
+                {/* Search Input & PageLength */}
+                <h4 className="text-lg font-bold mb-2">Petty Cash Transactions</h4>
+                <div className="flex justify-between items-center">
+                    <input
+                        type="text"
+                        placeholder="Search..."
+                        value={search}
+                        onChange={(e) => handleFilterChange('search', e.target.value)}
+                        className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                    />
+                    <PageSizeSelect value={limit} onChange={(size) => handleFilterChange('limit', size)} />
+                </div>
+                <Table headers={tableHeaders}>
+                    {!isLoading && transactions && transactions.length > 0 && transactions.map((transaction, index) => {
+                        let transactionType: React.ReactNode = transaction.transactionType ?? "";
 
-                    if (transaction.relatedType === "BANK") {
-                        // Bank transaction - show bank info
-                        const accountNumber = transaction?.transactionSource?.bankInfo?.accountNumber || "";
-                        const accountHolderName = transaction?.transactionSource?.bankInfo?.accountHolderName || "-";
-                        const bankName = transaction?.transactionSource?.bankInfo?.bankName || "-";
-                        sourceInfo = `[${accountNumber}] ${accountHolderName} - ${bankName}`;
-                        transactionSourceType = transaction.transactionSource?.type || "";
-                    } else if (transaction.relatedType === "EXPENSE") {
-                        // Expense transaction - show "Expense"
-                        sourceInfo = "Expense";
-                        transactionSourceType = "EXPENSE_PAYMENT";
-                    } else if (transaction.relatedType === "SUPPLIER_PAYMENT") {
-                        // Supplier payment - show "Supplier Payment"
-                        sourceInfo = "Supplier Payment";
-                        transactionSourceType = "SUPPLIER_PAYMENT";
-                    } else {
-                        sourceInfo = transaction.transactionSource?.description || "Other";
-                        transactionSourceType = transaction.transactionSource?.type || "";
-                    }
+                        const type = transactionType.toString().toLowerCase();
 
-                    const formattedSourceType = transactionSourceType.toLowerCase().split("_").join("-");
+                        if (type === "add") {
+                            transactionType = <span className="text-green-600 font-semibold">{transaction.transactionType}</span>;
+                        } else if (type === "spend") {
+                            transactionType = <span className="text-red-600 font-semibold">{transaction.transactionType}</span>;
+                        } else if (type === "return") {
+                            transactionType = <span className="text-primary font-semibold">{transaction.transactionType}</span>;
+                        }
 
-                    return (
-                        <TableRow
-                            index={index + 1}
-                            row={transaction}
-                            key={transaction.id}
-                            columns={[
-                                transactionType,
-                                format(transaction.amount),
-                                formatDate(transaction.transactionDate, systemSettings?.dateFormat.format || "d-m-Y"),
-                                transaction?.paymentMode?.name && <PaymentModeBadge mode={transaction?.paymentMode?.name} />,
-                                <div className="capitalize">{formattedSourceType}</div>,
-                                sourceInfo
-                            ]}
-                        >
-                        </TableRow>
-                    );
-                })}
+                        // Determine what to show in the source column
+                        let sourceInfo = "";
+                        let transactionSourceType = "";
 
-                {!isLoading && transactions && transactions.length === 0 && (
-                    <tr>
-                        <td colSpan={8} className="text-center text-gray-800  py-2 font-semibold">No Records Found</td>
-                    </tr>
-                )}
+                        if (transaction.relatedType === "BANK") {
+                            // Bank transaction - show bank info
+                            const accountNumber = transaction?.transactionSource?.bankInfo?.accountNumber || "";
+                            const accountHolderName = transaction?.transactionSource?.bankInfo?.accountHolderName || "-";
+                            const bankName = transaction?.transactionSource?.bankInfo?.bankName || "-";
+                            sourceInfo = `[${accountNumber}] ${accountHolderName} - ${bankName}`;
+                            transactionSourceType = transaction.transactionSource?.type || "";
+                        } else if (transaction.relatedType === "EXPENSE") {
+                            // Expense transaction - show "Expense"
+                            sourceInfo = "Expense";
+                            transactionSourceType = "EXPENSE_PAYMENT";
+                        } else if (transaction.relatedType === "SUPPLIER_PAYMENT") {
+                            // Supplier payment - show "Supplier Payment"
+                            sourceInfo = "Supplier Payment";
+                            transactionSourceType = "SUPPLIER_PAYMENT";
+                        } else {
+                            sourceInfo = transaction.transactionSource?.description || "Other";
+                            transactionSourceType = transaction.transactionSource?.type || "";
+                        }
 
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-2 text-gray-950  font-semibold" colSpan={8}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-            </Table>
+                        const formattedSourceType = transactionSourceType.toLowerCase().split("_").join("-");
 
-            {/* Pagination Component */}
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handleFilterChange('page', newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                        return (
+                            <TableRow
+                                index={index + 1}
+                                row={transaction}
+                                key={transaction.id}
+                                columns={[
+                                    transactionType,
+                                    format(transaction.amount),
+                                    formatDate(transaction.transactionDate, systemSettings?.dateFormat.format || "d-m-Y"),
+                                    transaction?.paymentMode?.name && <PaymentModeBadge mode={transaction?.paymentMode?.name} />,
+                                    <div className="capitalize">{formattedSourceType}</div>,
+                                    sourceInfo
+                                ]}
+                            >
+                            </TableRow>
+                        );
+                    })}
+
+                    {!isLoading && transactions && transactions.length === 0 && (
+                        <EmptyStateRow colSpan={8} art="cash-payment" title="No Records Found" />
+                    )}
+
+                    {isLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-2 text-gray-950  font-semibold" colSpan={8}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
+                </Table>
+
+                {/* Pagination Component */}
+                <PaginationWrapper
+                    count={pagination.totalPages}
+                    page={page}
+                    from={from}
+                    to={to}
+                    total={pagination.total}
+                    onChange={(_, newPage) => handleFilterChange('page', newPage)}
+                    paginationVariant="outlined"
+                    paginationShape="rounded"
+                />
+                </>
+            )}
+
 
             {/* Add Petty Cash Form Modal */}
             {

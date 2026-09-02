@@ -1,4 +1,6 @@
-import { ChevronRight, Search } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+
+import { AnimatedIcon } from '@components/icons';
 import { useEffect, useMemo, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
@@ -10,6 +12,7 @@ import { useAgentPanel } from '@context/AgentPanelContext';
 import NotificationBell from './NotificationBell';
 import { buildCommands } from '@lib/commandPalette';
 import { resolveBreadcrumb } from '@lib/breadcrumb';
+import lixiLogo from '@assets/images/lixi-logo.png';
 
 /**
  * The top bar.
@@ -120,7 +123,7 @@ const AdminHeader = () => {
                     className="flex items-center gap-2 rounded-lg border border-border bg-muted/60 px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer lg:w-56 lg:justify-between xl:w-72"
                 >
                     <span className="flex items-center gap-2">
-                        <Search className="w-4 h-4" />
+                        <AnimatedIcon name="search" size={16} />
                         <span className="hidden lg:inline">Search…</span>
                     </span>
                     <kbd className="hidden lg:inline rounded border border-border bg-card px-1.5 py-0.5 text-[11px] font-medium">
@@ -148,11 +151,22 @@ const AdminHeader = () => {
                         : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground'
                         }`}
                 >
-                    <span
-                        aria-hidden="true"
-                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${isAgentAvailable ? 'bg-success' : 'bg-muted-foreground/50'
-                            }`}
-                    />
+                    {/* The mark carries the identity, the dot the status: the
+                        dot rides the mark's corner so the pill still fits the
+                        same slot it did as a bare dot + label. */}
+                    <span className="relative flex shrink-0">
+                        <img
+                            src={lixiLogo}
+                            alt=""
+                            aria-hidden="true"
+                            className="h-5 w-5 rounded-full"
+                        />
+                        <span
+                            aria-hidden="true"
+                            className={`absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full ring-2 ring-card ${isAgentAvailable ? 'bg-success' : 'bg-muted-foreground/50'
+                                }`}
+                        />
+                    </span>
                     Lixi
                 </button>
             </div>

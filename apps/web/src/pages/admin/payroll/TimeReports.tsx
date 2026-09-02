@@ -239,7 +239,7 @@ const TimeReports: React.FC = () => {
                                 </thead>
                                 <tbody>
                                     {(summary?.byProject ?? []).length === 0 ? (
-                                        <NoRecords colSpan={4} message="No data for the selected filters." />
+                                        <NoRecords art="analysis" colSpan={4} message="No data for the selected filters." />
                                     ) : (
                                         (summary?.byProject ?? []).map((r) => (
                                             <tr key={r.projectId} className="border-b border-border hover:bg-gray-50">
@@ -278,7 +278,7 @@ const TimeReports: React.FC = () => {
                                 </thead>
                                 <tbody>
                                     {(summary?.byEmployee ?? []).length === 0 ? (
-                                        <NoRecords colSpan={4} message="No data for the selected filters." />
+                                        <NoRecords art="analysis" colSpan={4} message="No data for the selected filters." />
                                     ) : (
                                         (summary?.byEmployee ?? []).map((r) => (
                                             <tr key={r.employeeUserId} className="border-b border-border hover:bg-gray-50">

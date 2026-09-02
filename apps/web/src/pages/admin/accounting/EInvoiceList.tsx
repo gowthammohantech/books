@@ -161,7 +161,7 @@ const EInvoiceList: React.FC = () => {
                     />
                 ))}
                 {!isLoading && rows.length === 0 && (
-                    <NoRecords colSpan={headers.length} message="No e-invoice records yet. Generate an IRN from an invoice." />
+                    <NoRecords art="invoice" colSpan={headers.length} message="No e-invoice records yet. Generate an IRN from an invoice." />
                 )}
                 {isLoading && (
                     <tr>

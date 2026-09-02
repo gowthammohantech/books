@@ -18,8 +18,8 @@ import DeleteConfirmationModal from '@components/admin/DeleteConfirmationModal';
 import ExportButton from '@components/admin/ExportButton';
 import { hasPermission } from '@utils/hasPermission';
 import { PageHeader } from '@/context/PageHeaderContext';
-import { Button, Badge } from '@components/ui';
-
+import { Button, Badge, EmptyState, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 const CONTACTS_URL = `${Constants.API_BASE_URL}/admin/contacts`;
 
 interface PaginationData {
@@ -284,9 +284,24 @@ const ContactList: React.FC = () => {
         tableHeaders.push('Actions');
     }
 
+    /**
+     * No contacts, nothing searched, and the view tab on its default.
+     *
+     * One caveat worth naming: that default is 'all-active', which hides
+     * archived parties — so a workspace whose only contacts have all been
+     * archived reads as first-run here. Distinguishing the two needs an
+     * unfiltered count from the API, which does not exist for this endpoint,
+     * and the hero still says a true and useful thing in that case.
+     *
+     * The branch covers both display modes: the grid and the table are two
+     * renderings of the same empty list, and neither is worth showing.
+     */
+    const isFirstRun =
+        !isLoading && contacts.length === 0 && !q && view === 'all-active';
+
     return (
         <div className="space-y-4">
-            <PageHeader title="Contacts">
+            <PageHeader title="Parties">
                 {hasPermission(permissions, 'customers', 'view') && (
                     <ExportButton
                         url={Constants.EXPORT_CONTACTS_URL}
@@ -310,167 +325,180 @@ const ContactList: React.FC = () => {
                 </Button>
             </PageHeader>
 
-            {/* Filter view tabs */}
-            <div className="flex flex-wrap gap-1 border-b border-gray-200 pb-2">
-                {VIEW_OPTIONS.map((v) => (
-                    <button
-                        key={v}
-                        type="button"
-                        onClick={() => handleViewChange(v)}
-                        className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                            view === v
-                                ? 'bg-primary text-white'
-                                : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
-                        }`}
-                    >
-                        {VIEW_LABELS[v]}
-                    </button>
-                ))}
-            </div>
-
-            {/* Search + grid/list toggle */}
-            <div className="flex justify-between items-center gap-2">
-                <input
-                    type="text"
-                    placeholder="Search contacts..."
-                    value={q}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 text-gray-800 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+{isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.contacts}
+                    action={
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={() => navigate('/contacts/new')}>
+                            {LIST_EMPTY_STATES.contacts.cta}
+                        </Button>
+                    }
                 />
-                <div className="flex items-center gap-1 border border-gray-300 rounded-md overflow-hidden">
-                    <button
-                        type="button"
-                        title="List view"
-                        onClick={() => setParam({ display: 'list' })}
-                        className={`px-2 py-1.5 transition-colors ${
-                            displayMode === 'list' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
-                        }`}
-                    >
-                        <List size={16} />
-                    </button>
-                    <button
-                        type="button"
-                        title="Grid view"
-                        onClick={() => setParam({ display: 'grid' })}
-                        className={`px-2 py-1.5 transition-colors ${
-                            displayMode === 'grid' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
-                        }`}
-                    >
-                        <LayoutGrid size={16} />
-                    </button>
-                </div>
-            </div>
+            ) : (
+                <>
+                    {/* Filter view tabs */}
+                    <div className="flex flex-wrap gap-1 border-b border-gray-200 pb-2">
+                        {VIEW_OPTIONS.map((v) => (
+                            <button
+                                key={v}
+                                type="button"
+                                onClick={() => handleViewChange(v)}
+                                className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                                    view === v
+                                        ? 'bg-primary text-white'
+                                        : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                                }`}
+                            >
+                                {VIEW_LABELS[v]}
+                            </button>
+                        ))}
+                    </div>
 
-            {/* Grid view */}
-            {displayMode === 'grid' && (
-                <div>
-                    {isLoading && (
-                        <div className="flex justify-center py-8">
-                            <LoaderSpinner />
+                    {/* Search + grid/list toggle */}
+                    <div className="flex justify-between items-center gap-2">
+                        <input
+                            type="text"
+                            placeholder="Search contacts..."
+                            value={q}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64 text-gray-800 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                        />
+                        <div className="flex items-center gap-1 border border-gray-300 rounded-md overflow-hidden">
+                            <button
+                                type="button"
+                                title="List view"
+                                onClick={() => setParam({ display: 'list' })}
+                                className={`px-2 py-1.5 transition-colors ${
+                                    displayMode === 'list' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                                }`}
+                            >
+                                <List size={16} />
+                            </button>
+                            <button
+                                type="button"
+                                title="Grid view"
+                                onClick={() => setParam({ display: 'grid' })}
+                                className={`px-2 py-1.5 transition-colors ${
+                                    displayMode === 'grid' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                                }`}
+                            >
+                                <LayoutGrid size={16} />
+                            </button>
                         </div>
-                    )}
-                    {!isLoading && contacts.length === 0 && (
-                        <p className="text-center text-gray-500 py-8">No contacts found.</p>
-                    )}
-                    {!isLoading && contacts.length > 0 && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {contacts.map((contact) => (
-                                <div
-                                    key={contact.id}
-                                    onClick={() => handleRowClick(contact)}
-                                    className="bg-white border border-border rounded-xl p-4 shadow-sm hover:shadow-md cursor-pointer transition-shadow space-y-1"
-                                >
-                                    <p className="font-semibold text-gray-800 truncate">
-                                        {contact.displayName || contact.organisation || '—'}
-                                    </p>
-                                    {(contact.firstName || contact.lastName) && (
-                                        <p className="text-sm text-gray-500 truncate">
-                                            {[contact.firstName, contact.lastName].filter(Boolean).join(' ')}
-                                        </p>
-                                    )}
-                                    {contact.email && (
-                                        <p className="text-xs text-gray-400 truncate">{contact.email}</p>
-                                    )}
-                                    <div className="pt-1">{statusBadge(contact.status)}</div>
-                                    {(canEdit || canDelete) && (
+                    </div>
+
+                    {/* Grid view */}
+                    {displayMode === 'grid' && (
+                        <div>
+                            {isLoading && (
+                                <div className="flex justify-center py-8">
+                                    <LoaderSpinner />
+                                </div>
+                            )}
+                            {!isLoading && contacts.length === 0 && (
+                                <EmptyState art="people-search" title="No contacts found" />
+                            )}
+                            {!isLoading && contacts.length > 0 && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {contacts.map((contact) => (
                                         <div
-                                            className="flex items-center gap-2 pt-2"
-                                            onClick={(e) => e.stopPropagation()}
+                                            key={contact.id}
+                                            onClick={() => handleRowClick(contact)}
+                                            className="bg-white border border-border rounded-xl p-4 shadow-sm hover:shadow-md cursor-pointer transition-shadow space-y-1"
                                         >
-                                            {canEdit && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    leftIcon={<Edit size={14} />}
-                                                    onClick={() => handleEditClick(contact)}
-                                                >
-                                                    Edit
-                                                </Button>
+                                            <p className="font-semibold text-gray-800 truncate">
+                                                {contact.displayName || contact.organisation || '—'}
+                                            </p>
+                                            {(contact.firstName || contact.lastName) && (
+                                                <p className="text-sm text-gray-500 truncate">
+                                                    {[contact.firstName, contact.lastName].filter(Boolean).join(' ')}
+                                                </p>
                                             )}
-                                            {canDelete && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="danger"
-                                                    leftIcon={<Trash2 size={14} />}
-                                                    onClick={() => handleDeleteClick(contact)}
+                                            {contact.email && (
+                                                <p className="text-xs text-gray-400 truncate">{contact.email}</p>
+                                            )}
+                                            <div className="pt-1">{statusBadge(contact.status)}</div>
+                                            {(canEdit || canDelete) && (
+                                                <div
+                                                    className="flex items-center gap-2 pt-2"
+                                                    onClick={(e) => e.stopPropagation()}
                                                 >
-                                                    Delete
-                                                </Button>
+                                                    {canEdit && (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            leftIcon={<Edit size={14} />}
+                                                            onClick={() => handleEditClick(contact)}
+                                                        >
+                                                            Edit
+                                                        </Button>
+                                                    )}
+                                                    {canDelete && (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="danger"
+                                                            leftIcon={<Trash2 size={14} />}
+                                                            onClick={() => handleDeleteClick(contact)}
+                                                        >
+                                                            Delete
+                                                        </Button>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
-                                    )}
+                                    ))}
                                 </div>
-                            ))}
+                            )}
                         </div>
                     )}
-                </div>
-            )}
 
-            {/* List / table view */}
-            {displayMode === 'list' && (
-                <Table headers={tableHeaders}>
-                    {!isLoading && contacts.map((contact, index) => (
-                        <TableRow
-                            key={contact.id}
-                            index={index + 1}
-                            row={contact}
-                            columns={[
-                                <span className="font-medium text-gray-800">
-                                    {contact.displayName || contact.organisation || '—'}
-                                </span>,
-                                [contact.firstName, contact.lastName].filter(Boolean).join(' ') || '—',
-                                contact.email || '—',
-                                contact.telephone || contact.mobile || '—',
-                                statusBadge(contact.status),
-                            ]}
-                            actions={canEdit || canDelete ? tableActions : undefined}
-                            onRowClick={(item) => handleRowClick(item as Contact)}
-                        />
-                    ))}
-                    {!isLoading && contacts.length === 0 && (
-                        <NoRecords colSpan={tableHeaders.length} message="No contacts found" />
+                    {/* List / table view */}
+                    {displayMode === 'list' && (
+                        <Table headers={tableHeaders}>
+                            {!isLoading && contacts.map((contact, index) => (
+                                <TableRow
+                                    key={contact.id}
+                                    index={index + 1}
+                                    row={contact}
+                                    columns={[
+                                        <span className="font-medium text-gray-800">
+                                            {contact.displayName || contact.organisation || '—'}
+                                        </span>,
+                                        [contact.firstName, contact.lastName].filter(Boolean).join(' ') || '—',
+                                        contact.email || '—',
+                                        contact.telephone || contact.mobile || '—',
+                                        statusBadge(contact.status),
+                                    ]}
+                                    actions={canEdit || canDelete ? tableActions : undefined}
+                                    onRowClick={(item) => handleRowClick(item as Contact)}
+                                />
+                            ))}
+                            {!isLoading && contacts.length === 0 && (
+                                <NoRecords art="people-search" colSpan={tableHeaders.length} message="No contacts found" />
+                            )}
+                            {isLoading && (
+                                <tr key="table-loader">
+                                    <td className="text-center py-4 text-gray-950 font-semibold" colSpan={tableHeaders.length}>
+                                        <LoaderSpinner />
+                                    </td>
+                                </tr>
+                            )}
+                        </Table>
                     )}
-                    {isLoading && (
-                        <tr key="table-loader">
-                            <td className="text-center py-4 text-gray-950 font-semibold" colSpan={tableHeaders.length}>
-                                <LoaderSpinner />
-                            </td>
-                        </tr>
-                    )}
-                </Table>
-            )}
 
-            {/* Pagination */}
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handlePageChange(newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                    {/* Pagination */}
+                    <PaginationWrapper
+                        count={pagination.totalPages}
+                        page={page}
+                        from={from}
+                        to={to}
+                        total={pagination.total}
+                        onChange={(_, newPage) => handlePageChange(newPage)}
+                        paginationVariant="outlined"
+                        paginationShape="rounded"
+                    />
+                </>
+            )}
 
             {/* Delete Contact */}
             <DeleteConfirmationModal

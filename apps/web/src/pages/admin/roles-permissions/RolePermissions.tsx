@@ -367,7 +367,7 @@ const RolePermissions: React.FC = () => {
                                         </thead>
                                         <tbody>
                                             {!module.children || module.children.length === 0 ? (
-                                                <NoRecords colSpan={6} message="No modules found" />
+                                                <NoRecords art="people-search" colSpan={6} message="No modules found" />
                                             ) : (
                                                 module.children.map((child, childIndex) => (
                                                     <tr key={childIndex} className="border-b border-border hover:bg-gray-50 text-sm text-left">

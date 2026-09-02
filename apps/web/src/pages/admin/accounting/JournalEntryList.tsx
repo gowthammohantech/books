@@ -15,11 +15,12 @@ import LoaderSpinner from "@components/admin/LoaderSpinner";
 import NoRecords from "@components/admin/NoRecords";
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import ExportButton from "@components/admin/ExportButton";
-import { Button, PageSizeSelect } from "@components/ui";
+import { Button, PageSizeSelect, EmptyStateHero } from "@components/ui";
 import useDateFormatter from "@hooks/useDateFormatter";
 import { PageHeader } from "@/context/PageHeaderContext";
 import type { JournalEntryRow } from "@models/accounting";
 
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface PaginationData {
     total: number;
     page: number;
@@ -124,6 +125,12 @@ const JournalEntryList: React.FC = () => {
     const from = (pagination.page - 1) * pagination.limit + 1;
     const to = Math.min(pagination.page * pagination.limit, pagination.total);
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && entries.length === 0;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Journal Entries">
@@ -138,51 +145,68 @@ const JournalEntryList: React.FC = () => {
                     <CirclePlusIcon size={16} /> Add Journal Entry
                 </Link>
             </PageHeader>
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.journalEntries}
+                    action={
+                        <Link
+                            to="/accounting/journal-entries/new"
+                            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+                        >
+                            <CirclePlusIcon size={16} /> {LIST_EMPTY_STATES.journalEntries.cta}
+                        </Link>
+                    }
+                />
+            ) : (
+                <>
 
-            <ActiveFilterBanner filters={activeFilters} onClear={clearDrillFilters} />
+                <ActiveFilterBanner filters={activeFilters} onClear={clearDrillFilters} />
 
-            <div className="flex justify-end items-center">
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
+                <div className="flex justify-end items-center">
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
 
-            <Table headers={headers}>
-                {!isLoading && entries.map((row, idx) => (
-                    <TableRow
-                        key={row.id}
-                        index={(page - 1) * limit + idx + 1}
-                        row={row}
-                        columns={[
-                            <span className="font-mono">{row.entryNumber ?? "—"}</span>,
-                            formatDate(row.entryDate),
-                            row.description ?? "—",
-                            formatNumber(row.totalDebit),
-                            formatNumber(row.totalCredit),
-                            row.lineCount,
-                        ]}
-                        actions={tableActions}
-                        onRowClick={(item) => { void handleView(item); }}
-                    />
-                ))}
-                {!isLoading && entries.length === 0 && (
-                    <NoRecords colSpan={8} message="No journal entries yet." />
-                )}
-                {isLoading && (
-                    <tr>
-                        <td className="text-center py-2" colSpan={8}><LoaderSpinner /></td>
-                    </tr>
-                )}
-            </Table>
+                <Table headers={headers}>
+                    {!isLoading && entries.map((row, idx) => (
+                        <TableRow
+                            key={row.id}
+                            index={(page - 1) * limit + idx + 1}
+                            row={row}
+                            columns={[
+                                <span className="font-mono">{row.entryNumber ?? "—"}</span>,
+                                formatDate(row.entryDate),
+                                row.description ?? "—",
+                                formatNumber(row.totalDebit),
+                                formatNumber(row.totalCredit),
+                                row.lineCount,
+                            ]}
+                            actions={tableActions}
+                            onRowClick={(item) => { void handleView(item); }}
+                        />
+                    ))}
+                    {!isLoading && entries.length === 0 && (
+                        <NoRecords art="folder" colSpan={8} message="No journal entries yet." />
+                    )}
+                    {isLoading && (
+                        <tr>
+                            <td className="text-center py-2" colSpan={8}><LoaderSpinner /></td>
+                        </tr>
+                    )}
+                </Table>
 
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handlePageChange(newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                <PaginationWrapper
+                    count={pagination.totalPages}
+                    page={page}
+                    from={from}
+                    to={to}
+                    total={pagination.total}
+                    onChange={(_, newPage) => handlePageChange(newPage)}
+                    paginationVariant="outlined"
+                    paginationShape="rounded"
+                />
+                </>
+            )}
+
 
             {viewing && (
                 <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setViewing(null)}>
