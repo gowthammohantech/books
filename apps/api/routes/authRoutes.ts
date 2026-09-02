@@ -11,6 +11,7 @@ import {
 } from '../controllers/authController';
 import { registerValidator, loginValidator } from '../validators/authValidator';
 import protect from '../middleware/authMiddleware';
+import { ipKey } from '../lib/rateLimitKey';
 
 const router = Router();
 
@@ -28,6 +29,7 @@ const signupHourlyLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: ipKey,
   message: { message: 'Too many sign-up attempts. Please try again later.' },
 });
 
@@ -36,6 +38,7 @@ const signupDailyLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: ipKey,
   message: { message: 'Too many sign-up attempts. Please try again later.' },
 });
 
@@ -45,6 +48,7 @@ const switchLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: ipKey,
   message: { message: 'Too many requests' },
 });
 

@@ -12,6 +12,7 @@ import { resolvePackCode } from '../lib/ledger/resolvePackCode';
 import { seedTransactionCategoriesForUser } from '../prisma/seedTransactionCategories';
 import { ensureDefaultTaxGroup } from '../lib/tax/ensureDefaultTaxGroup';
 import { parseVatNumber } from '../lib/euVat';
+import { PROVISION_TX_OPTIONS } from '../lib/tenantProvisioning';
 
 /**
  * Structural validation for the tenant tax identifiers. Empty/null/undefined are
@@ -383,7 +384,12 @@ async function autoInitLedgerForUser(tenantId: string): Promise<void> {
             data: { ledgerInitialized: true },
           });
         }
-      });
+        // A country pack is a chart of accounts, its role mappings, a regime and
+        // the default tax rates — far more writes than Prisma's default 5s
+        // interactive-transaction budget survives on a remote database. Overrunning
+        // it aborts with P2028 and, because this helper is best-effort, the tenant
+        // silently ends up with no ledger at all. Same ceiling as signup.
+      }, PROVISION_TX_OPTIONS);
 
       console.log(`[ledger auto-init] initialized pack ${packCode} for user ${tenantId}`);
     }

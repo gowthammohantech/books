@@ -28,7 +28,13 @@ const app = express();
 // Behind an HTTPS reverse proxy (TLS terminated upstream). Trust X-Forwarded-*
 // so req.protocol reflects the original scheme (https) — otherwise generated
 // upload/image URLs come out as http://.
-app.set('trust proxy', true);
+//
+// One hop, not `true`: trusting every hop means a client can prepend its own
+// X-Forwarded-For and pick whatever `req.ip` it likes, which trivially bypasses
+// the IP rate limiters (express-rate-limit flags this as
+// ERR_ERL_PERMISSIVE_TRUST_PROXY). Raise the count only if another reverse
+// proxy is added in front.
+app.set('trust proxy', 1);
 
 // Cron registration is a side effect of importing these modules.
 import './invoiceReminderCron';

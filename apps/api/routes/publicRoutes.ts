@@ -7,6 +7,7 @@ import { razorpayGateway } from '../lib/paymentGateways/razorpayGateway';
 import { stripeGateway } from '../lib/paymentGateways/stripeGateway';
 import { decryptConfigSecrets, gatewaySecretKeys } from '../lib/configSecret';
 import { resolveDisplayName } from '../lib/contacts/contactIdentity';
+import { ipKey } from '../lib/rateLimitKey';
 
 const router = Router();
 
@@ -16,6 +17,7 @@ const limiter = rateLimit({
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: ipKey,
   message: { success: false, message: 'Too many requests' },
 });
 

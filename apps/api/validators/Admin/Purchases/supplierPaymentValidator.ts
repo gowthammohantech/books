@@ -3,9 +3,24 @@ import type { ValidationChain } from 'express-validator';
 import type { Request } from 'express';
 
 import { prisma } from '../../../lib/prisma';
+import { requireTenantId } from '../../../lib/tenantScope';
 
-function getValidatorUserId(req: Request): string | undefined {
-  return (req as Request & { user?: string }).user;
+/**
+ * Scope a validator lookup to the caller's workspace.
+ *
+ * This used to read `req.user` and filter on a `userId` column. Purchase and
+ * Contact have no such column — they are scoped by `tenantId` — so every
+ * authenticated request threw `Unknown argument \`userId\`` from Prisma and no
+ * supplier payment could be recorded at all. Unauthenticated requests fall
+ * through to an unscoped lookup, as before; `protect` runs ahead of these
+ * validators on every routed path.
+ */
+function tenantWhere(req: Request): { tenantId: string } | Record<string, never> {
+  try {
+    return { tenantId: requireTenantId(req) };
+  } catch {
+    return {};
+  }
 }
 
 export const supplierPaymentValidator: ValidationChain[] = [
@@ -14,12 +29,8 @@ export const supplierPaymentValidator: ValidationChain[] = [
     .withMessage('Purchase ID is required')
     .bail()
     .custom(async (value: string, { req }) => {
-      const userId = getValidatorUserId(req as Request);
-      const where = userId
-        ? { id: value, userId }
-        : { id: value };
       const exists = await prisma.purchase.findFirst({
-        where,
+        where: { id: value, ...tenantWhere(req as Request) },
         select: { id: true },
       });
       if (!exists) throw new Error('Purchase not found');
@@ -34,12 +45,8 @@ export const supplierPaymentValidator: ValidationChain[] = [
   body('contactId')
     .optional({ checkFalsy: true })
     .custom(async (value: string, { req }) => {
-      const userId = getValidatorUserId(req as Request);
-      const where = userId
-        ? { id: value, userId, isDeleted: false }
-        : { id: value, isDeleted: false };
       const exists = await prisma.contact.findFirst({
-        where,
+        where: { id: value, isDeleted: false, ...tenantWhere(req as Request) },
         select: { id: true },
       });
       if (!exists) throw new Error('Contact not found');

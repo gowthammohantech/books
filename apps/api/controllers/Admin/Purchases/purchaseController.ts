@@ -131,6 +131,19 @@ function asNumber(value: unknown, fallback = 0): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+/**
+ * Normalise an optional foreign-key input to `string | null`.
+ *
+ * The purchase forms post `''` — not `undefined` — for every picker the user
+ * left alone, and `''` is not nullish, so `body.x ?? null` handed the empty
+ * string straight to an FK column. Postgres answered with P2003
+ * (`Purchase_purchaseOrderId_fkey`) and the whole create 500'd. Blank, missing
+ * and non-string all mean "no relation": null.
+ */
+function optionalId(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() !== '' ? value : null;
+}
+
 function buildBaseUrl(req: Request): string {
   return `${req.protocol}://${req.get('host')}/`;
 }
@@ -563,7 +576,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
     const authUserId = requireTenantId(req);
     const body = req.body as Record<string, unknown>;
 
-    const purchaseOrderId = body.purchaseOrderId as string | undefined;
+    const purchaseOrderId = optionalId(body.purchaseOrderId);
     // SECURITY: always use the authenticated tenant id — never trust body.tenantId.
     const tenantId = authUserId;
     const billFrom = body.billFrom as string;
@@ -585,16 +598,16 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
     }
     const notes = (body.notes as string) ?? '';
     const termsAndCondition = (body.termsAndCondition as string) ?? '';
-    const paymentMode = body.paymentMode as string | undefined;
+    const paymentMode = optionalId(body.paymentMode);
     const subTotal = body.subTotal as number | undefined;
     const totalTax = body.totalTax as number | undefined;
     const totalDiscount = body.totalDiscount as number | undefined;
     const grandTotal = body.grandTotal as number | undefined;
     const signType = (body.sign_type as PurchaseSignType) ?? 'none';
-    const signatureIdInput = body.signatureId as string | undefined;
+    const signatureIdInput = optionalId(body.signatureId);
     const signatureName = body.signatureName as string | undefined;
     const checkNumber = body.checkNumber as string | undefined;
-    const bank = body.bank as string | undefined;
+    const bank = optionalId(body.bank);
     const sp_amount = body.sp_amount as number | undefined;
     const sp_paid_amount = body.sp_paid_amount as number | undefined;
 
@@ -704,6 +717,21 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
       return;
     }
 
+    // A linked PO must exist AND belong to this tenant. Without the check an
+    // unknown id reached Postgres as an FK violation (a 500 the user reads as
+    // "save failed"), and a known id from another workspace would have linked
+    // across tenants.
+    if (purchaseOrderId) {
+      const linkedPO = await prisma.purchaseOrder.findFirst({
+        where: { id: purchaseOrderId, tenantId },
+        select: { id: true },
+      });
+      if (!linkedPO) {
+        res.status(404).json({ success: false, message: 'Purchase Order not found' });
+        return;
+      }
+    }
+
     // Validate signature type
     if (signType && !VALID_SIGN_TYPES.has(signType)) {
       res.status(400).json({ message: 'Invalid signature type' });
@@ -778,7 +806,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
       const created = await tx.purchase.create({
         data: {
           purchaseId: purchaseIdString,
-          purchaseOrderId: purchaseOrderId ?? null,
+          purchaseOrderId,
           // Contact-aware: write contactId (new path) or supplierId (legacy). Both nullable.
           supplierId: resolvedSupplierId,
           ...(resolvedContactId ? { contactId: resolvedContactId } : {}),
@@ -828,7 +856,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
               ? 'cancelled'
               : 'pending';
         await tx.purchaseOrder.updateMany({
-          where: { id: purchaseOrderId },
+          where: { id: purchaseOrderId, tenantId },
           data: { status: poStatus },
         });
       }
@@ -842,7 +870,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
             supplierId: resolvedSupplierId,
             referenceNumber: (body.sp_referenceNumber as string) ?? '',
             paymentDate: safeDate(body.sp_paymentDate) ?? new Date(),
-            paymentModeId: (body.sp_paymentMode as string) ?? null,
+            paymentModeId: optionalId(body.sp_paymentMode),
             sourceType: 'BANK',
             amount: Math.min(asNumber(body.sp_amount, 0), enforcedGrandTotal),
             paidAmount: Math.min(asNumber(body.sp_amount, 0), enforcedGrandTotal),
@@ -1104,16 +1132,16 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
     const items = normaliseItems(body.items, docCostCenterId);
     const notes = body.notes as string | undefined;
     const termsAndCondition = body.termsAndCondition as string | undefined;
-    const paymentMode = body.paymentMode as string | undefined;
+    const paymentMode = optionalId(body.paymentMode);
     const subTotal = body.subTotal as number | undefined;
     const totalTax = body.totalTax as number | undefined;
     const totalDiscount = body.totalDiscount as number | undefined;
     const grandTotal = body.grandTotal as number | undefined;
     const signType = (body.sign_type as PurchaseSignType) ?? existingPurchase.sign_type;
-    const signatureIdInput = body.signatureId as string | undefined;
+    const signatureIdInput = optionalId(body.signatureId);
     const signatureName = body.signatureName as string | undefined;
     const checkNumber = body.checkNumber as string | undefined;
-    const bank = body.bank as string | undefined;
+    const bank = optionalId(body.bank);
     // P0-4 (Task 6): sp_* payment fields are no longer consumed on the update
     // path — payment state is derived from preserved SupplierPayment rows.
     const reqStatus = body.status as PurchaseStatus | undefined;
@@ -2337,7 +2365,7 @@ export async function updatePurchaseStatus(req: Request, res: Response): Promise
               ? 'cancelled'
               : 'pending';
         await tx.purchaseOrder.updateMany({
-          where: { id: upd.purchaseOrderId },
+          where: { id: upd.purchaseOrderId, tenantId: upd.tenantId },
           data: { status: poStatus },
         });
       }
