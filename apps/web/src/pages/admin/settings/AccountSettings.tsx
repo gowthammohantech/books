@@ -87,17 +87,10 @@ const AccountSettings: React.FC = () => {
     const fetchCountries = useCallback(async (searchQuery: string = '') => {
         setLoadingCountries(true);
         try {
-            const url = searchQuery
-                ? `${Constants.FETCH_COUNTRIES_URL}?search=${encodeURIComponent(searchQuery)}`
-                : Constants.FETCH_COUNTRIES_URL;
-
-            const response = await fetch(url, {
-                headers: { 'Authorization': `Bearer ${token}` }
+            const response = await api.get<LocationItem[]>(Constants.FETCH_COUNTRIES_URL, {
+                params: searchQuery ? { search: searchQuery } : undefined,
             });
-
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const data = await response.json() as LocationItem[];
-            setCountryOptions(data.map(item => ({ id: item.id, name: item.name })));
+            setCountryOptions(response.data.map(item => ({ id: item.id, name: item.name })));
         } catch (error) {
             toast.error("Failed to fetch countries.");
             setCountryOptions([]);
@@ -114,18 +107,10 @@ const AccountSettings: React.FC = () => {
 
         setLoadingStates(true);
         try {
-            const baseUrl = `${Constants.FETCH_STATES_URL}/${profile.country}`;
-            const url = searchQuery
-                ? `${baseUrl}?search=${encodeURIComponent(searchQuery)}`
-                : baseUrl;
-
-            const response = await fetch(url, {
-                headers: { 'Authorization': `Bearer ${token}` }
+            const response = await api.get<LocationItem[]>(`${Constants.FETCH_STATES_URL}/${profile.country}`, {
+                params: searchQuery ? { search: searchQuery } : undefined,
             });
-
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const data = await response.json() as LocationItem[];
-            setStateOptions(data.map(item => ({ id: item.id, name: item.name })));
+            setStateOptions(response.data.map(item => ({ id: item.id, name: item.name })));
         } catch (error) {
             setStateOptions([]);
         } finally {
@@ -141,18 +126,10 @@ const AccountSettings: React.FC = () => {
 
         setLoadingCities(true);
         try {
-            const baseUrl = `${Constants.FETCH_CITIES_URL}/${profile.state}`;
-            const url = searchQuery
-                ? `${baseUrl}?search=${encodeURIComponent(searchQuery)}`
-                : baseUrl;
-
-            const response = await fetch(url, {
-                headers: { 'Authorization': `Bearer ${token}` }
+            const response = await api.get<LocationItem[]>(`${Constants.FETCH_CITIES_URL}/${profile.state}`, {
+                params: searchQuery ? { search: searchQuery } : undefined,
             });
-
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const data = await response.json() as LocationItem[];
-            setCityOptions(data.map(item => ({ id: item.id, name: item.name })));
+            setCityOptions(response.data.map(item => ({ id: item.id, name: item.name })));
         } catch (error) {
             setCityOptions([]);
         } finally {
@@ -164,11 +141,7 @@ const AccountSettings: React.FC = () => {
         const fetchUserProfile = async () => {
             setLoadingProfile(true);
             try {
-                const response = await fetch(Constants.FETCH_USER_PROFILE_URL, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const data = await response.json() as ApiProfile;
+                const { data } = await api.get<ApiProfile>(Constants.FETCH_USER_PROFILE_URL);
 
                 const fetchedProfile: Profile = {
                     ...data,
@@ -332,9 +305,7 @@ const AccountSettings: React.FC = () => {
             if (profile.profileImageFile) {
                 formData.append('profileImage', profile.profileImageFile);
             }
-            await api.put(Constants.UPDATE_PROFILE_URL, formData, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await api.put(Constants.UPDATE_PROFILE_URL, formData);
             setSavingProfile(false);
             setFormErrors({});
             toast.success('Profile updated successfully.');

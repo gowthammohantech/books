@@ -99,9 +99,7 @@ const ProfileSettings: React.FC = () => {
         if (!token) return;
         setIsLoading(true);
         try {
-            const response = await axios(Constants.FETCH_USER_PROFILE_URL, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.get(Constants.FETCH_USER_PROFILE_URL);
             const data = response.data;
             if (data) {
                 setProfile({
@@ -139,9 +137,8 @@ const ProfileSettings: React.FC = () => {
     const fetchCountries = useCallback(async () => {
         if (!token) return;
         try {
-            const response = await axios(Constants.FETCH_COUNTRIES_URL, {
+            const response = await api.get(Constants.FETCH_COUNTRIES_URL, {
                 params: { search: debouncedCountrySearch },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             setCountryOptions(response.data.map((c: any) => ({ id: String(c.id), name: c.name })));
         } catch (error) {
@@ -156,9 +153,8 @@ const ProfileSettings: React.FC = () => {
     const fetchStates = useCallback(async () => {
         if (!token || !selectedCountry) return;
         try {
-            const response = await axios(`${Constants.FETCH_STATES_URL}/${selectedCountry.id}`, {
+            const response = await api.get(`${Constants.FETCH_STATES_URL}/${selectedCountry.id}`, {
                 params: { search: debouncedStateSearch },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             setStateOptions(response.data.map((s: any) => ({ id: String(s.id), name: s.name })));
         } catch (error) {
@@ -174,9 +170,8 @@ const ProfileSettings: React.FC = () => {
     const fetchCities = useCallback(async () => {
         if (!token || !selectedState) return;
         try {
-            const response = await axios(`${Constants.FETCH_CITIES_URL}/${selectedState.id}`, {
+            const response = await api.get(`${Constants.FETCH_CITIES_URL}/${selectedState.id}`, {
                 params: { search: debouncedCitySearch },
-                headers: { 'Authorization': `Bearer ${token}` }
             });
             setCityOptions(response.data.map((c: any) => ({ id: String(c.id), name: c.name })));
         } catch (error) {
@@ -275,9 +270,7 @@ const ProfileSettings: React.FC = () => {
                 formData.append('profileImage', profileToSubmit.profileImageFile);
             }
 
-            const res = await api.put(Constants.UPDATE_PROFILE_URL, formData, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const res = await api.put(Constants.UPDATE_PROFILE_URL, formData);
             // Sync the top-right header avatar (auth.user) without a re-login.
             const updatedUser = res.data?.user;
             if (updatedUser) {
