@@ -11,10 +11,11 @@ import LoaderSpinner from "@components/admin/LoaderSpinner";
 import NoRecords from "@components/admin/NoRecords";
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import ExportButton from "@components/admin/ExportButton";
-import { Button, Badge, type BadgeColor } from "@components/ui";
+import { Button, Badge, type BadgeColor, EmptyStateHero } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 import type { Account, AccountType } from "@models/accounting";
 
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 const ACCOUNT_TYPES: AccountType[] = ["ASSET", "LIABILITY", "EQUITY", "INCOME", "EXPENSE"];
 
 const typeBadgeColor = (t: AccountType): BadgeColor => {
@@ -169,6 +170,12 @@ const ChartOfAccountsList: React.FC = () => {
 
     const headers = ["#", "Code", "Name", "Type", "Parent", "Actions"];
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && accounts.length === 0;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Chart of Accounts">
@@ -189,46 +196,58 @@ const ChartOfAccountsList: React.FC = () => {
                     Add Account
                 </Button>
             </PageHeader>
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.chartOfAccounts}
+                    action={<Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={openCreate}>
+                        {LIST_EMPTY_STATES.chartOfAccounts.cta}
+                    </Button>}
+                />
+            ) : (
+                <>
 
-            <div className="flex items-center gap-3">
-                <label className="text-sm text-gray-700">Filter:</label>
-                <select
-                    value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
-                    className="border border-gray-300 px-3 py-2 rounded-md bg-white text-gray-800 text-sm"
-                >
-                    <option value="">All types</option>
-                    {ACCOUNT_TYPES.map((t) => (
-                        <option key={t} value={t}>{t}</option>
+                <div className="flex items-center gap-3">
+                    <label className="text-sm text-gray-700">Filter:</label>
+                    <select
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value)}
+                        className="border border-gray-300 px-3 py-2 rounded-md bg-white text-gray-800 text-sm"
+                    >
+                        <option value="">All types</option>
+                        {ACCOUNT_TYPES.map((t) => (
+                            <option key={t} value={t}>{t}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <Table headers={headers}>
+                    {!isLoading && accounts.map((row, idx) => (
+                        <TableRow
+                            key={row.id}
+                            index={idx + 1}
+                            row={row}
+                            columns={[
+                                <span className="font-mono">{row.code}</span>,
+                                row.name,
+                                <Badge color={typeBadgeColor(row.accountType)}>{row.accountType}</Badge>,
+                                row.parent ? `${row.parent.code} – ${row.parent.name}` : "—",
+                            ]}
+                            actions={tableActions}
+                            onRowClick={(item) => openEdit(item)}
+                        />
                     ))}
-                </select>
-            </div>
+                    {!isLoading && accounts.length === 0 && (
+                        <NoRecords art="folder" colSpan={6} message="No accounts found. Click 'Seed Defaults' to install the standard chart." />
+                    )}
+                    {isLoading && (
+                        <tr>
+                            <td className="text-center py-2" colSpan={6}><LoaderSpinner /></td>
+                        </tr>
+                    )}
+                </Table>
+                </>
+            )}
 
-            <Table headers={headers}>
-                {!isLoading && accounts.map((row, idx) => (
-                    <TableRow
-                        key={row.id}
-                        index={idx + 1}
-                        row={row}
-                        columns={[
-                            <span className="font-mono">{row.code}</span>,
-                            row.name,
-                            <Badge color={typeBadgeColor(row.accountType)}>{row.accountType}</Badge>,
-                            row.parent ? `${row.parent.code} – ${row.parent.name}` : "—",
-                        ]}
-                        actions={tableActions}
-                        onRowClick={(item) => openEdit(item)}
-                    />
-                ))}
-                {!isLoading && accounts.length === 0 && (
-                    <NoRecords art="folder" colSpan={6} message="No accounts found. Click 'Seed Defaults' to install the standard chart." />
-                )}
-                {isLoading && (
-                    <tr>
-                        <td className="text-center py-2" colSpan={6}><LoaderSpinner /></td>
-                    </tr>
-                )}
-            </Table>
 
             {showModal && (
                 <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowModal(false)}>

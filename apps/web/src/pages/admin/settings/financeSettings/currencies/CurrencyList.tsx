@@ -18,9 +18,10 @@ import LoaderSpinner from "@components/admin/LoaderSpinner";
 import type { PermissionAction } from "@models/permissions";
 import { hasPermission } from "@utils/hasPermission";
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
-import { Button, FormField, PageSizeSelect, EmptyStateRow } from "@components/ui";
+import { Button, FormField, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface Currency {
     id: string;
     name: string;
@@ -190,6 +191,12 @@ const CurrencyList: React.FC = () => {
             setIsDeleting(false);
         }
     }
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && currencies.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Currencies">
@@ -202,59 +209,73 @@ const CurrencyList: React.FC = () => {
                     </Button>
                 )}
             </PageHeader>
-            {/* Search and Page Length */}
-            <div className="flex justify-between items-center">
-                <FormField
-                    type="text"
-                    placeholder="Search currencies"
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    containerClassName="w-full md:w-64"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.currencies}
+                    action={hasPermission(permissions, 'finance-settings', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={() => { setCurrencyModalOpen(true); setEditData(null) }}>
+                            {LIST_EMPTY_STATES.currencies.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
-
-            {/* Currency Table */}
-            <Table headers={tableHeaders}>
-                {!isLoading && currencies && currencies.map((currency: Currency, index: number) => (
-                    <TableRow
-                        key={currency.id}
-                        index={index + 1}
-                        row={currency}
-                        columns={[
-                            <span className="text-primary capitalize">{currency.name}</span>,
-                            currency.symbol,
-                            currency.code,
-                            <Switch name={`status-${currency.id}`} checked={currency.status} onChange={() => handleCurrencyStatusChange(currency.id)} disabled={currency.isDefault || !hasPermission(permissions, 'finance-settings', 'edit')} />,
-                            <Switch name={`default-${currency.id}`} checked={currency.isDefault} onChange={() => handleCurrencyDefaultStatusChange(currency.id)} disabled={currency.isDefault || !hasPermission(permissions, 'finance-settings', 'edit')} />,
-                        ]}
-                        actions={prepareTableActions(currency)}
+            ) : (
+                <>
+                {/* Search and Page Length */}
+                <div className="flex justify-between items-center">
+                    <FormField
+                        type="text"
+                        placeholder="Search currencies"
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        containerClassName="w-full md:w-64"
                     />
-                ))}
-                {!isLoading && !currencies.length &&
-                    <EmptyStateRow colSpan={6} art="cash-payment" title="No currencies found" />
-                }
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
 
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-2 text-foreground  font-semibold" colSpan={7}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-            </Table>
+                {/* Currency Table */}
+                <Table headers={tableHeaders}>
+                    {!isLoading && currencies && currencies.map((currency: Currency, index: number) => (
+                        <TableRow
+                            key={currency.id}
+                            index={index + 1}
+                            row={currency}
+                            columns={[
+                                <span className="text-primary capitalize">{currency.name}</span>,
+                                currency.symbol,
+                                currency.code,
+                                <Switch name={`status-${currency.id}`} checked={currency.status} onChange={() => handleCurrencyStatusChange(currency.id)} disabled={currency.isDefault || !hasPermission(permissions, 'finance-settings', 'edit')} />,
+                                <Switch name={`default-${currency.id}`} checked={currency.isDefault} onChange={() => handleCurrencyDefaultStatusChange(currency.id)} disabled={currency.isDefault || !hasPermission(permissions, 'finance-settings', 'edit')} />,
+                            ]}
+                            actions={prepareTableActions(currency)}
+                        />
+                    ))}
+                    {!isLoading && !currencies.length &&
+                        <EmptyStateRow colSpan={6} art="cash-payment" title="No currencies found" />
+                    }
 
-            {/* Pagination */}
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handlePageChange(newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                    {isLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-2 text-foreground  font-semibold" colSpan={7}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
+                </Table>
+
+                {/* Pagination */}
+                <PaginationWrapper
+                    count={pagination.totalPages}
+                    page={page}
+                    from={from}
+                    to={to}
+                    total={pagination.total}
+                    onChange={(_, newPage) => handlePageChange(newPage)}
+                    paginationVariant="outlined"
+                    paginationShape="rounded"
+                />
+                </>
+            )}
+
             {/* Currency Form Modal */}
             <CurrencyFormModal
                 isOpen={currencyModalOpen}

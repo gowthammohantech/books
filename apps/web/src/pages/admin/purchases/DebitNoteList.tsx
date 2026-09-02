@@ -20,8 +20,8 @@ import LoaderSpinner from "@components/admin/LoaderSpinner";
 import useDateFormatter from "@hooks/useDateFormatter";
 import ProfileCard from "@components/admin/ProfileImage";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, FormField, PageSizeSelect, EmptyStateRow } from "@components/ui";
-
+import { Button, FormField, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface DebitNoteList {
     id: string;
     debitNoteId: string;
@@ -182,6 +182,12 @@ const DebitNoteList: FC = () => {
     const from = (pagination.page - 1) * pagination.limit + 1;
     const to = Math.min(pagination.page * pagination.limit, pagination.total);
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && debitNotes.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Debit Notes (Purchase Returns)">
@@ -193,67 +199,81 @@ const DebitNoteList: FC = () => {
                     </Button>
                 )}
             </PageHeader>
-
-            {/* Search Input & PageLength */}
-            <div className="flex justify-between items-center">
-                <FormField
-                    type="text"
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    containerClassName="w-full md:w-64"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.debitNotes}
+                    action={hasPermission(permissions, 'debit-notes', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={handleNewDebitNoteClick}>
+                            {LIST_EMPTY_STATES.debitNotes.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
+            ) : (
+                <>
 
-            <Table headers={tableHeaders}>
-                {!isLoading && debitNotes && debitNotes.map((debitNote, index) => (
-                    <TableRow
-                        key={debitNote.id}
-                        index={(page - 1) * limit + index + 1}
-                        row={debitNote}
-                        columns={[
-                            <span className="text-primary">{debitNote.debitNoteId}</span>,
-                            debitNote.purchase?.purchaseId || "",
-                            formatDate(debitNote.debitNoteDate, systemSettings?.dateFormat.format || 'd-m-Y'),
-                            <ProfileCard
-                                imageUrl={debitNote.vendor?.profileImage}
-                                name={debitNote.vendor?.name ?? '—'}
-                            />,
-                            formatMoney(debitNote.totalAmount, debitNote.currencyCode),
-                            <PaymentModeBadge mode={debitNote.paymentMode?.name ?? "NA"} />,
-                            formatDate(debitNote.createdAt, systemSettings?.dateFormat.format || 'd-m-Y'),
-                            <StatusBadge status={debitNote.status} />,
-                        ]}
-                        actions={showActions ? tableActions : undefined}
-                        onRowClick={(item) => navigate(`/debit-notes/view/${item.id}`)}
+                {/* Search Input & PageLength */}
+                <div className="flex justify-between items-center">
+                    <FormField
+                        type="text"
+                        placeholder="Search..."
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        containerClassName="w-full md:w-64"
                     />
-                ))}
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
 
-                {!isLoading && debitNotes.length === 0 && (
-                    <EmptyStateRow colSpan={8} art="invoice" title="No debit notes found" />
-                )}
+                <Table headers={tableHeaders}>
+                    {!isLoading && debitNotes && debitNotes.map((debitNote, index) => (
+                        <TableRow
+                            key={debitNote.id}
+                            index={(page - 1) * limit + index + 1}
+                            row={debitNote}
+                            columns={[
+                                <span className="text-primary">{debitNote.debitNoteId}</span>,
+                                debitNote.purchase?.purchaseId || "",
+                                formatDate(debitNote.debitNoteDate, systemSettings?.dateFormat.format || 'd-m-Y'),
+                                <ProfileCard
+                                    imageUrl={debitNote.vendor?.profileImage}
+                                    name={debitNote.vendor?.name ?? '—'}
+                                />,
+                                formatMoney(debitNote.totalAmount, debitNote.currencyCode),
+                                <PaymentModeBadge mode={debitNote.paymentMode?.name ?? "NA"} />,
+                                formatDate(debitNote.createdAt, systemSettings?.dateFormat.format || 'd-m-Y'),
+                                <StatusBadge status={debitNote.status} />,
+                            ]}
+                            actions={showActions ? tableActions : undefined}
+                            onRowClick={(item) => navigate(`/debit-notes/view/${item.id}`)}
+                        />
+                    ))}
 
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-2 text-gray-950  font-semibold" colSpan={8}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-            </Table>
+                    {!isLoading && debitNotes.length === 0 && (
+                        <EmptyStateRow colSpan={8} art="invoice" title="No debit notes found" />
+                    )}
 
-            {/* Pagination Component */}
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handlePageChange(newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                    {isLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-2 text-gray-950  font-semibold" colSpan={8}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
+                </Table>
+
+                {/* Pagination Component */}
+                <PaginationWrapper
+                    count={pagination.totalPages}
+                    page={page}
+                    from={from}
+                    to={to}
+                    total={pagination.total}
+                    onChange={(_, newPage) => handlePageChange(newPage)}
+                    paginationVariant="outlined"
+                    paginationShape="rounded"
+                />
+                </>
+            )}
+
 
             {/* Delete Confirmation Modal */}
 

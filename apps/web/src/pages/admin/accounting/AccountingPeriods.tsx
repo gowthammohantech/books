@@ -13,9 +13,10 @@ import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import useDateFormatter from "@hooks/useDateFormatter";
 import DateInput from "@components/admin/DateInput";
 import { ymdStringToDate, dateToYmdString } from "@utils/converters";
-import { Button, Badge } from "@components/ui";
+import { Button, Badge, EmptyStateHero } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface AccountingPeriod {
     id: string;
     name: string;
@@ -208,6 +209,12 @@ const AccountingPeriods: React.FC = () => {
 
     const headers = ["#", "Name", "Start", "End", "Status", "Locked At", "Actions"];
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && periods.length === 0;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Accounting Periods">
@@ -215,37 +222,49 @@ const AccountingPeriods: React.FC = () => {
                     Add Period
                 </Button>
             </PageHeader>
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.accountingPeriods}
+                    action={<Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={openCreate}>
+                        {LIST_EMPTY_STATES.accountingPeriods.cta}
+                    </Button>}
+                />
+            ) : (
+                <>
 
-            <Table headers={headers}>
-                {!isLoading && periods.map((row, idx) => (
-                    <TableRow
-                        key={row.id}
-                        index={idx + 1}
-                        row={row}
-                        columns={[
-                            <span className="font-medium">{row.name}</span>,
-                            formatDate(row.startDate),
-                            formatDate(row.endDate),
-                            row.isLocked ? (
-                                <Badge color="danger"><Lock size={12} /> Locked</Badge>
-                            ) : (
-                                <Badge color="success">Active</Badge>
-                            ),
-                            row.lockedAt ? formatDate(row.lockedAt) : "—",
-                        ]}
-                        actions={buildActions(row)}
-                        onRowClick={(item) => openEdit(item)}
-                    />
-                ))}
-                {!isLoading && periods.length === 0 && (
-                    <NoRecords art="checking-boxes" colSpan={7} message="No accounting periods. Click 'Add Period' to create one." />
-                )}
-                {isLoading && (
-                    <tr>
-                        <td className="text-center py-2" colSpan={7}><LoaderSpinner /></td>
-                    </tr>
-                )}
-            </Table>
+                <Table headers={headers}>
+                    {!isLoading && periods.map((row, idx) => (
+                        <TableRow
+                            key={row.id}
+                            index={idx + 1}
+                            row={row}
+                            columns={[
+                                <span className="font-medium">{row.name}</span>,
+                                formatDate(row.startDate),
+                                formatDate(row.endDate),
+                                row.isLocked ? (
+                                    <Badge color="danger"><Lock size={12} /> Locked</Badge>
+                                ) : (
+                                    <Badge color="success">Active</Badge>
+                                ),
+                                row.lockedAt ? formatDate(row.lockedAt) : "—",
+                            ]}
+                            actions={buildActions(row)}
+                            onRowClick={(item) => openEdit(item)}
+                        />
+                    ))}
+                    {!isLoading && periods.length === 0 && (
+                        <NoRecords art="checking-boxes" colSpan={7} message="No accounting periods. Click 'Add Period' to create one." />
+                    )}
+                    {isLoading && (
+                        <tr>
+                            <td className="text-center py-2" colSpan={7}><LoaderSpinner /></td>
+                        </tr>
+                    )}
+                </Table>
+                </>
+            )}
+
 
             {showModal && (
                 <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowModal(false)}>

@@ -17,8 +17,8 @@ import LoaderSpinner from "@components/admin/LoaderSpinner";
 import NoRecords from "@components/admin/NoRecords";
 import type { Vehicle } from "@models/vehicle";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Badge, Button, PageSizeSelect } from "@components/ui";
-
+import { Badge, Button, PageSizeSelect, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface PaginationData {
     total: number;
     page: number;
@@ -165,6 +165,12 @@ const VehicleList: React.FC = () => {
         return '—';
     };
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && vehicles.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Vehicles">
@@ -174,94 +180,108 @@ const VehicleList: React.FC = () => {
                     </Button>
                 }
             </PageHeader>
-
-            {/* Search Input & PageLength */}
-            <div className="flex justify-between items-center">
-                <input
-                    type="text"
-                    placeholder="Search by name, registration, VIN, make, model..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-80 text-gray-800 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.vehicles}
+                    action={hasPermission(permissions, 'vehicles', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={() => { handleCreateClick(); }}>
+                            {LIST_EMPTY_STATES.vehicles.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
+            ) : (
+                <>
 
-            {/* Status filter pill */}
-            <div className="flex items-center gap-2">
-                {(['all', 'true', 'false'] as const).map((opt) => (
-                    <button
-                        key={opt}
-                        type="button"
-                        onClick={() => handleStatusFilterChange(opt)}
-                        className={
-                            'px-3 py-1 text-sm rounded-full border cursor-pointer ' +
-                            (statusFilter === opt
-                                ? 'bg-primary text-white border-primary'
-                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50')
-                        }
-                    >
-                        {opt === 'all' ? 'All' : opt === 'true' ? 'Active' : 'Inactive'}
-                    </button>
-                ))}
-            </div>
-
-            {/* Table */}
-            <Table headers={tableHeaders}>
-                {!isLoading && vehicles && vehicles.map((vehicle, index) => (
-                    <TableRow
-                        key={vehicle.id}
-                        index={index + 1}
-                        row={vehicle}
-                        columns={[
-                            renderName(vehicle),
-                            vehicle.customerId
-                                ? (
-                                    <Link
-                                        to={`/customers/edit/${vehicle.customerId}`}
-                                        className="text-primary hover:underline"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        {vehicle.customerName ?? '—'}
-                                    </Link>
-                                )
-                                : (vehicle.customerName ?? '—'),
-                            vehicle.registrationNumber ?? '—',
-                            vehicle.vin ?? '—',
-                            vehicle.year ?? '—',
-                            <Badge color={vehicle.status === true ? 'success' : 'gray'}>
-                                {vehicle.status === true ? 'Active' : 'Inactive'}
-                            </Badge>,
-                        ]}
-                        actions={canEdit || canDelete ? tableActions : undefined}
-                        onRowClick={(item) => navigate(`/vehicles/edit/${item.id}`)}
+                {/* Search Input & PageLength */}
+                <div className="flex justify-between items-center">
+                    <input
+                        type="text"
+                        placeholder="Search by name, registration, VIN, make, model..."
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-80 text-gray-800 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     />
-                ))}
-                {!isLoading && !vehicles.length &&
-                    <NoRecords art="empty" colSpan={8} message="No vehicles found" />
-                }
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-1 text-gray-950 font-semibold" colSpan={8}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-            </Table>
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
 
-            {/* Pagination Component */}
-            {!isLoading && pagination.totalPages > 1 && (
-                <PaginationWrapper
-                    count={pagination.totalPages}
-                    page={page}
-                    from={from}
-                    to={to}
-                    total={pagination.total}
-                    onChange={(_, newPage) => handlePageChange(newPage)}
-                    paginationVariant="outlined"
-                    paginationShape="rounded"
-                />
+                {/* Status filter pill */}
+                <div className="flex items-center gap-2">
+                    {(['all', 'true', 'false'] as const).map((opt) => (
+                        <button
+                            key={opt}
+                            type="button"
+                            onClick={() => handleStatusFilterChange(opt)}
+                            className={
+                                'px-3 py-1 text-sm rounded-full border cursor-pointer ' +
+                                (statusFilter === opt
+                                    ? 'bg-primary text-white border-primary'
+                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50')
+                            }
+                        >
+                            {opt === 'all' ? 'All' : opt === 'true' ? 'Active' : 'Inactive'}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Table */}
+                <Table headers={tableHeaders}>
+                    {!isLoading && vehicles && vehicles.map((vehicle, index) => (
+                        <TableRow
+                            key={vehicle.id}
+                            index={index + 1}
+                            row={vehicle}
+                            columns={[
+                                renderName(vehicle),
+                                vehicle.customerId
+                                    ? (
+                                        <Link
+                                            to={`/customers/edit/${vehicle.customerId}`}
+                                            className="text-primary hover:underline"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            {vehicle.customerName ?? '—'}
+                                        </Link>
+                                    )
+                                    : (vehicle.customerName ?? '—'),
+                                vehicle.registrationNumber ?? '—',
+                                vehicle.vin ?? '—',
+                                vehicle.year ?? '—',
+                                <Badge color={vehicle.status === true ? 'success' : 'gray'}>
+                                    {vehicle.status === true ? 'Active' : 'Inactive'}
+                                </Badge>,
+                            ]}
+                            actions={canEdit || canDelete ? tableActions : undefined}
+                            onRowClick={(item) => navigate(`/vehicles/edit/${item.id}`)}
+                        />
+                    ))}
+                    {!isLoading && !vehicles.length &&
+                        <NoRecords art="empty" colSpan={8} message="No vehicles found" />
+                    }
+                    {isLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-1 text-gray-950 font-semibold" colSpan={8}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
+                </Table>
+
+                {/* Pagination Component */}
+                {!isLoading && pagination.totalPages > 1 && (
+                    <PaginationWrapper
+                        count={pagination.totalPages}
+                        page={page}
+                        from={from}
+                        to={to}
+                        total={pagination.total}
+                        onChange={(_, newPage) => handlePageChange(newPage)}
+                        paginationVariant="outlined"
+                        paginationShape="rounded"
+                    />
+                )}
+                </>
             )}
+
 
             <DeleteConfirmationModal
                 isOpen={isDeleteModalOpen}

@@ -21,7 +21,8 @@ import SubmitButton from "@components/admin/SubmitButton";
 import DynamicCustomFields from "@components/admin/DynamicCustomFields";
 import ImageCropperUpload from "@components/common/ImageCropperUpload";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
+import { Button, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 // Interface for the Category data object
 interface Category {
     id: string;
@@ -284,6 +285,12 @@ const CategoryList: FC = () => {
     if (allowedActions.length === 0) {
         tableHeader.pop();
     }
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && categories.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Categories">
@@ -297,65 +304,79 @@ const CategoryList: FC = () => {
                     </Button>
                 }
             </PageHeader>
-
-            <div className="flex flex-col md:flex-row justify-between gap-4">
-                <input
-                    type="text"
-                    placeholder="Search by category name..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.categories}
+                    action={hasPermission(permissions, 'product-services', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={openCreateCategory}>
+                            {LIST_EMPTY_STATES.categories.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
+            ) : (
+                <>
 
-            <Table headers={tableHeader}>
-                {!isLoading && categories && categories.map((categoryItem, index) => (
-                    <TableRow
-                        key={categoryItem.id}
-                        row={categoryItem}
-                        index={index + 1}
-                        columns={[
-                            <ProfileCard
-                                imageUrl={categoryItem.categoryImageUrl}
-                                name={categoryItem.category_name}
-                                primary
-                            />,
-                            categoryItem.slug,
-                            <label className="inline-flex items-center cursor-pointer">
-                                <input type="checkbox" className="sr-only peer" checked={categoryItem.status} onChange={() => updateStatus(categoryItem)} />
-                                <div className="relative w-11 h-6 bg-gray-200 peer-checked:bg-primary rounded-full peer-focus:ring-2 peer-focus:ring-ring">
-                                    <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${categoryItem.status ? 'translate-x-full' : ''}`}></div>
-                                </div>
-                            </label>
-                        ]}
-                        actions={allowedActions.length > 0 ? allowedActions : undefined}
+                <div className="flex flex-col md:flex-row justify-between gap-4">
+                    <input
+                        type="text"
+                        placeholder="Search by category name..."
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring"
                     />
-                ))}
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
 
-                {!isLoading && categories.length === 0 &&
-                    <EmptyStateRow colSpan={tableHeader.length} art="folder" title="No categories found." />
-                }
+                <Table headers={tableHeader}>
+                    {!isLoading && categories && categories.map((categoryItem, index) => (
+                        <TableRow
+                            key={categoryItem.id}
+                            row={categoryItem}
+                            index={index + 1}
+                            columns={[
+                                <ProfileCard
+                                    imageUrl={categoryItem.categoryImageUrl}
+                                    name={categoryItem.category_name}
+                                    primary
+                                />,
+                                categoryItem.slug,
+                                <label className="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" className="sr-only peer" checked={categoryItem.status} onChange={() => updateStatus(categoryItem)} />
+                                    <div className="relative w-11 h-6 bg-gray-200 peer-checked:bg-primary rounded-full peer-focus:ring-2 peer-focus:ring-ring">
+                                        <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${categoryItem.status ? 'translate-x-full' : ''}`}></div>
+                                    </div>
+                                </label>
+                            ]}
+                            actions={allowedActions.length > 0 ? allowedActions : undefined}
+                        />
+                    ))}
 
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-2 text-gray-950  font-semibold" colSpan={7}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-            </Table>
+                    {!isLoading && categories.length === 0 &&
+                        <EmptyStateRow colSpan={tableHeader.length} art="folder" title="No categories found." />
+                    }
 
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handlePageChange(newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                    {isLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-2 text-gray-950  font-semibold" colSpan={7}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
+                </Table>
+
+                <PaginationWrapper
+                    count={pagination.totalPages}
+                    page={page}
+                    from={from}
+                    to={to}
+                    total={pagination.total}
+                    onChange={(_, newPage) => handlePageChange(newPage)}
+                    paginationVariant="outlined"
+                    paginationShape="rounded"
+                />
+                </>
+            )}
+
 
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={isEditMode ? 'Edit Category' : 'Add New Category'}>
                 {/* Form fields are identical to your provided code, just ensure they are within this modal */}

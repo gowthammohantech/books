@@ -16,12 +16,13 @@ import SubmitButton from "@components/admin/SubmitButton";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import DeleteConfirmationModal from "@components/admin/DeleteConfirmationModal";
 import PermissionGuard from "@components/admin/PermissionGuard";
-import { Button, Badge, EmptyStateRow } from "@components/ui";
+import { Button, Badge, EmptyStateRow, EmptyStateHero } from "@components/ui";
 import { PageHeader } from "@/context/PageHeaderContext";
 import useDateFormatter from "@hooks/useDateFormatter";
 import { hasPermission } from "@utils/hasPermission";
 import type { Holiday } from "@models/timeTracking";
 
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 const MODULE_SLUG = "time-tracking-others";
 
 interface FormErrors {
@@ -179,6 +180,12 @@ const Holidays: React.FC = () => {
 
     const tableHeaders = ["#", "Name", "Date", "Recurring", "Actions"];
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && items.length === 0;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Holidays">
@@ -188,34 +195,46 @@ const Holidays: React.FC = () => {
                     </Button>
                 </PermissionGuard>
             </PageHeader>
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.holidays}
+                    action={<Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={openCreate}>
+                        {LIST_EMPTY_STATES.holidays.cta}
+                    </Button>}
+                />
+            ) : (
+                <>
 
-            <Table headers={tableHeaders}>
-                {!isLoading && items.length > 0 &&
-                    items.map((item, index) => (
-                        <TableRow
-                            key={item.id}
-                            row={item}
-                            index={index + 1}
-                            columns={[
-                                <span className="font-medium text-gray-900">{item.name}</span>,
-                                formatDate(item.date),
-                                item.recurringYearly ? (
-                                    <Badge color="indigo">Yearly</Badge>
-                                ) : (
-                                    <Badge color="gray">One-off</Badge>
-                                ),
-                            ]}
-                            actions={tableActions}
-                        />
-                    ))
-                }
-                {!isLoading && items.length === 0 && (
-                    <EmptyStateRow colSpan={5} art="checking-boxes" title="No Holidays Found" />
-                )}
-                {isLoading && (
-                    <tr key="loader"><td className="text-center py-2 font-semibold" colSpan={5}><LoaderSpinner /></td></tr>
-                )}
-            </Table>
+                <Table headers={tableHeaders}>
+                    {!isLoading && items.length > 0 &&
+                        items.map((item, index) => (
+                            <TableRow
+                                key={item.id}
+                                row={item}
+                                index={index + 1}
+                                columns={[
+                                    <span className="font-medium text-gray-900">{item.name}</span>,
+                                    formatDate(item.date),
+                                    item.recurringYearly ? (
+                                        <Badge color="indigo">Yearly</Badge>
+                                    ) : (
+                                        <Badge color="gray">One-off</Badge>
+                                    ),
+                                ]}
+                                actions={tableActions}
+                            />
+                        ))
+                    }
+                    {!isLoading && items.length === 0 && (
+                        <EmptyStateRow colSpan={5} art="checking-boxes" title="No Holidays Found" />
+                    )}
+                    {isLoading && (
+                        <tr key="loader"><td className="text-center py-2 font-semibold" colSpan={5}><LoaderSpinner /></td></tr>
+                    )}
+                </Table>
+                </>
+            )}
+
 
             <Modal
                 isOpen={showModal}
