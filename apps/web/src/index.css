@@ -252,6 +252,41 @@
   --text-sm: 0.875rem;
 }
 
+/* ---------------------------------------------------------------------------
+   Density scale.
+
+   Tailwind v4 compiles every spacing utility to calc(var(--spacing) * n), and
+   resolves var(--spacing) at use time, through inheritance. So a class on a
+   subtree rescales all of them inside it — no theme rebuild, no touching the
+   ~1,400 call sites that use p-4 / gap-4 / mt-6.
+
+   0.225rem is 0.9x the 0.25rem default. The factor is bounded below by the
+   control heights it must not break: at 0.9, h-9 lands on 32.4px, still over
+   the 32px hit-target floor. (The floor in @layer base is written in rem
+   literals precisely so it cannot be dragged under by this.)
+
+   Scoped to the admin shells rather than :root on purpose:
+     - login, signup, the setup wizard and the marketing pages keep the
+       roomier default; they are not dense screens and are not the bug.
+     - print output is unaffected.
+     - it can be toggled at runtime, which is how the before/after screenshots
+       are taken from a single build.
+
+   The body:has() rule exists because Modal portals to document.body, as do
+   sonner toasts and the sidebar flyouts. Without it a dialog would keep the
+   default spacing while the page behind it was compact.
+
+   --content-max caps line length on wide monitors; see the layouts.
+--------------------------------------------------------------------------- */
+:root {
+  --content-max: 105rem;
+}
+
+.density-compact,
+body:has(.density-compact) {
+  --spacing: 0.225rem;
+}
+
 /* Motion that does not need JavaScript.
    The dividing line for animated icons: whole-element transforms live here,
    where they cost nothing and honour motion-reduce for free. Only per-path

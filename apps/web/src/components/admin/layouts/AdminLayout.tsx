@@ -74,7 +74,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           any page can open it via useCommandPalette(). */}
       <CommandPaletteProvider>
         <AgentPanelProvider>
-          <div className="flex h-screen bg-background font-sans print:block print:h-auto">
+          <div className="density-compact flex h-screen bg-background font-sans print:block print:h-auto">
             <div className="print:hidden">
               <Sidebar isOpen={isSidebarOpen} onToggle={toggleSidebar} />
             </div>
