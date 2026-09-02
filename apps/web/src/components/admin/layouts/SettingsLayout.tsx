@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Link, Outlet, useLocation } from "react-router-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSelector } from "react-redux";
 
 import DemoBanner from "../DemoBanner";
@@ -30,8 +30,8 @@ import type { RootState } from "@store/index";
  *
  * A sibling of AdminLayout rather than a branch inside it: AdminLayout owns the
  * app sidebar, the AI FAB and the sidebar-width preference, none of which exist
- * in here. Entering settings swaps the whole shell — its own nav, its own way
- * out — which is what "Close Settings" means.
+ * in here. Entering settings swaps the whole shell — its own nav, and one way
+ * out: the chevron at the top of the rail, back to the dashboard.
  *
  * The nav is the same mechanism as the app rail: a row per group, children in
  * a flyout beside it. It replaced a fully expanded tree, which listed all
@@ -118,7 +118,7 @@ const GroupRow = ({
  * PageHeaderContext exactly as they do under the admin shell — without this
  * they would set a title with nothing to render it.
  */
-const SettingsTopBar = ({ onClose }: { onClose: () => void }) => {
+const SettingsTopBar = () => {
     const { title, actions } = usePageHeader();
 
     return (
@@ -126,27 +126,13 @@ const SettingsTopBar = ({ onClose }: { onClose: () => void }) => {
             <h1 className="truncate text-base font-semibold text-foreground">
                 {title}
             </h1>
-            <div className="flex items-center gap-2">
-                {actions}
-                {/* Icon only: the label lives in aria-label/title so the
-                    control is still announced and still names itself on hover. */}
-                <button
-                    type="button"
-                    onClick={onClose}
-                    aria-label="Close settings"
-                    title="Close Settings"
-                    className="flex cursor-pointer items-center rounded-md p-1.5 text-destructive transition-colors hover:bg-destructive/10"
-                >
-                    <X size={16} />
-                </button>
-            </div>
+            <div className="flex items-center gap-2">{actions}</div>
         </header>
     );
 };
 
 const SettingsLayout = () => {
     const { pathname } = useLocation();
-    const navigate = useNavigate();
     const mainRef = useRef<HTMLElement>(null);
 
     const { data: systemSettings } = useSelector(
@@ -198,13 +184,26 @@ const SettingsLayout = () => {
             <CommandPaletteProvider>
                 <div className="flex h-screen bg-background font-sans print:block print:h-auto">
                     <aside className="flex h-screen w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground print:hidden">
-                        <Link
-                            to="/settings"
-                            className="flex h-12 shrink-0 items-center gap-2 px-4 text-sidebar-foreground hover:text-sidebar-primary"
-                        >
-                            <ChevronLeft size={16} />
-                            <span className="text-base font-semibold">All Settings</span>
-                        </Link>
+                        {/* Two controls, not one: the chevron is the way out of
+                            settings entirely, the label is the way back up to
+                            the settings index. Wrapping both in one link left
+                            the arrow doing nothing on /settings itself. */}
+                        <div className="flex h-12 shrink-0 items-center gap-1 px-4">
+                            <Link
+                                to="/"
+                                aria-label="Back to dashboard"
+                                title="Back to Dashboard"
+                                className="-ml-1.5 flex items-center rounded-md p-1.5 text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-primary"
+                            >
+                                <ChevronLeft size={16} />
+                            </Link>
+                            <Link
+                                to="/settings"
+                                className="truncate text-base font-semibold text-sidebar-foreground transition-colors hover:text-sidebar-primary"
+                            >
+                                All Settings
+                            </Link>
+                        </div>
 
                         {/* The split, stated once at the top rather than as two
                             headings you scroll between. */}
@@ -304,7 +303,7 @@ const SettingsLayout = () => {
                     </aside>
 
                     <div className="flex flex-1 flex-col overflow-hidden print:overflow-visible">
-                        <SettingsTopBar onClose={() => navigate("/")} />
+                        <SettingsTopBar />
 
                         <main
                             ref={mainRef}
