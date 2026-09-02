@@ -1,4 +1,5 @@
 import api from '@lib/apiClient';
+import { computeDocumentTotals, type TotalsItem } from '@elixirbooks/money';
 import { computeLineTotals, lineTaxPercent as resolveLineTaxPercent } from '@lib/documentLineMath';
 import React, { useEffect, useState, useMemo } from 'react';
 import { PlusCircle, Loader2Icon } from 'lucide-react';
@@ -454,21 +455,14 @@ const RecurringScheduleForm: React.FC = () => {
 
     // --- Totals (identical aggregation to CreateInvoice) ----------------------
     const { subTotal, totalTax, totalDiscount, grandTotal } = useMemo(() => {
-        const totals = formData.items.reduce(
-            (acc, item) => {
-                acc.subTotal += item.rate * item.qty;
-                acc.totalDiscount += item.discount;
-                acc.totalTax += item.tax;
-                return acc;
-            },
-            { subTotal: 0, totalTax: 0, totalDiscount: 0 }
-        );
-        const grand = totals.subTotal - totals.totalDiscount + totals.totalTax;
+        // Decimal accumulation, and tax on the discounted base — the same code
+        // recurringScheduleController recomputes and persists with.
+        const totals = computeDocumentTotals(formData.items as unknown as TotalsItem[]);
         return {
-            subTotal: round2(totals.subTotal),
-            totalTax: round2(totals.totalTax),
-            totalDiscount: round2(totals.totalDiscount),
-            grandTotal: round2(grand)
+            subTotal: totals.subTotal,
+            totalTax: totals.totalTax,
+            totalDiscount: totals.totalDiscount,
+            grandTotal: totals.grandTotal
         };
     }, [formData.items]);
 
@@ -536,6 +530,11 @@ const RecurringScheduleForm: React.FC = () => {
             taxableAmount: +(subTotal - totalDiscount).toFixed(2),
             totalDiscount: +totalDiscount.toFixed(2),
             totalTax: +totalTax.toFixed(2),
+            // computeDocumentTotals derives grandTotal as exactly
+            // subTotal - totalDiscount + totalTax, so this is now structurally 0
+            // rather than incidentally so. Kept because the column is nullable and
+            // the server preserves whatever arrives: dropping the field would be a
+            // payload change, not a simplification.
             roundOff: +(grandTotal - (subTotal - totalDiscount + totalTax)).toFixed(2),
             TotalAmount: grandTotal,
             notes: formData.notes || undefined,
