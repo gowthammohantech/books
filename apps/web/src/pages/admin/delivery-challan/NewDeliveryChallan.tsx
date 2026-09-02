@@ -39,6 +39,7 @@ import { PageHeader } from "@/context/PageHeaderContext";
 import { Button } from '@components/ui';
 import { useLineItemCustomFields } from '@hooks/useLineItemCustomFields';
 import { validateLineCustomFields } from '@lib/lineCustomFields';
+import { computeLineTotals, lineTaxPercent as resolveLineTaxPercent } from '@lib/documentLineMath';
 
 type ProductItem = BaseProductItem & { customFields?: Record<string, string | number | boolean | string[]> };
 
@@ -381,14 +382,8 @@ const NewDeliveryChallan: React.FC = () => {
     };
 
     /** Flat percent for a line: new tax_rate_id wins, legacy tax_group_id falls back (C8). */
-    const lineTaxPercent = (line: { tax_rate_id?: string | null; tax_group_id?: string | null }): number => {
-        if (line.tax_rate_id) {
-            const r = taxRateLibrary.find((x) => x.id === line.tax_rate_id);
-            if (r) return Number(r.rate);
-        }
-        const g = taxes.find((t) => String(t.id) === String(line.tax_group_id));
-        return g?.total_tax_rate || 0;
-    };
+    const lineTaxPercent = (line: { tax_rate_id?: string | null; tax_group_id?: string | null }): number =>
+        resolveLineTaxPercent(line, taxRateLibrary, taxes);
 
     const handleEditingItemChange = (field: keyof ProductItem, value: string | number) => {
         setEditingItem(prev => {
@@ -402,29 +397,21 @@ const NewDeliveryChallan: React.FC = () => {
 
             const updatedItem = { ...prev, [field]: newValue };
 
-            const { qty, rate, discount_value, discount_type } = updatedItem;
-
-            const subtotal = qty * rate;
-
-            const discountAmount = discount_type === 'Percentage'
-                ? (subtotal * (discount_value || 0)) / 100
-                : (discount_value || 0);
-
-            const discountedSubtotal = subtotal - discountAmount;
-
-            const taxRate = lineTaxPercent(updatedItem);
-            const taxPerUnit = (rate * taxRate) / 100;
-
-            const totalTax = taxPerUnit * qty;
-
-            const newAmount = discountedSubtotal + totalTax;
+            const line = computeLineTotals({
+                qty: updatedItem.qty,
+                rate: updatedItem.rate,
+                discount_type: updatedItem.discount_type,
+                discount_value: updatedItem.discount_value,
+                taxPercent: lineTaxPercent(updatedItem),
+            });
 
             return {
                 ...updatedItem,
-                discount: discountAmount,
-                discount_type: discount_type || 'Fixed',
-                tax: totalTax,
-                amount: newAmount
+                discount: line.discount,
+                discount_value: line.discountValue,
+                discount_type: updatedItem.discount_type || 'Fixed',
+                tax: line.tax,
+                amount: line.amount
             };
         });
     };
@@ -497,22 +484,21 @@ const NewDeliveryChallan: React.FC = () => {
 
     const handleInLineItemChange = (product: ProductItem, rowId: string) => {
         //do calculations
-        const { qty, rate, discount_value, discount_type } = product;
-        const subtotal = qty * rate;
+        const line = computeLineTotals({
+            qty: product.qty,
+            rate: product.rate,
+            discount_type: product.discount_type,
+            discount_value: product.discount_value,
+            taxPercent: lineTaxPercent(product),
+        });
 
-        const discountAmount = discount_type === 'Percentage'
-            ? (subtotal * (discount_value || 0)) / 100
-            : (discount_value || 0);
-
-        const discountedSubtotal = subtotal - discountAmount;
-
-        const taxRate = lineTaxPercent(product);
-        const taxPerUnit = (rate * taxRate) / 100;
-
-        const totalTax = taxPerUnit * qty;
-
-        const newAmount = discountedSubtotal + totalTax;
-        const updatedProduct = { ...product, discount: discountAmount, tax: totalTax, amount: newAmount };
+        const updatedProduct = {
+            ...product,
+            discount: line.discount,
+            discount_value: line.discountValue,
+            tax: line.tax,
+            amount: line.amount,
+        };
         setInvoiceFormData((prev) => ({
             ...prev,
             items: prev.items.map(item => item.id === rowId ? updatedProduct : item)
@@ -533,17 +519,17 @@ const NewDeliveryChallan: React.FC = () => {
     const handleNewProductCreated = (product: Product) => {
         const discount_type = product.discount?.type;
         const discount_value = product.discount?.value;
-        const subtotal = product.prices?.selling ?? 0;
         const rate = product.prices?.selling ?? 0;
-        const discountAmount = discount_type === 'Percentage'
-            ? (subtotal * (discount_value || 0)) / 100
-            : (discount_value || 0);
-        const taxRate = product.tax_rate?.rate ?? product.tax?.total_rate ?? 0;
-        const taxPerUnit = (rate * taxRate) / 100;
-
-        const totalTax = taxPerUnit * 1;
-        const discountedSubtotal = subtotal - discountAmount;
-        const newAmount = discountedSubtotal + totalTax;
+        const line = computeLineTotals({
+            qty: 1,
+            rate,
+            discount_type,
+            discount_value,
+            taxPercent: product.tax_rate?.rate ?? product.tax?.total_rate ?? 0,
+        });
+        const discountAmount = line.discount;
+        const totalTax = line.tax;
+        const newAmount = line.amount;
 
         let updated = false;
         setInvoiceFormData((prev) => ({
