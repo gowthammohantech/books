@@ -149,9 +149,9 @@ const OverviewPurchaseOrder: React.FC = () => {
             setIsConvertModalOpen(false);
             const newPurchaseId = response.data?.data?.id;
             if (newPurchaseId) {
-                navigate(`/admin/purchases/view/${newPurchaseId}`);
+                navigate(`/purchases/view/${newPurchaseId}`);
             } else {
-                navigate('/admin/purchases');
+                navigate('/purchases');
             }
         } catch (error) {
             toast.error('Failed to convert purchase order to purchase.');
@@ -186,7 +186,7 @@ const OverviewPurchaseOrder: React.FC = () => {
                     variant="primary"
                     size="sm"
                     leftIcon={<Edit size={14} />}
-                    onClick={() => navigate(`/admin/purchase-orders/edit/${purchaseOrderId}`)}
+                    onClick={() => navigate(`/purchase-orders/edit/${purchaseOrderId}`)}
                 >
                     Edit
                 </Button>
@@ -213,7 +213,7 @@ const OverviewPurchaseOrder: React.FC = () => {
                     type="button"
                     variant="white"
                     size="sm"
-                    onClick={() => navigate('/admin/purchase-orders')}
+                    onClick={() => navigate('/purchase-orders')}
                 >
                     Back
                 </Button>

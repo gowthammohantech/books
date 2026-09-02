@@ -52,7 +52,7 @@ const NotFound: React.FC = () => {
                     </button>
 
                     <Link
-                        to="/admin"
+                        to="/"
                         className="group w-full sm:w-auto flex items-center justify-center gap-2 px-7 py-3.5 bg-primary border-2 border-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-primary/90 hover:border-primary hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-accent transition-all duration-200 cursor-pointer"
                     >
                         <Home size={18} className="group-hover:scale-110 transition-transform" />

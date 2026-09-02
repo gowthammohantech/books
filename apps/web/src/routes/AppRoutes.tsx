@@ -1,16 +1,17 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import AdminRoute from "./AdminRoute";
+import AdminLogin from "@pages/admin/auth/AdminLogin";
 import AdminRegister from "@pages/admin/auth/AdminRegister";
 import AdminLogout from "@pages/admin/auth/AdminLogout";
 import SetupOrganizationInfo from "@pages/admin/auth/SetupOrganizationInfo";
 import SsoLanding from "@pages/admin/auth/SsoLanding";
+import WorkspacePicker from "@pages/admin/auth/WorkspacePicker";
 import PublicInvoiceViewer from "@pages/public/PublicInvoiceViewer";
 import PublicQuotationViewer from "@pages/public/PublicQuotationViewer";
 import { useSetupStatus } from "@context/SetupStatusContext";
 import RouteErrorBoundary from "@components/RouteErrorBoundary";
 import Seo from "@components/admin/Seo";
-import NotFound from "@pages/errors/NotFound";
 import type { RootState } from "@store/index";
 
 /**
@@ -26,9 +27,16 @@ import type { RootState } from "@store/index";
  * Now the tree is fixed and the gates are per-route:
  *
  *   public       always mounted, no session required, no probe on the way in
- *   /register    always reachable — signup is public and uncapped
+ *   /signin      always reachable — the app mounts at the root, so the login
+ *                page is a sibling of it rather than a child
+ *   /signup      always reachable — signup is public and uncapped
+ *   /workspaces  reachable while signed in, and NOT behind the setup gate: an
+ *                un-set-up workspace is precisely when you need a way out to a
+ *                different one
  *   /setup       reachable while signed in; where an un-set-up workspace lands
- *   /admin/*     the app, redirected to /setup until THIS workspace is set up
+ *   /*           the app, redirected to /setup until THIS workspace is set up.
+ *                Its own catch-all serves 404s; a second one here would be the
+ *                same pattern and would shadow it.
  *
  * The setup question is now per workspace (`companySettingsComplete` from
  * GET /api/auth/session), so switching into a new workspace correctly lands in
@@ -66,7 +74,8 @@ const AppRoutes = () => {
                 <Route path="/sso" element={<SsoLanding />} />
                 <Route path="/invoice/:token" element={<PublicInvoiceViewer />} />
                 <Route path="/quotation/:token" element={<PublicQuotationViewer />} />
-                <Route path="/register" element={<><Seo title="Create account" /><AdminRegister /></>} />
+                <Route path="/signin" element={<><Seo title="Sign in" /><AdminLogin /></>} />
+                <Route path="/signup" element={<><Seo title="Create account" /><AdminRegister /></>} />
                 <Route path="/documentation" element={iframePage("/documentation/index.html", "Documentation")} />
                 <Route
                     path="/documentation/mobile"
@@ -74,14 +83,26 @@ const AppRoutes = () => {
                 />
                 <Route path="/landing" element={iframePage("/landing/index.html", "Landing")} />
 
-                {/* ---- Setup: signed in, workspace not yet configured ---- */}
+                {/* ---- Workspace picker: signed in, no workspace context needed ---- */}
+            <Route
+                path="/workspaces"
+                element={
+                    isAuthenticated ? (
+                        <><Seo title="Choose a company" /><WorkspacePicker /></>
+                    ) : (
+                        <Navigate to="/signin" replace />
+                    )
+                }
+            />
+
+            {/* ---- Setup: signed in, workspace not yet configured ---- */}
                 <Route
                     path="/setup"
                     element={
                         isAuthenticated ? (
                             <><Seo title="Set up your workspace" /><SetupOrganizationInfo /></>
                         ) : (
-                            <Navigate to="/admin/login" replace />
+                            <Navigate to="/signin" replace />
                         )
                     }
                 />
@@ -89,13 +110,10 @@ const AppRoutes = () => {
                 {/* Mounted ahead of the setup gate on purpose: without it, a user
                     whose workspace is mid-setup has no way out of /setup except
                     clearing cookies. */}
-                <Route path="/admin/logout" element={<AdminLogout />} />
+                <Route path="/logout" element={<AdminLogout />} />
 
                 {/* ---- The app ---- */}
-                <Route path="/" element={appTree} />
-                <Route path="/admin/*" element={appTree} />
-
-                <Route path="*" element={<><Seo title="Not Found" /><NotFound /></>} />
+                <Route path="/*" element={appTree} />
             </Routes>
         </RouteErrorBoundary>
     );

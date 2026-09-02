@@ -81,6 +81,24 @@ export interface MembershipSummary {
   slug: string;
   roleName: string | null;
   isOwner: boolean;
+  /**
+   * Enough context to tell two similarly-named workspaces apart on the picker
+   * screen. Both are nullable and both are display-only — nothing routes or
+   * authorizes on them.
+   *
+   * There is no branch or warehouse count here because there is no Branch or
+   * Warehouse model (erp-roadmap.md §1.1). Do not synthesize one.
+   */
+  city: string | null;
+  /** ACTIVE memberships, i.e. people who can currently sign in to it. */
+  memberCount: number;
+  /**
+   * Tenant.plan. A real column, but nothing reads or enforces it yet — there is
+   * no subscription model behind it, so treat it as a label, not an
+   * entitlement. Already on ActiveTenant; carried per membership so the picker
+   * can label every card rather than only the one you happen to be in.
+   */
+  plan: string | null;
 }
 
 /**
@@ -102,7 +120,17 @@ export async function loadMemberships(userId: string): Promise<MembershipSummary
       id: true,
       tenantId: true,
       isOwner: true,
-      tenant: { select: { name: true, slug: true } },
+      tenant: {
+        select: {
+          name: true,
+          slug: true,
+          // A workspace that has not been through /setup has no
+          // CompanySettings row at all, hence the optional chain below.
+          plan: true,
+          companySettings: { select: { city: true } },
+          _count: { select: { memberships: { where: { status: 'ACTIVE' } } } },
+        },
+      },
       role: { select: { roleName: true } },
     },
   });
@@ -113,6 +141,9 @@ export async function loadMemberships(userId: string): Promise<MembershipSummary
     slug: m.tenant.slug,
     roleName: m.role?.roleName ?? null,
     isOwner: m.isOwner,
+    plan: m.tenant.plan ?? null,
+    city: m.tenant.companySettings?.city?.trim() || null,
+    memberCount: m.tenant._count.memberships,
   }));
 }
 

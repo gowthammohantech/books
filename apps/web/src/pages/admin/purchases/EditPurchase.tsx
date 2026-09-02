@@ -936,7 +936,7 @@ const EditPurchase: React.FC = () => {
             });
 
             toast.success('Purchase updated successfully.');
-            navigate('/admin/purchases');
+            navigate('/purchases');
         } catch (error: any) {
             if (error.response?.status !== 200 && error.response?.data?.errors) {
                 setFormErrors(error.response.data.errors);
@@ -1426,7 +1426,7 @@ const EditPurchase: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => navigate('/admin/purchases')}>Cancel</Button>
+                    <Button variant="white" onClick={() => navigate('/purchases')}>Cancel</Button>
                     <SubmitButton isDisabled={isSaving} isLoading={isSaving} mode='edit' />
                 </div>
 

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Copy, Check } from "lucide-react";
+import AuthShell from "./AuthShell";
 import { useSelector, useDispatch } from "react-redux";
 import { loginUser } from "../../../store/auth/authSlice";
 import { fetchSystemSettings } from "@store/systemSettingsSlice";
 import type { RootState, AppDispatch } from "../../../store";
-import { resolveCompanyLogo } from "@utils/companyLogo";
 import { resolveLandingPath } from "@utils/roleLanding";
 const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
 const DEMO_EMAIL = "admin@demo.elixirbooks.local";
@@ -36,7 +36,7 @@ const LoginPage: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated) {
       const path = activeTenant?.isOwner
-        ? "/admin/dashboard"
+        ? "/dashboard"
         : resolveLandingPath(systemSettings?.defaultRoute, systemSettings?.permissions);
       navigate(path);
     }
@@ -48,7 +48,7 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     const resultAction = await dispatch(loginUser({ email, password }));
     if (loginUser.fulfilled.match(resultAction)) {
-      const { token, tenant } = resultAction.payload;
+      const { token, tenant, memberships } = resultAction.payload;
 
       // Fetch system-settings/permissions with the just-issued token before
       // deciding where to land — relying on the separate App-level boot
@@ -60,11 +60,21 @@ const LoginPage: React.FC = () => {
         settings = settingsAction.payload;
       }
 
+      // Someone who belongs to more than one company is asked which one they
+      // meant. Login has already picked a default (last used, else oldest
+      // membership) and the token is scoped to it, so the picker is a
+      // confirmation rather than a blocker — and for the single-workspace
+      // majority it never appears at all.
+      if ((memberships?.length ?? 0) > 1) {
+        navigate("/workspaces");
+        return;
+      }
+
       // `tenant` is the workspace this token was minted for; login picks it
       // (last used, else oldest membership) and tells us which role the user
       // holds THERE.
       const path = tenant?.isOwner
-        ? "/admin/dashboard"
+        ? "/dashboard"
         : resolveLandingPath(settings?.defaultRoute, settings?.permissions);
       navigate(path);
     }
@@ -91,24 +101,47 @@ const LoginPage: React.FC = () => {
 
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
-      <div className="w-full max-w-md p-6 md:p-8 bg-white rounded-xl shadow-md space-y-6">
-        {/* Logo + Brand */}
-        <div className="flex items-center justify-center gap-2">
-          <img src={resolveCompanyLogo(systemSettings?.company?.siteLogo)} alt="Logo" className="w-32" />
-        </div>
-
-        {/* Heading */}
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Sign in to access the dashboard
+    <AuthShell
+      active="signin"
+      heading="Welcome back"
+      subheading="Sign in to your Elixir Book workspace."
+      footer={
+        <>
+          <p className="text-center text-xs text-muted-foreground">
+            By continuing you agree to the Terms &amp; Privacy Policy.
           </p>
-        </div>
 
+          {/* Demo credentials — only shown when VITE_DEMO_MODE=true */}
+          {DEMO_MODE && (
+            <div className="mt-4 p-3 bg-accent border border-accent rounded-md">
+              <div className="flex justify-between items-center text-sm text-gray-700">
+                <div>
+                  <p>
+                    <span className="font-medium">Email:</span> {DEMO_EMAIL}
+                  </p>
+                  <p>
+                    <span className="font-medium">Password:</span> {DEMO_PASSWORD}
+                  </p>
+                </div>
+                <button
+                  onClick={handleCopy}
+                  className="p-2 text-gray-500 hover:text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {isCopied ? (
+                    <Check className="text-green-600" size={18} />
+                  ) : (
+                    <Copy size={18} />
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      }
+    >
         {/* Error */}
         {error && (
-          <div className="p-3 text-sm text-destructive bg-destructive-soft border border-destructive rounded-lg">
+          <div className="mb-4 p-3 text-sm text-destructive bg-destructive-soft border border-destructive rounded-lg">
             {error}
           </div>
         )}
@@ -197,35 +230,7 @@ const LoginPage: React.FC = () => {
             {isLoading ? "Logging in..." : "Login"}
           </button>
         </form>
-
-        {/* Demo credentials — only shown when VITE_DEMO_MODE=true */}
-        {DEMO_MODE && (
-          <div className="p-3 bg-accent border border-accent rounded-md">
-            <div className="flex justify-between items-center text-sm text-gray-700">
-              <div>
-                <p>
-                  <span className="font-medium">Email:</span>{" "}
-                  {DEMO_EMAIL}
-                </p>
-                <p>
-                  <span className="font-medium">Password:</span> {DEMO_PASSWORD}
-                </p>
-              </div>
-              <button
-                onClick={handleCopy}
-                className="p-2 text-gray-500 hover:text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                {isCopied ? (
-                  <Check className="text-green-600" size={18} />
-                ) : (
-                  <Copy size={18} />
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+    </AuthShell>
   );
 };
 

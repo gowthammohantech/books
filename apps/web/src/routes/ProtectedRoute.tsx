@@ -16,7 +16,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ( { moduleSlug, action}) =
     
     if (!isAuthenticated || !token || isTokenExpired(token)) {
         dispatch(logout());
-        return <Navigate to="/admin/login" state={{ from: location.pathname }} replace />;
+        return <Navigate to="/signin" state={{ from: location.pathname }} replace />;
     }
 
     if(isLoading || !systemSettings) {
@@ -36,7 +36,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ( { moduleSlug, action}) =
         const permissions = systemSettings?.permissions || [];
         const isAllowed = hasPermission(permissions, moduleSlug, action as PermissionAction);
         if (!isAllowed) {
-            return <Navigate to="/admin/unauthorized" />;
+            return <Navigate to="/unauthorized" />;
         }
     }
     

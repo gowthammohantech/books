@@ -64,7 +64,7 @@ class RouteErrorBoundary extends Component<Props, State> {
                         </button>
                         <button
                             type="button"
-                            onClick={() => window.location.assign("/admin/logout")}
+                            onClick={() => window.location.assign("/logout")}
                             className="px-5 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-accent cursor-pointer"
                         >
                             Sign out

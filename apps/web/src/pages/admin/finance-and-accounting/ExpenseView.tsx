@@ -102,7 +102,7 @@ const ExpenseView: React.FC = () => {
         return (
             <>
                 <PageHeader title="Expense">
-                    <Button variant="secondary" onClick={() => navigate("/admin/expenses")}>
+                    <Button variant="secondary" onClick={() => navigate("/expenses")}>
                         Back
                     </Button>
                 </PageHeader>
@@ -125,7 +125,7 @@ const ExpenseView: React.FC = () => {
                 {hasPermission(permissions, "expenses", "edit") && (
                     <Button onClick={() => setIsEditOpen(true)}>Edit</Button>
                 )}
-                <Button variant="secondary" onClick={() => navigate("/admin/expenses")}>
+                <Button variant="secondary" onClick={() => navigate("/expenses")}>
                     Back
                 </Button>
             </PageHeader>

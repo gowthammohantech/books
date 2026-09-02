@@ -729,7 +729,7 @@ const EditCreditNote: React.FC = () => {
             });
 
             toast.success('Credit note updated successfully.');
-            navigate('/admin/credit-notes');
+            navigate('/credit-notes');
         } catch (error: any) {
             if (error.response?.status !== 200 && error.response?.data?.errors) {
                 setFormErrors(error.response.data.errors);
@@ -1190,7 +1190,7 @@ const EditCreditNote: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => navigate('/admin/credit-notes')}>Cancel</Button>
+                    <Button variant="white" onClick={() => navigate('/credit-notes')}>Cancel</Button>
                     <SubmitButton isDisabled={isSaving} isLoading={isSaving} mode='edit' />
                 </div>
 

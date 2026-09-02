@@ -44,11 +44,11 @@ const SsoLanding = () => {
                 const contactId = params.get("contact_id");
                 const dealId = params.get("deal_id");
                 if (dealId) {
-                    navigate(`/admin/quotations/create?customer=${contactId ?? ""}`, { replace: true });
+                    navigate(`/quotations/create?customer=${contactId ?? ""}`, { replace: true });
                 } else if (contactId) {
-                    navigate(`/admin/customers?external=${contactId}`, { replace: true });
+                    navigate(`/customers?external=${contactId}`, { replace: true });
                 } else {
-                    navigate("/admin/dashboard", { replace: true });
+                    navigate("/dashboard", { replace: true });
                 }
             } catch (err: unknown) {
                 const message = axios.isAxiosError(err)
@@ -65,7 +65,7 @@ const SsoLanding = () => {
                 <>
                     <h2 className="text-xl font-semibold text-destructive">SSO failed</h2>
                     <p className="text-sm text-muted-foreground">{error}</p>
-                    <a href="/admin/login" className="text-sm text-primary hover:underline">
+                    <a href="/signin" className="text-sm text-primary hover:underline">
                         Sign in manually instead
                     </a>
                 </>

@@ -571,7 +571,7 @@ const RecurringScheduleForm: React.FC = () => {
                 await api.post(Constants.RECURRING_SCHEDULES_URL, payload, { headers });
                 toast.success('Schedule created successfully.');
             }
-            navigate('/admin/recurring-invoices');
+            navigate('/recurring-invoices');
         } catch (err: any) {
             if (err.response?.data?.errors) {
                 setFormErrors(err.response.data.errors);
@@ -966,7 +966,7 @@ const RecurringScheduleForm: React.FC = () => {
                     </div>
 
                     <div className="flex justify-end mt-4 gap-3">
-                        <Button variant="white" type="button" onClick={() => navigate('/admin/recurring-invoices')}>
+                        <Button variant="white" type="button" onClick={() => navigate('/recurring-invoices')}>
                             Cancel
                         </Button>
                         <Button type="submit" disabled={isSubmitting}>

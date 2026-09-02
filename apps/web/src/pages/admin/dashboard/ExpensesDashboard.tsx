@@ -78,7 +78,7 @@ const ExpensesDashboard: React.FC = () => {
         <div className="px-4 py-3 bg-gray-50 min-h-full font-sans border border-gray-200 rounded-md space-y-4">
             <PageHeader title="Expenses">
                 <DashboardSwitcher />
-                <button onClick={() => navigate('/admin/expenses')} className="bg-white border border-primary text-primary hover:bg-accent px-2 py-1 rounded-md shadow cursor-pointer flex items-center gap-2">All Expenses <ArrowRight size={14} /></button>
+                <button onClick={() => navigate('/expenses')} className="bg-white border border-primary text-primary hover:bg-accent px-2 py-1 rounded-md shadow cursor-pointer flex items-center gap-2">All Expenses <ArrowRight size={14} /></button>
             </PageHeader>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -110,7 +110,7 @@ const ExpensesDashboard: React.FC = () => {
                 <div className="bg-white border border-border rounded-xl shadow-sm p-4">
                     <div className="flex items-center justify-between mb-3">
                         <h2 className="text-md font-semibold text-gray-600">Recent Expenses</h2>
-                        <button onClick={() => navigate('/admin/reports/expense')} className="text-sm text-primary font-semibold flex items-center gap-1 cursor-pointer">Report <ArrowRight size={14} /></button>
+                        <button onClick={() => navigate('/reports/expense')} className="text-sm text-primary font-semibold flex items-center gap-1 cursor-pointer">Report <ArrowRight size={14} /></button>
                     </div>
                     <Table headers={["#", "Category", "Amount", "Mode", "Date"]}>
                         {expenses.length > 0 ? expenses.map((e, i) => (

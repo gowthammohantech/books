@@ -128,8 +128,8 @@ interface TallyBankRow {
 const BankTransactionList: React.FC = () => {
     const { token } = useSelector((state: RootState) => state.auth);
     const { formatDate } = useDateFormatter();
-    // Optional route param: when present (`/admin/banking/:bankId`) the list is
-    // locked to that bank; absent (`/admin/banking/transactions`) = all banks.
+    // Optional route param: when present (`/banking/:bankId`) the list is
+    // locked to that bank; absent (`/banking/transactions`) = all banks.
     const { bankId } = useParams<{ bankId?: string }>();
     const [rows, setRows] = useState<BankTransactionRow[]>([]);
     const [pagination, setPagination] = useState<PaginationData>({
@@ -658,7 +658,7 @@ const BankTransactionList: React.FC = () => {
                     <span>
                         <strong>Setup required:</strong> Choose your country to enable transaction categories.{" "}
                         <Link
-                            to="/admin/settings/ledger-setup"
+                            to="/settings/ledger-setup"
                             className="font-medium underline hover:opacity-80"
                         >
                             Go to Ledger Setup

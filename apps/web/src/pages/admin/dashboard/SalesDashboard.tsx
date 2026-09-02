@@ -85,7 +85,7 @@ const SalesDashboard: React.FC = () => {
         <div className="px-4 py-3 bg-gray-50 min-h-full font-sans border border-gray-200 rounded-md space-y-4">
             <PageHeader title="Sales & Invoices">
                 <DashboardSwitcher />
-                <button onClick={() => navigate('/admin/invoices')} className="bg-white border border-primary text-primary hover:bg-accent px-2 py-1 rounded-md shadow cursor-pointer flex items-center gap-2">All Invoices <ArrowRight size={14} /></button>
+                <button onClick={() => navigate('/invoices')} className="bg-white border border-primary text-primary hover:bg-accent px-2 py-1 rounded-md shadow cursor-pointer flex items-center gap-2">All Invoices <ArrowRight size={14} /></button>
             </PageHeader>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -155,7 +155,7 @@ const SalesDashboard: React.FC = () => {
                 <div className="bg-white border border-border rounded-xl shadow-sm p-4">
                     <div className="flex items-center justify-between mb-3">
                         <h2 className="text-md font-semibold text-gray-600">Top Debtors</h2>
-                        <button onClick={() => navigate('/admin/accounting/reports/ar-aging')} className="text-sm text-primary font-semibold flex items-center gap-1 cursor-pointer">AR Aging <ArrowRight size={14} /></button>
+                        <button onClick={() => navigate('/accounting/reports/ar-aging')} className="text-sm text-primary font-semibold flex items-center gap-1 cursor-pointer">AR Aging <ArrowRight size={14} /></button>
                     </div>
                     <Table headers={["#", "Customer", "Outstanding", "Oldest (days)"]}>
                         {data.topDebtors.map((d, i) => (
@@ -170,7 +170,7 @@ const SalesDashboard: React.FC = () => {
             )}
 
             <div className="flex justify-end">
-                <button onClick={() => navigate('/admin/reports/income')} className="text-sm text-primary font-semibold flex items-center gap-1 cursor-pointer"><Receipt size={14} /> Full Income Report <ArrowRight size={14} /></button>
+                <button onClick={() => navigate('/reports/income')} className="text-sm text-primary font-semibold flex items-center gap-1 cursor-pointer"><Receipt size={14} /> Full Income Report <ArrowRight size={14} /></button>
             </div>
         </div>
     );

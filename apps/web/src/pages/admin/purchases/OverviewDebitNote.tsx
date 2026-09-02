@@ -147,7 +147,7 @@ const OverviewDebitNote: React.FC = () => {
                     type="button"
                     variant="white"
                     size="sm"
-                    onClick={() => navigate("/admin/debit-notes")}
+                    onClick={() => navigate("/debit-notes")}
                 >
                     Back
                 </Button>
@@ -184,7 +184,7 @@ const OverviewDebitNote: React.FC = () => {
                     type="button"
                     variant="white"
                     size="sm"
-                    onClick={() => navigate("/admin/debit-notes")}
+                    onClick={() => navigate("/debit-notes")}
                 >
                     Back
                 </Button>

@@ -2883,7 +2883,7 @@ async function main(): Promise<void> {
   }
   console.log('-'.repeat(60));
   console.log(`Demo admin: ${DEMO_EMAIL} / Demo123$`);
-  console.log('Login at:  http://localhost:8080/admin/login');
+  console.log('Login at:  http://localhost:8080/signin');
 }
 
 main()

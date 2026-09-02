@@ -335,7 +335,7 @@ const ExpenseList: React.FC = () => {
                             ))
                         ]}
                         actions={tableActions}
-                        onRowClick={(item) => navigate(`/admin/expenses/view/${item.id}`)}
+                        onRowClick={(item) => navigate(`/expenses/view/${item.id}`)}
                     />
                 ))}
 

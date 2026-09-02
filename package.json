@@ -17,7 +17,9 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "clean": "node scripts/clean.mjs",
+    "clean:build": "node scripts/clean.mjs --build-only"
   },
   "devDependencies": {
     "baseline-browser-mapping": "^2.11.19",

@@ -1,441 +1,554 @@
-import { useState, useMemo, useEffect } from "react";
-import { NavLink, useLocation, useNavigate, Link } from "react-router-dom";
-import { ChevronDown, Plus, LifeBuoy } from "lucide-react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+    ChevronRight,
+    Plus,
+    LifeBuoy,
+    PanelLeftClose,
+    PanelLeftOpen,
+    Settings,
+} from "lucide-react";
 import { useSelector } from "react-redux";
-import { assetUrl } from "@utils/assetUrl";
 import BottomBar from "./layouts/BottomBar";
+import { cn } from "@lib/cn";
 import { resolveCompanyLogo } from "@utils/companyLogo";
-import { navItems, canView, canCreate } from "@lib/navigation";
+import { resolveNavPath as resolveSidebarPath } from "@lib/navPaths";
+import { badgesByRoute } from "@lib/workQueues";
+import { useWorkQueues } from "@hooks/useWorkQueues";
+import { canCreate } from "@lib/navigation";
+import {
+    buildNavModules,
+    findActiveNavRoute,
+    moduleRoutes,
+    type NavModule,
+} from "@lib/navModules";
 import type { RootState } from "@store/index";
-import type {
-    NavCollapsibleItem,
-    NavItemType,
-    NavLinkItem,
-} from "@models/sidebar";
+import type { NavLinkItem } from "@models/sidebar";
 import type { PermissionSet } from "@models/permissions";
 
-// --- Helper Functions for Link Styling ---
-const getLinkClasses = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center p-2 my-1 text-sm font-medium rounded-lg transition-colors duration-200 relative ${isActive
-        ? "bg-sidebar-accent text-sidebar-primary border-l-4 border-sidebar-primary"
-        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground border-l-4 border-transparent"
-    }`;
+/**
+ * A module rail whose children open in a flyout OVER the page.
+ *
+ * This replaced a tree of nested accordions. The problem is specific to the
+ * size of this nav: Accounts Management alone holds fourteen entries, so
+ * expanding it pushed every module below it off screen, and
+ * the thing you were aiming at moved while you aimed at it. A flyout fixes that
+ * for free — nothing in the rail moves when a module opens, because the
+ * children are not in the rail. navModules.ts does the flattening.
+ *
+ * The two widths differ only in whether the rail shows labels:
+ *
+ *   expanded   240px, icon + label + count, bands captioned
+ *   collapsed  64px, icon alone, bands reduced to a hairline
+ *
+ * Both open the SAME flyout on hover, focus or click. An earlier revision
+ * docked the children as a second 224px column when expanded, which made the
+ * expanded state a different interaction from the collapsed one — two
+ * behaviours to learn, and the wide state was the worse of the two. One
+ * mechanism at both widths is the point.
+ *
+ * The flyout is a DOM child of the row container even though it renders
+ * outside it: `mouseleave` follows the DOM, not the pixels, so moving the
+ * pointer from a rail row into the flyout is not a leave.
+ */
 
-const getSubLinkClasses = ({ isActive }: { isActive: boolean }) =>
-    `block py-2 px-2 text-sm font-medium rounded-md transition-colors duration-200 relative ${isActive
-        ? "bg-sidebar-accent text-sidebar-primary border-l-4 border-sidebar-primary"
-        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground border-l-4 border-transparent"
-    }`;
+const PANEL_ROW = "flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition-colors";
 
+/**
+ * How many things are waiting behind this entry.
+ *
+ * A module shows the sum of everything under it, so a "7" on Sales is the
+ * overdue invoices plus the expiring quotations you would find inside it.
+ * Without the roll-up an unselected module hides its own alerts, which is the
+ * one job the badge exists to do.
+ */
+const countFor = (routes: string[], badges: Record<string, number>): number =>
+    routes.reduce((total, route) => total + (badges[route] ?? 0), 0);
 
-// --- NavItem Component (for top-level links) ---
-const NavItem = ({
-    item,
-    isSidebarOpen,
-    permissions,
+const NavBadge = ({ count }: { count: number }) =>
+    count > 0 ? (
+        <span className="ml-auto shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[11px] font-semibold leading-none text-primary-foreground">
+            {count > 99 ? "99+" : count}
+        </span>
+    ) : null;
+
+/** The quick-create affordance, unchanged in behaviour from the accordion rail. */
+const AddButton = ({ to, title }: { to: string; title: string }) => (
+    <Link
+        to={to}
+        aria-label={`Add new ${title}`}
+        className="absolute right-1 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground opacity-0 transition-opacity group-hover/row:opacity-100 focus-visible:opacity-100"
+    >
+        <Plus size={14} />
+    </Link>
+);
+
+const ModuleRow = ({
+    navModule,
+    isActive,
+    isExpanded,
+    count,
+    onPeek,
 }: {
-    item: NavLinkItem;
-    isSidebarOpen: boolean;
-    permissions: PermissionSet[];
+    navModule: NavModule;
+    isActive: boolean;
+    isExpanded: boolean;
+    count: number;
+    onPeek: (element: HTMLElement) => void;
 }) => {
-    const { pathname: rawPathname } = useLocation();
-    const pathname = resolveSidebarPath(rawPathname);
-    const { to, icon, title, slug, addPath, exact } = item;
-    // "/admin" is the collapsed Dashboard entry: keep it lit on every dashboard
-    // view (/admin/dashboard/*) now that the per-view sidebar children are gone.
-    const isActive = to === "/admin"
-        ? pathname === to || pathname.startsWith("/admin/dashboard")
-        : exact ? pathname === to : pathname.startsWith(to);
+    const label = count > 0 ? `${navModule.title} (${count} waiting)` : navModule.title;
+    const hasChildren = navModule.sections.length > 0;
 
-    return (
-        <div className="relative group">
-            <NavLink to={to} className={getLinkClasses({ isActive })}>
-                <div className="flex items-center">
-                    {icon}
-                    <span
-                        className={`ml-2 transition-opacity font-medium duration-300 whitespace-nowrap ${isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-                            }`}
-                    >
-                        {title}
-                    </span>
-                </div>
-            </NavLink>
-            {isSidebarOpen && addPath && canCreate(slug, permissions) && (
-                <Link
-                    to={addPath}
-                    aria-label={`Add new ${title}`}
-                    className="absolute right-0 top-0 h-full w-8 flex items-center justify-center bg-sidebar-primary text-sidebar-primary-foreground rounded-r-lg opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                >
-                    <Plus size={18} />
-                </Link>
-            )}
-        </div>
+    const classes = cn(
+        "relative flex items-center rounded-xl transition-colors",
+        isExpanded ? "h-10 w-full gap-2.5 px-2.5" : "h-10 w-10 justify-center",
+        isActive
+            ? "bg-sidebar-accent text-sidebar-primary"
+            : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
     );
-};
 
-const SubNavLinkItem = ({
-    item,
-    permissions,
-}: {
-    item: NavLinkItem;
-    permissions: PermissionSet[];
-}) => {
-    const { to, title, slug, addPath, exact } = item;
-
-    return (
-        <div className="relative group/subitem">
-            <NavLink to={to} end={to === "/admin" || exact} className={getSubLinkClasses}>
-                <span>{title}</span>
-            </NavLink>
-
-            {addPath && canCreate(slug, permissions) && (
-                <Link
-                    to={addPath}
-                    aria-label={`Add new ${title}`}
-                    className="absolute right-0 top-0 h-full w-8 flex items-center justify-center bg-sidebar-primary text-sidebar-primary-foreground rounded-r-lg opacity-0 group-hover/subitem:opacity-100 focus-visible:opacity-100 transition-opacity"
-                >
-                    <Plus size={18} />
-                </Link>
-            )}
-        </div>
-    );
-};
-
-// --- CollapsibleNavItem Component ---
-interface CollapsibleNavItemProps {
-    item: NavCollapsibleItem;
-    isSidebarOpen: boolean;
-    openMenus: Record<string, boolean>;
-    activePath: string[];
-    onToggle: (id: string) => void;
-    level: number;
-    permissions: PermissionSet[];
-}
-
-// This is the updated CollapsibleNavItem component
-const CollapsibleNavItem = ({
-    item,
-    isSidebarOpen,
-    openMenus,
-    activePath,
-    onToggle,
-    level,
-    permissions,
-}: CollapsibleNavItemProps) => {
-    const { id, icon, title, children, slug, addPath } = item;
-    const isOpen = openMenus[id] || false;
-    const isChildActive = activePath.includes(id);
-
-    const paddingClass = "p-2 my-1";
-    const activeClass =
-        isChildActive && isSidebarOpen
-            ? "bg-gray-100 text-gray-800"
-            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground";
-
-    return (
-        <div className="relative group">
-            <button
-                onClick={() => onToggle(id)}
-                className={`flex items-center justify-between w-full text-sm font-medium rounded-lg transition-colors duration-300 text-left ${paddingClass} ${activeClass}`}
-                aria-expanded={isOpen}
-            >
-                <div className="flex items-center">
-                    {icon}
+    const body = (
+        <>
+            <span className="relative flex shrink-0 items-center justify-center">
+                {navModule.icon}
+                {/* Collapsed, the count is a dot: at 40px a two-digit pill
+                    crowds the icon out, and the figure itself is one row away
+                    in the flyout. Expanded, there is room for the number. */}
+                {!isExpanded && count > 0 && (
                     <span
-                        className={`ml-2 transition-opacity duration-300 whitespace-nowrap font-medium ${isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-                            }`}
-                    >
-                        {title}
-                    </span>
-                </div>
-                {isSidebarOpen && (
-                    <ChevronDown
-                        size={16}
-                        className={`transition-transform duration-300 ${isOpen ? "rotate-180" : ""
-                            }`}
+                        aria-hidden="true"
+                        className="absolute -right-1.5 -top-1.5 h-2 w-2 rounded-full bg-primary ring-2 ring-sidebar"
                     />
                 )}
-            </button>
-
-            {isSidebarOpen && addPath && canCreate(slug, permissions) && (
-                <Link
-                    to={addPath}
-                    aria-label={`Add new ${title}`}
-                    className="absolute right-0 top-0 h-full w-8 flex items-center justify-center bg-sidebar-primary text-sidebar-primary-foreground rounded-r-lg opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                >
-                    <Plus size={18} />
-                </Link>
+            </span>
+            {isExpanded && (
+                <>
+                    <span className="min-w-0 flex-1 truncate text-left text-sm font-medium">
+                        {navModule.title}
+                    </span>
+                    <NavBadge count={count} />
+                    {/* Points at where the children will appear — to the side,
+                        not below. A chevron-down here would promise an
+                        accordion that is not coming. */}
+                    {hasChildren && (
+                        <ChevronRight
+                            size={14}
+                            aria-hidden="true"
+                            className="shrink-0 text-sidebar-foreground/40"
+                        />
+                    )}
+                </>
             )}
+        </>
+    );
 
-            <div
-                className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen && isSidebarOpen ? "max-h-screen" : "max-h-0"
-                    }`}
-            >
-                <div
-                    className="space-y-1"
-                    style={{
-                        paddingLeft: level <= 1 ? level * 1.5 + "rem" : level - 0.5 + "rem",
-                    }}
+    return (
+        <div className={cn("relative flex py-0.5", isExpanded ? "px-2" : "justify-center")}>
+            {/* Inset marker rather than the old border-l-4: it reads as the rail
+                pointing at the module instead of the row growing a border. */}
+            {isActive && (
+                <span
+                    aria-hidden="true"
+                    className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-sidebar-primary"
+                />
+            )}
+            {navModule.to ? (
+                <Link
+                    to={navModule.to}
+                    title={isExpanded ? undefined : label}
+                    aria-label={label}
+                    aria-current={isActive ? "page" : undefined}
+                    className={classes}
+                    onMouseEnter={(event) => onPeek(event.currentTarget)}
+                    onFocus={(event) => onPeek(event.currentTarget)}
                 >
-                    {children.map((subItem) => {
-                        switch (subItem.type) {
-                            case "link":
-                                return (
-                                    <SubNavLinkItem
-                                        key={subItem.to}
-                                        item={subItem}
-                                        permissions={permissions}
-                                    />
-                                );
-                            case "collapsible":
-                                return (
-                                    <CollapsibleNavItem
-                                        key={subItem.id}
-                                        item={subItem}
-                                        isSidebarOpen={isSidebarOpen}
-                                        openMenus={openMenus}
-                                        activePath={activePath}
-                                        onToggle={onToggle}
-                                        level={level + 1}
-                                        permissions={permissions}
-                                    />
-                                );
-                            default:
-                                return null;
-                        }
-                    })}
-                </div>
-            </div>
+                    {body}
+                </Link>
+            ) : (
+                <button
+                    type="button"
+                    title={isExpanded ? undefined : label}
+                    aria-label={label}
+                    aria-current={isActive ? "true" : undefined}
+                    aria-haspopup={hasChildren ? "menu" : undefined}
+                    className={cn(classes, "cursor-pointer")}
+                    onClick={(event) => onPeek(event.currentTarget)}
+                    onMouseEnter={(event) => onPeek(event.currentTarget)}
+                    onFocus={(event) => onPeek(event.currentTarget)}
+                >
+                    {body}
+                </button>
+            )}
         </div>
     );
 };
 
-// --- Helper to find the full path of the active menu ---
-// Some document VIEW routes live outside their list path (e.g.
-// /admin/view-quotation/:id, /admin/view-invoice/:id). Map them to the owning
-// list path so the sidebar highlights the right menu + keeps its group open.
-const SIDEBAR_PATH_ALIASES: ReadonlyArray<readonly [string, string]> = [
-    ["/admin/view-quotation", "/admin/quotations"],
-    ["/admin/view-invoice", "/admin/invoices"],
-];
-const resolveSidebarPath = (pathname: string): string => {
-    for (const [from, to] of SIDEBAR_PATH_ALIASES) {
-        if (pathname === from || pathname.startsWith(`${from}/`)) return to;
-    }
-    return pathname;
-};
+const PanelRow = ({
+    item,
+    isActive,
+    permissions,
+    badges,
+}: {
+    item: NavLinkItem;
+    isActive: boolean;
+    permissions: PermissionSet[];
+    badges: Record<string, number>;
+}) => (
+    <div className="group/row relative">
+        {/* The padding belongs to the link, not to a wrapper: a row whose
+            hit area stops short of its own background is a target that looks
+            bigger than it is. */}
+        <Link
+            to={item.to}
+            aria-current={isActive ? "page" : undefined}
+            className={cn(
+                PANEL_ROW,
+                isActive
+                    ? "bg-sidebar-accent font-medium text-sidebar-primary"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            )}
+        >
+            <span className="truncate">{item.title}</span>
+            <NavBadge count={countFor([item.to], badges)} />
+        </Link>
+        {item.addPath && canCreate(item.slug, permissions) && (
+            <AddButton to={item.addPath} title={item.title} />
+        )}
+    </div>
+);
 
-const findActiveMenuPath = (
-    items: NavItemType[],
-    pathname: string
-): string[] => {
-    for (const item of items) {
-        if (item.type === "collapsible") {
-            if (
-                item.children.some(
-                    (child) =>
-                        child.type === "link" &&
-                        // "/admin" is the prefix of every admin route — match it
-                        // exactly so the Dashboards group doesn't activate everywhere.
-                        (child.to === "/admin"
-                            ? pathname === "/admin"
-                            : pathname.startsWith(child.to))
-                )
-            ) {
-                return [item.id];
-            }
-            const pathInChild = findActiveMenuPath(item.children, pathname);
-            if (pathInChild.length > 0) {
-                return [item.id, ...pathInChild];
-            }
-        }
-    }
-    return [];
-};
+/** A module's destinations, flat. The body of the flyout at either width. */
+const ModulePanel = ({
+    navModule,
+    activeRoute,
+    permissions,
+    badges,
+}: {
+    navModule: NavModule;
+    activeRoute: string | null;
+    permissions: PermissionSet[];
+    badges: Record<string, number>;
+}) => (
+    <>
+        <div className="flex h-10 shrink-0 items-center gap-2 px-3">
+            <h2 className="truncate text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
+                {navModule.panelTitle}
+            </h2>
+            {navModule.addPath && canCreate(navModule.slug, permissions) && (
+                <Link
+                    to={navModule.addPath}
+                    aria-label={`Add new ${navModule.title}`}
+                    title={`Add new ${navModule.title}`}
+                    className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-primary"
+                >
+                    <Plus size={15} />
+                </Link>
+            )}
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 pb-2">
+            {navModule.sections.map((section, index) => (
+                <div key={section.caption ?? `direct-${index}`} className={index > 0 ? "mt-3" : ""}>
+                    {/* The old third accordion level, demoted to a caption. */}
+                    {section.caption && (
+                        <p className="px-2.5 pb-1 pt-1 text-[11px] font-medium uppercase tracking-wider text-sidebar-foreground/40">
+                            {section.caption}
+                        </p>
+                    )}
+                    {section.items.map((item) => (
+                        <PanelRow
+                            key={item.to}
+                            item={item}
+                            isActive={item.to === activeRoute}
+                            permissions={permissions}
+                            badges={badges}
+                        />
+                    ))}
+                </div>
+            ))}
+        </div>
+    </>
+);
 
-const findPathToId = (items: NavItemType[], targetId: string): string[] => {
-    for (const item of items) {
-        if (item.type === "collapsible") {
-            // Check if the current item is the one we're looking for
-            if (item.id === targetId) {
-                return [item.id];
-            }
-            // If not, search in its children
-            const pathInChild = findPathToId(item.children, targetId);
-            // If found in a child, prepend the current item's ID to the path
-            if (pathInChild.length > 0) {
-                return [item.id, ...pathInChild];
-            }
-        }
-    }
-    // Return an empty array if not found
-    return [];
-};
-
-// --- Main Sidebar Component ---
-const Sidebar = ({ isOpen }: { isOpen: boolean }) => {
+const Sidebar = ({
+    isOpen,
+    onToggle,
+}: {
+    isOpen: boolean;
+    onToggle: () => void;
+}) => {
     const { pathname } = useLocation();
     const navigate = useNavigate();
 
     const { data: systemSettings } = useSelector(
         (state: RootState) => state.systemSettings
     );
-    const permissions = systemSettings?.permissions || [];
-
-    const activePath = useMemo(
-        () => findActiveMenuPath(navItems, resolveSidebarPath(pathname)),
-        [pathname]
+    const { activeTenant } = useSelector((state: RootState) => state.auth);
+    const permissions = useMemo(
+        () => systemSettings?.permissions || [],
+        [systemSettings?.permissions]
     );
-    const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+    // Shared with the dashboard tiles through a module-level cache, so the two
+    // never disagree and the dashboard does not pay for a second request.
+    const { counts } = useWorkQueues();
+    const badges = useMemo(() => badgesByRoute(counts ?? {}), [counts]);
 
+    // "" is the fresh-install default, so a blank string means "never set",
+    // not "set to nothing".
+    const hasOwnLogo = Boolean(systemSettings?.company?.siteLogo?.trim());
+    // Which company am I in. It sat in the top bar, which put it as far from
+    // the product name as the layout allows; under the wordmark it reads as
+    // one statement — this product, this company — and frees the top bar for
+    // the breadcrumb.
+    //
+    // activeTenant is the workspace the current token is scoped to, which is
+    // the same thing the footer and the picker name. CompanySettings.companyName
+    // is the fallback for a session that has not re-read /auth/session yet.
+    const subtitle =
+        activeTenant?.name?.trim() || systemSettings?.company?.companyName?.trim() || "";
+
+    const modules = useMemo(() => buildNavModules(permissions), [permissions]);
+    const active = useMemo(
+        () => findActiveNavRoute(modules, resolveSidebarPath(pathname)),
+        [modules, pathname]
+    );
+
+    // The children live in a flyout anchored to the row that opened it. Fixed
+    // rather than absolute: the rail scrolls, and an absolutely placed flyout
+    // would be clipped by its own scroll container.
+    const [peek, setPeek] = useState<{ id: string; top: number; left: number } | null>(null);
+    const peekModule = peek ? modules.find((navModule) => navModule.id === peek.id) : undefined;
+    const closePeek = useCallback(() => setPeek(null), []);
+
+    const openPeek = useCallback(
+        (navModule: NavModule, element: HTMLElement) => {
+            // A module that is only a link (Dashboard, Fixed Assets, Reports)
+            // has nothing to fly out; an empty panel would be a promise of
+            // content that never arrives.
+            if (navModule.sections.length === 0) {
+                setPeek(null);
+                return;
+            }
+            const rows = navModule.sections.reduce(
+                (total, section) => total + section.items.length + (section.caption ? 1 : 0),
+                0
+            );
+            const rect = element.getBoundingClientRect();
+            const height = Math.min(0.7 * window.innerHeight, 56 + rows * 32);
+            setPeek({
+                id: navModule.id,
+                left: rect.right + 8,
+                top: Math.max(8, Math.min(rect.top - 8, window.innerHeight - height - 16)),
+            });
+        },
+        []
+    );
+
+    // A flyout that outlives what opened it is a stray menu: close it when the
+    // rail changes width (the anchor coordinates go stale), when the route
+    // changes, and on Escape.
     useEffect(() => {
-        const newOpenState: Record<string, boolean> = {};
-        activePath.forEach((id) => {
-            newOpenState[id] = true;
-        });
-        setOpenMenus(newOpenState);
-    }, [activePath]);
-
-    const handleToggle = (id: string) => {
-        setOpenMenus((prev) => {
-            const isCurrentlyOpen = !!prev[id];
-
-            // If the user is trying to CLOSE an already open menu...
-            if (isCurrentlyOpen) {
-                // Find the path to the item being closed.
-                const path = findPathToId(navItems, id);
-                // The new state will be its parent's path.
-                const parentPath = path.slice(0, -1);
-                const newOpenState: Record<string, boolean> = {};
-                parentPath.forEach((pathId) => {
-                    newOpenState[pathId] = true;
-                });
-                return newOpenState;
-            }
-            // If the user is trying to OPEN a menu...
-            else {
-                // Find the full path to the item.
-                const pathToOpen = findPathToId(navItems, id);
-                // The new state will be this exact path, closing all other menus.
-                const newOpenState: Record<string, boolean> = {};
-                pathToOpen.forEach((pathId) => {
-                    newOpenState[pathId] = true;
-                });
-                return newOpenState;
-            }
-        });
-    };
-
-    const filterNavItems = useMemo(() => {
-        function filter(items: NavItemType[]): NavItemType[] {
-            return items
-                .map((item) => {
-                    if (item.type === "header") {
-                        return item;
-                    }
-
-                    if (!canView(item.slug, permissions)) {
-                        return null;
-                    }
-
-                    if (item.type === "collapsible") {
-                        const visibleChildren = filter(item.children);
-                        if (visibleChildren.length > 0) {
-                            return { ...item, children: visibleChildren };
-                        }
-                        return null;
-                    }
-                    return item;
-                })
-                .filter(Boolean) as NavItemType[];
-        }
-        return filter(navItems);
-    }, [permissions]);
+        setPeek(null);
+    }, [isOpen]);
+    useEffect(() => setPeek(null), [pathname]);
+    useEffect(() => {
+        if (!peek) return;
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") setPeek(null);
+        };
+        document.addEventListener("keydown", onKeyDown);
+        return () => document.removeEventListener("keydown", onKeyDown);
+    }, [peek]);
 
     return (
         <aside
-            className={`bg-sidebar text-sidebar-foreground flex flex-col h-screen transition-all duration-300 ease-in-out z-0 border-r border-sidebar-border ${isOpen ? "w-60" : "w-20"
-                }`}
+            className={cn(
+                "z-0 flex h-screen flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out",
+                isOpen ? "w-60" : "w-16"
+            )}
         >
-            <div className="p-4 flex items-center h-12">
-                {systemSettings?.company?.favicon && (
-                    <img
-                        src={assetUrl(systemSettings?.company?.favicon)}
-                        alt="Logo"
-                        className={`h-6 w-6 ${isOpen ? "hidden" : ""}`}
-                    />
-                )}
-                <span
-                    onClick={() => navigate("/admin/dashboard")}
-                    className={`text-xl font-medium ml-2 text-gray-950 transition-opacity duration-200 whitespace-nowrap cursor-pointer ${isOpen ? "opacity-100" : "opacity-0"
-                        }`}
+            {/* Product identity, not company identity - the company moved to
+                the footer, where the workspace switcher is.
+
+                An install that has uploaded its own siteLogo keeps it: this is
+                white-labelled on-prem, and replacing a customer's mark with our
+                wordmark would be a regression, not a redesign. The lettermark
+                below is the fallback for everyone else, which is most installs
+                (siteLogo defaults to ""). resolveCompanyLogo cannot answer
+                "did they set one?" - it always returns the bundled fallback -
+                so the raw value is what gets tested here.
+
+                Spans both columns, with the mark centred over the rail so it
+                sits in the same place at either width. */}
+            <div className="flex h-14 shrink-0 items-center border-b border-sidebar-border pr-3">
+                <button
+                    type="button"
+                    onClick={() => navigate("/dashboard")}
+                    aria-label="Go to dashboard"
+                    className="flex min-w-0 flex-1 cursor-pointer items-center"
                 >
-                    <img
-                        src={resolveCompanyLogo(systemSettings?.company?.siteLogo)}
-                        alt="Logo"
-                        className="w-32"
-                    />
-                </span>
+                    {hasOwnLogo && isOpen ? (
+                        // Only one branding element is rendered per state: a wide
+                        // logo left inside the 64px rail slot would either clip or
+                        // push the mark out of the collapsed rail entirely.
+                        <img
+                            src={resolveCompanyLogo(systemSettings?.company?.siteLogo)}
+                            alt="Logo"
+                            className="ml-4 w-32 object-contain"
+                        />
+                    ) : (
+                        <>
+                            <span className="flex w-16 shrink-0 justify-center">
+                                {hasOwnLogo ? (
+                                    <img
+                                        src={resolveCompanyLogo(
+                                            systemSettings?.company?.favicon ||
+                                            systemSettings?.company?.siteLogo
+                                        )}
+                                        alt="Logo"
+                                        className="h-8 w-8 object-contain"
+                                    />
+                                ) : (
+                                    <span
+                                        aria-hidden="true"
+                                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-xs font-bold tracking-tight text-primary-foreground"
+                                    >
+                                        EB
+                                    </span>
+                                )}
+                            </span>
+                            {isOpen && (
+                                <span className="flex min-w-0 flex-col text-left">
+                                    <span className="truncate text-sm font-semibold leading-tight text-sidebar-foreground">
+                                        Elixir Book
+                                    </span>
+                                    {subtitle && (
+                                        <span className="truncate text-[11px] leading-tight text-sidebar-foreground/60">
+                                            {subtitle}
+                                        </span>
+                                    )}
+                                </span>
+                            )}
+                        </>
+                    )}
+                </button>
             </div>
-            <nav className="flex-1 px-3 py-2 overflow-y-auto overflow-x-hidden">
-                {filterNavItems.map((item, index) => {
-                    switch (item.type) {
-                        case "header":
-                            return (
-                                <p
-                                    key={index}
-                                    className={`${index > 0 ? "mt-4 pt-2" : ""
-                                        } mb-1 text-xs font-medium text-gray-400 uppercase ${index > 0 ? "border-t border-sidebar-border" : ""
-                                        } tracking-wider transition-opacity duration-300 ease-in-out ${isOpen ? "opacity-100" : "hidden"
-                                        }`}
-                                >
-                                    {item.title}
-                                </p>
-                            );
-                        case "link":
-                            return (
-                                <NavItem
-                                    key={item.to}
-                                    item={item}
-                                    isSidebarOpen={isOpen}
-                                    permissions={permissions}
+
+            {/* The flyout is rendered inside this container on purpose: it is
+                positioned outside the sidebar, but mouseleave follows the DOM,
+                so crossing from a row into the flyout does not close it. */}
+            <div
+                className="relative flex min-h-0 flex-1 flex-col"
+                onMouseLeave={closePeek}
+            >
+                <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {modules.map((navModule, index) => {
+                        const startsBand =
+                            index === 0 || navModule.band !== modules[index - 1].band;
+                        return (
+                            <div key={navModule.id}>
+                                {/* Expanded, the band is a caption. Collapsed, a
+                                    hairline: at 64px a caption truncates to
+                                    nothing useful, and the grouping is all the
+                                    caption was carrying anyway. */}
+                                {startsBand &&
+                                    (isOpen ? (
+                                        <p
+                                            className={cn(
+                                                "px-4 pb-1 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/60",
+                                                index > 0 && "pt-3"
+                                            )}
+                                        >
+                                            {navModule.band}
+                                        </p>
+                                    ) : (
+                                        index > 0 && (
+                                            <div
+                                                aria-hidden="true"
+                                                className="mx-3 my-1.5 h-px bg-sidebar-border"
+                                            />
+                                        )
+                                    ))}
+                                <ModuleRow
+                                    navModule={navModule}
+                                    isActive={navModule.id === active?.moduleId}
+                                    isExpanded={isOpen}
+                                    count={countFor(moduleRoutes(navModule), badges)}
+                                    onPeek={(element) => openPeek(navModule, element)}
                                 />
-                            );
-                        case "collapsible":
-                            return (
-                                <CollapsibleNavItem
-                                    key={item.id}
-                                    item={item}
-                                    isSidebarOpen={isOpen}
-                                    openMenus={openMenus}
-                                    activePath={activePath}
-                                    onToggle={handleToggle}
-                                    level={1}
-                                    permissions={permissions}
-                                />
-                            );
-                        default:
-                            return null;
-                    }
-                })}
-            </nav>
-            {/* Pinned above the company footer so it stays reachable from any
-                scroll position in the nav. */}
-            <div className="px-3 pb-1 overflow-x-hidden">
-                <NavLink
-                    to="/admin/help"
-                    className={getLinkClasses}
-                    title={!isOpen ? "Get Help" : undefined}
-                >
-                    <LifeBuoy size={16} />
-                    <span
-                        className={`ml-2 transition-opacity font-medium duration-300 whitespace-nowrap ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-                            }`}
+                            </div>
+                        );
+                    })}
+                </nav>
+
+                {/* Settings and Get Help are pinned rather than filed under a
+                    module: they have to be reachable from every one of them,
+                    and at both widths. */}
+                <div className="shrink-0 border-t border-sidebar-border py-1">
+                    {[
+                        { to: "/settings", icon: <Settings size={16} />, label: "Settings" },
+                        { to: "/help", icon: <LifeBuoy size={16} />, label: "Get Help" },
+                    ].map((entry) => (
+                        <div
+                            key={entry.to}
+                            className={cn("flex py-0.5", isOpen ? "px-2" : "justify-center")}
+                        >
+                            <Link
+                                to={entry.to}
+                                title={isOpen ? undefined : entry.label}
+                                aria-label={entry.label}
+                                onMouseEnter={closePeek}
+                                onFocus={closePeek}
+                                className={cn(
+                                    "flex h-10 items-center rounded-xl text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                                    isOpen ? "w-full gap-2.5 px-2.5" : "w-10 justify-center"
+                                )}
+                            >
+                                <span className="shrink-0">{entry.icon}</span>
+                                {isOpen && (
+                                    <span className="truncate text-sm font-medium">{entry.label}</span>
+                                )}
+                            </Link>
+                        </div>
+                    ))}
+                    <div className={cn("flex py-0.5", isOpen ? "px-2" : "justify-center")}>
+                        <button
+                            type="button"
+                            onClick={onToggle}
+                            onMouseEnter={closePeek}
+                            onFocus={closePeek}
+                            aria-expanded={isOpen}
+                            aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+                            title={isOpen ? undefined : "Expand sidebar"}
+                            className={cn(
+                                "flex h-10 cursor-pointer items-center rounded-xl text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                                isOpen ? "w-full gap-2.5 px-2.5" : "w-10 justify-center"
+                            )}
+                        >
+                            <span className="shrink-0">
+                                {isOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+                            </span>
+                            {isOpen && <span className="truncate text-sm font-medium">Collapse</span>}
+                        </button>
+                    </div>
+                </div>
+
+                {peek && peekModule && (
+                    <div
+                        role="menu"
+                        aria-label={peekModule.panelTitle}
+                        className="fixed z-50 flex w-56 flex-col rounded-xl border border-sidebar-border bg-sidebar py-2 shadow-xl"
+                        style={{ top: peek.top, left: peek.left, maxHeight: "70vh" }}
                     >
-                        Get Help
-                    </span>
-                </NavLink>
+                        <ModulePanel
+                            navModule={peekModule}
+                            activeRoute={active?.to ?? null}
+                            permissions={permissions}
+                            badges={badges}
+                        />
+                    </div>
+                )}
             </div>
+
             <BottomBar isSidebarOpen={isOpen} />
         </aside>
     );

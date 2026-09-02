@@ -87,7 +87,7 @@ const CreateJournalEntry: React.FC = () => {
             };
             await api.post(Constants.CREATE_JOURNAL_ENTRY_URL, payload);
             toast.success("Journal entry created");
-            navigate("/admin/accounting/journal-entries");
+            navigate("/accounting/journal-entries");
         } catch (err) {
             const msg = axios.isAxiosError(err)
                 ? (err.response?.data as { message?: string } | undefined)?.message
@@ -224,7 +224,7 @@ const CreateJournalEntry: React.FC = () => {
                 <div className="flex justify-end gap-2 pt-2">
                     <Button
                         variant="white"
-                        onClick={() => navigate("/admin/accounting/journal-entries")}
+                        onClick={() => navigate("/accounting/journal-entries")}
                     >
                         Cancel
                     </Button>

@@ -142,11 +142,11 @@ const ContactList: React.FC = () => {
     };
 
     const handleRowClick = (contact: Contact) => {
-        navigate(`/admin/contacts/${contact.id}`);
+        navigate(`/contacts/${contact.id}`);
     };
 
     const handleEditClick = (contact: Contact) => {
-        navigate(`/admin/contacts/edit/${contact.id}`);
+        navigate(`/contacts/edit/${contact.id}`);
     };
 
     const handleDeleteClick = (contact: Contact) => {
@@ -303,7 +303,7 @@ const ContactList: React.FC = () => {
                     </Button>
                 )}
                 <Button
-                    onClick={() => navigate('/admin/contacts/new')}
+                    onClick={() => navigate('/contacts/new')}
                     leftIcon={<CirclePlusIcon size={14} />}
                 >
                     New Contact

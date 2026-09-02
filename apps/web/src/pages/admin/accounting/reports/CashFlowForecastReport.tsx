@@ -115,7 +115,7 @@ export default function CashFlowForecastReport() {
                       <td className="px-4 py-3">{formatDate(bucket.monthStart, 'M Y')}</td>
                       <td className="px-4 py-3 text-right font-mono text-success">
                         <DrillLink
-                          to="/admin/invoices"
+                          to="/invoices"
                           params={{ status: 'UNPAID', invoiceType: 'INVOICE' }}
                           title="View unpaid invoices"
                         >
@@ -124,7 +124,7 @@ export default function CashFlowForecastReport() {
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-destructive">
                         <DrillLink
-                          to="/admin/purchases"
+                          to="/purchases"
                           params={{ status: 'pending' }}
                           title="View pending purchases"
                         >

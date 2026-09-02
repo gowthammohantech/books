@@ -425,7 +425,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
             if (isEditMode) {
                 await api.put(`${Constants.UPDATE_PRODUCT_URL}/${productData?.id}`, submissionData, config);
                 toast.success("Item updated successfully!");
-                navigate('/admin/products');
+                navigate('/products');
             } else {
                 await api.post(Constants.CREATE_PRODUCT_URL, submissionData, config);
                 toast.success("Item created successfully!");
@@ -437,7 +437,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
                     setFormData({ name: '', code: '', category: '', brand: '', unit: '', selling_price: '', purchase_price: '', discount_type: 'Fixed', discount_value: 0, taxRateId: noTaxReset?.id ?? '', barcode: '', alert_quantity: 0, enable_inventory: false, stock: 0, description: '', valuationMethod: 'WAC', currencyCode: defaultCurrencyCode });
                     setProductImage(null); setProductImagePreview(''); setGalleryImages([]); setGalleryImagePreviews([]); setCustomFields({}); setFormErrors({});
                 } else {
-                    navigate('/admin/products');
+                    navigate('/products');
                 }
             }
         } catch (error: any) {
@@ -695,7 +695,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
 
                 {/* --- Action Buttons --- */}
                 <div className="flex justify-end space-x-4 pt-6 ">
-                    <Button variant="white" onClick={() => navigate('/admin/products')}>Cancel</Button>
+                    <Button variant="white" onClick={() => navigate('/products')}>Cancel</Button>
                     {!isEditMode && (
                         <Button type="submit" variant="white" disabled={isSubmitting} onClick={() => { addAnotherRef.current = true; }}>
                             Create &amp; Add Another

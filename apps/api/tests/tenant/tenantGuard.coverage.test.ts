@@ -21,10 +21,16 @@ import {
   EXPLICIT_MODELS,
 } from '../../lib/tenantGuard';
 
-const SCHEMA = fs.readFileSync(
-  path.resolve(__dirname, '../../prisma/schema.prisma'),
-  'utf8',
-);
+// Normalised to LF before anything parses it. The model regex below anchors on
+// an LF after the brace, and a clone with `core.autocrlf=true` — the Windows
+// default, with no .gitattributes pinning eol — checks the schema out with CRLF.
+// The regex then matches nothing, every model looks unclassified, and three
+// tests fail for a reason that has nothing to do with the tenant guard. CI runs
+// on LF, so this only ever bites a developer.
+const SCHEMA = fs
+  .readFileSync(path.resolve(__dirname, '../../prisma/schema.prisma'), 'utf8')
+  .split('\r\n')
+  .join('\n');
 
 /** `model Foo {` … up to the matching close, for every model in the schema. */
 function schemaModels(): Map<string, string> {

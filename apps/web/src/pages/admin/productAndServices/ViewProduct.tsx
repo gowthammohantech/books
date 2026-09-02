@@ -100,7 +100,7 @@ const ViewProduct: FC = () => {
                     <Button
                         variant="secondary"
                         leftIcon={<ArrowLeft size={14} />}
-                        onClick={() => navigate('/admin/products')}
+                        onClick={() => navigate('/products')}
                     >
                         Back
                     </Button>
@@ -127,7 +127,7 @@ const ViewProduct: FC = () => {
                 {hasPermission(permissions, 'product-services', 'edit') && (
                     <Button
                         leftIcon={<Edit size={14} />}
-                        onClick={() => navigate(`/admin/products/edit/${product.id}`)}
+                        onClick={() => navigate(`/products/edit/${product.id}`)}
                     >
                         Edit
                     </Button>
@@ -135,7 +135,7 @@ const ViewProduct: FC = () => {
                 <Button
                     variant="secondary"
                     leftIcon={<ArrowLeft size={14} />}
-                    onClick={() => navigate('/admin/products')}
+                    onClick={() => navigate('/products')}
                 >
                     Back
                 </Button>

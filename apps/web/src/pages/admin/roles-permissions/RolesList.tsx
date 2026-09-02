@@ -174,7 +174,7 @@ const RolesList: React.FC = () => {
     }
 
     const handlePermissionsClick = (item: RoleList) => {
-        navigate(`/admin/roles/permissions/${item.id}`);
+        navigate(`/roles/permissions/${item.id}`);
     }
     // Calculate pagination display text
     const from = (pagination.page - 1) * pagination.limit + 1;

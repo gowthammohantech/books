@@ -85,11 +85,11 @@ const TaxRateList: React.FC = () => {
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleCreateClick = () => {
-        navigate('/admin/settings/tax-rates/new');
+        navigate('/settings/tax-rates/new');
     };
 
     const handleEditClick = (item: TaxRate) => {
-        navigate(`/admin/settings/tax-rates/edit/${item.id}`);
+        navigate(`/settings/tax-rates/edit/${item.id}`);
     };
 
     const handleDeleteClick = (item: TaxRate) => {

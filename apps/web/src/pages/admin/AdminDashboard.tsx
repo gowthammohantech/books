@@ -3,12 +3,9 @@ import Constants from '@constants/api';
 import useDateFormatter from '@hooks/useDateFormatter';
 import type { RootState } from '@store/index';
 
-import { Calendar, Clock, Users, FileText, ShoppingCart, Truck, Receipt, LayoutGrid, ArrowRight, User, Package, BarChart2, BadgeDollarSign, CreditCard, AlertCircle } from 'lucide-react';
+import { Users, ShoppingCart, Truck, Receipt, ArrowRight, BarChart2, BadgeDollarSign, CreditCard, CheckCircle2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import dashboardBg from '@assets/images/dashboard-img.svg';
-import { CardItem } from '@components/admin/dashboard/CardItem';
-import { DashboardCard } from '@components/admin/dashboard/DashboardCard';
 import Table from '@components/admin/Table';
 import type { CustomersShape, PirchartShape, PurchaseStats, RecentInvoices, RecentPayments, RecentPurchase, SaleStats, SuppliersShape } from '@models/dashboard';
 import TableRow from '@components/admin/TableRow';
@@ -22,6 +19,10 @@ import ApexGradientPie from '@components/admin/dashboard/ApexGradientPie';
 import MultiLineAreaChart from '@components/admin/MultiLineAreaChart';
 import { PageHeader } from '@/context/PageHeaderContext';
 import DashboardSwitcher from '@components/admin/DashboardSwitcher';
+import StatsCard from '@components/admin/StatsCard';
+import { WORK_QUEUES } from '@lib/workQueues';
+import { useWorkQueues } from '@hooks/useWorkQueues';
+import { useAgentPanel } from '@context/AgentPanelContext';
 import { themeColor } from "@lib/designTokens";
 interface AgingBuckets {
     current: number;
@@ -64,13 +65,17 @@ interface GraphItem {
 
 const DashboardPage: React.FC = () => {
 
-    const { user, token } = useSelector((state: RootState) => state.auth);
+    const { token, activeTenant } = useSelector((state: RootState) => state.auth);
     const [time, setTime] = useState<Date>(new Date());
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const { formatDate, timeFormat } = useDateFormatter();
     const { format } = useCurrencyFormatter();
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
+    // Same module-level cache the sidebar badges read, so a tile and the badge
+    // beside it can never show different numbers.
+    const { counts: queueCounts } = useWorkQueues();
+    const { isAvailable: isAgentAvailable, open: openAgent } = useAgentPanel();
     const [dashboardData, setDashboardData] = useState<DashboardData>({
         totalInvoiceCount: 0,
         totalProductCount: 0,
@@ -133,6 +138,21 @@ const DashboardPage: React.FC = () => {
         if (hour < 18) return "Good Afternoon";
         return "Good Evening";
     };
+    // Only queues with something in them. A grid of zeroes is a grid nobody
+    // needs to read, which teaches people to stop reading it on the days it
+    // does have something.
+    const activeQueues = WORK_QUEUES.filter((queue) => (queueCounts?.[queue.key] ?? 0) > 0);
+    const pendingTotal = activeQueues.reduce(
+        (total, queue) => total + (queueCounts?.[queue.key] ?? 0),
+        0,
+    );
+    // "3 invoices overdue, 2 bank lines to explain" — the tiles, read out. Built
+    // from the same list so it can never name a queue the grid does not show.
+    const digestSentence = activeQueues
+        .map((queue) => `${queueCounts?.[queue.key]} ${queue.label.toLowerCase()}`)
+        .join(', ')
+        .concat('.');
+
     const fetchDashboardData = async () => {
         try {
             setIsLoading(true);
@@ -164,42 +184,111 @@ const DashboardPage: React.FC = () => {
                 <DashboardSwitcher />
             </PageHeader>
 
-            <div className="mt-2 p-4 bg-primary text-white rounded-xl shadow flex justify-between">
-                <div>
-                    <h2 className="text-2xl font-bold">{getGreeting()}, {user?.firstName + ' ' + user?.lastName || 'Guest'}</h2> {/* Use optional chaining and fallback */}
-                    <p className="mt-1">Welcome back! Stay on top of your invoices and customers today.</p>
-                    <div className="flex items-center mt-2 text-sm opacity-90">
-                        <Calendar size={16} className="mr-2" />
-                        <span>{formatDate(time, systemSettings?.dateFormat.format || 'd-m-Y')}</span>
-                        <Clock size={16} className="ml-4 mr-2" />
-                        <span>{formattedTime}</span>
-                    </div>
+            {/* The state of the business, in one line. The illustrated banner
+                this replaces said "Welcome back!" and nothing else — a hero's
+                worth of screen carrying no information. */}
+            <div className="mt-2">
+                <h2 className="text-2xl font-bold text-foreground">
+                    {getGreeting()}. Here&apos;s the state of the business.
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                    {[
+                        formatDate(time, systemSettings?.dateFormat.format || 'd-m-Y'),
+                        formattedTime,
+                        activeTenant?.name,
+                        activeTenant?.roleName && `Signed in as ${activeTenant.roleName}`,
+                    ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                </p>
+            </div>
+
+            {/* Money first: what is owed to us, what we owe, and the two halves
+                of sales. Amounts, not document counts — counts live in the
+                queue tiles below, where each one comes with somewhere to go. */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 w-full">
+                <StatsCard
+                    title="Receivables"
+                    period="Outstanding"
+                    value={format(dashboardData.sales.totalDueAmount || 0)}
+                    icon={<BadgeDollarSign className="w-5 h-5" />}
+                    accent="warning"
+                    color=""
+                />
+                <StatsCard
+                    title="Payables"
+                    period="Outstanding"
+                    value={format(dashboardData.purchases.totalDuePurchases || 0)}
+                    icon={<CreditCard className="w-5 h-5" />}
+                    accent="danger"
+                    color=""
+                />
+                <StatsCard
+                    title="Sales"
+                    period="All time"
+                    value={format(dashboardData.sales.totalSalesAmount || 0)}
+                    icon={<BarChart2 className="w-5 h-5" />}
+                    accent="primary"
+                    color=""
+                />
+                <StatsCard
+                    title="Collected"
+                    period="All time"
+                    value={format(dashboardData.sales.receivedAmount || 0)}
+                    icon={<CheckCircle2 className="w-5 h-5" />}
+                    accent="success"
+                    color=""
+                />
+            </div>
+
+            {/* Agent digest. Shown only when there is both an agent and
+                something for it to talk about — a banner announcing an empty
+                queue is noise on the one day the books are clean. */}
+            {isAgentAvailable && pendingTotal > 0 && (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-accent px-4 py-3 text-accent-foreground">
+                    <p className="flex items-start gap-3 text-sm">
+                        <span
+                            aria-hidden="true"
+                            className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold"
+                        >
+                            A
+                        </span>
+                        <span>
+                            Agent digest — {digestSentence} I can work through these with
+                            your approval.
+                        </span>
+                    </p>
+                    <button
+                        type="button"
+                        onClick={openAgent}
+                        className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                    >
+                        Ask the agent
+                    </button>
                 </div>
-                <img src={dashboardBg} className='w-30' />
-            </div>
+            )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4 w-full">
-                <DashboardCard title="Overview" icon={<LayoutGrid className="w-6 h-6" />}>
-                    <CardItem icon={<FileText className="w-5 h-5 text-primary" />} label="Invoices" value={dashboardData.totalInvoiceCount || 0} color="purple" />
-                    <CardItem icon={<User className="w-5 h-5 text-green-600" />} label="Customers" value={dashboardData.totalCustomerCount || 0} color="green" />
-                    <CardItem icon={<Package className="w-5 h-5 text-amber-600" />} label="Products" value={dashboardData.totalProductCount || 0} color="yellow" />
-                    <CardItem icon={<Truck className="w-5 h-5 text-blue-600" />} label="Suppliers" value={dashboardData.totalSupplierCount || 0} color="blue" />
-                </DashboardCard>
-
-                <DashboardCard title="Sales Statistics" icon={<BarChart2 className="w-6 h-6" />}>
-                    <CardItem icon={<BadgeDollarSign className="w-5 h-5 text-primary" />} label="Total Sales" value={format(dashboardData.sales.totalSalesAmount || 0)} color="purple" />
-                    <CardItem icon={<CreditCard className="w-5 h-5 text-green-600" />} label="Paid Amount" value={format(dashboardData.sales.receivedAmount || 0)} color="green" />
-                    <CardItem icon={<AlertCircle className="w-5 h-5 text-red-600" />} label="Amount Due" value={format(dashboardData.sales.totalDueAmount || 0)} color="red" />
-                    <CardItem icon={<FileText className="w-5 h-5 text-blue-600" />} label="Quotations" value={dashboardData.sales.quotationCount} color="blue" />
-                </DashboardCard>
-
-                <DashboardCard title="Purchase Statistics" icon={<ShoppingCart className="w-6 h-6" />}>
-                    <CardItem icon={<FileText className="w-5 h-5 text-primary" />} label="Total Purchases" value={format(dashboardData.purchases.totalPurchasesAmount || 0)} color="purple" />
-                    <CardItem icon={<CreditCard className="w-5 h-5 text-green-600" />} label="Paid Amount" value={format(dashboardData.purchases.totalPaidPurchases || 0)} color="green" />
-                    <CardItem icon={<AlertCircle className="w-5 h-5 text-red-600" />} label="Amount Due" value={format(dashboardData.purchases.totalDuePurchases || 0)} color="red" />
-                    <CardItem icon={<FileText className="w-5 h-5 text-blue-600" />} label="Debit Notes" value={dashboardData.purchases.debitNoteCount} color="blue" />
-                </DashboardCard>
-            </div>
+            {/* What is waiting for someone. */}
+            {activeQueues.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 w-full">
+                    {activeQueues.map((queue) => (
+                        <button
+                            key={queue.key}
+                            type="button"
+                            onClick={() => navigate(queue.to)}
+                            className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-colors hover:border-primary cursor-pointer"
+                        >
+                            <span>
+                                <span className="block font-medium text-card-foreground">{queue.label}</span>
+                                <span className="block text-sm text-muted-foreground">{queue.module}</span>
+                            </span>
+                            <span className="font-mono tabular-nums text-2xl font-bold text-destructive-strong">
+                                {queueCounts?.[queue.key]}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {/* Outstanding dues — Aging buckets + Top debtors (slice E.4) */}
             {dashboardData?.agingBuckets && (
@@ -306,7 +395,7 @@ const DashboardPage: React.FC = () => {
                             Recent Customers
                         </h4>
                         <button
-                            onClick={() => navigate("/admin/customers")}
+                            onClick={() => navigate("/customers")}
                             className="text-sm text-primary hover:text-white hover:bg-primary px-3 py-1 rounded-md flex items-center gap-1 transition-all duration-300">
                             View all <ArrowRight className="w-4 h-4" />
                         </button>
@@ -353,7 +442,7 @@ const DashboardPage: React.FC = () => {
                             Recent Suppliers
                         </h4>
                         <button
-                            onClick={() => navigate("/admin/suppliers")}
+                            onClick={() => navigate("/suppliers")}
                             className="text-sm text-green-600 hover:text-white hover:bg-green-600 px-3 py-1 rounded-md flex items-center gap-1 transition-all duration-300">
                             View all <ArrowRight className="w-4 h-4" />
                         </button>
@@ -399,7 +488,7 @@ const DashboardPage: React.FC = () => {
                         Recent Invoices
                     </h4>
                     <button
-                        onClick={() => navigate("/admin/invoices")}
+                        onClick={() => navigate("/invoices")}
                         className="text-sm text-blue-600 hover:text-white hover:bg-blue-600 px-3 py-1 rounded-md flex items-center gap-1 transition-all duration-300">
                         View all <ArrowRight className="w-4 h-4" />
                     </button>
@@ -492,7 +581,7 @@ const DashboardPage: React.FC = () => {
                             Recent Purchases
                         </h4>
                         <button
-                            onClick={() => navigate("/admin/purchases")}
+                            onClick={() => navigate("/purchases")}
                             className="text-sm text-green-600 hover:text-white hover:bg-green-600 px-3 py-1 rounded-md flex items-center gap-1 transition-all duration-300">
                             View all <ArrowRight className="w-4 h-4" />
                         </button>

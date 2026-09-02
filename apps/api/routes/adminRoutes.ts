@@ -666,6 +666,7 @@ router.get('/activity-logs', protect, requirePermission('activity-log', 'view'),
 //dashboard
 router.get('/dashboard', protect, requirePermission('dashboard', 'view'), dashboardController.getDashboard);
 router.get('/dashboard/accounts-planning', protect, requirePermission('dashboard', 'view'), dashboardPlanningController.accountsPlanning);
+router.get('/work-queues', protect, requirePermission('dashboard', 'view'), dashboardController.getWorkQueues);
 
 //expense
 router.post("/expenses", protect, requirePermission('expenses', 'create'), upload.single("attachment"), createExpenseValidator, expenseController.createExpense);

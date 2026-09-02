@@ -1,15 +1,19 @@
-import type { ReactNode } from "react";
+import { createElement, type ReactNode } from "react";
+import { BarChart2 } from "lucide-react";
 import type { NavItemType } from "@models/sidebar";
 import type { PermissionSet } from "@models/permissions";
 import { navItems, canCreate, canView } from "./navigation";
+import { settingsBands } from "./settingsCatalogue";
+import { reports } from "./reportCatalogue";
 
 /**
  * Command palette model.
  *
  * A "command" is one thing the palette can take you to. Everything here is
- * derived from the sidebar tree in `navigation.tsx`, so a menu entry added
- * there becomes searchable here for free — there is no second list to keep
- * in sync.
+ * derived from the app's nav sources — the sidebar tree in `navigation.tsx`,
+ * the settings catalogue in `settingsCatalogue.tsx` and the report catalogue in
+ * `reportCatalogue.ts` — so an entry added to any of them becomes searchable
+ * here for free. There is no separate list to keep in sync.
  */
 
 export type CommandKind = "navigate" | "create";
@@ -41,21 +45,22 @@ const singularize = (title: string): string => {
 
 /** Hand-written synonyms for labels people search by a different word. */
 const SYNONYMS: Record<string, string[]> = {
-    "/admin": ["home", "overview"],
-    "/admin/contacts": ["customers", "clients", "suppliers", "vendors"],
-    "/admin/invoices": ["sales", "receivables", "ar"],
-    "/admin/purchases": ["bills", "payables", "ap"],
-    "/admin/products": ["items", "stock", "sku"],
-    "/admin/expenses": ["spending", "costs"],
-    "/admin/accounting/chart-of-accounts": ["coa", "ledger", "accounts"],
-    "/admin/accounting/journal-entries": ["je", "manual entry"],
-    "/admin/accounting/reports/profit-loss": ["pnl", "income statement"],
-    "/admin/accounting/reports/balance-sheet": ["bs"],
-    "/admin/accounting/reports/trial-balance": ["tb"],
-    "/admin/accounting/cost-centers": ["departments", "profit centres"],
-    "/admin/users": ["staff", "team", "members"],
-    "/admin/roles": ["permissions", "access"],
-    "/admin/settings/tax-rates": ["gst", "vat", "taxes"],
+    "/": ["home", "overview"],
+    "/contacts": ["customers", "clients", "suppliers", "vendors"],
+    "/invoices": ["sales", "receivables", "ar"],
+    "/purchases": ["bills", "payables", "ap"],
+    "/products": ["items", "stock", "sku"],
+    "/expenses": ["spending", "costs"],
+    "/accounting/chart-of-accounts": ["coa", "ledger", "accounts"],
+    "/accounting/journal-entries": ["je", "manual entry"],
+    "/accounting/reports/profit-loss": ["pnl", "income statement"],
+    "/accounting/reports/balance-sheet": ["bs"],
+    "/accounting/reports/trial-balance": ["tb"],
+    "/accounting/cost-centers": ["departments", "profit centres"],
+    "/users": ["staff", "team", "members"],
+    "/roles": ["permissions", "access"],
+    "/settings/tax-rates": ["gst", "vat", "taxes"],
+    "/activity-log": ["activity log", "audit", "change log", "history", "who changed"],
 };
 
 /**
@@ -71,116 +76,133 @@ const SYNONYMS: Record<string, string[]> = {
  */
 type ExtraCommand = Omit<Command, "icon"> & { slug: string | null };
 
+/**
+ * The icon every catalogue-sourced report row carries. Built with
+ * `createElement` because this module is a `.ts` file — the catalogues that own
+ * markup are `.tsx`, and the report catalogue deliberately holds no ReactNode
+ * so it can stay importable from a plain node test.
+ */
+const REPORT_ICON: ReactNode = createElement(BarChart2, { size: 16 });
+
 const EXTRA_COMMANDS: ReadonlyArray<ExtraCommand> = [
     // Alternate dashboard views — sidebar shows only the single "Dashboard"
     // entry and expects you to use the on-page switcher to reach these.
     {
-        id: "nav:/admin/dashboard/sales",
+        id: "nav:/dashboard/sales",
         kind: "navigate",
         title: "Sales Dashboard",
         group: "Dashboard",
-        path: "/admin/dashboard/sales",
+        path: "/dashboard/sales",
         slug: "dashboard",
         keywords: ["sales & invoices", "overview"],
     },
     {
-        id: "nav:/admin/dashboard/accounts",
+        id: "nav:/dashboard/accounts",
         kind: "navigate",
         title: "Accounts Dashboard",
         group: "Dashboard",
-        path: "/admin/dashboard/accounts",
+        path: "/dashboard/accounts",
         slug: "dashboard",
         keywords: ["accounts & p&l", "pnl", "overview"],
     },
     {
-        id: "nav:/admin/dashboard/expenses",
+        id: "nav:/dashboard/expenses",
         kind: "navigate",
         title: "Expenses Dashboard",
         group: "Dashboard",
-        path: "/admin/dashboard/expenses",
+        path: "/dashboard/expenses",
         slug: "dashboard",
         keywords: ["spending", "overview"],
     },
     {
-        id: "nav:/admin/expense-categories",
+        id: "nav:/expense-categories",
         kind: "navigate",
         title: "Expense Categories",
         group: "Banking & Finance",
-        path: "/admin/expense-categories",
+        path: "/expense-categories",
         slug: "expenses",
         keywords: ["expense types", "categories"],
     },
     {
-        id: "create:/admin/recurring-schedules/new",
+        id: "create:/recurring-schedules/new",
         kind: "create",
         title: "New Recurring Schedule",
         group: "Sales",
-        path: "/admin/recurring-schedules/new",
+        path: "/recurring-schedules/new",
         slug: "recurring-invoices",
         keywords: ["create", "add", "new", "recurring invoice", "template"],
     },
     {
-        id: "nav:/admin/transactions",
+        id: "nav:/transactions",
         kind: "navigate",
         title: "Transactions",
         group: "Banking & Finance",
-        path: "/admin/transactions",
+        path: "/transactions",
         slug: "expenses",
         keywords: ["bank transactions", "ledger"],
     },
     {
-        id: "create:/admin/settings/tax-rates/new",
+        id: "create:/settings/tax-rates/new",
         kind: "create",
         title: "New Tax",
         group: "Settings › Finance Settings",
-        path: "/admin/settings/tax-rates/new",
+        path: "/settings/tax-rates/new",
         slug: "finance-settings",
         keywords: ["create", "add", "new", "tax rate", "gst", "vat"],
     },
     {
-        id: "nav:/admin/settings/account",
+        id: "nav:/settings",
+        kind: "navigate",
+        title: "All Settings",
+        group: "Settings",
+        path: "/settings",
+        slug: null,
+        keywords: ["preferences", "configuration", "setup", "admin"],
+    },
+    {
+        id: "nav:/settings/account",
         kind: "navigate",
         title: "Account Settings",
         group: "Settings",
-        path: "/admin/settings/account",
+        path: "/settings/account",
         slug: "general-settings",
         keywords: ["subscription", "plan"],
     },
     // Gateway configuration screens, reached today only by clicking through the
     // Payment Gateways page. Their routes carry no guard of their own.
     {
-        id: "nav:/admin/settings/payment-gateways/razorpay",
+        id: "nav:/settings/payment-gateways/razorpay",
         kind: "navigate",
         title: "Razorpay Configuration",
         group: "Settings › Payment Gateways",
-        path: "/admin/settings/payment-gateways/razorpay",
+        path: "/settings/payment-gateways/razorpay",
         slug: null,
         keywords: ["payment gateway", "upi"],
     },
     {
-        id: "nav:/admin/settings/payment-gateways/stripe",
+        id: "nav:/settings/payment-gateways/stripe",
         kind: "navigate",
         title: "Stripe Configuration",
         group: "Settings › Payment Gateways",
-        path: "/admin/settings/payment-gateways/stripe",
+        path: "/settings/payment-gateways/stripe",
         slug: null,
         keywords: ["payment gateway", "card"],
     },
     {
-        id: "nav:/admin/settings/profile",
+        id: "nav:/settings/profile",
         kind: "navigate",
         title: "Profile Settings",
         group: "Account",
-        path: "/admin/settings/profile",
+        path: "/settings/profile",
         slug: "general-settings",
         keywords: ["my account", "password", "avatar"],
     },
     {
-        id: "nav:/admin/help",
+        id: "nav:/help",
         kind: "navigate",
         title: "Get Help",
         group: "Account",
-        path: "/admin/help",
+        path: "/help",
         slug: null,
         keywords: ["support", "contact us"],
     },
@@ -194,11 +216,11 @@ const EXTRA_COMMANDS: ReadonlyArray<ExtraCommand> = [
         keywords: ["docs", "manual", "guide"],
     },
     {
-        id: "nav:/admin/logout",
+        id: "nav:/logout",
         kind: "navigate",
         title: "Log Out",
         group: "Account",
-        path: "/admin/logout",
+        path: "/logout",
         slug: null,
         keywords: ["sign out", "exit"],
     },
@@ -283,6 +305,77 @@ export const buildCommands = (
                 ? canCreate(slug, permissions)
                 : canView(slug, permissions);
         if (allowed) push(command);
+    }
+
+    // The settings catalogue is the app's *other* nav source: it drives the
+    // /settings landing cards and the settings shell's left nav, and none of it
+    // appears in `navItems`. Flattened here so the palette still reaches every
+    // settings page.
+    //
+    // Only for the real tree. A caller that supplies its own `items` is
+    // exercising the flattener against a fixture and should get exactly the
+    // destinations it declared, not the app's.
+    //
+    // Pushed last so a hand-written EXTRA_COMMANDS entry wins the id: those
+    // carry better palette labels ("Account Settings" over the catalogue's
+    // in-context "General") and their own synonyms.
+    if (items === navItems) {
+        // The report catalogue is the app's third nav source. The sidebar's
+        // Reports accordion collapsed into a single link to the Reports Center,
+        // which took twelve destinations out of `navItems` — and the seventeen
+        // accounting/tax/time reports were never in it to begin with. Flattened
+        // here so every report stays one keystroke away.
+        //
+        // No report has a menu entry any more: the Financial Statements and
+        // Finance Reports menus were the last ones, and they came out of the
+        // tree once the Reports Center indexed the same eleven paths. So this
+        // loop is the only writer for every report id, and a report's group is
+        // its catalogue category ("Reports › Payables") — which is also the
+        // breadcrumb resolveBreadcrumb will show for it.
+        for (const report of reports) {
+            if (report.slug !== null && !canView(report.slug, permissions)) {
+                continue;
+            }
+            push({
+                id: `nav:${report.path}`,
+                kind: "navigate",
+                title: report.name,
+                group: `Reports › ${report.category}`,
+                path: report.path,
+                icon: REPORT_ICON,
+                keywords: [
+                    "report",
+                    report.category,
+                    report.path,
+                    ...(SYNONYMS[report.path] ?? []),
+                ],
+            });
+        }
+
+        for (const band of settingsBands) {
+            for (const group of band.groups) {
+                for (const link of group.links) {
+                    if (link.slug !== null && !canView(link.slug, permissions)) {
+                        continue;
+                    }
+                    push({
+                        id: `nav:${link.to}`,
+                        kind: "navigate",
+                        title: link.title,
+                        group: `Settings › ${group.title}`,
+                        path: link.to,
+                        icon: group.icon,
+                        keywords: [
+                            "settings",
+                            band.title,
+                            group.title,
+                            link.to,
+                            ...(SYNONYMS[link.to] ?? []),
+                        ],
+                    });
+                }
+            }
+        }
     }
 
     return out;

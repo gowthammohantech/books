@@ -88,7 +88,7 @@ const AccountsDashboard: React.FC = () => {
         <div className="px-4 py-3 bg-gray-50 min-h-full font-sans border border-gray-200 rounded-md space-y-4">
             <PageHeader title="Accounts & P&L">
                 <DashboardSwitcher />
-                <button onClick={() => navigate('/admin/accounting/reports/profit-loss')} className="bg-white border border-primary text-primary hover:bg-accent px-2 py-1 rounded-md shadow cursor-pointer flex items-center gap-2">Full P&L <ArrowRight size={14} /></button>
+                <button onClick={() => navigate('/accounting/reports/profit-loss')} className="bg-white border border-primary text-primary hover:bg-accent px-2 py-1 rounded-md shadow cursor-pointer flex items-center gap-2">Full P&L <ArrowRight size={14} /></button>
             </PageHeader>
 
             {/* Monthly Sales vs Expenses */}

@@ -13,22 +13,22 @@ const perm = (slug: string, over: Partial<PermissionSet> = {}): PermissionSet =>
 // person the permission rows do not apply to.
 
 const tree: NavItemType[] = [
-    { type: 'link', to: '/admin', title: 'Dashboard', slug: 'dashboard' },
+    { type: 'link', to: '/', title: 'Dashboard', slug: 'dashboard' },
     {
         type: 'collapsible', id: 'sales', title: 'Sales', slug: 'sales', icon: null,
         children: [
-            { type: 'link', to: '/admin/invoices', title: 'Invoices', slug: 'invoices', addPath: '/admin/invoices/create-invoice' },
-            { type: 'link', to: '/admin/credit-notes', title: 'Credit Notes', slug: 'credit-notes' },
+            { type: 'link', to: '/invoices', title: 'Invoices', slug: 'invoices', addPath: '/invoices/create-invoice' },
+            { type: 'link', to: '/credit-notes', title: 'Credit Notes', slug: 'credit-notes' },
             {
                 type: 'collapsible', id: 'reports', title: 'Reports', slug: 'reports', icon: null,
                 children: [
-                    { type: 'link', to: '/admin/reports/sales', title: 'Sales', slug: 'reports' },
+                    { type: 'link', to: '/reports/sales', title: 'Sales', slug: 'reports' },
                 ],
             },
         ],
     },
     // Same `to` as its own list page: must not yield a redundant "New Budget" row.
-    { type: 'link', to: '/admin/budgets', title: 'Budgets', slug: 'accounting', addPath: '/admin/budgets' },
+    { type: 'link', to: '/budgets', title: 'Budgets', slug: 'accounting', addPath: '/budgets' },
 ];
 
 const allPerms = ['dashboard', 'sales', 'invoices', 'credit-notes', 'reports', 'accounting'].map((s) => perm(s));
@@ -37,13 +37,13 @@ const titles = (permissions = allPerms) => build(permissions).map((c) => c.title
 
 describe('buildCommands', () => {
     it('flattens nested menus and records the ancestor breadcrumb', () => {
-        const salesReport = build().find((c) => c.path === '/admin/reports/sales');
+        const salesReport = build().find((c) => c.path === '/reports/sales');
         expect(salesReport?.group).toBe('Sales › Reports');
     });
 
     it('emits a create command for addPath, singularizing the label', () => {
         const create = build().find((c) => c.kind === 'create');
-        expect(create).toMatchObject({ title: 'New Invoice', path: '/admin/invoices/create-invoice' });
+        expect(create).toMatchObject({ title: 'New Invoice', path: '/invoices/create-invoice' });
     });
 
     it('skips a create command whose addPath is the list page itself', () => {
@@ -101,7 +101,7 @@ describe('coverage of the real sidebar tree', () => {
         'Banking', 'Expenses', 'Petty Cash', 'Chart of Accounts',
         'Journal Entries', 'Budgets', 'Fixed Assets', 'Payroll Profiles',
         'Pay Runs', 'Time Tracking', 'Holidays', 'Users', 'Roles & Permissions',
-        'Activity Log', 'Company Settings', 'Email Settings', 'Bank Accounts',
+        'Audit Trail', 'Company Settings', 'Email Settings', 'Bank Accounts',
         'Currencies', 'Vehicles', 'Delivery Challans',
     ])('reaches %s', (title) => {
         expect(superAdminCommands.map((c) => c.title)).toContain(title);
@@ -118,7 +118,7 @@ describe('rankCommands', () => {
         rankCommands(commands, query, recents)[0]?.command.title;
 
     it('an empty query lists recents first, then nav order', () => {
-        const ranked = rankCommands(commands, '', ['nav:/admin/credit-notes']);
+        const ranked = rankCommands(commands, '', ['nav:/credit-notes']);
         expect(ranked[0].command.title).toBe('Credit Notes');
         expect(ranked[1].command.title).toBe('Dashboard');
     });
@@ -138,13 +138,13 @@ describe('rankCommands', () => {
 
     it('requires every token to match, so a multi-word query narrows', () => {
         const results = rankCommands(commands, 'sales report', []);
-        expect(results.map((r) => r.command.path)).toEqual(['/admin/reports/sales']);
+        expect(results.map((r) => r.command.path)).toEqual(['/reports/sales']);
     });
 
     it('matches on keywords that are not in the visible title', () => {
         // "receivables" is a registered synonym for the invoices list.
         expect(rankCommands(commands, 'receivables', []).map((r) => r.command.path))
-            .toContain('/admin/invoices');
+            .toContain('/invoices');
     });
 
     it('returns nothing when no command matches', () => {
@@ -153,7 +153,7 @@ describe('rankCommands', () => {
 
     it('lets a recent command break a tie without overriding a better match', () => {
         // "Credit Notes" is recent but "Invoices" is an exact title match.
-        expect(top('invoices', ['nav:/admin/credit-notes'])).toBe('Invoices');
+        expect(top('invoices', ['nav:/credit-notes'])).toBe('Invoices');
     });
 });
 

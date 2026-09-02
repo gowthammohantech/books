@@ -114,7 +114,18 @@ vi.mock('../../lib/prisma', () => {
           )
           .map((m) => ({
             ...m,
-            tenant: db.tenants.find((t) => t.id === m.tenantId) ?? { name: 'T', slug: 't' },
+            tenant: {
+              // Spread first so a real row's name/slug win, then supply the
+              // fields loadMemberships selects that this fake db has no
+              // columns for.
+              name: 'T',
+              slug: 't',
+              ...(db.tenants.find((t) => t.id === m.tenantId) ?? {}),
+              companySettings: null,
+              _count: {
+                memberships: db.memberships.filter((x) => x.tenantId === m.tenantId).length,
+              },
+            },
             role: db.roles.find((r) => r.id === m.roleId) ?? null,
           }))),
       count: vi.fn(async (args: { where: { tenantId?: string; userId?: string; isOwner?: boolean } }) =>

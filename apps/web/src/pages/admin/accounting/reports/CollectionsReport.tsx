@@ -155,7 +155,7 @@ export default function CollectionsReport() {
                       <td className="px-4 py-3 text-xs text-muted-foreground">{row.bucket}</td>
                       <td className="px-4 py-3"><DunningBadge stage={row.dunningStage} /></td>
                       <td className="px-4 py-3 text-right font-mono">
-                        <DrillLink to="/admin/invoices" params={{ status: AR_UNPAID_STATUSES, invoiceType: 'INVOICE', dueStartDate: row.dueDate.slice(0, 10), dueEndDate: row.dueDate.slice(0, 10) }} title="View invoices due on this date">{fmt(row.amount)}</DrillLink>
+                        <DrillLink to="/invoices" params={{ status: AR_UNPAID_STATUSES, invoiceType: 'INVOICE', dueStartDate: row.dueDate.slice(0, 10), dueEndDate: row.dueDate.slice(0, 10) }} title="View invoices due on this date">{fmt(row.amount)}</DrillLink>
                       </td>
                     </tr>
                   ))

@@ -745,7 +745,7 @@ const CreateDebitNote: React.FC = () => {
             });
 
             toast.success('Debit note created successfully.');
-            navigate('/admin/debit-notes');
+            navigate('/debit-notes');
         } catch (error: any) {
             if (error.response?.status !== 200 && error.response?.data?.errors) {
                 setFormErrors(error.response.data.errors);
@@ -1199,7 +1199,7 @@ const CreateDebitNote: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => navigate('/admin/debit-notes')}>Cancel</Button>
+                    <Button variant="white" onClick={() => navigate('/debit-notes')}>Cancel</Button>
                     <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode='create' />
                 </div>
 

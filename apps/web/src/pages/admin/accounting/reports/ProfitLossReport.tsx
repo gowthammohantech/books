@@ -110,7 +110,7 @@ export default function ProfitLossReport() {
             <div className="flex justify-between font-medium border-t pt-2 mt-2">
               <span>Total Revenue</span>
               <DrillLink
-                to="/admin/invoices"
+                to="/invoices"
                 params={{ startDate: from, endDate: to, invoiceType: 'INVOICE' }}
                 title="View invoices in this period"
               >
@@ -124,7 +124,7 @@ export default function ProfitLossReport() {
             <div className="flex justify-between">
               <span>COGS</span>
               <DrillLink
-                to="/admin/purchases"
+                to="/purchases"
                 params={{ startDate: from, endDate: to }}
                 title="View purchases in this period"
               >
@@ -149,7 +149,7 @@ export default function ProfitLossReport() {
               <div key={i} className="flex justify-between">
                 <span>{c.name}</span>
                 <DrillLink
-                  to="/admin/expenses"
+                  to="/expenses"
                   params={{ startDate: from, endDate: to, expenseCategoryId: c.categoryId }}
                   title="View expenses in this category"
                 >
@@ -160,7 +160,7 @@ export default function ProfitLossReport() {
             <div className="flex justify-between font-medium border-t pt-2 mt-2">
               <span>Total Opex</span>
               <DrillLink
-                to="/admin/expenses"
+                to="/expenses"
                 params={{ startDate: from, endDate: to }}
                 title="View all expenses in this period"
               >
@@ -201,7 +201,7 @@ export default function ProfitLossReport() {
             <div className="flex justify-between">
               <span>Output Tax Collected</span>
               <DrillLink
-                to="/admin/invoices"
+                to="/invoices"
                 params={{ startDate: from, endDate: to, invoiceType: 'INVOICE' }}
                 title="View invoices in this period"
               >
@@ -211,7 +211,7 @@ export default function ProfitLossReport() {
             <div className="flex justify-between">
               <span>Input Tax Paid</span>
               <DrillLink
-                to="/admin/purchases"
+                to="/purchases"
                 params={{ startDate: from, endDate: to }}
                 title="View purchases in this period"
               >

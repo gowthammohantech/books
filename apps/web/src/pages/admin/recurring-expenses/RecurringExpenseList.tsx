@@ -198,7 +198,7 @@ const RecurringExpenseList: React.FC = () => {
         <div className="space-y-4">
             <PageHeader title="Recurring Expenses">
                 <Link
-                    to="/admin/expenses"
+                    to="/expenses"
                     className="text-sm text-primary hover:underline"
                 >
                     Manage expenses

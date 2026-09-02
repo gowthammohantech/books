@@ -196,12 +196,12 @@ export default function PaymentGateways() {
               <div className="p-5">
                 <p className="text-xs text-muted-foreground mb-3">{g.note}</p>
                 {g.kind === 'RAZORPAY' && (
-                  <Link to="/admin/settings/payment-gateways/razorpay" className="text-sm text-primary underline">
+                  <Link to="/settings/payment-gateways/razorpay" className="text-sm text-primary underline">
                     Configure
                   </Link>
                 )}
                 {g.kind === 'STRIPE' && (
-                  <Link to="/admin/settings/payment-gateways/stripe" className="text-sm text-primary underline">
+                  <Link to="/settings/payment-gateways/stripe" className="text-sm text-primary underline">
                     Configure
                   </Link>
                 )}

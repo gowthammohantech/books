@@ -6,6 +6,7 @@ import { resolveDisplayName } from '../../lib/contacts/contactIdentity';
 import { requireTenantId, UnauthorizedError } from '../../lib/tenantScope';
 import { contactViewWhere } from '../../lib/contacts/contactRole';
 import { creditNoteTotalsByInvoice } from '../../lib/reports/aging';
+import { computeWorkQueues } from '../../lib/workQueues';
 
 // The canonical "real invoice" statuses — a DRAFT is not yet a sale and a
 // CANCELLED invoice was reversed, so neither contributes to sales/due KPIs.
@@ -40,6 +41,37 @@ function toNum(value: unknown): number {
 function imageUrl(baseUrl: string, image: string | null | undefined): string {
   if (!image) return '';
   return `${baseUrl}/${image.replace(/\\/g, '/')}`;
+}
+
+/**
+ * Just the queue counts, for the sidebar badges.
+ *
+ * The badges render on every page, and getDashboard is far too expensive to
+ * call for five integers. Same permission slug as the dashboard: these are the
+ * dashboard's numbers, shown somewhere else.
+ */
+export async function getWorkQueues(req: Request, res: Response): Promise<void> {
+  try {
+    const tenantId = requireTenantId(req);
+    // Start of day — an invoice due today is not overdue yet.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    res.status(200).json({
+      success: true,
+      message: 'Work queues retrieved successfully',
+      data: await computeWorkQueues(tenantId, today),
+    });
+  } catch (error) {
+    if (handleUnauthorized(res, error)) return;
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Error fetching work queues:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching work queues',
+      error: message,
+    });
+  }
 }
 
 export async function getDashboard(req: Request, res: Response): Promise<void> {
@@ -554,6 +586,14 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
       .sort((a, b) => b.outstanding - a.outstanding)
       .slice(0, 10);
 
+    // ---------- WORK QUEUES ----------
+    // Folded in rather than fetched separately: this handler is already making
+    // twenty-odd queries, so the dashboard gets its tiles without a second
+    // round trip. GET /admin/work-queues serves the same numbers to the sidebar
+    // badges on every other page. `now` is midnight-today, which is the
+    // boundary computeWorkQueues wants.
+    const workQueues = await computeWorkQueues(tenantId, now);
+
     // ---------- RESPONSE ----------
     res.status(200).json({
       success: true,
@@ -585,6 +625,7 @@ export async function getDashboard(req: Request, res: Response): Promise<void> {
         salesComparison,
         agingBuckets,
         topDebtors,
+        workQueues,
       },
     });
   } catch (error) {

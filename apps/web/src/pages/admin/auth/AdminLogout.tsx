@@ -24,7 +24,7 @@ const AdminLogout: React.FC = () => {
         dispatch(logout());
     }, [dispatch]);
 
-    return <Navigate to="/admin/login" replace />;
+    return <Navigate to="/signin" replace />;
 };
 
 export default AdminLogout;

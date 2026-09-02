@@ -13,6 +13,13 @@ export interface TenantSummary {
     /** The role this person holds IN THIS WORKSPACE — it differs per workspace. */
     roleName: string | null;
     isOwner: boolean;
+    /** Display-only context for the workspace picker. Null until /setup has
+     *  run, since city lives on CompanySettings. */
+    city?: string | null;
+    /** People with an ACTIVE membership of that workspace. */
+    memberCount?: number;
+    /** Tenant.plan. A label only — no subscription model enforces it. */
+    plan?: string | null;
 }
 
 /** The workspace the current token is scoped to. */

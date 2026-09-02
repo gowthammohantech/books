@@ -46,11 +46,11 @@ const VehicleList: React.FC = () => {
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleCreateClick = () => {
-        navigate('/admin/vehicles/new');
+        navigate('/vehicles/new');
     };
 
     const handleEditClick = (item: Vehicle) => {
-        navigate(`/admin/vehicles/edit/${item.id}`);
+        navigate(`/vehicles/edit/${item.id}`);
     };
 
     const handleDeleteClick = (item: Vehicle) => {
@@ -218,7 +218,7 @@ const VehicleList: React.FC = () => {
                             vehicle.customerId
                                 ? (
                                     <Link
-                                        to={`/admin/customers/edit/${vehicle.customerId}`}
+                                        to={`/customers/edit/${vehicle.customerId}`}
                                         className="text-primary hover:underline"
                                         onClick={(e) => e.stopPropagation()}
                                     >
@@ -234,7 +234,7 @@ const VehicleList: React.FC = () => {
                             </Badge>,
                         ]}
                         actions={canEdit || canDelete ? tableActions : undefined}
-                        onRowClick={(item) => navigate(`/admin/vehicles/edit/${item.id}`)}
+                        onRowClick={(item) => navigate(`/vehicles/edit/${item.id}`)}
                     />
                 ))}
                 {!isLoading && !vehicles.length &&

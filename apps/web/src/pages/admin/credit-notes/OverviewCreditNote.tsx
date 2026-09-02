@@ -142,7 +142,7 @@ const OverviewCreditNote: React.FC = () => {
             <div className="flex flex-col items-center justify-center gap-4 py-10">
                 <p className="text-gray-950 font-semibold">Credit note not found</p>
                 <button
-                    onClick={() => navigate("/admin/credit-notes")}
+                    onClick={() => navigate("/credit-notes")}
                     className="bg-gray-200 hover:bg-gray-300 text-gray-950 px-3 py-1 rounded-md shadow cursor-pointer"
                 >  Back
                 </button>
@@ -177,7 +177,7 @@ const OverviewCreditNote: React.FC = () => {
                 />
                 {/* Back Button */}
                 <button
-                    onClick={() => navigate("/admin/credit-notes")}
+                    onClick={() => navigate("/credit-notes")}
                     className="bg-gray-200 hover:bg-gray-300 text-gray-950 px-2 py-1 rounded-md shadow cursor-pointer flex items-center gap-2"
                 >  Back
                 </button>

@@ -18,11 +18,11 @@ import { PageHeader } from "@/context/PageHeaderContext";
 
 /** Pages people most often land on after asking "where do I change X?". */
 const COMMON_TASKS: Array<{ to: string; label: string }> = [
-    { to: "/admin/settings/company-settings", label: "Company details, logo & tax numbers" },
-    { to: "/admin/settings/email-settings", label: "Outgoing email (SMTP) setup" },
-    { to: "/admin/settings/document-defaults", label: "Invoice & document defaults" },
-    { to: "/admin/users", label: "Invite or deactivate users" },
-    { to: "/admin/roles", label: "Roles & permissions" },
+    { to: "/settings/company-settings", label: "Company details, logo & tax numbers" },
+    { to: "/settings/email-settings", label: "Outgoing email (SMTP) setup" },
+    { to: "/settings/document-defaults", label: "Invoice & document defaults" },
+    { to: "/users", label: "Invite or deactivate users" },
+    { to: "/roles", label: "Roles & permissions" },
 ];
 
 /**
@@ -178,7 +178,7 @@ const GetHelp = () => {
                             No support contact has been set yet. Add an email address and
                             phone number under{" "}
                             <Link
-                                to="/admin/settings/company-settings"
+                                to="/settings/company-settings"
                                 className="text-primary underline"
                             >
                                 Company Settings

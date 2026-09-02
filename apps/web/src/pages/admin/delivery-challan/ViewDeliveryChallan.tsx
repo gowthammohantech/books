@@ -72,7 +72,7 @@ const ViewDeliveryChallan: React.FC = () => {
                         documentTitle={challanDetails?.challanNumber ? `Challan-${challanDetails.challanNumber}` : 'Challan'}
                         normalLabel="Normal (A4)"
                     />
-                    <Button variant="secondary" onClick={() => navigate("/admin/delivery-challans")}>
+                    <Button variant="secondary" onClick={() => navigate("/delivery-challans")}>
                         <ArrowLeft size={16} /> Back
                     </Button>
                 </div>

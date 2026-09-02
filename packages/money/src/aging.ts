@@ -44,10 +44,20 @@ export interface DueWindow {
   dueEndDate?: string;
 }
 
-/** `asOf` shifted back `days` days, as a YYYY-MM-DD string. */
+/**
+ * `asOf` shifted back `days` days, as a YYYY-MM-DD string.
+ *
+ * Entirely in UTC, and deliberately so. This used to parse at LOCAL midnight
+ * (`T00:00:00`) and then format with `toISOString`, which is UTC — east of
+ * Greenwich those are different days, so local midnight in UTC+05:30 is 18:30
+ * the day before and every window boundary came back one day early. A calendar
+ * date shifted by whole days must not depend on where the reader is sitting,
+ * and the drift was invisible to CI because it runs in UTC, where the two
+ * agree.
+ */
 function shiftDays(asOf: string, days: number): string {
-  const d = new Date(`${asOf}T00:00:00`);
-  d.setDate(d.getDate() - days);
+  const d = new Date(`${asOf}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - days);
   return d.toISOString().slice(0, 10);
 }
 

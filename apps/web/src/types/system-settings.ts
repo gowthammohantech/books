@@ -12,6 +12,10 @@ export interface Company {
     companyLogo: string;
     favicon: string;
     taxRegime?: string;
+    /** 1-12. Already returned by getBasicDetails — that endpoint sends the
+     *  whole CompanySettings row and strips only the four audit columns — but
+     *  it was missing from this type, so nothing could read it. */
+    fiscalYearStartMonth?: number | null;
     gstin?: string;
     vatNumber?: string;
     abn?: string;

@@ -266,7 +266,7 @@ const EmailQuotation: React.FC = () => {
                     You need to configure your SMTP or NodeMailer settings before sending quotations.
                 </p>
                 <button
-                    onClick={() => navigate("/admin/settings/email-settings")}
+                    onClick={() => navigate("/settings/email-settings")}
                     className="px-6 py-2 bg-primary text-white rounded-md hover:bg-primary/90 flex items-center gap-2"
                 >
                     <Settings size={18} /> Configure Email Settings

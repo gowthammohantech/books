@@ -209,7 +209,7 @@ const PaymentTransactionList: React.FC = () => {
                             tx.invoice && tx.invoice.id
                                 ? (
                                     <Link
-                                        to={`/admin/invoices/edit-invoice/${tx.invoice.id}`}
+                                        to={`/invoices/edit-invoice/${tx.invoice.id}`}
                                         className="text-primary hover:underline"
                                     >
                                         {tx.invoice.invoiceNumber ?? tx.invoice.id.slice(0, 8)}

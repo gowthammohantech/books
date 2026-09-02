@@ -195,7 +195,7 @@ const InvoiceList: React.FC = () => {
             return;
         }
         setTenantValue("nextInvoiceNo", nextInvoiceNo);
-        navigate("/admin/invoices/create-invoice");
+        navigate("/invoices/create-invoice");
     }
 
     const handleSearch = (value: string) => {
@@ -326,7 +326,7 @@ const InvoiceList: React.FC = () => {
     };
 
     const handleEditClick = (item: Invoice) => {
-        navigate(`/admin/invoices/edit-invoice/${item.id}`);
+        navigate(`/invoices/edit-invoice/${item.id}`);
     }
     const handleDeleteClick = (item: Invoice) => {
         setItemToDelete(item);
@@ -427,7 +427,7 @@ const InvoiceList: React.FC = () => {
                         index={(page - 1) * limit + index + 1}
                         row={invoice}
                         columns={[
-                            <a href={`/admin/view-invoice/${invoice.id}`} onClick={(e) => e.stopPropagation()} // inline-block + py-1 lifts the hit area to ~26px; as a bare inline link it
+                            <a href={`/view-invoice/${invoice.id}`} onClick={(e) => e.stopPropagation()} // inline-block + py-1 lifts the hit area to ~26px; as a bare inline link it
                             // measured 18px tall, under the 24x24 minimum in WCAG 2.2 SC 2.5.8.
                             className="inline-block py-1 text-primary font-medium cursor-pointer hover:underline">{invoice.invoiceNumber}</a>,
                             <Badge color={invoice.invoiceType === 'PROFORMA' ? 'info' : 'success'}>
@@ -454,7 +454,7 @@ const InvoiceList: React.FC = () => {
                             ))
                         ]}
                         actions={getTableActions(invoice)}
-                        onRowClick={(item) => navigate(`/admin/view-invoice/${item.id}`)}
+                        onRowClick={(item) => navigate(`/view-invoice/${item.id}`)}
                     />
                 ))}
 

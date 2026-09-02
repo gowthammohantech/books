@@ -45,12 +45,12 @@ export const getAuthToken = (): string | undefined => Cookies.get('authToken');
 /**
  * Paths where a 401 must NOT bounce the user to login.
  *
- * /setup and /register are where a user completes signup and workspace setup; a
+ * /setup and /signup are where a user completes signup and workspace setup; a
  * transient 401 there should surface inline beside the form rather than discard
- * what they have typed. /admin/login is on the list for the obvious reason.
+ * what they have typed. /signin is on the list for the obvious reason.
  */
-export const LOGIN_PATH = '/admin/login';
-export const NO_REDIRECT_PATHS = [LOGIN_PATH, '/setup', '/register'];
+export const LOGIN_PATH = '/signin';
+export const NO_REDIRECT_PATHS = [LOGIN_PATH, '/setup', '/signup'];
 
 export const isNoRedirectPath = (pathname: string): boolean =>
   NO_REDIRECT_PATHS.some((p) => pathname.startsWith(p));

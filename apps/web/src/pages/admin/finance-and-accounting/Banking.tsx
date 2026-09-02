@@ -259,7 +259,7 @@ const Banking: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {/* Petty Cash Row */}
-                            <tr className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => navigate('/admin/petty-cash')}>
+                            <tr className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => navigate('/petty-cash')}>
                                 <td className="py-2 px-6">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full border border-indigo-200 flex items-center justify-center">
@@ -284,7 +284,7 @@ const Banking: React.FC = () => {
                             {/* Bank Accounts */}
                             {bankAccounts && bankAccounts.length > 0 ? (
                                 bankAccounts.map((bankAccount) => (
-                                    <tr key={bankAccount.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => navigate(`/admin/banking/${bankAccount.id}`)}>
+                                    <tr key={bankAccount.id} className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => navigate(`/banking/${bankAccount.id}`)}>
                                         <td className="py-2 px-6">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-full border border-indigo-200 flex items-center justify-center">

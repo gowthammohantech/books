@@ -1028,7 +1028,7 @@ const CreateInvoice: React.FC = () => {
 
             toast.success('Invoice created successfully.');
             isDirtyRef.current = false;
-            navigate('/admin/invoices');
+            navigate('/invoices');
         } catch (error: any) {
             if (error.response?.status !== 200 && error.response?.data?.errors) {
                 setFormErrors(error.response.data.errors);
@@ -1611,7 +1611,7 @@ const CreateInvoice: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => { if (confirmIfDirty(isDirtyRef.current)) navigate('/admin/invoices'); }}>Cancel</Button>
+                    <Button variant="white" onClick={() => { if (confirmIfDirty(isDirtyRef.current)) navigate('/invoices'); }}>Cancel</Button>
                     <Button
                         disabled={isSubmitting}
                         onClick={handleSaveAsDraft}

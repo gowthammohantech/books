@@ -5,7 +5,7 @@ type ParamValue = string | number | null | undefined;
 
 interface Props {
     /**
-     * Target route to drill into (e.g. "/admin/invoices"). When omitted the
+     * Target route to drill into (e.g. "/invoices"). When omitted the
      * value renders as plain text — used for derived/arithmetic figures
      * (Gross Profit, Net Income, …) that have no underlying row set.
      */

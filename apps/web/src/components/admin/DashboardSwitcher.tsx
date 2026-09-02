@@ -1,10 +1,10 @@
 import { NavLink } from 'react-router-dom';
 
 const DASHBOARDS = [
-    { to: '/admin', label: 'Overview', end: true },
-    { to: '/admin/dashboard/sales', label: 'Sales & Invoices' },
-    { to: '/admin/dashboard/accounts', label: 'Accounts & P&L' },
-    { to: '/admin/dashboard/expenses', label: 'Expenses' },
+    { to: '/', label: 'Overview', end: true },
+    { to: '/dashboard/sales', label: 'Sales & Invoices' },
+    { to: '/dashboard/accounts', label: 'Accounts & P&L' },
+    { to: '/dashboard/expenses', label: 'Expenses' },
 ] as const;
 
 /**

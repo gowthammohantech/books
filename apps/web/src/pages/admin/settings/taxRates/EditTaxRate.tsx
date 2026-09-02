@@ -71,7 +71,7 @@ const EditTaxRate: React.FC = () => {
             });
             toast.success('Tax rate deleted successfully');
             setDeleteModalOpen(false);
-            navigate('/admin/settings/tax-rates');
+            navigate('/settings/tax-rates');
         } catch (error) {
             console.error('Error deleting tax rate:', error);
             toast.error('Failed to delete tax rate.');

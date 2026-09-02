@@ -118,7 +118,7 @@ export default function ApAgingReport() {
               <div key={key} className="border rounded p-3 text-center">
                 <div className="text-xs text-gray-500 mb-1">{BUCKET_LABELS[key]}</div>
                 <div className="text-sm font-semibold text-right">
-                  <DrillLink to="/admin/purchases" params={{ status: AP_UNPAID_STATUSES, ...bucketDueWindow(data.asOf.slice(0, 10), key) }} title="View purchases in this bucket">{fmt(buckets[key])}</DrillLink>
+                  <DrillLink to="/purchases" params={{ status: AP_UNPAID_STATUSES, ...bucketDueWindow(data.asOf.slice(0, 10), key) }} title="View purchases in this bucket">{fmt(buckets[key])}</DrillLink>
                 </div>
               </div>
             ))}
@@ -150,7 +150,7 @@ export default function ApAgingReport() {
                       <td className="px-4 py-3">{formatDate(row.dueDate)}</td>
                       <td className="px-4 py-3 text-right">{row.daysOverdue}</td>
                       <td className="px-4 py-3 text-right font-mono">
-                        <DrillLink to="/admin/purchases" params={{ status: AP_UNPAID_STATUSES, dueStartDate: row.dueDate.slice(0, 10), dueEndDate: row.dueDate.slice(0, 10) }} title="View purchases due on this date">{fmt(row.amount)}</DrillLink>
+                        <DrillLink to="/purchases" params={{ status: AP_UNPAID_STATUSES, dueStartDate: row.dueDate.slice(0, 10), dueEndDate: row.dueDate.slice(0, 10) }} title="View purchases due on this date">{fmt(row.amount)}</DrillLink>
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">{row.bucket}</td>
                     </tr>

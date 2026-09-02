@@ -95,7 +95,7 @@ const ViewInvoice: React.FC = () => {
                         type="button"
                         variant="primary"
                         size="sm"
-                        onClick={() => navigate(`/admin/invoices/edit-invoice/${invoiceDetails.id}`)}
+                        onClick={() => navigate(`/invoices/edit-invoice/${invoiceDetails.id}`)}
                     >
                         Edit Invoice
                     </Button>
@@ -104,7 +104,7 @@ const ViewInvoice: React.FC = () => {
                     type="button"
                     variant="white"
                     size="sm"
-                    onClick={() => navigate("/admin/invoices")}
+                    onClick={() => navigate("/invoices")}
                 >
                     Back
                 </Button>
