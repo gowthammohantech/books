@@ -1,5 +1,5 @@
 import api from '@lib/apiClient';
-import { Edit, PauseCircle, PlayCircle, PlayIcon, ListIcon, StopCircle } from "lucide-react";
+import { CirclePlusIcon, Edit, PauseCircle, PlayCircle, PlayIcon, ListIcon, StopCircle } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Table from "@components/admin/Table";
 import { useSelector } from "react-redux";
@@ -12,7 +12,7 @@ import TableRow from "@components/admin/TableRow";
 import PaginationWrapper from "@components/admin/PaginationWrapper";
 import LoaderSpinner from "@components/admin/LoaderSpinner";
 import NoRecords from "@components/admin/NoRecords";
-import { Badge, PageSizeSelect, EmptyState } from "@components/ui";
+import { Badge, PageSizeSelect, EmptyState, Button, EmptyStateHero } from "@components/ui";
 import type { BadgeColor } from "@components/ui";
 import type { Action } from "@components/admin/tableActions";
 import useDateFormatter from "@hooks/useDateFormatter";
@@ -23,6 +23,7 @@ import type {
 } from "@models/recurringInvoice";
 import { PageHeader } from "@/context/PageHeaderContext";
 
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface PaginationData {
     total: number;
     page: number;
@@ -252,6 +253,12 @@ const RecurringInvoiceList: React.FC = () => {
     const from = (pagination.page - 1) * pagination.limit + 1;
     const to = Math.min(pagination.page * pagination.limit, pagination.total);
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && schedules.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Recurring Invoices">
@@ -263,76 +270,90 @@ const RecurringInvoiceList: React.FC = () => {
                     New Recurring Invoice
                 </button>
             </PageHeader>
-
-            {/* Search Input & PageLength */}
-            <div className="flex justify-between items-center">
-                <input
-                    type="text"
-                    placeholder="Search by name..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-80 text-gray-800 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.recurringInvoices}
+                    action={
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={() => navigate('/recurring-schedules/new')}>
+                            {LIST_EMPTY_STATES.recurringInvoices.cta}
+                        </Button>
+                    }
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
+            ) : (
+                <>
 
-            {/* Table */}
-            <Table headers={tableHeaders}>
-                {!isLoading && schedules && schedules.map((row, index) => (
-                    <TableRow
-                        key={row.id}
-                        index={index + 1}
-                        row={row}
-                        onRowClick={handleEditClick}
-                        columns={[
-                            <span className="text-gray-800 font-medium">{row.name || '—'}</span>,
-                            row.customer
-                                ? (
-                                    <Link
-                                        to={`/contacts/${row.customer.id}`}
-                                        className="text-primary hover:underline"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        {row.customer.name}
-                                    </Link>
-                                )
-                                : '—',
-                            formatCadence(row),
-                            row.nextRunDate ? formatDate(row.nextRunDate) : '—',
-                            <Badge color={STATUS_COLOR[row.status] ?? 'gray'}>
-                                {capitalize(row.status.toLowerCase())}
-                            </Badge>,
-                            row.occurrencesCount,
-                            row.TotalAmount ?? '—',
-                        ]}
-                        actions={buildActionsFor(row)}
+                {/* Search Input & PageLength */}
+                <div className="flex justify-between items-center">
+                    <input
+                        type="text"
+                        placeholder="Search by name..."
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-80 text-gray-800 focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     />
-                ))}
-                {!isLoading && !schedules.length &&
-                    <NoRecords art="invoice" colSpan={9} message="No recurring schedules found" />
-                }
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-1 text-gray-950 font-semibold" colSpan={9}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-            </Table>
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
 
-            {/* Pagination Component */}
-            {!isLoading && pagination.totalPages > 1 && (
-                <PaginationWrapper
-                    count={pagination.totalPages}
-                    page={page}
-                    from={from}
-                    to={to}
-                    total={pagination.total}
-                    onChange={(_, newPage) => handlePageChange(newPage)}
-                    paginationVariant="outlined"
-                    paginationShape="rounded"
-                />
+                {/* Table */}
+                <Table headers={tableHeaders}>
+                    {!isLoading && schedules && schedules.map((row, index) => (
+                        <TableRow
+                            key={row.id}
+                            index={index + 1}
+                            row={row}
+                            onRowClick={handleEditClick}
+                            columns={[
+                                <span className="text-gray-800 font-medium">{row.name || '—'}</span>,
+                                row.customer
+                                    ? (
+                                        <Link
+                                            to={`/contacts/${row.customer.id}`}
+                                            className="text-primary hover:underline"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            {row.customer.name}
+                                        </Link>
+                                    )
+                                    : '—',
+                                formatCadence(row),
+                                row.nextRunDate ? formatDate(row.nextRunDate) : '—',
+                                <Badge color={STATUS_COLOR[row.status] ?? 'gray'}>
+                                    {capitalize(row.status.toLowerCase())}
+                                </Badge>,
+                                row.occurrencesCount,
+                                row.TotalAmount ?? '—',
+                            ]}
+                            actions={buildActionsFor(row)}
+                        />
+                    ))}
+                    {!isLoading && !schedules.length &&
+                        <NoRecords art="invoice" colSpan={9} message="No recurring schedules found" />
+                    }
+                    {isLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-1 text-gray-950 font-semibold" colSpan={9}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
+                </Table>
+
+                {/* Pagination Component */}
+                {!isLoading && pagination.totalPages > 1 && (
+                    <PaginationWrapper
+                        count={pagination.totalPages}
+                        page={page}
+                        from={from}
+                        to={to}
+                        total={pagination.total}
+                        onChange={(_, newPage) => handlePageChange(newPage)}
+                        paginationVariant="outlined"
+                        paginationShape="rounded"
+                    />
+                )}
+                </>
             )}
+
 
             {viewingOccurrencesOf && (
                 <div

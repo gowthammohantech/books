@@ -20,8 +20,8 @@ import { useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
-
+import { Button, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface DeliveryChallanList {
     id: string;
     challanNumber: string;
@@ -182,6 +182,12 @@ const DeliveryChallanList: React.FC = () => {
     const from = (pagination.page - 1) * pagination.limit + 1;
     const to = Math.min(pagination.page * pagination.limit, pagination.total);
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && deliveryChallans.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Delivery Challans">
@@ -193,65 +199,79 @@ const DeliveryChallanList: React.FC = () => {
                     </Button>
                 )}
             </PageHeader>
-
-            {/* Search Input & PageLength */}
-            <div className="flex justify-between items-center">
-                <input
-                    type="text"
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.deliveryChallans}
+                    action={hasPermission(permissions, 'delivery-challans', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={handleNewDeliveryChallanClick}>
+                            {LIST_EMPTY_STATES.deliveryChallans.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
-            {/* Invoice Table */}
-            <Table headers={tableHeaders}>
-                {!isLoading && deliveryChallans && deliveryChallans.map((challan, index) => (
-                    <TableRow
-                        key={challan.id}
-                        index={(page - 1) * limit + index + 1}
-                        row={challan}
-                        columns={[
-                            <span className="text-primary">{challan.challanNumber}</span>,
-                            <ProfileCard
-                                imageUrl={challan.billTo?.image}
-                                name={challan.billTo?.name}
-                                email={challan.billTo?.email}
-                            />,
-                            <span className="font-semibold text-gray-950 ">{formatMoney(challan.totalAmount, challan.currencyCode)}</span>,
-                            <span className="font-semibold text-gray-950 ">{formatDate(challan.createdAt as string, systemSettings?.dateFormat.format || 'd-m-Y')}</span>,
-                            <InvoiceStatusBadge status={challan.status} />
-                        ]}
-                        actions={tableActions}
-                        onRowClick={(item) => navigate(`/delivery-challans/view/${item.id}`)}
+            ) : (
+                <>
+
+                {/* Search Input & PageLength */}
+                <div className="flex justify-between items-center">
+                    <input
+                        type="text"
+                        placeholder="Search..."
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     />
-                ))}
-                {!isLoading && deliveryChallans && deliveryChallans.length === 0 && (
-                    <EmptyStateRow colSpan={10} art="invoice" title="No Delivery Challans Found" />
-                )}
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
+                {/* Invoice Table */}
+                <Table headers={tableHeaders}>
+                    {!isLoading && deliveryChallans && deliveryChallans.map((challan, index) => (
+                        <TableRow
+                            key={challan.id}
+                            index={(page - 1) * limit + index + 1}
+                            row={challan}
+                            columns={[
+                                <span className="text-primary">{challan.challanNumber}</span>,
+                                <ProfileCard
+                                    imageUrl={challan.billTo?.image}
+                                    name={challan.billTo?.name}
+                                    email={challan.billTo?.email}
+                                />,
+                                <span className="font-semibold text-gray-950 ">{formatMoney(challan.totalAmount, challan.currencyCode)}</span>,
+                                <span className="font-semibold text-gray-950 ">{formatDate(challan.createdAt as string, systemSettings?.dateFormat.format || 'd-m-Y')}</span>,
+                                <InvoiceStatusBadge status={challan.status} />
+                            ]}
+                            actions={tableActions}
+                            onRowClick={(item) => navigate(`/delivery-challans/view/${item.id}`)}
+                        />
+                    ))}
+                    {!isLoading && deliveryChallans && deliveryChallans.length === 0 && (
+                        <EmptyStateRow colSpan={10} art="invoice" title="No Delivery Challans Found" />
+                    )}
 
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-2 text-gray-950  font-semibold" colSpan={7}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
+                    {isLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-2 text-gray-950  font-semibold" colSpan={7}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
 
-            </Table>
+                </Table>
 
-            {/* Pagination Component */}
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handlePageChange(newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                {/* Pagination Component */}
+                <PaginationWrapper
+                    count={pagination.totalPages}
+                    page={page}
+                    from={from}
+                    to={to}
+                    total={pagination.total}
+                    onChange={(_, newPage) => handlePageChange(newPage)}
+                    paginationVariant="outlined"
+                    paginationShape="rounded"
+                />
+                </>
+            )}
+
             {/* Delete Invoice */}
             <DeleteConfirmationModal
                 isOpen={showDeleteModal}

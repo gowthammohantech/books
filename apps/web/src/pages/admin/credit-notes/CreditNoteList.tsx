@@ -20,8 +20,8 @@ import { useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect } from "@components/ui";
-
+import { Button, PageSizeSelect, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface Invoice {
     id: string;
     creditNoteNumber: string;
@@ -197,6 +197,12 @@ const CreditNoteList: React.FC = () => {
     const from = (pagination.page - 1) * pagination.limit + 1;
     const to = Math.min(pagination.page * pagination.limit, pagination.total);
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && invoices.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Credit Notes">
@@ -208,67 +214,81 @@ const CreditNoteList: React.FC = () => {
                     </Button>
                 }
             </PageHeader>
-
-            {/* Search Input & PageLength */}
-            <div className="flex justify-between items-center">
-                <input
-                    type="text"
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.creditNotes}
+                    action={hasPermission(permissions, 'credit-notes', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={handleNewCreditNoteClick}>
+                            {LIST_EMPTY_STATES.creditNotes.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
-            {/* Invoice Table */}
-            <Table headers={tableHeaders}>
-                {!isLoading && invoices && invoices.map((invoice, index) => (
-                    <TableRow
-                        key={invoice.id}
-                        index={(page - 1) * limit + index + 1} // Correct index for pagination
-                        row={invoice}
-                        columns={[
-                            <span className="text-primary">{invoice.creditNoteNumber}</span>,
-                            <ProfileCard
-                                imageUrl={invoice.billTo?.image}
-                                name={invoice.billTo?.name}
-                                email={invoice.billTo?.email}
-                            />,
-                            <span className="font-semibold text-gray-950 ">{formatMoney(invoice.totalAmount, invoice.currencyCode)}</span>,
-                            <span className="font-semibold text-gray-950 ">{formatDate(invoice.createdAt, systemSettings?.dateFormat.format || 'd-m-Y')}</span>,
-                            <InvoiceStatusBadge status={invoice.status} />
-                        ]}
-                        actions={canEdit || canDelete ? tableActions : undefined}
-                        onRowClick={(item) => navigate(`/credit-notes/view/${item.id}`)}
+            ) : (
+                <>
+
+                {/* Search Input & PageLength */}
+                <div className="flex justify-between items-center">
+                    <input
+                        type="text"
+                        placeholder="Search..."
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     />
-                ))}
-                {!isLoading && invoices && invoices.length === 0 && (
-                    <NoRecords art="invoice" colSpan={7} message="No credit notes found" />
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
+                {/* Invoice Table */}
+                <Table headers={tableHeaders}>
+                    {!isLoading && invoices && invoices.map((invoice, index) => (
+                        <TableRow
+                            key={invoice.id}
+                            index={(page - 1) * limit + index + 1} // Correct index for pagination
+                            row={invoice}
+                            columns={[
+                                <span className="text-primary">{invoice.creditNoteNumber}</span>,
+                                <ProfileCard
+                                    imageUrl={invoice.billTo?.image}
+                                    name={invoice.billTo?.name}
+                                    email={invoice.billTo?.email}
+                                />,
+                                <span className="font-semibold text-gray-950 ">{formatMoney(invoice.totalAmount, invoice.currencyCode)}</span>,
+                                <span className="font-semibold text-gray-950 ">{formatDate(invoice.createdAt, systemSettings?.dateFormat.format || 'd-m-Y')}</span>,
+                                <InvoiceStatusBadge status={invoice.status} />
+                            ]}
+                            actions={canEdit || canDelete ? tableActions : undefined}
+                            onRowClick={(item) => navigate(`/credit-notes/view/${item.id}`)}
+                        />
+                    ))}
+                    {!isLoading && invoices && invoices.length === 0 && (
+                        <NoRecords art="invoice" colSpan={7} message="No credit notes found" />
+                    )}
+
+                    {isLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-1 text-gray-950  font-semibold" colSpan={7}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
+
+                </Table>
+
+                {/* Pagination Component */}
+                {!isLoading && pagination.totalPages > 1 && (
+                    <PaginationWrapper
+                        count={pagination.totalPages}
+                        page={page}
+                        from={from}
+                        to={to}
+                        total={pagination.total}
+                        onChange={(_, newPage) => handlePageChange(newPage)}
+                        paginationVariant="outlined"
+                        paginationShape="rounded"
+                    />
                 )}
-
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-1 text-gray-950  font-semibold" colSpan={7}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-
-            </Table>
-
-            {/* Pagination Component */}
-            {!isLoading && pagination.totalPages > 1 && (
-                <PaginationWrapper
-                    count={pagination.totalPages}
-                    page={page}
-                    from={from}
-                    to={to}
-                    total={pagination.total}
-                    onChange={(_, newPage) => handlePageChange(newPage)}
-                    paginationVariant="outlined"
-                    paginationShape="rounded"
-                />
+                </>
             )}
+
             {/* Delete Invoice */}
             <DeleteConfirmationModal
                 isOpen={showDeleteModal}

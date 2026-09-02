@@ -20,8 +20,8 @@ import LoaderSpinner from "@components/admin/LoaderSpinner";
 import SubmitButton from "@components/admin/SubmitButton";
 import ProfileCard from "@components/admin/ProfileImage";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
-
+import { Button, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface PaginationData {
     total: number;
     page: number;
@@ -167,6 +167,12 @@ const InventoryList: React.FC = () => {
     const from = (pagination.page - 1) * pagination.limit + 1;
     const to = Math.min(pagination.page * pagination.limit, pagination.total);
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && inventories.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Inventory">
@@ -179,98 +185,112 @@ const InventoryList: React.FC = () => {
                     </Button>
                 )}
             </PageHeader>
-
-            {/* Search Input & PageLength */}
-            <div className="flex justify-between items-center">
-                <input
-                    type="text"
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.inventory}
+                    action={hasPermission(permissions, 'inventory', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={handleNewInventoryClick}>
+                            {LIST_EMPTY_STATES.inventory.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
-            {/* Invoice Table */}
-            <Table headers={["#", "Product/Service", "Unit", "Quantity", "Selling Price", "Purchase Price", "Stock Actions"]}>
-                {!isLoading && inventories && inventories.map((inventory, index) => (
-                    <TableRow
-                        key={inventory.id}
-                        index={(page - 1) * limit + index + 1}
-                        row={inventory}
-                        columns={[
-                            <ProfileCard
-                                imageUrl={inventory.productDetails.product_image ?? ""}
-                                name={inventory.productDetails.name ?? ""}
-                                email={inventory.productDetails.code ?? ""}
-                            />,
-                            inventory?.productDetails?.unit_name,
-                            inventory.quantity,
-                            formatProductPrice(inventory.productDetails.selling_price, inventory.productDetails.currencyCode),
-                            formatProductPrice(inventory.productDetails.purchase_price, inventory.productDetails.currencyCode),
-                            < div className="flex gap-2" >
-                                {/* History */}
-                                <span
-                                    onClick={(e) => { e.stopPropagation(); handleView(inventory); }}
-                                    className="inline-flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-xs font-medium text-primary cursor-pointer">
-                                    <HistoryIcon className="h-4 w-4" />
-                                    History
-                                </span>
+            ) : (
+                <>
 
-                                {/* Stock In */}
-                                <PermissionGuard moduleSlug="inventory" action="edit">
-                                    <span
-                                        onClick={(e) => { e.stopPropagation(); handleStockUpdate(inventory, 'stock_in'); }}
-                                        className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-700 cursor-pointer">
-                                        <PlusCircleIcon className="h-4 w-4" />
-                                        Stock In
-                                    </span>
-                                </PermissionGuard>
-
-                                {/* Stock Out */}
-                                <PermissionGuard moduleSlug="inventory" action="edit">
-                                    <span
-                                        onClick={(e) => { e.stopPropagation(); handleStockUpdate(inventory, 'stock_out'); }}
-                                        className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-1 text-xs font-medium text-red-700 cursor-pointer">
-                                        <MinusCircle className="h-4 w-4" />
-                                        Stock Out
-                                    </span>
-                                </PermissionGuard>
-                            </div>
-
-                        ]}
-                        onRowClick={(item) => handleView(item)}
+                {/* Search Input & PageLength */}
+                <div className="flex justify-between items-center">
+                    <input
+                        type="text"
+                        placeholder="Search..."
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="border border-gray-300 rounded-md px-4 py-2 w-full md:w-64  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     />
-                ))}
-                {
-                    !isLoading && inventories.length === 0 && (
-                        <EmptyStateRow colSpan={10} art="empty" title="No Items Found" />
-                    )
-                }
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
+                {/* Invoice Table */}
+                <Table headers={["#", "Product/Service", "Unit", "Quantity", "Selling Price", "Purchase Price", "Stock Actions"]}>
+                    {!isLoading && inventories && inventories.map((inventory, index) => (
+                        <TableRow
+                            key={inventory.id}
+                            index={(page - 1) * limit + index + 1}
+                            row={inventory}
+                            columns={[
+                                <ProfileCard
+                                    imageUrl={inventory.productDetails.product_image ?? ""}
+                                    name={inventory.productDetails.name ?? ""}
+                                    email={inventory.productDetails.code ?? ""}
+                                />,
+                                inventory?.productDetails?.unit_name,
+                                inventory.quantity,
+                                formatProductPrice(inventory.productDetails.selling_price, inventory.productDetails.currencyCode),
+                                formatProductPrice(inventory.productDetails.purchase_price, inventory.productDetails.currencyCode),
+                                < div className="flex gap-2" >
+                                    {/* History */}
+                                    <span
+                                        onClick={(e) => { e.stopPropagation(); handleView(inventory); }}
+                                        className="inline-flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-xs font-medium text-primary cursor-pointer">
+                                        <HistoryIcon className="h-4 w-4" />
+                                        History
+                                    </span>
 
-                {
-                    isLoading && (
-                        <tr key="table-loader">
-                            <td className="text-center py-2 text-gray-950  font-semibold" colSpan={10}>
-                                <LoaderSpinner />
-                            </td>
-                        </tr>
-                    )
-                }
+                                    {/* Stock In */}
+                                    <PermissionGuard moduleSlug="inventory" action="edit">
+                                        <span
+                                            onClick={(e) => { e.stopPropagation(); handleStockUpdate(inventory, 'stock_in'); }}
+                                            className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-700 cursor-pointer">
+                                            <PlusCircleIcon className="h-4 w-4" />
+                                            Stock In
+                                        </span>
+                                    </PermissionGuard>
 
-            </Table >
+                                    {/* Stock Out */}
+                                    <PermissionGuard moduleSlug="inventory" action="edit">
+                                        <span
+                                            onClick={(e) => { e.stopPropagation(); handleStockUpdate(inventory, 'stock_out'); }}
+                                            className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-1 text-xs font-medium text-red-700 cursor-pointer">
+                                            <MinusCircle className="h-4 w-4" />
+                                            Stock Out
+                                        </span>
+                                    </PermissionGuard>
+                                </div>
 
-            {/* Pagination Component */}
-            < PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handlePageChange(newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                            ]}
+                            onRowClick={(item) => handleView(item)}
+                        />
+                    ))}
+                    {
+                        !isLoading && inventories.length === 0 && (
+                            <EmptyStateRow colSpan={10} art="empty" title="No Items Found" />
+                        )
+                    }
+
+                    {
+                        isLoading && (
+                            <tr key="table-loader">
+                                <td className="text-center py-2 text-gray-950  font-semibold" colSpan={10}>
+                                    <LoaderSpinner />
+                                </td>
+                            </tr>
+                        )
+                    }
+
+                </Table >
+
+                {/* Pagination Component */}
+                < PaginationWrapper
+                    count={pagination.totalPages}
+                    page={page}
+                    from={from}
+                    to={to}
+                    total={pagination.total}
+                    onChange={(_, newPage) => handlePageChange(newPage)}
+                    paginationVariant="outlined"
+                    paginationShape="rounded"
+                />
+                </>
+            )}
+
 
             {/* Stock Update Modal */}
             < Modal isOpen={isStockUpdateModalOpen}

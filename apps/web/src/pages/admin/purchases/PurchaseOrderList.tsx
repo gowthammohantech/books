@@ -22,9 +22,10 @@ import ProfileCard from "@components/admin/ProfileImage";
 import { useQuery } from "@tanstack/react-query";
 import { fetchModuleHierarchy, fetchCustomFieldsByModule } from "@api/customFieldTypeApi";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, FormField, PageSizeSelect, EmptyStateRow } from "@components/ui";
+import { Button, FormField, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
 import { setTenantValue } from "@utils/tenantStorage";
 
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface PurchaseOrder {
     id: string;
     purchaseOrderId: string;
@@ -231,6 +232,12 @@ const PurchaseOrderList: FC = () => {
     const from = (pagination.page - 1) * pagination.limit + 1;
     const to = Math.min(pagination.page * pagination.limit, pagination.total);
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && purchaseOrders.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Purchase Orders">
@@ -242,75 +249,89 @@ const PurchaseOrderList: FC = () => {
                     </Button>
                 }
             </PageHeader>
-
-            {/* Search Input & PageLength */}
-            <div className="flex justify-between items-center">
-                <FormField
-                    type="text"
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    containerClassName="w-full md:w-64"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.purchaseOrders}
+                    action={hasPermission(permissions, 'purchase-orders', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={handleNewPoClick}>
+                            {LIST_EMPTY_STATES.purchaseOrders.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
+            ) : (
+                <>
 
-            <Table headers={tableHeaders}>
-                {!isPageLoading && purchaseOrders && purchaseOrders.map((purchaseOrder, index) => (
-                    <TableRow
-                        key={purchaseOrder.id}
-                        index={(page - 1) * limit + index + 1}
-                        row={purchaseOrder}
-                        columns={[
-                            <span className="text-primary">{purchaseOrder.purchaseOrderId}</span>,
-                            formatDate(purchaseOrder.purchaseOrderDate, systemSettings?.dateFormat.format || 'd-m-Y'),
-                            <ProfileCard
-                                imageUrl={purchaseOrder.billTo?.profileImage}
-                                name={purchaseOrder.billTo?.name || ""}
-                            />,
-                            formatMoney(purchaseOrder.TotalAmount, purchaseOrder.currencyCode),
-                            <PaymentModeBadge mode={purchaseOrder.payment_mode || "cash"} />,
-                            formatDate(purchaseOrder.createdAt, systemSettings?.dateFormat.format || 'd-m-Y'),
-                            <StatusBadge status={purchaseOrder.status} />,
-
-                            // Inject dynamic custom field columns
-                            ...tableCustomFields.map((f: any) => (
-                                <span key={f.id} className="text-gray-600 font-medium">
-                                    {extractCustomFieldValue(purchaseOrder, f.fieldSlug || f.id)}
-                                </span>
-                            ))
-                        ]}
-                        actions={getTableActions(purchaseOrder)}
-                        onRowClick={(item) => navigate(`/purchase-orders/view/${item.id}`)}
+                {/* Search Input & PageLength */}
+                <div className="flex justify-between items-center">
+                    <FormField
+                        type="text"
+                        placeholder="Search..."
+                        value={search}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        containerClassName="w-full md:w-64"
                     />
-                ))}
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
 
-                {!isPageLoading && purchaseOrders.length === 0 && (
-                    <EmptyStateRow colSpan={tableHeaders.length} art="invoice" title="No purchase orders found" />
+                <Table headers={tableHeaders}>
+                    {!isPageLoading && purchaseOrders && purchaseOrders.map((purchaseOrder, index) => (
+                        <TableRow
+                            key={purchaseOrder.id}
+                            index={(page - 1) * limit + index + 1}
+                            row={purchaseOrder}
+                            columns={[
+                                <span className="text-primary">{purchaseOrder.purchaseOrderId}</span>,
+                                formatDate(purchaseOrder.purchaseOrderDate, systemSettings?.dateFormat.format || 'd-m-Y'),
+                                <ProfileCard
+                                    imageUrl={purchaseOrder.billTo?.profileImage}
+                                    name={purchaseOrder.billTo?.name || ""}
+                                />,
+                                formatMoney(purchaseOrder.TotalAmount, purchaseOrder.currencyCode),
+                                <PaymentModeBadge mode={purchaseOrder.payment_mode || "cash"} />,
+                                formatDate(purchaseOrder.createdAt, systemSettings?.dateFormat.format || 'd-m-Y'),
+                                <StatusBadge status={purchaseOrder.status} />,
+
+                                // Inject dynamic custom field columns
+                                ...tableCustomFields.map((f: any) => (
+                                    <span key={f.id} className="text-gray-600 font-medium">
+                                        {extractCustomFieldValue(purchaseOrder, f.fieldSlug || f.id)}
+                                    </span>
+                                ))
+                            ]}
+                            actions={getTableActions(purchaseOrder)}
+                            onRowClick={(item) => navigate(`/purchase-orders/view/${item.id}`)}
+                        />
+                    ))}
+
+                    {!isPageLoading && purchaseOrders.length === 0 && (
+                        <EmptyStateRow colSpan={tableHeaders.length} art="invoice" title="No purchase orders found" />
+                    )}
+
+                    {isPageLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-6 text-gray-950  font-semibold" colSpan={tableHeaders.length}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
+                </Table>
+
+                {/* Pagination Component */}
+                {!isPageLoading && pagination.totalPages > 1 && (
+                    <PaginationWrapper
+                        count={pagination.totalPages}
+                        page={page}
+                        from={from}
+                        to={to}
+                        total={pagination.total}
+                        onChange={(_, newPage) => handlePageChange(newPage)}
+                        paginationVariant="outlined"
+                        paginationShape="rounded"
+                    />
                 )}
-
-                {isPageLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-6 text-gray-950  font-semibold" colSpan={tableHeaders.length}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-            </Table>
-
-            {/* Pagination Component */}
-            {!isPageLoading && pagination.totalPages > 1 && (
-                <PaginationWrapper
-                    count={pagination.totalPages}
-                    page={page}
-                    from={from}
-                    to={to}
-                    total={pagination.total}
-                    onChange={(_, newPage) => handlePageChange(newPage)}
-                    paginationVariant="outlined"
-                    paginationShape="rounded"
-                />
+                </>
             )}
+
 
             <DeleteConfirmationModal
                 isOpen={showDeleteModal}

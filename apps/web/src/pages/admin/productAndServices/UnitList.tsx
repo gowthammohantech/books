@@ -19,7 +19,8 @@ import Switch from "@components/admin/Switch";
 import SubmitButton from "@components/admin/SubmitButton";
 import DynamicCustomFields from "@components/admin/DynamicCustomFields";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, PageSizeSelect, EmptyStateRow } from "@components/ui";
+import { Button, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 // Define the shape of your data
 interface Unit {
     id: string;
@@ -274,6 +275,12 @@ const UnitList: FC = () => {
         tableHeaders.pop();
     }
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && units.length === 0 && !search;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Units">
@@ -287,57 +294,71 @@ const UnitList: FC = () => {
                     </Button>
                 )}
             </PageHeader>
-
-            <div className="flex flex-col md:flex-row justify-between gap-4">
-                <input
-                    type="text"
-                    placeholder="Search by name or short name.."
-                    value={search}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
-                    className="border border-gray-300 px-4 py-2 rounded-md w-full md:w-64 bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.units}
+                    action={hasPermission(permissions, 'product-services', 'create') && (
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={openCreateUnit}>
+                            {LIST_EMPTY_STATES.units.cta}
+                        </Button>
+                    )}
                 />
-                <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
-            </div>
+            ) : (
+                <>
 
-            <Table headers={tableHeaders}>
-                {!isLoading && units.length > 0 && (
-                    units.map((unit, index) => (
-                        <TableRow
-                            key={unit.id}
-                            index={(page - 1) * limit + index + 1}
-                            row={unit}
-                            columns={[
-                                <p className="capitalize text-primary">{unit.unit_name}</p>,
-                                unit.short_name,
-                                <Switch name={`status-${unit.id}`} checked={unit.status} onChange={() => toggleStatus(unit)} />
-                            ]}
-                            actions={allowedActions.length > 0 ? allowedActions : undefined}
-                        />
-                    ))
-                )}
+                <div className="flex flex-col md:flex-row justify-between gap-4">
+                    <input
+                        type="text"
+                        placeholder="Search by name or short name.."
+                        value={search}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
+                        className="border border-gray-300 px-4 py-2 rounded-md w-full md:w-64 bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                    />
+                    <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
+                </div>
 
-                {!isLoading && units.length === 0 && (
-                    <EmptyStateRow colSpan={5} art="empty" title="No Units Found" />
-                )}
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-2 text-gray-950  font-semibold" colSpan={5}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-            </Table>
+                <Table headers={tableHeaders}>
+                    {!isLoading && units.length > 0 && (
+                        units.map((unit, index) => (
+                            <TableRow
+                                key={unit.id}
+                                index={(page - 1) * limit + index + 1}
+                                row={unit}
+                                columns={[
+                                    <p className="capitalize text-primary">{unit.unit_name}</p>,
+                                    unit.short_name,
+                                    <Switch name={`status-${unit.id}`} checked={unit.status} onChange={() => toggleStatus(unit)} />
+                                ]}
+                                actions={allowedActions.length > 0 ? allowedActions : undefined}
+                            />
+                        ))
+                    )}
 
-            <PaginationWrapper
-                count={pagination.totalPages}
-                page={page}
-                from={from}
-                to={to}
-                total={pagination.total}
-                onChange={(_, newPage) => handlePageChange(newPage)}
-                paginationVariant="outlined"
-                paginationShape="rounded"
-            />
+                    {!isLoading && units.length === 0 && (
+                        <EmptyStateRow colSpan={5} art="empty" title="No Units Found" />
+                    )}
+                    {isLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-2 text-gray-950  font-semibold" colSpan={5}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
+                </Table>
+
+                <PaginationWrapper
+                    count={pagination.totalPages}
+                    page={page}
+                    from={from}
+                    to={to}
+                    total={pagination.total}
+                    onChange={(_, newPage) => handlePageChange(newPage)}
+                    paginationVariant="outlined"
+                    paginationShape="rounded"
+                />
+                </>
+            )}
+
 
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingUnit ? 'Edit Unit' : 'Add New Unit'}>
                 <form onSubmit={handleNewUnitSubmit} className="space-y-4">

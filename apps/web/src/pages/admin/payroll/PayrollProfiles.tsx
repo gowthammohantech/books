@@ -15,8 +15,8 @@ import Modal from "@components/admin/Modal";
 import SubmitButton from "@components/admin/SubmitButton";
 import Switch from "@components/admin/Switch";
 import { PageHeader } from "@/context/PageHeaderContext";
-import { Button, EmptyStateRow } from "@components/ui";
-
+import { Button, EmptyStateRow, EmptyStateHero } from "@components/ui";
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 const PAYROLL_PROFILES_URL = `${Constants.API_BASE_URL}/admin/payroll/profiles`;
 
 interface StaffUser {
@@ -250,6 +250,12 @@ const PayrollProfiles: React.FC = () => {
         },
     ];
 
+    /**
+     * Nothing here and nothing asked for, so this list has never held a
+     * record rather than having been filtered down to none.
+     */
+    const isFirstRun = !isLoading && profiles.length === 0;
+
     return (
         <div className="space-y-4">
             <PageHeader title="Payroll Profiles">
@@ -257,41 +263,53 @@ const PayrollProfiles: React.FC = () => {
                     New Profile
                 </Button>
             </PageHeader>
+            {isFirstRun ? (
+                <EmptyStateHero
+                    {...LIST_EMPTY_STATES.payrollProfiles}
+                    action={<Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={handleCreateClick}>
+                        {LIST_EMPTY_STATES.payrollProfiles.cta}
+                    </Button>}
+                />
+            ) : (
+                <>
 
-            <Table headers={tableHeaders}>
-                {!isLoading && profiles.map((profile, index) => (
-                    <TableRow
-                        key={profile.id}
-                        row={profile}
-                        index={index + 1}
-                        columns={[
-                            <span className="text-primary">{getEmployeeName(profile)}</span>,
-                            profile.defaultGross !== null
-                                ? profile.defaultGross.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                                : <span className="text-gray-400">—</span>,
-                            profile.payFrequency,
-                            <Switch
-                                name={`active-${profile.id}`}
-                                checked={profile.isActive}
-                                onChange={() => handleActiveToggle(profile)}
-                            />,
-                        ]}
-                        actions={tableActions}
-                    />
-                ))}
+                <Table headers={tableHeaders}>
+                    {!isLoading && profiles.map((profile, index) => (
+                        <TableRow
+                            key={profile.id}
+                            row={profile}
+                            index={index + 1}
+                            columns={[
+                                <span className="text-primary">{getEmployeeName(profile)}</span>,
+                                profile.defaultGross !== null
+                                    ? profile.defaultGross.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                    : <span className="text-gray-400">—</span>,
+                                profile.payFrequency,
+                                <Switch
+                                    name={`active-${profile.id}`}
+                                    checked={profile.isActive}
+                                    onChange={() => handleActiveToggle(profile)}
+                                />,
+                            ]}
+                            actions={tableActions}
+                        />
+                    ))}
 
-                {!isLoading && profiles.length === 0 && (
-                    <EmptyStateRow colSpan={6} art="people-search" title="No Records Found" />
-                )}
+                    {!isLoading && profiles.length === 0 && (
+                        <EmptyStateRow colSpan={6} art="people-search" title="No Records Found" />
+                    )}
 
-                {isLoading && (
-                    <tr key="table-loader">
-                        <td className="text-center py-2 text-gray-950 font-semibold" colSpan={6}>
-                            <LoaderSpinner />
-                        </td>
-                    </tr>
-                )}
-            </Table>
+                    {isLoading && (
+                        <tr key="table-loader">
+                            <td className="text-center py-2 text-gray-950 font-semibold" colSpan={6}>
+                                <LoaderSpinner />
+                            </td>
+                        </tr>
+                    )}
+                </Table>
+                </>
+            )}
+
 
             {/* Create / Edit Modal */}
             {isModalOpen && (

@@ -43,6 +43,7 @@ import ExplainTransactionForm from "./ExplainTransactionForm";
 import { PageHeader } from "@/context/PageHeaderContext";
 import { Badge, Button, fieldControlClasses, FormField, PageSizeSelect, Select, EmptyStateRow } from "@components/ui";
 
+import { LIST_EMPTY_STATES } from "@constants/listEmptyStates";
 interface PaginationData {
     total: number;
     page: number;
@@ -1135,8 +1136,8 @@ const BankTransactionList: React.FC = () => {
                     <EmptyStateRow
                         colSpan={tableHeaders.length}
                         size="full"
-                        art="cash-payment"
-                        title="No bank transactions yet"
+                        art={LIST_EMPTY_STATES.bankTransactions.art}
+                        title={LIST_EMPTY_STATES.bankTransactions.title}
                         description="Import a bank statement to get started."
                         action={
                             <Button
@@ -1146,7 +1147,7 @@ const BankTransactionList: React.FC = () => {
                                 leftIcon={<Upload size={14} />}
                                 onClick={() => setImportStep("upload")}
                             >
-                                Import CSV
+                                {LIST_EMPTY_STATES.bankTransactions.cta}
                             </Button>
                         }
                     />
