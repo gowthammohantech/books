@@ -3,14 +3,13 @@ import { useEffect, useState, type FC } from "react";
 import axios, { AxiosError } from "axios";
 import Constants from "@constants/api";
 import { toast } from "sonner";
-import Modal from "@components/admin/Modal";
 import DateInput from "@components/admin/DateInput";
 import SubmitButton from "@components/admin/SubmitButton";
 import type { OptionType } from "@models/common";
 import { useDebounce } from "@hooks/useDebounce";
 import type { PendingPurchase } from "@models/purchase";
 import SmartDropdown from "@components/admin/SmartDropdown";
-import { Button, FormField, fieldControlClasses } from "@components/ui";
+import { Button, Drawer, FormField, fieldControlClasses } from '@components/ui';
 
 interface PaymentFormModalProps {
     isOpen: boolean;
@@ -273,7 +272,7 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={'Add New Payment'} size="3xl">
+        <Drawer isOpen={isOpen} onClose={onClose} title={'Add New Payment'}>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Purchase ID */}
@@ -419,7 +418,7 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
                     <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode="create" />
                 </div>
             </form>
-        </Modal>
+        </Drawer>
     );
 };
 

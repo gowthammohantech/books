@@ -42,8 +42,7 @@ import { recomputeLineTaxesByIds, recomputeLineTaxesFromComponents, appendLineTa
 import { round2 } from '@utils/round2';
 import type { Contact } from '@models/contact';
 import ContactPicker from '@components/admin/ContactPicker';
-import { Button, FormField, Select, fieldControlClasses } from '@components/ui';
-import { PageHeader } from "@/context/PageHeaderContext";
+import { Button, FormField, RouteDrawer, Select, fieldControlClasses } from '@components/ui';
 import { getTenantValue, setTenantValue } from "@utils/tenantStorage";
 
 interface InvoiceFormData {
@@ -1076,11 +1075,31 @@ const CreateInvoice: React.FC = () => {
     }
 
     return (
-        <div className="md:p-4 min-h-screen border border-gray-200 rounded">
-            <form onSubmit={(e) => e.preventDefault()}>
-                <div className="max-w-7xl mx-auto space-y-4">
+        <RouteDrawer
+            title="New Invoice"
+            confirmOnClose={isDirtyRef.current}
+            actions={
+                <>
+                    <Button variant="white" onClick={() => { if (confirmIfDirty(isDirtyRef.current)) navigate('/invoices'); }}>Cancel</Button>
+                    <Button
+                    disabled={isSubmitting}
+                    onClick={handleSaveAsDraft}
+                    >
+                    Save as Draft
+                    </Button>
+                    <Button
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={handleSaveAndSend}
+                    leftIcon={<Mail size={16} />}
+                    >
+                    Save & Send
+                    </Button>
+                </>
+            }
+        >
+            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
 
-                    <PageHeader title="New Invoice" />
 
                     {/* Header */}
                     <div className="flex justify-end items-center mb-2">
@@ -1354,7 +1373,7 @@ const CreateInvoice: React.FC = () => {
                         </div>
                     </div>
 
-                </div>
+                
 
                 {/* Edit Product Modal */}
                 <Modal isOpen={isEditProductModalOpen} onClose={() => setIsEditProductModalOpen(false)} title={`Edit: ${editingItem?.name}`}>
@@ -1463,7 +1482,7 @@ const CreateInvoice: React.FC = () => {
                     )}
                 </Modal>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* Left Side: Tabs */}
                     <div>
                         <h3 className="text-lg font-semibold text-gray-950 mb-3">Extra Information</h3>
@@ -1598,24 +1617,6 @@ const CreateInvoice: React.FC = () => {
                         ))}
                     </div>
                 </div>
-                <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => { if (confirmIfDirty(isDirtyRef.current)) navigate('/invoices'); }}>Cancel</Button>
-                    <Button
-                        disabled={isSubmitting}
-                        onClick={handleSaveAsDraft}
-                    >
-                        Save as Draft
-                    </Button>
-                    <Button
-                        type="button"
-                        disabled={isSubmitting}
-                        onClick={handleSaveAndSend}
-                        leftIcon={<Mail size={16} />}
-                    >
-                        Save & Send
-                    </Button>
-                </div>
-
                 <Modal isOpen={isSignatureModalOpen} onClose={() => setSignatureModalOpen(false)} title="Draw Signature">
                     <div className="p-4">
                         <div className="bg-white border border-gray-400">
@@ -1673,7 +1674,7 @@ const CreateInvoice: React.FC = () => {
                 onSuccess={() => setNewInvoiceNumber()}
             />
             {isFetching && <FullPageLoader />}
-        </div>
+                </RouteDrawer>
     );
 };
 

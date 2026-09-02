@@ -1,4 +1,7 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+
+import DrawerFallback from "./DrawerFallback";
+import { RealLocationProvider } from "./DrawerOutlet";
 import AdminDashboard from "@pages/admin/AdminDashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminLayout from "@components/admin/layouts/AdminLayout";
@@ -8,16 +11,13 @@ import UnitList from "@pages/admin/productAndServices/UnitList";
 import BrandList from "@pages/admin/productAndServices/BrandList";
 import CategoryList from "@pages/admin/productAndServices/Categories";
 import ProductList from "@pages/admin/productAndServices/ProductList";
-import AddProduct from "@pages/admin/productAndServices/AddProduct";
 import EditProduct from "@pages/admin/productAndServices/EditProduct";
 import ViewProduct from "@pages/admin/productAndServices/ViewProduct";
 import TaxRateList from "@pages/admin/settings/taxRates/TaxRateList";
-import CreateTaxRate from "@pages/admin/settings/taxRates/CreateTaxRate";
 import EditTaxRate from "@pages/admin/settings/taxRates/EditTaxRate";
 import AccountSettings from "@pages/admin/settings/AccountSettings";
 import SignatureList from "@pages/admin/settings/systemSettings/SignatureList";
 import PurchaseOrderList from "@pages/admin/purchases/PurchaseOrderList";
-import CreatePurchaseOrder from "@pages/admin/purchases/CreatePurchaseOrder";
 import BankAccountList from "@pages/admin/settings/financeSettings/BankAccountList";
 import LedgerSetupWizard from "@pages/admin/settings/financeSettings/LedgerSetupWizard";
 import DocumentDefaultsPage from "@pages/admin/settings/financeSettings/DocumentDefaults";
@@ -25,26 +25,20 @@ import TransactionCategoriesPage from "@pages/admin/settings/financeSettings/Tra
 import CompanySettings from "@pages/admin/settings/websiteSettings/CompanySettings";
 import EditPurchaseOrder from "@pages/admin/purchases/EditPurchaseOrder";
 import PurchaseList from "@pages/admin/purchases/PurchaseList";
-import CreatePurchase from "@pages/admin/purchases/CreatePurchase";
 import SupplierPayments from "@pages/admin/purchases/SupplierPayments";
 import SupplierBalances from "@pages/admin/purchases/SupplierBalances";
 import DebitNoteList from "@pages/admin/purchases/DebitNoteList";
-import CreateDebitNote from "@pages/admin/purchases/CreateDebitNote";
 import OverviewDebitNote from "@pages/admin/purchases/OverviewDebitNote";
 import CurrencyList from "@pages/admin/settings/financeSettings/currencies/CurrencyList";
 import LocalizationSettings from "@pages/admin/settings/websiteSettings/LocalizationSettings";
-import CustomerForm from "@pages/admin/customers/CreateCustomer";
 import EditCustomer from "@pages/admin/customers/EditCustomer";
 import CustomerStatement from "@pages/admin/customers/CustomerStatement";
 import VehicleList from "@pages/admin/vehicles/VehicleList";
-import CreateVehicle from "@pages/admin/vehicles/CreateVehicle";
 import EditVehicle from "@pages/admin/vehicles/EditVehicle";
 import QuotationList from "@pages/admin/quotations/QuotationList";
-import CreateNewQuotation from "@pages/admin/quotations/CreateNewQuotation";
 import EditQuotation from "@pages/admin/quotations/EditQuotation";
 import AdminLogout from "@pages/admin/auth/AdminLogout";
 import InvoiceTemplateList from "@pages/admin/invoices/InvoiceTemplateList";
-import CreateInvoice from "@pages/admin/invoices/CreateInvoice";
 import InvoiceList from "@pages/admin/invoices/InvoiceList";
 import EditInvoice from "@pages/admin/invoices/EditInvoice";
 import RecurringInvoiceList from "@pages/admin/recurring-invoices/RecurringInvoiceList";
@@ -52,13 +46,11 @@ import RecurringScheduleForm from "@pages/admin/recurring-invoices/RecurringSche
 import RecurringExpenseList from "@pages/admin/recurring-expenses/RecurringExpenseList";
 import ViewInvoice from "@pages/admin/invoices/ViewInvoice";
 import CreditNoteList from "@pages/admin/credit-notes/CreditNoteList";
-import AddCreditNote from "@pages/admin/credit-notes/AddCreditNote";
 import EditCreditNote from "@pages/admin/credit-notes/EditCreditNote";
 import OverviewCreditNote from "@pages/admin/credit-notes/OverviewCreditNote";
 import InventoryList from "@pages/admin/inventory/InventoryList";
 import EmailSettings from "@pages/admin/settings/systemSettings/EmailSettings";
 import DeliveryChallanList from "@pages/admin/delivery-challan/DeliveryChallanList";
-import NewDeliveryChallan from "@pages/admin/delivery-challan/NewDeliveryChallan";
 import RolesList from "@pages/admin/roles-permissions/RolesList";
 import EditDeliveryChallan from "@pages/admin/delivery-challan/EditDeliveryChallan";
 import ViewDeliveryChallan from "@pages/admin/delivery-challan/ViewDeliveryChallan";
@@ -116,7 +108,6 @@ import MessagingSettings from "@pages/admin/settings/MessagingSettings";
 import AiSettings from "@pages/admin/settings/AiSettings";
 import ChartOfAccountsList from "@pages/admin/accounting/ChartOfAccountsList";
 import JournalEntryList from "@pages/admin/accounting/JournalEntryList";
-import CreateJournalEntry from "@pages/admin/accounting/CreateJournalEntry";
 import ProfitLossReport from "@pages/admin/accounting/reports/ProfitLossReport";
 import BalanceSheetReport from "@pages/admin/accounting/reports/BalanceSheetReport";
 import TrialBalanceReport from "@pages/admin/accounting/reports/TrialBalanceReport";
@@ -158,8 +149,18 @@ import ContactForm from "@pages/admin/contacts/ContactForm";
 import ContactCard from "@pages/admin/contacts/ContactCard";
 
 const AdminRoute = () => {
+    const location = useLocation();
+    const background = (location.state as { backgroundLocation?: Location } | null)
+        ?.backgroundLocation;
+
     return (
-        <Routes>
+        // The primary tree renders the page BEHIND an open create drawer, and the
+        // real location otherwise. Every route inside is unchanged; only the 14
+        // create routes swap their element for <DrawerFallback>, which is what
+        // catches a cold load of a create URL. The drawers themselves are rendered
+        // by <DrawerOutlet>, mounted inside each shell.
+        <RealLocationProvider location={location}>
+        <Routes location={background ?? location}>
             <Route element={<AdminLayout />}>
                 {/* Dashboard */}
                 <Route element={<ProtectedRoute moduleSlug="dashboard" action="view" />}>
@@ -179,7 +180,7 @@ const AdminRoute = () => {
                     <Route path="/brands" element={<><Seo title="Brands" /><BrandList /></>} />
                     <Route path="/categories" element={<><Seo title="Categories" /><CategoryList /></>} />
                     <Route path="/products" element={<><Seo title="Items" /><ProductList /></>} />
-                    <Route path="/products/new" element={<><Seo title="New Item" /><AddProduct /></>} />
+                    <Route path="/products/new" element={<DrawerFallback />} />
                     <Route path="/products/edit/:id" element={<><Seo title="Edit Item" /><EditProduct /></>} />
                     <Route path="/products/view/:id" element={<><Seo title="Item" /><ViewProduct /></>} />
                 </Route>
@@ -194,7 +195,7 @@ const AdminRoute = () => {
                 {/* Invoices */}
                 <Route element={<ProtectedRoute moduleSlug="invoices" action="view" />}>
                     <Route path="/invoices" element={<><Seo title="Invoices" /><InvoiceList /></>} />
-                    <Route path="/invoices/create-invoice" element={<><Seo title="New Invoice" /><CreateInvoice /></>} />
+                    <Route path="/invoices/create-invoice" element={<DrawerFallback />} />
                     <Route path="/invoices/edit-invoice/:invoiceId" element={<><Seo title="Edit Invoice" /><EditInvoice /></>} />
                     <Route path="/invoices/email/:invoiceId" element={<><Seo title="Email Invoice" /><EmailInvoice /></>} />
                     {/* /invoice-templates is a settings catalogue entry — it lives in the settings shell below. */}
@@ -204,14 +205,14 @@ const AdminRoute = () => {
 
                 {/* Recurring Invoice Schedules (dedicated non-posting template editor) */}
                 <Route element={<ProtectedRoute moduleSlug="recurring-invoices" action="view" />}>
-                    <Route path="/recurring-schedules/new" element={<><Seo title="New Recurring Schedule" /><RecurringScheduleForm /></>} />
+                    <Route path="/recurring-schedules/new" element={<DrawerFallback />} />
                     <Route path="/recurring-schedules/edit/:id" element={<><Seo title="Edit Recurring Schedule" /><RecurringScheduleForm /></>} />
                 </Route>
 
                 {/* Credit Notes */}
                 <Route element={<ProtectedRoute moduleSlug="credit-notes" action="view" />}>
                     <Route path="/credit-notes" element={<><Seo title="Credit Notes" /><CreditNoteList /></>} />
-                    <Route path="/credit-notes/new" element={<><Seo title="New Credit Note" /><AddCreditNote /></>} />
+                    <Route path="/credit-notes/new" element={<DrawerFallback />} />
                     <Route path="/credit-notes/edit/:id" element={<><Seo title="Edit Credit Note" /><EditCreditNote /></>} />
                     <Route path="/credit-notes/view/:id" element={<><Seo title="Credit Note" /><OverviewCreditNote /></>} />
                 </Route>
@@ -219,7 +220,7 @@ const AdminRoute = () => {
                 {/* Quotations */}
                 <Route element={<ProtectedRoute moduleSlug="quotations" action="view" />}>
                     <Route path="/quotations" element={<><Seo title="Quotations" /><QuotationList /></>} />
-                    <Route path="/quotations/new" element={<><Seo title="New Quotation" /><CreateNewQuotation /></>} />
+                    <Route path="/quotations/new" element={<DrawerFallback />} />
                     <Route path="/quotations/edit/:id" element={<><Seo title="Edit Quotation" /><EditQuotation /></>} />
                     <Route path="/quotations/email/:id" element={<><Seo title="Email Quotation" /><EmailQuotation /></>} />
                     <Route path="/view-quotation/:id" element={<><Seo title="Quotation" /><ViewQuotation /></>} />
@@ -228,7 +229,7 @@ const AdminRoute = () => {
                 {/* Delivery Challans */}
                 <Route element={<ProtectedRoute moduleSlug="delivery-challans" action="view" />}>
                     <Route path="/delivery-challans" element={<><Seo title="Delivery Challans" /><DeliveryChallanList /></>} />
-                    <Route path="/delivery-challans/new" element={<><Seo title="New Delivery Challan" /><NewDeliveryChallan /></>} />
+                    <Route path="/delivery-challans/new" element={<DrawerFallback />} />
                     <Route path="/delivery-challans/edit/:id" element={<><Seo title="Edit Delivery Challan" /><EditDeliveryChallan /></>} />
                     <Route path="/delivery-challans/view/:id" element={<><Seo title="View Delivery Challan" /><ViewDeliveryChallan /></>} />
                 </Route>
@@ -236,7 +237,7 @@ const AdminRoute = () => {
                 {/* Customers — list redirects to Contacts; detail/edit/statement routes kept for deep links */}
                 <Route element={<ProtectedRoute moduleSlug="customers" action="view" />}>
                     <Route path="/customers" element={<Navigate to="/contacts" replace />} />
-                    <Route path="/customers/new" element={<><Seo title="New Customer" /><CustomerForm /></>} />
+                    <Route path="/customers/new" element={<DrawerFallback />} />
                     <Route path="/customers/edit/:id" element={<><Seo title="Edit Customer" /><EditCustomer /></>} />
                     <Route path="/customers/:id/statement" element={<><Seo title="Customer Statement" /><CustomerStatement /></>} />
                 </Route>
@@ -244,27 +245,27 @@ const AdminRoute = () => {
                 {/* Contacts */}
                 <Route element={<ProtectedRoute moduleSlug="contacts" action="view" />}>
                     <Route path="/contacts" element={<><Seo title="Parties" /><ContactList /></>} />
-                    <Route path="/contacts/new" element={<><Seo title="New Contact" /><ContactForm /></>} />
+                    <Route path="/contacts/new" element={<DrawerFallback />} />
                     <Route path="/contacts/edit/:id" element={<><Seo title="Edit Contact" /><ContactForm /></>} />
                     <Route path="/contacts/:id" element={<><Seo title="Contact" /><ContactCard /></>} />
                 </Route>
 
                 {/* Vehicles */}
                 <Route path="/vehicles" element={<><Seo title="Vehicles" /><VehicleList /></>} />
-                <Route path="/vehicles/new" element={<><Seo title="New Vehicle" /><CreateVehicle /></>} />
+                <Route path="/vehicles/new" element={<DrawerFallback />} />
                 <Route path="/vehicles/edit/:id" element={<><Seo title="Edit Vehicle" /><EditVehicle /></>} />
 
                 {/* Purchase Module */}
                 <Route element={<ProtectedRoute moduleSlug="purchase-orders" action="view" />}>
                     <Route path="/purchase-orders" element={<><Seo title="Purchase Orders" /><PurchaseOrderList /></>} />
-                    <Route path="/purchase-orders/new" element={<><Seo title="New Purchase Order" /><CreatePurchaseOrder /></>} />
+                    <Route path="/purchase-orders/new" element={<DrawerFallback />} />
                     <Route path="/purchase-orders/edit/:id" element={<><Seo title="Edit Purchase Order" /><EditPurchaseOrder /></>} />
                     <Route path="/purchase-orders/view/:id" element={<><Seo title="Purchase Order" /><OverviewPurchaseOrder /></>} />
                 </Route>
 
                 <Route element={<ProtectedRoute moduleSlug="purchase-list" action="view" />}>
                     <Route path="/purchases" element={<><Seo title="Purchases" /><PurchaseList /></>} />
-                    <Route path="/purchases/new" element={<><Seo title="New Purchase" /><CreatePurchase /></>} />
+                    <Route path="/purchases/new" element={<DrawerFallback />} />
                     <Route path="/purchases/edit/:id" element={<><Seo title="Edit Purchase" /><EditPurchase /></>} />
                     <Route path="/purchases/view/:id" element={<><Seo title="Purchase Overview" /><OverviewPurchase /></>} />
                     <Route path="/supplier-balances" element={<><Seo title="Supplier Balances" /><SupplierBalances /></>} />
@@ -272,7 +273,7 @@ const AdminRoute = () => {
 
                 <Route element={<ProtectedRoute moduleSlug="debit-notes" action="view" />}>
                     <Route path="/debit-notes" element={<><Seo title="Debit Notes" /><DebitNoteList /></>} />
-                    <Route path="/debit-notes/new" element={<><Seo title="New Debit Note" /><CreateDebitNote /></>} />
+                    <Route path="/debit-notes/new" element={<DrawerFallback />} />
                     <Route path="/debit-notes/view/:id" element={<><Seo title="Debit Note Overview" /><OverviewDebitNote /></>} />
                 </Route>
 
@@ -340,7 +341,7 @@ const AdminRoute = () => {
                 </Route>
                 <Route element={<ProtectedRoute moduleSlug="journal-entries" action="view" />}>
                     <Route path="/accounting/journal-entries" element={<><Seo title="Journal Entries" /><JournalEntryList /></>} />
-                    <Route path="/accounting/journal-entries/new" element={<><Seo title="New Journal Entry" /><CreateJournalEntry /></>} />
+                    <Route path="/accounting/journal-entries/new" element={<DrawerFallback />} />
                 </Route>
 
                 {/* Remaining accounting features all gate on the "accounting" module */}
@@ -494,7 +495,7 @@ const AdminRoute = () => {
                 <Route element={<ProtectedRoute moduleSlug="finance-settings" action="view" />}>
                     <Route path="/settings/bank-accounts" element={<><Seo title="Bank Accounts" /><BankAccountList /></>} />
                     <Route path="/settings/tax-rates" element={<><Seo title="Taxes" /><TaxRateList /></>} />
-                    <Route path="/settings/tax-rates/new" element={<><Seo title="New Tax" /><CreateTaxRate /></>} />
+                    <Route path="/settings/tax-rates/new" element={<DrawerFallback />} />
                     <Route path="/settings/tax-rates/edit/:id" element={<><Seo title="Edit Tax" /><EditTaxRate /></>} />
                     {/* Tax Groups merged into Taxes (spec 2026-07-12) — old deep links land on Taxes */}
                     <Route path="/settings/tax-groups" element={<Navigate to="/settings/tax-rates" replace />} />
@@ -535,6 +536,7 @@ const AdminRoute = () => {
             <Route path="/unauthorized" element={<><Seo title="Unauthorized" /><Unauthorized /></>} />
             <Route path="*" element={<><Seo title="Not Found" /><NotFound /></>} />
         </Routes>
+        </RealLocationProvider>
     );
 };
 

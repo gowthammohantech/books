@@ -73,6 +73,27 @@ const RULES = [
     onlyIn: /\.css$/,
   },
   {
+    id: "page-level-viewport-height",
+    // Staged, not yet enforced. The create flows are clean — they are drawers
+    // now and the drawer body sizes itself — but the six Edit twins still
+    // carry the frame the create screens used to
+    // (`md:p-4 min-h-screen border border-gray-200 rounded`, e.g.
+    // EditInvoice.tsx:1326), and Reminder.tsx uses min-h-screen for three
+    // hand-rolled modal wrappers. Enable this once those land; until then it
+    // reports under --all so the remaining debt is countable.
+    enabled: false,
+    stage: "H3",
+    hint:
+      "min-h-screen / h-screen on a page root. AdminLayout is `flex h-dvh` with " +
+      "one overflow-y-auto pane, and a Drawer body is shorter still — a " +
+      "viewport-height floor inside either guarantees a scrollbar even when " +
+      "the content fits. The shell owns the pane height.",
+    pattern: /(?<![\w-])(?:min-)?h-screen(?![\w-])/g,
+    // auth/ renders outside the admin shell and legitimately owns the viewport;
+    // AgentDock's `lg:h-screen` is a static sibling column, not a page root.
+    onlyIn: /^apps\/web\/src\/pages\/admin\/(?!auth\/)/,
+  },
+  {
     id: "inline-style-px-height",
     enabled: true,
     stage: "H2",

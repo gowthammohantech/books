@@ -9,6 +9,7 @@ import {
     usePageHeader,
 } from "../../../context/PageHeaderContext";
 import { CommandPaletteProvider } from "../../../context/CommandPaletteContext";
+import DrawerOutlet from "../../../routes/DrawerOutlet";
 import { Tabs } from "@components/ui";
 import { cn } from "@lib/cn";
 import { useNavFlyout } from "@hooks/useNavFlyout";
@@ -318,6 +319,9 @@ const SettingsLayout = () => {
                             </div>
                         </main>
                     </div>
+
+                    {/* /settings/tax-rates/new. Same reasoning as AdminLayout. */}
+                    <DrawerOutlet shell="settings" />
                 </div>
             </CommandPaletteProvider>
         </PageHeaderProvider>

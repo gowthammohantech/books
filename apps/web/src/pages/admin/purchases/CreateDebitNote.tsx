@@ -38,9 +38,8 @@ import CurrencySelect from '@components/admin/CurrencySelect';
 import CostCenterSelect from '@components/admin/CostCenterSelect';
 import { useCurrencies } from '@hooks/useCurrencies';
 import { useDocumentDefaults } from '@hooks/useDocumentDefaults';
-import { Button, FormField, Select, fieldControlClasses } from '@components/ui';
+import { Button, FormField, RouteDrawer, Select, fieldControlClasses } from '@components/ui';
 import { round2 } from '@utils/round2';
-import { PageHeader } from "@/context/PageHeaderContext";
 
 // Extend the base ProductItem to carry per-line custom field values.
 type ProductItem = BaseProductItem & {
@@ -787,11 +786,17 @@ const CreateDebitNote: React.FC = () => {
         setIsProductModalOpen(true);
     }
     return (
-        <div className="md:p-4 min-h-screen border border-gray-200  rounded">
-            <form onSubmit={saveDebitNote}>
-                <div className="max-w-7xl mx-auto space-y-4">
+        <RouteDrawer
+            title="New Debit Note"
+            actions={
+                <>
+                    <Button variant="white" onClick={() => navigate('/debit-notes')}>Cancel</Button>
+                    <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode='create' />
+                </>
+            }
+        >
+            <form className="space-y-4" onSubmit={saveDebitNote}>
 
-                    <PageHeader title="New Debit Note" />
                     {/* Header */}
                     <div className="flex justify-end items-center mb-2">
                         <img src={resolveCompanyLogo(systemSettings?.company?.siteLogo)} alt="" className='w-32' />
@@ -982,7 +987,7 @@ const CreateDebitNote: React.FC = () => {
 
                     {/* Other sections can go here */}
 
-                </div>
+                
 
                 {/* Edit Product Modal */}
                 <Modal isOpen={isEditProductModalOpen} onClose={() => setIsEditProductModalOpen(false)} title={`Edit: ${editingItem?.name}`}>
@@ -1068,7 +1073,7 @@ const CreateDebitNote: React.FC = () => {
                     )}
                 </Modal>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                     {/* Left Side: Tabs */}
                     <div>
@@ -1181,11 +1186,6 @@ const CreateDebitNote: React.FC = () => {
                         ))}
                     </div>
                 </div>
-                <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => navigate('/debit-notes')}>Cancel</Button>
-                    <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode='create' />
-                </div>
-
                 <Modal isOpen={isSignatureModalOpen} onClose={() => setSignatureModalOpen(false)} title="Draw Signature">
                     <div className="p-4">
                         <div className="bg-white border border-gray-400">
@@ -1249,7 +1249,7 @@ const CreateDebitNote: React.FC = () => {
                 }}
             />
             {isFetching && <FullPageLoader />}
-        </div>
+                </RouteDrawer>
     );
 };
 

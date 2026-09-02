@@ -16,6 +16,7 @@ import { CheckCircle2, CirclePlusIcon, Edit, LucideEye, MailIcon, ReceiptIcon, T
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useOpenDrawer } from '@hooks/useOpenDrawer';
 import { toast } from "sonner";
 import { PageHeader } from "@/context/PageHeaderContext";
 import { Button, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
@@ -68,6 +69,7 @@ interface PaginationData {
 
 const QuotationList: React.FC = () => {
     const navigate = useNavigate();
+    const openDrawer = useOpenDrawer();
     const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
@@ -87,7 +89,7 @@ const QuotationList: React.FC = () => {
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
     const handleNewQuotationClick = () => {
-        navigate("/quotations/new");
+        openDrawer("/quotations/new");
     }
 
     const handleSearch = (value: string) => {

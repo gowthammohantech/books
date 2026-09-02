@@ -1,5 +1,5 @@
 import api from '@lib/apiClient';
-import Modal from "@components/admin/Modal"
+import { Drawer } from '@components/ui';
 import SearchableDropdown from "@components/admin/SearchableDropdown";
 import SubmitButton from "@components/admin/SubmitButton";
 import Constants from "@constants/api";
@@ -225,7 +225,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
         }
     }
     return (
-        <Modal isOpen={isOpen} onClose={() => { onClose(); onSuccess(); }} title={editItem ? 'Edit User' : 'Create User'}>
+        <Drawer isOpen={isOpen} onClose={() => { onClose(); onSuccess(); }} title={editItem ? 'Edit User' : 'Create User'}>
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="flex items-start gap-4 mb-4">
                     {/* Image Preview or Default */}
@@ -431,7 +431,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                     <SubmitButton isDisabled={isSaving} isLoading={isSaving} mode={editItem ? "edit" : "create"} />
                 </div>
             </form>
-        </Modal>
+        </Drawer>
     )
 }
 

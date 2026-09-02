@@ -1,11 +1,10 @@
 import type React from "react";
 import { useState, useEffect } from "react";
-import Modal from "@components/admin/Modal";
 import { UploadCloud } from "lucide-react";
 import SearchableDropdown from "@components/admin/SearchableDropdown";
 import DateInput from "@components/admin/DateInput";
 import { round2 } from "@utils/round2";
-import { Button, FormField, fieldControlClasses } from "@components/ui";
+import { Button, Drawer, FormField, fieldControlClasses } from '@components/ui';
 
 // Props for the modal component
 interface PaymentModalProps {
@@ -169,7 +168,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onConfirm,
     }, [isOpen, totalAmount]);
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Add New Payment">
+        <Drawer isOpen={isOpen} onClose={onClose} title="Add New Payment">
             <form onSubmit={handleSubmit} className="p-1">
 
                 {/* --- Main Form Fields Grid --- */}
@@ -299,7 +298,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onConfirm,
                 </div>
 
             </form>
-        </Modal>
+        </Drawer>
     );
 };
 

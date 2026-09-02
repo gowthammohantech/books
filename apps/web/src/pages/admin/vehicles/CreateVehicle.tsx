@@ -10,9 +10,8 @@ import type { RootState } from '@store/index';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useDebounce } from '@hooks/useDebounce';
-import { PageHeader } from '@/context/PageHeaderContext';
 import { Save } from 'lucide-react';
-import { Button } from '@components/ui';
+import { Button, FormSection, RouteDrawer } from '@components/ui';
 
 interface VehicleFormProps {
     vehicleData?: VehicleFormData | null;
@@ -262,28 +261,30 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ vehicleData = null }) => {
         : null;
 
     return (
-        <div className="p-6 bg-white rounded-xl shadow-sm border border-border overflow-x-auto">
-            <PageHeader title={isEditMode ? 'Edit Vehicle' : 'Add Vehicle'}>
-                <Button
-                    variant="white"
-                    onClick={() => navigate('/vehicles')}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    type="submit"
-                    form="vehicle-form"
-                    disabled={isSubmitting}
-                    leftIcon={<Save size={16} />}
-                >
-                    {isEditMode ? 'Save Changes' : 'Create'}
-                </Button>
-            </PageHeader>
+        <RouteDrawer
+            title={isEditMode ? 'Edit Vehicle' : 'Add Vehicle'}
+            actions={
+                <>
+                    <Button
+                        variant="white"
+                        onClick={() => navigate('/vehicles')}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="submit"
+                        form="vehicle-form"
+                        disabled={isSubmitting}
+                        isLoading={isSubmitting}
+                        leftIcon={<Save size={16} />}
+                    >
+                        {isEditMode ? 'Save Changes' : 'Create'}
+                    </Button>
+                </>
+            }
+        >
             <form id="vehicle-form" className="space-y-8" onSubmit={handleSubmit}>
-                <section>
-                    <h3 className="text-lg font-semibold leading-6 text-gray-950 border-b border-gray-200 pb-2 mb-6">
-                        Basic Details
-                    </h3>
+                <FormSection title="Basic Details">
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-6">
                         <div className="sm:col-span-3">
                             <label className="block text-sm font-medium text-gray-700">
@@ -417,10 +418,10 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ vehicleData = null }) => {
                             </div>
                         </div>
                     </div>
-                </section>
+                </FormSection>
 
             </form>
-        </div>
+        </RouteDrawer>
     );
 };
 

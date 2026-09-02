@@ -18,6 +18,7 @@ import { CirclePlusIcon, Edit, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useOpenDrawer } from '@hooks/useOpenDrawer';
 import { toast } from "sonner";
 import { PageHeader } from "@/context/PageHeaderContext";
 import { Button, PageSizeSelect, EmptyStateRow, EmptyStateHero } from "@components/ui";
@@ -65,6 +66,7 @@ interface DeliveryChallanList {
 
 const DeliveryChallanList: React.FC = () => {
     const navigate = useNavigate();
+    const openDrawer = useOpenDrawer();
     const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
@@ -81,7 +83,7 @@ const DeliveryChallanList: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isDeleting, setIsDeleting] = useState<boolean>(false);
     const handleNewDeliveryChallanClick = () => {
-        navigate("/delivery-challans/new");
+        openDrawer("/delivery-challans/new");
     }
 
     const handleSearch = (value: string) => {

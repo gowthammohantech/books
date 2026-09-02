@@ -38,8 +38,7 @@ import CurrencySelect from '@components/admin/CurrencySelect';
 import CostCenterSelect from '@components/admin/CostCenterSelect';
 import { useCurrencies } from '@hooks/useCurrencies';
 import { useDocumentDefaults } from '@hooks/useDocumentDefaults';
-import { Button, FormField, Select, fieldControlClasses } from '@components/ui';
-import { PageHeader } from "@/context/PageHeaderContext";
+import { Button, FormField, RouteDrawer, Select, fieldControlClasses } from '@components/ui';
 import { getTenantValue } from "@utils/tenantStorage";
 
 // Extend the base ProductItem to carry per-line custom field values.
@@ -704,11 +703,17 @@ const CreatePurchaseOrder: React.FC = () => {
     const docCurrencySymbol = resolveCurrency(purchaseFormData.currencyCode).symbol;
 
     return (
-        <div className="md:p-4 min-h-screen border border-gray-200  rounded">
-            <form onSubmit={savePurchaseOrder}>
-                <div className="max-w-7xl mx-auto space-y-4">
+        <RouteDrawer
+            title="New Purchase Order"
+            actions={
+                <>
+                    <Button variant="white" onClick={() => navigate('/purchase-orders')}>Cancel</Button>
+                    <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode='create' />
+                </>
+            }
+        >
+            <form className="space-y-4" onSubmit={savePurchaseOrder}>
 
-                    <PageHeader title="New Purchase Order" />
                     {/* Header */}
                     <div className="flex justify-end items-center mb-2">
                         <img src={resolveCompanyLogo(systemSettings?.company?.siteLogo)} alt="" className='w-32' />
@@ -898,7 +903,7 @@ const CreatePurchaseOrder: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                </div>
+                
 
                 {/* Edit Product Modal */}
                 <Modal isOpen={isEditProductModalOpen} onClose={() => setIsEditProductModalOpen(false)} title={`Edit: ${editingItem?.name}`}>
@@ -984,7 +989,7 @@ const CreatePurchaseOrder: React.FC = () => {
                     )}
                 </Modal>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                     {/* Left Side: Tabs */}
                     <div>
@@ -1097,11 +1102,6 @@ const CreatePurchaseOrder: React.FC = () => {
                         ))}
                     </div>
                 </div>
-                <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => navigate('/purchase-orders')}>Cancel</Button>
-                    <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode='create' />
-                </div>
-
                 <Modal isOpen={isSignatureModalOpen} onClose={() => setSignatureModalOpen(false)} title="Draw Signature">
                     <div className="p-4">
                         <div className="bg-white border border-gray-400">
@@ -1156,7 +1156,7 @@ const CreatePurchaseOrder: React.FC = () => {
                 }}
             />
             {isFetching && <FullPageLoader />}
-        </div>
+                </RouteDrawer>
     );
 };
 

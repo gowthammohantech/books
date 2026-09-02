@@ -1,9 +1,8 @@
 import api from '@lib/apiClient';
 import DateInput from "@components/admin/DateInput";
-import Modal from "@components/admin/Modal";
 import SmartDropdown from "@components/admin/SmartDropdown";
 import SubmitButton from "@components/admin/SubmitButton";
-import { Button, FormField, fieldControlClasses } from "@components/ui";
+import { Button, Drawer, FormField, fieldControlClasses } from '@components/ui';
 import Constants from "@constants/api";
 import { useDebounce } from "@hooks/useDebounce";
 import type { OptionType } from "@models/common";
@@ -259,7 +258,7 @@ const InvoicePaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, inv
         }
     }
     return (
-        <Modal isOpen={isOpen} onClose={() => handleOnClose()} title="Invoice Payment">
+        <Drawer isOpen={isOpen} onClose={() => handleOnClose()} title="Invoice Payment">
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit() }}>
                 {/* Invoice Number & Amount */}
                 <div className="grid grid-cols-2 gap-4">
@@ -392,7 +391,7 @@ const InvoicePaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, inv
                     <SubmitButton isDisabled={isSaving} isLoading={isSaving} mode="create" />
                 </div>
             </form>
-        </Modal>
+        </Drawer>
     );
 };
 

@@ -1,5 +1,4 @@
 import api from '@lib/apiClient';
-import Modal from "@components/admin/Modal";
 import SubmitButton from "@components/admin/SubmitButton";
 import Switch from "@components/admin/Switch";
 import Constants from "@constants/api";
@@ -7,7 +6,7 @@ import type { ExpenseCategoryFormData, ExpenseCategoryShape } from "@models/expe
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button, FormField, fieldControlClasses } from "@components/ui";
+import { Button, Drawer, FormField, fieldControlClasses } from '@components/ui';
 
 interface Props {
     isOpen: boolean;
@@ -89,7 +88,7 @@ const ExpenseCategoryFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess,
     };
     return (
         <>
-            <Modal isOpen={isOpen} onClose={onClose} title="Expense Category" size="xl">
+            <Drawer isOpen={isOpen} onClose={onClose} title="Expense Category">
                 {/* title */}
                 <form onSubmit={handleFormSubmit}>
                     <FormField
@@ -126,7 +125,7 @@ const ExpenseCategoryFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess,
                         <SubmitButton isDisabled={isSaving} onClick={() => { }} isLoading={isSaving} mode={editItem ? "edit" : "create"} />
                     </div>
                 </form>
-            </Modal>
+            </Drawer>
         </>
     );
 };

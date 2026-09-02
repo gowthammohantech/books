@@ -1,5 +1,5 @@
 import api from '@lib/apiClient';
-import Modal from "@components/admin/Modal";
+import { Drawer } from '@components/ui';
 import SearchableDropdown from "@components/admin/SearchableDropdown";
 import SubmitButton from "@components/admin/SubmitButton";
 import Constants from "@constants/api";
@@ -91,7 +91,7 @@ const NewInventoryModal: React.FC<InventoryModalProps> = ({ isOpen, onClose, onS
         }
     }
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Add Inventory">
+        <Drawer isOpen={isOpen} onClose={onClose} title="Add Inventory">
             <form onSubmit={handleSubmit}>
                 <div className="mb-4">
                     <label htmlFor="product" className="block text-gray-700  font-semibold mb-2">Product/Service <em className="text-destructive">*</em></label>
@@ -177,7 +177,7 @@ const NewInventoryModal: React.FC<InventoryModalProps> = ({ isOpen, onClose, onS
                     <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode="create" />
                 </div>
             </form>
-        </Modal>
+        </Drawer>
     );
 }
 

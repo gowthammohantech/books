@@ -1,5 +1,4 @@
 import api from '@lib/apiClient';
-import Modal from "@components/admin/Modal";
 import QuillEditor, { type QuillEditorRef } from "@components/admin/QuillEditor";
 import SubmitButton from "@components/admin/SubmitButton";
 import Switch from "@components/admin/Switch";
@@ -8,7 +7,7 @@ import Constants from "@constants/api";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Badge, Button, FormField, Select, fieldControlClasses } from "@components/ui";
+import { Badge, Button, Drawer, FormField, Select, fieldControlClasses } from '@components/ui';
 
 interface Props {
     isOpen: boolean;
@@ -239,7 +238,7 @@ const QuotationReminderModal: React.FC<Props> = ({ isOpen, onClose, editingRemin
         }
     }
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={editingReminder ? 'Edit Quotation Reminder' : 'Create Quotation Reminder'} size="4xl">
+        <Drawer isOpen={isOpen} onClose={onClose} title={editingReminder ? 'Edit Quotation Reminder' : 'Create Quotation Reminder'}>
             <form onSubmit={handlePurchaseReminderSave} className="space-y-6">
                 {/* Name and Enable Reminder on same row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -477,7 +476,7 @@ const QuotationReminderModal: React.FC<Props> = ({ isOpen, onClose, editingRemin
                     </SubmitButton>
                 </div>
             </form>
-        </Modal>
+        </Drawer>
     );
 }
 export default QuotationReminderModal;

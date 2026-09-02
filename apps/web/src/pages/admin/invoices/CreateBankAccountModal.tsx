@@ -1,6 +1,5 @@
 import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
-import Modal from "@components/admin/Modal";
 import type { AxiosError } from 'axios';
 import Constants from "@constants/api";
 import SubmitButton from "@components/admin/SubmitButton";
@@ -10,7 +9,7 @@ import type { BankAccountCreatedResponse } from "@models/bank-account";
 import SmartDropdown from "@components/admin/SmartDropdown";
 import type { OptionType } from "@models/common";
 import { BANK_CODE_TYPES, getBankCodeType } from "@constants/bankCodeTypes";
-import { Button, FormField, Select } from "@components/ui";
+import { Button, Drawer, FormField, Select } from '@components/ui';
 
 interface Props {
     isOpen: boolean;
@@ -125,7 +124,7 @@ const CreateBankAccountModal: React.FC<Props> = ({ isOpen, onClose, onSuccess })
         }
     };
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create Bank Account">
+        <Drawer isOpen={isOpen} onClose={onClose} title="Create Bank Account">
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                     {/* Account Holder Name */}
@@ -230,7 +229,7 @@ const CreateBankAccountModal: React.FC<Props> = ({ isOpen, onClose, onSuccess })
                     <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode={"create"} />
                 </div>
             </form>
-        </Modal>
+        </Drawer>
     );
 }
 

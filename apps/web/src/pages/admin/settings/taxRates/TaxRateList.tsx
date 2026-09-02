@@ -1,6 +1,7 @@
 import api from '@lib/apiClient';
 import { CirclePlusIcon, Edit, Sparkles, Trash2Icon } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useOpenDrawer } from '@hooks/useOpenDrawer';
 import Table from "@components/admin/Table";
 import { useSelector } from "react-redux";
 import type { RootState } from "@store/index";
@@ -78,6 +79,7 @@ const TaxRateList: React.FC = () => {
     const limit = Number(searchParams.get('limit') || 10);
     const page = Number(searchParams.get('page') || 1);
     const navigate = useNavigate();
+    const openDrawer = useOpenDrawer();
     const { user } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
@@ -85,7 +87,7 @@ const TaxRateList: React.FC = () => {
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleCreateClick = () => {
-        navigate('/settings/tax-rates/new');
+        openDrawer('/settings/tax-rates/new');
     };
 
     const handleEditClick = (item: TaxRate) => {

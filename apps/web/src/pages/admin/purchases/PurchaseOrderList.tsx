@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo, type FC } from "react";
 import { CirclePlusIcon, Edit, Trash2Icon } from "lucide-react";
 import Table from '@components/admin/Table';
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useOpenDrawer } from '@hooks/useOpenDrawer';
 
 import { useSelector } from "react-redux";
 import type { RootState } from '@store/index';
@@ -74,6 +75,7 @@ const PurchaseOrderList: FC = () => {
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     const navigate = useNavigate();
+    const openDrawer = useOpenDrawer();
     const { formatMoney } = useCurrencies();
     const { formatDate } = useDateFormatter();
 
@@ -146,7 +148,7 @@ const PurchaseOrderList: FC = () => {
 
     // Handler to navigate to the 'new purchase order' page
     const handleNewPoClick = () => {
-        navigate("/purchase-orders/new");
+        openDrawer("/purchase-orders/new");
     };
 
     // Fetch purchase orders whenever search, limit, or page changes

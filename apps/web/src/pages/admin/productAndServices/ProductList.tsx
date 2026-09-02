@@ -2,6 +2,7 @@ import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
 import type { FC, ChangeEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useOpenDrawer } from '@hooks/useOpenDrawer';
 import Constants from "@constants/api";
 
 import Table from "@components/admin/Table";
@@ -61,6 +62,7 @@ interface ProductPagination {
 const ProductList: FC = () => {
     // Hooks
     const navigate = useNavigate();
+    const openDrawer = useOpenDrawer();
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     const [searchParams, setSearchParams] = useSearchParams();
@@ -227,7 +229,7 @@ const ProductList: FC = () => {
                 }
                 {hasPermission(permissions, 'product-services', 'create') &&
                     <Button
-                        onClick={() => navigate('/products/new')}
+                        onClick={() => openDrawer('/products/new')}
                         leftIcon={<CirclePlusIcon size={14} />}
                         className="shadow"
                     >
@@ -240,7 +242,7 @@ const ProductList: FC = () => {
                 <EmptyStateHero
                     {...LIST_EMPTY_STATES.products}
                     action={hasPermission(permissions, 'product-services', 'create') && (
-                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={() => navigate('/products/new')}>
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={() => openDrawer('/products/new')}>
                             {LIST_EMPTY_STATES.products.cta}
                         </Button>
                     )}

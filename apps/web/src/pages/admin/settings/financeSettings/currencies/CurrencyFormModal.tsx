@@ -1,6 +1,5 @@
 import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
-import Modal from "../../../../../components/admin/Modal";
 import Switch from "../../../../../components/admin/Switch";
 import type { AxiosError } from 'axios';
 import Constants from "../../../../../constants/api";
@@ -9,7 +8,7 @@ import type { AppDispatch, RootState } from "../../../../../store";
 import { toast } from "sonner";
 import { fetchSystemSettings } from "@store/systemSettingsSlice";
 import SubmitButton from "@components/admin/SubmitButton";
-import { Button, FormField } from "@components/ui";
+import { Button, Drawer, FormField } from '@components/ui';
 
 interface CurrencyFormModalProps {
     isOpen: boolean;
@@ -88,7 +87,7 @@ const CurrencyFormModal: React.FC<CurrencyFormModalProps> = ({ isOpen, onClose, 
     }
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={editData ? 'Edit Currency' : 'Create New Currency'}>
+        <Drawer isOpen={isOpen} onClose={onClose} title={editData ? 'Edit Currency' : 'Create New Currency'}>
             <form className="space-y-4 p-4" onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }}>
                 <FormField
                     label="Name"
@@ -135,7 +134,7 @@ const CurrencyFormModal: React.FC<CurrencyFormModalProps> = ({ isOpen, onClose, 
                     <SubmitButton isDisabled={isSaving} isLoading={isSaving} mode={editData ? 'edit' : 'create'} />
                 </div>
             </form>
-        </Modal>
+        </Drawer>
     );
 }
 

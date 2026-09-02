@@ -9,8 +9,7 @@ import { Plus, Trash2 } from "lucide-react";
 import type { RootState } from "@store/index";
 import Constants from "@constants/api";
 import type { Account } from "@models/accounting";
-import { Button, Badge } from "@components/ui";
-import { PageHeader } from "@/context/PageHeaderContext";
+import { Badge, Button, RouteDrawer } from "@components/ui";
 import DateInput from "@components/admin/DateInput";
 import { ymdStringToDate, dateToYmdString } from "@utils/converters";
 
@@ -100,10 +99,28 @@ const CreateJournalEntry: React.FC = () => {
     };
 
     return (
-        <div className="space-y-5">
-            <PageHeader title="New Journal Entry" />
-
-            <div className="bg-white rounded-md border border-gray-100 p-5 space-y-4">
+        <RouteDrawer
+            title="New Journal Entry"
+            actions={
+                <>
+                    <Button
+                        variant="white"
+                        onClick={() => navigate("/accounting/journal-entries")}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleSave}
+                        disabled={!canSave}
+                        isLoading={submitting}
+                        title={!canSave ? "Fill in all lines and ensure debits equal credits" : ""}
+                    >
+                        Save Journal Entry
+                    </Button>
+                </>
+            }
+        >
+            <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <DateInput
@@ -221,23 +238,8 @@ const CreateJournalEntry: React.FC = () => {
                     </table>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2">
-                    <Button
-                        variant="white"
-                        onClick={() => navigate("/accounting/journal-entries")}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={handleSave}
-                        disabled={!canSave}
-                        title={!canSave ? "Fill in all lines and ensure debits equal credits" : ""}
-                    >
-                        {submitting ? "Saving…" : "Save Journal Entry"}
-                    </Button>
-                </div>
             </div>
-        </div>
+        </RouteDrawer>
     );
 };
 

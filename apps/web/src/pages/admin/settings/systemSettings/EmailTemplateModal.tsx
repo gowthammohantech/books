@@ -1,5 +1,4 @@
 import api from '@lib/apiClient';
-import Modal from "@components/admin/Modal";
 import SearchableDropdown from "@components/admin/SearchableDropdown";
 import SubmitButton from "@components/admin/SubmitButton";
 import { TiptapEditor } from "@components/admin/TiptapEditor";
@@ -10,7 +9,7 @@ import type { RootState } from "@store/index";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
-import { Button, FormField, fieldControlClasses } from "@components/ui";
+import { Button, Drawer, FormField, fieldControlClasses } from '@components/ui';
 interface TemplateProps {
     isOpen: boolean,
     onClose: () => void,
@@ -153,11 +152,10 @@ const EmailTemplateModal: React.FC<TemplateProps> = ({ isOpen, onClose, onSucces
         setFormData(prev => ({ ...prev, description: value }));
     }
     return (
-        <Modal
+        <Drawer
             isOpen={isOpen}
             onClose={onClose}
             title="Email Template"
-            size="4xl"
         >
             <form onSubmit={handleFormSubmit}>
                 <div className="flex mb-4">
@@ -268,7 +266,7 @@ const EmailTemplateModal: React.FC<TemplateProps> = ({ isOpen, onClose, onSucces
                     />
                 </div>
             </form>
-        </Modal>
+        </Drawer>
     );
 }
 

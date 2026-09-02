@@ -30,6 +30,9 @@ const REPRESENTATIVE = [
   "/invoices",
   "/invoices/create-invoice",
   "/contacts",
+  "/contacts/new",
+  "/purchases/new",
+  "/settings/tax-rates/new",
   "/accounting/reports/profit-loss",
   "/settings/company-settings",
   "/banking",
@@ -122,6 +125,26 @@ test("layout sweep", async ({ browser }, testInfo) => {
     .slice(0, 15);
   console.log(`\nworst overflow ratios:`);
   for (const m of worst) console.log(`  ${(m.overflowRatio as number).toFixed(2)}  ${m.route} @${m.viewport}`);
+
+  // The create routes' `overflowRatio` now describes the list behind the
+  // drawer. This is the number that actually tracks those screens; it is not
+  // comparable with a pre-drawer baseline, so it is reported separately rather
+  // than folded into the list above.
+  type Overlay = { ratio: number; w: number; h: number };
+  const overlayOf = (m: Metric) => m.overlay as Overlay | null | undefined;
+  const drawers = metrics
+    .filter((m) => overlayOf(m))
+    .sort((a, b) => overlayOf(b)!.ratio - overlayOf(a)!.ratio)
+    .slice(0, 15);
+  if (drawers.length) {
+    console.log(`\nworst drawer-body ratios (depth in brackets):`);
+    for (const m of drawers) {
+      const o = overlayOf(m)!;
+      console.log(
+        `  ${o.ratio.toFixed(2)}  ${o.w}x${o.h}  [${m.overlayDepth}]  ${m.route} @${m.viewport}`,
+      );
+    }
+  }
 
   if (process.env.EB_ASSERT === "1") {
     expect(overflow, "routes with horizontal page overflow").toHaveLength(0);

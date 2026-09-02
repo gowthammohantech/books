@@ -1,6 +1,7 @@
 import api from '@lib/apiClient';
 import { CirclePlusIcon, Edit, Trash2Icon } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useOpenDrawer } from '@hooks/useOpenDrawer';
 import Table from "@components/admin/Table";
 import { useSelector } from "react-redux";
 import type { RootState } from "@store/index";
@@ -39,13 +40,14 @@ const VehicleList: React.FC = () => {
     const limit = Number(searchParams.get('limit') || 10);
     const page = Number(searchParams.get('page') || 1);
     const navigate = useNavigate();
+    const openDrawer = useOpenDrawer();
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     const [isLoading, setIsLoading] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleCreateClick = () => {
-        navigate('/vehicles/new');
+        openDrawer('/vehicles/new');
     };
 
     const handleEditClick = (item: Vehicle) => {

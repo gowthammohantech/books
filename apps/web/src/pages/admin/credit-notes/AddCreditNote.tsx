@@ -35,8 +35,7 @@ import CurrencySelect from '@components/admin/CurrencySelect';
 import CostCenterSelect from '@components/admin/CostCenterSelect';
 import { useCurrencies } from '@hooks/useCurrencies';
 import { useDocumentDefaults } from '@hooks/useDocumentDefaults';
-import { PageHeader } from "@/context/PageHeaderContext";
-import { Button } from "@components/ui";
+import { Button, RouteDrawer } from '@components/ui';
 import { round2 } from '@utils/round2';
 import { useLineItemCustomFields } from '@hooks/useLineItemCustomFields';
 import { validateLineCustomFields } from '@lib/lineCustomFields';
@@ -741,11 +740,17 @@ const AddCreditNote: React.FC = () => {
         setIsProductModalOpen(true);
     }
     return (
-        <div className="md:p-4 min-h-screen border border-gray-200  rounded">
-            <form onSubmit={saveCreditNote}>
-                <div className="max-w-7xl mx-auto space-y-4">
+        <RouteDrawer
+            title="New Credit Note"
+            actions={
+                <>
+                    <Button variant="white" onClick={() => navigate('/credit-notes')}>Cancel</Button>
+                    <SubmitButton isDisabled={isSaving} isLoading={isSaving} mode="create" />
+                </>
+            }
+        >
+            <form className="space-y-4" onSubmit={saveCreditNote}>
 
-                    <PageHeader title="New Credit Note" />
                     {/* Header */}
                     <div className="flex justify-end items-center mb-2">
                         <img src={resolveCompanyLogo(systemSettings?.company?.siteLogo)} alt="" className='w-32 h-auto' />
@@ -934,7 +939,7 @@ const AddCreditNote: React.FC = () => {
 
                     {/* Other sections can go here */}
 
-                </div>
+                
 
                 {/* Edit Product Modal */}
                 <Modal isOpen={isEditProductModalOpen} onClose={() => setIsEditProductModalOpen(false)} title={`Edit: ${editingItem?.name}`}>
@@ -1031,7 +1036,7 @@ const AddCreditNote: React.FC = () => {
                     )}
                 </Modal>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                     {/* Left Side: Tabs */}
                     <div>
@@ -1119,11 +1124,6 @@ const AddCreditNote: React.FC = () => {
                         ))}
                     </div>
                 </div>
-                <div className="flex justify-end mt-4 gap-3">
-                    <Button variant="white" onClick={() => navigate('/credit-notes')}>Cancel</Button>
-                    <SubmitButton isDisabled={isSaving} isLoading={isSaving} mode="create" />
-                </div>
-
                 <Modal isOpen={isSignatureModalOpen} onClose={() => setSignatureModalOpen(false)} title="Draw Signature">
                     <div className="p-4">
                         <div className="bg-white border border-gray-400">
@@ -1179,7 +1179,7 @@ const AddCreditNote: React.FC = () => {
             />
 
             {isFetching && <FullPageLoader />}
-        </div>
+                </RouteDrawer>
     );
 };
 

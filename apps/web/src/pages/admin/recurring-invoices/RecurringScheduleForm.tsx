@@ -14,8 +14,7 @@ import CreateProductForm from '@components/admin/CreateProductForm';
 import CurrencySelect from '@components/admin/CurrencySelect';
 import LineTaxSelect from '@components/admin/LineTaxSelect';
 import ContactPicker from '@components/admin/ContactPicker';
-import { Button } from '@components/ui';
-import { PageHeader } from '@/context/PageHeaderContext';
+import { Button, RouteDrawer } from '@components/ui';
 
 import Constants from '@constants/api';
 import type { RootState } from '@store/index';
@@ -602,10 +601,21 @@ const RecurringScheduleForm: React.FC = () => {
         'border border-gray-300 rounded-md px-4 py-2 w-full text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring';
 
     return (
-        <div className="md:p-4 min-h-screen border border-gray-200 rounded">
-            <form onSubmit={handleSubmit}>
-                <div className="max-w-7xl mx-auto space-y-4">
-                    <PageHeader title={isEdit ? 'Edit Recurring Schedule' : 'New Recurring Schedule'} />
+        <RouteDrawer
+            title={isEdit ? 'Edit Recurring Schedule' : 'New Recurring Schedule'}
+            actions={
+                <>
+                    <Button variant="white" type="button" onClick={() => navigate('/recurring-invoices')}>
+                    Cancel
+                    </Button>
+                    <Button type="submit" disabled={isSubmitting}>
+                    {isEdit ? 'Update Schedule' : 'Create Schedule'}
+                    </Button>
+                </>
+            }
+        >
+            <form className="space-y-4" onSubmit={handleSubmit}>
+
 
                     <p className="text-xs text-gray-500">
                         A schedule is a non-posting template. It does not affect the ledger or inventory —
@@ -926,7 +936,7 @@ const RecurringScheduleForm: React.FC = () => {
                     </div>
 
                     {/* Notes / terms + totals */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Notes</label>
@@ -969,15 +979,7 @@ const RecurringScheduleForm: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="flex justify-end mt-4 gap-3">
-                        <Button variant="white" type="button" onClick={() => navigate('/recurring-invoices')}>
-                            Cancel
-                        </Button>
-                        <Button type="submit" disabled={isSubmitting}>
-                            {isEdit ? 'Update Schedule' : 'Create Schedule'}
-                        </Button>
-                    </div>
-                </div>
+                
             </form>
 
             <CreateProductForm
@@ -985,7 +987,7 @@ const RecurringScheduleForm: React.FC = () => {
                 onClose={() => setIsProductModalOpen(false)}
                 onSuccess={(newProduct: Product) => handleNewProductCreated(newProduct)}
             />
-        </div>
+                </RouteDrawer>
     );
 };
 

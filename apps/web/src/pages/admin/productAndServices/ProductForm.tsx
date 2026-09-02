@@ -15,7 +15,7 @@ import CreateUnitModal from './CreateUnitModal';
 import CurrencySelect from '@components/admin/CurrencySelect';
 import { useCurrencies } from '@hooks/useCurrencies';
 import DynamicCustomFields from '@components/admin/DynamicCustomFields';
-import { Button } from '@components/ui';
+import { Button, FormActions } from '@components/ui';
 import type { ProductTaxRate } from '@models/product';
 import type { TaxRate } from '@models/taxRate';
 import { validateProductForm } from '@utils/productValidation';
@@ -684,8 +684,11 @@ export default function ProductForm({ productData }: ProductFormProps) {
                     onFieldsLoaded={setActiveCustomFields}
                 />
 
-                {/* --- Action Buttons --- */}
-                <div className="flex justify-end space-x-4 pt-6 ">
+                {/* Action row. Stays inside the form rather than moving to the
+                    drawer footer: "Create & Add Another" sets a ref this form
+                    reads in its own submit handler, so hoisting it out would be
+                    a behaviour change, not a layout one. */}
+                <FormActions className="pt-6">
                     <Button variant="white" onClick={() => navigate('/products')}>Cancel</Button>
                     {!isEditMode && (
                         <Button type="submit" variant="white" disabled={isSubmitting} onClick={() => { addAnotherRef.current = true; }}>
@@ -693,7 +696,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
                         </Button>
                     )}
                     <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode={isEditMode ? 'edit' : 'create'} />
-                </div>
+                </FormActions>
             </form>
 
             {/* Category Create Modal — the modal doesn't hand back the created record,

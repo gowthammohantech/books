@@ -1,6 +1,7 @@
 import api from '@lib/apiClient';
 import { CirclePlusIcon, Edit, PauseCircle, PlayCircle, PlayIcon, ListIcon, StopCircle } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useOpenDrawer } from '@hooks/useOpenDrawer';
 import Table from "@components/admin/Table";
 import Constants from "@constants/api";
 import { useEffect, useState } from "react";
@@ -65,6 +66,7 @@ const RecurringInvoiceList: React.FC = () => {
     const limit = Number(searchParams.get('limit') || 10);
     const page = Number(searchParams.get('page') || 1);
     const navigate = useNavigate();
+    const openDrawer = useOpenDrawer();
     const [isLoading, setIsLoading] = useState(false);
     const [busyRowId, setBusyRowId] = useState<string | null>(null);
 
@@ -258,7 +260,7 @@ const RecurringInvoiceList: React.FC = () => {
             <PageHeader title="Recurring Invoices">
                 <button
                     type="button"
-                    onClick={() => navigate('/recurring-schedules/new')}
+                    onClick={() => openDrawer('/recurring-schedules/new')}
                     className="bg-primary hover:bg-primary/90 text-white text-sm font-medium px-4 py-2 rounded-md"
                 >
                     New Recurring Invoice
@@ -268,7 +270,7 @@ const RecurringInvoiceList: React.FC = () => {
                 <EmptyStateHero
                     {...LIST_EMPTY_STATES.recurringInvoices}
                     action={
-                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={() => navigate('/recurring-schedules/new')}>
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={() => openDrawer('/recurring-schedules/new')}>
                             {LIST_EMPTY_STATES.recurringInvoices.cta}
                         </Button>
                     }

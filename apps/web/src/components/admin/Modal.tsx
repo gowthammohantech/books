@@ -3,6 +3,13 @@ import { createPortal } from 'react-dom';
 
 import { AnimatedIcon } from '@components/icons';
 import { confirmIfDirty } from '@hooks/useDirtyGuard';
+import {
+  isTopmostOverlay,
+  overlayCount,
+  overlayZ,
+  pushOverlay,
+  removeOverlay,
+} from '@components/ui';
 
 interface ModalProps {
   isOpen: boolean;
@@ -27,18 +34,21 @@ const sizeClassMap = {
   full: 'w-full max-w-none',
 };
 
-// Escape must close only the topmost modal when modals nest (e.g.
-// CreateProductForm's Modal with a quick-create CreateUnitModal/
-// CreateCategoryModal/CreateBrandModal/CreateTaxGroupModal on top). Every open
-// instance pushes its id here and the keydown handler below only acts when
-// it's the last (topmost) entry — otherwise it lets the event fall through
-// to whichever modal actually owns it.
-const modalStack: symbol[] = [];
-
+// Escape must close only the topmost overlay when overlays nest (e.g. a
+// quick-create modal opened from inside a create Drawer). The stack lives in
+// components/ui/overlayStack so Modal and Drawer share one — a stack private
+// to this file could only see half of a mixed nest.
 const Modal = ({ isOpen, onClose, title, children, size = '2xl', confirmOnClose = false }: ModalProps) => {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<Element | null>(null);
   const idRef = useRef(Symbol('modal'));
+
+  // Same stack-derived depth as Drawer: a confirm opened from inside a drawer
+  // has to paint above it, and the two nest in both directions.
+  const depthRef = useRef<number | null>(null);
+  if (isOpen && depthRef.current === null) depthRef.current = overlayCount();
+  if (!isOpen && depthRef.current !== null) depthRef.current = null;
+  const depth = depthRef.current ?? 0;
 
   // Route every discard through the shared confirm so backdrop-click can't
   // silently drop a half-filled form when the caller marks it dirty.
@@ -61,23 +71,20 @@ const Modal = ({ isOpen, onClose, title, children, size = '2xl', confirmOnClose 
     );
     (focusable ?? dialogRef.current)?.focus();
 
-    modalStack.push(idRef.current);
+    pushOverlay(idRef.current);
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      // Only the topmost modal in the stack reacts — a nested modal's Escape
-      // must not also bubble into an outer modal's handler.
-      if (modalStack[modalStack.length - 1] !== idRef.current) return;
+      // Only the topmost overlay in the stack reacts — a nested one's Escape
+      // must not also bubble into an outer overlay's handler.
+      if (!isTopmostOverlay(idRef.current)) return;
       handleClose();
     };
     document.addEventListener('keydown', onKeyDown);
 
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      // Cleanup order across nested modals isn't guaranteed LIFO, so remove
-      // by identity rather than assuming this is the top of the stack.
-      const idx = modalStack.indexOf(idRef.current);
-      if (idx !== -1) modalStack.splice(idx, 1);
+      removeOverlay(idRef.current);
       if (previouslyFocusedRef.current instanceof HTMLElement) {
         previouslyFocusedRef.current.focus();
       }
@@ -87,6 +94,8 @@ const Modal = ({ isOpen, onClose, title, children, size = '2xl', confirmOnClose 
 
   if (!isOpen) return null;
 
+  const z = overlayZ(depth);
+
   // Render through a portal to <body> so the fixed-position overlay is always
   // anchored to the viewport. Inline rendering breaks when an ancestor creates
   // a containing block for fixed descendants (e.g. the invoice toolbar's
@@ -95,10 +104,17 @@ const Modal = ({ isOpen, onClose, title, children, size = '2xl', confirmOnClose 
   return createPortal(
     <>
       {/* Fixed Backdrop */}
-      <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={handleClose}></div>
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+        style={{ zIndex: z.backdrop }}
+        onClick={handleClose}
+      ></div>
 
       {/* Scrollable Page Flow */}
-      <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto px-4 py-10">
+      <div
+        className="fixed inset-0 flex items-start justify-center overflow-y-auto px-4 py-10"
+        style={{ zIndex: z.panel }}
+      >
         <div
           ref={dialogRef}
           role="dialog"

@@ -1,7 +1,6 @@
 import api from '@lib/apiClient';
 import DateInput from "@components/admin/DateInput";
 import { ymdStringToDate, dateToYmdString } from "@utils/converters";
-import Modal from "@components/admin/Modal";
 import SmartDropdown from "@components/admin/SmartDropdown";
 import SubmitButton from "@components/admin/SubmitButton";
 import Constants from "@constants/api";
@@ -16,7 +15,7 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import DynamicCustomFields from "@components/admin/DynamicCustomFields"; // <-- Imported reusable component
-import { Button, FormField, Select, fieldControlClasses } from "@components/ui";
+import { Button, Drawer, FormField, Select, fieldControlClasses } from '@components/ui';
 
 interface Props {
     isOpen: boolean;
@@ -442,7 +441,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
 
     return (
         <>
-            <Modal isOpen={isOpen} onClose={onClose} title={editItem ? 'Update Expense' : 'Create New Expense'} size="3xl">
+            <Drawer isOpen={isOpen} onClose={onClose} title={editItem ? 'Update Expense' : 'Create New Expense'}>
                 <form onSubmit={handleSubmit}>
                     {/* Expense Date */}
                     <div className="grid grid-cols-3 gap-4">
@@ -727,7 +726,7 @@ const ExpenseFormModal: React.FC<Props> = ({ isOpen, onClose, onSuccess, editIte
                         <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode={editItem ? 'edit' : 'create'} />
                     </div>
                 </form>
-            </Modal>
+            </Drawer>
 
             {/* Inline "Add Category" — create an expense category without leaving the form */}
             <ExpenseCategoryFormModal

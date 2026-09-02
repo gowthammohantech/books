@@ -140,6 +140,25 @@ export const AUDIT_SOURCE = String.raw`(() => {
     mainScrollHeight: mainEl ? mainEl.scrollHeight : null,
     mainClientHeight: mainEl ? mainEl.clientHeight : null,
     overflowRatio: mainEl ? +(mainEl.scrollHeight / Math.max(1, mainEl.clientHeight)).toFixed(3) : null,
+    // Create flows are drawers now, and a drawer portals to the body, outside
+    // main. So on the 14 create routes the overflowRatio above describes the
+    // LIST behind the drawer, not the form — which would silently delete the
+    // most useful measurement on the most-changed screens. Measure the topmost
+    // drawer's own scroll pane too.
+    overlayDepth: document.querySelectorAll('.eb-overlay-panel').length,
+    overlay: (() => {
+      const bodies = [...document.querySelectorAll('.eb-overlay-body')];
+      const el = bodies[bodies.length - 1];
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return {
+        w: Math.round(r.width),
+        h: Math.round(r.height),
+        scrollHeight: el.scrollHeight,
+        clientHeight: el.clientHeight,
+        ratio: +(el.scrollHeight / Math.max(1, el.clientHeight)).toFixed(3),
+      };
+    })(),
     tightHits: document.querySelectorAll('[data-hit="tight"]').length,
     apexRects: [...document.querySelectorAll('.apexcharts-canvas')].map((el) => {
       const r = el.getBoundingClientRect();

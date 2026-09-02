@@ -627,3 +627,42 @@ button {
     transform: translateY(-4px);
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Overlays in print.
+
+   A `fixed`, 75%-wide drawer prints as a bar stamped across page one, with the
+   page behind it printing underneath. When any overlay is open, print the
+   overlay and nothing else.
+
+   `data-overlay-open` is set on <body> by components/ui/overlayStack.ts; the
+   marker classes come from Drawer. AdminLayout's own `print:block
+   print:h-auto print:overflow-visible` is for the view screens that are a real
+   printing path (ViewInvoice, components/print/*) and is untouched here — #root
+   is only hidden while an overlay is actually open.
+
+   Ctrl+P on a create drawer is not a supported workflow. This just stops an
+   accidental print looking broken.
+--------------------------------------------------------------------------- */
+@media print {
+  body[data-overlay-open] #root {
+    display: none !important;
+  }
+
+  body[data-overlay-open] .eb-overlay-backdrop {
+    display: none !important;
+  }
+
+  body[data-overlay-open] .eb-overlay-panel {
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+
+  body[data-overlay-open] .eb-overlay-body {
+    overflow: visible !important;
+  }
+}

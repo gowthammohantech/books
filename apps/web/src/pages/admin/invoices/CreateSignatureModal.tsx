@@ -1,6 +1,5 @@
 import api from '@lib/apiClient';
 import { useEffect, useState } from "react";
-import Modal from "@components/admin/Modal";
 import type { AxiosError } from 'axios';
 import Constants from "@constants/api";
 import SubmitButton from "@components/admin/SubmitButton";
@@ -8,7 +7,7 @@ import { toast } from "sonner";
 import { Image, Trash2Icon } from "lucide-react";
 import Switch from "@components/admin/Switch";
 import type { SignatureOptions } from "@models/signature";
-import { Button, FormField } from "@components/ui";
+import { Button, Drawer, FormField } from '@components/ui';
 
 interface Props {
     isOpen: boolean;
@@ -119,7 +118,7 @@ const CreateSignatureModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) =
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create Signature">
+        <Drawer isOpen={isOpen} onClose={onClose} title="Create Signature">
             <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Image Upload */}
                 <label htmlFor="imageUpload" className="block text-sm font-medium text-foreground mb-1">Image <span className="text-destructive">*</span></label>
@@ -197,7 +196,7 @@ const CreateSignatureModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) =
                     />
                 </div>
             </form>
-        </Modal>
+        </Drawer>
     );
 }
 

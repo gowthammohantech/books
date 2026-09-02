@@ -1,5 +1,5 @@
 import api from '@lib/apiClient';
-import Modal from "@components/admin/Modal";
+import { Drawer } from '@components/ui';
 import SmartDropdown from "@components/admin/SmartDropdown";
 import SubmitButton from "@components/admin/SubmitButton";
 import Constants from "@constants/api";
@@ -165,7 +165,7 @@ const PettyCashModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
     }
     return (
         <>
-        <Modal isOpen={isOpen} onClose={onClose} title="Add Petty Cash">
+        <Drawer isOpen={isOpen} onClose={onClose} title="Add Petty Cash">
             <form onSubmit={handleSubmit}>
                 <div className="mb-4">
                     <label htmlFor="amount" className="block text-sm font-medium text-destructive">Amount *</label>
@@ -216,7 +216,7 @@ const PettyCashModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
                     />
                 </div>
             </form>
-        </Modal>
+        </Drawer>
 
         <CreatePaymentModeModal
             isOpen={isPaymentModeModalOpen}
