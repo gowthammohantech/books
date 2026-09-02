@@ -77,7 +77,15 @@ const BottomBar: React.FC<BottomBarProps> = ({ isSidebarOpen }) => {
                     aria-orientation="vertical"
                     // Opens UPWARD: it is pinned to the bottom of the viewport,
                     // so there is nowhere below it to go.
-                    className="absolute bottom-full left-2 right-2 mb-2 rounded-xl border border-sidebar-border bg-sidebar shadow-lg z-50 overflow-hidden"
+                    //
+                    // Width is NOT tied to the rail. Stretching it edge to edge
+                    // is right at w-60, but on the collapsed w-16 rail it left
+                    // 48px of menu, which wrapped every label down to one word
+                    // — or one letter — per line. Collapsed, it keeps its own
+                    // width and spills over the content beside it, like the
+                    // nav flyouts do.
+                    className={`absolute bottom-full left-2 mb-2 rounded-xl border border-sidebar-border bg-sidebar shadow-lg z-50 overflow-hidden ${isSidebarOpen ? "right-2" : "w-60"
+                        }`}
                 >
                     <div className="px-3 py-3">
                         <p className="truncate text-sm font-semibold text-sidebar-foreground">

@@ -281,12 +281,16 @@ const DashboardPage: React.FC = () => {
                 </button>
             </PageHeader>
 
-            <div className="mt-6 flex flex-col items-center text-center">
+            {/* One line: the greeting anchors to the left edge like every other
+                page title, the timestamp is a footnote pushed out to the right.
+                It wraps under the greeting only when the row is too narrow to
+                hold both. */}
+            <div className="mt-6 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                 <h2 className="text-2xl font-semibold text-foreground">
                     {getGreeting()},{' '}
                     <span className="text-primary">{activeTenant?.name ?? 'there'}</span>
                 </h2>
-                <p className="mt-2 text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                     {[
                         formatDate(time, dateFormat),
                         formattedTime,
