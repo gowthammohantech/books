@@ -42,8 +42,15 @@ const Switch = ({
         aria-checked={checked}
         disabled={disabled}
         onClick={() => onChange(!checked)}
+        // Opts out of the global min-height floor: a switch forced to 32px
+        // stops being a switch and becomes a rounded rectangle. The target is
+        // grown instead by a transparent pseudo-element centred on the pill,
+        // which reaches the 32/44px floor without touching the visual size.
+        data-hit="tight"
         className={[
           "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full",
+          "before:absolute before:left-0 before:top-1/2 before:h-8 before:w-full",
+          "before:-translate-y-1/2 before:content-[''] coarse:before:h-11",
           "transition-colors motion-reduce:transition-none",
           "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1",
           "disabled:opacity-60 disabled:cursor-not-allowed",

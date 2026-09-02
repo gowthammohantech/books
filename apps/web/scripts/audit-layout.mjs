@@ -102,8 +102,14 @@ export const AUDIT_SOURCE = String.raw`(() => {
   // ---- Satisfiable assertions --------------------------------------------
   const coarse = matchMedia('(pointer: coarse)').matches;
   const floor = coarse ? 44 : 32;
+  // Exactly the selector the base-layer floor enforces. Two deliberate
+  // exclusions: checkboxes and radios (a 44px glyph is wrong — their label
+  // carries the target), and a plain href anchor, which is an inline text link
+  // in a breadcrumb or a sentence, not a control. Auditing something the CSS
+  // does not enforce would produce a permanent, unfixable failure list.
   const smallTargets = [...document.querySelectorAll(
-      'button,[role="button"],a[href],select,textarea,input:not([type=hidden])')]
+      'button,[role="button"],a[role="button"],summary,select,textarea,' +
+      'input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=hidden])')]
     .filter((el) => el.offsetParent !== null)
     .map((el) => ({ el, r: el.getBoundingClientRect() }))
     .filter(({ el, r }) => r.height > 0 && r.height < floor - 0.5 && !el.closest('[data-hit="tight"]'))
