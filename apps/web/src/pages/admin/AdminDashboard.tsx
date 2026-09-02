@@ -26,6 +26,7 @@ import TableRow from '@components/admin/TableRow';
 import StatusBadge from '@components/admin/StatusBadge';
 import { useCurrencyFormatter } from '@hooks/useCurrencyFormatter';
 import { useNavigate } from 'react-router-dom';
+import { useOpenDrawer } from '@hooks/useOpenDrawer';
 import LoaderSpinner from '@components/admin/LoaderSpinner';
 import MultiLineAreaChart from '@components/admin/MultiLineAreaChart';
 import { PageHeader } from '@/context/PageHeaderContext';
@@ -129,6 +130,7 @@ const DashboardPage: React.FC = () => {
     const { formatDate, timeFormat } = useDateFormatter();
     const { format } = useCurrencyFormatter();
     const navigate = useNavigate();
+    const openDrawer = useOpenDrawer();
     const [isLoading, setIsLoading] = useState(false);
     // Same module-level cache the sidebar badges read, so a tile and the badge
     // beside it can never show different numbers.
@@ -275,7 +277,7 @@ const DashboardPage: React.FC = () => {
             <PageHeader title="Dashboard">
                 <button
                     type="button"
-                    onClick={() => navigate('/invoices/create-invoice')}
+                    onClick={() => openDrawer('/invoices/create-invoice')}
                     className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 cursor-pointer"
                 >
                     <Plus className="w-4 h-4" /> Add

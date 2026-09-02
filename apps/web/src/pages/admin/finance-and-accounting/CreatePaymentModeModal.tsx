@@ -1,6 +1,6 @@
 import api from '@lib/apiClient';
+import { Drawer } from '@components/ui';
 import { useEffect, useState } from "react";
-import Modal from "@components/admin/Modal";
 import type { AxiosError } from 'axios';
 import Constants from "@constants/api";
 import { toast } from "sonner";
@@ -53,7 +53,7 @@ const CreatePaymentModeModal: React.FC<CreatePaymentModeModalProps> = ({ isOpen,
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create Payment Mode">
+        <Drawer isOpen={isOpen} onClose={onClose} title="Create Payment Mode">
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label className="block font-medium text-sm text-gray-700">
@@ -88,7 +88,7 @@ const CreatePaymentModeModal: React.FC<CreatePaymentModeModalProps> = ({ isOpen,
                     />
                 </div>
             </form>
-        </Modal>
+        </Drawer>
     );
 };
 

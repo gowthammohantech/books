@@ -5,6 +5,7 @@ import ScanBillModal from "@components/admin/ai/ScanBillModal";
 import { useAiConfig } from "@hooks/useAiConfig";
 import Table from "@components/admin/Table";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useOpenDrawer } from '@hooks/useOpenDrawer';
 import ActiveFilterBanner, { type ActiveFilter } from "@components/admin/ActiveFilterBanner";
 
 import { useSelector } from "react-redux";
@@ -79,6 +80,7 @@ const PurchaseList: FC = () => {
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     const navigate = useNavigate();
+    const openDrawer = useOpenDrawer();
 
     // State for the list of purchase orders and pagination
     const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -186,7 +188,7 @@ const PurchaseList: FC = () => {
 
     // Handler to navigate to the 'new purchase order' page
     const handleNewPurchaseClick = () => {
-        navigate("/purchases/new");
+        openDrawer("/purchases/new");
     };
 
     // Fetch purchases whenever search, limit, or page changes

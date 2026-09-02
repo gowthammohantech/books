@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { useOpenDrawer } from "@hooks/useOpenDrawer";
+import { isDrawerPath } from "@/routes/drawerRoutes";
 import { useSelector } from "react-redux";
 import {
     CornerDownLeft,
@@ -76,6 +78,7 @@ const Highlighted = ({ text, query }: { text: string; query: string }) => {
 
 const CommandPalette = ({ isOpen, onClose }: CommandPaletteProps) => {
     const navigate = useNavigate();
+    const openDrawer = useOpenDrawer();
     const { user } = useSelector((state: RootState) => state.auth);
     const permissions = useSelector(
         (state: RootState) => state.systemSettings.data?.permissions
@@ -201,7 +204,10 @@ const CommandPalette = ({ isOpen, onClose }: CommandPaletteProps) => {
         if (!item) return;
         if (item.type === "command") {
             remember(item.command.id);
-            navigate(item.command.path);
+            // Create commands open a drawer over the page the palette was
+            // summoned from, rather than replacing it.
+            if (isDrawerPath(item.command.path)) openDrawer(item.command.path);
+            else navigate(item.command.path);
         } else {
             navigate(item.entity.path);
         }

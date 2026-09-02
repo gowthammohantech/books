@@ -68,16 +68,27 @@ const NavBadge = ({ count }: { count: number }) =>
         </span>
     ) : null;
 
-/** The quick-create affordance, unchanged in behaviour from the accordion rail. */
-const AddButton = ({ to, title }: { to: string; title: string }) => (
+/**
+ * The quick-create affordance, unchanged in behaviour from the accordion rail.
+ *
+ * `backgroundLocation` keeps whatever page you are on mounted behind the create
+ * drawer, so quick-adding an invoice from a report does not throw that report
+ * away. A create route without it still works — DrawerFallback puts the module's
+ * list behind the drawer instead.
+ */
+const AddButton = ({ to, title }: { to: string; title: string }) => {
+    const location = useLocation();
+    return (
     <Link
         to={to}
+        state={{ backgroundLocation: location }}
         aria-label={`Add new ${title}`}
         className="absolute right-1 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground opacity-0 transition-opacity group-hover/row:opacity-100 focus-visible:opacity-100"
     >
         <AnimatedIcon name="plus" size={14} />
     </Link>
-);
+    );
+};
 
 const ModuleRow = ({
     navModule,

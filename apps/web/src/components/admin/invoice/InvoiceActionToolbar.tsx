@@ -27,6 +27,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { useOpenDrawer } from "@hooks/useOpenDrawer";
 import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
 import InvoiceTemplateA from "@pages/admin/invoices/InvoiceTemplateA";
@@ -126,6 +127,7 @@ const InvoiceActionToolbar: React.FC<InvoiceActionToolbarProps> = ({
     onChanged,
 }) => {
     const navigate = useNavigate();
+    const openDrawer = useOpenDrawer();
     const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
@@ -316,9 +318,10 @@ const InvoiceActionToolbar: React.FC<InvoiceActionToolbarProps> = ({
     // --- navigation --------------------------------------------------------
     const goEmail = () => navigate(`/invoices/email/${invoiceId}`);
     const goReminder = () => navigate(`/invoices/email/${invoiceId}?mode=reminder`);
-    const goDuplicate = () => navigate(`/invoices/create-invoice?copyFromId=${invoiceId}`);
-    const goNewInvoice = () => navigate(`/invoices/create-invoice`);
-    const goCreditNote = () => navigate(`/credit-notes/new?invoiceId=${invoiceId}`);
+    // These three open create drawers; the query strings ride along untouched.
+    const goDuplicate = () => openDrawer(`/invoices/create-invoice?copyFromId=${invoiceId}`);
+    const goNewInvoice = () => openDrawer(`/invoices/create-invoice`);
+    const goCreditNote = () => openDrawer(`/credit-notes/new?invoiceId=${invoiceId}`);
 
     // --- status predicates -------------------------------------------------
     const s = (status || "").toUpperCase();

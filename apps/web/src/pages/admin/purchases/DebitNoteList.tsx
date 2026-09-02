@@ -3,6 +3,7 @@ import { useEffect, useState, type FC } from "react";
 import { CirclePlusIcon, Trash2Icon } from "lucide-react";
 import Table from "@components/admin/Table";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useOpenDrawer } from '@hooks/useOpenDrawer';
 
 import { useSelector } from "react-redux";
 import type { RootState } from "@store/index";
@@ -78,6 +79,7 @@ const DebitNoteList: FC = () => {
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
     const navigate = useNavigate();
+    const openDrawer = useOpenDrawer();
     const { formatMoney } = useCurrencies();
     const { formatDate } = useDateFormatter();
     // State for the list of purchase orders and pagination
@@ -110,7 +112,7 @@ const DebitNoteList: FC = () => {
 
     // Handler to navigate to the 'new purchase order' page
     const handleNewDebitNoteClick = () => {
-        navigate("/debit-notes/new");
+        openDrawer("/debit-notes/new");
     };
 
     // Fetch debitNotes whenever search, limit, or page changes

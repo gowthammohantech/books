@@ -1,5 +1,5 @@
 import api from '@lib/apiClient';
-import Modal from "@components/admin/Modal";
+import { Drawer } from '@components/ui';
 import Constants from "@constants/api";
 import type { Product, ProductFormData } from "@models/product";
 import type { TaxRate } from "@models/taxRate";
@@ -125,7 +125,7 @@ const CreateProductForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
 
     return (
         <>
-            <Modal isOpen={isOpen} onClose={onClose} title="New Item" size="3xl">
+            <Drawer isOpen={isOpen} onClose={onClose} title="New Item">
                 <form onSubmit={handleSubmit}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                         {/* Name */}
@@ -180,7 +180,7 @@ const CreateProductForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
                         <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode='create' />
                     </div>
                 </form>
-            </Modal>
+            </Drawer>
         </>
     );
 };

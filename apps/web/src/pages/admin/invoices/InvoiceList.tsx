@@ -13,6 +13,7 @@ import { CirclePlusIcon, Edit, Trash2Icon } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useOpenDrawer } from '@hooks/useOpenDrawer';
 import ActiveFilterBanner, { type ActiveFilter } from "@components/admin/ActiveFilterBanner";
 import { useCostCenters } from "@hooks/useCostCenters";
 import { toast } from "sonner";
@@ -95,6 +96,7 @@ const extractCustomFieldValue = (invoice: Invoice, fieldSlug: string) => {
 
 const InvoiceList: React.FC = () => {
     const navigate = useNavigate();
+    const openDrawer = useOpenDrawer();
     const { token } = useSelector((state: RootState) => state.auth);
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
@@ -196,7 +198,7 @@ const InvoiceList: React.FC = () => {
             return;
         }
         setTenantValue("nextInvoiceNo", nextInvoiceNo);
-        navigate("/invoices/create-invoice");
+        openDrawer("/invoices/create-invoice");
     }
 
     const handleSearch = (value: string) => {

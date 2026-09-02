@@ -1,6 +1,6 @@
 import api from '@lib/apiClient';
+import { Drawer } from '@components/ui';
 import { useEffect, useState } from "react";
-import Modal from "./Modal";
 import type { AxiosError } from 'axios';
 import Constants from "@constants/api";
 import SubmitButton from "./SubmitButton";
@@ -97,7 +97,7 @@ const CreateCustomerForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => 
     }
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create Customer">
+        <Drawer isOpen={isOpen} onClose={onClose} title="Create Customer">
             <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-1 gap-6 pt-6">
                     <div>
@@ -235,7 +235,7 @@ const CreateCustomerForm: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => 
                     <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode="create">Create</SubmitButton>
                 </div>
             </form>
-        </Modal>
+        </Drawer>
         );
 }
 

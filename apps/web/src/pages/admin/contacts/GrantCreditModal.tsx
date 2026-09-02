@@ -3,9 +3,8 @@ import { useState } from 'react';
 
 import { toast } from 'sonner';
 import Constants from '@constants/api';
-import Modal from '@components/admin/Modal';
 import SubmitButton from '@components/admin/SubmitButton';
-import { Button, FormField, fieldControlClasses } from '@components/ui';
+import { Button, Drawer, FormField, fieldControlClasses } from '@components/ui';
 
 interface GrantCreditModalProps {
   isOpen: boolean;
@@ -56,7 +55,8 @@ const GrantCreditModal: React.FC<GrantCreditModalProps> = ({ isOpen, onClose, co
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Grant Account Credit" size="sm">
+    <Drawer
+            width="narrow" isOpen={isOpen} onClose={handleClose} title="Grant Account Credit">
       <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
         <FormField
           label="Amount"
@@ -94,7 +94,7 @@ const GrantCreditModal: React.FC<GrantCreditModalProps> = ({ isOpen, onClose, co
           </SubmitButton>
         </div>
       </form>
-    </Modal>
+    </Drawer>
   );
 };
 

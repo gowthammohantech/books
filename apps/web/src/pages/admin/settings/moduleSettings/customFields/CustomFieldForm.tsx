@@ -5,10 +5,9 @@ import { Plus, Trash2 } from "lucide-react";
 import Constants from "@constants/api";
 import { toast } from "sonner";
 import type { CustomFieldFormState, CustomFieldTypeShape } from "@models/modulesettings/customField";
-import Modal from "@components/admin/Modal";
 import SmartDropdown from "@components/admin/SmartDropdown";
 import SubmitButton from "@components/admin/SubmitButton";
-import { Button, FormField } from "@components/ui";
+import { Button, Drawer, FormField } from '@components/ui';
 
 interface CustomFieldFormProps {
     isOpen: boolean;
@@ -230,11 +229,10 @@ const CustomFieldForm: React.FC<CustomFieldFormProps> = ({
     const isEditing = !!editItem;
 
     return (
-        <Modal
+        <Drawer
             isOpen={isOpen}
             onClose={resetAndClose}
             title={isEditing ? "Edit Custom Field" : "Add Custom Field"}
-            size="2xl"
         >
             <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -378,7 +376,7 @@ const CustomFieldForm: React.FC<CustomFieldFormProps> = ({
                     </SubmitButton>
                 </div>
             </form>
-        </Modal>
+        </Drawer>
     );
 };
 

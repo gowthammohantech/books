@@ -1,6 +1,5 @@
 import api from '@lib/apiClient';
 import { useState, useEffect } from 'react';
-import Modal from '@components/admin/Modal';
 import CustomCheckbox from '@components/admin/CustomCheckbox';
 
 import Constants from '@constants/api';
@@ -9,7 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '@store/index';
 import { Info } from 'lucide-react';
 import { fetchSystemSettings } from '@store/systemSettingsSlice';
-import { Button, FormField } from '@components/ui';
+import { Button, Drawer, FormField } from '@components/ui';
 import { getTenantValue, setTenantValue } from "@utils/tenantStorage";
 
 interface Props {
@@ -126,7 +125,7 @@ const InvoiceNumberConfigModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Invoice Number Configuration">
+        <Drawer isOpen={isOpen} onClose={onClose} title="Invoice Number Configuration">
             <div>
                 <h4 className="text-lg font-semibold text-foreground mb-2">Configure Invoice Number Preferences</h4>
                 {formData.invoiceNumberType === 'auto' &&
@@ -218,7 +217,7 @@ const InvoiceNumberConfigModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
                     <Button variant="primary" onClick={handleSave}>Save</Button>
                 </div>
             </div>
-        </Modal>
+        </Drawer>
     );
 };
 

@@ -1,6 +1,7 @@
 import api from '@lib/apiClient';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useOpenDrawer } from '@hooks/useOpenDrawer';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -73,6 +74,7 @@ const statusBadge = (status?: string) => {
 const ContactList: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
+    const openDrawer = useOpenDrawer();
     const { data: systemSettings } = useSelector((state: RootState) => state.systemSettings);
     const permissions = systemSettings?.permissions || [];
 
@@ -318,7 +320,7 @@ const ContactList: React.FC = () => {
                     </Button>
                 )}
                 <Button
-                    onClick={() => navigate('/contacts/new')}
+                    onClick={() => openDrawer('/contacts/new')}
                     leftIcon={<CirclePlusIcon size={14} />}
                 >
                     New Contact
@@ -329,7 +331,7 @@ const ContactList: React.FC = () => {
                 <EmptyStateHero
                     {...LIST_EMPTY_STATES.contacts}
                     action={
-                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={() => navigate('/contacts/new')}>
+                        <Button size="lg" leftIcon={<CirclePlusIcon size={16} />} onClick={() => openDrawer('/contacts/new')}>
                             {LIST_EMPTY_STATES.contacts.cta}
                         </Button>
                     }

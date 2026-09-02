@@ -1,6 +1,6 @@
 import api from '@lib/apiClient';
+import { Drawer } from '@components/ui';
 import { useEffect, useState } from "react";
-import Modal from "@components/admin/Modal";
 import type { AxiosError } from 'axios';
 import Constants from "@constants/api";
 import SubmitButton from "@components/admin/SubmitButton";
@@ -127,7 +127,7 @@ const CreateUnitModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create Unit">
+        <Drawer isOpen={isOpen} onClose={onClose} title="Create Unit">
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Unit Name Input */}
                 <div>
@@ -154,7 +154,7 @@ const CreateUnitModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
                     <SubmitButton isDisabled={isSubmitting} isLoading={isSubmitting} mode={"create"} />
                 </div>
             </form>
-        </Modal>
+        </Drawer>
     );
 }
 
