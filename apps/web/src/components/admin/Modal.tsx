@@ -4,12 +4,11 @@ import { createPortal } from 'react-dom';
 import { AnimatedIcon } from '@components/icons';
 import { confirmIfDirty } from '@hooks/useDirtyGuard';
 import {
-  OverlayDepthProvider,
   isTopmostOverlay,
+  overlayCount,
   overlayZ,
   pushOverlay,
   removeOverlay,
-  useOverlayDepth,
 } from '@components/ui';
 
 interface ModalProps {
@@ -43,7 +42,13 @@ const Modal = ({ isOpen, onClose, title, children, size = '2xl', confirmOnClose 
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<Element | null>(null);
   const idRef = useRef(Symbol('modal'));
-  const depth = useOverlayDepth();
+
+  // Same stack-derived depth as Drawer: a confirm opened from inside a drawer
+  // has to paint above it, and the two nest in both directions.
+  const depthRef = useRef<number | null>(null);
+  if (isOpen && depthRef.current === null) depthRef.current = overlayCount();
+  if (!isOpen && depthRef.current !== null) depthRef.current = null;
+  const depth = depthRef.current ?? 0;
 
   // Route every discard through the shared confirm so backdrop-click can't
   // silently drop a half-filled form when the caller marks it dirty.
@@ -97,7 +102,7 @@ const Modal = ({ isOpen, onClose, title, children, size = '2xl', confirmOnClose 
   // `backdrop-blur`/transform), which pins the modal to that ancestor's box and
   // leaves it off-screen / unscrollable.
   return createPortal(
-    <OverlayDepthProvider depth={depth + 1}>
+    <>
       {/* Fixed Backdrop */}
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm"
@@ -139,7 +144,7 @@ const Modal = ({ isOpen, onClose, title, children, size = '2xl', confirmOnClose 
           <div className="p-4">{children}</div>
         </div>
       </div>
-    </OverlayDepthProvider>,
+    </>,
     document.body
   );
 };

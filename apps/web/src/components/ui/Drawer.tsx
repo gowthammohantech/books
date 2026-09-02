@@ -11,12 +11,13 @@ import { XIcon } from "lucide-react";
 
 import { confirmIfDirty } from "@hooks/useDirtyGuard";
 import Button from "./Button";
+import { overlayZ } from "./OverlayLayer";
 import {
-  OverlayDepthProvider,
-  overlayZ,
-  useOverlayDepth,
-} from "./OverlayLayer";
-import { isTopmostOverlay, pushOverlay, removeOverlay } from "./overlayStack";
+  isTopmostOverlay,
+  overlayCount,
+  pushOverlay,
+  removeOverlay,
+} from "./overlayStack";
 
 export type DrawerWidth = "narrow" | "base" | "wide";
 
@@ -90,8 +91,18 @@ const Drawer = ({
   const previouslyFocusedRef = useRef<Element | null>(null);
   const idRef = useRef(Symbol("drawer"));
   const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const depth = useOverlayDepth();
   const titleId = useId();
+
+  // Depth is read from the live overlay stack, not from React context: a
+  // drawer is frequently a SIBLING of the one that opened it rather than a
+  // descendant, and context would report every such panel as depth 0 — same
+  // width, same z-index, no visible stack. Captured on the first open render,
+  // before the effect below pushes, so width and z-index are right on the
+  // very first paint.
+  const depthRef = useRef<number | null>(null);
+  if (isOpen && depthRef.current === null) depthRef.current = overlayCount();
+  if (!isOpen && depthRef.current !== null) depthRef.current = null;
+  const depth = depthRef.current ?? 0;
 
   // The panel starts off-screen and transitions in on the next frame; `closing`
   // drives the same transition in reverse before onClose actually fires.
@@ -184,7 +195,7 @@ const Drawer = ({
   // transform or backdrop-filter becomes the containing block for fixed
   // descendants, which would pin the drawer to that ancestor's box.
   return createPortal(
-    <OverlayDepthProvider depth={depth + 1}>
+    <>
       <div
         className={`eb-overlay-backdrop fixed inset-0 bg-black/40 backdrop-blur-[1px] transition-opacity duration-200 motion-reduce:transition-none print:hidden ${
           shown ? "opacity-100" : "opacity-0"
@@ -273,7 +284,7 @@ const Drawer = ({
           ) : null}
         </aside>
       </div>
-    </OverlayDepthProvider>,
+    </>,
     document.body,
   );
 };

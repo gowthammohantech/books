@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import { parentOf } from "@/routes/drawerRoutes";
+import { drawerCloseAction, parentOf } from "@/routes/drawerRoutes";
 
 export interface DrawerRouteState {
   /** Always true while the drawer's route is matched — the route IS the state. */
@@ -26,12 +26,10 @@ export const useDrawerRoute = (): DrawerRouteState => {
   const parentPath = parentOf(location.pathname) ?? "/";
 
   const close = useCallback(() => {
-    // `default` is the key react-router gives the first entry of a session —
-    // a pasted link, a refresh, or a new tab. There is nothing to go back to,
-    // so land on the list instead of leaving the site.
-    if (location.key !== "default") navigate(-1);
-    else navigate(parentPath, { replace: true });
-  }, [location.key, navigate, parentPath]);
+    const next = drawerCloseAction(location.key, location.pathname);
+    if (next.action === "back") navigate(-1);
+    else navigate(next.to, { replace: true });
+  }, [location.key, location.pathname, navigate]);
 
   return { isOpen: true, close, parentPath };
 };

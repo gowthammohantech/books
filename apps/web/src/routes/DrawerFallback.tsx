@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 
-import { parentOf } from "./drawerRoutes";
+import { backgroundPathFor } from "./drawerRoutes";
 
 /**
  * What a create route renders in the PRIMARY route tree.
@@ -22,7 +22,7 @@ import { parentOf } from "./drawerRoutes";
  */
 const DrawerFallback = () => {
   const location = useLocation();
-  const parent = parentOf(location.pathname);
+  const parent = backgroundPathFor(location.pathname);
 
   // Unreachable: drawerRoutes.test.ts asserts every drawer path has a parent.
   if (!parent) return null;

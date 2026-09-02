@@ -8,7 +8,7 @@ export { default as Drawer } from "./Drawer";
 export type { DrawerProps, DrawerWidth } from "./Drawer";
 export { default as RouteDrawer } from "./RouteDrawer";
 export type { RouteDrawerProps } from "./RouteDrawer";
-export { OverlayDepthProvider, useOverlayDepth, overlayZ } from "./OverlayLayer";
+export { overlayZ } from "./OverlayLayer";
 export {
   pushOverlay,
   removeOverlay,

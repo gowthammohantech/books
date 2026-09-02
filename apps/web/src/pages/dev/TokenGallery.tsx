@@ -10,7 +10,10 @@ import {
   Button,
   Card,
   Checkbox,
+  Drawer,
+  FormActions,
   FormField,
+  FormSection,
   RadioGroup,
   Select,
   Skeleton,
@@ -163,6 +166,8 @@ export default function TokenGallery() {
   const [radio, setRadio] = useState("r1");
   const [on, setOn] = useState(true);
   const [pulse, setPulse] = useState(0);
+  // Depth 0..3, so the stacking behaviour can be walked without a real form.
+  const [drawers, setDrawers] = useState(0);
 
   return (
     <div className="min-h-screen bg-background p-6 text-foreground">
@@ -576,6 +581,63 @@ export default function TokenGallery() {
             <strong>Check by hand, because no test can:</strong> turn on the OS &ldquo;reduce
             motion&rdquo; setting and reload. Every glyph above must look exactly as it does now,
             and the Network tab must show <strong>no</strong> chunk request for the variants.
+          </p>
+        </Section>
+
+        <Section title="Drawer">
+          <p className="mb-3 max-w-3xl text-sm text-muted-foreground">
+            The create-flow surface. 75% of the viewport at the base level, each
+            nested level 40px narrower so the parent&rsquo;s edge stays visible,
+            full-width below <code>md</code>.
+          </p>
+          <Button size="sm" leftIcon={<PlusIcon size={14} />} onClick={() => setDrawers(1)}>
+            Open a drawer
+          </Button>
+
+          {Array.from({ length: drawers }, (_, i) => i).map((level) => (
+            <Drawer
+              key={level}
+              isOpen
+              onClose={() => setDrawers(level)}
+              title={`Level ${level + 1}`}
+              description="Escape closes only this one. Focus returns to whatever opened it."
+              footer={
+                <FormActions leading={<span className="text-xs text-muted-foreground">Footer is pinned, not sticky</span>}>
+                  <Button variant="white" onClick={() => setDrawers(level)}>Cancel</Button>
+                  <Button onClick={() => setDrawers(level)}>Save</Button>
+                </FormActions>
+              }
+            >
+              <div className="space-y-6">
+                <FormSection title="A section" description="Heading, rule and field grid in one." columns={6}>
+                  <FormField label="Name" containerClassName="sm:col-span-3" placeholder="e.g. Acme Ltd" />
+                  <FormField label="Code" containerClassName="sm:col-span-3" placeholder="ACME" />
+                  <FormField label="Notes" containerClassName="sm:col-span-6" placeholder="Optional" />
+                </FormSection>
+
+                {level < 2 && (
+                  <Button size="sm" variant="outline" onClick={() => setDrawers(level + 2)}>
+                    Open one inside this
+                  </Button>
+                )}
+
+                {/* Enough body to prove the footer stays put while this scrolls. */}
+                <div className="space-y-2">
+                  {Array.from({ length: 24 }, (_, n) => (
+                    <div key={n} className="rounded-md border border-border px-3 py-2 text-sm text-muted-foreground">
+                      Filler row {n + 1}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Drawer>
+          ))}
+
+          <p className="mt-6 max-w-3xl rounded-lg border border-warning/40 bg-warning-soft px-3 py-2 text-sm text-foreground">
+            <strong>Check by hand, because no test can:</strong> with three levels open, Escape must
+            close one at a time and focus must land back on the button that opened each; Tab must
+            stay inside the top panel; and with &ldquo;reduce motion&rdquo; on, each panel must
+            appear already in place rather than sliding.
           </p>
         </Section>
 

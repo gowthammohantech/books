@@ -61,3 +61,35 @@ export const parentOf = (pathname: string): string | undefined =>
 
 export const drawerRoutesFor = (shell: DrawerRoute["shell"]): DrawerRoute[] =>
   DRAWER_ROUTES.filter((r) => r.shell === shell);
+
+/**
+ * The location the primary route tree should render at.
+ *
+ * `backgroundLocation` is set by useOpenDrawer when a drawer is opened from
+ * inside the app, so the page you were on stays mounted. When it is absent —
+ * a pasted link, a refresh, a new tab, a call site that has not been wired —
+ * the create route's list stands in, which is what DrawerFallback supplies.
+ * Returns null when the URL is not a drawer route at all.
+ */
+export const backgroundPathFor = (pathname: string): string | null =>
+  parentOf(pathname) ?? null;
+
+export type DrawerCloseAction =
+  | { action: "back" }
+  | { action: "replace"; to: string };
+
+/**
+ * What closing a route drawer should do.
+ *
+ * `default` is the key react-router gives the first entry of a session. There
+ * is nothing behind it, so going back would leave the app entirely — land on
+ * the list instead. Anything else was pushed, and Back is the same gesture as
+ * the drawer's own close, which is the point of keeping these in sync.
+ */
+export const drawerCloseAction = (
+  locationKey: string,
+  pathname: string,
+): DrawerCloseAction =>
+  locationKey !== "default"
+    ? { action: "back" }
+    : { action: "replace", to: parentOf(pathname) ?? "/" };

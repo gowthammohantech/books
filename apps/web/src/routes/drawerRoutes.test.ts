@@ -3,7 +3,13 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { DRAWER_ROUTES, isDrawerPath, parentOf } from "./drawerRoutes";
+import {
+  backgroundPathFor,
+  DRAWER_ROUTES,
+  drawerCloseAction,
+  isDrawerPath,
+  parentOf,
+} from "./drawerRoutes";
 
 /**
  * The drawer table names routes by string, so a renamed list route would
@@ -40,5 +46,46 @@ describe("drawer routes", () => {
   it("does not treat an ordinary path as a drawer path", () => {
     expect(isDrawerPath("/invoices")).toBe(false);
     expect(parentOf("/invoices")).toBeUndefined();
+  });
+});
+
+describe("close behaviour", () => {
+  it("goes back when the drawer was pushed onto a real history entry", () => {
+    expect(drawerCloseAction("abc123", "/invoices/create-invoice")).toEqual({
+      action: "back",
+    });
+  });
+
+  it("lands on the list when the drawer IS the first entry", () => {
+    // A pasted link, a refresh, or EditInvoice's window.open(..., '_blank').
+    // navigate(-1) here would leave the app.
+    expect(drawerCloseAction("default", "/invoices/create-invoice")).toEqual({
+      action: "replace",
+      to: "/invoices",
+    });
+  });
+
+  it("uses the mapped parent, not the path minus a segment", () => {
+    expect(drawerCloseAction("default", "/recurring-schedules/new")).toEqual({
+      action: "replace",
+      to: "/recurring-invoices",
+    });
+    expect(drawerCloseAction("default", "/customers/new")).toEqual({
+      action: "replace",
+      to: "/contacts",
+    });
+  });
+});
+
+describe("cold-load background", () => {
+  it("supplies the list for every drawer route", () => {
+    for (const { path, parent } of DRAWER_ROUTES) {
+      expect(backgroundPathFor(path)).toBe(parent);
+    }
+  });
+
+  it("is null for a route that is not a drawer", () => {
+    expect(backgroundPathFor("/invoices")).toBeNull();
+    expect(backgroundPathFor("/invoices/edit-invoice/abc")).toBeNull();
   });
 });

@@ -214,3 +214,111 @@ pagination, which is a behavioural change and out of scope here.
 - Root font-size lever: `html { font-size: 15px }` scales sidebar width, header
   height, button height, button font size and padding all at 0.938 (= 15/16).
 - `npm run test` — 263 tests pass; `typecheck` and `lint` clean (0 errors).
+
+---
+
+# Addendum — create flows as drawers
+
+A later change moved every create flow into a right-side drawer. It is recorded
+here because it changes what two of the numbers above *mean*, and retires one of
+the defects the original audit could only work around.
+
+## What changed
+
+The 14 route-registered create screens and 23 create modals now render in a
+shared `Drawer` (`components/ui/Drawer.tsx`): 75% of the viewport, anchored
+right, sliding in right-to-left, with a header, a scrolling body and a pinned
+footer. Their page frames are gone.
+
+Family A — the eight document create screens — had each been copied from the
+last, and all eight carried the same frame:
+
+```
+<div className="md:p-4 min-h-screen border border-gray-200 rounded">
+  <form>
+    <div className="max-w-7xl mx-auto space-y-4">
+```
+
+Three things wrong with it, all of which this audit's own findings predicted:
+
+1. **`min-h-screen` inside an `h-dvh` shell.** A viewport-height floor in a pane
+   that is already shorter than the viewport guarantees a scrollbar even when
+   the content fits. It is why four create routes reported an identical 1.052 at
+   2560×1440 — content *shorter* than the pane, padded back up to it.
+2. **A second width cap.** `AdminLayout.tsx:93` already wraps every page in
+   `max-w-(--content-max)` (105rem). `max-w-7xl` (80rem) nested inside it.
+3. **A container that closed early.** The `max-w-7xl` div closed before the
+   "Extra Information" grid and the footer action row, so those two blocks
+   rendered full-width while everything above them was capped. Present in all
+   eight; `NewDeliveryChallan.tsx` leaked six blocks. The drawer body has no
+   width cap of its own, so the bug is no longer expressible.
+
+`md:p-4` also double-padded against the shell's own `p-3 lg:p-4`.
+
+## What this does to the metrics
+
+**`overflowRatio` changes subject on 14 routes.** It is
+`main.scrollHeight / main.clientHeight` (`scripts/audit-layout.mjs`), and a
+drawer portals to `<body>`, outside `<main>`. So `/invoices/create-invoice` now
+reports the ratio of the *invoice list* behind the drawer. That is not an
+improvement, it is a different measurement, and the pre-drawer figures below are
+not comparable with anything the sweep prints for those routes now:
+
+| Route | 1366×768 | 1461×878 | 1920×1080 | 2560×1440 |
+|---|---|---|---|---|
+| `/invoices/create-invoice` | 1.846 | 1.602 | 1.290 | 1.052 |
+| `/purchases/new` | 1.530 | 1.328 | 1.069 | 1.052 |
+| `/quotations/new` | 1.470 | 1.277 | 1.069 | 1.052 |
+| `/credit-notes/new` | 1.473 | 1.279 | 1.069 | 1.052 |
+| `/contacts/new` | 2.128 | 1.848 | 1.488 | 1.105 |
+| `/settings/tax-rates/new` | 1.000 | 1.000 | 1.000 | 1.000 |
+
+`audit-layout.mjs` therefore also reports `overlay` — the topmost drawer body's
+own width, height and scroll ratio — and `overlayDepth`. `layout.spec.ts` prints
+those under "worst drawer-body ratios". **That** is the number that tracks the
+create screens now.
+
+**`horizontalOverflow` is the assertion this work had to be careful about.** The
+panel translates fully off-screen to the right to enter and leave, and an
+unclipped off-screen frame makes `document.scrollWidth > clientWidth` — a red
+sweep, intermittently, depending on when the audit samples. `Drawer` renders the
+panel inside a `fixed inset-0 overflow-hidden` clip layer for exactly this
+reason. Measured at 1461×878 with three levels open: `scrollWidth` 1461,
+`clientWidth` 1461.
+
+**Hit targets and fixed heights are unaffected.** Both queries walk the whole
+document, portalled overlays included. The drawer uses no authored heights —
+`inset-y-0` plus `grid-rows-[auto_1fr_auto]` and a `min-h-0` body — so
+`lint:layout` stays at zero, and the close button and footer buttons carry the
+same 32/44px floors as every other control.
+
+## Measured, in a real browser
+
+At 1461×878, three levels open (`/_tokens`, Drawer section):
+
+| | |
+|---|---|
+| Panel widths | 1096 / 1056 / 1016 px — 75%, then a constant 40px inset per level |
+| Horizontal overflow | none (`scrollWidth` = `clientWidth` = 1461) |
+| `#root` `inert` | set while any overlay is open, removed on the last close |
+| `body[data-overlay-open]` | same |
+| Escape | pops exactly one level (3 → 2 → 1 → 0) |
+| Console errors | none |
+
+## Things deliberately left as they were
+
+| Item | Why |
+|---|---|
+| The 11 `h-48` signature `<canvas>` elements | Unchanged, for the reason recorded above: react-signature-canvas maps CSS pixels to the backing bitmap. Their width does change inside a drawer, so pen tracking is worth a manual check. |
+| `ProductForm`'s action row | Stays in the form body rather than the drawer footer. "Create & Add Another" sets a ref the form's own submit handler reads, so hoisting it would be a behaviour change, not a layout one. |
+| `Modal.tsx` | Still serves the ~44 overlays that are views, confirms and croppers. It shares `Drawer`'s overlay stack, so the two layer and unwind correctly when they nest. |
+| The six `Edit*` twins | Out of scope. They still carry the frame above — see the staged `page-level-viewport-height` rule in `check-fixed-heights.mjs`, which reports 18 remaining under `--all` and is disabled until they land. |
+
+## New guard
+
+`check-fixed-heights.mjs` gains `page-level-viewport-height` (stage H3),
+**disabled**, matching `min-h-screen` / `h-screen` under `src/pages/admin/`
+excluding `auth/`. It reports 18 under `--all`: the six Edit twins' frames,
+three loading spinners, and `Reminder.tsx`'s three hand-rolled modal wrappers.
+None are create screens. Enable it once those are dealt with, per this file's
+convention that a stage is done when its rule is on and reports zero.

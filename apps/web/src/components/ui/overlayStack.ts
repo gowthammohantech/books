@@ -35,9 +35,11 @@ const syncShell = (): void => {
   }
 };
 
-export const pushOverlay = (id: symbol): void => {
+/** Pushes the overlay and returns its depth: 0 for the bottom-most. */
+export const pushOverlay = (id: symbol): number => {
   stack.push(id);
   syncShell();
+  return stack.length - 1;
 };
 
 /**
