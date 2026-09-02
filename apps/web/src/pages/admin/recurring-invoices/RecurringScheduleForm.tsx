@@ -1,4 +1,5 @@
 import api from '@lib/apiClient';
+import { computeLineTotals, lineTaxPercent as resolveLineTaxPercent } from '@lib/documentLineMath';
 import React, { useEffect, useState, useMemo } from 'react';
 import { PlusCircle, Loader2Icon } from 'lucide-react';
 import axios from 'axios';
@@ -313,22 +314,23 @@ const RecurringScheduleForm: React.FC = () => {
 
     // In-line product row change — identical math to CreateInvoice.
     const handleInLineItemChange = (product: ProductItem, rowId: string) => {
-        const { qty, rate, discount_value, discount_type, tax_group_id } = product;
-        const subtotal = qty * rate;
+        const selectedTaxGroup = taxes.find((t) => String(t.id) === String(product.tax_group_id));
 
-        const discountAmount = discount_type === 'Percentage'
-            ? (subtotal * (discount_value || 0)) / 100
-            : (discount_value || 0);
+        const line = computeLineTotals({
+            qty: product.qty,
+            rate: product.rate,
+            discount_type: product.discount_type,
+            discount_value: product.discount_value,
+            taxPercent: resolveLineTaxPercent(product, taxRateLibrary, taxes),
+        });
 
-        const discountedSubtotal = subtotal - discountAmount;
-
-        const selectedTaxGroup = taxes.find((t) => String(t.id) === String(tax_group_id));
-        const taxRate = selectedTaxGroup?.total_tax_rate || 0;
-        const taxPerUnit = (rate * taxRate) / 100;
-        const totalTax = taxPerUnit * qty;
-        const newAmount = discountedSubtotal + totalTax;
-
-        let updatedProduct: ProductItem = { ...product, discount: discountAmount, tax: totalTax, amount: newAmount };
+        let updatedProduct: ProductItem = {
+            ...product,
+            discount: line.discount,
+            discount_value: line.discountValue,
+            tax: line.tax,
+            amount: line.amount,
+        };
 
         const stickyIds = product.appliedTaxRateIds ?? [];
         if (stickyIds.length > 0) {
@@ -395,15 +397,18 @@ const RecurringScheduleForm: React.FC = () => {
         const discount_type = product.discount?.type;
         const discount_value = product.discount?.value;
         const rate = product.prices?.selling ?? 0;
-        const subtotal = rate;
-        const discountAmount = discount_type === 'Percentage'
-            ? (subtotal * (discount_value || 0)) / 100
-            : (discount_value || 0);
         // Prefer the unified-tax rate (single per-line TaxRate) over the legacy
         // tax-group total when seeding the flat percent for a quick-created product.
-        const taxRate = product.tax_rate?.rate ?? product.tax?.total_rate ?? 0;
-        const totalTax = (rate * taxRate) / 100;
-        const newAmount = subtotal - discountAmount + totalTax;
+        const seeded = computeLineTotals({
+            qty: 1,
+            rate,
+            discount_type,
+            discount_value,
+            taxPercent: product.tax_rate?.rate ?? product.tax?.total_rate ?? 0,
+        });
+        const discountAmount = seeded.discount;
+        const totalTax = seeded.tax;
+        const newAmount = seeded.amount;
 
         let updated = false;
         setFormData((prev) => ({
