@@ -88,8 +88,12 @@ export async function createPettyCash(
         return { status: 404, body: { success: false, message: 'Payment mode not found' } };
       }
 
-      const bankAccount = await tx.bankDetail.findUnique({
-        where: { id: bankAccountId },
+      // Tenant-scoped: `bankAccountId` comes straight from the request body,
+      // and this read is the only thing standing between it and a balance
+      // update. Unscoped, a petty-cash entry could debit another tenant's
+      // bank account.
+      const bankAccount = await tx.bankDetail.findFirst({
+        where: { id: bankAccountId, tenantId },
       });
       if (!bankAccount || bankAccount.isDeleted) {
         return { status: 404, body: { success: false, message: 'Bank account not found' } };
@@ -333,8 +337,12 @@ export async function returnPettyCash(
       }
 
       // Fetch bank account
-      const bankAccount = await tx.bankDetail.findUnique({
-        where: { id: bankAccountId },
+      // Tenant-scoped: `bankAccountId` comes straight from the request body,
+      // and this read is the only thing standing between it and a balance
+      // update. Unscoped, a petty-cash entry could debit another tenant's
+      // bank account.
+      const bankAccount = await tx.bankDetail.findFirst({
+        where: { id: bankAccountId, tenantId },
       });
       if (!bankAccount || bankAccount.isDeleted) {
         return { status: 404, body: { success: false, message: 'Bank account not found' } };

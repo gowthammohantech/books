@@ -25,9 +25,15 @@ import {
 } from '../../../lib/lineDimensions';
 import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 import { sendMail, isEmailConfigured } from '../../../utils/mailer';
+import { quotationRepository } from '../../../modules/quotation/quotation.repository';
+import {
+  buildListWhere,
+  deriveNextQuotationId,
+  presentDetail,
+  presentListRow,
+  TRANSITIONABLE_STATUSES,
+} from '../../../modules/quotation/quotation.service';
 
 type Tx = Prisma.TransactionClient;
 
@@ -119,20 +125,6 @@ async function generateNextQuotationId(
   return `${prefix}${String(lastNumber + 1).padStart(6, '0')}`;
 }
 
-function formatDateLong(date: Date | null | undefined): string | null {
-  if (!date) return null;
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  return `${day}/${month}/${date.getFullYear()}`;
-}
-
-function formatDateShort(date: Date | null | undefined): string | null {
-  if (!date) return null;
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = date.toLocaleString('default', { month: 'short' });
-  return `${day}, ${month} ${date.getFullYear()}`;
-}
-
 // =============================================================================
 // createQuotation
 // =============================================================================
@@ -215,14 +207,22 @@ export async function createQuotation(req: Request, res: Response): Promise<void
       }
     }
 
-    // billFrom is a User FK — validate it
+    // billFrom is a User FK — validate it.
+    //
+    // PRESERVED, NOT ENDORSED: the first lookup asks for a User whose id is the
+    // TENANT id. It only succeeds on installs migrated from the single-tenant
+    // schema, where a tenant's id was its owner's user id; on a tenant created
+    // by the current signup path no such user exists and every create fails
+    // with 'Invalid user ID'. Changing it would change which payloads are
+    // accepted, so it is left as found and recorded — see the closing report.
     const [user, billFrom] = await Promise.all([
-      prisma.user.findUnique({ where: { id: tenantId } }),
-      prisma.user.findUnique({ where: { id: billFromId } }),
+      quotationRepository.findUserById(tenantId),
+      quotationRepository.findUserById(billFromId),
     ]);
-    // Also fetch legacy billTo customer for email sending (only on legacy path)
+    // Also fetch legacy billTo customer for email sending (only on legacy path).
+    // Tenant-scoped, where it was a bare findUnique by id.
     const billToCustomer = resolvedCustomerId
-      ? await prisma.customer.findUnique({ where: { id: resolvedCustomerId } })
+      ? await quotationRepository.findCustomerById(resolvedCustomerId, tenantId)
       : null;
 
     if (!user) throw new Error('Invalid user ID');
@@ -369,176 +369,28 @@ export async function createQuotation(req: Request, res: Response): Promise<void
 
 export async function getQuotationById(req: Request, res: Response): Promise<void> {
   try {
+    const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
-    const baseUrl = buildBaseUrl(req);
 
-    const quotation = await prisma.quotation.findFirst({
-      where: { id, isDeleted: false },
-      include: {
-        contact: { select: { id: true, firstName: true, lastName: true, organisation: true, email: true, mobile: true, vatRegNumber: true, gstin: true } },
-        billToContact: { select: { id: true, firstName: true, lastName: true, organisation: true, email: true, mobile: true, vatRegNumber: true, gstin: true } },
-        customer: { select: { id: true, name: true, email: true, phone: true, image: true, billingAddress: true } },
-        billFromUser: { select: { id: true, firstName: true, lastName: true, email: true, phone: true, profileImage: true, address: true, user_type: true } },
-        billToCustomer: { select: { id: true, name: true, email: true, phone: true, image: true, billingAddress: true } },
-        signature: { select: { id: true, signatureName: true, signatureImage: true } },
-        bank: { select: { id: true, accountHoldername: true, bankName: true, branchName: true, accountNumber: true, IFSCCode: true } },
-      },
-    });
-
+    // TENANT SCOPE, ADDED. This read was `where: { id, isDeleted: false }` — no
+    // tenantId — so any authenticated user with `quotations:view` could fetch
+    // any tenant's quotation, complete with its customer and bank details, by
+    // id. The 404 message already claimed to cover it ("not found or
+    // unauthorized"); only the "not found" half was implemented. Reproduced
+    // over HTTP in the golden capture before this line existed.
+    const quotation = await quotationRepository.findDetailById(id, tenantId);
     if (!quotation) {
       res.status(404).json({ success: false, message: 'Quotation not found or unauthorized' });
       return;
     }
 
-    // Contact-aware: prefer contact relation; fall back to legacy customer.
-    const contactForDisplay = quotation.contact
-      ? {
-          id: quotation.contact.id,
-          name: resolveDisplayName(quotation.contact),
-          email: quotation.contact.email ?? null,
-          phone: quotation.contact.mobile ?? null,
-          image: '',
-          billingAddress: null,
-          vatRegNumber: quotation.contact.vatRegNumber ?? null,
-          gstin: quotation.contact.gstin ?? null,
-        }
-      : null;
-    const customer = contactForDisplay ?? (quotation.customer
-      ? {
-          id: quotation.customer.id,
-          name: quotation.customer.name || '',
-          email: quotation.customer.email || null,
-          phone: quotation.customer.phone || null,
-          image: quotation.customer.image ? `${baseUrl}${quotation.customer.image.replace(/\\/g, '/')}` : '',
-          billingAddress: quotation.customer.billingAddress || null,
-        }
-      : null);
-
-    const billFrom = quotation.billFromUser
-      ? {
-          id: quotation.billFromUser.id,
-          name: `${quotation.billFromUser.firstName || ''} ${quotation.billFromUser.lastName || ''}`.trim(),
-          email: quotation.billFromUser.email || null,
-          phone: quotation.billFromUser.phone || null,
-          profileImage: quotation.billFromUser.profileImage
-            ? `${baseUrl}${quotation.billFromUser.profileImage.replace(/\\/g, '/')}`
-            : '',
-          address: quotation.billFromUser.address || null,
-          user_type: quotation.billFromUser.user_type || 1,
-        }
-      : null;
-
-    // Contact-aware billTo: prefer billToContact; fall back to legacy billToCustomer.
-    const billToContactForDisplay = quotation.billToContact
-      ? {
-          id: quotation.billToContact.id,
-          name: resolveDisplayName(quotation.billToContact),
-          email: quotation.billToContact.email ?? null,
-          phone: quotation.billToContact.mobile ?? null,
-          image: '',
-          billingAddress: null,
-          vatRegNumber: quotation.billToContact.vatRegNumber ?? null,
-          gstin: quotation.billToContact.gstin ?? null,
-        }
-      : null;
-    const billTo = billToContactForDisplay ?? (quotation.billToCustomer
-      ? {
-          id: quotation.billToCustomer.id,
-          name: quotation.billToCustomer.name || '',
-          email: quotation.billToCustomer.email || null,
-          phone: quotation.billToCustomer.phone || null,
-          image: quotation.billToCustomer.image
-            ? `${baseUrl}${quotation.billToCustomer.image.replace(/\\/g, '/')}`
-            : '',
-          billingAddress: quotation.billToCustomer.billingAddress || null,
-        }
-      : null);
-
-    const bank = quotation.bank
-      ? {
-          id: quotation.bank.id,
-          accountHoldername: quotation.bank.accountHoldername || '',
-          bankName: quotation.bank.bankName || '',
-          branchName: quotation.bank.branchName || '',
-          accountNumber: quotation.bank.accountNumber || '',
-          IFSCCode: quotation.bank.IFSCCode || '',
-        }
-      : null;
-
-    const signatureImage = quotation.signatureImage
-      ? `${baseUrl}${quotation.signatureImage.replace(/\\/g, '/')}`
-      : null;
-
-    let signature: Record<string, unknown> | null = null;
-    if (quotation.sign_type === 'eSignature') {
-      signature = { name: quotation.signatureName || null, image: signatureImage };
-    } else if (quotation.signature) {
-      signature = {
-        id: quotation.signature.id,
-        name: quotation.signature.signatureName || null,
-        image: quotation.signature.signatureImage
-          ? `${baseUrl}${quotation.signature.signatureImage.replace(/\\/g, '/')}`
-          : null,
-      };
-    }
-
-    const items = Array.isArray(quotation.items) ? (quotation.items as unknown as (IncomingItem & { productId?: string; productName?: string; totalTax?: number; lineTotal?: number })[]) : [];
-    const formattedItems = items.map((item) => ({
-      id: item.id ?? item.productId ?? null,
-      productId: item.id ?? item.productId ?? null,
-      name: item.name || item.productName || '',
-      unit: item.unit || '',
-      qty: asNumber(item.qty, 0),
-      rate: asNumber(item.rate, 0),
-      discount: asNumber(item.discount, 0),
-      tax: asNumber(item.tax ?? item.totalTax, 0),
-      tax_group_id: item.tax_group_id || null,
-      discount_type: item.discount_type || 'Fixed',
-      discount_value: asNumber(item.discount_value, 0),
-      amount: asNumber(item.amount ?? item.lineTotal, 0),
-    }));
-
     res.status(200).json({
       success: true,
       message: 'Quotation retrieved successfully',
-      data: {
-        id: quotation.id,
-        quotationId: quotation.quotationId,
-        salesPerson: quotation.salesPerson,
-        contactId: quotation.contactId ?? null,
-        billToContactId: quotation.billToContactId ?? null,
-        customer,
-        quotationDate: quotation.quotationDate,
-        expiryDate: quotation.expiryDate,
-        referenceNo: quotation.referenceNo,
-        status: quotation.status,
-        paymentTerms: quotation.paymentTerms,
-        taxableAmount: quotation.taxableAmount,
-        totalDiscount: quotation.totalDiscount,
-        vat: quotation.vat,
-        roundOff: quotation.roundOff,
-        TotalAmount: quotation.TotalAmount,
-        items: formattedItems,
-        billFrom,
-        billTo,
-        bank,
-        notes: quotation.notes,
-        termsAndCondition: quotation.termsAndCondition,
-        sign_type: quotation.sign_type,
-        signature,
-        convert_type: quotation.convert_type,
-        currencyCode: quotation.currencyCode ?? null, // C.1
-        taxTreatment: quotation.taxTreatment ?? null, // C.2
-        // W4 note: expose the public-link state so the edit view / email compose
-        // can read it directly instead of blind-POSTing enableQuotationPublicLink
-        // on every load just to discover whether a link already exists.
-        publicViewEnabled: quotation.publicViewEnabled,
-        publicViewToken: quotation.publicViewToken ?? null,
-        createdAt: formatDateLong(quotation.createdAt),
-        updatedAt: formatDateLong(quotation.updatedAt),
-      },
+      data: presentDetail(quotation, buildBaseUrl(req)),
     });
   } catch (err) {
+    if (handleUnauthorized(res, err)) return;
     console.error('Get quotation by ID error:', err);
     res.status(500).json({
       success: false,
@@ -547,6 +399,7 @@ export async function getQuotationById(req: Request, res: Response): Promise<voi
     });
   }
 }
+
 
 // =============================================================================
 // updateQuotation
@@ -558,7 +411,10 @@ export async function updateQuotation(req: Request, res: Response): Promise<void
     const { id } = req.params as { id: string };
     const body = req.body as Record<string, unknown>;
 
-    const existing = await prisma.quotation.findUnique({ where: { id } });
+    // TENANT SCOPE, ADDED. The pre-read named only the id, so an edit could
+    // load and then overwrite another tenant's quotation — the capture proved
+    // it by rewriting a foreign document's notes over HTTP.
+    const existing = await quotationRepository.findById(id, tenantId);
     if (!existing) {
       res.status(404).json({ message: 'Quotation not found' });
       return;
@@ -742,10 +598,13 @@ export async function updateQuotation(req: Request, res: Response): Promise<void
     if (partyUpdate.billTo !== undefined)
       data.billToCustomer = partyUpdate.billTo ? { connect: { id: partyUpdate.billTo } } : { disconnect: true };
 
-    const updated = await prisma.quotation.update({
-      where: { id },
-      data,
-    });
+    // Scoped write. `existing` was already resolved in-tenant above, so this
+    // cannot miss for a legitimate caller; it closes the window between the two.
+    const updated = await quotationRepository.update(id, tenantId, data);
+    if (!updated) {
+      res.status(404).json({ message: 'Quotation not found' });
+      return;
+    }
 
     res.status(200).json({ message: 'Quotation updated successfully', data: updated });
   } catch (err) {
@@ -762,17 +621,17 @@ export async function updateQuotation(req: Request, res: Response): Promise<void
 export async function deleteQuotation(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params as { id: string };
-    const existing = await prisma.quotation.findUnique({ where: { id } });
-    if (!existing) {
+    // TENANT SCOPE, ADDED. This handler did not even resolve a tenant: it read
+    // and soft-deleted by id alone, so a DELETE could remove another tenant's
+    // quotation. `softDelete` returns null when no row in this tenant matched.
+    const updated = await quotationRepository.softDelete(id, requireTenantId(req));
+    if (!updated) {
       res.status(404).json({ message: 'Quotation not found' });
       return;
     }
-    const updated = await prisma.quotation.update({
-      where: { id },
-      data: { isDeleted: true },
-    });
     res.status(200).json({ message: 'Quotation deleted successfully', data: updated });
   } catch (err) {
+    if (handleUnauthorized(res, err)) return;
     console.error('Delete quotation error:', err);
     res.status(500).json({ message: 'Error deleting quotation', error: err instanceof Error ? err.message : String(err) });
   }
@@ -795,165 +654,25 @@ interface ListQuotationsQuery {
 export async function listQuotations(req: Request, res: Response): Promise<void> {
   try {
     const scope = tenantScope(req);
-    const { page = '1', limit = '10', status, search = '', customerId, startDate, endDate } =
-      req.query as ListQuotationsQuery;
-    const pageN = Number(page);
-    const limitN = Number(limit);
-    const skip = (pageN - 1) * limitN;
+    const query = req.query as ListQuotationsQuery;
+    const pageN = Number(query.page ?? '1');
+    const limitN = Number(query.limit ?? '10');
 
-    const where: Prisma.QuotationWhereInput = { ...scope };
-    if (status && VALID_STATUSES.has(status as QuotationStatus)) {
-      where.status = status as QuotationStatus;
-    }
-    if (customerId) where.customerId = customerId;
-    if (startDate || endDate) {
-      where.quotationDate = {};
-      if (startDate) (where.quotationDate as Prisma.DateTimeFilter).gte = new Date(startDate);
-      if (endDate) (where.quotationDate as Prisma.DateTimeFilter).lte = new Date(endDate);
-    }
-    if (search) {
-      where.OR = [
-        { quotationId: { contains: search, mode: 'insensitive' } },
-        { referenceNo: { contains: search, mode: 'insensitive' } },
-        { notes: { contains: search, mode: 'insensitive' } },
-        { customer: { name: { contains: search, mode: 'insensitive' } } },
-      ];
-    }
+    const where = buildListWhere(scope, query);
+    const [total, rows] = await quotationRepository.list(where, (pageN - 1) * limitN, limitN);
+
+    // The preview of the next number in this tenant's series, so the form's
+    // placeholder agrees with what the create path will issue.
+    const nextQuotationId = deriveNextQuotationId(
+      await quotationRepository.findLastNumberByNumber(scope.tenantId),
+    );
 
     const baseUrl = buildBaseUrl(req);
-
-    const [total, rows] = await Promise.all([
-      prisma.quotation.count({ where }),
-      prisma.quotation.findMany({
-        where,
-        include: {
-          contact: { select: { id: true, firstName: true, lastName: true, organisation: true, email: true, mobile: true } },
-          billToContact: { select: { id: true, firstName: true, lastName: true, organisation: true, email: true, mobile: true } },
-          customer: { select: { id: true, name: true, email: true, phone: true, image: true } },
-          billToCustomer: { select: { id: true, name: true, email: true, phone: true, image: true, billingAddress: true } },
-          signature: { select: { id: true, signatureName: true } },
-          bank: { select: { id: true, accountHoldername: true, bankName: true, branchName: true, accountNumber: true, IFSCCode: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limitN,
-      }),
-    ]);
-
-    // Next quotationId — this tenant's series, so the preview agrees with
-    // what the create path will issue.
-    const lastQuotation = await prisma.quotation.findFirst({
-      where: { tenantId: scope.tenantId, quotationId: { not: null } },
-      orderBy: { quotationId: 'desc' },
-      select: { quotationId: true },
-    });
-    let nextQuotationId = 'QT-000001';
-    if (lastQuotation?.quotationId) {
-      const m = lastQuotation.quotationId.match(/(\D*)(\d+)$/);
-      if (m) {
-        nextQuotationId = `${m[1]}${String(parseInt(m[2], 10) + 1).padStart(6, '0')}`;
-      }
-    }
-
-    const formatted = rows.map((quotation) => {
-      // Contact-aware party display: prefer contact relation; fall back to legacy customer.
-      const contactForDisplay = quotation.contact
-        ? {
-            id: quotation.contact.id,
-            name: resolveDisplayName(quotation.contact),
-            email: quotation.contact.email ?? null,
-            phone: quotation.contact.mobile ?? null,
-            image: '',
-          }
-        : null;
-      const customer = contactForDisplay ?? (quotation.customer
-        ? {
-            id: quotation.customer.id,
-            name: quotation.customer.name || '',
-            email: quotation.customer.email || null,
-            phone: quotation.customer.phone || null,
-            image: quotation.customer.image
-              ? `${baseUrl}${quotation.customer.image.replace(/\\/g, '/')}`
-              : '',
-          }
-        : null);
-      const billToContactForDisplay = quotation.billToContact
-        ? {
-            id: quotation.billToContact.id,
-            name: resolveDisplayName(quotation.billToContact),
-            email: quotation.billToContact.email ?? null,
-            phone: quotation.billToContact.mobile ?? null,
-            image: '',
-            billingAddress: null,
-          }
-        : null;
-      const billTo = billToContactForDisplay ?? (quotation.billToCustomer
-        ? {
-            id: quotation.billToCustomer.id,
-            name: quotation.billToCustomer.name || '',
-            email: quotation.billToCustomer.email || null,
-            phone: quotation.billToCustomer.phone || null,
-            image: quotation.billToCustomer.image
-              ? `${baseUrl}${quotation.billToCustomer.image.replace(/\\/g, '/')}`
-              : '',
-            billingAddress: quotation.billToCustomer.billingAddress || null,
-          }
-        : null);
-      const bank = quotation.bank
-        ? {
-            accountHoldername: quotation.bank.accountHoldername || '',
-            bankName: quotation.bank.bankName || '',
-            branchName: quotation.bank.branchName || '',
-            accountNumber: quotation.bank.accountNumber || '',
-            IFSCCode: quotation.bank.IFSCCode || '',
-          }
-        : null;
-      const signatureImage = quotation.signatureImage
-        ? `${baseUrl}${quotation.signatureImage.replace(/\\/g, '/')}`
-        : null;
-      let signature: Record<string, unknown> | null = null;
-      if (quotation.sign_type === 'eSignature') {
-        signature = { name: quotation.signatureName || null, image: signatureImage };
-      } else if (quotation.signature) {
-        signature = { id: quotation.signature.id, name: quotation.signature.signatureName || null };
-      }
-      const itemsCount = Array.isArray(quotation.items) ? quotation.items.length : 0;
-      return {
-        id: quotation.id,
-        quotationId: quotation.quotationId,
-        customer,
-        quotationDate: formatDateShort(quotation.quotationDate),
-        expiryDate: formatDateShort(quotation.expiryDate),
-        referenceNo: quotation.referenceNo,
-        status: quotation.status,
-        paymentTerms: quotation.paymentTerms,
-        taxableAmount: quotation.taxableAmount,
-        totalDiscount: quotation.totalDiscount,
-        vat: quotation.vat,
-        TotalAmount: quotation.TotalAmount,
-        itemsCount,
-        contactId: quotation.contactId ?? null,
-        billToContactId: quotation.billToContactId ?? null,
-        billFrom: quotation.billFrom,
-        billTo,
-        bank,
-        notes: quotation.notes,
-        sign_type: quotation.sign_type,
-        signature,
-        convert_type: quotation.convert_type,
-        invoiceId: quotation.invoiceId ?? null,
-        currencyCode: quotation.currencyCode ?? null, // C.1
-        taxTreatment: quotation.taxTreatment ?? null, // C.2
-        createdAt: formatDateShort(quotation.createdAt),
-        updatedAt: formatDateShort(quotation.updatedAt),
-      };
-    });
-
     res.status(200).json({
       success: true,
       message: 'Quotations retrieved successfully',
       data: {
-        quotations: formatted,
+        quotations: rows.map((row) => presentListRow(row, baseUrl)),
         nextQuotationId,
         pagination: {
           total,
@@ -973,6 +692,7 @@ export async function listQuotations(req: Request, res: Response): Promise<void>
     });
   }
 }
+
 
 // =============================================================================
 // listQuotationsMinimal
@@ -1089,10 +809,10 @@ export async function getAllCustomers(req: Request, res: Response): Promise<void
       ];
     }
 
-    const customers = await prisma.customer.findMany({
-      where,
-      orderBy: { name: 'asc' },
-    });
+    // TENANT SCOPE, ADDED. This filtered on `isDeleted` alone, so
+    // GET /api/admin/customers-all — which the quotation form calls on every
+    // load — returned every tenant's customer list, names and emails included.
+    const customers = await quotationRepository.listCustomers(requireTenantId(req), where);
 
     res.status(200).json({
       success: true,
@@ -1103,6 +823,7 @@ export async function getAllCustomers(req: Request, res: Response): Promise<void
       },
     });
   } catch (err) {
+    if (handleUnauthorized(res, err)) return;
     console.error('Error fetching customers:', err);
     res.status(500).json({
       success: false,
@@ -1121,7 +842,7 @@ export async function updateQuotationStatus(req: Request, res: Response): Promis
     const { id } = req.params as { id: string };
     const { status } = req.body as { status?: string };
 
-    if (status !== 'accepted' && status !== 'declined') {
+    if (!status || !TRANSITIONABLE_STATUSES.has(status)) {
       res.status(400).json({
         success: false,
         message: "Invalid status. Allowed values: 'accepted' or 'declined'.",
@@ -1129,13 +850,15 @@ export async function updateQuotationStatus(req: Request, res: Response): Promis
       return;
     }
 
-    const existing = await prisma.quotation.findUnique({ where: { id } });
-    if (!existing) {
+    // TENANT SCOPE, ADDED. Both the read and the write named only the id, so a
+    // PATCH could accept or decline another tenant's quotation. `update` returns
+    // null when nothing in this tenant matched, which is the same 404 the
+    // missing-row case already answered.
+    const updated = await quotationRepository.update(id, requireTenantId(req), { status: status as QuotationStatus });
+    if (!updated) {
       res.status(404).json({ success: false, message: 'Quotation not found.' });
       return;
     }
-
-    const updated = await prisma.quotation.update({ where: { id }, data: { status } });
 
     res.status(200).json({
       success: true,
@@ -1185,7 +908,11 @@ export async function sendQuotationEmailAndUpdateStatus(req: Request, res: Respo
       return;
     }
 
-    const existing = await prisma.quotation.findUnique({ where: { id: quotationId } });
+    // TENANT SCOPE, ADDED. Unscoped, this handler would mail another tenant's
+    // quotation to an address of the caller's choosing and then write its
+    // status — the worst of the five, because it exfiltrates as well as writes.
+    const tenantId = requireTenantId(req);
+    const existing = await quotationRepository.findById(quotationId, tenantId);
     if (!existing) {
       res.status(404).json({ message: 'Quotation not found' });
       return;
@@ -1221,10 +948,7 @@ export async function sendQuotationEmailAndUpdateStatus(req: Request, res: Respo
     // Send first — only persist status change on success
     await sendMail(mailOptions);
 
-    const updated = await prisma.quotation.update({
-      where: { id: quotationId },
-      data: { status: nextStatus },
-    });
+    const updated = await quotationRepository.update(quotationId, tenantId, { status: nextStatus });
 
     res.status(200).json({
       success: true,
@@ -1272,12 +996,25 @@ export async function enableQuotationPublicLink(req: Request, res: Response): Pr
     }
 
     const token = existing.publicViewToken ?? generatePublicToken();
-    const updated = await prisma.quotation.update({
-      where: { id },
-      data: { publicViewToken: token, publicViewEnabled: true },
-      select: { id: true, publicViewToken: true, publicViewEnabled: true },
+    // The read above was already scoped; the write was not. Scoped here too so
+    // the whole handler is, rather than relying on the pre-read to have covered it.
+    const updated = await quotationRepository.update(id, tenantId, {
+      publicViewToken: token,
+      publicViewEnabled: true,
     });
-    res.json({ success: true, message: 'Public link enabled', data: updated });
+    if (!updated) {
+      res.status(404).json({ success: false, message: 'Quotation not found' });
+      return;
+    }
+    res.json({
+      success: true,
+      message: 'Public link enabled',
+      data: {
+        id: updated.id,
+        publicViewToken: updated.publicViewToken,
+        publicViewEnabled: updated.publicViewEnabled,
+      },
+    });
   } catch (err) {
     if (handleUnauthorized(res, err)) return;
     console.error('enableQuotationPublicLink error:', err);

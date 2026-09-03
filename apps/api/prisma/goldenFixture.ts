@@ -29,6 +29,20 @@ const U = 'golden-user-0000-0000-0000000000001';
 const AT = new Date('2026-01-01T00:00:00.000Z');
 
 /**
+ * A SECOND tenant, seeded with one customer, that the golden token has no
+ * membership in.
+ *
+ * It exists to make cross-tenant leakage visible in the captured bytes. A
+ * single-tenant fixture cannot tell a scoped query from an unscoped one: both
+ * return the same rows. With a foreign row present, any handler that forgets
+ * `tenantId` returns it, and the diff says so.
+ */
+const T2 = 'golden-tenant-0000-0000-000000000002';
+const U2 = 'golden-user-0000-0000-0000000000002';
+/** A quotation owned by T2. Fetching it with T's token must 404, not 200. */
+const FOREIGN_QUOTATION = 'golden-foreign-quotation-001';
+
+/**
  * A distinct timestamp per product.
  *
  * getAllProducts orders by `createdAt: 'desc'`. Rows sharing a timestamp are a
@@ -43,6 +57,8 @@ const D = (n: number | string) => new Prisma.Decimal(n);
 async function wipe(): Promise<void> {
   // Children first; the fixture owns every row it touches.
   await prisma.customFieldValue.deleteMany({ where: { tenantId: T } }).catch(() => {});
+  await prisma.quotation.deleteMany({ where: { tenantId: T } }).catch(() => {});
+  await prisma.contact.deleteMany({ where: { tenantId: T } }).catch(() => {});
   await prisma.inventory.deleteMany({ where: { tenantId: T } }).catch(() => {});
   await prisma.product.deleteMany({ where: { tenantId: T } }).catch(() => {});
   await prisma.taxRate.deleteMany({ where: { tenantId: T } }).catch(() => {});
@@ -54,7 +70,13 @@ async function wipe(): Promise<void> {
   await prisma.tenantMembership.deleteMany({ where: { tenantId: T } }).catch(() => {});
   await prisma.role.deleteMany({ where: { tenantId: T } }).catch(() => {});
   await prisma.user.deleteMany({ where: { id: U } }).catch(() => {});
+  await prisma.customer.deleteMany({ where: { tenantId: T } }).catch(() => {});
   await prisma.tenant.deleteMany({ where: { id: T } }).catch(() => {});
+  // ...and the foreign tenant the leak check depends on.
+  await prisma.quotation.deleteMany({ where: { tenantId: T2 } }).catch(() => {});
+  await prisma.customer.deleteMany({ where: { tenantId: T2 } }).catch(() => {});
+  await prisma.user.deleteMany({ where: { id: U2 } }).catch(() => {});
+  await prisma.tenant.deleteMany({ where: { id: T2 } }).catch(() => {});
 }
 
 async function main(): Promise<void> {
@@ -62,6 +84,15 @@ async function main(): Promise<void> {
 
   await prisma.tenant.create({
     data: { id: T, name: 'Golden Co', slug: 'golden-co', status: 'ACTIVE', createdAt: AT, updatedAt: AT },
+  });
+  await prisma.tenant.create({
+    data: { id: T2, name: 'Other Co', slug: 'other-co', status: 'ACTIVE', createdAt: AT, updatedAt: AT },
+  });
+  await prisma.user.create({
+    data: {
+      id: U2, firstName: 'Other', lastName: 'Owner', email: 'owner@other.test',
+      password: 'x', createdAt: AT, updatedAt: AT,
+    },
   });
   await prisma.user.create({
     data: {
@@ -220,6 +251,97 @@ async function main(): Promise<void> {
       createdAt: AT, updatedAt: AT,
     },
   });
+
+  // ---------------------------------------------------------------------------
+  // Quotations, for the second domain's capture.
+  //
+  // A quotation needs a party, and the Contact model is the unified one the
+  // document controllers are migrating toward, so the fixture seeds a Contact
+  // rather than a legacy Customer.
+  // ---------------------------------------------------------------------------
+  // The foreign tenant's own quotation. Every by-id quotation handler is driven
+  // against this id with the GOLDEN tenant's token; a scoped handler 404s.
+  await prisma.quotation.create({
+    data: {
+      id: FOREIGN_QUOTATION, tenantId: T2, billFrom: U2,
+      quotationId: 'QT-OTHER01', quotationDate: AT,
+      items: [] as unknown as Prisma.InputJsonValue,
+      taxableAmount: D(1), totalDiscount: D(0), vat: D(0), TotalAmount: D(1),
+      status: 'draft', notes: 'FOREIGN TENANT DATA', createdAt: AT, updatedAt: AT,
+    },
+  });
+
+  // Two customers in the golden tenant, and one in the foreign tenant. The
+  // foreign row is the leak probe: it must never appear in a response driven by
+  // the golden tenant's token.
+  await prisma.customer.create({
+    data: {
+      id: 'golden-customer-000000000001', tenantId: T,
+      name: 'Alpha Customer', email: 'alpha@golden.test', phone: '111',
+      createdAt: AT, updatedAt: AT,
+    },
+  });
+  await prisma.customer.create({
+    data: {
+      id: 'golden-customer-000000000002', tenantId: T,
+      name: 'Beta Customer', email: 'beta@golden.test', phone: '222',
+      status: 'Inactive', createdAt: AT, updatedAt: AT,
+    },
+  });
+  await prisma.customer.create({
+    data: {
+      id: 'golden-foreign-customer-0001', tenantId: T2,
+      name: 'LEAKED Foreign Customer', email: 'leak@other.test', phone: '999',
+      createdAt: AT, updatedAt: AT,
+    },
+  });
+
+  await prisma.contact.create({
+    data: {
+      id: 'golden-contact-0000000000001',
+      tenantId: T,
+      firstName: 'Golden',
+      lastName: 'Customer',
+      email: 'customer@golden.test',
+      createdAt: AT,
+      updatedAt: AT,
+    },
+  });
+
+  const quotationItems = [
+    {
+      name: 'Widget',
+      qty: 2,
+      rate: 100,
+      discount: 50,
+      discount_type: 'Percentage',
+      discount_value: 25,
+      tax: 27,
+      tax_group_id: group.id,
+      amount: 177,
+    },
+  ];
+
+  for (let i = 1; i <= 6; i += 1) {
+    await prisma.quotation.create({
+      data: {
+        id: `golden-quotation-00000000000${i}`,
+        tenantId: T,
+        billFrom: U,
+        contactId: 'golden-contact-0000000000001',
+        quotationId: `QT-GOLDEN0${i}`,
+        quotationDate: at(i),
+        items: quotationItems as unknown as Prisma.InputJsonValue,
+        taxableAmount: D(200),
+        totalDiscount: D(50),
+        vat: D(27),
+        TotalAmount: D(177),
+        status: i === 1 ? 'sent' : 'draft',
+        createdAt: at(i),
+        updatedAt: AT,
+      },
+    });
+  }
 
   const token = generateToken(U, T, membership.id);
   console.log(JSON.stringify({ tenantId: T, userId: U, token }, null, 2));

@@ -1,11 +1,27 @@
-import api from '@lib/apiClient';
-import { useState, useEffect, useCallback } from 'react';
-
+/**
+ * Payments recorded against a purchase, with their summary.
+ *
+ * React Query behind the same `{ payments, summary, loading, refetch }` contract the
+ * hand-rolled version returned, so its callers are untouched. Deduplicated
+ * across mounts, cached, and abandoned on unmount — none of which the
+ * useState/useEffect version did.
+ */
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import type { RootState } from '@store/index';
+
+import api from '@lib/apiClient';
 import Constants from '@constants/api';
+import { qk } from '@api/core/queryKeys';
+import type { RootState } from '@store/index';
 import type { InvoicePaymentSummary } from '@models/invoice-payment';
 
+/**
+ * A supplier payment row.
+ *
+ * Declared here rather than in types/: PurchasePaymentHistoryPanel imports it
+ * from this module, so it is part of the hook's published surface.
+ */
 export interface SupplierPaymentRow {
     id: string;
     paidAmount: string;
@@ -28,36 +44,33 @@ const EMPTY_SUMMARY: InvoicePaymentSummary = {
     status: '',
 };
 
+interface Result {
+  payments: SupplierPaymentRow[];
+  summary: InvoicePaymentSummary;
+}
+
 export function useSupplierPayments(purchaseId: string) {
-    const { token } = useSelector((s: RootState) => s.auth);
+  const { token } = useSelector((s: RootState) => s.auth);
+  const queryClient = useQueryClient();
 
-    const [payments, setPayments] = useState<SupplierPaymentRow[]>([]);
-    const [summary, setSummary] = useState<InvoicePaymentSummary>(EMPTY_SUMMARY);
-    const [loading, setLoading] = useState(false);
+  const { data, isFetching } = useQuery({
+    queryKey: qk.supplierPayments(purchaseId),
+    queryFn: async (): Promise<Result> => {
+      const res = await api.get(`${Constants.PURCHASE_PAYMENTS_URL}/${purchaseId}/payments`);
+      const inner = res.data?.data ?? {};
+      return { payments: inner.payments ?? [], summary: inner.summary ?? EMPTY_SUMMARY };
+    },
+    enabled: Boolean(token && purchaseId),
+  });
 
-    const doFetch = useCallback(() => {
-        if (!token || !purchaseId) return;
+  const refetch = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: qk.supplierPayments(purchaseId) });
+  }, [queryClient, purchaseId]);
 
-        setLoading(true);
-        api
-            .get(`${Constants.PURCHASE_PAYMENTS_URL}/${purchaseId}/payments`)
-            .then((res) => {
-                const inner = res.data?.data ?? {};
-                setPayments(inner.payments ?? []);
-                setSummary(inner.summary ?? EMPTY_SUMMARY);
-            })
-            .catch(() => {
-                setPayments([]);
-                setSummary(EMPTY_SUMMARY);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, [token, purchaseId]);
-
-    useEffect(() => {
-        doFetch();
-    }, [doFetch]);
-
-    return { payments, summary, loading, refetch: doFetch };
+  return {
+    payments: data?.payments ?? [],
+    summary: data?.summary ?? EMPTY_SUMMARY,
+    loading: isFetching,
+    refetch,
+  };
 }

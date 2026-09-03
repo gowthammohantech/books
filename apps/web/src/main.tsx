@@ -51,7 +51,36 @@ document.addEventListener('visibilitychange', () => {
 });
 setInterval(checkTokenExpiry, 60_000);
 
-const queryClient = new QueryClient();
+/**
+ * Explicit defaults, where there were none.
+ *
+ * A bare `new QueryClient()` retries a failed query three times and treats every
+ * result as immediately stale. Both are wrong here: the 401 handler in
+ * lib/apiClient already logs out and redirects, so retrying an auth failure
+ * three times just delays the redirect, and a zero staleTime refetches reference
+ * data on every mount of every screen that reads it.
+ *
+ * The values below match what the hand-rolled caches they replace were already
+ * doing — hooks/useCurrencies.ts held a module-level `_cached` with no
+ * expiry at all, and SetupStatusContext keeps a per-tenant sessionStorage copy.
+ */
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      retry: (failureCount, error) => {
+        // Never retry what will not change: an auth failure is handled by the
+        // interceptor, and a 4xx is the server declining, not a blip.
+        const status = (error as { status?: number; response?: { status?: number } })?.status
+          ?? (error as { response?: { status?: number } })?.response?.status;
+        if (typeof status === 'number' && status >= 400 && status < 500) return false;
+        return failureCount < 2;
+      },
+    },
+  },
+});
 import { ThemeProvider } from '@mui/material/styles';
 import { muiTheme } from '@lib/muiTheme';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';

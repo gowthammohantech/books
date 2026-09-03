@@ -1,41 +1,40 @@
-import type { ActivityEntry } from '@models/activity';
-import api from '@lib/apiClient';
-import { useState, useEffect, useCallback } from 'react';
-
+/**
+ * A purchase's audit feed. The invoice counterpart is `useInvoiceActivity`.
+ *
+ * Same React Query treatment, same `{ entries, loading, refetch }` contract, so
+ * `OverviewPurchase` is untouched — which matters here because that screen calls
+ * this hook for both its rows and its refresh, and the two used to be separate
+ * hook instances over the same endpoint.
+ */
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import type { RootState } from '@store/index';
+
+import api from '@lib/apiClient';
 import Constants from '@constants/api';
+import { qk } from '@api/core/queryKeys';
+import type { ActivityEntry } from '@models/activity';
+import type { RootState } from '@store/index';
 
 /** @see ActivityEntry — the invoice feed carries the identical shape. */
 export type PurchaseActivityEntry = ActivityEntry;
 
 export function usePurchaseActivity(purchaseId: string) {
-    const { token } = useSelector((s: RootState) => s.auth);
+  const { token } = useSelector((s: RootState) => s.auth);
+  const queryClient = useQueryClient();
 
-    const [entries, setEntries] = useState<PurchaseActivityEntry[]>([]);
-    const [loading, setLoading] = useState(false);
+  const { data, isFetching } = useQuery({
+    queryKey: qk.purchaseActivity(purchaseId),
+    queryFn: async (): Promise<PurchaseActivityEntry[]> => {
+      const res = await api.get(`${Constants.PURCHASE_ACTIVITY_URL}/${purchaseId}/activity`);
+      return res.data?.data?.items ?? [];
+    },
+    enabled: Boolean(token && purchaseId),
+  });
 
-    const doFetch = useCallback(() => {
-        if (!token || !purchaseId) return;
+  const refetch = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: qk.purchaseActivity(purchaseId) });
+  }, [queryClient, purchaseId]);
 
-        setLoading(true);
-        api
-            .get(`${Constants.PURCHASE_ACTIVITY_URL}/${purchaseId}/activity`)
-            .then((res) => {
-                const inner = res.data?.data ?? {};
-                setEntries(inner.items ?? []);
-            })
-            .catch(() => {
-                setEntries([]);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, [token, purchaseId]);
-
-    useEffect(() => {
-        doFetch();
-    }, [doFetch]);
-
-    return { entries, loading, refetch: doFetch };
+  return { entries: data ?? [], loading: isFetching, refetch };
 }

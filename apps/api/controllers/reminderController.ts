@@ -355,10 +355,16 @@ export async function createReminder(req: Request, res: Response): Promise<void>
       return;
     }
 
-    // For manual reminders, validate target invoice and customer
+    // For manual reminders, validate target invoice and customer.
+    //
+    // TENANT-SCOPED, ADDED. `targetInvoice`/`targetCustomer`/`targetQuotation`
+    // arrive in the request body and these reads are the only check on them, so
+    // unscoped they let a reminder be attached to another tenant's document —
+    // and a reminder renders that document into an email. The 404 the miss
+    // already answers is the right response for a foreign id too.
     if (type === 'manual') {
       if (targetInvoice) {
-        const invoice = await prisma.invoice.findUnique({ where: { id: targetInvoice } });
+        const invoice = await prisma.invoice.findFirst({ where: { id: targetInvoice, tenantId } });
         if (!invoice) {
           res.status(404).json({
             success: false,
@@ -369,7 +375,7 @@ export async function createReminder(req: Request, res: Response): Promise<void>
       }
 
       if (targetCustomer) {
-        const customer = await prisma.customer.findUnique({ where: { id: targetCustomer } });
+        const customer = await prisma.customer.findFirst({ where: { id: targetCustomer, tenantId } });
         if (!customer) {
           res.status(404).json({
             success: false,
@@ -474,7 +480,7 @@ export async function createReminderQuotation(req: Request, res: Response): Prom
     // Validate targets for manual reminders
     if (type === 'manual' || type === 'manual_purchase' || type === 'manual_quotation') {
       if (targetInvoice) {
-        const invoice = await prisma.invoice.findUnique({ where: { id: targetInvoice } });
+        const invoice = await prisma.invoice.findFirst({ where: { id: targetInvoice, tenantId } });
         if (!invoice) {
           res.status(404).json({ success: false, message: 'Target invoice not found' });
           return;
@@ -482,7 +488,7 @@ export async function createReminderQuotation(req: Request, res: Response): Prom
       }
 
       if (targetQuotation) {
-        const quotation = await prisma.quotation.findUnique({ where: { id: targetQuotation } });
+        const quotation = await prisma.quotation.findFirst({ where: { id: targetQuotation, tenantId } });
         if (!quotation) {
           res.status(404).json({ success: false, message: 'Target quotation not found' });
           return;
@@ -490,7 +496,7 @@ export async function createReminderQuotation(req: Request, res: Response): Prom
       }
 
       if (targetCustomer) {
-        const customer = await prisma.customer.findUnique({ where: { id: targetCustomer } });
+        const customer = await prisma.customer.findFirst({ where: { id: targetCustomer, tenantId } });
         if (!customer) {
           res.status(404).json({ success: false, message: 'Target customer not found' });
           return;

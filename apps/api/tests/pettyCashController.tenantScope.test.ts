@@ -58,7 +58,14 @@ vi.mock('../lib/prisma', () => {
       update: mockPettyCashUpdate,
     },
     pettyCashTransaction: { create: mockPettyCashTransactionCreate },
-    bankDetail: { findUnique: mockBankDetailFindUnique, update: mockBankDetailUpdate },
+    bankDetail: {
+      // `findFirst`, not `findUnique`: the bank lookup now filters on
+      // tenantId as well as id, and findUnique cannot carry a non-unique
+      // column. Both are mocked to the same fn so either shape is caught.
+      findUnique: mockBankDetailFindUnique,
+      findFirst: mockBankDetailFindUnique,
+      update: mockBankDetailUpdate,
+    },
     bankTransaction: { create: mockBankTransactionCreate },
     paymentMode: { findUnique: mockPaymentModeFindUnique },
   };

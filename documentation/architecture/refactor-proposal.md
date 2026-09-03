@@ -1093,6 +1093,69 @@ and is the same story.
 
 ---
 
+### 10.9 Quotation documents were readable and writable across tenants
+
+Found by extending the golden harness to a **second tenant**, which a single-tenant fixture cannot
+do: with only one tenant's rows present, a scoped query and an unscoped one return the same thing.
+With a foreign quotation seeded, driving the API with tenant A's token against tenant B's id
+returned, over HTTP through `protect` and `requirePermission`:
+
+| Endpoint | Before | Effect |
+|---|---|---|
+| `GET /api/admin/quotations/:id` | 200 | the whole document, customer and bank details included |
+| `PUT /api/admin/quotations/:id` | 200 | notes overwritten on the foreign row |
+| `PATCH /api/admin/quotations-status/:id` | 200 | status changed |
+| `DELETE /api/admin/quotations/:id` | 200 | `isDeleted` set |
+| `POST /api/admin/quotations/mail` | — | mails the foreign document to any address |
+
+Five handlers resolved a quotation with `where: { id }` and no `tenantId`; `deleteQuotation` did not
+resolve a tenant at all. `getQuotationById` answers *"Quotation not found or unauthorized"* — only
+the "not found" half was ever implemented. `tenantGuard` ships in `warn` mode
+(`lib/tenantGuard.ts:139`), so each was logged and served.
+
+Separately, `GET /api/admin/customers-all` — which the quotation form calls on every load — filtered
+on `isDeleted` alone and returned **every tenant's** customer list.
+
+Fixed in the quotation module extraction. 34 of the 42 captured responses are byte-identical across
+the change; the 8 that differ are exactly the four probes turning 404 and the customer lists losing
+the foreign row.
+
+### 10.10 The same shape, counted everywhere
+
+`apps/api/scripts/scanTenantScope.ts` brace-matches every Prisma call on a model the DMMF says has a
+`tenantId` and reports those whose `where` carries no tenant filter. It found **520** such call
+sites in `controllers/` and `lib/`.
+
+Most are writes with a bare `{ id }` immediately after a scoped read — a TOCTOU window rather than a
+leak. The dangerous subset is a **read whose only filter is the id**, because there the read *is* the
+authorization decision: **38** of those remain after fixing seven where the id comes straight from
+the request body and nothing else checks it —
+
+- `reminderController`: `targetInvoice` / `targetCustomer` / `targetQuotation`. A reminder could be
+  attached to another tenant's document, and a reminder renders that document into an email.
+- `pettyCashController`: `bankAccountId`, on both the issue and the return path — the lookup is the
+  only thing between a request-supplied id and a **balance update**.
+
+`tests/tenant/scopeBaseline.test.ts` freezes both counts as ceilings. The remaining 38 have **not**
+been individually cleared; some are certainly benign (a row resolved by an id the same transaction
+just generated) and some are not.
+
+### 10.11 Quotation oddities recorded but not changed
+
+Each is a visible API change rather than a refactor, so each was left as found:
+
+- `createQuotation` validates `billFrom` against a **User whose id is the tenant id**
+  (`quotationController.ts`, create path). That only resolves on installs migrated from the
+  single-tenant schema; on a tenant created by the current signup path no such user exists and every
+  create fails with `Invalid user ID`.
+- `routes/adminRoutes.ts:486` re-registers `GET /quotations`, dead behind line 482.
+- `/quotations-minimal` is routed to `getAllCustomers`; `listQuotationsMinimal` is exported and never
+  routed, so the endpoint returns customers under a quotations name.
+- The list search covers the legacy `customer.name` but not contact names, so documents written by
+  the **current** contact-based path are unfindable by party. `listQuotationsMinimal` searches both.
+- The next-number preview orders by `quotationId`; the issuing path orders by `createdAt`. A
+  back-dated document makes the two disagree.
+
 ## Appendix: how to re-derive these numbers
 
 ```bash

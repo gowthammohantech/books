@@ -25,6 +25,10 @@ import { getQuotationById } from '../controllers/Admin/Invoice/quotationControll
 function makeReqRes(id: string) {
   const req = {
     params: { id },
+    // `tenantId` is required now: the handler resolves the tenant and puts it in
+    // the query's `where`. It used to look a quotation up by id alone, which is
+    // the cross-tenant read `tests/tenant/quotationScope.test.ts` guards against.
+    tenantId: 'tenant-a',
     protocol: 'http',
     get: vi.fn().mockReturnValue('localhost'),
   } as unknown as Request;
