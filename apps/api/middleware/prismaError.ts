@@ -1,6 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 
+import { errorDetails, hasHttpStatus } from '../core/errors/appError';
+
 /**
  * Map Prisma (and Prisma-validation) errors to a user-facing HTTP status + message.
  *
@@ -11,14 +13,33 @@ import { Prisma } from '@prisma/client';
  *   - P2003 foreign-key violation   -> 400 "Related <field> does not exist"
  *   - P2025 record not found        -> 404
  *   - PrismaClientValidationError   -> 400 (bad type/shape, e.g. number into a String column)
- * Anything else falls through to a 500 so the caller can decide.
+ *
+ * It also honours any error carrying a numeric HTTP `status` — every AppError,
+ * and the ten pre-existing classes that already declare one. Before that branch
+ * existed nothing translated them globally, so an UnauthorizedError escaping a
+ * controller became a 500 "Not authorized" rather than a 401, and
+ * ForeignTenantRowError — which sets `code = 'P2025'` precisely so not-found
+ * handling keeps working — became a 500 rather than a 404, because it is not a
+ * `Prisma.PrismaClientKnownRequestError` and the check above misses it.
+ *
+ * Anything else is a 500 whose message is NOT echoed to the client: an
+ * unrecognised error is by definition one nobody wrote a message for, and its
+ * text is as likely to be a stack-adjacent internal detail as anything a caller
+ * should read. It is logged instead.
  */
 export interface HttpError {
   status: number;
   message: string;
+  details?: Record<string, string>;
 }
 
 export function toHttpError(err: unknown): HttpError {
+  // Errors that know their own status win: they were thrown deliberately, by
+  // code that decided what the caller should see.
+  if (hasHttpStatus(err)) {
+    return { status: err.status, message: err.message, details: errorDetails(err) };
+  }
+
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     switch (err.code) {
       case 'P2002': {
@@ -45,7 +66,7 @@ export function toHttpError(err: unknown): HttpError {
     return { status: 400, message: detail ?? 'Invalid data submitted' };
   }
 
-  return { status: 500, message: err instanceof Error ? err.message : String(err) };
+  return { status: 500, message: 'Internal server error' };
 }
 
 /**
@@ -53,8 +74,8 @@ export function toHttpError(err: unknown): HttpError {
  * Returns true when it handled the error so callers can `if (sendPrismaError(...)) return;`.
  */
 export function sendPrismaError(res: Response, err: unknown): boolean {
-  const { status, message } = toHttpError(err);
-  res.status(status).json({ success: false, message });
+  const { status, message, details } = toHttpError(err);
+  res.status(status).json({ success: false, message, ...(details ? { errors: details } : {}) });
   return true;
 }
 
@@ -73,9 +94,10 @@ export function prismaErrorHandler(
     next(err);
     return;
   }
-  const { status, message } = toHttpError(err);
+  const { status, message, details } = toHttpError(err);
   if (status >= 500) {
+    // The only place the real message survives, now that it is not returned.
     console.error('Unhandled error:', err);
   }
-  res.status(status).json({ success: false, message });
+  res.status(status).json({ success: false, message, ...(details ? { errors: details } : {}) });
 }
