@@ -22,6 +22,8 @@ import externalRoutes from './routes/externalRoutes';
 import publicRoutes from './routes/publicRoutes';
 import reminderRoutes from './routes/reminderRoutes';
 
+import { assertConfigValid } from './config';
+
 dotenv.config();
 
 const app = express();
@@ -149,6 +151,11 @@ const reason = (err: unknown): string =>
 // server, so there is no configuration under which skipping the check helps.
 // ---------------------------------------------------------------------------
 void (async function bootstrap(): Promise<void> {
+  // Before any of the steps below, and before the listen: a missing JWT_SECRET
+  // produces a server that looks healthy and 500s every authenticated route.
+  // Same reasoning as the schema guard further down.
+  assertConfigValid();
+
   if (process.env.MIGRATE_ON_BOOT !== 'false') {
     try {
       execSync('npx prisma migrate deploy', { stdio: 'inherit' });
