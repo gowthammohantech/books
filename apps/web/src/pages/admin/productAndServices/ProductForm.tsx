@@ -456,7 +456,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
 
     return (
         <>
-            <form onSubmit={handleSubmit} className="space-y-4 bg-white">
+            <form onSubmit={handleSubmit} className="space-y-4 bg-card">
                 {/* --- Form Grid --- */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ">
                     {/* Name */}
@@ -468,7 +468,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
 
                     {/* Unit */}
                     <div>
-                        <label htmlFor="unit" className="block text-sm font-medium text-gray-600">Unit</label>
+                        <label htmlFor="unit" className="block text-sm font-medium text-gray-700">Unit</label>
                         <SmartDropdown
                             items={[NO_UNIT, ...units]}
                             value={unitSearchInput}
@@ -484,21 +484,21 @@ export default function ProductForm({ productData }: ProductFormProps) {
 
                     {/* Description */}
                     <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-gray-600">Description</label>
+                        <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
                         <textarea name="description" id="description" rows={2} value={formData.description} onChange={handleInputChange} className="mt-1 block text-gray-700 p-2 w-full border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary" />
                         {formErrors.description && <p className="text-destructive text-xs mt-1">{formErrors.description}</p>}
                     </div>
 
                     {/* Unit Price */}
                     <div>
-                        <label htmlFor="selling_price" className="block text-sm font-medium text-gray-600">Unit Price</label>
+                        <label htmlFor="selling_price" className="block text-sm font-medium text-gray-700">Unit Price</label>
                         <input type="number" name="selling_price" id="selling_price" value={formData.selling_price} onChange={handleInputChange} className="mt-1 text-gray-700 p-2 block w-full focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary border border-gray-200 rounded-md " />
                         {formErrors.selling_price && <p className="text-destructive text-xs mt-1">{formErrors.selling_price}</p>}
                     </div>
 
                     {/* Tax */}
                     <div>
-                        <label htmlFor="tax" className="block text-sm font-medium text-gray-600">Tax</label>
+                        <label htmlFor="tax" className="block text-sm font-medium text-gray-700">Tax</label>
                         <SmartDropdown
                             items={taxes}
                             value={taxSearchInput}
@@ -517,7 +517,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                         {/* Product Image */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-2">Product Image</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
                             <ImageCropperUpload
                                 value={productImagePreview || undefined}
                                 aspect={1}
@@ -529,7 +529,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
 
                         {/* Code */}
                         <div>
-                            <label htmlFor="code" className="block text-sm font-medium text-gray-600">Code </label>
+                            <label htmlFor="code" className="block text-sm font-medium text-gray-700">Code </label>
                             <div className="mt-1 flex">
                                 <input type="text" name="code" id="code" value={formData.code} onChange={handleInputChange} className="flex-grow block text-gray-700 p-2 w-full border border-gray-200 rounded-l-md focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary" />
                                 <button type="button" onClick={generateProductCode} className="px-3 py-2 bg-gray-200 text-gray-700 border border-l-0 border-gray-200 rounded-r-md hover:bg-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary">Generate</button>
@@ -539,7 +539,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
 
                         {/* Category */}
                         <div>
-                            <label htmlFor="category" className="block text-sm font-medium text-gray-600">Category</label>
+                            <label htmlFor="category" className="block text-sm font-medium text-gray-700">Category</label>
                             <SmartDropdown
                                 items={categories}
                                 value={categorySearchInput}
@@ -555,7 +555,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
 
                         {/* Brand */}
                         <div>
-                            <label htmlFor="brand" className="block text-sm font-medium text-gray-600">Brand</label>
+                            <label htmlFor="brand" className="block text-sm font-medium text-gray-700">Brand</label>
                             <SmartDropdown
                                 items={brands}
                                 value={brandSearchInput}
@@ -571,14 +571,14 @@ export default function ProductForm({ productData }: ProductFormProps) {
 
                         {/* Purchase Price */}
                         <div>
-                            <label htmlFor="purchase_price" className="block text-sm font-medium text-gray-600">Purchase Price</label>
+                            <label htmlFor="purchase_price" className="block text-sm font-medium text-gray-700">Purchase Price</label>
                             <input type="number" name="purchase_price" id="purchase_price" value={formData.purchase_price} onChange={handleInputChange} className="mt-1 text-gray-700 p-2 block w-full focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary border border-gray-200 rounded-md " />
                             {formErrors.purchase_price && <p className="text-destructive text-xs mt-1">{formErrors.purchase_price}</p>}
                         </div>
 
                         {/* Discount Type */}
                         <div>
-                            <label htmlFor="discount_type" className="block text-sm font-medium text-gray-600">Discount Type</label>
+                            <label htmlFor="discount_type" className="block text-sm font-medium text-gray-700">Discount Type</label>
                             <select name="discount_type" id="discount_type" value={formData.discount_type} onChange={handleInputChange} className="mt-1 text-gray-700 p-2 block w-full border border-gray-200 rounded-md ">
                                 <option value="Fixed">Fixed</option>
                                 <option value="Percentage">Percentage</option>
@@ -588,14 +588,14 @@ export default function ProductForm({ productData }: ProductFormProps) {
 
                         {/* Discount Value */}
                         <div>
-                            <label htmlFor="discount_value" className="block text-sm font-medium text-gray-500">Discount Value </label>
+                            <label htmlFor="discount_value" className="block text-sm font-medium text-gray-700">Discount Value </label>
                             <input type="number" name="discount_value" id="discount_value" value={formData.discount_value} onChange={handleInputChange} className="mt-1 text-gray-700 p-2 focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary block w-full border border-gray-200 rounded-md " />
                             {formErrors.discount_value && <p className="text-destructive text-xs mt-1">{formErrors.discount_value}</p>}
                         </div>
 
                         {/* Barcode */}
                         <div>
-                            <label htmlFor="barcode" className="block text-sm font-medium text-gray-600">Barcode </label>
+                            <label htmlFor="barcode" className="block text-sm font-medium text-gray-700">Barcode </label>
                             <div className="mt-1 flex">
                                 <input type="text" name="barcode" id="barcode" value={formData.barcode} onChange={handleInputChange} className="flex-grow block text-gray-700 p-2 w-full focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary border border-gray-200 rounded-l-md " />
                                 <button type="button" onClick={generateBarcode} className="px-3 py-2 bg-gray-200 text-gray-700 border border-l-0 border-gray-200 rounded-r-md hover:bg-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary">Generate</button>
@@ -620,16 +620,16 @@ export default function ProductForm({ productData }: ProductFormProps) {
                         {/* Opening Stock, Alert Quantity, Valuation Method — only meaningful when tracking inventory */}
                         {formData.enable_inventory && (
                             <div>
-                                <label htmlFor="stock" className="block text-sm font-medium text-gray-600">Opening stock quantity</label>
+                                <label htmlFor="stock" className="block text-sm font-medium text-gray-700">Opening stock quantity</label>
                                 <input type="number" name="stock" id="stock" value={formData.stock} onChange={handleInputChange} className="mt-1 text-gray-700 p-2 block focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary w-full border border-gray-200 rounded-md " />
-                                <p className="text-xs text-gray-400 mt-1">Creates an inventory record so this product appears in Inventory.</p>
+                                <p className="text-xs text-gray-600 mt-1">Creates an inventory record so this product appears in Inventory.</p>
                                 {formErrors.stock && <p className="text-destructive text-xs mt-1">{formErrors.stock}</p>}
                             </div>
                         )}
 
                         {formData.enable_inventory && (
                             <div>
-                                <label htmlFor="alert_quantity" className="block text-sm font-medium text-gray-600">Alert Quantity </label>
+                                <label htmlFor="alert_quantity" className="block text-sm font-medium text-gray-700">Alert Quantity </label>
                                 <input type="number" name="alert_quantity" id="alert_quantity" value={formData.alert_quantity} onChange={handleInputChange} className="mt-1 text-gray-700 p-2 block focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary w-full border border-gray-200 rounded-md " />
                                 {formErrors.alert_quantity && <p className="text-destructive text-xs mt-1">{formErrors.alert_quantity}</p>}
                             </div>
@@ -637,7 +637,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
 
                         {formData.enable_inventory && (
                             <div>
-                                <label htmlFor="valuationMethod" className="block text-sm font-medium text-gray-600">Valuation Method</label>
+                                <label htmlFor="valuationMethod" className="block text-sm font-medium text-gray-700">Valuation Method</label>
                                 <select
                                     name="valuationMethod"
                                     id="valuationMethod"
@@ -664,10 +664,10 @@ export default function ProductForm({ productData }: ProductFormProps) {
                         <div className="md:col-span-3">
                             <label className="block text-sm font-medium text-gray-700 mb-2">Gallery Images</label>
                             <div className="mt-1 flex items-center space-x-4">
-                                <label className="cursor-pointer bg-gray-50 text-gray-500 flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-200 rounded-md hover:bg-gray-100">
+                                <label className="cursor-pointer bg-gray-50 text-gray-700 flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-200 rounded-md hover:bg-gray-100">
                                     <Upload />
                                     <span>Browse Images</span>
-                                    <p className="text-xs text-gray-400 mt-1">Supported formats: PNG, JPEG, WEBP</p>
+                                    <p className="text-xs text-gray-600 mt-1">Supported formats: PNG, JPEG, WEBP</p>
                                     <input type="file" className="hidden" onChange={handleGalleryImagesChange} accept="image/png, image/jpeg, image/webp" multiple />
                                 </label>
                             </div>
@@ -675,7 +675,7 @@ export default function ProductForm({ productData }: ProductFormProps) {
                                 {galleryImagePreviews.map((preview, index) => (
                                     <div key={index} className="relative w-24 h-24">
                                         <img src={preview} alt="Gallery preview" className="w-full h-full object-cover rounded-md" />
-                                        <button type="button" onClick={() => removeGalleryImage(index)} className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 leading-none">
+                                        <button type="button" onClick={() => removeGalleryImage(index)} className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 leading-none">
                                             <X size={14} />
                                         </button>
                                     </div>

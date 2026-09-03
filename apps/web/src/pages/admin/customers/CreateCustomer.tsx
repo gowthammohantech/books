@@ -281,12 +281,12 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerData = null }) => {
     };
 
     return (
-        <div className="p-6 bg-white  rounded-xl shadow-sm border border-border ">
+        <div className="p-6 bg-card  rounded-xl shadow-sm border border-border ">
             <PageHeader title={isEditMode ? 'Edit Customer' : 'Add Customer'}>
                 <button
                     type="button"
                     onClick={() => navigate('/customers')}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-card border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
                 >
                     Cancel
                 </button>
@@ -294,7 +294,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customerData = null }) => {
                     type="submit"
                     form="customer-form"
                     disabled={isSubmitting}
-                    className="px-4 py-2 text-sm font-medium text-white bg-primary border border-transparent rounded-md shadow-sm hover:bg-primary/90 focus:outline-none flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary border border-transparent rounded-md shadow-sm hover:bg-primary/90 focus:outline-none flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                     <Save size={16} />
                     {isEditMode ? 'Save Changes' : 'Create'}

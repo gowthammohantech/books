@@ -90,8 +90,8 @@ const CostLayers: React.FC = () => {
         <div className="space-y-6">
             <PageHeader title="FIFO Cost Layers" />
 
-            <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-2">
-                <p className="text-sm text-gray-500">Select a product to view its FIFO cost layers (inventory valuation buckets).</p>
+            <div className="bg-card border border-gray-200 rounded-lg p-4 space-y-2">
+                <p className="text-sm text-gray-700">Select a product to view its FIFO cost layers (inventory valuation buckets).</p>
                 <div className="max-w-sm">
                     <SearchableDropdown
                         label="Product"
@@ -110,7 +110,7 @@ const CostLayers: React.FC = () => {
                     <h2 className="text-base font-semibold text-gray-700">
                         Layers for <span className="text-primary">{selectedProduct.name}</span>
                         {layers.length > 0 && (
-                            <span className="ml-2 text-sm font-normal text-gray-500">
+                            <span className="ml-2 text-sm font-normal text-gray-700">
                                 — Total Qty: {layers.reduce((sum, l) => sum + l.qtyRemaining, 0).toLocaleString()}
                             </span>
                         )}
@@ -120,10 +120,10 @@ const CostLayers: React.FC = () => {
                         {!isLoadingLayers && layers.length > 0 &&
                             layers.map((layer, index) => (
                                 <tr key={layer.id} className="hover:bg-gray-50 border-b border-gray-100">
-                                    <td className="px-4 py-2 text-sm text-gray-600">{index + 1}</td>
+                                    <td className="px-4 py-2 text-sm text-gray-700">{index + 1}</td>
                                     <td className="px-4 py-2 text-sm text-gray-900 font-medium">{Number(layer.qtyRemaining).toLocaleString()}</td>
                                     <td className="px-4 py-2 text-sm text-gray-900">{Number(layer.unitCost).toLocaleString()}</td>
-                                    <td className="px-4 py-2 text-sm text-gray-600">{formatDate(layer.receivedAt, dateFormat)}</td>
+                                    <td className="px-4 py-2 text-sm text-gray-700">{formatDate(layer.receivedAt, dateFormat)}</td>
                                 </tr>
                             ))
                         }
@@ -138,7 +138,7 @@ const CostLayers: React.FC = () => {
             )}
 
             {!selectedProduct && (
-                <div className="text-center py-12 text-gray-400 text-sm">
+                <div className="text-center py-12 text-gray-600 text-sm">
                     Select a product above to see its FIFO cost layers.
                 </div>
             )}

@@ -241,7 +241,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
                 {selectedContact && (
                     <button
                         type="button"
-                        className="absolute inset-y-0 right-2 flex items-center text-gray-400 hover:text-destructive"
+                        className="absolute inset-y-0 right-2 flex items-center text-gray-600 hover:text-destructive"
                         onClick={handleClear}
                         aria-label="Clear selected contact"
                     >
@@ -254,17 +254,17 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
             {showDropdown && !selectedContact && menuRect && createPortal(
                 <div
                     ref={menuRef}
-                    className="z-[1000] bg-white border border-gray-200 rounded-md shadow-lg"
+                    className="z-[1000] bg-card border border-gray-200 rounded-md shadow-lg"
                     style={{ position: 'fixed', top: menuRect.top + 4, left: menuRect.left, width: menuRect.width }}
                 >
                     <ul className="max-h-[min(18rem,40vh)] overflow-y-auto overscroll-contain">
                         {loading && (
-                            <li className="p-2 flex items-center gap-2 text-sm text-gray-500">
+                            <li className="p-2 flex items-center gap-2 text-sm text-gray-700">
                                 <Loader2 size={14} className="animate-spin" /> Loading...
                             </li>
                         )}
                         {!loading && contacts.length === 0 && (
-                            <li className="p-2 text-sm text-gray-500 text-center">
+                            <li className="p-2 text-sm text-gray-700 text-center">
                                 {debouncedInput ? `No results for "${debouncedInput}"` : 'Type to search...'}
                             </li>
                         )}
@@ -280,7 +280,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
                                 <div className="flex flex-col">
                                     <span className="font-medium text-gray-700">{personLabel(c)}</span>
                                     {(companySubtitle(c) || c.email) && (
-                                        <span className="text-xs text-gray-400">
+                                        <span className="text-xs text-gray-600">
                                             {[companySubtitle(c), c.email].filter(Boolean).join(' • ')}
                                         </span>
                                     )}
@@ -290,7 +290,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
                     </ul>
                     {/* New contact option */}
                     <div
-                        className="p-2 border-t border-gray-200 cursor-pointer hover:bg-accent sticky bottom-0 bg-white"
+                        className="p-2 border-t border-gray-200 cursor-pointer hover:bg-accent sticky bottom-0 bg-card"
                         onMouseDown={(e) => {
                             e.preventDefault();
                             setShowDropdown(false);
@@ -314,7 +314,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
                 <div className="mt-2 p-2 bg-accent rounded-md border border-accent text-sm">
                     <p className="font-semibold text-gray-800">{personLabel(selectedContact)}</p>
                     {(companySubtitle(selectedContact) || selectedContact.email) && (
-                        <p className="text-gray-500 text-xs">
+                        <p className="text-gray-700 text-xs">
                             {[companySubtitle(selectedContact), selectedContact.email].filter(Boolean).join(' • ')}
                         </p>
                     )}
@@ -328,7 +328,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
                         role="dialog"
                         aria-modal="true"
                         aria-label="New Contact"
-                        className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm mx-4"
+                        className="bg-card rounded-lg shadow-xl p-6 w-full max-w-sm mx-4"
                     >
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">New Contact</h3>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Organisation Name</label>
@@ -345,7 +345,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
                             <button
                                 type="button"
                                 onClick={closeNewModal}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-card border border-gray-300 rounded-md hover:bg-gray-50"
                             >
                                 Cancel
                             </button>
@@ -353,7 +353,7 @@ const ContactPicker: React.FC<ContactPickerProps> = ({ view, value, onChange, er
                                 type="button"
                                 onClick={handleCreateContact}
                                 disabled={creating || !newOrgName.trim()}
-                                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-60 flex items-center gap-2"
+                                className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-md hover:bg-primary/90 disabled:opacity-60 flex items-center gap-2"
                             >
                                 {creating && <Loader2 size={14} className="animate-spin" />}
                                 Create

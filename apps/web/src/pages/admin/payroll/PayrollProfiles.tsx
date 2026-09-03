@@ -283,7 +283,7 @@ const PayrollProfiles: React.FC = () => {
                                 <span className="text-primary">{getEmployeeName(profile)}</span>,
                                 profile.defaultGross !== null
                                     ? profile.defaultGross.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                                    : <span className="text-gray-400">—</span>,
+                                    : <span className="text-gray-600">—</span>,
                                 profile.payFrequency,
                                 <Switch
                                     name={`active-${profile.id}`}

@@ -80,7 +80,7 @@ export default function EditProduct() {
     }
 
     return (
-        <div className="p-4 bg-white border border-gray-200 rounded-lg ">
+        <div className="p-4 bg-card border border-gray-200 rounded-lg ">
             <PageHeader title="Edit Item" />
             {/* Pass the typed product data to the form component */}
             <ProductForm productData={product} />

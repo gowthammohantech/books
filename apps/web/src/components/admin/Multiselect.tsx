@@ -40,14 +40,18 @@ const MultiSelect: FC<MultiSelectProps> = ({
       // Tailwind v3 violets (#a78bfa, #ede9fe, #5b21b6, #c084fc) which were
       // never the brand color even before the migration.
       styles={{
-        control: (base) => ({
+        // Filled, borderless, 28px — the same control as fieldControlClasses().
+        control: (base, state) => ({
           ...base,
-          border: `1px solid ${themeColor('border')}`,
-          borderRadius: '0.375rem',
-          backgroundColor: themeColor('card'),
-          boxShadow: 'none',
+          border: 'none',
+          borderRadius: '0.5rem',
+          backgroundColor: themeColor('control-bg'),
+          minHeight: '1.75rem',
+          boxShadow: state.isFocused
+            ? `0 0 0 2px ${themeColor('focus-neutral')}`
+            : 'none',
           '&:hover': {
-            borderColor: themeColor('primary'),
+            backgroundColor: themeColor('control-bg-on-gray'),
           },
         }),
         option: (base, state) => ({

@@ -850,7 +850,7 @@ const CreateNewQuotation: React.FC = () => {
 
                     {/* Billing Section */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div className="bg-white  p-4 rounded-lg border border-gray-200 ">
+                        <div className="bg-card  p-4 rounded-lg border border-gray-200 ">
                             <h3 className="font-bold text-gray-950 ">Bill From <span className='text-destructive'>*</span></h3>
                             <div className="mt-4">
                                 <SmartDropdown
@@ -863,7 +863,7 @@ const CreateNewQuotation: React.FC = () => {
                                     serverside={false}
                                 />
                                 {!selectedAdmin && formErrors?.billFrom && <span className="text-destructive text-sm">{formErrors.billFrom}</span>}
-                                {!selectedAdmin && <p className="mt-2 text-xs text-gray-500  p-2 bg-gray-50  rounded-md font-semibold">
+                                {!selectedAdmin && <p className="mt-2 text-xs text-gray-700  p-2 bg-gray-50  rounded-md font-semibold">
                                     Select admin to view company details.
                                 </p>}
                                 {/* spacer */}
@@ -880,7 +880,7 @@ const CreateNewQuotation: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white  p-4 rounded-lg border border-gray-200 ">
+                        <div className="bg-card  p-4 rounded-lg border border-gray-200 ">
                             <h3 className="font-bold text-gray-950 mb-4">Bill To <span className='text-destructive'>*</span></h3>
                             <ContactPicker
                                 view="all-active"
@@ -892,7 +892,7 @@ const CreateNewQuotation: React.FC = () => {
                     </div>
 
                     {/* Tax Treatment */}
-                    <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <div className="bg-card p-4 rounded-lg border border-gray-200">
                         <div className="flex items-center gap-4 flex-wrap">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Tax Treatment</label>
@@ -917,7 +917,7 @@ const CreateNewQuotation: React.FC = () => {
                     </div>
 
                     {/* Items & Details Section */}
-                    <div className="bg-white  rounded-lg border border-gray-200 ">
+                    <div className="bg-card  rounded-lg border border-gray-200 ">
                         <div className="p-4">
                             {formErrors?.items && <span className="text-destructive text-sm">{formErrors.items}</span>}
                             <table className="w-full border-separate border-spacing-0 overflow-x-auto">
@@ -955,7 +955,7 @@ const CreateNewQuotation: React.FC = () => {
                                         />
                                     ))}
                                     {quotationFormData.items.length === 0 && (
-                                        <tr className="bg-white  text-gray-950 ">
+                                        <tr className="bg-card  text-gray-950 ">
                                             <td className="p-3 font-medium text-center" colSpan={9 + lineFields.length}>
                                                 No Items Selected
                                             </td>
@@ -1074,9 +1074,9 @@ const CreateNewQuotation: React.FC = () => {
                     <div>
                         <h3 className="text-lg font-semibold text-gray-950  mb-3">Extra Information</h3>
                         <div className="flex items-center gap-2 mb-4">
-                            <button type='button' onClick={() => setActiveInfoTab('notes')} className={`px-4 py-2 text-sm cursor-pointer font-medium rounded-md ${activeInfoTab === 'notes' ? 'bg-primary text-white' : 'bg-gray-200  text-gray-700 '}`}>Add Notes</button>
-                            <button type='button' onClick={() => setActiveInfoTab('termsAndCondition')} className={`px-4 py-2 text-sm cursor-pointer font-medium rounded-md ${activeInfoTab === 'termsAndCondition' ? 'bg-primary text-white' : 'bg-gray-200  text-gray-700 '}`}>Add Terms & Conditions</button>
-                            <button type='button' onClick={() => setActiveInfoTab('bank')} className={`px-4 py-2 text-sm cursor-pointer font-medium rounded-md ${activeInfoTab === 'bank' ? 'bg-primary text-white' : 'bg-gray-200  text-gray-700 '}`}>Bank Details</button>
+                            <button type='button' onClick={() => setActiveInfoTab('notes')} className={`px-4 py-2 text-sm cursor-pointer font-medium rounded-md ${activeInfoTab === 'notes' ? 'bg-primary text-primary-foreground' : 'bg-gray-200  text-gray-700 '}`}>Add Notes</button>
+                            <button type='button' onClick={() => setActiveInfoTab('termsAndCondition')} className={`px-4 py-2 text-sm cursor-pointer font-medium rounded-md ${activeInfoTab === 'termsAndCondition' ? 'bg-primary text-primary-foreground' : 'bg-gray-200  text-gray-700 '}`}>Add Terms & Conditions</button>
+                            <button type='button' onClick={() => setActiveInfoTab('bank')} className={`px-4 py-2 text-sm cursor-pointer font-medium rounded-md ${activeInfoTab === 'bank' ? 'bg-primary text-primary-foreground' : 'bg-gray-200  text-gray-700 '}`}>Bank Details</button>
                         </div>
 
                         {activeInfoTab === 'notes' && (
@@ -1109,13 +1109,13 @@ const CreateNewQuotation: React.FC = () => {
                     </div>
 
                     {/* Right Side: Totals & Signature */}
-                    <div className="bg-white  p-4 rounded-lg border border-gray-200  space-y-3">
-                        <div className="flex justify-between text-sm text-gray-600 "><span>Amount</span><span>{docCurrencySymbol}{subTotal.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-sm text-gray-600 "><span>Tax</span><span>{docCurrencySymbol}{totalTax.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-sm text-gray-600 "><span>Discount</span><span>- {docCurrencySymbol}{totalDiscount.toFixed(2)}</span></div>
+                    <div className="bg-card  p-4 rounded-lg border border-gray-200  space-y-3">
+                        <div className="flex justify-between text-sm text-gray-700 "><span>Amount</span><span>{docCurrencySymbol}{subTotal.toFixed(2)}</span></div>
+                        <div className="flex justify-between text-sm text-gray-700 "><span>Tax</span><span>{docCurrencySymbol}{totalTax.toFixed(2)}</span></div>
+                        <div className="flex justify-between text-sm text-gray-700 "><span>Discount</span><span>- {docCurrencySymbol}{totalDiscount.toFixed(2)}</span></div>
                         <hr className="border-gray-200 " />
                         <div className="flex justify-between font-bold text-gray-950 "><span>Total</span><span>{docCurrencySymbol}{grandTotal.toFixed(2)}</span></div>
-                        <p className="text-sm text-gray-500  capitalize">{totalInWords}</p>
+                        <p className="text-sm text-gray-700  capitalize">{totalInWords}</p>
 
                         <div className="flex items-center gap-4 pt-4">
                             <div className="flex items-center"><input id="no-sig" type="radio" name="signature" checked={quotationFormData.sign_type === 'none'} onChange={() => handleFormChange('sign_type', 'none')} className="h-4 w-4 text-primary cursor-pointer" /><label htmlFor="no-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">No Signature</label></div>
@@ -1139,7 +1139,7 @@ const CreateNewQuotation: React.FC = () => {
                                 {formErrors?.signatureId && <p className="text-destructive text-xs mt-1">{formErrors.signatureId}</p>}
                                 <p className="mt-2 text-sm font-medium text-gray-700 ">Signature Image</p>
                                 <div className="mt-2 h-20 w-48 bg-gray-100  rounded-md flex items-center justify-center">
-                                    {selectedManualSignatureImage ? <img src={selectedManualSignatureImage} alt="Selected Signature" className="max-h-full max-w-full" /> : <span className="text-xs text-gray-400">No signature selected</span>}
+                                    {selectedManualSignatureImage ? <img src={selectedManualSignatureImage} alt="Selected Signature" className="max-h-full max-w-full" /> : <span className="text-xs text-gray-600">No signature selected</span>}
                                 </div>
                             </div>
                         ) : (
@@ -1149,7 +1149,7 @@ const CreateNewQuotation: React.FC = () => {
                                 {formErrors?.signatureName && <p className="text-destructive text-xs mt-1">{formErrors.signatureName}</p>}
                                 <p className="mt-2 text-sm font-medium text-gray-700 ">Draw your eSignature</p>
                                 <div className="mt-2 h-20 w-48 bg-gray-100  rounded-md flex items-center justify-center cursor-pointer border-2 border-dashed border-gray-400" onClick={() => setSignatureModalOpen(true)}>
-                                    {quotationFormData.esignDataUrl ? <img src={quotationFormData.esignDataUrl} alt="Drawn Signature" className="max-h-full max-w-full" /> : <div className="text-center text-gray-500"><Edit3 size={20} className="mx-auto mb-1" /><span className="text-xs">Draw Signature</span></div>}
+                                    {quotationFormData.esignDataUrl ? <img src={quotationFormData.esignDataUrl} alt="Drawn Signature" className="max-h-full max-w-full" /> : <div className="text-center text-gray-700"><Edit3 size={20} className="mx-auto mb-1" /><span className="text-xs">Draw Signature</span></div>}
                                 </div>
                                 {formErrors?.esignDataUrl && <p className="text-destructive text-xs mt-1">{formErrors.esignDataUrl}</p>}
                             </div>
@@ -1175,7 +1175,7 @@ const CreateNewQuotation: React.FC = () => {
 
                 <Modal isOpen={isSignatureModalOpen} onClose={() => setSignatureModalOpen(false)} title="Draw Signature">
                     <div className="p-4">
-                        <div className="bg-white border border-gray-400">
+                        <div className="bg-card border border-gray-400">
                             <SignatureCanvas
                                 ref={sigPadRef}
                                 penColor='black'

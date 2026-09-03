@@ -76,7 +76,7 @@ const InvoiceTemplateList: React.FC = () => {
                 title={
                     <span className="flex flex-col">
                         <span>Invoice Templates</span>
-                        <span className="text-gray-500 text-xs font-normal">
+                        <span className="text-gray-700 text-xs font-normal">
                             Select a template for your invoices
                         </span>
                     </span>

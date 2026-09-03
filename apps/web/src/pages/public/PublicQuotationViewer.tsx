@@ -33,9 +33,9 @@ export default function PublicQuotationViewer() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  if (loading) return <div className="p-6 text-gray-600">Loading…</div>;
+  if (loading) return <div className="p-6 text-gray-700">Loading…</div>;
   if (error) return <div className="p-6 text-destructive">{error}</div>;
-  if (!data) return <div className="p-6 text-gray-600">No data.</div>;
+  if (!data) return <div className="p-6 text-gray-700">No data.</div>;
 
   const items = Array.isArray(data.items)
     ? (data.items as Array<{
@@ -57,7 +57,7 @@ export default function PublicQuotationViewer() {
   const hasTaxCol = items.some((item) => typeof item.tax === 'number');
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white text-sm text-gray-600 print:p-0">
+    <div className="max-w-3xl mx-auto p-6 bg-card text-sm text-gray-700 print:p-0">
       {logoSrc && (
         <div className="mb-4">
           <img src={logoSrc} alt={company?.companyName || 'logo'} className="h-12 max-w-[11.25rem] object-contain" />
@@ -72,15 +72,15 @@ export default function PublicQuotationViewer() {
         <div className="flex justify-between text-sm">
           <div>
             <div className="font-medium">{data.company?.companyName}</div>
-            <div className="text-gray-600">{data.company?.address}</div>
-            <div className="text-gray-600">{data.company?.email}</div>
-            {taxId && <div className="text-gray-600">{taxId.label}: {taxId.value}</div>}
+            <div className="text-gray-700">{data.company?.address}</div>
+            <div className="text-gray-700">{data.company?.email}</div>
+            {taxId && <div className="text-gray-700">{taxId.label}: {taxId.value}</div>}
           </div>
           <div className="text-right">
-            <div className="text-gray-600">#{data.quotationNumber}</div>
-            <div className="text-gray-600">{formatDate(data.quotationDate)}</div>
-            {data.expiryDate && <div className="text-gray-600">Valid until {formatDate(data.expiryDate)}</div>}
-            <div className="text-gray-600 capitalize">{data.status}</div>
+            <div className="text-gray-700">#{data.quotationNumber}</div>
+            <div className="text-gray-700">{formatDate(data.quotationDate)}</div>
+            {data.expiryDate && <div className="text-gray-700">Valid until {formatDate(data.expiryDate)}</div>}
+            <div className="text-gray-700 capitalize">{data.status}</div>
           </div>
         </div>
       </div>
@@ -88,7 +88,7 @@ export default function PublicQuotationViewer() {
       <div className="mb-4 text-sm">
         <div className="font-medium">Quoted to:</div>
         <div>{data.customer?.name}</div>
-        <div className="text-gray-600">{data.customer?.email}</div>
+        <div className="text-gray-700">{data.customer?.email}</div>
       </div>
 
       <table className="w-full text-sm mb-4">
@@ -139,7 +139,7 @@ export default function PublicQuotationViewer() {
       {data.paymentTerms && (
         <div className="mt-6 border-t pt-4 text-sm">
           <div className="font-medium mb-1">Payment Terms</div>
-          <p className="text-gray-600 whitespace-pre-line">{data.paymentTerms}</p>
+          <p className="text-gray-700 whitespace-pre-line">{data.paymentTerms}</p>
         </div>
       )}
 
@@ -147,7 +147,7 @@ export default function PublicQuotationViewer() {
       {data.notes && (
         <div className="mt-6 border-t pt-4 text-sm">
           <div className="font-medium mb-1">Notes</div>
-          <p className="text-gray-600 whitespace-pre-line">{data.notes}</p>
+          <p className="text-gray-700 whitespace-pre-line">{data.notes}</p>
         </div>
       )}
 
@@ -155,7 +155,7 @@ export default function PublicQuotationViewer() {
       {data.termsAndCondition && (
         <div className="mt-6 border-t pt-4 text-sm">
           <div className="font-medium mb-1">Terms &amp; Conditions</div>
-          <p className="text-gray-600 whitespace-pre-line">{data.termsAndCondition}</p>
+          <p className="text-gray-700 whitespace-pre-line">{data.termsAndCondition}</p>
         </div>
       )}
     </div>

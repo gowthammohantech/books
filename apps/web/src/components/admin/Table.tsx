@@ -25,13 +25,13 @@ const Table = ({ headers, children, fitWidth = false, colWidths }: TableProps) =
   return (
     <div
       className={
-        "w-full rounded-lg border border-gray-100" +
+        "w-full rounded-md border border-border" +
         (fitWidth ? "" : " overflow-x-auto")
       }
     >
       <table
         className={
-          "w-full bg-white text-sm text-gray-950 border-collapse border border-gray-100" +
+          "w-full bg-card text-sm text-foreground border-collapse border border-border" +
           // min-w-max is deliberate, and was measured before being kept.
           // Switching to min-w-full lets cells wrap so the ACTIONS column is
           // visible without scrolling, but wrapping cost 62px on the invoice
@@ -50,13 +50,16 @@ const Table = ({ headers, children, fitWidth = false, colWidths }: TableProps) =
             full 400px on scroll. Making it work needs the wrapper to own the
             vertical scroll (a max-height on every table), which is a bigger
             change than this. */}
-        <thead className="bg-gray-100 uppercase text-xs font-semibold text-gray-900">
+        {/* ERPNext's list head is quiet: gray text on the faintest wash, at the
+            body size, with no uppercase and no bold. The weight and the caps
+            were doing the work that the background tint does here. */}
+        <thead className="bg-gray-50 text-xs font-medium tracking-ui text-gray-700">
           <tr>
             {headers.map((header, idx) => (
               <th
                 key={idx}
                 className={
-                  "px-3 py-2 text-left border-b border-gray-100" +
+                  "px-2 py-[0.3125rem] text-left border-b border-border" +
                   (fitWidth ? ` ${colWidths?.[idx] ?? ""}` : "")
                 }
               >

@@ -50,7 +50,7 @@ const orDash = (value: ReactNode): ReactNode => {
 
 const DetailItem: FC<{ label: string; children: ReactNode }> = ({ label, children }) => (
     <div>
-        <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</dt>
+        <dt className="text-xs font-medium uppercase tracking-wide text-gray-700">{label}</dt>
         <dd className="mt-1 text-sm text-gray-900">{children}</dd>
     </div>
 );
@@ -153,7 +153,7 @@ const ViewProduct: FC = () => {
                                     className="max-h-[min(14rem,30vh)] w-auto object-contain"
                                 />
                             ) : (
-                                <span className="py-16 text-sm text-gray-400">No image</span>
+                                <span className="py-16 text-sm text-gray-600">No image</span>
                             )}
                         </div>
                         {gallery.length > 0 && (

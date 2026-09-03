@@ -65,7 +65,7 @@ export default function ProfitLossReport() {
   }, []);
 
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-white">
+    <div className="p-6 max-w-4xl mx-auto bg-card">
       <PageHeader title="Profit & Loss">
         <ExportButton url={Constants.EXPORT_PROFIT_AND_LOSS_URL} filename="profit-and-loss.csv" />
         <button type="button" onClick={() => window.print()} className="px-3 py-1 text-sm border rounded">
@@ -84,17 +84,17 @@ export default function ProfitLossReport() {
           onChange={(d) => setTo(d ? dateToYmdString(d) : '')}
           label="To"
         />
-        <button type="button" onClick={load} className="px-3 py-1 text-sm bg-primary text-white rounded">
+        <button type="button" onClick={load} className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded">
           Reload
         </button>
       </div>
 
-      {loading && <p className="text-gray-500">Loading…</p>}
+      {loading && <p className="text-gray-700">Loading…</p>}
       {error && <p className="text-destructive">{error}</p>}
 
       {data && (
         <div className="space-y-4 text-sm">
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-gray-600">
             Period: {formatDate(data.period.from)} —{' '}
             {formatDate(data.period.to)}
           </div>
@@ -143,7 +143,7 @@ export default function ProfitLossReport() {
           <section className="border rounded p-4">
             <h2 className="font-medium mb-2">Operating Expenses</h2>
             {data.operatingExpenses.byCategory.length === 0 && (
-              <div className="text-gray-400 text-xs">No operating expenses in period.</div>
+              <div className="text-gray-600 text-xs">No operating expenses in period.</div>
             )}
             {data.operatingExpenses.byCategory.map((c, i) => (
               <div key={i} className="flex justify-between">
@@ -197,7 +197,7 @@ export default function ProfitLossReport() {
             </div>
           </section>
 
-          <section className="border rounded p-4 text-xs text-gray-500">
+          <section className="border rounded p-4 text-xs text-gray-700">
             <div className="flex justify-between">
               <span>Output Tax Collected</span>
               <DrillLink

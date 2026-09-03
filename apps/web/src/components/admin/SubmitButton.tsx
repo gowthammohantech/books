@@ -34,7 +34,7 @@ const SubmitButton: React.FC<SubmitButtonProps> = ({
         <button
             type="submit"
             form={form}
-            className="px-4 py-2 text-sm font-semibold text-white bg-primary border border-transparent rounded-md hover:bg-primary/90 focus:outline-none flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm font-semibold text-primary-foreground bg-primary border border-transparent rounded-md hover:bg-primary/90 focus:outline-none flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             onClick={onClick}
             disabled={isLoading || isDisabled}
         >

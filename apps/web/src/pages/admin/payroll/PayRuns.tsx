@@ -270,11 +270,11 @@ const PayRuns: React.FC = () => {
             <PageHeader title="Pay Runs" />
 
             {/* ── Create run ── */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="bg-card border border-gray-200 rounded-lg p-4">
                 <h2 className="text-sm font-semibold text-gray-700 mb-3">New Pay Run</h2>
                 <div className="flex flex-wrap items-end gap-3">
                     <div>
-                        <label className="block text-xs text-gray-500 mb-1">Tax Year</label>
+                        <label className="block text-xs text-gray-700 mb-1">Tax Year</label>
                         <select
                             value={newYear}
                             onChange={(e) => setNewYear(e.target.value)}
@@ -286,7 +286,7 @@ const PayRuns: React.FC = () => {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs text-gray-500 mb-1">Month</label>
+                        <label className="block text-xs text-gray-700 mb-1">Month</label>
                         <select
                             value={newMonth}
                             onChange={(e) => setNewMonth(e.target.value)}
@@ -308,7 +308,7 @@ const PayRuns: React.FC = () => {
             </div>
 
             {/* ── List ── */}
-            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <div className="bg-card border border-gray-200 rounded-lg overflow-hidden">
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200">
                     <span className="text-sm font-semibold text-gray-700">Filter by tax year:</span>
                     <select
@@ -349,10 +349,10 @@ const PayRuns: React.FC = () => {
                                             key={run.id}
                                             className={`border-b border-border hover:bg-gray-50 transition-colors ${selectedRun?.id === run.id ? 'bg-accent' : ''}`}
                                         >
-                                            <td className="px-4 py-3 text-gray-500">{idx + 1}</td>
+                                            <td className="px-4 py-3 text-gray-700">{idx + 1}</td>
                                             <td className="px-4 py-3 font-medium text-gray-900">{run.taxYearLabel}</td>
                                             <td className="px-4 py-3 text-gray-700">{MONTH_NAMES[(run.taxMonth ?? 1) - 1]}</td>
-                                            <td className="px-4 py-3 text-gray-500 text-xs">
+                                            <td className="px-4 py-3 text-gray-700 text-xs">
                                                 {run.periodStart ? run.periodStart.slice(0, 10) : '—'} – {run.periodEnd ? run.periodEnd.slice(0, 10) : '—'}
                                             </td>
                                             <td className="px-4 py-3"><StatusBadge status={run.status} /></td>
@@ -385,7 +385,7 @@ const PayRuns: React.FC = () => {
             )}
 
             {selectedRun && !detailLoading && (
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-card border border-gray-200 rounded-lg overflow-hidden">
                     {/* Run header */}
                     <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-gray-200 bg-gray-50">
                         <div className="flex items-center gap-3">
@@ -422,7 +422,7 @@ const PayRuns: React.FC = () => {
                             <Button
                                 variant="ghost"
                                 onClick={() => setSelectedRun(null)}
-                                className="text-gray-500 hover:text-gray-800 text-sm underline"
+                                className="text-gray-700 hover:text-gray-800 text-sm underline"
                             >
                                 Close
                             </Button>
@@ -484,7 +484,7 @@ const PayRuns: React.FC = () => {
                                                             className="border border-gray-300 rounded px-2 py-1 text-sm w-40 focus:outline-none focus:ring-1 focus:ring-ring"
                                                         />
                                                     ) : (
-                                                        <span className="text-gray-500">{line.note || '—'}</span>
+                                                        <span className="text-gray-700">{line.note || '—'}</span>
                                                     )}
                                                 </td>
                                                 {isDraft && (
@@ -508,7 +508,7 @@ const PayRuns: React.FC = () => {
                                                 <tr key={`ded-${idx}`} className="border-b border-border">
                                                     <td colSpan={6} className="px-8 py-3 bg-accent">
                                                         <div className="space-y-2">
-                                                            <div className="text-xs font-semibold text-gray-600 uppercase mb-2">
+                                                            <div className="text-xs font-semibold text-gray-700 uppercase mb-2">
                                                                 Deduction lines for {line.employeeName}
                                                             </div>
                                                             {line.deductionLines.map((d, dIdx) => (
@@ -589,11 +589,11 @@ const PayRuns: React.FC = () => {
             {/* ── Confirm dialog ── */}
             {confirmAction && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+                    <div className="bg-card rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
                         <h3 className="text-lg font-semibold text-gray-900 mb-2 capitalize">
                             {confirmAction} pay run?
                         </h3>
-                        <p className="text-sm text-gray-600 mb-6">
+                        <p className="text-sm text-gray-700 mb-6">
                             {confirmAction === 'finalize'
                                 ? 'Finalizing locks the run and posts payroll journal entries. This cannot be undone.'
                                 : 'Voiding this run will mark it as cancelled. Any associated salary settlements must be reversed separately.'}

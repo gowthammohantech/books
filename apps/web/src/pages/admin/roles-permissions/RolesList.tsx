@@ -306,7 +306,7 @@ const RolesList: React.FC = () => {
                 <form onSubmit={handleRoleFormSubmit}>
                     <div className="flex">
                         <div className="w-full mr-4">
-                            <label className="block text-gray-600 font-semibold mb-2">Role Name <em className="text-destructive text-sm">*</em></label>
+                            <label className="block text-gray-700 font-semibold mb-2">Role Name <em className="text-destructive text-sm">*</em></label>
                             <input
                                 type="text"
                                 value={formData.roleName}

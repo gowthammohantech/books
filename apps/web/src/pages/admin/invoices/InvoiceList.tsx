@@ -466,17 +466,17 @@ const InvoiceList: React.FC = () => {
                                         name={invoice.billTo?.name}
                                         email={invoice.billTo?.email}
                                     />,
-                                    <span className="font-semibold text-gray-600 ">{formatMoney(invoice.TotalAmount, invoice.currencyCode)}</span>,
-                                    <span className="font-semibold text-gray-600 ">{formatMoney(invoice.totalPaid as number ?? 0, invoice.currencyCode)}</span>,
+                                    <span className="font-semibold text-gray-700 ">{formatMoney(invoice.TotalAmount, invoice.currencyCode)}</span>,
+                                    <span className="font-semibold text-gray-700 ">{formatMoney(invoice.totalPaid as number ?? 0, invoice.currencyCode)}</span>,
                                     <InvoiceStatusBadge status={invoice.status} dueDate={invoice.dueDate} totalAmount={invoice.TotalAmount} totalPaid={invoice.totalPaid} />,
                                     invoice.costCenter
-                                        ? <span className="text-gray-600 font-medium" title={invoice.costCenter.name}>{invoice.costCenter.code}</span>
-                                        : <span className="text-gray-400">—</span>,
-                                    <span className="font-medium text-gray-600 ">{formatDate(invoice.createdAt as string, systemSettings?.dateFormat.format || 'd-m-Y')}</span>,
+                                        ? <span className="text-gray-700 font-medium" title={invoice.costCenter.name}>{invoice.costCenter.code}</span>
+                                        : <span className="text-gray-600">—</span>,
+                                    <span className="font-medium text-gray-700 ">{formatDate(invoice.createdAt as string, systemSettings?.dateFormat.format || 'd-m-Y')}</span>,
 
                                     // Map over configured custom fields using fieldSlug
                                     ...tableCustomFields.map((f: any) => (
-                                        <span key={f.id} className="text-gray-600 font-medium">
+                                        <span key={f.id} className="text-gray-700 font-medium">
                                             {extractCustomFieldValue(invoice, f.fieldSlug)}
                                         </span>
                                     ))

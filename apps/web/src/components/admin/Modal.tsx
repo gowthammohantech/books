@@ -105,7 +105,7 @@ const Modal = ({ isOpen, onClose, title, children, size = '2xl', confirmOnClose 
           aria-modal="true"
           aria-label={title}
           tabIndex={-1}
-          className={`w-full ${sizeClassMap[size ?? '2xl']} rounded-lg bg-white shadow-lg`}
+          className={`w-full ${sizeClassMap[size ?? '2xl']} rounded-xl bg-popover shadow-md`}
           onClick={(e) => e.stopPropagation()}
           // React synthetic events bubble through the React tree (not the DOM),
           // so a form submit inside a portaled modal would otherwise reach an
@@ -114,10 +114,10 @@ const Modal = ({ isOpen, onClose, title, children, size = '2xl', confirmOnClose 
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-gray-200 px-4 py-2">
-            <h2 className="text-xl font-bold text-gray-600 font-sans">{title}</h2>
+            <h2 className="text-xl font-bold text-gray-700 font-sans">{title}</h2>
             <button
               onClick={handleClose}
-              className="text-gray-500 hover:text-gray-700 cursor-pointer"
+              className="text-gray-700 hover:text-gray-700 cursor-pointer"
               aria-label="Close modal"
             >
               <AnimatedIcon name="close-circle" size={24} />

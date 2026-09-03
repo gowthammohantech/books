@@ -1297,9 +1297,9 @@ const EditInvoice: React.FC = () => {
     if (loadError) {
         return (
             <div className="flex items-center justify-center min-h-screen p-4">
-                <div className="max-w-md w-full text-center bg-white border border-gray-200 rounded-md shadow-sm p-8">
+                <div className="max-w-md w-full text-center bg-card border border-gray-200 rounded-md shadow-sm p-8">
                     <p className="text-lg font-semibold text-gray-950 mb-2">Couldn't load this invoice</p>
-                    <p className="text-sm text-gray-600 mb-6">{loadError}</p>
+                    <p className="text-sm text-gray-700 mb-6">{loadError}</p>
                     <div className="flex items-center justify-center gap-3">
                         <Button
                             type="button"
@@ -1386,7 +1386,7 @@ const EditInvoice: React.FC = () => {
                     <details className="border border-gray-200 rounded-md mb-4 group">
                         <summary className="cursor-pointer select-none px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-md">
                             Sharing &amp; advanced options
-                            <span className="text-gray-400 font-normal"> — public link, QR, WhatsApp, e-invoice (IRN)</span>
+                            <span className="text-gray-600 font-normal"> — public link, QR, WhatsApp, e-invoice (IRN)</span>
                         </summary>
                         <div className="p-4 pt-2">
 
@@ -1431,7 +1431,7 @@ const EditInvoice: React.FC = () => {
                                 <div className="mt-3 flex items-start gap-4">
                                     <QRCodeSVG value={getPublicUrl(invoiceData.publicViewToken)} size={120} />
                                     <div className="flex-1 text-sm">
-                                        <p className="text-gray-500 mb-1">Anyone with this link can view (read-only):</p>
+                                        <p className="text-gray-700 mb-1">Anyone with this link can view (read-only):</p>
                                         <div className="flex items-center gap-2 mb-2">
                                             <code className="text-xs bg-gray-100 px-2 py-1 rounded break-all flex-1">
                                                 {getPublicUrl(invoiceData.publicViewToken)}
@@ -1468,12 +1468,12 @@ const EditInvoice: React.FC = () => {
                             </div>
 
                             {eInvoiceLoading && (
-                                <p className="text-xs text-gray-500">Loading…</p>
+                                <p className="text-xs text-gray-700">Loading…</p>
                             )}
 
                             {!eInvoiceLoading && !eInvoice && (
                                 <div className="flex items-center justify-between gap-3">
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-gray-700">
                                         Generate an IRN (Invoice Reference Number) for this invoice via the configured e-invoice provider.
                                     </p>
                                     <Button
@@ -1490,21 +1490,21 @@ const EditInvoice: React.FC = () => {
                                 <div className="text-sm space-y-1">
                                     <div className="grid grid-cols-2 gap-2">
                                         <div>
-                                            <div className="text-xs text-gray-500">IRN</div>
+                                            <div className="text-xs text-gray-700">IRN</div>
                                             <code className="text-xs bg-gray-100 px-2 py-1 rounded break-all block" title={eInvoice.irn ?? ''}>
                                                 {eInvoice.irn ?? '—'}
                                             </code>
                                         </div>
                                         <div>
-                                            <div className="text-xs text-gray-500">ACK No</div>
+                                            <div className="text-xs text-gray-700">ACK No</div>
                                             <div className="text-sm">{eInvoice.ackNo ?? '—'}</div>
-                                            <div className="text-xs text-gray-500 mt-1">
+                                            <div className="text-xs text-gray-700 mt-1">
                                                 {eInvoice.ackDate ? formatDateTime(eInvoice.ackDate) : ''}
                                             </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between pt-2">
-                                        <div className="text-xs text-gray-500">
+                                        <div className="text-xs text-gray-700">
                                             Provider: <span className="uppercase">{eInvoice.provider}</span>
                                             {eInvoice.cancelledAt && (
                                                 <span className="ml-2">· cancelled {formatDate(eInvoice.cancelledAt)}</span>
@@ -1536,7 +1536,7 @@ const EditInvoice: React.FC = () => {
                     {(paymentMethods.length > 0 || invoiceFormData.paymentOptions.length > 0) && (
                         <div className="mb-4 border border-gray-200 rounded-md p-4">
                             <h3 className="text-sm font-semibold text-gray-700 mb-1">Payment options (shown on public link)</h3>
-                            <p className="text-xs text-gray-500 mb-3">
+                            <p className="text-xs text-gray-700 mb-3">
                                 Tick the methods to offer on this invoice, and paste the payment URL for each
                                 (e.g. the Wise / Revolut / Stripe payment link for this invoice). The customer sees these
                                 as "Pay with" buttons on the public view link. Manage available methods in Settings → Payment Gateways.
@@ -1602,7 +1602,7 @@ const EditInvoice: React.FC = () => {
                             <option value="PROFORMA">Proforma</option>
                         </Select>
                         {invoiceFormData.invoiceType === 'PROFORMA' && (
-                            <p className="text-xs text-gray-500 mt-1">Proformas do not deduct inventory on save.</p>
+                            <p className="text-xs text-gray-700 mt-1">Proformas do not deduct inventory on save.</p>
                         )}
                     </div>
 
@@ -1650,7 +1650,7 @@ const EditInvoice: React.FC = () => {
                                         {overriddenLineCount} line{overriddenLineCount === 1 ? '' : 's'} keep their own profit center.
                                     </p>
                                 )}
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-gray-700 mt-1">
                                     The invoice number stays as issued; changing the profit center does not renumber it.
                                 </p>
                             </div>
@@ -1661,7 +1661,7 @@ const EditInvoice: React.FC = () => {
 
                     {/* Billing Section */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div className="bg-white p-4 rounded-md border border-gray-200 ">
+                        <div className="bg-card p-4 rounded-md border border-gray-200 ">
                             <h3 className="font-bold text-gray-950 ">Bill From <span className='text-destructive'>*</span></h3>
                             <div className="mt-4">
                                 <SmartDropdown
@@ -1674,7 +1674,7 @@ const EditInvoice: React.FC = () => {
                                     serverside={false}
                                 />
                                 {!selectedAdmin && formErrors?.billFrom && <span className="text-destructive text-sm">{formErrors.billFrom}</span>}
-                                {!selectedAdmin && <p className="mt-2 text-xs text-gray-500 p-2 font-semibold">
+                                {!selectedAdmin && <p className="mt-2 text-xs text-gray-700 p-2 font-semibold">
                                     Select admin to view company details.
                                 </p>}
                                 <div className="h-4"></div>
@@ -1690,7 +1690,7 @@ const EditInvoice: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white p-4 rounded-md border border-gray-200 ">
+                        <div className="bg-card p-4 rounded-md border border-gray-200 ">
                             <div className="flex justify-between items-center">
                                 <h3 className="font-bold text-gray-950 ">Bill To <span className='text-destructive'>*</span></h3>
                                 <Button
@@ -1717,7 +1717,7 @@ const EditInvoice: React.FC = () => {
                                     loading={customersLoading}
                                 />
                                 {!selectedCustomer && formErrors?.billTo && <span className="text-destructive text-sm">{formErrors.billTo}</span>}
-                                {!selectedCustomer && <p className="mt-2 text-xs text-gray-500 p-2 font-semibold">
+                                {!selectedCustomer && <p className="mt-2 text-xs text-gray-700 p-2 font-semibold">
                                     Select customer to view customer details
                                 </p>}
                                 <div className="h-4"></div>
@@ -1760,7 +1760,7 @@ const EditInvoice: React.FC = () => {
                     </div>
 
                     {/* Tax Treatment */}
-                    <div className="bg-white p-4 rounded-md border border-gray-200">
+                    <div className="bg-card p-4 rounded-md border border-gray-200">
                         <div className="flex items-center gap-4 flex-wrap">
                             <div>
                                 <Select
@@ -1794,7 +1794,7 @@ const EditInvoice: React.FC = () => {
                     />
 
                     {/* Items & Details Section */}
-                    <div className="bg-white rounded-md border border-gray-200 ">
+                    <div className="bg-card rounded-md border border-gray-200 ">
                         <div className="p-4">
                             {formErrors?.items && <span className="text-destructive text-sm">{formErrors.items}</span>}
                             <table className="w-full border-separate border-spacing-0 overflow-x-auto">
@@ -1839,7 +1839,7 @@ const EditInvoice: React.FC = () => {
                                             <tr className="bg-gray-50">
                                                 <td colSpan={9 + lineFields.length} className="px-3 py-2 border-b border-gray-200">
                                                     <div className="flex flex-wrap items-center gap-2 text-xs">
-                                                        <span className="text-gray-600 font-medium">Taxes:</span>
+                                                        <span className="text-gray-700 font-medium">Taxes:</span>
                                                         {((item as ProductItem).taxes ?? []).length === 0 && (
                                                             <span className="text-muted-foreground italic">No taxes applied</span>
                                                         )}
@@ -1871,7 +1871,7 @@ const EditInvoice: React.FC = () => {
                                         </React.Fragment>
                                     ))}
                                     {invoiceFormData.items.length === 0 && (
-                                        <tr className="bg-white text-gray-950 ">
+                                        <tr className="bg-card text-gray-950 ">
                                             <td className="p-3 font-medium text-center" colSpan={9 + lineFields.length}>
                                                 No Items Selected
                                             </td>
@@ -2033,8 +2033,8 @@ const EditInvoice: React.FC = () => {
                     </div>
 
                     {/* Right Side: Totals & Signature */}
-                    <div className="bg-white p-4 rounded-md border border-gray-200 space-y-3">
-                        <div className="flex justify-between text-sm text-gray-600 "><span>Amount</span><span>{fmtMoney(subTotal || 0)}</span></div>
+                    <div className="bg-card p-4 rounded-md border border-gray-200 space-y-3">
+                        <div className="flex justify-between text-sm text-gray-700 "><span>Amount</span><span>{fmtMoney(subTotal || 0)}</span></div>
                         {(() => {
                             const breakdown: Record<string, number> = {};
                             for (const line of invoiceFormData.items as ProductItem[]) {
@@ -2048,7 +2048,7 @@ const EditInvoice: React.FC = () => {
                             return (
                                 <div className="pl-2 border-l-2 border-accent space-y-1">
                                     {entries.map(([label, amount]) => (
-                                        <div key={label} className="flex justify-between text-xs text-gray-600">
+                                        <div key={label} className="flex justify-between text-xs text-gray-700">
                                             <span>{label}</span>
                                             <span>{fmtMoney(amount)}</span>
                                         </div>
@@ -2056,11 +2056,11 @@ const EditInvoice: React.FC = () => {
                                 </div>
                             );
                         })()}
-                        <div className="flex justify-between text-sm text-gray-600 "><span>Tax</span><span>{fmtMoney(totalTax || 0)}</span></div>
-                        <div className="flex justify-between text-sm text-gray-600 "><span>Discount</span><span>- {fmtMoney(totalDiscount || 0)}</span></div>
+                        <div className="flex justify-between text-sm text-gray-700 "><span>Tax</span><span>{fmtMoney(totalTax || 0)}</span></div>
+                        <div className="flex justify-between text-sm text-gray-700 "><span>Discount</span><span>- {fmtMoney(totalDiscount || 0)}</span></div>
                         <hr className="border-gray-200 " />
                         <div className="flex justify-between font-bold text-gray-950 "><span>Total</span><span>{fmtMoney(grandTotal || 0)}</span></div>
-                        <p className="text-sm text-gray-500 capitalize">{totalInWords}</p>
+                        <p className="text-sm text-gray-700 capitalize">{totalInWords}</p>
 
                         <div className="flex items-center gap-4 pt-4">
                             <div className="flex items-center"><input id="no-sig" type="radio" name="signature" checked={invoiceFormData.sign_type === 'none'} onChange={() => handleFormChange('sign_type', 'none')} className="h-4 w-4 text-primary cursor-pointer" /><label htmlFor="no-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">No Signature</label></div>
@@ -2085,7 +2085,7 @@ const EditInvoice: React.FC = () => {
                                 {formErrors?.signatureId && <p className="text-destructive text-xs mt-1">{formErrors.signatureId}</p>}
                                 <p className="mt-2 text-sm font-medium text-gray-700 ">Signature Image</p>
                                 <div className="mt-2 h-20 w-48 bg-gray-100 rounded-md flex items-center justify-center">
-                                    {selectedManualSignatureImage ? <img src={selectedManualSignatureImage} alt="Selected Signature" className="max-h-full max-w-full" /> : <span className="text-xs text-gray-400">No signature selected</span>}
+                                    {selectedManualSignatureImage ? <img src={selectedManualSignatureImage} alt="Selected Signature" className="max-h-full max-w-full" /> : <span className="text-xs text-gray-600">No signature selected</span>}
                                 </div>
                             </div>
                         ) : (
@@ -2102,7 +2102,7 @@ const EditInvoice: React.FC = () => {
                                 />
                                 <p className="mt-2 text-sm font-medium text-gray-700 ">Draw your eSignature</p>
                                 <div className="mt-2 h-20 w-48 bg-gray-100 rounded-md flex items-center justify-center cursor-pointer border-2 border-dashed border-gray-400" onClick={() => setSignatureModalOpen(true)}>
-                                    {invoiceFormData.esignDataUrl ? <img src={invoiceFormData.esignDataUrl} alt="Drawn Signature" className="max-h-full max-w-full" /> : <div className="text-center text-gray-500"><Edit size={20} className="mx-auto mb-1" /><span className="text-xs">Draw Signature</span></div>}
+                                    {invoiceFormData.esignDataUrl ? <img src={invoiceFormData.esignDataUrl} alt="Drawn Signature" className="max-h-full max-w-full" /> : <div className="text-center text-gray-700"><Edit size={20} className="mx-auto mb-1" /><span className="text-xs">Draw Signature</span></div>}
                                 </div>
                                 {formErrors?.esignDataUrl && <p className="text-destructive text-xs mt-1">{formErrors.esignDataUrl}</p>}
                             </div>
@@ -2118,7 +2118,7 @@ const EditInvoice: React.FC = () => {
 
                 <Modal isOpen={isSignatureModalOpen} onClose={() => setSignatureModalOpen(false)} title="Draw Signature">
                     <div className="p-4">
-                        <div className="bg-white border border-gray-400">
+                        <div className="bg-card border border-gray-400">
                             <SignatureCanvas
                                 ref={sigPadRef}
                                 penColor='black'
@@ -2180,14 +2180,14 @@ const EditInvoice: React.FC = () => {
 
             {whatsappModal && (
                 <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-md shadow-lg max-w-lg w-full p-5">
+                    <div className="bg-card rounded-md shadow-lg max-w-lg w-full p-5">
                         <div className="flex items-center justify-between mb-3">
                             <h2 className="text-lg font-semibold">Send via WhatsApp</h2>
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setWhatsappModal(null)}
-                                className="text-gray-500 hover:text-gray-700 text-xl leading-none"
+                                className="text-gray-700 hover:text-gray-700 text-xl leading-none"
                                 aria-label="Close"
                             >
                                 ×
@@ -2195,16 +2195,16 @@ const EditInvoice: React.FC = () => {
                         </div>
                         <div className="space-y-3 text-sm">
                             <div>
-                                <div className="text-xs text-gray-500">Phone</div>
+                                <div className="text-xs text-gray-700">Phone</div>
                                 <code className="text-xs bg-gray-100 px-2 py-1 rounded block">{whatsappModal.phone}</code>
                             </div>
                             <div>
-                                <div className="text-xs text-gray-500">Message</div>
+                                <div className="text-xs text-gray-700">Message</div>
                                 <pre className="text-xs bg-gray-100 px-2 py-2 rounded whitespace-pre-wrap">{whatsappModal.message}</pre>
                             </div>
                             {whatsappModal.publicLink && (
                                 <div>
-                                    <div className="text-xs text-gray-500">Public link</div>
+                                    <div className="text-xs text-gray-700">Public link</div>
                                     <code className="text-xs bg-gray-100 px-2 py-1 rounded break-all block">{whatsappModal.publicLink}</code>
                                 </div>
                             )}
@@ -2220,7 +2220,7 @@ const EditInvoice: React.FC = () => {
                                     href={whatsappModal.waMeUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="px-3 py-1 bg-success text-white text-sm rounded-md"
+                                    className="px-3 py-1 bg-success text-success-foreground text-sm rounded-md"
                                 >
                                     Open in WhatsApp
                                 </a>

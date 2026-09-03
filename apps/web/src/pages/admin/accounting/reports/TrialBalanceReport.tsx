@@ -62,7 +62,7 @@ export default function TrialBalanceReport() {
   }, []);
 
   return (
-    <div className="p-6 max-w-5xl mx-auto bg-white">
+    <div className="p-6 max-w-5xl mx-auto bg-card">
       <PageHeader title="Trial Balance">
         <ExportButton url={Constants.EXPORT_TRIAL_BALANCE_URL} filename="trial-balance.csv" />
         <Button type="button" variant="white" size="md" leftIcon={<Printer size={14} />} onClick={() => window.print()}>
@@ -90,7 +90,7 @@ export default function TrialBalanceReport() {
 
       {data && (
         <>
-          <div className="text-xs text-gray-400 mb-2">As of {formatDate(data.asOf)}</div>
+          <div className="text-xs text-gray-600 mb-2">As of {formatDate(data.asOf)}</div>
 
           <div className="overflow-x-auto border border-border rounded-md">
             <table className="w-full text-sm border-collapse">

@@ -130,7 +130,7 @@ const SmartDropdown: React.FC<SmartDropdownProps> = ({
                         disabled={disabled}
                         type="button"
                         aria-label="Clear selection"
-                        className={`absolute inset-y-0 right-2 flex items-center text-gray-400 hover:text-destructive cursor-pointer ${disabled ? 'cursor-not-allowed' : ''}`}
+                        className={`absolute inset-y-0 right-2 flex items-center text-gray-600 hover:text-destructive cursor-pointer ${disabled ? 'cursor-not-allowed' : ''}`}
                         onClick={() => {
                             onSelect(null);
                             setDisplayInput("");
@@ -144,7 +144,7 @@ const SmartDropdown: React.FC<SmartDropdownProps> = ({
             </div>
 
             {showDropdown && (
-                <div className="absolute top-full left-0 w-full bg-white text-gray-950 border border-gray-200 z-10 rounded-md shadow-lg">
+                <div className="absolute top-full left-0 w-full bg-popover text-gray-950 border border-gray-200 z-10 rounded-md shadow-lg">
                     {/* Items section (scrollable) */}
                     <ul className="max-h-40 overflow-auto">
                         {!loading && filteredItems.length > 0 && (
@@ -160,11 +160,11 @@ const SmartDropdown: React.FC<SmartDropdownProps> = ({
                                     }}
                                 >
                                     <div className="flex flex-col">
-                                        <span className="font-medium text-sm text-gray-600">
+                                        <span className="font-medium text-sm text-gray-700">
                                             {makeUcFirst(item.name)}
                                         </span>
                                         {item.subLabel && (
-                                            <span className="text-sm text-gray-500">{item.subLabel}</span>
+                                            <span className="text-sm text-gray-700">{item.subLabel}</span>
                                         )}
                                     </div>
                                 </li>
@@ -173,13 +173,13 @@ const SmartDropdown: React.FC<SmartDropdownProps> = ({
                         }
 
                         {filteredItems.length === 0 && !loading && displayInput && (
-                            <li className="p-2 text-center text-gray-500 text-sm">
+                            <li className="p-2 text-center text-gray-700 text-sm">
                                 No items found for "{displayInput}"
                             </li>
                         )}
 
                         {loading && (
-                            <li className="p-2 text-center text-gray-500 text-sm">
+                            <li className="p-2 text-center text-gray-700 text-sm">
                                 Loading...
                             </li>
                         )}
@@ -189,7 +189,7 @@ const SmartDropdown: React.FC<SmartDropdownProps> = ({
                     {onAddNew && (
                         <div
                             className="p-2 border-t border-gray-200 cursor-pointer 
-                   hover:bg-accent sticky bottom-0 bg-white"
+                   hover:bg-accent sticky bottom-0 bg-card"
                             onMouseDown={(e) => {
                                 e.preventDefault();
                                 onAddNew();

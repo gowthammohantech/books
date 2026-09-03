@@ -161,10 +161,10 @@ const Banking: React.FC = () => {
 
                         {/* Dropdown Menu */}
                         {dropdownOpen && (
-                            <div className="absolute bg-white border border-gray-200 rounded-md z-10">
+                            <div className="absolute bg-popover border border-gray-200 rounded-md z-10">
                                 <button
                                     className={`w-full text-left px-4 py-2 text-sm rounded-t-md font-medium transition ${viewMode === "30days"
-                                        ? "bg-primary text-white"
+                                        ? "bg-primary text-primary-foreground"
                                         : "text-gray-700 hover:bg-gray-100"
                                         }`}
                                     onClick={() => {
@@ -176,7 +176,7 @@ const Banking: React.FC = () => {
                                 </button>
                                 <button
                                     className={`w-full text-left px-4 py-2 text-sm rounded-b-md font-medium transition ${viewMode === "12months"
-                                        ? "bg-primary text-white"
+                                        ? "bg-primary text-primary-foreground"
                                         : "text-gray-700 hover:bg-gray-100"
                                         }`}
                                     onClick={() => {
@@ -195,10 +195,10 @@ const Banking: React.FC = () => {
                     {/* Cash In Hand */}
                     <div className="flex items-center py-4 w-56">
                         <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
-                            <HandCoinsIcon className="w-6 h-6 text-gray-600" />
+                            <HandCoinsIcon className="w-6 h-6 text-gray-700" />
                         </div>
                         <div className="ml-4">
-                            <h3 className="text-sm text-gray-600 font-medium">Cash In Hand</h3>
+                            <h3 className="text-sm text-gray-700 font-medium">Cash In Hand</h3>
                             <p className="flex items-center gap-2 text-xl font-semibold text-gray-900">
                                 {format(totals.pettyCashCurrentBalance)}
                                 {balanaceTrend?.pettyFlag === 'up' ? <TrendingUp className="w-4 h-4 text-green-600" /> : <TrendingDown className="w-4 h-4 text-red-600" />}
@@ -212,7 +212,7 @@ const Banking: React.FC = () => {
                             <LandmarkIcon className="w-6 h-6 text-green-600" />
                         </div>
                         <div className="ml-4">
-                            <h3 className="text-sm text-gray-600 font-medium">Bank Balance</h3>
+                            <h3 className="text-sm text-gray-700 font-medium">Bank Balance</h3>
                             <p className="flex items-center gap-2 text-xl font-semibold text-gray-900">
                                 {format(totals.bankCurrentBalance)}
                                 {balanaceTrend?.bankFlag === 'up' ? <TrendingUp className="w-4 h-4 text-green-600" /> : <TrendingDown className="w-4 h-4 text-red-600" />}
@@ -250,7 +250,7 @@ const Banking: React.FC = () => {
             <div className="space-y-4">
                 <div className="flex justify-between items-center">
                     <h4 className="text-lg font-semibold text-gray-900">All Accounts</h4>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gray-700">
                         {bankAccounts ? bankAccounts.length + 1 : 1} accounts
                     </span>
                 </div>

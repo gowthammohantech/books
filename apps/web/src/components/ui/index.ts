@@ -17,6 +17,9 @@ export type {
 export { default as Badge } from "./Badge";
 export type { BadgeProps, BadgeColor, BadgeVariant } from "./Badge";
 
+export { default as Indicator } from "./Indicator";
+export type { IndicatorProps, IndicatorHue } from "./Indicator";
+
 export { default as FormField, fieldControlClasses } from "./FormField";
 export type { FormFieldProps } from "./FormField";
 

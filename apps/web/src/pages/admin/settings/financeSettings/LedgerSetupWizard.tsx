@@ -57,10 +57,10 @@ const StepIndicator = ({ stage }: { stage: Stage }) => {
                         <div
                             className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold border-2 ${
                                 idx < current
-                                    ? "bg-primary border-primary text-white"
+                                    ? "bg-primary border-primary text-primary-foreground"
                                     : idx === current
-                                    ? "bg-white border-primary text-primary"
-                                    : "bg-white border-border text-muted-foreground"
+                                    ? "bg-card border-primary text-primary"
+                                    : "bg-card border-border text-muted-foreground"
                             }`}
                         >
                             {idx < current ? "✓" : idx + 1}

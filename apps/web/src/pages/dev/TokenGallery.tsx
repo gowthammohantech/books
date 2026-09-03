@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PlusIcon, TrashIcon, DownloadIcon } from "lucide-react";
+import { PlusIcon, TrashIcon, DownloadIcon, PlusCircleIcon } from "lucide-react";
 import {
   AnimatedIcon,
   ANIMATED_ICON_NAMES,
@@ -10,7 +10,9 @@ import {
   Button,
   Card,
   Checkbox,
+  fieldControlClasses,
   FormField,
+  Indicator,
   RadioGroup,
   Select,
   Skeleton,
@@ -19,6 +21,7 @@ import {
   Tabs,
   type BadgeColor,
   type BadgeVariant,
+  type IndicatorHue,
   type ButtonSize,
   type ButtonVariant,
 } from "@components/ui";
@@ -144,7 +147,108 @@ const GRAY_RAMP = [
   "bg-gray-900",
   "bg-gray-950",
 ];
-const RADII = ["rounded-sm", "rounded-md", "rounded-lg", "rounded-xl"];
+/**
+ * The ERPNext hue ramps, fully spelled so Tailwind v4's JIT can see them.
+ *
+ * This grid is the whole reason this page exists. Registering 110 ramp
+ * utilities in `@theme inline` is 110 lines of copy-paste, and one typo there
+ * (`--color-vilolet-400`) yields a class that compiles, renders nothing, and
+ * ships. A blank tile below IS that bug — this is the only place it surfaces.
+ *
+ * Gray is absent on purpose: it still renders the old ramp under its own
+ * heading below, and moves in the stage that shifts its call sites.
+ */
+const RAMP_STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900];
+const RAMPS: Array<{ name: string; note: string; classes: string[] }> = [
+  {
+    name: "blue",
+    note: "links, focus, informational states",
+    classes: ["bg-blue-50", "bg-blue-100", "bg-blue-200", "bg-blue-300", "bg-blue-400", "bg-blue-500", "bg-blue-600", "bg-blue-700", "bg-blue-800", "bg-blue-900"],
+  },
+  {
+    name: "green",
+    note: "success, submitted documents",
+    classes: ["bg-green-50", "bg-green-100", "bg-green-200", "bg-green-300", "bg-green-400", "bg-green-500", "bg-green-600", "bg-green-700", "bg-green-800", "bg-green-900"],
+  },
+  {
+    name: "red",
+    note: "errors, overdue, destructive",
+    classes: ["bg-red-50", "bg-red-100", "bg-red-200", "bg-red-300", "bg-red-400", "bg-red-500", "bg-red-600", "bg-red-700", "bg-red-800", "bg-red-900"],
+  },
+  {
+    name: "orange",
+    note: "warnings, in-progress states",
+    classes: ["bg-orange-50", "bg-orange-100", "bg-orange-200", "bg-orange-300", "bg-orange-400", "bg-orange-500", "bg-orange-600", "bg-orange-700", "bg-orange-800", "bg-orange-900"],
+  },
+  {
+    name: "yellow",
+    note: "drafts, pending review",
+    classes: ["bg-yellow-50", "bg-yellow-100", "bg-yellow-200", "bg-yellow-300", "bg-yellow-400", "bg-yellow-500", "bg-yellow-600", "bg-yellow-700", "bg-yellow-800", "bg-yellow-900"],
+  },
+  {
+    name: "amber",
+    note: "charts and highlights",
+    classes: ["bg-amber-50", "bg-amber-100", "bg-amber-200", "bg-amber-300", "bg-amber-400", "bg-amber-500", "bg-amber-600", "bg-amber-700", "bg-amber-800", "bg-amber-900"],
+  },
+  {
+    name: "purple",
+    note: "category tints",
+    classes: ["bg-purple-50", "bg-purple-100", "bg-purple-200", "bg-purple-300", "bg-purple-400", "bg-purple-500", "bg-purple-600", "bg-purple-700", "bg-purple-800", "bg-purple-900"],
+  },
+  {
+    name: "violet",
+    note: "category tints",
+    classes: ["bg-violet-50", "bg-violet-100", "bg-violet-200", "bg-violet-300", "bg-violet-400", "bg-violet-500", "bg-violet-600", "bg-violet-700", "bg-violet-800", "bg-violet-900"],
+  },
+  {
+    name: "pink",
+    note: "category tints",
+    classes: ["bg-pink-50", "bg-pink-100", "bg-pink-200", "bg-pink-300", "bg-pink-400", "bg-pink-500", "bg-pink-600", "bg-pink-700", "bg-pink-800", "bg-pink-900"],
+  },
+  {
+    name: "teal",
+    note: "category tints",
+    classes: ["bg-teal-50", "bg-teal-100", "bg-teal-200", "bg-teal-300", "bg-teal-400", "bg-teal-500", "bg-teal-600", "bg-teal-700", "bg-teal-800", "bg-teal-900"],
+  },
+  {
+    name: "cyan",
+    note: "category tints",
+    classes: ["bg-cyan-50", "bg-cyan-100", "bg-cyan-200", "bg-cyan-300", "bg-cyan-400", "bg-cyan-500", "bg-cyan-600", "bg-cyan-700", "bg-cyan-800", "bg-cyan-900"],
+  },
+];
+
+/* Surface & outline — the only vocabulary that fully flips in dark mode. */
+const SURFACE_TOKENS = [
+  "bg-surface-white",
+  "bg-surface-gray-1",
+  "bg-surface-gray-2",
+  "bg-surface-gray-3",
+  "bg-surface-gray-4",
+  "bg-surface-modal",
+  "bg-surface-red-3",
+];
+const OUTLINE_TOKENS = [
+  "bg-outline-gray-1",
+  "bg-outline-gray-2",
+  "bg-outline-gray-modals",
+];
+
+const INDICATOR_HUES: IndicatorHue[] = [
+  "gray", "blue", "green", "red", "orange", "yellow",
+  "amber", "purple", "violet", "pink", "teal", "cyan",
+];
+
+/* 2px outer rings, colour-coded to intent. Fully spelled for the JIT. */
+const FOCUS_RINGS: Array<[string, string]> = [
+  ["default", "shadow-[0_0_0_2px_var(--focus-default)]"],
+  ["blue", "shadow-[0_0_0_2px_var(--focus-blue)]"],
+  ["green", "shadow-[0_0_0_2px_var(--focus-green)]"],
+  ["red", "shadow-[0_0_0_2px_var(--focus-red)]"],
+  ["yellow", "shadow-[0_0_0_2px_var(--focus-yellow)]"],
+  ["neutral (fields)", "shadow-[0_0_0_2px_var(--focus-neutral)]"],
+];
+
+const RADII = ["rounded-sm", "rounded-md", "rounded-lg", "rounded-xl", "rounded-2xl"];
 const SHADOWS = [
   "shadow-2xs",
   "shadow-xs",
@@ -214,6 +318,52 @@ export default function TokenGallery() {
           </div>
         </Section>
 
+        <Section title="Hue ramps (ERPNext)">
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            Twelve hues, ten steps. Deliberately not perceptually uniform: 50&ndash;400 are
+            packed close as background tints, 500&ndash;700 carry text and icons, 800&ndash;900
+            are the near-black anchors. <strong>Any blank tile is an unregistered token.</strong>
+          </p>
+          {RAMPS.map((ramp) => (
+            <div key={ramp.name} className="space-y-1">
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm font-semibold text-foreground">{ramp.name}</span>
+                <span className="font-mono text-[0.6875rem] text-muted-foreground">{ramp.note}</span>
+              </div>
+              <div className="grid grid-cols-10 gap-1">
+                {ramp.classes.map((c, i) => (
+                  <div key={c} className="space-y-1">
+                    <div className={`h-11 rounded-sm border border-border ${c}`} />
+                    <div className="font-mono text-[0.6875rem] leading-tight text-muted-foreground">
+                      {RAMP_STEPS[i]}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </Section>
+
+        <Section title="Surface &amp; outline">
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            Shown on both white and the page background, because these are hairline values
+            and a rule that is invisible on one of the two is the bug worth catching.
+          </p>
+          {[
+            { label: "on --card (white)", bg: "bg-card" },
+            { label: "on --background", bg: "bg-background" },
+          ].map((row) => (
+            <div key={row.label} className={`space-y-2 rounded-xl border border-border p-4 ${row.bg}`}>
+              <h3 className={H3}>{row.label}</h3>
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-10">
+                {[...SURFACE_TOKENS, ...OUTLINE_TOKENS].map((c) => (
+                  <Swatch key={c} name={c.replace("bg-", "")} className={c} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </Section>
+
         <Section title="Typography">
           <div className="space-y-2 rounded-xl border border-border bg-card p-5">
             <p className="text-xs text-muted-foreground">font-sans — Geist Variable</p>
@@ -250,6 +400,86 @@ export default function TokenGallery() {
               <div key={s} className="space-y-1">
                 <div className={`h-16 w-24 rounded-lg bg-card ${s}`} />
                 <div className="font-mono text-[0.6875rem] text-muted-foreground">{s}</div>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        <Section title="Indicator (the status primitive)">
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            One pill replaces five badge systems. Colour comes only from the tinted pairs,
+            every one of which is contrast-checked by{" "}
+            <code className="font-mono text-xs">npm run lint:contrast</code>.
+          </p>
+          <div className="overflow-x-auto rounded-md border border-border bg-card p-5">
+            <table className="w-full text-sm">
+              <thead>
+                <tr>
+                  {["hue", "default", "no dot", "with icon", "round"].map((h) => (
+                    <th key={h} className={`p-2 text-left ${H3}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {INDICATOR_HUES.map((h) => (
+                  <tr key={h} className="border-b border-border last:border-0">
+                    <td className="p-2 font-mono text-[0.6875rem] text-muted-foreground">{h}</td>
+                    <td className="p-2"><Indicator hue={h}>Submitted</Indicator></td>
+                    <td className="p-2"><Indicator hue={h} dot={false}>Draft</Indicator></td>
+                    <td className="p-2">
+                      <Indicator hue={h} icon={<PlusCircleIcon size={14} />}>Sent</Indicator>
+                    </td>
+                    <td className="p-2"><Indicator hue={h} round>7</Indicator></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+
+        <Section title="Control heights">
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            Every control resolves to 28px on a fine pointer &mdash; that even rhythm is the
+            whole point of the ERPNext toolbar. The dashed rule is exactly 1.75rem:
+            <strong> anything not aligned to it is a failed migration</strong>.
+          </p>
+          <div className="rounded-md border border-border bg-card p-5">
+            <div className="relative">
+              <div
+                className="pointer-events-none absolute left-0 right-0 top-0 h-7 border-y border-dashed border-destructive/50"
+                aria-hidden="true"
+              />
+              <div className="relative flex flex-wrap items-start gap-3">
+                <Button>Primary</Button>
+                <Button variant="secondary">Default</Button>
+                <Button variant="ghost">Ghost</Button>
+                <Button size="icon" aria-label="Delete"><TrashIcon size={14} /></Button>
+                <input
+                  className={fieldControlClasses()}
+                  style={{ width: "11rem" }}
+                  placeholder="Filled input"
+                  aria-label="Filled input sample"
+                />
+                <Indicator hue="green">Pill is 20px</Indicator>
+              </div>
+            </div>
+          </div>
+        </Section>
+
+        <Section title="Focus rings">
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            Always a 2px outer ring, never an outline, and colour-coded to intent rather
+            than always blue. A box-shadow so it cannot shift layout &mdash; which matters at
+            28px, where there is no vertical slack to give back.
+          </p>
+          <div className="flex flex-wrap gap-4 rounded-md border border-border bg-card p-5">
+            {FOCUS_RINGS.map(([name, cls]) => (
+              <div key={name} className="space-y-1">
+                <div
+                  className={`flex h-7 w-28 items-center justify-center rounded-md bg-muted text-[0.6875rem] text-muted-foreground ${cls}`}
+                >
+                  {name}
+                </div>
               </div>
             ))}
           </div>

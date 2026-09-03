@@ -293,7 +293,7 @@ const PurchaseOrderList: FC = () => {
 
                                 // Inject dynamic custom field columns
                                 ...tableCustomFields.map((f: any) => (
-                                    <span key={f.id} className="text-gray-600 font-medium">
+                                    <span key={f.id} className="text-gray-700 font-medium">
                                         {extractCustomFieldValue(purchaseOrder, f.fieldSlug || f.id)}
                                     </span>
                                 ))

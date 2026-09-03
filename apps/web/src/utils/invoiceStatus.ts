@@ -8,9 +8,11 @@
  * backend considered it settled. Callers should now pass `creditNoted`.
  *
  * The label/colour map stays here: it is presentation, and the package has no
- * business knowing about Tailwind classes.
+ * business knowing about the UI. It names an Indicator hue rather than class
+ * strings now, so the pill's geometry lives in one place.
  */
 import type { DisplayStatus } from '@elixirbooks/money';
+import type { IndicatorHue } from '@components/ui';
 
 export {
   deriveInvoiceDisplayStatus,
@@ -20,12 +22,12 @@ export type { DisplayStatus, InvoiceDisplayInput } from '@elixirbooks/money';
 
 export const DISPLAY_STATUS_META: Record<
     DisplayStatus,
-    { label: string; classes: string }
+    { label: string; hue: IndicatorHue }
 > = {
-    DRAFT: { label: "Draft", classes: "bg-warning-soft text-warning-strong" },
-    SENT: { label: "Sent", classes: "bg-info-soft text-info-strong" },
-    PARTIALLY_PAID: { label: "Partially Paid", classes: "bg-info-soft text-info-strong" },
-    PAID: { label: "Fully Paid", classes: "bg-success-soft text-success-strong" },
-    DELAYED: { label: "Delayed Payment", classes: "bg-destructive-soft text-destructive-strong" },
-    CANCELLED: { label: "Cancelled", classes: "bg-muted text-muted-foreground" },
+    DRAFT: { label: "Draft", hue: "yellow" },
+    SENT: { label: "Sent", hue: "blue" },
+    PARTIALLY_PAID: { label: "Partially Paid", hue: "blue" },
+    PAID: { label: "Fully Paid", hue: "green" },
+    DELAYED: { label: "Delayed Payment", hue: "red" },
+    CANCELLED: { label: "Cancelled", hue: "gray" },
 };

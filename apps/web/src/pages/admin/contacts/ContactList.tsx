@@ -345,8 +345,8 @@ const ContactList: React.FC = () => {
                                 onClick={() => handleViewChange(v)}
                                 className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                                     view === v
-                                        ? 'bg-primary text-white'
-                                        : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-card border border-gray-300 text-gray-700 hover:bg-gray-50'
                                 }`}
                             >
                                 {VIEW_LABELS[v]}
@@ -369,7 +369,7 @@ const ContactList: React.FC = () => {
                                 title="List view"
                                 onClick={() => setParam({ display: 'list' })}
                                 className={`px-2 py-1.5 transition-colors ${
-                                    displayMode === 'list' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                                    displayMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-card text-gray-700 hover:bg-gray-50'
                                 }`}
                             >
                                 <List size={16} />
@@ -379,7 +379,7 @@ const ContactList: React.FC = () => {
                                 title="Grid view"
                                 onClick={() => setParam({ display: 'grid' })}
                                 className={`px-2 py-1.5 transition-colors ${
-                                    displayMode === 'grid' ? 'bg-primary text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+                                    displayMode === 'grid' ? 'bg-primary text-primary-foreground' : 'bg-card text-gray-700 hover:bg-gray-50'
                                 }`}
                             >
                                 <LayoutGrid size={16} />
@@ -404,18 +404,18 @@ const ContactList: React.FC = () => {
                                         <div
                                             key={contact.id}
                                             onClick={() => handleRowClick(contact)}
-                                            className="bg-white border border-border rounded-xl p-4 shadow-sm hover:shadow-md cursor-pointer transition-shadow space-y-1"
+                                            className="bg-card border border-border rounded-xl p-4 shadow-sm hover:shadow-md cursor-pointer transition-shadow space-y-1"
                                         >
                                             <p className="font-semibold text-gray-800 truncate">
                                                 {contact.displayName || contact.organisation || '—'}
                                             </p>
                                             {(contact.firstName || contact.lastName) && (
-                                                <p className="text-sm text-gray-500 truncate">
+                                                <p className="text-sm text-gray-700 truncate">
                                                     {[contact.firstName, contact.lastName].filter(Boolean).join(' ')}
                                                 </p>
                                             )}
                                             {contact.email && (
-                                                <p className="text-xs text-gray-400 truncate">{contact.email}</p>
+                                                <p className="text-xs text-gray-600 truncate">{contact.email}</p>
                                             )}
                                             <div className="pt-1">{statusBadge(contact.status)}</div>
                                             {(canEdit || canDelete) && (
@@ -513,7 +513,7 @@ const ContactList: React.FC = () => {
             {/* CSV Import modal (salvaged from owner's WIP customer import wizard) */}
             {importStep !== 'closed' && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                    <div className="bg-white rounded-md shadow-lg w-full max-w-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+                    <div className="bg-card rounded-md shadow-lg w-full max-w-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center">
                             <h2 className="text-lg font-semibold text-gray-800">
                                 {importStep === 'upload' && 'Import Contacts (CSV)'}
@@ -524,7 +524,7 @@ const ContactList: React.FC = () => {
                                 type="button"
                                 aria-label="close"
                                 onClick={resetImportState}
-                                className="text-gray-500 hover:text-gray-700"
+                                className="text-gray-700 hover:text-gray-700"
                             >
                                 <X size={18} />
                             </button>
@@ -540,9 +540,9 @@ const ContactList: React.FC = () => {
                                         onChange={(e) =>
                                             setImportFile(e.target.files?.[0] ?? null)
                                         }
-                                        className="border border-gray-300 rounded-md px-3 py-2 w-full bg-white text-gray-800"
+                                        className="border border-gray-300 rounded-md px-3 py-2 w-full bg-card text-gray-800"
                                     />
-                                    <p className="text-xs text-gray-500 mt-1">
+                                    <p className="text-xs text-gray-700 mt-1">
                                         Expected columns: organisation (or firstName + lastName), email, telephone
                                         (optional: town, region, postcode, currencyCode).
                                     </p>
@@ -559,7 +559,7 @@ const ContactList: React.FC = () => {
                                         type="button"
                                         disabled={isPreviewing || !importFile}
                                         onClick={submitImportUpload}
-                                        className="px-3 py-1 rounded-md bg-primary text-white hover:bg-primary/90 disabled:opacity-50"
+                                        className="px-3 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                                     >
                                         {isPreviewing ? 'Parsing...' : 'Preview'}
                                     </button>
@@ -624,7 +624,7 @@ const ContactList: React.FC = () => {
                                         type="button"
                                         disabled={isConfirming || validImportCount === 0}
                                         onClick={submitImportConfirm}
-                                        className="px-3 py-1 rounded-md bg-primary text-white hover:bg-primary/90 disabled:opacity-50"
+                                        className="px-3 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                                     >
                                         {isConfirming ? 'Importing...' : `Confirm Import (${validImportCount})`}
                                     </button>
@@ -651,7 +651,7 @@ const ContactList: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={resetImportState}
-                                        className="px-3 py-1 rounded-md bg-primary text-white hover:bg-primary/90"
+                                        className="px-3 py-1 rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
                                     >
                                         Close
                                     </button>

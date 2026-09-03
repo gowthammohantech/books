@@ -123,7 +123,7 @@ const EInvoiceList: React.FC = () => {
             <PageHeader title="E-Invoices (IRN)" />
 
             <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Status:</label>
+                <label className="text-sm text-gray-700">Status:</label>
                 <select
                     value={statusFilter}
                     onChange={(e) => {
@@ -154,7 +154,7 @@ const EInvoiceList: React.FC = () => {
                             <StatusBadge status={row.status} />,
                             row.ackNo ?? "—",
                             formatDate(row.ackDate),
-                            <span className="text-xs uppercase tracking-wide text-gray-500">{row.provider}</span>,
+                            <span className="text-xs uppercase tracking-wide text-gray-700">{row.provider}</span>,
                             formatDate(row.createdAt),
                         ]}
                         actions={buildActions(row)}
@@ -171,7 +171,7 @@ const EInvoiceList: React.FC = () => {
             </Table>
 
             {total > 0 && totalPages > 1 && (
-                <div className="flex justify-between items-center text-sm text-gray-600 pt-2">
+                <div className="flex justify-between items-center text-sm text-gray-700 pt-2">
                     <div>
                         Page {page} of {totalPages} ({total} records)
                     </div>

@@ -306,7 +306,7 @@ export default function TaxReturns() {
           <select
             value={regime}
             onChange={(e) => setRegime(e.target.value as TaxRegime)}
-            className="border border-gray-300 rounded px-3 py-2 text-sm bg-white"
+            className="border border-gray-300 rounded px-3 py-2 text-sm bg-card"
           >
             {(Object.keys(REGIME_LABELS) as TaxRegime[]).map((r) => (
               <option key={r} value={r}>
@@ -330,7 +330,7 @@ export default function TaxReturns() {
         </Button>
       </div>
 
-      <p className="text-xs text-gray-500 mb-4">{DISCLAIMER}</p>
+      <p className="text-xs text-gray-700 mb-4">{DISCLAIMER}</p>
 
       {loading && (
         <div className="py-10">
@@ -368,7 +368,7 @@ export default function TaxReturns() {
 
           {supported && data && (
             <div className="space-y-4">
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-gray-600">
                 Period: {formatDate(from)} — {formatDate(to)}
               </div>
 
@@ -389,7 +389,7 @@ export default function TaxReturns() {
                     }
                   >
                     {!ecSales || ecSales.rows.length === 0 ? (
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-gray-600">
                         No cross-border reverse-charge sales in period.
                       </p>
                     ) : (
@@ -457,7 +457,7 @@ export default function TaxReturns() {
                     }
                   >
                     {!oss || oss.rows.length === 0 ? (
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-gray-600">
                         No B2C cross-border EU sales in period.
                       </p>
                     ) : (

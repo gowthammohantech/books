@@ -71,11 +71,11 @@ const SectionTable = ({ type, docs, onApprove, onReject, actionLoadingId, format
     const label = docLabel(type);
 
     return (
-        <div className="bg-white rounded-lg border border-gray-200">
+        <div className="bg-card rounded-lg border border-gray-200">
             <div className="px-4 py-3 border-b border-gray-100">
                 <h2 className="text-base font-semibold text-gray-700">
                     {label}s
-                    <span className="ml-2 text-xs font-normal text-gray-400">({docs.length} pending)</span>
+                    <span className="ml-2 text-xs font-normal text-gray-600">({docs.length} pending)</span>
                 </h2>
             </div>
             <div className="overflow-x-auto border border-border rounded-md">
@@ -97,7 +97,7 @@ const SectionTable = ({ type, docs, onApprove, onReject, actionLoadingId, format
                                 const isActing = actionLoadingId === doc.id;
                                 return (
                                     <tr key={doc.id} className="border-b border-border hover:bg-gray-50">
-                                        <td className="px-4 py-3 text-gray-500">{idx + 1}</td>
+                                        <td className="px-4 py-3 text-gray-700">{idx + 1}</td>
                                         <td className="px-4 py-3 text-primary font-medium">{getDocNumber(doc)}</td>
                                         <td className="px-4 py-3 text-gray-700">{formatDate(doc.date)}</td>
                                         <td className="px-4 py-3 text-right text-gray-800">{getDocAmount(doc)}</td>
@@ -226,7 +226,7 @@ const ApprovalsQueue: React.FC = () => {
                     <span className="flex flex-col">
                         <span>Approvals</span>
                         {!isLoading && (
-                            <span className="text-xs font-normal text-gray-500">
+                            <span className="text-xs font-normal text-gray-700">
                                 {totalPending === 0
                                     ? "No pending approvals."
                                     : `${totalPending} document${totalPending !== 1 ? "s" : ""} awaiting approval`}
@@ -264,7 +264,7 @@ const ApprovalsQueue: React.FC = () => {
                 size="md"
             >
                 <div className="space-y-4">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-700">
                         Optionally provide a reason for rejection. This will be recorded against the document.
                     </p>
                     <div>
@@ -295,7 +295,7 @@ const ApprovalsQueue: React.FC = () => {
                         >
                             {isRejecting ? (
                                 <>
-                                    <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full" />
+                                    <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-card border-t-transparent rounded-full" />
                                     Rejecting...
                                 </>
                             ) : (

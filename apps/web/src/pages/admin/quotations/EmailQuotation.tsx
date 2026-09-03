@@ -260,9 +260,9 @@ const EmailQuotation: React.FC = () => {
     if (isSMTPNotConfigured) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] bg-gray-50 rounded-lg border border-gray-200">
-                <Settings className="w-16 h-16 text-gray-400 mb-4" />
+                <Settings className="w-16 h-16 text-gray-600 mb-4" />
                 <h2 className="text-xl font-semibold text-gray-700 mb-2">SMTP Not Configured</h2>
-                <p className="text-gray-500 mb-4 text-center">
+                <p className="text-gray-700 mb-4 text-center">
                     You need to configure your SMTP or NodeMailer settings before sending quotations.
                 </p>
                 <button
@@ -309,7 +309,7 @@ const EmailQuotation: React.FC = () => {
                 <div className="border border-border rounded-xl bg-white shadow-sm">
                     {/* From */}
                     <div className="p-4 flex items-center gap-4">
-                        <label className="w-32 text-gray-600 font-medium">From</label>
+                        <label className="w-32 text-gray-700 font-medium">From</label>
                         <input
                             type="email"
                             value={emailSettings.from}
@@ -320,7 +320,7 @@ const EmailQuotation: React.FC = () => {
 
                     {/* To */}
                     <div className="p-4 flex items-center gap-4">
-                        <label className="w-32 text-gray-600 font-medium">To</label>
+                        <label className="w-32 text-gray-700 font-medium">To</label>
                         <input
                             type="email"
                             value={quotationDetails?.billTo?.email || ""}
@@ -332,7 +332,7 @@ const EmailQuotation: React.FC = () => {
 
                     {/* Subject */}
                     <div className="p-4 flex items-center gap-4">
-                        <label className="w-32 text-gray-600 font-medium">Subject</label>
+                        <label className="w-32 text-gray-700 font-medium">Subject</label>
                         <input
                             type="text"
                             value={formData.subject}

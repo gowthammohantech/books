@@ -113,7 +113,7 @@ const LeaveReport: React.FC = () => {
             <PageHeader title="Leave Report" />
 
             {/* ── Filters ── */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="bg-card border border-gray-200 rounded-lg p-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
                     <DateInput label="From" value={from} onChange={setFrom} />
                     <DateInput label="To" value={to} onChange={setTo} />
@@ -168,8 +168,8 @@ const LeaveReport: React.FC = () => {
                     {/* ── Totals ── */}
                     {totals && (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="bg-white border border-gray-200 rounded-lg p-4">
-                                <div className="text-xs uppercase text-gray-500">Total Days</div>
+                            <div className="bg-card border border-gray-200 rounded-lg p-4">
+                                <div className="text-xs uppercase text-gray-700">Total Days</div>
                                 <div className="text-2xl font-semibold text-primary mt-1">
                                     {fmtDays(totals.days)}
                                 </div>
@@ -178,7 +178,7 @@ const LeaveReport: React.FC = () => {
                     )}
 
                     {/* ── By type ── */}
-                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="bg-card border border-gray-200 rounded-lg overflow-hidden">
                         <div className="px-4 py-3 border-b border-gray-200 text-sm font-semibold text-gray-700">
                             By Leave Type
                         </div>
@@ -211,7 +211,7 @@ const LeaveReport: React.FC = () => {
                     </div>
 
                     {/* ── By employee ── */}
-                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="bg-card border border-gray-200 rounded-lg overflow-hidden">
                         <div className="px-4 py-3 border-b border-gray-200 text-sm font-semibold text-gray-700">
                             By Employee
                         </div>

@@ -58,7 +58,7 @@ const StatsCard: FC<StatsCardProps> = ({ title, value, difference, icon, accent,
 
     return (
         <div
-            className={`relative border rounded-xl shadow-sm hover:shadow-md transition-all p-4 ${tinted ? ACCENT_CARD[resolvedAccent] : "bg-white border-border"
+            className={`relative border rounded-xl shadow-sm hover:shadow-md transition-all p-4 ${tinted ? ACCENT_CARD[resolvedAccent] : "bg-card border-border"
                 }`}
         >
             {/* Top: title + icon */}

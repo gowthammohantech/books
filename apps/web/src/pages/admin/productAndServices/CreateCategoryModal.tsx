@@ -165,13 +165,13 @@ const CreateCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) =>
                 {/* Name Input */}
                 <div>
                     <label htmlFor="category_name" className="block text-sm font-medium text-gray-700  mb-1">Name <span className="text-destructive">*</span></label>
-                    <input id="category_name" name="category_name" type="text" maxLength={100} value={formData.category_name || ""} onChange={handleChange} placeholder="Enter Category Name" className="w-full bg-white  text-gray-950  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-ring focus:border-primary" />
+                    <input id="category_name" name="category_name" type="text" maxLength={100} value={formData.category_name || ""} onChange={handleChange} placeholder="Enter Category Name" className="w-full bg-card  text-gray-950  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-ring focus:border-primary" />
                     {formErrors.category_name && <p className="text-destructive text-xs mt-1">{formErrors.category_name}</p>}
                 </div>
                 {/* Slug Input */}
                 <div>
                     <label htmlFor="slug" className="block text-sm font-medium text-gray-700  mb-1">Slug <span className="text-destructive">*</span></label>
-                    <input id="slug" type="text" name="slug" maxLength={100} value={formData.slug || ""} onChange={handleChange} placeholder="Enter Category Slug" className="w-full bg-white  text-gray-950  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-ring focus:border-primary" />
+                    <input id="slug" type="text" name="slug" maxLength={100} value={formData.slug || ""} onChange={handleChange} placeholder="Enter Category Slug" className="w-full bg-card  text-gray-950  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-ring focus:border-primary" />
                     {formErrors.slug && <p className="text-destructive text-xs mt-1">{formErrors.slug}</p>}
                 </div>
                 {/* Custom Fields */}

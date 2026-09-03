@@ -128,7 +128,7 @@ const TimeReports: React.FC = () => {
             <PageHeader title="Time Reports" />
 
             {/* ── Filters ── */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="bg-card border border-gray-200 rounded-lg p-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
                     <DateInput label="From" value={from} onChange={setFrom} />
                     <DateInput label="To" value={to} onChange={setTo} />
@@ -199,22 +199,22 @@ const TimeReports: React.FC = () => {
                     {/* ── Totals ── */}
                     {totals && (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="bg-white border border-gray-200 rounded-lg p-4">
-                                <div className="text-xs uppercase text-gray-500">Total Hours</div>
+                            <div className="bg-card border border-gray-200 rounded-lg p-4">
+                                <div className="text-xs uppercase text-gray-700">Total Hours</div>
                                 <div className="text-2xl font-semibold text-gray-900 mt-1">
                                     {fmtHours(totals.hours)}
                                 </div>
                             </div>
-                            <div className="bg-white border border-gray-200 rounded-lg p-4">
-                                <div className="text-xs uppercase text-gray-500">
+                            <div className="bg-card border border-gray-200 rounded-lg p-4">
+                                <div className="text-xs uppercase text-gray-700">
                                     Billable Hours
                                 </div>
                                 <div className="text-2xl font-semibold text-gray-900 mt-1">
                                     {fmtHours(totals.billableHours)}
                                 </div>
                             </div>
-                            <div className="bg-white border border-gray-200 rounded-lg p-4">
-                                <div className="text-xs uppercase text-gray-500">Amount</div>
+                            <div className="bg-card border border-gray-200 rounded-lg p-4">
+                                <div className="text-xs uppercase text-gray-700">Amount</div>
                                 <div className="text-2xl font-semibold text-primary mt-1">
                                     {formatMoney(totals.amount, defaultCurrencyCode)}
                                 </div>
@@ -223,7 +223,7 @@ const TimeReports: React.FC = () => {
                     )}
 
                     {/* ── By project ── */}
-                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="bg-card border border-gray-200 rounded-lg overflow-hidden">
                         <div className="px-4 py-3 border-b border-gray-200 text-sm font-semibold text-gray-700">
                             By Project
                         </div>
@@ -262,7 +262,7 @@ const TimeReports: React.FC = () => {
                     </div>
 
                     {/* ── By employee ── */}
-                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="bg-card border border-gray-200 rounded-lg overflow-hidden">
                         <div className="px-4 py-3 border-b border-gray-200 text-sm font-semibold text-gray-700">
                             By Employee
                         </div>

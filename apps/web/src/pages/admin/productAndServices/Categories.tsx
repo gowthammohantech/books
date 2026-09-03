@@ -343,7 +343,7 @@ const CategoryList: FC = () => {
                                 <label className="inline-flex items-center cursor-pointer">
                                     <input type="checkbox" className="sr-only peer" checked={categoryItem.status} onChange={() => updateStatus(categoryItem)} />
                                     <div className="relative w-11 h-6 bg-gray-200 peer-checked:bg-primary rounded-full peer-focus:ring-2 peer-focus:ring-ring">
-                                        <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${categoryItem.status ? 'translate-x-full' : ''}`}></div>
+                                        <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-surface-white rounded-full shadow-md transform transition-transform ${categoryItem.status ? 'translate-x-full' : ''}`}></div>
                                     </div>
                                 </label>
                             ]}
@@ -395,13 +395,13 @@ const CategoryList: FC = () => {
                     {/* Name Input */}
                     <div>
                         <label htmlFor="category_name" className="block text-sm font-medium text-gray-700  mb-1">Name <span className="text-destructive">*</span></label>
-                        <input id="category_name" type="text" value={category.category_name || ""} onChange={(e) => setCategory({ ...category, category_name: e.target.value })} placeholder="Enter Category Name" className="w-full bg-white  text-gray-950  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-ring focus:border-primary" />
+                        <input id="category_name" type="text" value={category.category_name || ""} onChange={(e) => setCategory({ ...category, category_name: e.target.value })} placeholder="Enter Category Name" className="w-full bg-card  text-gray-950  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-ring focus:border-primary" />
                         {formErrors.category_name && <p className="text-destructive text-xs mt-1">{formErrors.category_name}</p>}
                     </div>
                     {/* Slug Input */}
                     <div>
                         <label htmlFor="slug" className="block text-sm font-medium text-gray-700  mb-1">Slug <span className="text-destructive">*</span></label>
-                        <input id="slug" type="text" value={category.slug || ""} onChange={(e) => setCategory({ ...category, slug: e.target.value })} placeholder="Enter Category Slug" className="w-full bg-white  text-gray-950  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-ring focus:border-primary" />
+                        <input id="slug" type="text" value={category.slug || ""} onChange={(e) => setCategory({ ...category, slug: e.target.value })} placeholder="Enter Category Slug" className="w-full bg-card  text-gray-950  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-ring focus:border-primary" />
                         {formErrors.slug && <p className="text-destructive text-xs mt-1">{formErrors.slug}</p>}
                     </div>
                     <DynamicCustomFields

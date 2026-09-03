@@ -64,7 +64,7 @@ const BankAccountDetailsModal: React.FC<Props> = ({ isOpen, onClose, bankAccount
                                     {formatMoney(bankAccount.currentBalance || 0, accountCurrency)}
                                 </p>
                             </div>
-                            <div className="p-3 rounded-full bg-primary text-white">
+                            <div className="p-3 rounded-full bg-primary text-primary-foreground">
                                 <CreditCard size={24} />
                             </div>
                         </div>

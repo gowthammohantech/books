@@ -171,7 +171,7 @@ const LeaveApprovals: React.FC = () => {
                                     <td className="px-4 py-3 text-gray-700">
                                         {r.leaveType?.name ?? '—'}
                                         {r.leaveType && !r.leaveType.paid && (
-                                            <span className="ml-1 text-[0.6875rem] uppercase text-gray-400">
+                                            <span className="ml-1 text-[0.6875rem] uppercase text-gray-600">
                                                 Unpaid
                                             </span>
                                         )}
@@ -232,11 +232,11 @@ const LeaveApprovals: React.FC = () => {
             {/* ── Reject dialog ── */}
             {rejectingId && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+                    <div className="bg-card rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">
                             Reject leave request?
                         </h3>
-                        <p className="text-sm text-gray-600 mb-3">
+                        <p className="text-sm text-gray-700 mb-3">
                             The request will be returned to the employee with your note.
                         </p>
                         <textarea

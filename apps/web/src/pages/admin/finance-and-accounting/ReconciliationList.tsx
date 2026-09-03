@@ -261,25 +261,25 @@ const ReconciliationList: React.FC = () => {
                 <div className="flex items-center gap-4">
                     <div className="relative" ref={dropdownRef}>
                         <button
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer min-w-[17.5rem] justify-between"
+                            className="flex items-center gap-2 px-4 py-2 bg-card border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer min-w-[17.5rem] justify-between"
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                         >
                             <div className="text-left">
                                 <div className="font-semibold text-gray-900 text-sm">
                                     {selectedBank ? `${selectedBank.accountHoldername} - ${selectedBank.bankName}` : 'Select Bank Account'}
                                 </div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-gray-700">
                                     Account Number: {selectedBank ? `xxxx${selectedBank.accountNumber?.slice(-4)}` : 'xxxxxxxx'}
                                 </div>
                             </div>
                             <ChevronDown
                                 size={16}
-                                className={`text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                                className={`text-gray-700 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
                             />
                         </button>
 
                         {isDropdownOpen && (
-                            <div className="absolute top-full left-0 mt-1 w-full max-w-md bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-[min(15rem,35vh)] overflow-y-auto">
+                            <div className="absolute top-full left-0 mt-1 w-full max-w-md bg-popover border border-gray-300 rounded-lg shadow-lg z-50 max-h-[min(15rem,35vh)] overflow-y-auto">
                                 {bankAccounts && bankAccounts.length > 0 ? (
                                     bankAccounts.map((account) => {
                                         const formattedBankName = `${account.accountHoldername} - ${account.bankName}`;
@@ -292,14 +292,14 @@ const ReconciliationList: React.FC = () => {
                                                 <div className="font-medium text-gray-900 text-sm">
                                                     {formattedBankName}
                                                 </div>
-                                                <div className="text-xs text-gray-500">
+                                                <div className="text-xs text-gray-700">
                                                     Account: xxxx{account.accountNumber?.slice(-4)}
                                                 </div>
                                             </div>
                                         );
                                     })
                                 ) : (
-                                    <div className="px-4 py-3 text-gray-500 text-sm">
+                                    <div className="px-4 py-3 text-gray-700 text-sm">
                                         No bank accounts found
                                     </div>
                                 )}
@@ -309,12 +309,12 @@ const ReconciliationList: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-4 p-4 bg-white">
+                    <div className="flex items-center gap-4 p-4 bg-card">
                         <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-chart-3/5 to-primary/5 text-primary shadow-inner border border-gray-300">
                             <LandmarkIcon className="w-6 h-6" />
                         </div>
                         <div className="flex flex-col items-start">
-                            <span className="text-sm font-medium text-gray-500 tracking-wide">
+                            <span className="text-sm font-medium text-gray-700 tracking-wide">
                                 Current Balance
                             </span>
                             <span
@@ -436,7 +436,7 @@ const ReconciliationList: React.FC = () => {
                                         <AlertCircle className="w-6 h-6 text-amber-600" />
                                     </div>
                                     <h4 className="text-lg font-semibold text-gray-900">Unreconcile Transaction</h4>
-                                    <p className="text-gray-600">This transaction is currently reconciled. Are you sure you want to mark it as unreconciled?</p>
+                                    <p className="text-gray-700">This transaction is currently reconciled. Are you sure you want to mark it as unreconciled?</p>
                                 </div>
                             ) : (
                                 <div className="space-y-2">
@@ -444,7 +444,7 @@ const ReconciliationList: React.FC = () => {
                                         <CheckCircle className="w-6 h-6 text-blue-600" />
                                     </div>
                                     <h4 className="text-lg font-semibold text-gray-900">Acknowledge Reconciliation</h4>
-                                    <p className="text-gray-600">Are you sure you want to mark this transaction as reconciled?</p>
+                                    <p className="text-gray-700">Are you sure you want to mark this transaction as reconciled?</p>
                                 </div>
                             )}
                         </div>

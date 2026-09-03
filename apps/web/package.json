@@ -13,7 +13,8 @@
     "lint:tokens": "node scripts/check-legacy-tokens.mjs",
     "gen:icons": "node scripts/gen-icon-variants.mjs",
     "lint:layout": "node scripts/check-fixed-heights.mjs",
-    "test:layout": "playwright test"
+    "test:layout": "playwright test",
+    "lint:contrast": "node scripts/check-contrast.mjs"
   },
   "dependencies": {
     "@elixirbooks/enums": "*",

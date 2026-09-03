@@ -409,7 +409,7 @@ const PaymentFormModal: FC<PaymentFormModalProps> = ({ isOpen, onClose, onConfir
                             <div className="space-y-1 text-center">
                                 {/* <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" /> */}
                                 <div className="flex text-sm text-muted-foreground">
-                                    <label htmlFor="attachment" className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary">
+                                    <label htmlFor="attachment" className="relative cursor-pointer bg-card rounded-md font-medium text-primary hover:text-primary">
                                         <span>Browse files</span>
                                         <input id="attachment" name="attachment" type="file" className="sr-only" onChange={(e) => handleFormChange('attachment', e.target.files ? e.target.files[0] : null)} />
                                     </label>

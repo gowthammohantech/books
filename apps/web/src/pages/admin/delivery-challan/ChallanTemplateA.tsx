@@ -41,7 +41,7 @@ const ChallanTemplateA: React.FC<InvoiceDetailsProps> = ({ challanData, lineFiel
                 </div>
 
                 {/* Row 2: Original + Date/Invoice */}
-                <div className="flex justify-between items-center mt-2 text-sm text-gray-600">
+                <div className="flex justify-between items-center mt-2 text-sm text-gray-700">
                     <p className="text-xs">Original For Recipient</p>
                     <div className="flex items-center gap-4">
                         <p>Date: {formatDate(challanData?.challanDate)}</p>
@@ -58,22 +58,22 @@ const ChallanTemplateA: React.FC<InvoiceDetailsProps> = ({ challanData, lineFiel
                 <div className="w-2/5">
                     <h2 className="font-bold text-primary mb-2">Bill To :</h2>
                     <p className="font-semibold">{challanData?.billTo?.name ?? '—'}</p>
-                    <p className="text-sm text-gray-600">{challanData?.billTo?.billingAddress?.addressLine1}</p>
-                    <p className="text-sm text-gray-600">{challanData?.billTo?.billingAddress?.city}, {challanData?.billTo?.billingAddress?.state}, {challanData?.billTo?.billingAddress?.country}</p>
-                    <p className="text-sm text-gray-600">{challanData?.billTo?.email}</p>
-                    <p className="text-sm text-gray-600">{challanData?.billTo?.phone ?? ''}</p>
+                    <p className="text-sm text-gray-700">{challanData?.billTo?.billingAddress?.addressLine1}</p>
+                    <p className="text-sm text-gray-700">{challanData?.billTo?.billingAddress?.city}, {challanData?.billTo?.billingAddress?.state}, {challanData?.billTo?.billingAddress?.country}</p>
+                    <p className="text-sm text-gray-700">{challanData?.billTo?.email}</p>
+                    <p className="text-sm text-gray-700">{challanData?.billTo?.phone ?? ''}</p>
                 </div>
                 <div className="w-2/5">
                     <h2 className="font-bold text-primary mb-2">Pay To :</h2>
                     <p className="font-semibold">{challanData?.billFrom.name}</p>
-                    <p className="text-sm text-gray-600">{challanData?.billFrom.address}</p>
-                    <p className="text-sm text-gray-600">{challanData?.billFrom.email}</p>
-                    <p className="text-sm text-gray-600">{challanData?.billFrom.phone}</p>
+                    <p className="text-sm text-gray-700">{challanData?.billFrom.address}</p>
+                    <p className="text-sm text-gray-700">{challanData?.billFrom.email}</p>
+                    <p className="text-sm text-gray-700">{challanData?.billFrom.phone}</p>
                 </div>
                 <div className="text-right">
                     <h2 className="font-bold text-primary mb-2">{systemSettings?.company?.companyName}</h2>
-                    <p className="text-sm text-gray-600">Address: {systemSettings?.company?.address}</p>
-                    <p className="text-sm text-gray-600">Mobile: {systemSettings?.company?.phone}</p>
+                    <p className="text-sm text-gray-700">Address: {systemSettings?.company?.address}</p>
+                    <p className="text-sm text-gray-700">Mobile: {systemSettings?.company?.phone}</p>
                 </div>
             </section>
 
@@ -82,15 +82,15 @@ const ChallanTemplateA: React.FC<InvoiceDetailsProps> = ({ challanData, lineFiel
                 <table className="w-full text-left">
                     <thead className="bg-gray-50">
                         <tr className="border-b border-gray-200">
-                            <th className="p-3 text-sm font-semibold text-gray-600">#</th>
-                            <th className="p-3 text-sm font-semibold text-gray-600">Item</th>
+                            <th className="p-3 text-sm font-semibold text-gray-700">#</th>
+                            <th className="p-3 text-sm font-semibold text-gray-700">Item</th>
                             {customColumns.map((c) => (
-                                <th key={c.slug} className="p-3 text-sm font-semibold text-gray-600">{c.label}</th>
+                                <th key={c.slug} className="p-3 text-sm font-semibold text-gray-700">{c.label}</th>
                             ))}
-                            <th className="p-3 text-sm font-semibold text-gray-600 text-right">Qty</th>
-                            <th className="p-3 text-sm font-semibold text-gray-600 text-right">Price</th>
-                            <th className="p-3 text-sm font-semibold text-gray-600 text-right">Discount</th>
-                            <th className="p-3 text-sm font-semibold text-gray-600 text-right">Total</th>
+                            <th className="p-3 text-sm font-semibold text-gray-700 text-right">Qty</th>
+                            <th className="p-3 text-sm font-semibold text-gray-700 text-right">Price</th>
+                            <th className="p-3 text-sm font-semibold text-gray-700 text-right">Discount</th>
+                            <th className="p-3 text-sm font-semibold text-gray-700 text-right">Total</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -116,15 +116,15 @@ const ChallanTemplateA: React.FC<InvoiceDetailsProps> = ({ challanData, lineFiel
             {/* Totals Section */}
             <section className="flex justify-end mt-6">
                 <div className="w-full max-w-xs">
-                    <div className="flex justify-between text-sm text-gray-600 py-2">
+                    <div className="flex justify-between text-sm text-gray-700 py-2">
                         <span className='font-bold'>Sub Total</span>
                         <span className='font-semibold'>{fmt(challanData?.taxableAmount || 0)}</span>
                     </div>
-                    <div className="flex justify-between text-sm text-gray-600 py-2">
+                    <div className="flex justify-between text-sm text-gray-700 py-2">
                         <span className='font-bold'>Tax</span>
                         <span className='font-semibold'>{fmt(challanData?.vat || 0)}</span>
                     </div>
-                    <div className="flex justify-between text-sm text-gray-600 py-2">
+                    <div className="flex justify-between text-sm text-gray-700 py-2">
                         <span className='font-bold'>Discount</span>
                         <span className='font-semibold'>{fmt(challanData?.totalDiscount || 0)}</span>
                     </div>
@@ -137,7 +137,7 @@ const ChallanTemplateA: React.FC<InvoiceDetailsProps> = ({ challanData, lineFiel
 
             {/* Amount in words and Summary */}
             <section className="mt-8 pt-6 border-t border-gray-200">
-                <p className="text-sm text-gray-600">Total Items / Qty : {challanData?.items.length} / {challanData?.items.reduce((sum, item) => sum + item.qty, 0)}</p>
+                <p className="text-sm text-gray-700">Total Items / Qty : {challanData?.items.length} / {challanData?.items.reduce((sum, item) => sum + item.qty, 0)}</p>
                 <p className="text-sm mt-2">
                     <span className="font-semibold">Total amount ( in words) : </span>
                     {numberToWords(challanData?.totalAmount || 0)}
@@ -148,10 +148,10 @@ const ChallanTemplateA: React.FC<InvoiceDetailsProps> = ({ challanData, lineFiel
             <footer className="mt-12 pt-8 flex justify-between border-t border-gray-200">
                 <div>
                     <h3 className="font-semibold mb-2">Bank Details</h3>
-                    <p className="text-sm text-gray-600">Bank : {challanData?.bank?.bankName}</p>
-                    <p className="text-sm text-gray-600">Account # : {challanData?.bank?.accountNumber}</p>
-                    <p className="text-sm text-gray-600">IFSC : {challanData?.bank?.IFSCCode}</p>
-                    <p className="text-sm text-gray-600">BRANCH : {challanData?.bank?.branchName}</p>
+                    <p className="text-sm text-gray-700">Bank : {challanData?.bank?.bankName}</p>
+                    <p className="text-sm text-gray-700">Account # : {challanData?.bank?.accountNumber}</p>
+                    <p className="text-sm text-gray-700">IFSC : {challanData?.bank?.IFSCCode}</p>
+                    <p className="text-sm text-gray-700">BRANCH : {challanData?.bank?.branchName}</p>
                 </div>
                 {challanData?.signature?.image && (
                     <div className="text-center">
@@ -164,12 +164,12 @@ const ChallanTemplateA: React.FC<InvoiceDetailsProps> = ({ challanData, lineFiel
             {/* Terms and Conditions */}
             <section className="mt-10">
                 <h3 className="font-semibold mb-2">Terms & Conditions :</h3>
-                <ol className="list-decimal list-inside text-xs text-gray-600 space-y-1">
+                <ol className="list-decimal list-inside text-xs text-gray-700 space-y-1">
                     <li className="whitespace-pre-line">{challanData?.termsAndCondition}</li>
                 </ol>
             </section>
 
-            <div className="mt-12 text-center text-sm text-gray-500">
+            <div className="mt-12 text-center text-sm text-gray-700">
                 <p>Thanks for your Business</p>
             </div>
 

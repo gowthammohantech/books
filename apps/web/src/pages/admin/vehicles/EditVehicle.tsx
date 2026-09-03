@@ -89,7 +89,7 @@ const EditVehicle: React.FC = () => {
                     <button
                         type="button"
                         onClick={() => setDeleteModalOpen(true)}
-                        className="bg-destructive hover:bg-destructive/90 text-white px-3 py-1.5 rounded-md shadow flex items-center gap-2 cursor-pointer"
+                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-3 py-1.5 rounded-md shadow flex items-center gap-2 cursor-pointer"
                     >
                         <Trash2Icon size={14} /> Delete Vehicle
                     </button>

@@ -83,7 +83,7 @@ export default function ApAgingReport() {
   const buckets = data?.buckets;
 
   return (
-    <div className="p-6 max-w-5xl mx-auto bg-white">
+    <div className="p-6 max-w-5xl mx-auto bg-card">
       <PageHeader title="Accounts Payable Aging">
         <ExportButton url={Constants.EXPORT_AP_AGING_URL} filename="ap-aging.csv" />
         <Button type="button" variant="white" size="md" leftIcon={<Printer size={14} />} onClick={() => window.print()}>
@@ -110,20 +110,20 @@ export default function ApAgingReport() {
 
       {!loading && data && (
         <>
-          <div className="text-xs text-gray-400 mb-4">As of {formatDate(data.asOf)}</div>
+          <div className="text-xs text-gray-600 mb-4">As of {formatDate(data.asOf)}</div>
 
           {/* Bucket summary cards */}
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-6">
             {buckets && (Object.keys(BUCKET_LABELS) as (keyof AgingBuckets)[]).map((key) => (
               <div key={key} className="border rounded p-3 text-center">
-                <div className="text-xs text-gray-500 mb-1">{BUCKET_LABELS[key]}</div>
+                <div className="text-xs text-gray-700 mb-1">{BUCKET_LABELS[key]}</div>
                 <div className="text-sm font-semibold text-right">
                   <DrillLink to="/purchases" params={{ status: AP_UNPAID_STATUSES, ...bucketDueWindow(data.asOf.slice(0, 10), key) }} title="View purchases in this bucket">{fmt(buckets[key])}</DrillLink>
                 </div>
               </div>
             ))}
             <div className="border-2 border-primary rounded p-3 text-center">
-              <div className="text-xs text-gray-500 mb-1">Total</div>
+              <div className="text-xs text-gray-700 mb-1">Total</div>
               <div className="text-sm font-bold text-right text-primary">{fmt(data.total)}</div>
             </div>
           </div>

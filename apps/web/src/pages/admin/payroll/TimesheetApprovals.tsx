@@ -228,7 +228,7 @@ const TimesheetApprovals: React.FC = () => {
                                     <td className="px-4 py-3 text-gray-700">
                                         {formatDate(parseISODate(ts.weekStartDate))}
                                     </td>
-                                    <td className="px-4 py-3 text-gray-500 text-xs">
+                                    <td className="px-4 py-3 text-gray-700 text-xs">
                                         {ts.submittedAt
                                             ? formatDate(new Date(ts.submittedAt))
                                             : '—'}
@@ -267,13 +267,13 @@ const TimesheetApprovals: React.FC = () => {
 
             {/* ── Read-only detail / approve-reject ── */}
             {selected && (
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-card border border-gray-200 rounded-lg overflow-hidden">
                     <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-gray-200 bg-gray-50">
                         <div className="flex items-center gap-3">
                             <span className="font-semibold text-gray-900">
                                 {employeeName(selected)}
                             </span>
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm text-gray-700">
                                 Week of {formatDate(parseISODate(selected.weekStartDate))}
                             </span>
                             <Badge color={STATUS_COLORS[selected.status]}>
@@ -301,7 +301,7 @@ const TimesheetApprovals: React.FC = () => {
                             <Button
                                 variant="ghost"
                                 onClick={closeDetail}
-                                className="text-gray-500 hover:text-gray-800 text-sm underline"
+                                className="text-gray-700 hover:text-gray-800 text-sm underline"
                             >
                                 Close
                             </Button>
@@ -339,10 +339,10 @@ const TimesheetApprovals: React.FC = () => {
                                             <td className="px-4 py-3 text-right font-mono text-gray-800">
                                                 {fmtHours(Number(e.hours) || 0)}
                                             </td>
-                                            <td className="px-4 py-3 text-center text-gray-600">
+                                            <td className="px-4 py-3 text-center text-gray-700">
                                                 {e.billable ? 'Yes' : 'No'}
                                             </td>
-                                            <td className="px-4 py-3 text-gray-500">{e.note || '—'}</td>
+                                            <td className="px-4 py-3 text-gray-700">{e.note || '—'}</td>
                                         </tr>
                                     ))}
                                     {(detail?.entries ?? []).length > 0 && (
@@ -366,11 +366,11 @@ const TimesheetApprovals: React.FC = () => {
             {/* ── Reject dialog ── */}
             {rejectingId && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+                    <div className="bg-card rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">
                             Reject timesheet?
                         </h3>
-                        <p className="text-sm text-gray-600 mb-3">
+                        <p className="text-sm text-gray-700 mb-3">
                             The timesheet will be returned to the employee with your note.
                         </p>
                         <textarea

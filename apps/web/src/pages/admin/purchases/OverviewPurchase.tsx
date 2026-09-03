@@ -163,7 +163,7 @@ const OverviewPurchase: React.FC = () => {
                     </div>
 
                     {/* Row 2: Original + Date/Invoice */}
-                    <div className="flex justify-between items-center mt-2 text-sm text-gray-600">
+                    <div className="flex justify-between items-center mt-2 text-sm text-gray-700">
                         <p className="text-xs">Original For Recipient</p>
                         <div className="flex items-center gap-4">
                             <p>Date: {formatDate(purchaseData.createdAt, systemSettings?.dateFormat.format || 'd-m-Y')}</p>
@@ -180,22 +180,22 @@ const OverviewPurchase: React.FC = () => {
                     <div className="w-2/5">
                         <h2 className="font-bold text-violet-600 mb-2">Bill From :</h2>
                         <p className="font-semibold text-gray-950">{systemSettings?.company.companyName}</p>
-                        <p className="text-sm text-gray-600">{systemSettings?.company.address}</p>
-                        <p className="text-sm text-gray-600">{systemSettings?.company.phone}</p>
-                        <p className="text-sm text-gray-600">{systemSettings?.company.pincode}</p>
-                        {taxId && <p className="text-sm text-gray-600">{taxId.label}: {taxId.value}</p>}
+                        <p className="text-sm text-gray-700">{systemSettings?.company.address}</p>
+                        <p className="text-sm text-gray-700">{systemSettings?.company.phone}</p>
+                        <p className="text-sm text-gray-700">{systemSettings?.company.pincode}</p>
+                        {taxId && <p className="text-sm text-gray-700">{taxId.label}: {taxId.value}</p>}
                     </div>
                     <div className="w-2/5">
                         <h2 className="font-bold text-violet-600 mb-2">Bill To :</h2>
                         <p className="font-semibold text-gray-950">{purchaseData?.billTo?.name ?? '—'}</p>
-                        <p className="text-sm text-gray-600">{purchaseData?.billTo?.address ?? ''}</p>
-                        <p className="text-sm text-gray-600">{purchaseData?.billTo?.email}</p>
-                        <p className="text-sm text-gray-600">{purchaseData?.billTo?.phone ?? ''}</p>
+                        <p className="text-sm text-gray-700">{purchaseData?.billTo?.address ?? ''}</p>
+                        <p className="text-sm text-gray-700">{purchaseData?.billTo?.email}</p>
+                        <p className="text-sm text-gray-700">{purchaseData?.billTo?.phone ?? ''}</p>
                     </div>
                     <div className="text-right">
                         <h2 className="font-bold text-violet-600 mb-2">{systemSettings?.company.companyName}</h2>
-                        <p className="text-sm text-gray-600">Address: {systemSettings?.company.address}</p>
-                        <p className="text-sm text-gray-600">Mobile: {systemSettings?.company.phone}</p>
+                        <p className="text-sm text-gray-700">Address: {systemSettings?.company.address}</p>
+                        <p className="text-sm text-gray-700">Mobile: {systemSettings?.company.phone}</p>
                     </div>
                 </section>
 
@@ -204,20 +204,20 @@ const OverviewPurchase: React.FC = () => {
                     <table className="w-full text-left">
                         <thead className="bg-gray-50">
                             <tr className="border-b border-gray-200">
-                                <th className="p-3 text-sm font-semibold text-gray-600">#</th>
-                                <th className="p-3 text-sm font-semibold text-gray-600">Item</th>
+                                <th className="p-3 text-sm font-semibold text-gray-700">#</th>
+                                <th className="p-3 text-sm font-semibold text-gray-700">Item</th>
                                 {customColumns.map((c) => (
-                                    <th key={c.slug} className="p-3 text-sm font-semibold text-gray-600">{c.label}</th>
+                                    <th key={c.slug} className="p-3 text-sm font-semibold text-gray-700">{c.label}</th>
                                 ))}
-                                <th className="p-3 text-sm font-semibold text-gray-600 text-right">Qty</th>
-                                <th className="p-3 text-sm font-semibold text-gray-600 text-right">Price</th>
-                                <th className="p-3 text-sm font-semibold text-gray-600 text-right">Discount</th>
-                                <th className="p-3 text-sm font-semibold text-gray-600 text-right">Total</th>
+                                <th className="p-3 text-sm font-semibold text-gray-700 text-right">Qty</th>
+                                <th className="p-3 text-sm font-semibold text-gray-700 text-right">Price</th>
+                                <th className="p-3 text-sm font-semibold text-gray-700 text-right">Discount</th>
+                                <th className="p-3 text-sm font-semibold text-gray-700 text-right">Total</th>
                             </tr>
                         </thead>
                         <tbody>
                             {purchaseData && purchaseData.items.map((item, index) => (
-                                <tr key={item.id} className="border-b border-gray-200 text-gray-600">
+                                <tr key={item.id} className="border-b border-gray-200 text-gray-700">
                                     <td className="p-3">{index + 1}</td>
                                     <td className="p-3 font-medium">{item.name}</td>
                                     {customColumns.map((c) => (
@@ -238,7 +238,7 @@ const OverviewPurchase: React.FC = () => {
                 {/* Totals Section */}
                 <section className="flex justify-end mt-2">
                     <div className="w-full max-w-xs">
-                        <div className="flex justify-between text-sm text-gray-600 py-2">
+                        <div className="flex justify-between text-sm text-gray-700 py-2">
                             <span className='font-bold'>Sub Total</span>
                             <span className='font-semibold'>{formatMoney(purchaseData?.taxableAmount || 0, purchaseData?.currencyCode)}</span>
                         </div>
@@ -258,20 +258,20 @@ const OverviewPurchase: React.FC = () => {
                             const entries = Object.entries(breakdown);
                             if (entries.length === 0) {
                                 return (
-                                    <div className="flex justify-between text-sm text-gray-600 py-2">
+                                    <div className="flex justify-between text-sm text-gray-700 py-2">
                                         <span className='font-bold'>Tax</span>
                                         <span className='font-semibold'>{formatMoney(purchaseData.totalTax || 0, purchaseData?.currencyCode)}</span>
                                     </div>
                                 );
                             }
                             return entries.map(([label, amount]) => (
-                                <div key={label} className="flex justify-between text-sm text-gray-600 py-2">
+                                <div key={label} className="flex justify-between text-sm text-gray-700 py-2">
                                     <span className='font-bold'>{label}</span>
                                     <span className='font-semibold'>{formatMoney(amount, purchaseData?.currencyCode)}</span>
                                 </div>
                             ));
                         })()}
-                        <div className="flex justify-between text-sm text-gray-600 py-2">
+                        <div className="flex justify-between text-sm text-gray-700 py-2">
                             <span className='font-bold'>Discount</span>
                             <span className='font-semibold'>{formatMoney(purchaseData?.totalDiscount || 0, purchaseData?.currencyCode)}</span>
                         </div>
@@ -284,8 +284,8 @@ const OverviewPurchase: React.FC = () => {
 
                 {/* Amount in words and Summary */}
                 <section className="mt-2 pt-2 border-t border-gray-200">
-                    <p className="text-sm text-gray-600">Total Items / Qty : {purchaseData?.items.length} / {purchaseData?.items.reduce((sum, item) => sum + item.qty, 0)}</p>
-                    <p className="text-sm mt-2 text-gray-600">
+                    <p className="text-sm text-gray-700">Total Items / Qty : {purchaseData?.items.length} / {purchaseData?.items.reduce((sum, item) => sum + item.qty, 0)}</p>
+                    <p className="text-sm mt-2 text-gray-700">
                         <span className="font-semibold">Total amount ( in words) : </span>
                         {numberToWords(purchaseData?.totalAmount || 0)}
                     </p>
@@ -295,10 +295,10 @@ const OverviewPurchase: React.FC = () => {
                 <footer className="mt-2 pt-2 flex justify-between border-t border-gray-200">
                     <div>
                         <h3 className="font-semibold mb-2 text-gray-950">Bank Details</h3>
-                        <p className="text-sm text-gray-600">Bank : {purchaseData?.bank?.name}</p>
-                        <p className="text-sm text-gray-600">Account # : {purchaseData?.bank?.accountNumber}</p>
-                        <p className="text-sm text-gray-600">IFSC : {purchaseData?.bank?.ifscCode}</p>
-                        <p className="text-sm text-gray-600">BRANCH : {purchaseData?.bank?.branchName}</p>
+                        <p className="text-sm text-gray-700">Bank : {purchaseData?.bank?.name}</p>
+                        <p className="text-sm text-gray-700">Account # : {purchaseData?.bank?.accountNumber}</p>
+                        <p className="text-sm text-gray-700">IFSC : {purchaseData?.bank?.ifscCode}</p>
+                        <p className="text-sm text-gray-700">BRANCH : {purchaseData?.bank?.branchName}</p>
                     </div>
                     {purchaseData?.signature?.image && (
                         <div className="text-center text-gray-950 font-semibold">
@@ -311,12 +311,12 @@ const OverviewPurchase: React.FC = () => {
                 {/* Terms and Conditions */}
                 <section className="mt-2">
                     <h3 className="font-semibold mb-2">Terms & Conditions :</h3>
-                    <ol className="list-decimal list-inside text-xs text-gray-600 space-y-1">
+                    <ol className="list-decimal list-inside text-xs text-gray-700 space-y-1">
                         <li>{purchaseData?.termsAndCondition}</li>
                     </ol>
                 </section>
 
-                <div className="mt-2 text-center text-sm text-gray-500">
+                <div className="mt-2 text-center text-sm text-gray-700">
                     <p>Thanks for your Business</p>
                 </div>
 

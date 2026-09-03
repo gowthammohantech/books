@@ -97,10 +97,10 @@ const AdjustBalanceModal: React.FC<AdjustBalanceModalProps> = ({ isOpen, onClose
                     <div className="font-medium text-gray-700 capitalize">
                         {bankAccount.bankName} · {bankAccount.accountNumber}
                     </div>
-                    <div className="text-gray-500 mt-0.5">
+                    <div className="text-gray-700 mt-0.5">
                         Current balance: <span className="font-semibold text-gray-700">{formatMoney(current, currency)}</span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-2">
+                    <p className="text-xs text-gray-600 mt-2">
                         Opening balance can't be edited. Post a dated deposit or withdrawal to correct
                         the current balance — the account's transaction history is preserved.
                     </p>

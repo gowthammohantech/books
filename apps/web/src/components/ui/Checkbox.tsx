@@ -39,7 +39,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           type="checkbox"
           disabled={disabled}
           className={[
-            "h-4 w-4 rounded-[3px] border border-border text-primary",
+            "h-3.5 w-3.5 rounded-sm border border-border text-primary",
             "accent-primary outline-none transition-colors",
             "focus-visible:ring-1 focus-visible:ring-ring",
             "disabled:cursor-not-allowed",

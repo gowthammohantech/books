@@ -13,6 +13,7 @@ import {
   DISPLAY_STATUS_META,
   type DisplayStatus,
 } from '@utils/invoiceStatus';
+import { Indicator } from '@components/ui';
 
 interface InvoiceStatusBadgeProps {
   status: string;
@@ -22,13 +23,14 @@ interface InvoiceStatusBadgeProps {
   totalPaid?: number | null;
 }
 
+// Icons inherit currentColor from the pill — no text-* class here.
 const ICONS: Record<DisplayStatus, React.ReactNode> = {
-  DRAFT: <FileText size={14} className="ml-1 text-warning-strong" />,
-  SENT: <Send size={14} className="ml-1 text-info-strong" />,
-  PARTIALLY_PAID: <RefreshCw size={14} className="ml-1 text-info-strong" />,
-  PAID: <CheckCircle size={14} className="ml-1 text-success-strong" />,
-  DELAYED: <AlertTriangle size={14} className="ml-1 text-destructive-strong" />,
-  CANCELLED: <Ban size={14} className="ml-1 text-muted-foreground" />,
+  DRAFT: <FileText size={14} />,
+  SENT: <Send size={14} />,
+  PARTIALLY_PAID: <RefreshCw size={14} />,
+  PAID: <CheckCircle size={14} />,
+  DELAYED: <AlertTriangle size={14} />,
+  CANCELLED: <Ban size={14} />,
 };
 
 const InvoiceStatusBadge: React.FC<InvoiceStatusBadgeProps> = ({
@@ -41,14 +43,12 @@ const InvoiceStatusBadge: React.FC<InvoiceStatusBadgeProps> = ({
   const meta = DISPLAY_STATUS_META[display];
 
   return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[0.8125rem] font-medium ${
-        meta?.classes ?? 'bg-muted text-muted-foreground'
-      }`}
+    <Indicator
+      hue={meta?.hue ?? 'gray'}
+      icon={ICONS[display] ?? <Clock size={14} />}
     >
       {meta?.label ?? status}
-      {ICONS[display] ?? <Clock size={14} className="ml-1 text-muted-foreground" />}
-    </span>
+    </Indicator>
   );
 };
 

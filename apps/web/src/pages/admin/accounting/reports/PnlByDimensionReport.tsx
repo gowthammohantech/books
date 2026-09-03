@@ -126,7 +126,7 @@ export default function PnlByDimensionReport() {
     : selected?.name ?? '';
 
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-white">
+    <div className="p-6 max-w-4xl mx-auto bg-card">
       <PageHeader title="P&L by Dimension">
         <button type="button" onClick={() => window.print()} className="px-3 py-1 text-sm border rounded">
           Print / Save PDF
@@ -140,8 +140,8 @@ export default function PnlByDimensionReport() {
           onClick={() => handleDimensionChange('cost-center')}
           className={`px-4 py-1.5 text-sm rounded-full border transition-colors ${
             dimension === 'cost-center'
-              ? 'bg-primary text-white border-primary'
-              : 'text-gray-600 border-gray-300 hover:border-primary'
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'text-gray-700 border-gray-300 hover:border-primary'
           }`}
         >
           Cost Center
@@ -151,8 +151,8 @@ export default function PnlByDimensionReport() {
           onClick={() => handleDimensionChange('project')}
           className={`px-4 py-1.5 text-sm rounded-full border transition-colors ${
             dimension === 'project'
-              ? 'bg-primary text-white border-primary'
-              : 'text-gray-600 border-gray-300 hover:border-primary'
+              ? 'bg-primary text-primary-foreground border-primary'
+              : 'text-gray-700 border-gray-300 hover:border-primary'
           }`}
         >
           Project
@@ -186,13 +186,13 @@ export default function PnlByDimensionReport() {
           type="button"
           onClick={load}
           disabled={loading || !selected}
-          className="px-3 py-1 text-sm bg-primary text-white rounded disabled:opacity-50"
+          className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded disabled:opacity-50"
         >
           Run Report
         </button>
       </div>
 
-      {loading && <p className="text-gray-500">Loading…</p>}
+      {loading && <p className="text-gray-700">Loading…</p>}
 
       {!loading && data && (
         <div className="space-y-3 text-sm">
@@ -200,22 +200,22 @@ export default function PnlByDimensionReport() {
             <div className="text-base font-semibold text-gray-700">
               {dimLabel || (dimension === 'cost-center' ? 'Cost Center' : 'Project')}
             </div>
-            <div className="text-xs text-gray-400">
+            <div className="text-xs text-gray-600">
               {formatDate(from)} to {formatDate(to)}
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div className="border rounded p-4">
-              <div className="text-xs text-gray-500 mb-1">Revenue</div>
+              <div className="text-xs text-gray-700 mb-1">Revenue</div>
               <div className="text-lg font-semibold text-green-700">{revenue !== null ? fmt(revenue) : '—'}</div>
             </div>
             <div className="border rounded p-4">
-              <div className="text-xs text-gray-500 mb-1">Expense</div>
+              <div className="text-xs text-gray-700 mb-1">Expense</div>
               <div className="text-lg font-semibold text-red-600">{expense !== null ? fmt(expense) : '—'}</div>
             </div>
             <div className={`border-2 rounded p-4 ${net !== null && net >= 0 ? 'border-green-500 bg-green-50' : 'border-red-400 bg-red-50'}`}>
-              <div className="text-xs text-gray-500 mb-1">Net</div>
+              <div className="text-xs text-gray-700 mb-1">Net</div>
               <div className={`text-lg font-bold ${net !== null && net >= 0 ? 'text-green-700' : 'text-red-600'}`}>
                 {net !== null ? fmt(net) : '—'}
               </div>
@@ -226,7 +226,7 @@ export default function PnlByDimensionReport() {
       )}
 
       {!loading && !data && (
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-gray-600">
           Select a {dimension === 'cost-center' ? 'cost center' : 'project'} and run the report to view its profit &amp; loss.
         </p>
       )}

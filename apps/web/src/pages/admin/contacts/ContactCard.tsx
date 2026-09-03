@@ -101,7 +101,7 @@ function isoDate(d: Date): string {
 function StatCard({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div className="border rounded-lg p-4 flex flex-col gap-1">
-      <span className="text-xs text-gray-500 uppercase tracking-wide">{label}</span>
+      <span className="text-xs text-gray-700 uppercase tracking-wide">{label}</span>
       <span className={`text-xl font-bold ${color ?? 'text-gray-800'}`}>{value}</span>
     </div>
   );
@@ -111,7 +111,7 @@ function DetailRow({ label, value }: { label: string; value?: string | number | 
   if (!value && value !== 0) return null;
   return (
     <div className="flex gap-2 text-sm">
-      <span className="w-40 text-gray-500 flex-shrink-0">{label}</span>
+      <span className="w-40 text-gray-700 flex-shrink-0">{label}</span>
       <span className="text-gray-800">{String(value)}</span>
     </div>
   );
@@ -161,9 +161,9 @@ responseType: 'blob'
       .finally(() => setLoading(false));
   }, [contactId, token, refreshKey]);
 
-  if (loading) return <p className="text-gray-500 py-4">Loading summary…</p>;
+  if (loading) return <p className="text-gray-700 py-4">Loading summary…</p>;
   if (error) return <p className="text-destructive py-4">{error}</p>;
-  if (!summary) return <p className="text-gray-400 py-4">No summary data.</p>;
+  if (!summary) return <p className="text-gray-600 py-4">No summary data.</p>;
 
   const contact = summary.contact;
   const currency = contact.currencyCode ?? null;
@@ -196,7 +196,7 @@ responseType: 'blob'
             seriesNames={['Received', 'Paid']}
           />
         ) : (
-          <p className="text-gray-400 text-sm">No monthly data available.</p>
+          <p className="text-gray-600 text-sm">No monthly data available.</p>
         )}
       </div>
 
@@ -230,7 +230,7 @@ responseType: 'blob'
         <DetailRow label="Mobile" value={contact.mobile} />
         {addressParts.length > 0 && (
           <div className="flex gap-2 text-sm">
-            <span className="w-40 text-gray-500 flex-shrink-0">Address</span>
+            <span className="w-40 text-gray-700 flex-shrink-0">Address</span>
             <span className="text-gray-800">{addressParts.join(', ')}</span>
           </div>
         )}
@@ -303,7 +303,7 @@ function DocumentsTab({
       .finally(() => setLoading(false));
   }, [contactId, token, filterType]);
 
-  if (loading) return <p className="text-gray-500 py-4">Loading…</p>;
+  if (loading) return <p className="text-gray-700 py-4">Loading…</p>;
   if (error) return <p className="text-destructive py-4">{error}</p>;
 
   const label = DOC_TYPE_LABELS[filterType];
@@ -311,7 +311,7 @@ function DocumentsTab({
   return (
     <div>
       {items.length === 0 ? (
-        <p className="text-gray-400 py-4">No {label.toLowerCase()}s found.</p>
+        <p className="text-gray-600 py-4">No {label.toLowerCase()}s found.</p>
       ) : (
         <table className="w-full text-sm border-collapse">
           <thead>
@@ -393,13 +393,13 @@ function StatementTab({ contactId }: { contactId: string }) {
         <button
           type="button"
           onClick={load}
-          className="px-3 py-1 text-sm bg-primary text-white rounded"
+          className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded"
         >
           Reload
         </button>
       </div>
 
-      {loading && <p className="text-gray-500">Loading…</p>}
+      {loading && <p className="text-gray-700">Loading…</p>}
       {error && <p className="text-destructive">{error}</p>}
 
       {data && data.byCurrency.length === 0 && (
@@ -417,7 +417,7 @@ function StatementTab({ contactId }: { contactId: string }) {
                 Statement in {sym.code} ({sym.symbol})
               </h3>
               {section.lines.length === 0 && (
-                <p className="text-gray-400 text-sm">No transactions in this currency for the period.</p>
+                <p className="text-gray-600 text-sm">No transactions in this currency for the period.</p>
               )}
               {section.lines.length > 0 && (
                 <table className="w-full text-sm border-collapse">
@@ -492,7 +492,7 @@ function AccountHistoryTab({ contactId, token }: { contactId: string; token: str
       .finally(() => setLoading(false));
   }, [contactId, token]);
 
-  if (loading) return <p className="text-gray-500 py-4">Loading…</p>;
+  if (loading) return <p className="text-gray-700 py-4">Loading…</p>;
   if (error) return <p className="text-destructive py-4">{error}</p>;
   const safeItems = Array.isArray(items) ? items : [];
   if (safeItems.length === 0) return <EmptyState size="compact" art="checking-boxes" title="No history found" />;
@@ -568,7 +568,7 @@ const ContactCard: React.FC = () => {
   if (!id) return null;
 
   if (loading) {
-    return <p className="text-gray-500 p-6">Loading contact…</p>;
+    return <p className="text-gray-700 p-6">Loading contact…</p>;
   }
 
   const displayName = contact?.displayName || contact?.organisation || [contact?.firstName, contact?.lastName].filter(Boolean).join(' ') || 'Unknown Contact';
@@ -579,7 +579,7 @@ const ContactCard: React.FC = () => {
         <button
           type="button"
           onClick={() => setIsGrantCreditOpen(true)}
-          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 text-gray-700"
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-card hover:bg-gray-50 text-gray-700"
         >
           <Wallet size={14} />
           Grant Credit
@@ -587,7 +587,7 @@ const ContactCard: React.FC = () => {
         <button
           type="button"
           onClick={() => navigate(`/contacts/edit/${id}`)}
-          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 text-gray-700"
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-card hover:bg-gray-50 text-gray-700"
         >
           <Pencil size={14} />
           Edit
@@ -604,7 +604,7 @@ const ContactCard: React.FC = () => {
             className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === tab.id
                 ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
             {tab.label}
@@ -613,7 +613,7 @@ const ContactCard: React.FC = () => {
       </div>
 
       {/* Tab content */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <div className="bg-card rounded-lg border border-gray-200 p-4">
         {activeTab === 'summary' && (
           <SummaryTab contactId={id} token={token ?? ''} refreshKey={creditRefreshKey} />
         )}

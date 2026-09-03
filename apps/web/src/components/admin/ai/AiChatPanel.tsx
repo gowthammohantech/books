@@ -278,7 +278,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ onClose }) => {
           <button
             type="button"
             onClick={startNewChat}
-            className="flex items-center gap-1 rounded p-1.5 text-gray-500 hover:bg-gray-100"
+            className="flex items-center gap-1 rounded p-1.5 text-gray-700 hover:bg-gray-100"
             title="New chat"
           >
             <Plus size={16} />
@@ -286,7 +286,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className="rounded p-1.5 text-gray-500 hover:bg-gray-100"
+            className="rounded p-1.5 text-gray-700 hover:bg-gray-100"
             title="Close"
           >
             <X size={16} />
@@ -324,7 +324,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ onClose }) => {
         {tab === 'activity' && (
           <div className="flex-1 overflow-y-auto py-1" role="tabpanel">
             {sessions.length === 0 ? (
-              <p className="px-4 py-3 text-xs text-gray-400">No previous chats</p>
+              <p className="px-4 py-3 text-xs text-gray-600">No previous chats</p>
             ) : (
               sessions.map((s) => (
                 <div
@@ -348,7 +348,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ onClose }) => {
                     className="opacity-0 group-hover:opacity-100"
                     title="Delete chat"
                   >
-                    <Trash2 size={13} className="text-gray-400 hover:text-destructive" />
+                    <Trash2 size={13} className="text-gray-600 hover:text-destructive" />
                   </button>
                 </div>
               ))
@@ -363,7 +363,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ onClose }) => {
             <div className="flex h-full flex-col items-center justify-center text-center">
               <img src={lixiLogo} alt="" aria-hidden="true" className="mb-3 h-12 w-12 rounded-2xl" />
               <h3 className="text-sm font-semibold text-gray-800">Ask about your finances</h3>
-              <p className="mb-4 mt-1 max-w-xs text-xs text-gray-500">
+              <p className="mb-4 mt-1 max-w-xs text-xs text-gray-700">
                 Grounded in your real ledger data — never made-up numbers.
               </p>
               <div className="flex w-full flex-col gap-2">
@@ -400,7 +400,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ onClose }) => {
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-xs text-gray-400">
+                <div className="flex items-center gap-2 text-xs text-gray-600">
                   <Loader2 size={13} className="animate-spin" />
                   Thinking…
                 </div>
@@ -422,7 +422,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ onClose }) => {
               onKeyDown={onInputKeyDown}
               rows={1}
               placeholder="Ask about invoices, GST, debtors…"
-              className="max-h-32 flex-1 resize-none bg-transparent text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none"
+              className="max-h-32 flex-1 resize-none bg-transparent text-sm text-gray-800 placeholder:text-gray-600 focus:outline-none"
             />
             <button
               type="button"
@@ -434,7 +434,7 @@ const AiChatPanel: FC<AiChatPanelProps> = ({ onClose }) => {
               {isStreaming ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
             </button>
           </div>
-          <p className="mt-1.5 text-center text-[0.6875rem] text-gray-400">
+          <p className="mt-1.5 text-center text-[0.6875rem] text-gray-600">
             Enter to send · Shift+Enter for a new line · ≈ $0.005 / reply
           </p>
         </div>
@@ -469,7 +469,7 @@ const MessageBubble: FC<{ message: DisplayMessage }> = ({ message }) => {
 };
 
 const ToolLine: FC<{ event: ToolEvent }> = ({ event }) => (
-  <div className="flex items-center gap-1.5 pl-1 text-xs italic text-gray-400">
+  <div className="flex items-center gap-1.5 pl-1 text-xs italic text-gray-600">
     <span aria-hidden>🔧</span>
     <span>{toolLabel(event.name)}</span>
   </div>

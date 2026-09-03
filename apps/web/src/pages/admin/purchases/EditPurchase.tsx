@@ -1051,7 +1051,7 @@ const EditPurchase: React.FC = () => {
 
                     {/* Billing Section */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div className="bg-white p-4 rounded-xl border border-border shadow-sm">
+                        <div className="bg-card p-4 rounded-xl border border-border shadow-sm">
                             <h3 className="font-bold text-gray-950 ">Bill From <span className='text-destructive'>*</span></h3>
                             <div className="mt-4">
                                 <SmartDropdown
@@ -1064,7 +1064,7 @@ const EditPurchase: React.FC = () => {
                                     serverside={false}
                                 />
                                 {!selectedAdmin && formErrors?.billFrom && <span className="text-destructive text-sm">{formErrors.billFrom}</span>}
-                                {!selectedAdmin && <p className="mt-2 text-xs text-gray-500  p-2 bg-gray-50  rounded-md font-semibold">
+                                {!selectedAdmin && <p className="mt-2 text-xs text-gray-700  p-2 bg-gray-50  rounded-md font-semibold">
                                     Select admin to view company details.
                                 </p>}
                                 <div className="h-4"></div>
@@ -1080,7 +1080,7 @@ const EditPurchase: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white p-4 rounded-xl border border-border shadow-sm">
+                        <div className="bg-card p-4 rounded-xl border border-border shadow-sm">
                             <h3 className="font-bold text-gray-950  mb-4">Bill To <span className='text-destructive'>*</span></h3>
                             <ContactPicker
                                 view="all-active"
@@ -1092,7 +1092,7 @@ const EditPurchase: React.FC = () => {
                     </div>
 
                     {/* Tax Treatment */}
-                    <div className="bg-white p-4 rounded-xl border border-border shadow-sm">
+                    <div className="bg-card p-4 rounded-xl border border-border shadow-sm">
                         <div className="flex items-center gap-4 flex-wrap">
                             <Select
                                 label="Tax Treatment"
@@ -1126,7 +1126,7 @@ const EditPurchase: React.FC = () => {
                     />
 
                     {/* Items & Details Section */}
-                    <div className="bg-white rounded-xl border border-border shadow-sm">
+                    <div className="bg-card rounded-xl border border-border shadow-sm">
                         <div className="p-4">
                             {formErrors?.items && <span className="text-destructive text-sm">{formErrors.items}</span>}
                             <table className="w-full border-separate border-spacing-0 overflow-x-auto">
@@ -1171,7 +1171,7 @@ const EditPurchase: React.FC = () => {
                                             />
                                             <tr>
                                                 <td colSpan={9 + lineFields.length} className="px-3 pb-2">
-                                                    <span className="text-xs text-gray-500 mr-2">Tax rates:</span>
+                                                    <span className="text-xs text-gray-700 mr-2">Tax rates:</span>
                                                     {purchaseFormData.taxTreatment === 'STANDARD' ? (
                                                         <LineTaxSelect
                                                             taxRates={taxRateLibrary}
@@ -1185,7 +1185,7 @@ const EditPurchase: React.FC = () => {
                                                         <span className="text-xs text-warning italic">Tax suppressed</span>
                                                     )}
                                                     {(item.taxes ?? []).length > 0 && (
-                                                        <span className="ml-2 text-xs text-gray-400">
+                                                        <span className="ml-2 text-xs text-gray-600">
                                                             {item.taxes!.map(t => `${t.name} ${t.percent}%`).join(' + ')}
                                                         </span>
                                                     )}
@@ -1194,7 +1194,7 @@ const EditPurchase: React.FC = () => {
                                         </React.Fragment>
                                     ))}
                                     {purchaseFormData.items.length === 0 && (
-                                        <tr className="bg-white  text-gray-950 ">
+                                        <tr className="bg-card  text-gray-950 ">
                                             <td className="p-3 font-medium text-center" colSpan={9 + lineFields.length}>
                                                 No Items Selected
                                             </td>
@@ -1371,13 +1371,13 @@ const EditPurchase: React.FC = () => {
                     </div>
 
                     {/* Right Side: Totals & Signature */}
-                    <div className="bg-white p-4 rounded-xl border border-border shadow-sm space-y-3">
-                        <div className="flex justify-between text-sm text-gray-600 "><span>Amount</span><span>{docCurrencySymbol}{subTotal?.toFixed(2) || '0.00'}</span></div>
-                        <div className="flex justify-between text-sm text-gray-600 "><span>Tax</span><span>{docCurrencySymbol}{totalTax?.toFixed(2) || '0.00'}</span></div>
-                        <div className="flex justify-between text-sm text-gray-600 "><span>Discount</span><span>- {docCurrencySymbol}{totalDiscount?.toFixed(2) || '0.00'}</span></div>
+                    <div className="bg-card p-4 rounded-xl border border-border shadow-sm space-y-3">
+                        <div className="flex justify-between text-sm text-gray-700 "><span>Amount</span><span>{docCurrencySymbol}{subTotal?.toFixed(2) || '0.00'}</span></div>
+                        <div className="flex justify-between text-sm text-gray-700 "><span>Tax</span><span>{docCurrencySymbol}{totalTax?.toFixed(2) || '0.00'}</span></div>
+                        <div className="flex justify-between text-sm text-gray-700 "><span>Discount</span><span>- {docCurrencySymbol}{totalDiscount?.toFixed(2) || '0.00'}</span></div>
                         <hr className="border-gray-200 " />
                         <div className="flex justify-between font-bold text-gray-950 "><span>Total</span><span>{docCurrencySymbol}{grandTotal?.toFixed(2) || '0.00'}</span></div>
-                        <p className="text-sm text-gray-500 capitalize">{totalInWords}</p>
+                        <p className="text-sm text-gray-700 capitalize">{totalInWords}</p>
 
                         <div className="flex items-center gap-4 pt-4">
                             <div className="flex items-center"><input id="no-sig" type="radio" name="signature" checked={purchaseFormData.sign_type === 'none'} onChange={() => { handleFormChange('sign_type', 'none'); handleFormChange('esignDataUrl', null) }} className="h-4 w-4 text-primary cursor-pointer" /><label htmlFor="no-sig" className="ml-2 block text-sm text-gray-700 cursor-pointer">No Signature</label></div>
@@ -1401,7 +1401,7 @@ const EditPurchase: React.FC = () => {
                                 {formErrors?.signatureId && <p className="text-destructive text-xs mt-1">{formErrors.signatureId}</p>}
                                 <p className="mt-2 text-sm font-medium text-gray-700 ">Signature Image</p>
                                 <div className="mt-2 h-20 w-48 bg-gray-100 rounded-md flex items-center justify-center">
-                                    {selectedManualSignatureImage ? <img src={selectedManualSignatureImage} alt="Selected Signature" className="max-h-full max-w-full" /> : <span className="text-xs text-gray-400">No signature selected</span>}
+                                    {selectedManualSignatureImage ? <img src={selectedManualSignatureImage} alt="Selected Signature" className="max-h-full max-w-full" /> : <span className="text-xs text-gray-600">No signature selected</span>}
                                 </div>
                             </div>
                         ) : (
@@ -1418,7 +1418,7 @@ const EditPurchase: React.FC = () => {
                                 />
                                 <p className="mt-2 text-sm font-medium text-foreground">Draw your eSignature</p>
                                 <div className="mt-2 h-20 w-48 bg-gray-100 rounded-md flex items-center justify-center cursor-pointer border-2 border-dashed border-gray-400" onClick={() => setSignatureModalOpen(true)}>
-                                    {purchaseFormData.esignDataUrl ? <img src={purchaseFormData.esignDataUrl} alt="Drawn Signature" className="max-h-full max-w-full" /> : <div className="text-center text-gray-500"><Edit3 size={20} className="mx-auto mb-1" /><span className="text-xs">Draw Signature</span></div>}
+                                    {purchaseFormData.esignDataUrl ? <img src={purchaseFormData.esignDataUrl} alt="Drawn Signature" className="max-h-full max-w-full" /> : <div className="text-center text-gray-700"><Edit3 size={20} className="mx-auto mb-1" /><span className="text-xs">Draw Signature</span></div>}
                                 </div>
                                 {formErrors?.esignDataUrl && <p className="text-destructive text-xs mt-1">{formErrors.esignDataUrl}</p>}
                             </div>
@@ -1432,7 +1432,7 @@ const EditPurchase: React.FC = () => {
 
                 <Modal isOpen={isSignatureModalOpen} onClose={() => setSignatureModalOpen(false)} title="Draw Signature">
                     <div className="p-4">
-                        <div className="bg-white border border-gray-400">
+                        <div className="bg-card border border-gray-400">
                             <SignatureCanvas
                                 ref={sigPadRef}
                                 penColor='black'

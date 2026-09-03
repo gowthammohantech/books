@@ -312,7 +312,7 @@ const UnitList: FC = () => {
                         placeholder="Search by name or short name.."
                         value={search}
                         onChange={(e: ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
-                        className="border border-gray-300 px-4 py-2 rounded-md w-full md:w-64 bg-white  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                        className="border border-gray-300 px-4 py-2 rounded-md w-full md:w-64 bg-card  text-gray-950  focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
                     />
                     <PageSizeSelect value={limit} onChange={handlePageLengthChange} />
                 </div>
@@ -369,7 +369,7 @@ const UnitList: FC = () => {
                             name="unit_name"
                             value={newUnit.unit_name}
                             onChange={handleNewUnitChange}
-                            className="mt-1 block w-full border border-gray-300  rounded-md p-2 bg-white  text-gray-950 "
+                            className="mt-1 block w-full border border-gray-300  rounded-md p-2 bg-card  text-gray-950 "
                         />
                         {formErrors.unit_name && (
                             <p className="text-sm text-destructive mt-1">{formErrors.unit_name}</p>
@@ -383,7 +383,7 @@ const UnitList: FC = () => {
                             name="short_name"
                             value={newUnit.short_name}
                             onChange={handleNewUnitChange}
-                            className="mt-1 block w-full border border-gray-300  rounded-md p-2 bg-white  text-gray-950 "
+                            className="mt-1 block w-full border border-gray-300  rounded-md p-2 bg-card  text-gray-950 "
                         />
                         {formErrors.short_name && (
                             <p className="text-sm text-destructive mt-1">{formErrors.short_name}</p>

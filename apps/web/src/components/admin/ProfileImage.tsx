@@ -60,11 +60,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ imageUrl, name, email, classN
             )}
 
             <div>
-                <span className={`font-medium ${primary ? "text-primary" : "text-gray-600"} capitalize`}>
+                <span className={`font-medium ${primary ? "text-primary" : "text-gray-700"} capitalize`}>
                     {name || "Deleted User"}
                 </span>
                 {email && (
-                    <p className="text-gray-500 text-xs font-medium">{email}</p>
+                    <p className="text-gray-700 text-xs font-medium">{email}</p>
                 )}
             </div>
         </div>

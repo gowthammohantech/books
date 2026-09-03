@@ -346,7 +346,7 @@ const ExpenseList: React.FC = () => {
                                 formatDate(expense.createdAt, systemSettings?.dateFormat.format || 'd-m-Y'),
 
                                 ...tableCustomFields.map((f: any) => (
-                                    <span key={f.id} className="text-gray-600 font-medium">
+                                    <span key={f.id} className="text-gray-700 font-medium">
                                         {extractCustomFieldValue(expense, f.fieldSlug || f.id)}
                                     </span>
                                 ))

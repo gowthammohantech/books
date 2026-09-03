@@ -125,7 +125,7 @@ const LoginPage: React.FC = () => {
                 </div>
                 <button
                   onClick={handleCopy}
-                  className="p-2 text-gray-500 hover:text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="p-2 text-gray-700 hover:text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   {isCopied ? (
                     <Check className="text-green-600" size={18} />
@@ -190,7 +190,7 @@ const LoginPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-700 hover:text-gray-700"
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -225,7 +225,7 @@ const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2.5 text-white font-semibold bg-primary rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:bg-chart-3 disabled:cursor-not-allowed transition-all duration-300"
+            className="w-full py-2.5 text-primary-foreground font-semibold bg-primary rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:bg-chart-3 disabled:cursor-not-allowed transition-all duration-300"
           >
             {isLoading ? "Logging in..." : "Login"}
           </button>

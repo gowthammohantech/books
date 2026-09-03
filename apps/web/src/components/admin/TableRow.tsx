@@ -25,17 +25,17 @@ const TableRow = <T,>({ index, row, columns, actions, onRowClick }: TableRowProp
 
   return (
     <tr
-      className={`border-b border-gray-100 transition-colors hover:bg-accent/60${onRowClick ? ' cursor-pointer' : ''}`}
+      className={`border-b border-border transition-colors hover:bg-highlight${onRowClick ? ' cursor-pointer' : ''}`}
       {...(onRowClick ? { onClick: () => onRowClick(row) } : {})}
     >
-      <td className="px-3 py-1 text-sm text-gray-700">{index}</td>
+      <td className="px-2 py-[0.3125rem] text-sm tracking-ui text-gray-700">{index}</td>
       {columns.map((col, colIndex) => (
-        <td key={colIndex} className={`px-3 py-1 text-sm text-gray-500 font-medium`}>
+        <td key={colIndex} className={`px-2 py-[0.3125rem] text-sm tracking-ui text-gray-800`}>
           {col}
         </td>
       ))}
       {actions && (
-        <td className="px-3 py-1" onClick={(e) => e.stopPropagation()}>
+        <td className="px-2 py-[0.3125rem]" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-start gap-2">
             {primaryActions.map((action) => {
               const disabled = action.isDisabled ? action.isDisabled(row) : false;

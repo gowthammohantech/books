@@ -62,7 +62,7 @@ const Switch = ({
         <span
           aria-hidden="true"
           className={[
-            "inline-block h-5 w-5 transform rounded-full bg-white shadow-sm",
+            "inline-block h-5 w-5 transform rounded-full bg-card shadow-sm",
             "transition-transform motion-reduce:transition-none",
             checked ? "translate-x-5" : "translate-x-0.5",
           ].join(" ")}

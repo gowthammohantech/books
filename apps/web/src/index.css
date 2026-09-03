@@ -33,92 +33,410 @@
 --------------------------------------------------------------------------- */
 
 :root {
-  --background: #fafafa;
-  --foreground: #000000;
-  --card: #ffffff;
-  --card-foreground: #181818;
-  --popover: #ffffff;
-  --popover-foreground: #000000;
+  /* LAYER 5 — the shadcn contract, re-pointed onto the layers below.
+
+     The names are kept and only the values move. That is the decision that
+     makes this migration affordable: ~4,000 call sites already say bg-card,
+     text-muted-foreground and border-border, and every one of them retunes
+     here without being edited. It is also what will make dark mode a value
+     swap — these resolve through --surface-*, the vocabulary that flips.
+
+     --primary is the exception: it stays the brand indigo-blue and belongs to
+     no ramp. ERPNext's own system puts near-black in the primary action and
+     reserves blue for links, focus and info. Keeping a blue primary here means
+     those two roles must stay separable, so they are drawn from different
+     blues — brand #3f5ec2 (hue 226) against the ERPNext link blue #0070cc
+     (hue 205). The call-site rule that follows:
+       brand action         -> --primary
+       link / informational -> --blue-700, or --info-strong
+       focus                -> --ring */
+  --background: var(--surface-gray-1);
+  --foreground: var(--text-color);
+  --card: var(--surface-white);
+  --card-foreground: var(--text-color);
+  --popover: var(--surface-modal);
+  --popover-foreground: var(--text-color);
   --primary: #3f5ec2;
-  --primary-foreground: #eff6ff;
-  --secondary: #ebebeb;
-  --secondary-foreground: #222222;
-  --muted: #f5f5f5;
-  --muted-foreground: #525252;
+  --primary-foreground: #eff6ff; /* 5.37:1 */
+  --secondary: var(--surface-gray-3);
+  --secondary-foreground: var(--text-color);
+  --muted: var(--control-bg);
+  --muted-foreground: var(--text-muted);
+  /* --accent is the pale BRAND wash, so it is derived from --primary and not
+     from the blue ramp. ~40 call sites pair it as `bg-accent text-primary`;
+     pointing it at --bg-blue would put ERPNext's cooler link tint (hue 205)
+     behind indigo brand text (hue 226), which reads as a mismatch rather than
+     a pairing. The neutral row/menu wash ERPNext uses is a different token —
+     --highlight-color, i.e. gray-50 — and the sites that wanted THAT have been
+     moved onto it rather than being served a blue. */
   --accent: #dbe6f6;
-  --accent-foreground: #14185a;
-  --destructive: #df2225;
-  --destructive-foreground: #eff6ff;
-  --border: #e4e4e4;
-  --input: #ebebeb;
-  --ring: #3f5ec2;
+  --accent-foreground: #14185a; /* 12.30:1 on --accent */
+  --destructive: var(--red-600);
+  --destructive-foreground: #eff6ff; /* 4.93:1 */
+  --border: var(--outline-gray-1);
+  --input: var(--control-bg);
+  --ring: var(--blue-700); /* focus is NOT --primary; see above */
   --chart-1: #dbe6f6;
   --chart-2: #9ab0e5;
   --chart-3: #6a7ccd;
   --chart-4: #3f5ec2;
   --chart-5: #14185a;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #000000;
-  --sidebar-primary: #3f5ec2;
-  --sidebar-primary-foreground: #eff6ff;
-  --sidebar-accent: #dbe6f6;
-  --sidebar-accent-foreground: #14185a;
-  --sidebar-border: #e4e4e4;
-  --sidebar-ring: #3f5ec2;
+  /* The sidebar's active item is brand, not a link, so -primary and -ring stay
+     on --primary rather than following --ring onto the blue ramp. */
+  --sidebar: var(--surface-white);
+  --sidebar-foreground: var(--text-color);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--outline-gray-1);
+  --sidebar-ring: var(--primary);
 
-  /* Extension 1 — status colors. Hues are carried over from the previous
-     system: they sit fine with the blue primary, and retuning them would
-     change meaning-bearing UI (paid / overdue / draft) for no benefit.
+  /* -------------------------------------------------------------------------
+     LAYER 1 — hue ramps (ERPNext Desk).
 
-     Each status has three roles, because one color cannot serve all of them
-     at readable contrast:
+     Twelve hues x ten steps, read out of the running Frappe desk. The scale is
+     deliberately not perceptually uniform: 50-400 are packed close as tints for
+     backgrounds, 500-700 carry text and icons, 800-900 are the near-black
+     anchors. Gray does the vast majority of the work; the other eleven appear
+     almost exclusively as status tints and avatar backgrounds.
+
+     Gray carries an eleventh step that ERPNext does not define. Rather than
+     duplicate a value to pad the scale, the top three steps are shifted so all
+     eleven are genuine ERPNext colors:
+       800 #383838  ERPNext gray-800, its --text-color
+       900 #232323  ERPNext's dark-theme re-cut of step 800
+       950 #171717  ERPNext gray-900, its --text-neutral
+     This matters because ~359 call sites use text-gray-950 to mean "the
+     darkest ink", and that is exactly where they land.
+
+     These are raw values only. Nothing consumes them until the ramps are
+     registered as utilities below. --color-gray-* is deliberately NOT moved
+     onto this ramp yet — see the note there. */
+  --gray-50: #f8f8f8;
+  --gray-100: #f3f3f3;
+  --gray-200: #ededed;
+  --gray-300: #e2e2e2;
+  --gray-400: #c7c7c7;
+  --gray-500: #999999;
+  --gray-600: #7c7c7c;
+  --gray-700: #525252;
+  --gray-800: #383838;
+  --gray-900: #232323;
+  --gray-950: #171717;
+
+  /* Links, focus and informational states. NOT the primary action: --primary
+     stays the brand indigo-blue, and this ramp is a visibly cooler blue, so a
+     link never reads as a button and vice versa. */
+  --blue-50: #f7fbfd;
+  --blue-100: #edf6fd;
+  --blue-200: #e3f1fd;
+  --blue-300: #c9e7fc;
+  --blue-400: #70b6f0;
+  --blue-500: #0289f7;
+  --blue-600: #007be0;
+  --blue-700: #0070cc;
+  --blue-800: #005ca3;
+  --blue-900: #004880;
+
+  --green-50: #f3fcf5;
+  --green-100: #e4f5e9;
+  --green-200: #daf0e1;
+  --green-300: #cae5d4;
+  --green-400: #b6dec5;
+  --green-500: #59ba8b;
+  --green-600: #30a66d;
+  --green-700: #278f5e;
+  --green-800: #16794c;
+  --green-900: #173b2c;
+
+  --red-50: #fff7f7;
+  --red-100: #fff0f0;
+  --red-200: #fcd7d7;
+  --red-300: #f9c6c6;
+  --red-400: #eb9091;
+  --red-500: #e03636;
+  --red-600: #cc2929;
+  --red-700: #b52a2a;
+  --red-800: #941f1f;
+  --red-900: #6b1515;
+
+  --orange-50: #fff9f5;
+  --orange-100: #fff1e7;
+  --orange-200: #fce6d5;
+  --orange-300: #f7d6bd;
+  --orange-400: #f0b58b;
+  --orange-500: #e86c13;
+  --orange-600: #d45a08;
+  --orange-700: #bd3e0c;
+  --orange-800: #9e3513;
+  --orange-900: #6b2711;
+
+  --yellow-50: #fffcef;
+  --yellow-100: #fff7d3;
+  --yellow-200: #f7e9a8;
+  --yellow-300: #f5e171;
+  --yellow-400: #f2d14b;
+  --yellow-500: #edba13;
+  --yellow-600: #d1930d;
+  --yellow-700: #ab6e05;
+  --yellow-800: #8c5600;
+  --yellow-900: #733f12;
+
+  --amber-50: #fdfaed;
+  --amber-100: #fcf3cf;
+  --amber-200: #f7e28d;
+  --amber-300: #f5d261;
+  --amber-400: #f2be3a;
+  --amber-500: #e79913;
+  --amber-600: #db7706;
+  --amber-700: #b35309;
+  --amber-800: #91400d;
+  --amber-900: #763813;
+
+  --purple-50: #fdfaff;
+  --purple-100: #f9f0ff;
+  --purple-200: #f1e5fa;
+  --purple-300: #e9d6f5;
+  --purple-400: #d6c1e6;
+  --purple-500: #9c45e3;
+  --purple-600: #8642c2;
+  --purple-700: #6e399d;
+  --purple-800: #5c2f83;
+  --purple-900: #401863;
+
+  --violet-50: #fbfaff;
+  --violet-100: #f5f2ff;
+  --violet-200: #e5e1fa;
+  --violet-300: #dad2f7;
+  --violet-400: #bdb1f0;
+  --violet-500: #6846e3;
+  --violet-600: #5f46c7;
+  --violet-700: #4f3da1;
+  --violet-800: #392980;
+  --violet-900: #251959;
+
+  --pink-50: #fff7fc;
+  --pink-100: #feeef8;
+  --pink-200: #f8e2f0;
+  --pink-300: #f2d4e6;
+  --pink-400: #e9c4da;
+  --pink-500: #e34aa6;
+  --pink-600: #cf3a96;
+  --pink-700: #9c2671;
+  --pink-800: #801458;
+  --pink-900: #570f3e;
+
+  --teal-50: #f0fdfa;
+  --teal-100: #e6f7f4;
+  --teal-200: #bae8e1;
+  --teal-300: #97ded4;
+  --teal-400: #73d1c4;
+  --teal-500: #36baad;
+  --teal-600: #0b9e92;
+  --teal-700: #0f736b;
+  --teal-800: #115c57;
+  --teal-900: #114541;
+
+  --cyan-50: #f5fbfc;
+  --cyan-100: #e0f8ff;
+  --cyan-200: #b3ecfc;
+  --cyan-300: #94e6ff;
+  --cyan-400: #6bd3f2;
+  --cyan-500: #34bae3;
+  --cyan-600: #32a4c7;
+  --cyan-700: #267a94;
+  --cyan-800: #125c73;
+  --cyan-900: #164759;
+
+  /* -------------------------------------------------------------------------
+     LAYER 2 — surface & outline.
+
+     ERPNext runs two vocabularies side by side: older desk CSS reaches for
+     --gray-200 directly, newer components reach for --surface-gray-2. They
+     resolve to the same light values, but only this set is fully re-mapped for
+     dark mode — which is exactly why the dark theme is a token swap there and
+     a dormant, unusable block here.
+
+     So: anything that must flip in dark mode goes through these. Anything that
+     must NOT flip (a tint pair, a switch knob) uses a ramp step or
+     --surface-white directly. Holding that line now is what makes dark mode a
+     value swap later instead of a component audit. */
+  --surface-white: #ffffff;
+  --surface-gray-1: var(--gray-50); /* sidebar, menu bar */
+  --surface-gray-2: var(--gray-100); /* controls at rest */
+  --surface-gray-3: var(--gray-200); /* controls hovered */
+  --surface-gray-4: var(--gray-300); /* pressed / active */
+  --surface-modal: #ffffff;
+  --surface-red-3: #ffd8d8;
+  --outline-gray-1: var(--gray-200); /* every hairline rule */
+  --outline-gray-2: var(--gray-300); /* emphasised border */
+  --outline-gray-modals: var(--gray-200);
+
+  /* -------------------------------------------------------------------------
+     LAYER 3 — tinted pairs.
+
+     The ERPNext status primitive, and the reason its badges stay consistent
+     while this app grew five parallel badge systems. Each hue exposes a
+     background and the foreground that belongs on it, so no call site ever
+     picks a step by hand. Backgrounds land on 50-100, text on 700-800 — a
+     pairing that holds across every hue.
+
+     Measured ratio on the right of each line. Yellow deviates from ERPNext as
+     shipped, because ERPNext ships it below AA: its yellow-700 #ab6e05 on
+     #fff7d3 is 3.93:1, so this uses yellow-800; amber is moved to 800 for the
+     same reason. Enforced by scripts/check-contrast.mjs. */
+  --bg-green: var(--green-100);
+  --text-on-green: var(--green-800); /* 4.79:1 */
+  --bg-red: var(--red-100);
+  --text-on-red: var(--red-700); /* 5.70:1 */
+  --bg-blue: var(--blue-100);
+  --text-on-blue: var(--blue-700); /* 4.58:1 */
+  --bg-orange: var(--orange-100);
+  --text-on-orange: var(--orange-700); /* 4.92:1 */
+  --bg-yellow: var(--yellow-100);
+  --text-on-yellow: var(--yellow-800); /* 5.66:1 */
+  --bg-purple: var(--purple-100);
+  --text-on-purple: var(--purple-700); /* 6.92:1 */
+  --bg-pink: var(--pink-50);
+  --text-on-pink: var(--pink-700); /* 6.81:1 */
+  --bg-cyan: var(--cyan-50);
+  --text-on-cyan: var(--cyan-700); /* 4.68:1 */
+  --bg-teal: var(--teal-100);
+  --text-on-teal: var(--teal-700); /* 5.15:1 */
+  --bg-violet: var(--violet-100);
+  --text-on-violet: var(--violet-700); /* 7.57:1 */
+  --bg-amber: var(--amber-100);
+  --text-on-amber: var(--amber-800); /* 6.41:1 */
+  --bg-gray: var(--gray-100);
+  --text-on-gray: var(--gray-700); /* 7.04:1 */
+
+  /* Avatars reuse the pill pairing in every hue ERPNext audits, so this is
+     one source with two names rather than a second set of values. */
+  --green-avatar-bg: var(--bg-green);
+  --green-avatar-color: var(--text-on-green);
+  --red-avatar-bg: var(--bg-red);
+  --red-avatar-color: var(--text-on-red);
+  --blue-avatar-bg: var(--bg-blue);
+  --blue-avatar-color: var(--text-on-blue);
+  --orange-avatar-bg: var(--bg-orange);
+  --orange-avatar-color: var(--text-on-orange);
+  --yellow-avatar-bg: var(--bg-yellow);
+  --yellow-avatar-color: var(--text-on-yellow);
+  --purple-avatar-bg: var(--bg-purple);
+  --purple-avatar-color: var(--text-on-purple);
+  --pink-avatar-bg: var(--bg-pink);
+  --pink-avatar-color: var(--text-on-pink);
+  --cyan-avatar-bg: var(--bg-cyan);
+  --cyan-avatar-color: var(--text-on-cyan);
+  --teal-avatar-bg: var(--bg-teal);
+  --teal-avatar-color: var(--text-on-teal);
+  --violet-avatar-bg: var(--bg-violet);
+  --violet-avatar-color: var(--text-on-violet);
+  --amber-avatar-bg: var(--bg-amber);
+  --amber-avatar-color: var(--text-on-amber);
+  --gray-avatar-bg: var(--bg-gray);
+  --gray-avatar-color: var(--text-on-gray);
+
+  /* -------------------------------------------------------------------------
+     LAYER 4 — ERPNext semantic aliases.
+
+     Names a role rather than a step. The shadcn contract below is re-pointed
+     at these, so the ~4,000 existing bg-card / text-muted-foreground call
+     sites retune without being touched. */
+  --text-color: var(--gray-800); /* default body text */
+  --text-muted: var(--gray-700); /* secondary labels */
+  --text-light: var(--gray-600); /* timestamps, hints — see check-contrast */
+  --text-neutral: var(--gray-950); /* emphasis, headings */
+  --control-bg: var(--gray-100); /* inputs, default buttons */
+  --control-bg-on-gray: var(--gray-200); /* the same, on a gray surface */
+  --subtle-accent: var(--gray-50); /* hover wash */
+  --highlight-color: var(--gray-50); /* row hover, search matches */
+  --disabled-control-bg: var(--gray-200); /* disabled fields */
+
+  /* Extension 1 — status colors, now drawn from the ERPNext ramps.
+
+     Each status still has three roles, because one color cannot serve all of
+     them at readable contrast:
        --x            the fill, and the recognisable hue
-       --x-foreground text ON that fill. Amber and cyan are light, so white
-                      text fails badly there (warning/white measured 1.87:1);
-                      near-black clears 6:1 on all three.
-       --x-strong     text on the pale --x-soft surface. The full-strength hue
-                      on its own soft background measures 1.8-2.7:1, so soft
-                      badges need a darkened variant. These are the shallowest
-                      darkening that reaches WCAG AA 4.5:1. */
-  --success: #27ae60;
-  --success-foreground: #181818;
-  --success-soft: #f4fbf7;
-  --success-strong: #1d8348;
-  --warning: #e2b93b;
-  --warning-foreground: #181818;
-  --warning-soft: #fefbf5;
-  --warning-strong: #8a7124;
-  --info: #06aed4;
-  --info-foreground: #181818;
-  --info-soft: #f4f9fe;
-  --info-strong: #047c97;
-  /* White on --destructive is 4.78:1 and passes, so it keeps a light
-     foreground; only the soft-surface text needs darkening. */
-  --destructive-soft: #fef4f4;
-  --destructive-strong: #c81e21;
+       --x-foreground text ON that fill. The mid-ramp yellows and blues are
+                      light, so white fails badly there; near-black clears 5:1
+                      on all of them.
+       --x-strong     text on the pale --x-soft surface, which is that hue's
+                      LAYER 3 tint.
 
-  /* Secondary accents used by colorful cards, badges and charts. */
+     Ratios are measured, not asserted — scripts/check-contrast.mjs fails if
+     any of them drifts. */
+  --success: var(--green-600);
+  --success-foreground: var(--gray-950); /* 5.81:1 */
+  --success-soft: var(--bg-green);
+  --success-strong: var(--text-on-green); /* 4.79:1 */
+  --warning: var(--yellow-500);
+  --warning-foreground: var(--gray-950); /* 9.93:1 */
+  --warning-soft: var(--bg-yellow);
+  --warning-strong: var(--text-on-yellow); /* 5.66:1 */
+  --info: var(--blue-500);
+  --info-foreground: var(--gray-950); /* 5.06:1 */
+  --info-soft: var(--bg-blue);
+  --info-strong: var(--text-on-blue); /* 4.58:1 */
+  /* The note that stood here claimed white on --destructive was 4.78:1 and
+     passed. It was measured against pure white, but the token is #eff6ff —
+     the real pair was 4.39:1 and had been failing AA unnoticed. ERPNext's
+     red-600 is darker and clears it. */
+  --destructive-soft: var(--bg-red);
+  --destructive-strong: var(--text-on-red); /* 5.70:1 */
+
+  /* Secondary accents used by colorful cards, badges and charts. --indigo is
+     the app's own: ERPNext has no indigo ramp, splitting that space between
+     purple and violet. */
   --indigo: #3538cd;
-  --orange: #e04f16;
-  --orange-soft: #fdf6f3;
-  --pink: #dd2590;
-  --pink-soft: #fdf4f9;
-  --teal: #0e9384;
-  --teal-soft: #e9f5f4;
+  --orange: var(--orange-600);
+  --orange-soft: var(--bg-orange);
+  --pink: var(--pink-600);
+  --pink-soft: var(--bg-pink);
+  --teal: var(--teal-600);
+  --teal-soft: var(--bg-teal);
 
   --font-sans: "Geist Variable", Geist, system-ui, -apple-system, sans-serif;
   --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, monospace;
 
   --radius: 0.5rem;
 
-  --shadow-2xs: 0.25px 1px 3px 0px hsl(236.5829 64.225% 21.4383% / 0.07);
-  --shadow-xs: 0.25px 1px 3px 0px hsl(236.5829 64.225% 21.4383% / 0.07);
-  --shadow-sm: 0.25px 1px 3px 0px hsl(236.5829 64.225% 21.4383% / 0.15), 0.25px 1px 2px -1px hsl(236.5829 64.225% 21.4383% / 0.15);
-  --shadow: 0.25px 1px 3px 0px hsl(236.5829 64.225% 21.4383% / 0.15), 0.25px 1px 2px -1px hsl(236.5829 64.225% 21.4383% / 0.15);
-  --shadow-md: 0.25px 1px 3px 0px hsl(236.5829 64.225% 21.4383% / 0.15), 0.25px 2px 4px -1px hsl(236.5829 64.225% 21.4383% / 0.15);
-  --shadow-lg: 0.25px 1px 3px 0px hsl(236.5829 64.225% 21.4383% / 0.15), 0.25px 4px 6px -1px hsl(236.5829 64.225% 21.4383% / 0.15);
-  --shadow-xl: 0.25px 1px 3px 0px hsl(236.5829 64.225% 21.4383% / 0.15), 0.25px 8px 10px -1px hsl(236.5829 64.225% 21.4383% / 0.15);
-  --shadow-2xl: 0.25px 1px 3px 0px hsl(236.5829 64.225% 21.4383% / 0.38);
+  /* Focus is a 2px OUTER ring (box-shadow), never an outline, and it is
+     colour-coded to intent rather than always blue. --focus-neutral is the
+     resting-to-focus ring on a filled control, where a coloured ring would
+     fight the fill. */
+  --focus-default: #c9c9c9;
+  --focus-blue: #65b9fc;
+  --focus-green: #5bb98c;
+  --focus-red: #eb9091;
+  --focus-yellow: #fff0ad;
+  --focus-neutral: rgba(124, 124, 124, 0.25);
+
+  /* The 0.02em signature. List rows, pills, avatars and table cells all carry
+     it, and it is the reason ERPNext's dense data views stay readable at
+     13-14px. Buttons are the documented exception and reset to 0. */
+  --tracking-ui: 0.02em;
+
+  /* Elevation, from ERPNext. Every step is built the same way: a 1px hairline
+     at low opacity doing the work of a border, plus one soft cast. That
+     hairline is why an ERPNext button needs no border of its own.
+
+     Assignments: xs on buttons, sm on cards, md on modals, lg and up on
+     dropdowns. Offsets stay in px — commit 9c69510 deliberately excluded
+     shadow offsets from the px->rem pass, since they are optical, not layout.
+
+     --shadow-2xs is not an ERPNext step. It is kept because this app uses it
+     as a barely-there lift, and dropping a token silently removes the utility
+     rather than failing the build. */
+  --shadow-2xs: 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --shadow-xs: rgba(0, 0, 0, 0.05) 0 0.5px 0 0, rgba(0, 0, 0, 0.08) 0 0 0 1px, rgba(0, 0, 0, 0.05) 0 2px 4px 0;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --shadow: 0 0 1px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 0 1px rgba(0, 0, 0, 0.12), 0 0.5px 2px rgba(0, 0, 0, 0.15), 0 2px 3px rgba(0, 0, 0, 0.16);
+  --shadow-lg: 0 0 1px rgba(0, 0, 0, 0.35), 0 6px 8px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 0 1px rgba(0, 0, 0, 0.19), 0 1px 2px rgba(0, 0, 0, 0.07), 0 6px 15px -5px rgba(0, 0, 0, 0.11);
+  --shadow-2xl: 0 0 1px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.05), 0 10px 24px -3px rgba(0, 0, 0, 0.1);
 }
 
 .dark {
@@ -215,30 +533,244 @@
   --color-teal-soft: var(--teal-soft);
   --color-indigo-600: oklch(0.6484 0.187 258.73);
 
-  /* Extension 2 — neutral ramp, anchored to this palette's own neutrals
-     (#fafafa background, #f5f5f5 muted, #ebebeb secondary, #525252
-     muted-foreground, #181818 card-foreground, #000 foreground). Replaces the
-     old navy-tinted scale, and defines 50/950 — which previously fell through
-     to stock Tailwind while looking tokenized. */
-  --color-gray-50: #fafafa;
-  --color-gray-100: #f5f5f5;
-  --color-gray-200: #ebebeb;
-  --color-gray-300: #d4d4d4;
-  --color-gray-400: #a4a4a4;
-  --color-gray-500: #737373;
-  --color-gray-600: #525252;
-  --color-gray-700: #404040;
-  --color-gray-800: #262626;
-  --color-gray-900: #181818;
-  --color-gray-950: #000000;
+  /* Extension 3 — the ERPNext hue ramps, registered at the stock Tailwind hue
+     names on purpose. Two reasons:
+
+       1. --color-gray-* already does exactly this (see below), so it is the
+          precedent in this file rather than a new vocabulary.
+       2. It means the ~166 stock-hue call sites still scattered across 40
+          files (bg-green-100, text-indigo-700, ...) RETUNE onto the new
+          palette instead of sitting on Tailwind's stock hues while everything
+          around them moves. They stay wrong in the semantic sense — a status
+          colour belongs in a token, not a raw hue — but they stop being wrong
+          in the visual sense immediately, which decouples that cleanup from
+          this migration.
+
+     Note --color-indigo-600 above is NOT part of a ramp: ERPNext has no indigo
+     (it splits that space into purple and violet), and that single value is
+     the app's own accent. */
+  --color-blue-50: var(--blue-50);
+  --color-blue-100: var(--blue-100);
+  --color-blue-200: var(--blue-200);
+  --color-blue-300: var(--blue-300);
+  --color-blue-400: var(--blue-400);
+  --color-blue-500: var(--blue-500);
+  --color-blue-600: var(--blue-600);
+  --color-blue-700: var(--blue-700);
+  --color-blue-800: var(--blue-800);
+  --color-blue-900: var(--blue-900);
+
+  --color-green-50: var(--green-50);
+  --color-green-100: var(--green-100);
+  --color-green-200: var(--green-200);
+  --color-green-300: var(--green-300);
+  --color-green-400: var(--green-400);
+  --color-green-500: var(--green-500);
+  --color-green-600: var(--green-600);
+  --color-green-700: var(--green-700);
+  --color-green-800: var(--green-800);
+  --color-green-900: var(--green-900);
+
+  --color-red-50: var(--red-50);
+  --color-red-100: var(--red-100);
+  --color-red-200: var(--red-200);
+  --color-red-300: var(--red-300);
+  --color-red-400: var(--red-400);
+  --color-red-500: var(--red-500);
+  --color-red-600: var(--red-600);
+  --color-red-700: var(--red-700);
+  --color-red-800: var(--red-800);
+  --color-red-900: var(--red-900);
+
+  --color-orange-50: var(--orange-50);
+  --color-orange-100: var(--orange-100);
+  --color-orange-200: var(--orange-200);
+  --color-orange-300: var(--orange-300);
+  --color-orange-400: var(--orange-400);
+  --color-orange-500: var(--orange-500);
+  --color-orange-600: var(--orange-600);
+  --color-orange-700: var(--orange-700);
+  --color-orange-800: var(--orange-800);
+  --color-orange-900: var(--orange-900);
+
+  --color-yellow-50: var(--yellow-50);
+  --color-yellow-100: var(--yellow-100);
+  --color-yellow-200: var(--yellow-200);
+  --color-yellow-300: var(--yellow-300);
+  --color-yellow-400: var(--yellow-400);
+  --color-yellow-500: var(--yellow-500);
+  --color-yellow-600: var(--yellow-600);
+  --color-yellow-700: var(--yellow-700);
+  --color-yellow-800: var(--yellow-800);
+  --color-yellow-900: var(--yellow-900);
+
+  --color-amber-50: var(--amber-50);
+  --color-amber-100: var(--amber-100);
+  --color-amber-200: var(--amber-200);
+  --color-amber-300: var(--amber-300);
+  --color-amber-400: var(--amber-400);
+  --color-amber-500: var(--amber-500);
+  --color-amber-600: var(--amber-600);
+  --color-amber-700: var(--amber-700);
+  --color-amber-800: var(--amber-800);
+  --color-amber-900: var(--amber-900);
+
+  --color-purple-50: var(--purple-50);
+  --color-purple-100: var(--purple-100);
+  --color-purple-200: var(--purple-200);
+  --color-purple-300: var(--purple-300);
+  --color-purple-400: var(--purple-400);
+  --color-purple-500: var(--purple-500);
+  --color-purple-600: var(--purple-600);
+  --color-purple-700: var(--purple-700);
+  --color-purple-800: var(--purple-800);
+  --color-purple-900: var(--purple-900);
+
+  --color-violet-50: var(--violet-50);
+  --color-violet-100: var(--violet-100);
+  --color-violet-200: var(--violet-200);
+  --color-violet-300: var(--violet-300);
+  --color-violet-400: var(--violet-400);
+  --color-violet-500: var(--violet-500);
+  --color-violet-600: var(--violet-600);
+  --color-violet-700: var(--violet-700);
+  --color-violet-800: var(--violet-800);
+  --color-violet-900: var(--violet-900);
+
+  --color-pink-50: var(--pink-50);
+  --color-pink-100: var(--pink-100);
+  --color-pink-200: var(--pink-200);
+  --color-pink-300: var(--pink-300);
+  --color-pink-400: var(--pink-400);
+  --color-pink-500: var(--pink-500);
+  --color-pink-600: var(--pink-600);
+  --color-pink-700: var(--pink-700);
+  --color-pink-800: var(--pink-800);
+  --color-pink-900: var(--pink-900);
+
+  --color-teal-50: var(--teal-50);
+  --color-teal-100: var(--teal-100);
+  --color-teal-200: var(--teal-200);
+  --color-teal-300: var(--teal-300);
+  --color-teal-400: var(--teal-400);
+  --color-teal-500: var(--teal-500);
+  --color-teal-600: var(--teal-600);
+  --color-teal-700: var(--teal-700);
+  --color-teal-800: var(--teal-800);
+  --color-teal-900: var(--teal-900);
+
+  --color-cyan-50: var(--cyan-50);
+  --color-cyan-100: var(--cyan-100);
+  --color-cyan-200: var(--cyan-200);
+  --color-cyan-300: var(--cyan-300);
+  --color-cyan-400: var(--cyan-400);
+  --color-cyan-500: var(--cyan-500);
+  --color-cyan-600: var(--cyan-600);
+  --color-cyan-700: var(--cyan-700);
+  --color-cyan-800: var(--cyan-800);
+  --color-cyan-900: var(--cyan-900);
+
+  /* Extension 5 — tinted pairs. Registered as tint-/on- so the utilities
+     read bg-tint-green / text-on-green rather than bg-bg-green. The CSS
+     custom properties keep ERPNext's own names. */
+  --color-tint-green: var(--bg-green);
+  --color-on-green: var(--text-on-green);
+  --color-tint-red: var(--bg-red);
+  --color-on-red: var(--text-on-red);
+  --color-tint-blue: var(--bg-blue);
+  --color-on-blue: var(--text-on-blue);
+  --color-tint-orange: var(--bg-orange);
+  --color-on-orange: var(--text-on-orange);
+  --color-tint-yellow: var(--bg-yellow);
+  --color-on-yellow: var(--text-on-yellow);
+  --color-tint-purple: var(--bg-purple);
+  --color-on-purple: var(--text-on-purple);
+  --color-tint-pink: var(--bg-pink);
+  --color-on-pink: var(--text-on-pink);
+  --color-tint-cyan: var(--bg-cyan);
+  --color-on-cyan: var(--text-on-cyan);
+  --color-tint-teal: var(--bg-teal);
+  --color-on-teal: var(--text-on-teal);
+  --color-tint-violet: var(--bg-violet);
+  --color-on-violet: var(--text-on-violet);
+  --color-tint-amber: var(--bg-amber);
+  --color-on-amber: var(--text-on-amber);
+  --color-tint-gray: var(--bg-gray);
+  --color-on-gray: var(--text-on-gray);
+
+  --color-control-bg: var(--control-bg);
+  --color-control-bg-on-gray: var(--control-bg-on-gray);
+  --color-highlight: var(--highlight-color);
+  --color-subtle-accent: var(--subtle-accent);
+  /* Extension 4 — surface & outline. */
+  --color-surface-white: var(--surface-white);
+  --color-surface-gray-1: var(--surface-gray-1);
+  --color-surface-gray-2: var(--surface-gray-2);
+  --color-surface-gray-3: var(--surface-gray-3);
+  --color-surface-gray-4: var(--surface-gray-4);
+  --color-surface-modal: var(--surface-modal);
+  --color-surface-red-3: var(--surface-red-3);
+  --color-outline-gray-1: var(--outline-gray-1);
+  --color-outline-gray-2: var(--outline-gray-2);
+  --color-outline-gray-modals: var(--outline-gray-modals);
+
+  /* Extension 2 — neutral ramp, now the ERPNext gray from LAYER 1.
+
+     This is the hidden dependency of the whole migration: ~2,570 call sites
+     use gray-50..950, so until this points at the new ramp the new palette
+     sits on the old neutrals and nothing looks right.
+
+     It could not move verbatim. ERPNext's scale is roughly one step lighter
+     through the middle, so a straight swap would have dropped 755 text call
+     sites below AA:
+
+       step 600 as text  #525252 (7.81:1)  ->  #7c7c7c (4.17:1)  FAIL
+       step 500 as text  #737373 (4.74:1)  ->  #999999 (2.85:1)  FAIL
+       step 400 as text  #a4a4a4 (2.66:1)  ->  #c7c7c7 (1.83:1)  FAIL
+
+     The two ramps happen to be offset by almost exactly one step in that
+     range — this app's 600 IS ERPNext's 700, to the byte — so the fix was to
+     shift those call sites one step darker first (600/500 -> 700, 400 -> 600)
+     and only then move the ramp. Every one of them ended up darker than it
+     started, so the pass could not introduce a new failure. Held by the
+     gray-text-light-steps rule in scripts/check-legacy-tokens.mjs.
+
+     Steps 300 and lighter are left where they are: the seven text-gray-300
+     sites are disabled states and em-dash "no value" placeholders, which
+     carry no information and are exempt. */
+  --color-gray-50: var(--gray-50);
+  --color-gray-100: var(--gray-100);
+  --color-gray-200: var(--gray-200);
+  --color-gray-300: var(--gray-300);
+  --color-gray-400: var(--gray-400);
+  --color-gray-500: var(--gray-500);
+  --color-gray-600: var(--gray-600);
+  --color-gray-700: var(--gray-700);
+  --color-gray-800: var(--gray-800);
+  --color-gray-900: var(--gray-900);
+  --color-gray-950: var(--gray-950);
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* Radius, remapped onto ERPNext's roles. The scale was previously derived
+     from --radius by +/-2px and +4px, which put the control radius on
+     rounded-md at 6px. ERPNext controls are 8px, and rounded-md is where the
+     app's ~500 control call sites already are, so the roles are shifted one
+     notch rather than the call sites:
+
+       rounded-sm   4px   checkboxes, tags        (unchanged)
+       rounded-md   8px   buttons, inputs, cards  (was 6px — 502 sites)
+       rounded-lg  10px   popovers, menus         (was 8px — 120 sites)
+       rounded-xl  12px   dialogs                 (unchanged — 119 sites)
+       rounded-2xl 16px   large panels
+
+     Bare `rounded` stays Tailwind's 4px and is ERPNext's `tiny`. */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
 
   --shadow-2xs: var(--shadow-2xs);
   --shadow-xs: var(--shadow-xs);
@@ -249,7 +781,23 @@
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
 
+  /* ERPNext's base is 14px, which is what --text-sm already is here, so the
+     scale is extended rather than renumbered. --text-xs is deliberately NOT
+     moved to ERPNext's 13px: it is the table-meta size at ~530 call sites and
+     inflating all of them is a large uncontrolled change for no gain. The
+     13px step is available as --text-pill, which is what actually needs it
+     (pills, alerts, control labels). */
+  --text-2xs: 0.75rem;
+  --text-pill: 0.8125rem;
   --text-sm: 0.875rem;
+
+  --color-focus-default: var(--focus-default);
+  --color-focus-blue: var(--focus-blue);
+  --color-focus-green: var(--focus-green);
+  --color-focus-red: var(--focus-red);
+  --color-focus-yellow: var(--focus-yellow);
+
+  --tracking-ui: var(--tracking-ui);
 }
 
 /* ---------------------------------------------------------------------------
@@ -368,8 +916,15 @@ main {
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
+    /* ERPNext's desk is 14px/21px at weight 420 — a fractional variable-font
+       weight, not 400. It thickens body copy just enough to hold up against a
+       light gray palette on dense screens, and 400 looks thin beside it.
+       Geist Variable is a true 100-900 variable font, so 420 resolves; it was
+       tuned for Inter though, so the 0.02em tracking that goes with it is a
+       starting value to check on /_tokens rather than a measured one. */
+    font-size: 0.875rem;
     line-height: 1.5;
-    font-weight: 400;
+    font-weight: 420;
   }
 
 
@@ -384,10 +939,19 @@ main {
   }
 
   /* ---- Hit-target floor -------------------------------------------------
-     A layout audit across 139 routes found a control below the 32px minimum
-     on 646 of 650 route x viewport combinations, spread over 128 distinct
-     class signatures — far too many to fix one call site at a time, and they
-     would only come back. So the floor is enforced once, here.
+     A layout audit across 139 routes found a control below the then-32px
+     minimum on 646 of 650 route x viewport combinations, spread over 128
+     distinct class signatures — far too many to fix one call site at a time,
+     and they would only come back. So the floor is enforced once, here.
+
+     The fine-pointer floor is now 28px, matching the ERPNext desk, where every
+     button, input and select resolves to 28 and that is what gives toolbars
+     their even rhythm. This is deliberately below the 32px the audit above
+     established and below WCAG 2.5.5 AAA's 44px: a decision taken with the
+     tradeoff on the table, not an accident. The coarse-pointer tier below
+     still holds 2.75rem, so touch — where a mis-tap actually costs something —
+     is unaffected. scripts/audit-layout.mjs carries the matching constant and
+     must be changed with this rule, never after it.
 
      `min-block-size`, not padding: padding would inflate a dense table row,
      whereas a min-height raises the box to exactly the floor and stops. And
@@ -406,7 +970,7 @@ main {
       textarea,
       input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"])
     ):not([data-hit="tight"]) {
-    min-block-size: 2rem;
+    min-block-size: 1.75rem;
   }
 
   @media (pointer: coarse) {

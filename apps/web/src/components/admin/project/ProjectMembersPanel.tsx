@@ -297,7 +297,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                             <select
                                 value={newEmployeeId}
                                 onChange={(e) => setNewEmployeeId(e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-card focus:outline-none focus:ring-2 focus:ring-ring"
                             >
                                 <option value="">Select employee…</option>
                                 {staffOptions.map((s) => (
@@ -310,7 +310,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                             <select
                                 value={newRole}
                                 onChange={(e) => setNewRole(e.target.value as ProjectMemberRole)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-card focus:outline-none focus:ring-2 focus:ring-ring"
                             >
                                 {ROLE_OPTIONS.map((r) => (
                                     <option key={r} value={r}>{r}</option>
@@ -351,7 +351,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="text-left text-gray-500 border-b border-gray-200">
+                                    <tr className="text-left text-gray-700 border-b border-gray-200">
                                         <th className="py-2 pr-3 font-medium">Employee</th>
                                         <th className="py-2 px-3 font-medium">Role</th>
                                         <th className="py-2 px-3 font-medium">Rate</th>
@@ -364,7 +364,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                                         <tr key={m.id} className="border-b border-gray-100">
                                             <td className="py-2 pr-3">
                                                 <div className="font-medium text-gray-900">{fullName(m)}</div>
-                                                <div className="text-xs text-gray-500">{m.employee?.email}</div>
+                                                <div className="text-xs text-gray-700">{m.employee?.email}</div>
                                             </td>
                                             <td className="py-2 px-3">
                                                 <div className="flex items-center gap-2">
@@ -373,7 +373,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                                                         value={m.role}
                                                         disabled={rowBusyId === m.id}
                                                         onChange={(e) => patchMember(m, { role: e.target.value as ProjectMemberRole })}
-                                                        className="px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
+                                                        className="px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-950 bg-card focus:outline-none focus:ring-2 focus:ring-ring"
                                                     >
                                                         {ROLE_OPTIONS.map((r) => (
                                                             <option key={r} value={r}>{r}</option>
@@ -401,7 +401,7 @@ const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({ projectId, op
                                                     className="w-24 px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-950 focus:outline-none focus:ring-2 focus:ring-ring"
                                                 />
                                                 {m.billingRate != null && (
-                                                    <div className="text-xs text-gray-400 mt-1">
+                                                    <div className="text-xs text-gray-600 mt-1">
                                                         {formatMoney(Number(m.billingRate), defaultCurrencyCode)}
                                                     </div>
                                                 )}

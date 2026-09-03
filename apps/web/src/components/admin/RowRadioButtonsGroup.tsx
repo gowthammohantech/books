@@ -30,7 +30,7 @@ export default function RowRadioButtonsGroup({ value, onChange, options, name }:
                         value={option.value}
                         control={<Radio />}
                         label={option.label}
-                        className="text-gray-600"
+                        className="text-gray-700"
                     />
                 ))}
             </RadioGroup>

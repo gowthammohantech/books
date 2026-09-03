@@ -89,7 +89,7 @@ export default function SupplierBalances() {
         </Button>
       </PageHeader>
 
-      <p className="text-xs text-gray-500 mb-4">
+      <p className="text-xs text-gray-700 mb-4">
         Accounts Payable per supplier. Credit increases what you owe (bills); debit reduces it
         (payments &amp; purchase returns). Balance Due = Credit − Debit.
       </p>

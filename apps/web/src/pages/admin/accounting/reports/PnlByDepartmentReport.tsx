@@ -143,7 +143,7 @@ export default function PnlByDepartmentReport() {
     <div className="space-y-4">
       <PageHeader title="P&L by Department" />
 
-      <div className="bg-white p-4 rounded-xl border border-border shadow-sm flex flex-wrap items-end gap-4">
+      <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-wrap items-end gap-4">
         <div className="w-44">
           <DateInput
             label="From"
@@ -175,7 +175,7 @@ export default function PnlByDepartmentReport() {
 
       {!loading && data && (
         <>
-          <div className="bg-white rounded-xl border border-border shadow-sm overflow-x-auto">
+          <div className="bg-card rounded-xl border border-border shadow-sm overflow-x-auto">
             <table className="w-full min-w-max">
               <thead className="bg-gray-100 text-gray-900">
                 <tr>
@@ -204,7 +204,7 @@ export default function PnlByDepartmentReport() {
             </table>
           </div>
 
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-700">
             Untagged amounts appear in the <strong>Common / Unallocated</strong> column. Departments
             are not cross-charged, so overheads stay where they were booked.
           </p>
@@ -219,7 +219,7 @@ export default function PnlByDepartmentReport() {
       )}
 
       {!loading && !data && (
-        <p className="text-gray-500 text-sm">No data for this period.</p>
+        <p className="text-gray-700 text-sm">No data for this period.</p>
       )}
     </div>
   );

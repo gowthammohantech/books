@@ -55,17 +55,17 @@ const InvoiceTemplateA5Landscape: React.FC<InvoiceDetailsProps> = ({ invoiceData
                     />
                     <div>
                         <p className="font-bold text-[12px] text-primary leading-tight">{systemSettings?.company.companyName}</p>
-                        <p className="text-gray-600">{systemSettings?.company.address}</p>
-                        <p className="text-gray-600">Mobile: {systemSettings?.company.phone}</p>
-                        {taxId && <p className="text-gray-600">{taxId.label}: {taxId.value}</p>}
+                        <p className="text-gray-700">{systemSettings?.company.address}</p>
+                        <p className="text-gray-700">Mobile: {systemSettings?.company.phone}</p>
+                        {taxId && <p className="text-gray-700">{taxId.label}: {taxId.value}</p>}
                     </div>
                 </div>
                 <div className="text-right shrink-0">
                     <h1 className="text-[13px] font-bold text-gray-950 leading-tight">TAX INVOICE</h1>
-                    <p className="text-gray-500">Original For Recipient</p>
-                    <p className="text-gray-600">Invoice No: <span className="font-semibold">{invoiceData?.invoiceNumber}</span></p>
-                    <p className="text-gray-600">Date: {formatDate(invoiceData?.invoiceDate)} &nbsp; Due: {formatDate(invoiceData?.dueDate)}</p>
-                    <p className="text-gray-600">Status: <span className="font-semibold">{invoiceData?.status}</span></p>
+                    <p className="text-gray-700">Original For Recipient</p>
+                    <p className="text-gray-700">Invoice No: <span className="font-semibold">{invoiceData?.invoiceNumber}</span></p>
+                    <p className="text-gray-700">Date: {formatDate(invoiceData?.invoiceDate)} &nbsp; Due: {formatDate(invoiceData?.dueDate)}</p>
+                    <p className="text-gray-700">Status: <span className="font-semibold">{invoiceData?.status}</span></p>
                 </div>
             </header>
 
@@ -74,7 +74,7 @@ const InvoiceTemplateA5Landscape: React.FC<InvoiceDetailsProps> = ({ invoiceData
                 <div className="w-1/2">
                     <span className="font-bold text-primary">Invoice To: </span>
                     <span className="font-semibold capitalize">{invoiceData?.billTo?.name ?? '—'}</span>
-                    <span className="text-gray-600">
+                    <span className="text-gray-700">
                         {' '}— {invoiceData?.billTo?.billingAddress?.addressLine1}, {invoiceData?.billTo?.billingAddress?.city}, {invoiceData?.billTo?.billingAddress?.state}, {invoiceData?.billTo?.billingAddress?.country}
                         {' '}· {invoiceData?.billTo?.email} {invoiceData?.billTo?.phone ?? ''}
                         {invoiceData?.billTo?.vatRegNumber && <> · VAT Reg: {invoiceData.billTo.vatRegNumber}</>}
@@ -84,7 +84,7 @@ const InvoiceTemplateA5Landscape: React.FC<InvoiceDetailsProps> = ({ invoiceData
                 <div className="w-1/2 pl-4 border-l border-gray-200">
                     <span className="font-bold text-primary">Pay To: </span>
                     <span className="font-semibold">{invoiceData?.billFrom.name}</span>
-                    <span className="text-gray-600"> — {invoiceData?.billFrom.address} · {invoiceData?.billFrom.email} {invoiceData?.billFrom.phone}</span>
+                    <span className="text-gray-700"> — {invoiceData?.billFrom.address} · {invoiceData?.billFrom.email} {invoiceData?.billFrom.phone}</span>
                 </div>
             </section>
 
@@ -93,17 +93,17 @@ const InvoiceTemplateA5Landscape: React.FC<InvoiceDetailsProps> = ({ invoiceData
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-300">
-                            <th className="py-0.5 px-1 font-semibold text-gray-600">#</th>
-                            <th className="py-0.5 px-1 font-semibold text-gray-600">Description</th>
+                            <th className="py-0.5 px-1 font-semibold text-gray-700">#</th>
+                            <th className="py-0.5 px-1 font-semibold text-gray-700">Description</th>
                             {customColumns.map((c) => (
-                                <th key={c.slug} className="py-0.5 px-1 font-semibold text-gray-600">{c.label}</th>
+                                <th key={c.slug} className="py-0.5 px-1 font-semibold text-gray-700">{c.label}</th>
                             ))}
-                            <th className="py-0.5 px-1 font-semibold text-gray-600 text-right">Qty</th>
-                            <th className="py-0.5 px-1 font-semibold text-gray-600 text-right">Unit</th>
-                            <th className="py-0.5 px-1 font-semibold text-gray-600 text-right">Rate</th>
-                            <th className="py-0.5 px-1 font-semibold text-gray-600 text-right">Discount</th>
-                            <th className="py-0.5 px-1 font-semibold text-gray-600 text-right">Tax</th>
-                            <th className="py-0.5 px-1 font-semibold text-gray-600 text-right">Amount</th>
+                            <th className="py-0.5 px-1 font-semibold text-gray-700 text-right">Qty</th>
+                            <th className="py-0.5 px-1 font-semibold text-gray-700 text-right">Unit</th>
+                            <th className="py-0.5 px-1 font-semibold text-gray-700 text-right">Rate</th>
+                            <th className="py-0.5 px-1 font-semibold text-gray-700 text-right">Discount</th>
+                            <th className="py-0.5 px-1 font-semibold text-gray-700 text-right">Tax</th>
+                            <th className="py-0.5 px-1 font-semibold text-gray-700 text-right">Amount</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -153,13 +153,13 @@ const InvoiceTemplateA5Landscape: React.FC<InvoiceDetailsProps> = ({ invoiceData
             {/* Bottom row: notes/terms (left) + totals (right); signature strip below-right */}
             <section className="flex justify-between gap-4 mt-1 pt-1 border-t border-gray-200">
                 <div className="w-3/5 pr-2 space-y-1">
-                    <p className="text-gray-600">
+                    <p className="text-gray-700">
                         Total Items / Qty : {invoiceData?.items.length} / {invoiceData?.items.reduce((sum, item) => sum + item.qty, 0)}
                     </p>
                     <p><span className="font-semibold">Amount in words: </span>{numberToWords(invoiceData?.TotalAmount || 0)}</p>
 
                     {(invoiceData?.bank?.accountHoldername || invoiceData?.bank?.bankName || invoiceData?.bank?.accountNumber || invoiceData?.bank?.IFSCCode || invoiceData?.bank?.branchName) && (
-                        <p className="text-gray-600">
+                        <p className="text-gray-700">
                             <span className="font-semibold text-gray-950">Bank Details: </span>
                             {invoiceData?.bank?.accountHoldername && <>Holder: {invoiceData.bank.accountHoldername} · </>}
                             {invoiceData?.bank?.bankName && <>Bank: {invoiceData.bank.bankName} · </>}
@@ -170,11 +170,11 @@ const InvoiceTemplateA5Landscape: React.FC<InvoiceDetailsProps> = ({ invoiceData
                     )}
 
                     {invoiceData?.notes && (
-                        <p><span className="font-semibold">Notes: </span><span className="whitespace-pre-line text-gray-600">{invoiceData.notes}</span></p>
+                        <p><span className="font-semibold">Notes: </span><span className="whitespace-pre-line text-gray-700">{invoiceData.notes}</span></p>
                     )}
 
                     {invoiceData?.termsAndCondition && (
-                        <p><span className="font-semibold">Terms & Conditions: </span><span className="whitespace-pre-line text-gray-600">{invoiceData.termsAndCondition}</span></p>
+                        <p><span className="font-semibold">Terms & Conditions: </span><span className="whitespace-pre-line text-gray-700">{invoiceData.termsAndCondition}</span></p>
                     )}
                 </div>
 
@@ -249,7 +249,7 @@ const InvoiceTemplateA5Landscape: React.FC<InvoiceDetailsProps> = ({ invoiceData
                                     }/invoice/${(invoiceData as unknown as { publicViewToken: string }).publicViewToken}`}
                                     size={44}
                                 />
-                                <p className="text-[8px] text-gray-500 mt-0.5">Scan to view</p>
+                                <p className="text-[8px] text-gray-700 mt-0.5">Scan to view</p>
                             </div>
                         )}
                         {(() => {
@@ -273,7 +273,7 @@ const InvoiceTemplateA5Landscape: React.FC<InvoiceDetailsProps> = ({ invoiceData
                                     <a href={link} target="_blank" rel="noopener noreferrer">
                                         <QRCodeSVG value={link} size={44} />
                                     </a>
-                                    <p className="text-[8px] text-gray-500 mt-0.5">Scan/tap to pay</p>
+                                    <p className="text-[8px] text-gray-700 mt-0.5">Scan/tap to pay</p>
                                 </div>
                             );
                         })()}
@@ -287,7 +287,7 @@ const InvoiceTemplateA5Landscape: React.FC<InvoiceDetailsProps> = ({ invoiceData
                 </div>
             </section>
 
-            <div className="mt-1 pt-1 border-t border-gray-200 text-center text-gray-500">
+            <div className="mt-1 pt-1 border-t border-gray-200 text-center text-gray-700">
                 <p>Thanks for your Business</p>
             </div>
 

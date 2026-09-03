@@ -271,7 +271,7 @@ const RecurringExpenseList: React.FC = () => {
                     onClick={() => setViewingChildrenOf(null)}
                 >
                     <div
-                        className="bg-white rounded-xl shadow-lg p-4 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+                        className="bg-card rounded-xl shadow-lg p-4 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <h3 className="text-lg font-semibold text-foreground mb-3">

@@ -163,7 +163,7 @@ const InvoiceNumberConfigModal: React.FC<Props> = ({ isOpen, onClose, onSuccess 
                                 {/* Tooltip */}
                                 {showTooltip && (
                                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-50 w-48">
-                                        <div className="bg-gray-900 text-white text-xs rounded py-2 px-3 text-center leading-relaxed">
+                                        <div className="bg-gray-900 text-gray-50 text-xs rounded py-2 px-3 text-center leading-relaxed">
                                             The edited prefix and next number will be updated in the transaction number series associated with your invoice.
                                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                                         </div>

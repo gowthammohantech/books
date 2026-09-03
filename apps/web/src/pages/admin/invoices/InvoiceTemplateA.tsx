@@ -45,8 +45,8 @@ const InvoiceTemplateA: React.FC<InvoiceDetailsProps> = ({ invoiceData, lineFiel
                 </div>
 
                 {/* Row 2: Original + Date/Invoice */}
-                <div className="flex justify-between items-center mt-2 text-sm text-gray-600">
-                    <p className="text-sm text-gray-600">Original For Recipient</p>
+                <div className="flex justify-between items-center mt-2 text-sm text-gray-700">
+                    <p className="text-sm text-gray-700">Original For Recipient</p>
                     <div className="flex items-center gap-4">
                         <p>Date: {formatDate(invoiceData?.invoiceDate)}</p>
                         <p>
@@ -62,25 +62,25 @@ const InvoiceTemplateA: React.FC<InvoiceDetailsProps> = ({ invoiceData, lineFiel
                 <div className="w-2/5">
                     <h2 className="font-bold text-primary mb-2">Invoice To :</h2>
                     <p className="font-semibold capitalize">{invoiceData?.billTo?.name ?? '—'}</p>
-                    <p className="text-sm text-gray-600">{invoiceData?.billTo?.billingAddress?.addressLine1}</p>
-                    <p className="text-sm text-gray-600">{invoiceData?.billTo?.billingAddress?.city}, {invoiceData?.billTo?.billingAddress?.state}, {invoiceData?.billTo?.billingAddress?.country}</p>
-                    <p className="text-sm text-gray-600">{invoiceData?.billTo?.email}</p>
-                    <p className="text-sm text-gray-600">{invoiceData?.billTo?.phone ?? ''}</p>
-                    {invoiceData?.billTo?.vatRegNumber && <p className="text-sm text-gray-600">VAT Reg: {invoiceData.billTo.vatRegNumber}</p>}
-                    {invoiceData?.billTo?.gstin && <p className="text-sm text-gray-600">GSTIN: {invoiceData.billTo.gstin}</p>}
+                    <p className="text-sm text-gray-700">{invoiceData?.billTo?.billingAddress?.addressLine1}</p>
+                    <p className="text-sm text-gray-700">{invoiceData?.billTo?.billingAddress?.city}, {invoiceData?.billTo?.billingAddress?.state}, {invoiceData?.billTo?.billingAddress?.country}</p>
+                    <p className="text-sm text-gray-700">{invoiceData?.billTo?.email}</p>
+                    <p className="text-sm text-gray-700">{invoiceData?.billTo?.phone ?? ''}</p>
+                    {invoiceData?.billTo?.vatRegNumber && <p className="text-sm text-gray-700">VAT Reg: {invoiceData.billTo.vatRegNumber}</p>}
+                    {invoiceData?.billTo?.gstin && <p className="text-sm text-gray-700">GSTIN: {invoiceData.billTo.gstin}</p>}
                 </div>
                 <div className="w-2/5">
                     <h2 className="font-bold text-primary mb-2">Pay To :</h2>
                     <p className="font-semibold">{invoiceData?.billFrom.name}</p>
-                    <p className="text-sm text-gray-600">{invoiceData?.billFrom.address}</p>
-                    <p className="text-sm text-gray-600">{invoiceData?.billFrom.email}</p>
-                    <p className="text-sm text-gray-600">{invoiceData?.billFrom.phone}</p>
+                    <p className="text-sm text-gray-700">{invoiceData?.billFrom.address}</p>
+                    <p className="text-sm text-gray-700">{invoiceData?.billFrom.email}</p>
+                    <p className="text-sm text-gray-700">{invoiceData?.billFrom.phone}</p>
                 </div>
                 <div className="text-right">
                     <h2 className="font-bold text-primary mb-2">{systemSettings?.company.companyName}</h2>
-                    <p className="text-sm text-gray-600">Address: {systemSettings?.company.address}</p>
-                    <p className="text-sm text-gray-600">Mobile: {systemSettings?.company.phone}</p>
-                    {taxId && <p className="text-sm text-gray-600">{taxId.label}: {taxId.value}</p>}
+                    <p className="text-sm text-gray-700">Address: {systemSettings?.company.address}</p>
+                    <p className="text-sm text-gray-700">Mobile: {systemSettings?.company.phone}</p>
+                    {taxId && <p className="text-sm text-gray-700">{taxId.label}: {taxId.value}</p>}
                 </div>
             </section>
 
@@ -89,15 +89,15 @@ const InvoiceTemplateA: React.FC<InvoiceDetailsProps> = ({ invoiceData, lineFiel
                 <table className="w-full text-left">
                     <thead className="bg-gray-50">
                         <tr className="border-b border-gray-200">
-                            <th className="p-3 text-sm font-semibold text-gray-600">#</th>
-                            <th className="p-3 text-sm font-semibold text-gray-600">Item</th>
+                            <th className="p-3 text-sm font-semibold text-gray-700">#</th>
+                            <th className="p-3 text-sm font-semibold text-gray-700">Item</th>
                             {customColumns.map((c) => (
-                                <th key={c.slug} className="p-3 text-sm font-semibold text-gray-600">{c.label}</th>
+                                <th key={c.slug} className="p-3 text-sm font-semibold text-gray-700">{c.label}</th>
                             ))}
-                            <th className="p-3 text-sm font-semibold text-gray-600 text-right">Qty</th>
-                            <th className="p-3 text-sm font-semibold text-gray-600 text-right">Price</th>
-                            <th className="p-3 text-sm font-semibold text-gray-600 text-right">Discount</th>
-                            <th className="p-3 text-sm font-semibold text-gray-600 text-right">Total</th>
+                            <th className="p-3 text-sm font-semibold text-gray-700 text-right">Qty</th>
+                            <th className="p-3 text-sm font-semibold text-gray-700 text-right">Price</th>
+                            <th className="p-3 text-sm font-semibold text-gray-700 text-right">Discount</th>
+                            <th className="p-3 text-sm font-semibold text-gray-700 text-right">Total</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -123,7 +123,7 @@ const InvoiceTemplateA: React.FC<InvoiceDetailsProps> = ({ invoiceData, lineFiel
             {/* Totals Section */}
             <section className="flex justify-end mt-2">
                 <div className="w-full max-w-xs">
-                    <div className="flex justify-between text-sm text-gray-600 py-2">
+                    <div className="flex justify-between text-sm text-gray-700 py-2">
                         <span className='font-bold'>Sub Total</span>
                         <span className='font-semibold'>{fmt(invoiceData?.taxableAmount || 0)}</span>
                     </div>
@@ -143,20 +143,20 @@ const InvoiceTemplateA: React.FC<InvoiceDetailsProps> = ({ invoiceData, lineFiel
                         const entries = Object.entries(breakdown);
                         if (entries.length === 0) {
                             return (
-                                <div className="flex justify-between text-sm text-gray-600 py-2">
+                                <div className="flex justify-between text-sm text-gray-700 py-2">
                                     <span className='font-bold'>Tax</span>
                                     <span className='font-semibold'>{fmt(invoiceData?.vat || 0)}</span>
                                 </div>
                             );
                         }
                         return entries.map(([label, amount]) => (
-                            <div key={label} className="flex justify-between text-sm text-gray-600 py-2">
+                            <div key={label} className="flex justify-between text-sm text-gray-700 py-2">
                                 <span className='font-bold'>{label}</span>
                                 <span className='font-semibold'>{fmt(amount)}</span>
                             </div>
                         ));
                     })()}
-                    <div className="flex justify-between text-sm text-gray-600 py-2">
+                    <div className="flex justify-between text-sm text-gray-700 py-2">
                         <span className='font-bold'>Discount</span>
                         <span className='font-semibold'>{fmt(invoiceData?.totalDiscount || 0)}</span>
                     </div>
@@ -170,7 +170,7 @@ const InvoiceTemplateA: React.FC<InvoiceDetailsProps> = ({ invoiceData, lineFiel
                         const balanceDue = Math.max(0, Number(invoiceData?.TotalAmount || 0) - totalPaid);
                         return (
                             <>
-                                <div className="flex justify-between text-sm text-gray-600 py-2 border-t border-gray-100">
+                                <div className="flex justify-between text-sm text-gray-700 py-2 border-t border-gray-100">
                                     <span className='font-bold'>Amount Paid</span>
                                     <span className='font-semibold text-success'>{fmt(totalPaid)}</span>
                                 </div>
@@ -207,7 +207,7 @@ const InvoiceTemplateA: React.FC<InvoiceDetailsProps> = ({ invoiceData, lineFiel
 
             {/* Amount in words and Summary */}
             <section className="mt-2 pt-2 border-t border-gray-200">
-                <p className="text-sm text-gray-600">Total Items / Qty : {invoiceData?.items.length} / {invoiceData?.items.reduce((sum, item) => sum + item.qty, 0)}</p>
+                <p className="text-sm text-gray-700">Total Items / Qty : {invoiceData?.items.length} / {invoiceData?.items.reduce((sum, item) => sum + item.qty, 0)}</p>
                 <p className="text-sm mt-2">
                     <span className="font-semibold">Total amount ( in words) : </span>
                     {numberToWords(invoiceData?.TotalAmount || 0)}
@@ -219,11 +219,11 @@ const InvoiceTemplateA: React.FC<InvoiceDetailsProps> = ({ invoiceData, lineFiel
                 {(invoiceData?.bank?.accountHoldername || invoiceData?.bank?.bankName || invoiceData?.bank?.accountNumber || invoiceData?.bank?.IFSCCode || invoiceData?.bank?.branchName) && (
                     <div>
                         <h3 className="font-semibold mb-2">Bank Details</h3>
-                        {invoiceData?.bank?.accountHoldername && <p className="text-sm text-gray-600">Account Holder : {invoiceData.bank.accountHoldername}</p>}
-                        {invoiceData?.bank?.bankName && <p className="text-sm text-gray-600">Bank : {invoiceData.bank.bankName}</p>}
-                        {invoiceData?.bank?.accountNumber && <p className="text-sm text-gray-600">Account # : {invoiceData.bank.accountNumber}</p>}
-                        {invoiceData?.bank?.IFSCCode && <p className="text-sm text-gray-600">IFSC : {invoiceData.bank.IFSCCode}</p>}
-                        {invoiceData?.bank?.branchName && <p className="text-sm text-gray-600">BRANCH : {invoiceData.bank.branchName}</p>}
+                        {invoiceData?.bank?.accountHoldername && <p className="text-sm text-gray-700">Account Holder : {invoiceData.bank.accountHoldername}</p>}
+                        {invoiceData?.bank?.bankName && <p className="text-sm text-gray-700">Bank : {invoiceData.bank.bankName}</p>}
+                        {invoiceData?.bank?.accountNumber && <p className="text-sm text-gray-700">Account # : {invoiceData.bank.accountNumber}</p>}
+                        {invoiceData?.bank?.IFSCCode && <p className="text-sm text-gray-700">IFSC : {invoiceData.bank.IFSCCode}</p>}
+                        {invoiceData?.bank?.branchName && <p className="text-sm text-gray-700">BRANCH : {invoiceData.bank.branchName}</p>}
                     </div>
                 )}
                 {(invoiceData as unknown as { publicViewEnabled?: boolean })?.publicViewEnabled && (invoiceData as unknown as { publicViewToken?: string })?.publicViewToken && (
@@ -235,7 +235,7 @@ const InvoiceTemplateA: React.FC<InvoiceDetailsProps> = ({ invoiceData, lineFiel
                             }/invoice/${(invoiceData as unknown as { publicViewToken: string }).publicViewToken}`}
                             size={96}
                         />
-                        <p className="text-xs text-gray-500 mt-1">Scan to view online</p>
+                        <p className="text-xs text-gray-700 mt-1">Scan to view online</p>
                     </div>
                 )}
                 {(() => {
@@ -261,7 +261,7 @@ const InvoiceTemplateA: React.FC<InvoiceDetailsProps> = ({ invoiceData, lineFiel
                             <a href={link} target="_blank" rel="noopener noreferrer">
                                 <QRCodeSVG value={link} size={96} />
                             </a>
-                            <p className="text-xs text-gray-500 mt-1">Scan or tap to pay via UPI</p>
+                            <p className="text-xs text-gray-700 mt-1">Scan or tap to pay via UPI</p>
                         </div>
                     );
                 })()}
@@ -277,7 +277,7 @@ const InvoiceTemplateA: React.FC<InvoiceDetailsProps> = ({ invoiceData, lineFiel
             {invoiceData?.notes && (
                 <section className="mt-2">
                     <h3 className="font-semibold mb-2">Notes :</h3>
-                    <p className="text-sm text-gray-600 whitespace-pre-line">{invoiceData.notes}</p>
+                    <p className="text-sm text-gray-700 whitespace-pre-line">{invoiceData.notes}</p>
                 </section>
             )}
 
@@ -285,13 +285,13 @@ const InvoiceTemplateA: React.FC<InvoiceDetailsProps> = ({ invoiceData, lineFiel
             {invoiceData?.termsAndCondition && (
                 <section className="mt-2">
                     <h3 className="font-semibold mb-2">Terms & Conditions :</h3>
-                    <ol className="list-decimal list-inside text-sm text-gray-600 space-y-1">
+                    <ol className="list-decimal list-inside text-sm text-gray-700 space-y-1">
                         <li className="whitespace-pre-line">{invoiceData.termsAndCondition}</li>
                     </ol>
                 </section>
             )}
 
-            <div className="mt-2Ema text-center text-sm text-gray-500">
+            <div className="mt-2Ema text-center text-sm text-gray-700">
                 <p>Thanks for your Business</p>
             </div>
 

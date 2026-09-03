@@ -324,14 +324,14 @@ const BankAccountList: FC = () => {
                 <button
                     type="button"
                     onClick={() => handleViewChange(false)}
-                    className={`px-4 py-1.5 text-sm font-medium rounded ${!showDeleted ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                    className={`px-4 py-1.5 text-sm font-medium rounded ${!showDeleted ? 'bg-primary text-primary-foreground' : 'text-gray-700 hover:bg-gray-100'}`}
                 >
                     Active
                 </button>
                 <button
                     type="button"
                     onClick={() => handleViewChange(true)}
-                    className={`px-4 py-1.5 text-sm font-medium rounded ${showDeleted ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                    className={`px-4 py-1.5 text-sm font-medium rounded ${showDeleted ? 'bg-primary text-primary-foreground' : 'text-gray-700 hover:bg-gray-100'}`}
                 >
                     Deleted
                 </button>

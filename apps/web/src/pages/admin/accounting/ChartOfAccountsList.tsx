@@ -211,7 +211,7 @@ const ChartOfAccountsList: React.FC = () => {
                     <select
                         value={filterType}
                         onChange={(e) => setFilterType(e.target.value)}
-                        className="border border-gray-300 px-3 py-2 rounded-md bg-white text-gray-800 text-sm"
+                        className="border border-gray-300 px-3 py-2 rounded-md bg-card text-gray-800 text-sm"
                     >
                         <option value="">All types</option>
                         {ACCOUNT_TYPES.map((t) => (
@@ -251,7 +251,7 @@ const ChartOfAccountsList: React.FC = () => {
 
             {showModal && (
                 <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowModal(false)}>
-                    <div className="bg-white rounded-md p-6 w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-card rounded-md p-6 w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
                         <h3 className="text-lg font-semibold mb-4">{editingId ? "Edit Account" : "Add Account"}</h3>
                         <form onSubmit={handleSubmit} className="space-y-3">
                             <div>

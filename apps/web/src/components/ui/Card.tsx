@@ -18,7 +18,7 @@ export interface CardProps
 // One step down from p-5 / px-5 py-4. Card is the most-reused surface in the
 // app, so this is the single highest-leverage padding change available — and
 // it compounds with the --spacing rescale rather than duplicating it.
-const BASE = "bg-card border border-border rounded-xl shadow-sm";
+const BASE = "bg-card border border-border rounded-md shadow-sm";
 
 const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
   {

@@ -405,20 +405,20 @@ const SignatureList: FC = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Image Upload */}
                     <div className="flex items-start gap-4 mb-4">
-                        <div className="relative w-24 h-24 border border-border rounded-md flex items-center justify-center overflow-hidden bg-white">
+                        <div className="relative w-24 h-24 border border-border rounded-md flex items-center justify-center overflow-hidden bg-card">
                             {formData.signatureImage_preview_url ? (
                                 <img src={formData.signatureImage_preview_url} alt="Preview" className="w-full h-full object-contain" />
                             ) : (
                                 <span className="text-xl text-muted-foreground"><Image /></span>
                             )}
                             {formData.signatureImage_preview_url && (
-                                <button type="button" onClick={handleImageDelete} title="Remove Image" className="absolute top-[-1px] right-[-1px] bg-white border border-destructive rounded-full p-1 shadow-md hover:bg-destructive group">
-                                    <Trash2Icon size={14} className="text-destructive group-hover:text-white" />
+                                <button type="button" onClick={handleImageDelete} title="Remove Image" className="absolute top-[-1px] right-[-1px] bg-card border border-destructive rounded-full p-1 shadow-md hover:bg-destructive group">
+                                    <Trash2Icon size={14} className="text-destructive group-hover:text-destructive-foreground" />
                                 </button>
                             )}
                         </div>
                         <div>
-                            <label htmlFor="imageUpload" className="inline-flex items-center bg-primary hover:bg-primary/90 text-white text-sm px-4 py-2 rounded-md transition duration-200 cursor-pointer">
+                            <label htmlFor="imageUpload" className="inline-flex items-center bg-primary hover:bg-primary/90 text-primary-foreground text-sm px-4 py-2 rounded-md transition duration-200 cursor-pointer">
                                 <Image size={16} className="mr-2" /> Upload Image
                             </label>
                             <input type="file" accept="image/png, image/jpeg" onChange={handleFileChange} className="hidden" id="imageUpload" />

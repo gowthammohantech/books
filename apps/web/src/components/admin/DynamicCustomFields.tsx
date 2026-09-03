@@ -77,7 +77,7 @@ const DynamicCustomFields: React.FC<DynamicCustomFieldsProps> = ({
 
     if (isLoading) {
         return (
-            <div className="bg-white p-4 rounded-lg border border-gray-200 mt-4 flex items-center justify-center min-h-[6.25rem]">
+            <div className="bg-card p-4 rounded-lg border border-gray-200 mt-4 flex items-center justify-center min-h-[6.25rem]">
                 <LoaderSpinner />
             </div>
         );
@@ -86,7 +86,7 @@ const DynamicCustomFields: React.FC<DynamicCustomFieldsProps> = ({
     if (activeCustomFields.length === 0) return null;
 
     return (
-        <div className="bg-white p-4 rounded-lg border border-gray-200 mt-4">
+        <div className="bg-card p-4 rounded-lg border border-gray-200 mt-4">
             <h3 className="font-bold text-gray-950 mb-4">Additional Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {activeCustomFields.map((field: any) => {
@@ -122,7 +122,7 @@ const DynamicCustomFields: React.FC<DynamicCustomFieldsProps> = ({
                                 />
                             ) : (typeSlug === 'dropdown' || typeSlug === 'select') ? (
                                 <select
-                                    className={`border rounded-md px-4 py-2 h-10 w-full text-sm bg-white focus:outline-none focus:ring-1 focus:ring-ring ${isError ? 'border-destructive' : 'border-gray-300'}`}
+                                    className={`border rounded-md px-4 py-2 h-10 w-full text-sm bg-card focus:outline-none focus:ring-1 focus:ring-ring ${isError ? 'border-destructive' : 'border-gray-300'}`}
                                     value={currentValue || ''}
                                     onChange={(e) => onChange(fieldKey, e.target.value)}
                                 >
@@ -158,7 +158,7 @@ const DynamicCustomFields: React.FC<DynamicCustomFieldsProps> = ({
                                     )}
                                     <input
                                         type="file"
-                                        className={`block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-accent file:text-primary hover:file:bg-accent ${isError ? 'border-destructive' : ''}`}
+                                        className={`block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-accent file:text-primary hover:file:bg-accent ${isError ? 'border-destructive' : ''}`}
                                         onChange={(e) => onChange(fieldKey, e.target.files?.[0] || null)}
                                     />
                                 </div>
@@ -235,7 +235,7 @@ const DynamicCustomFields: React.FC<DynamicCustomFieldsProps> = ({
                             )}
 
                             {isError && <p className="text-destructive text-xs mt-1">{errorMessage}</p>}
-                            {!isError && field.helpText && <p className="text-gray-500 text-xs mt-1 italic">{field.helpText}</p>}
+                            {!isError && field.helpText && <p className="text-gray-700 text-xs mt-1 italic">{field.helpText}</p>}
                         </div>
                     )
                 })}

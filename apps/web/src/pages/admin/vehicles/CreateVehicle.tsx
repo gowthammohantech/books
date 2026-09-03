@@ -263,7 +263,7 @@ const VehicleForm: React.FC<VehicleFormProps> = ({ vehicleData = null }) => {
         : null;
 
     return (
-        <div className="p-6 bg-white rounded-xl shadow-sm border border-border overflow-x-auto">
+        <div className="p-6 bg-card rounded-xl shadow-sm border border-border overflow-x-auto">
             <PageHeader title={isEditMode ? 'Edit Vehicle' : 'Add Vehicle'}>
                 <Button
                     variant="white"

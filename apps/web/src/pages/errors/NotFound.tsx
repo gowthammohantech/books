@@ -21,7 +21,7 @@ const NotFound: React.FC = () => {
                 {/* Bouncing Ghost Icon with Interactive Hover */}
                 <div className="mb-2 relative flex flex-col items-center justify-center group cursor-pointer">
                     <div className="animate-bounce relative z-10">
-                        <div className="bg-white p-5 rounded-full shadow-xl shadow-primary/10 ring-4 ring-accent group-hover:bg-accent group-hover:ring-accent transition-colors duration-300">
+                        <div className="bg-card p-5 rounded-full shadow-xl shadow-primary/10 ring-4 ring-accent group-hover:bg-accent group-hover:ring-accent transition-colors duration-300">
                             <Ghost className="w-12 h-12 text-primary group-hover:rotate-12 transition-transform duration-300" strokeWidth={1.5} />
                         </div>
                     </div>
@@ -36,7 +36,7 @@ const NotFound: React.FC = () => {
                     <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 tracking-tight">
                         Oh no! There's nothing here.
                     </h2>
-                    <p className="text-base sm:text-lg text-gray-500 font-medium leading-relaxed">
+                    <p className="text-base sm:text-lg text-gray-700 font-medium leading-relaxed">
                         We looked behind the server racks and checked under the digital rug, but this page has completely vanished.
                     </p>
                 </div>
@@ -45,15 +45,15 @@ const NotFound: React.FC = () => {
                 <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto px-6">
                     <button
                         onClick={() => navigate(-1)}
-                        className="group w-full sm:w-auto flex items-center justify-center gap-2 px-7 py-3.5 bg-white border-2 border-gray-200 text-gray-700 font-bold rounded-xl hover:border-accent hover:bg-accent hover:text-primary focus:outline-none focus:ring-4 focus:ring-accent transition-all duration-200 cursor-pointer shadow-sm"
+                        className="group w-full sm:w-auto flex items-center justify-center gap-2 px-7 py-3.5 bg-card border-2 border-gray-200 text-gray-700 font-bold rounded-xl hover:border-accent hover:bg-accent hover:text-primary focus:outline-none focus:ring-4 focus:ring-accent transition-all duration-200 cursor-pointer shadow-sm"
                     >
-                        <ArrowLeft size={18} className="text-gray-400 group-hover:text-primary group-hover:-translate-x-1 transition-all" />
+                        <ArrowLeft size={18} className="text-gray-600 group-hover:text-primary group-hover:-translate-x-1 transition-all" />
                         Go Back
                     </button>
 
                     <Link
                         to="/"
-                        className="group w-full sm:w-auto flex items-center justify-center gap-2 px-7 py-3.5 bg-primary border-2 border-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-primary/90 hover:border-primary hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-accent transition-all duration-200 cursor-pointer"
+                        className="group w-full sm:w-auto flex items-center justify-center gap-2 px-7 py-3.5 bg-primary border-2 border-primary text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-primary/90 hover:border-primary hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-accent transition-all duration-200 cursor-pointer"
                     >
                         <Home size={18} className="group-hover:scale-110 transition-transform" />
                         Back to Home
@@ -66,7 +66,7 @@ const NotFound: React.FC = () => {
                     onMouseEnter={() => setEggDiscovered(true)}
                     onMouseLeave={() => setEggDiscovered(false)}
                 >
-                    <p className={`text-xs font-mono transition-all duration-300 ${eggDiscovered ? 'text-primary scale-110 font-bold' : 'text-gray-400'}`}>
+                    <p className={`text-xs font-mono transition-all duration-300 ${eggDiscovered ? 'text-primary scale-110 font-bold' : 'text-gray-600'}`}>
                         {eggDiscovered
                             ? "Okay, fine. Here's a cookie for your trouble: 🍪"
                             : "// Pro tip: clicking the screen harder won't make the page appear."}

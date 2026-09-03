@@ -317,7 +317,7 @@ const ContactForm: React.FC = () => {
 
     // ── Shared select class ───────────────────────────────────────────────────
 
-    const selectClass = 'mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-ring focus:border-primary sm:text-sm text-gray-950 disabled:bg-gray-50';
+    const selectClass = 'mt-1 block w-full px-3 py-2 border border-gray-300 bg-card rounded-md shadow-sm focus:outline-none focus:ring-ring focus:border-primary sm:text-sm text-gray-950 disabled:bg-gray-50';
 
     // ── Render ────────────────────────────────────────────────────────────────
 
@@ -339,7 +339,7 @@ const ContactForm: React.FC = () => {
                     {isEditMode ? 'Save Changes' : 'Create'}
                 </Button>
             </PageHeader>
-            <div className="p-6 bg-white rounded-xl shadow-sm border border-border">
+            <div className="p-6 bg-card rounded-xl shadow-sm border border-border">
                 <form id="contact-form" className="space-y-8" onSubmit={handleSubmit}>
 
                     {/* ── Identity ──────────────────────────────────────────── */}

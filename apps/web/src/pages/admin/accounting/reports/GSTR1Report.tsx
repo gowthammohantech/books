@@ -107,7 +107,7 @@ responseType: 'blob'
   }, []);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto bg-white">
+    <div className="p-6 max-w-6xl mx-auto bg-card">
       <PageHeader title="GSTR-1 (Outward Supplies)">
         <Button type="button" variant="white" size="md" leftIcon={<Printer size={14} />} onClick={() => window.print()}>
           Print / Save PDF
@@ -145,7 +145,7 @@ responseType: 'blob'
 
       {data && (
         <div className="space-y-4 text-sm">
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-gray-600">
             Period: {formatDate(data.period.from)} —{' '}
             {formatDate(data.period.to)}
           </div>
@@ -154,7 +154,7 @@ responseType: 'blob'
             <h2 className="font-medium mb-2">Summary</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <div>
-                <div className="text-xs text-gray-500">Total Invoices</div>
+                <div className="text-xs text-gray-700">Total Invoices</div>
                 <div className="font-medium">
                   <DrillLink
                     to="/invoices"
@@ -166,7 +166,7 @@ responseType: 'blob'
                 </div>
               </div>
               <div>
-                <div className="text-xs text-gray-500">Taxable Value</div>
+                <div className="text-xs text-gray-700">Taxable Value</div>
                 <div className="font-medium">
                   <DrillLink
                     to="/invoices"
@@ -178,7 +178,7 @@ responseType: 'blob'
                 </div>
               </div>
               <div>
-                <div className="text-xs text-gray-500">CGST</div>
+                <div className="text-xs text-gray-700">CGST</div>
                 <div className="font-medium">
                   <DrillLink
                     to="/invoices"
@@ -190,7 +190,7 @@ responseType: 'blob'
                 </div>
               </div>
               <div>
-                <div className="text-xs text-gray-500">SGST</div>
+                <div className="text-xs text-gray-700">SGST</div>
                 <div className="font-medium">
                   <DrillLink
                     to="/invoices"
@@ -202,7 +202,7 @@ responseType: 'blob'
                 </div>
               </div>
               <div>
-                <div className="text-xs text-gray-500">IGST</div>
+                <div className="text-xs text-gray-700">IGST</div>
                 <div className="font-medium">
                   <DrillLink
                     to="/invoices"
@@ -214,7 +214,7 @@ responseType: 'blob'
                 </div>
               </div>
               <div>
-                <div className="text-xs text-gray-500">CESS</div>
+                <div className="text-xs text-gray-700">CESS</div>
                 <div className="font-medium">
                   <DrillLink
                     to="/invoices"
@@ -226,7 +226,7 @@ responseType: 'blob'
                 </div>
               </div>
               <div>
-                <div className="text-xs text-gray-500">Total Tax</div>
+                <div className="text-xs text-gray-700">Total Tax</div>
                 <div className="font-medium">
                   <DrillLink
                     to="/invoices"

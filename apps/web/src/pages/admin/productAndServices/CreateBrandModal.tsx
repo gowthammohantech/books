@@ -154,7 +154,7 @@ const CreateBrandModal: React.FC<Props> = ({ isOpen, onClose, onSuccess }) => {
                 {/* Name Input */}
                 <div>
                     <label htmlFor="brand_name" className="block text-sm font-medium text-destructive  mb-1">Name *</label>
-                    <input id="brand_name" name="brand_name" type="text" maxLength={50} value={formData.brand_name || ""} onChange={handleChange} placeholder="Enter Brand Name" className="w-full bg-white  text-gray-950  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-ring focus:border-primary" />
+                    <input id="brand_name" name="brand_name" type="text" maxLength={50} value={formData.brand_name || ""} onChange={handleChange} placeholder="Enter Brand Name" className="w-full bg-card  text-gray-950  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-ring focus:border-primary" />
                     {formErrors.brand_name && <p className="text-destructive text-xs mt-1">{formErrors.brand_name}</p>}
                 </div>
                 {/* Custom Fields */}

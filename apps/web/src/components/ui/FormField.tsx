@@ -6,20 +6,29 @@ import {
 } from "react";
 
 /**
- * Shared control styling for text-like inputs and native selects, matching
- * the app's token language (bg-muted, border-border, rounded-md,
- * primary focus ring). Exported so other primitives (e.g. Select) can
- * reuse the exact same look.
+ * Shared control styling for text-like inputs and native selects. Exported so
+ * every other primitive (Select, InputField, and the custom controls that
+ * imitate an input) can reuse the exact same look.
+ *
+ * ERPNext fields are FILLED, not outlined: --control-bg at rest with no border
+ * at all, and a 2px outer ring on focus. That ring is a box-shadow rather than
+ * an outline or a border so it cannot shift layout, which matters at 28px
+ * where there is no vertical slack to give back.
+ *
+ * `disabled:opacity-60` is deliberately gone. Fading a filled control muddies
+ * the fill instead of reading as disabled; ERPNext uses an explicit darker
+ * fill with dimmer text, which is what --disabled-control-bg is for.
  */
 export const fieldControlClasses = (invalid = false) =>
   [
-    "w-full bg-muted border rounded-md px-3 py-2 text-[0.8125rem] text-foreground",
-    "min-h-[2.25rem] coarse:min-h-[2.75rem]",
-    "placeholder:text-muted-foreground outline-none transition-colors",
-    "focus:ring-1 disabled:opacity-60 disabled:cursor-not-allowed",
+    "w-full bg-muted border-0 rounded-md px-2 py-1 text-sm text-foreground",
+    "min-h-[1.75rem] coarse:min-h-[2.75rem]",
+    "placeholder:text-gray-600 placeholder:opacity-100",
+    "outline-none transition-shadow",
+    "disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed",
     invalid
-      ? "border-destructive focus:border-destructive focus:ring-destructive"
-      : "border-border focus:border-primary focus:ring-ring",
+      ? "shadow-[0_0_0_1px_var(--destructive)] focus:shadow-[0_0_0_2px_var(--focus-red)]"
+      : "focus:shadow-[0_0_0_2px_var(--focus-neutral)]",
   ].join(" ");
 
 /**

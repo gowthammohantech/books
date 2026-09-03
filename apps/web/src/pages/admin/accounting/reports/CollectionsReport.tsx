@@ -103,7 +103,7 @@ export default function CollectionsReport() {
     : [];
 
   return (
-    <div className="p-6 max-w-5xl mx-auto bg-white">
+    <div className="p-6 max-w-5xl mx-auto bg-card">
       <PageHeader title="Collections">
         <Button type="button" variant="white" size="md" leftIcon={<Printer size={14} />} onClick={() => window.print()}>
           Print / Save PDF
@@ -129,7 +129,7 @@ export default function CollectionsReport() {
 
       {!loading && data && (
         <>
-          <div className="text-xs text-gray-400 mb-4">Overdue receivables as of {formatDate(asOf)}, sorted by days overdue</div>
+          <div className="text-xs text-gray-600 mb-4">Overdue receivables as of {formatDate(asOf)}, sorted by days overdue</div>
 
           <div className="overflow-x-auto border border-border rounded-md">
             <table className="w-full text-sm border-collapse">

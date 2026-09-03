@@ -64,7 +64,7 @@ export default function BalanceSheetReport() {
   }, []);
 
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-white">
+    <div className="p-6 max-w-4xl mx-auto bg-card">
       <PageHeader title="Balance Sheet">
         <ExportButton url={Constants.EXPORT_BALANCE_SHEET_URL} filename="balance-sheet.csv" />
         <button type="button" onClick={() => window.print()} className="px-3 py-1 text-sm border rounded">
@@ -78,22 +78,22 @@ export default function BalanceSheetReport() {
           onChange={(d) => setAsOf(d ? dateToYmdString(d) : '')}
           label="As Of"
         />
-        <button type="button" onClick={load} className="px-3 py-1 text-sm bg-primary text-white rounded">
+        <button type="button" onClick={load} className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded">
           Reload
         </button>
       </div>
 
-      {loading && <p className="text-gray-500">Loading…</p>}
+      {loading && <p className="text-gray-700">Loading…</p>}
       {error && <p className="text-destructive">{error}</p>}
 
       {data && (
         <div className="space-y-4 text-sm">
-          <div className="text-xs text-gray-400">As of {formatDate(data.asOf)}</div>
+          <div className="text-xs text-gray-600">As of {formatDate(data.asOf)}</div>
 
           <section className="border rounded p-4">
             <h2 className="font-medium mb-2">Assets</h2>
             <div className="ml-2 mb-2">
-              <div className="text-xs text-gray-500 mb-1">Current Assets</div>
+              <div className="text-xs text-gray-700 mb-1">Current Assets</div>
               <div className="flex justify-between">
                 <span>Cash & Bank</span>
                 <span>
@@ -124,7 +124,7 @@ export default function BalanceSheetReport() {
               </div>
             </div>
             <div className="ml-2 mb-2">
-              <div className="text-xs text-gray-500 mb-1">Fixed Assets</div>
+              <div className="text-xs text-gray-700 mb-1">Fixed Assets</div>
               <div className="flex justify-between">
                 <span>Total Fixed Assets</span>
                 <span>{data.assets.fixed.total.toFixed(2)}</span>
@@ -155,7 +155,7 @@ export default function BalanceSheetReport() {
           <section className="border rounded p-4">
             <h2 className="font-medium mb-2">Liabilities</h2>
             <div className="ml-2 mb-2">
-              <div className="text-xs text-gray-500 mb-1">Current Liabilities</div>
+              <div className="text-xs text-gray-700 mb-1">Current Liabilities</div>
               <div className="flex justify-between">
                 <span>Accounts Payable</span>
                 <span>
@@ -174,7 +174,7 @@ export default function BalanceSheetReport() {
               </div>
             </div>
             <div className="ml-2 mb-2">
-              <div className="text-xs text-gray-500 mb-1">Long-term Liabilities</div>
+              <div className="text-xs text-gray-700 mb-1">Long-term Liabilities</div>
               <div className="flex justify-between">
                 <span>Total Long-term Liabilities</span>
                 <span>{data.liabilities.longTerm.total.toFixed(2)}</span>

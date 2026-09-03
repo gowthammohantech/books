@@ -220,7 +220,7 @@ export default function MtdPanel() {
           <Button variant="outline" size="sm" onClick={connect} isLoading={connecting}>
             Connect to HMRC
           </Button>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-gray-700">
             {config?.connected
               ? 'OAuth tokens stored. You can fetch obligations and submit returns.'
               : 'Authorise Elixir Books with HMRC to enable live filing.'}
@@ -242,7 +242,7 @@ export default function MtdPanel() {
                   value={vrn}
                   onChange={(e) => setVrn(e.target.value)}
                   placeholder="123456789"
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-white"
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-card"
                 />
               </div>
               <div>
@@ -252,14 +252,14 @@ export default function MtdPanel() {
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
                   placeholder={config?.hasClientId ? 'stored — leave blank to keep' : ''}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-white"
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-card"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground pb-1">
                   Client Secret{' '}
                   {config?.hasClientSecret && (
-                    <span className="text-gray-400">(saved — leave blank to keep)</span>
+                    <span className="text-gray-600">(saved — leave blank to keep)</span>
                   )}
                 </label>
                 <input
@@ -268,7 +268,7 @@ export default function MtdPanel() {
                   onChange={(e) => setClientSecret(e.target.value)}
                   autoComplete="new-password"
                   placeholder={config?.hasClientSecret ? '••••••••' : ''}
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-white"
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-card"
                 />
               </div>
               <div className="flex items-end gap-6">
@@ -299,7 +299,7 @@ export default function MtdPanel() {
             </div>
           </div>
         ) : (
-          <p className="text-xs text-gray-400 border-t border-border pt-4">
+          <p className="text-xs text-gray-600 border-t border-border pt-4">
             Only the account owner can configure HMRC credentials.
           </p>
         )}
@@ -333,7 +333,7 @@ export default function MtdPanel() {
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-2 text-sm bg-white"
+              className="border border-gray-300 rounded px-3 py-2 text-sm bg-card"
             />
           </div>
           <div>
@@ -342,7 +342,7 @@ export default function MtdPanel() {
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-2 text-sm bg-white"
+              className="border border-gray-300 rounded px-3 py-2 text-sm bg-card"
             />
           </div>
         </div>
@@ -384,7 +384,7 @@ export default function MtdPanel() {
                           Submit VAT return
                         </Button>
                       ) : (
-                        <span className="text-xs text-gray-400">—</span>
+                        <span className="text-xs text-gray-600">—</span>
                       )}
                     </td>
                   </tr>
@@ -407,11 +407,11 @@ export default function MtdPanel() {
         >
           <dl className="text-sm grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <dt className="text-gray-500">Form bundle number</dt>
+              <dt className="text-gray-700">Form bundle number</dt>
               <dd className="font-mono">{receipt.formBundleNumber ?? '—'}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Processing date</dt>
+              <dt className="text-gray-700">Processing date</dt>
               <dd>{receipt.processingDate ? formatDate(receipt.processingDate) : '—'}</dd>
             </div>
           </dl>
@@ -423,7 +423,7 @@ export default function MtdPanel() {
         </Card>
       )}
 
-      {loadingConfig && <p className="text-xs text-gray-400">Loading MTD configuration…</p>}
+      {loadingConfig && <p className="text-xs text-gray-600">Loading MTD configuration…</p>}
     </div>
   );
 }

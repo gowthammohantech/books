@@ -57,8 +57,8 @@ function formatUsd(n: number): string {
 
 function SummaryCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-md border border-gray-200 bg-white p-4">
-      <p className="text-xs text-gray-500">{label}</p>
+    <div className="rounded-md border border-gray-200 bg-card p-4">
+      <p className="text-xs text-gray-700">{label}</p>
       <p className="mt-1 text-2xl font-semibold text-gray-950">{value}</p>
     </div>
   );
@@ -114,7 +114,7 @@ export default function AiUsageChart() {
       </div>
 
       {/* Chart */}
-      <div className="mt-4 rounded-md border border-gray-200 bg-white p-4">
+      <div className="mt-4 rounded-md border border-gray-200 bg-card p-4">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-sm font-medium text-gray-700">Last 30 days</p>
           <button
@@ -129,7 +129,7 @@ export default function AiUsageChart() {
         {error ? (
           <div className="py-12 text-center text-sm text-destructive">{error}</div>
         ) : loading ? (
-          <div className="py-12 text-center text-sm text-gray-400">Loading usage…</div>
+          <div className="py-12 text-center text-sm text-gray-600">Loading usage…</div>
         ) : !hasAnyCalls ? (
           <EmptyState
             art="analysis"

@@ -36,7 +36,7 @@ const TransactionOverviewModal: React.FC<Props> = ({
         icon,
         children,
     }) => (
-        <div className="bg-white/70 backdrop-blur-md border border-border rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
+        <div className="bg-card/70 backdrop-blur-md border border-border rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-2 border-b pb-2 mb-3">
                 <span className="text-blue-600">{icon}</span>
                 <h3 className="font-semibold text-gray-800 text-base">{title}</h3>
@@ -63,7 +63,7 @@ const TransactionOverviewModal: React.FC<Props> = ({
 
                 {relatedData.attachment && (
                     <div className="mt-3">
-                        <p className="text-sm text-gray-500">Attachment</p>
+                        <p className="text-sm text-gray-700">Attachment</p>
                         <a
                             href={relatedData.attachment}
                             target="_blank"
@@ -85,14 +85,14 @@ const TransactionOverviewModal: React.FC<Props> = ({
                                 className="w-10 h-10 rounded-full object-cover"
                             />
                         ) : (
-                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold">
+                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-semibold">
                                 {relatedData.user.name?.[0] ?? "?"}
                             </div>
                         )}
                         <div>
                             <p className="font-medium text-gray-800">{relatedData.user.name}</p>
-                            <p className="text-xs text-gray-500">{relatedData.user.email}</p>
-                            <p className="text-xs text-gray-500">{relatedData.user.phone}</p>
+                            <p className="text-xs text-gray-700">{relatedData.user.email}</p>
+                            <p className="text-xs text-gray-700">{relatedData.user.phone}</p>
                         </div>
                     </div>
                 </div>
@@ -131,7 +131,7 @@ const TransactionOverviewModal: React.FC<Props> = ({
                     <Info label="Notes" value={notes} />
                     {attachment && (
                         <div className="col-span-2">
-                            <p className="text-sm text-gray-500">Attachment</p>
+                            <p className="text-sm text-gray-700">Attachment</p>
                             <a
                                 href={attachment}
                                 target="_blank"
@@ -154,14 +154,14 @@ const TransactionOverviewModal: React.FC<Props> = ({
                                 className="w-10 h-10 rounded-full object-cover"
                             />
                         ) : (
-                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold">
+                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 font-semibold">
                                 {supplier?.name?.charAt(0).toUpperCase() ?? "S"}
                             </div>
                         )}
                         <div>
                             <p className="font-medium text-gray-800">{supplier?.name || "—"}</p>
-                            <p className="text-xs text-gray-500">{supplier?.email || "—"}</p>
-                            <p className="text-xs text-gray-500">{supplier?.phone || "—"}</p>
+                            <p className="text-xs text-gray-700">{supplier?.email || "—"}</p>
+                            <p className="text-xs text-gray-700">{supplier?.phone || "—"}</p>
                         </div>
                     </div>
                 </div>
@@ -180,7 +180,7 @@ const TransactionOverviewModal: React.FC<Props> = ({
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Transaction Overview" size="2xl">
-            <div className="p-6 space-y-6 bg-gradient-to-b from-gray-50 to-white rounded-2xl">
+            <div className="p-6 space-y-6 bg-gradient-to-b from-gray-50 to-card rounded-2xl">
                 {/* Related Section */}
                 {transaction.relatedType === "EXPENSE"
                     ? renderExpenseDetails()
@@ -227,7 +227,7 @@ interface InfoProps {
 
 const Info: React.FC<InfoProps> = ({ label, value, className }) => (
     <div className={className}>
-        <p className="text-xs text-gray-500">{label}</p>
+        <p className="text-xs text-gray-700">{label}</p>
         <p className="text-sm font-medium text-gray-900 mt-0.5">
             {value || "—"}
         </p>

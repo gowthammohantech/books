@@ -287,8 +287,8 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
             <p className="text-gray-700 font-medium">
               {file ? file.name : 'Drop a bill here or click to upload'}
             </p>
-            <p className="text-xs text-gray-500">PDF, JPG, PNG, or WEBP — up to 10MB</p>
-            <label className="mt-3 cursor-pointer bg-primary hover:bg-primary/90 text-white px-4 py-1.5 rounded-md text-sm">
+            <p className="text-xs text-gray-700">PDF, JPG, PNG, or WEBP — up to 10MB</p>
+            <label className="mt-3 cursor-pointer bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-1.5 rounded-md text-sm">
               Choose file
               <input
                 type="file"
@@ -318,7 +318,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
               type="button"
               onClick={startExtraction}
               disabled={!file}
-              className="px-4 py-1.5 rounded-md bg-primary hover:bg-primary/90 disabled:opacity-50 text-white text-sm flex items-center gap-1.5"
+              className="px-4 py-1.5 rounded-md bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-sm flex items-center gap-1.5"
             >
               <FileText size={14} /> Extract bill
             </button>
@@ -330,7 +330,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
         <div className="flex flex-col items-center gap-3 py-12">
           <Loader2 size={36} className="animate-spin text-primary" />
           <p className="text-gray-700 font-medium">Reading your bill…</p>
-          <p className="text-xs text-gray-500">Usually takes 2–10 seconds.</p>
+          <p className="text-xs text-gray-700">Usually takes 2–10 seconds.</p>
         </div>
       )}
 
@@ -427,7 +427,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
               </button>
             </div>
             <table className="w-full text-sm border border-gray-200">
-              <thead className="bg-gray-50 text-gray-600">
+              <thead className="bg-gray-50 text-gray-700">
                 <tr>
                   <th className="text-left px-2 py-1 font-medium">Description</th>
                   <th className="text-right px-2 py-1 font-medium w-20">Qty</th>
@@ -472,7 +472,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
                       />
                     </td>
                     <td className="px-2 py-1 text-center">
-                      <button type="button" onClick={() => removeLine(i)} className="text-gray-400 hover:text-destructive">
+                      <button type="button" onClick={() => removeLine(i)} className="text-gray-600 hover:text-destructive">
                         <Trash2 size={14} />
                       </button>
                     </td>
@@ -491,7 +491,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
               </button>
             </div>
             <table className="w-full text-sm border border-gray-200">
-              <thead className="bg-gray-50 text-gray-600">
+              <thead className="bg-gray-50 text-gray-700">
                 <tr>
                   <th className="text-left px-2 py-1 font-medium">Label</th>
                   <th className="text-right px-2 py-1 font-medium w-20">Rate %</th>
@@ -527,7 +527,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
                       />
                     </td>
                     <td className="px-2 py-1 text-center">
-                      <button type="button" onClick={() => removeTax(i)} className="text-gray-400 hover:text-destructive">
+                      <button type="button" onClick={() => removeTax(i)} className="text-gray-600 hover:text-destructive">
                         <Trash2 size={14} />
                       </button>
                     </td>
@@ -540,11 +540,11 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
           {/* Totals */}
           <div className="flex justify-end">
             <div className="w-72 text-sm space-y-1">
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-gray-700">
                 <span>Subtotal</span>
                 <span>{totals.subtotal.toFixed(2)} {data.currency}</span>
               </div>
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-gray-700">
                 <span>Tax</span>
                 <span>{totals.taxTotal.toFixed(2)} {data.currency}</span>
               </div>
@@ -574,7 +574,7 @@ const ScanBillModal: FC<ScanBillModalProps> = ({ isOpen, onClose, onConfirmed })
               type="button"
               onClick={handleConfirm}
               disabled={submitting || (!match?.supplierId && (!createSupplier || !supplierName.trim()))}
-              className="px-4 py-1.5 rounded-md bg-primary hover:bg-primary/90 disabled:opacity-50 text-white text-sm flex items-center gap-1.5"
+              className="px-4 py-1.5 rounded-md bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-sm flex items-center gap-1.5"
             >
               {submitting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
               Save as Purchase
@@ -608,7 +608,7 @@ const Field: FC<FieldProps> = ({ label, value, onChange, type = 'text' }) => {
   }
   return (
     <label className="flex flex-col gap-1 text-sm">
-      <span className="text-gray-600">{label}</span>
+      <span className="text-gray-700">{label}</span>
       <input
         type={type}
         value={value}

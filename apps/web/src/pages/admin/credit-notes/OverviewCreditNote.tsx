@@ -198,7 +198,7 @@ const OverviewCreditNote: React.FC = () => {
                     </div>
 
                     {/* Row 2: Date / Number / Status */}
-                    <div className="flex justify-between items-center mt-2 text-sm text-gray-600">
+                    <div className="flex justify-between items-center mt-2 text-sm text-gray-700">
                         <p className="text-xs">Original For Recipient</p>
                         <div className="flex items-center gap-4">
                             <p>Date: {formatDate(creditNote.creditNoteDate)}</p>
@@ -209,7 +209,7 @@ const OverviewCreditNote: React.FC = () => {
                         </div>
                     </div>
                     {creditNote.invoice?.invoiceNumber && (
-                        <div className="flex justify-end mt-1 text-sm text-gray-600">
+                        <div className="flex justify-end mt-1 text-sm text-gray-700">
                             <p>Against Invoice: {creditNote.invoice.invoiceNumber}</p>
                         </div>
                     )}
@@ -220,21 +220,21 @@ const OverviewCreditNote: React.FC = () => {
                     <div className="w-2/5">
                         <h2 className="font-bold text-violet-600 mb-2">From :</h2>
                         <p className="font-semibold text-gray-950">{creditNote.billFrom?.name || systemSettings?.company.companyName}</p>
-                        <p className="text-sm text-gray-600">{creditNote.billFrom?.address || systemSettings?.company.address}</p>
-                        <p className="text-sm text-gray-600">{creditNote.billFrom?.phone || systemSettings?.company.phone}</p>
-                        <p className="text-sm text-gray-600">{creditNote.billFrom?.email}</p>
+                        <p className="text-sm text-gray-700">{creditNote.billFrom?.address || systemSettings?.company.address}</p>
+                        <p className="text-sm text-gray-700">{creditNote.billFrom?.phone || systemSettings?.company.phone}</p>
+                        <p className="text-sm text-gray-700">{creditNote.billFrom?.email}</p>
                     </div>
                     <div className="w-2/5">
                         <h2 className="font-bold text-violet-600 mb-2">Customer :</h2>
                         <p className="font-semibold text-gray-950">{creditNote.billTo?.name}</p>
-                        <p className="text-sm text-gray-600">{creditNote.billTo?.address}</p>
-                        <p className="text-sm text-gray-600">{creditNote.billTo?.email}</p>
-                        <p className="text-sm text-gray-600">{creditNote.billTo?.phone}</p>
+                        <p className="text-sm text-gray-700">{creditNote.billTo?.address}</p>
+                        <p className="text-sm text-gray-700">{creditNote.billTo?.email}</p>
+                        <p className="text-sm text-gray-700">{creditNote.billTo?.phone}</p>
                     </div>
                     <div className="text-right">
                         <h2 className="font-bold text-violet-600 mb-2">{systemSettings?.company.companyName}</h2>
-                        <p className="text-sm text-gray-600">Address: {systemSettings?.company.address}</p>
-                        <p className="text-sm text-gray-600">Mobile: {systemSettings?.company.phone}</p>
+                        <p className="text-sm text-gray-700">Address: {systemSettings?.company.address}</p>
+                        <p className="text-sm text-gray-700">Mobile: {systemSettings?.company.phone}</p>
                     </div>
                 </section>
 
@@ -243,21 +243,21 @@ const OverviewCreditNote: React.FC = () => {
                     <table className="w-full text-left">
                         <thead className="bg-gray-50">
                             <tr className="border-b border-gray-200">
-                                <th className="p-3 text-sm font-semibold text-gray-600">#</th>
-                                <th className="p-3 text-sm font-semibold text-gray-600">Item</th>
+                                <th className="p-3 text-sm font-semibold text-gray-700">#</th>
+                                <th className="p-3 text-sm font-semibold text-gray-700">Item</th>
                                 {customColumns.map((c) => (
-                                    <th key={c.slug} className="p-3 text-sm font-semibold text-gray-600">{c.label}</th>
+                                    <th key={c.slug} className="p-3 text-sm font-semibold text-gray-700">{c.label}</th>
                                 ))}
-                                <th className="p-3 text-sm font-semibold text-gray-600 text-right">Qty</th>
-                                <th className="p-3 text-sm font-semibold text-gray-600 text-right">Rate</th>
-                                <th className="p-3 text-sm font-semibold text-gray-600 text-right">Discount</th>
-                                <th className="p-3 text-sm font-semibold text-gray-600 text-right">Tax</th>
-                                <th className="p-3 text-sm font-semibold text-gray-600 text-right">Total</th>
+                                <th className="p-3 text-sm font-semibold text-gray-700 text-right">Qty</th>
+                                <th className="p-3 text-sm font-semibold text-gray-700 text-right">Rate</th>
+                                <th className="p-3 text-sm font-semibold text-gray-700 text-right">Discount</th>
+                                <th className="p-3 text-sm font-semibold text-gray-700 text-right">Tax</th>
+                                <th className="p-3 text-sm font-semibold text-gray-700 text-right">Total</th>
                             </tr>
                         </thead>
                         <tbody>
                             {creditNote.items.map((item, index) => (
-                                <tr key={item.id ?? index} className="border-b border-gray-200 text-gray-600">
+                                <tr key={item.id ?? index} className="border-b border-gray-200 text-gray-700">
                                     <td className="p-3">{index + 1}</td>
                                     <td className="p-3 font-medium">{item.name ?? '-'}</td>
                                     {customColumns.map((c) => (
@@ -279,15 +279,15 @@ const OverviewCreditNote: React.FC = () => {
                 {/* Totals Section */}
                 <section className="flex justify-end mt-2">
                     <div className="w-full max-w-xs">
-                        <div className="flex justify-between text-sm text-gray-600 py-2">
+                        <div className="flex justify-between text-sm text-gray-700 py-2">
                             <span className='font-bold'>Sub Total</span>
                             <span className='font-semibold'>{money(creditNote.taxableAmount)}</span>
                         </div>
-                        <div className="flex justify-between text-sm text-gray-600 py-2">
+                        <div className="flex justify-between text-sm text-gray-700 py-2">
                             <span className='font-bold'>Tax</span>
                             <span className='font-semibold'>{money(creditNote.vat)}</span>
                         </div>
-                        <div className="flex justify-between text-sm text-gray-600 py-2">
+                        <div className="flex justify-between text-sm text-gray-700 py-2">
                             <span className='font-bold'>Discount</span>
                             <span className='font-semibold'>{money(creditNote.totalDiscount)}</span>
                         </div>
@@ -300,8 +300,8 @@ const OverviewCreditNote: React.FC = () => {
 
                 {/* Amount in words and Summary */}
                 <section className="mt-2 pt-2 border-t border-gray-200">
-                    <p className="text-sm text-gray-600">Total Items / Qty : {creditNote.items.length} / {creditNote.items.reduce((sum, item) => sum + itemQty(item), 0)}</p>
-                    <p className="text-sm mt-2 text-gray-600">
+                    <p className="text-sm text-gray-700">Total Items / Qty : {creditNote.items.length} / {creditNote.items.reduce((sum, item) => sum + itemQty(item), 0)}</p>
+                    <p className="text-sm mt-2 text-gray-700">
                         <span className="font-semibold">Total amount ( in words) : </span>
                         {numberToWords(creditNote.totalAmount || 0)}
                     </p>
@@ -311,9 +311,9 @@ const OverviewCreditNote: React.FC = () => {
                 <footer className="mt-2 pt-2 flex justify-between border-t border-gray-200">
                     <div>
                         <h3 className="font-semibold mb-2 text-gray-950">Bank Details</h3>
-                        <p className="text-sm text-gray-600">Bank : {creditNote.bank?.bankName}</p>
-                        <p className="text-sm text-gray-600">Account # : {creditNote.bank?.accountNumber}</p>
-                        <p className="text-sm text-gray-600">BRANCH : {creditNote.bank?.branch}</p>
+                        <p className="text-sm text-gray-700">Bank : {creditNote.bank?.bankName}</p>
+                        <p className="text-sm text-gray-700">Account # : {creditNote.bank?.accountNumber}</p>
+                        <p className="text-sm text-gray-700">BRANCH : {creditNote.bank?.branch}</p>
                     </div>
                     {creditNote.signature?.image && (
                         <div className="text-center text-gray-950 font-semibold">
@@ -330,7 +330,7 @@ const OverviewCreditNote: React.FC = () => {
                 {creditNote.termsAndCondition && (
                     <section className="mt-2">
                         <h3 className="font-semibold mb-2">Terms & Conditions :</h3>
-                        <ol className="list-decimal list-inside text-xs text-gray-600 space-y-1">
+                        <ol className="list-decimal list-inside text-xs text-gray-700 space-y-1">
                             <li>{creditNote.termsAndCondition}</li>
                         </ol>
                     </section>
@@ -340,11 +340,11 @@ const OverviewCreditNote: React.FC = () => {
                 {creditNote.notes && (
                     <section className="mt-2">
                         <h3 className="font-semibold mb-2">Notes :</h3>
-                        <p className="text-xs text-gray-600">{creditNote.notes}</p>
+                        <p className="text-xs text-gray-700">{creditNote.notes}</p>
                     </section>
                 )}
 
-                <div className="mt-2 text-center text-sm text-gray-500">
+                <div className="mt-2 text-center text-sm text-gray-700">
                     <p>Thanks for your Business</p>
                 </div>
 

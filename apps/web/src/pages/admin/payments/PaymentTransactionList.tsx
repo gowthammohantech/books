@@ -188,8 +188,8 @@ const PaymentTransactionList: React.FC = () => {
                         className={
                             'px-3 py-1 text-sm rounded-full border cursor-pointer ' +
                             (statusFilter === opt
-                                ? 'bg-primary text-white border-primary'
-                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50')
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-card text-gray-700 border-gray-300 hover:bg-gray-50')
                         }
                     >
                         {opt === 'all' ? 'All' : opt}

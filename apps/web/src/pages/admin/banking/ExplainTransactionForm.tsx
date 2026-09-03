@@ -434,7 +434,7 @@ const ExplainTransactionForm: React.FC<Props> = ({ txn, onDone }) => {
     const fields = selectedDef?.fields ?? [];
 
     return (
-        <div className="space-y-4 rounded-xl border border-border bg-white p-4">
+        <div className="space-y-4 rounded-xl border border-border bg-card p-4">
             <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold text-foreground">Explain Transaction</h3>
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[0.6875rem] font-semibold uppercase tracking-wide ${STATUS_PILL[txn.explainStatus].cls}`}>

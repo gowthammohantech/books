@@ -328,9 +328,9 @@ const CostCenters: React.FC = () => {
                                         {TYPE_BADGE[item.type ?? "BOTH"].label}
                                     </Badge>,
                                     item.parent ? (
-                                        <span className="text-gray-600">{item.parent.code}</span>
+                                        <span className="text-gray-700">{item.parent.code}</span>
                                     ) : (
-                                        <span className="text-gray-400">—</span>
+                                        <span className="text-gray-600">—</span>
                                     ),
                                     item.numberPrefix ? (
                                         <span className="font-mono text-xs text-gray-700">
@@ -338,7 +338,7 @@ const CostCenters: React.FC = () => {
                                             {String(item.nextNumber ?? 1).padStart(6, "0")}
                                         </span>
                                     ) : (
-                                        <span className="text-gray-400 text-xs">Shared sequence</span>
+                                        <span className="text-gray-600 text-xs">Shared sequence</span>
                                     ),
                                     <Switch
                                         checked={item.isActive}
@@ -428,7 +428,7 @@ const CostCenters: React.FC = () => {
 
                     <div className="rounded-md border border-gray-200 p-3 space-y-3">
                         <p className="text-sm font-medium text-gray-700">Document numbering</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-700">
                             Give this centre its own document prefix and its invoices will be numbered
                             in their own series. Leave the prefix blank to keep using the shared
                             company-wide sequence.
@@ -453,7 +453,7 @@ const CostCenters: React.FC = () => {
                             />
                         </div>
                         {prefixPreview && (
-                            <p className="text-xs text-gray-600">
+                            <p className="text-xs text-gray-700">
                                 Next invoice for this centre: <span className="font-mono text-primary">{prefixPreview}</span>
                             </p>
                         )}

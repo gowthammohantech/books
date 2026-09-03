@@ -1,3 +1,4 @@
+import { fieldControlClasses } from "@components/ui/FormField";
 import React from 'react';
 interface InputFieldProps {
   id: string;
@@ -35,7 +36,7 @@ const InputField: React.FC<InputFieldProps> = ({
         name={id}
         value={value}
         placeholder={placeholder}
-        className="mt-1 block w-full px-3 py-2 bg-muted border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary sm:text-sm"
+        className={`mt-1 ${fieldControlClasses(Boolean(error))}`}
         onChange={onChange}
         maxLength={maxLength}
       />

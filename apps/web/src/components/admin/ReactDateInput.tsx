@@ -56,12 +56,12 @@ const ReactDateInput: React.FC<Props> = ({
           required={required}
           disabled={disabled}
           dateFormat={dateFnsFormat}
-          className="w-full rounded-lg border border-gray-300 bg-white text-sm text-gray-950 py-2 pl-3 pr-10 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+          className="w-full rounded-lg border border-gray-300 bg-card text-sm text-gray-950 py-2 pl-3 pr-10 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
           calendarClassName=""
         />
 
         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-          <Calendar className="w-4 h-4 text-gray-500" />
+          <Calendar className="w-4 h-4 text-gray-700" />
         </div>
       </div>
     </div>

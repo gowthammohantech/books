@@ -275,7 +275,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onConfirm,
                             <div className="space-y-1 text-center">
                                 <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
                                 <div className="flex text-sm text-muted-foreground">
-                                    <label htmlFor="sp_attachment" className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-ring">
+                                    <label htmlFor="sp_attachment" className="relative cursor-pointer bg-card rounded-md font-medium text-primary hover:text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-ring">
                                         <span className="font-bold">Browse your files</span>
                                         <input id="sp_attachment" name="sp_attachment" type="file" className="sr-only" onChange={handleFileChange} />
                                     </label>

@@ -28,7 +28,7 @@ const CurrencySelect: React.FC<CurrencySelectProps> = ({
                 onChange={(e) => onChange(e.target.value)}
                 disabled={disabled || loading}
                 className={`mt-1 p-2 h-10 w-full border text-gray-700 text-sm border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-ring focus:border-primary ${
-                    disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-white'
+                    disabled ? 'bg-gray-100 cursor-not-allowed' : 'bg-card'
                 }`}
             >
                 {loading && <option value="">Loading…</option>}

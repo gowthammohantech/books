@@ -495,7 +495,7 @@ const FixedAssets: React.FC = () => {
             {/* Run Depreciation Modal */}
             <Modal isOpen={showDeprecModal} onClose={() => setShowDeprecModal(false)} title="Run Depreciation" size="md">
                 <div className="space-y-4">
-                    <p className="text-sm text-gray-600">Calculate and post depreciation entries for all eligible assets up to the selected date.</p>
+                    <p className="text-sm text-gray-700">Calculate and post depreciation entries for all eligible assets up to the selected date.</p>
                     <ReactDateInput
                         label="As Of Date"
                         required
@@ -517,7 +517,7 @@ const FixedAssets: React.FC = () => {
                                 </div>
                             )}
                             {deprecResults.length === 0 && (
-                                <p className="text-sm text-gray-500">No assets were due for depreciation.</p>
+                                <p className="text-sm text-gray-700">No assets were due for depreciation.</p>
                             )}
                         </div>
                     )}
@@ -539,10 +539,10 @@ const FixedAssets: React.FC = () => {
             {/* Dispose Asset Modal */}
             <Modal isOpen={showDisposeModal} onClose={() => setShowDisposeModal(false)} title={`Dispose Asset: ${disposeAsset?.name ?? ""}`} size="md">
                 <div className="space-y-4">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-700">
                         Post a gain/loss disposal entry and mark the asset disposed.
                         {disposeAsset && (
-                            <span className="block mt-1 text-xs text-gray-500">
+                            <span className="block mt-1 text-xs text-gray-700">
                                 Cost: {Number(disposeAsset.cost).toLocaleString()} &middot; Acc. Depr.: {disposeAsset.accumulatedDepreciation !== undefined ? Number(disposeAsset.accumulatedDepreciation).toLocaleString() : "—"}
                             </span>
                         )}

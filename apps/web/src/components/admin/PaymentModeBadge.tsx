@@ -1,75 +1,48 @@
 import React from 'react';
-import {
-  DollarSign,
-  CreditCard,
-  Banknote,
-  HelpCircle,
-} from 'lucide-react';
+import { DollarSign, CreditCard, Banknote, HelpCircle } from 'lucide-react';
+import { Indicator, type IndicatorHue } from '@components/ui';
 import UPI from '@assets/images/upi.svg';
+
 interface PaymentModeBadgeProps {
   mode: string;
 }
 
+/**
+ * The bank rails take cyan rather than blue. Blue is the informational status
+ * hue (Sent, Partially Paid), and a payment mode sitting in the same table
+ * cell colour as a status was the reason these two were hard to tell apart at
+ * a glance. Cash keeps green, cheque keeps blue.
+ */
 const modeConfig: Record<
   string,
-  {
-    label: string;
-    icon: React.ReactNode;
-    className: string;
-  }
+  { label: string; icon: React.ReactNode; hue: IndicatorHue }
 > = {
-  cash: {
-    label: 'Cash',
-    icon: <DollarSign size={14} className="ml-1 text-success-strong" />,
-    className: 'bg-success-soft text-success-strong',
-  },
-  cheque: {
-    label: 'Cheque',
-    icon: <CreditCard size={14} className="ml-1 text-primary" />,
-    className: 'bg-accent text-primary',
-  },
-  bank: {
-    label: 'Bank',
-    icon: <Banknote size={14} className="ml-1 text-info-strong" />,
-    className: 'bg-info-soft text-info-strong',
-  },
+  cash: { label: 'Cash', icon: <DollarSign size={14} />, hue: 'green' },
+  cheque: { label: 'Cheque', icon: <CreditCard size={14} />, hue: 'blue' },
+  bank: { label: 'Bank', icon: <Banknote size={14} />, hue: 'cyan' },
   upi: {
     label: 'UPI',
-    icon: <img src={UPI} alt="UPI" className="h-4 ml-1" />,
-    className: 'bg-info-soft text-info-strong',
+    // Not a lucide glyph, so it cannot inherit currentColor — it stays an image.
+    icon: <img src={UPI} alt="" className="h-3.5" />,
+    hue: 'cyan',
   },
-  'bank deposit': {
-    label: 'Bank Deposit',
-    icon: <Banknote size={14} className="ml-1 text-info-strong" />,
-    className: 'bg-info-soft text-info-strong',
-  },
-  'bank transfer': {
-    label: 'Bank Transfer',
-    icon: <Banknote size={14} className="ml-1 text-info-strong" />,
-    className: 'bg-info-soft text-info-strong',
-  },
-  'petty cash': {
-    label: 'Petty Cash',
-    icon: <Banknote size={14} className="ml-1 text-info-strong" />,
-    className: 'bg-info-soft text-info-strong',
-  },
+  'bank deposit': { label: 'Bank Deposit', icon: <Banknote size={14} />, hue: 'cyan' },
+  'bank transfer': { label: 'Bank Transfer', icon: <Banknote size={14} />, hue: 'cyan' },
+  'petty cash': { label: 'Petty Cash', icon: <Banknote size={14} />, hue: 'cyan' },
 };
 
 const PaymentModeBadge: React.FC<PaymentModeBadgeProps> = ({ mode }) => {
   const normalized = mode.toLowerCase().trim();
-  const config = modeConfig[normalized] || {
+  const config = modeConfig[normalized] ?? {
     label: mode,
-    icon: <HelpCircle size={14} className="ml-1 text-muted-foreground" />,
-    className: 'bg-muted text-muted-foreground',
+    icon: <HelpCircle size={14} />,
+    hue: 'gray' as IndicatorHue,
   };
 
   return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-md text-[0.8125rem] font-medium ${config.className}`}
-    >
+    <Indicator hue={config.hue} icon={config.icon}>
       {config.label}
-      {config.icon}
-    </span>
+    </Indicator>
   );
 };
 

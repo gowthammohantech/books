@@ -17,7 +17,7 @@ const defaultData = [
 
 export function ChartCard({ title, value, color, data = defaultData }: ChartCardProps) {
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-border p-4 flex justify-between items-center">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-4 flex justify-between items-center">
             {/* Left Side - Title & Value */}
             <div>
                 <p className="text-foreground font-semibold text-sm">{title}</p>

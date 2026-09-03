@@ -967,7 +967,7 @@ const Reminder = () => {
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-border">
+                            <tbody className="bg-card divide-y divide-border">
                                 {manualReminders.map((reminder) => (
                                     <tr
                                         key={reminder.id}
@@ -1025,7 +1025,7 @@ const Reminder = () => {
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-border">
+                            <tbody className="bg-card divide-y divide-border">
                                 {isLoading ? (
                                     <tr>
                                         <td
@@ -1094,7 +1094,7 @@ const Reminder = () => {
                                                                             }`}
                                                                     >
                                                                         <span
-                                                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${reminder.isEnabled
+                                                                            className={`inline-block h-4 w-4 transform rounded-full bg-card transition-transform ${reminder.isEnabled
                                                                                 ? "translate-x-6"
                                                                                 : "translate-x-1"
                                                                                 }`}
@@ -1116,7 +1116,7 @@ const Reminder = () => {
                                                                         </Button>
 
                                                                         {openActionDropdown === reminder.id && (
-                                                                            <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg border border-border py-1 z-10">
+                                                                            <div className="absolute right-0 mt-2 w-40 bg-popover rounded-xl shadow-lg border border-border py-1 z-10">
                                                                                 <button
                                                                                     onClick={() =>
                                                                                         handleEditReminder(reminder)
@@ -1191,7 +1191,7 @@ const Reminder = () => {
                                                                             }`}
                                                                     >
                                                                         <span
-                                                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${reminder.isEnabled
+                                                                            className={`inline-block h-4 w-4 transform rounded-full bg-card transition-transform ${reminder.isEnabled
                                                                                 ? "translate-x-6"
                                                                                 : "translate-x-1"
                                                                                 }`}
@@ -1213,7 +1213,7 @@ const Reminder = () => {
                                                                         </Button>
 
                                                                         {openActionDropdown === reminder.id && (
-                                                                            <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg border border-border py-1 z-10">
+                                                                            <div className="absolute right-0 mt-2 w-40 bg-popover rounded-xl shadow-lg border border-border py-1 z-10">
                                                                                 <button
                                                                                     onClick={() =>
                                                                                         handleEditReminder(reminder)
@@ -1324,7 +1324,7 @@ const Reminder = () => {
                         ></div>
 
                         {/* Modal panel */}
-                        <div className="relative inline-block align-bottom bg-white rounded-xl border border-border text-left overflow-hidden shadow-lg transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full z-50">
+                        <div className="relative inline-block align-bottom bg-popover rounded-xl border border-border text-left overflow-hidden shadow-lg transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full z-50">
                             {/* Modal Header */}
                             <div className="px-6 py-4 border-b border-border">
                                 <div className="flex items-center justify-between">
@@ -1535,7 +1535,7 @@ const Reminder = () => {
                                                         handlePlaceholderSelect(e.target.value, "subject");
                                                     }
                                                 }}
-                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-white cursor-pointer"
+                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-primary-foreground cursor-pointer"
                                             >
                                                 <option value="">Insert Placeholder</option>
                                                 {Array.isArray(placeholders) && placeholders.map((placeholder, index) => (
@@ -1570,7 +1570,7 @@ const Reminder = () => {
                                                         handlePlaceholderSelect(e.target.value, "body");
                                                     }
                                                 }}
-                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-white cursor-pointer"
+                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-primary-foreground cursor-pointer"
                                             >
                                                 <option value="">Insert Placeholder</option>
                                                 {Array.isArray(placeholders) && placeholders.map((placeholder, index) => (
@@ -1624,7 +1624,7 @@ const Reminder = () => {
                         ></div>
 
                         {/* Modal panel */}
-                        <div className="relative inline-block align-bottom bg-white rounded-xl border border-border text-left overflow-hidden shadow-lg transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full z-50">
+                        <div className="relative inline-block align-bottom bg-popover rounded-xl border border-border text-left overflow-hidden shadow-lg transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full z-50">
                             {/* Modal Header */}
                             <div className="px-6 py-4 border-b border-border">
                                 <div className="flex items-center justify-between">
@@ -1805,7 +1805,7 @@ const Reminder = () => {
                                                         handleManualPlaceholderSelect(e.target.value, "subject");
                                                     }
                                                 }}
-                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-white cursor-pointer"
+                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-primary-foreground cursor-pointer"
                                             >
                                                 <option value="">Insert Placeholder</option>
                                                 {Array.isArray(placeholders) && placeholders.map((placeholder, index) => (
@@ -1839,7 +1839,7 @@ const Reminder = () => {
                                                         handleManualPlaceholderSelect(e.target.value, "body");
                                                     }
                                                 }}
-                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-white cursor-pointer"
+                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-primary-foreground cursor-pointer"
                                             >
                                                 <option value="">Insert Placeholder</option>
                                                 {Array.isArray(placeholders) && placeholders.map((placeholder, index) => (
@@ -1898,7 +1898,7 @@ const Reminder = () => {
                             onClick={() => setIsPurchaseModalOpen(false)}
                         ></div>
 
-                        <div className="relative inline-block align-bottom bg-white rounded-xl border border-border text-left overflow-hidden shadow-lg transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full z-50">
+                        <div className="relative inline-block align-bottom bg-popover rounded-xl border border-border text-left overflow-hidden shadow-lg transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full z-50">
                             <div className="px-6 py-4 border-b border-border">
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-lg font-semibold text-foreground">
@@ -2164,7 +2164,7 @@ const Reminder = () => {
                                                         setSelectedPlaceholder("");
                                                     }
                                                 }}
-                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-white cursor-pointer"
+                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-primary-foreground cursor-pointer"
                                             >
                                                 <option value="">Insert Placeholder</option>
                                                 {Array.isArray(placeholders) && placeholders.map((placeholder, index) => (
@@ -2208,7 +2208,7 @@ const Reminder = () => {
                                                         setSelectedPlaceholder("");
                                                     }
                                                 }}
-                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-white cursor-pointer"
+                                                className="text-sm text-primary border border-primary rounded-md px-2 py-1 hover:bg-primary hover:text-primary-foreground cursor-pointer"
                                             >
                                                 <option value="">Insert Placeholder</option>
                                                 {Array.isArray(placeholders) && placeholders.map((placeholder, index) => (

@@ -182,7 +182,7 @@ const ImageCropperUpload: React.FC<ImageCropperUploadProps> = ({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled}
-          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
         >
           {label}
         </button>
@@ -209,7 +209,7 @@ const ImageCropperUpload: React.FC<ImageCropperUploadProps> = ({
           {/* Aspect-ratio presets (auto-detect mode) */}
           {autoDetectAspect && !aspect && (
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-gray-600 whitespace-nowrap">Ratio</span>
+              <span className="text-sm text-gray-700 whitespace-nowrap">Ratio</span>
               {RATIO_PRESETS.map((preset) => {
                 const active = ratioOverride === preset.value;
                 return (
@@ -232,7 +232,7 @@ const ImageCropperUpload: React.FC<ImageCropperUploadProps> = ({
 
           {/* Zoom slider */}
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600 whitespace-nowrap">Zoom</span>
+            <span className="text-sm text-gray-700 whitespace-nowrap">Zoom</span>
             <input
               type="range"
               min={1}
@@ -257,7 +257,7 @@ const ImageCropperUpload: React.FC<ImageCropperUploadProps> = ({
               type="button"
               onClick={() => void handleConfirm()}
               disabled={isProcessing || !croppedPixels}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
               {isProcessing ? 'Processing…' : 'Confirm'}
             </button>

@@ -107,7 +107,12 @@ export const AUDIT_SOURCE = String.raw`(() => {
 
   // ---- Satisfiable assertions --------------------------------------------
   const coarse = matchMedia('(pointer: coarse)').matches;
-  const floor = coarse ? 44 : 32;
+  // 28, not 32, on a fine pointer: the ERPNext desk puts every control at
+  // 28px and that rhythm is the point of the redesign. This is knowingly below
+  // the 32px this audit originally established (and below WCAG 2.5.5 AAA), and
+  // it is a product decision, not an oversight. The coarse tier below is where
+  // the real accessibility floor lives and it is unchanged at 44.
+  const floor = coarse ? 44 : 28;
   // Exactly the selector the base-layer floor enforces. Two deliberate
   // exclusions: checkboxes and radios (a 44px glyph is wrong — their label
   // carries the target), and a plain href anchor, which is an inline text link

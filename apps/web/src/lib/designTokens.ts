@@ -18,34 +18,49 @@
  * from `index.css`. The literals below are only a fallback for the case where
  * the stylesheet has not been applied yet (module evaluation racing the style
  * injection, or a non-browser environment such as a test runner).
+ *
+ * That race is real, not theoretical: muiTheme.ts calls themeColor() at module
+ * scope, so a stale fallback here does not fail — it renders the previous
+ * palette on a fast load and then never corrects itself, because a successful
+ * read is memoised. Update these whenever :root moves.
  */
 
 const FALLBACKS = {
-  background: "#fafafa",
-  foreground: "#000000",
+  background: "#f8f8f8",
+  foreground: "#383838",
   card: "#ffffff",
   primary: "#3f5ec2",
   "primary-foreground": "#eff6ff",
-  secondary: "#ebebeb",
-  "secondary-foreground": "#222222",
-  muted: "#f5f5f5",
+  secondary: "#ededed",
+  "secondary-foreground": "#383838",
+  muted: "#f3f3f3",
   "muted-foreground": "#525252",
   accent: "#dbe6f6",
   "accent-foreground": "#14185a",
-  destructive: "#df2225",
-  border: "#e4e4e4",
-  input: "#ebebeb",
-  ring: "#3f5ec2",
-  success: "#27ae60",
-  warning: "#e2b93b",
-  info: "#06aed4",
+  destructive: "#cc2929",
+  border: "#ededed",
+  input: "#f3f3f3",
+  ring: "#0070cc",
+  success: "#30a66d",
+  warning: "#edba13",
+  info: "#0289f7",
   indigo: "#3538cd",
-  teal: "#0e9384",
+  teal: "#0b9e92",
   "chart-1": "#dbe6f6",
   "chart-2": "#9ab0e5",
   "chart-3": "#6a7ccd",
   "chart-4": "#3f5ec2",
   "chart-5": "#14185a",
+  // Ramp steps the JS consumers need directly: react-select and the MUI
+  // input surfaces are rebuilt on the ERPNext control fills.
+  "blue-700": "#0070cc",
+  "gray-100": "#f3f3f3",
+  "gray-200": "#ededed",
+  "gray-500": "#999999",
+  "gray-700": "#525252",
+  "control-bg": "#f3f3f3",
+  "focus-neutral": "rgba(124, 124, 124, 0.25)",
+  "control-bg-on-gray": "#ededed",
 } as const;
 
 export type TokenName = keyof typeof FALLBACKS;

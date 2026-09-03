@@ -49,7 +49,7 @@ const InvoiceActivityTimeline: React.FC<InvoiceActivityTimelineProps> = ({ invoi
     const { formatDate } = useDateFormatter();
 
     return (
-        <div className="font-sans max-w-5xl mx-auto mt-4 mb-4 bg-white rounded-xl border border-border shadow-sm">
+        <div className="font-sans max-w-5xl mx-auto mt-4 mb-4 bg-card rounded-xl border border-border shadow-sm">
             {/* Card header */}
             <div className="px-4 py-3 border-b border-border">
                 <h2 className="text-lg font-semibold text-foreground">Activity</h2>
@@ -66,7 +66,7 @@ const InvoiceActivityTimeline: React.FC<InvoiceActivityTimelineProps> = ({ invoi
                             <li key={entry.id ?? idx} className="mb-4 ml-4">
                                 {/* Timeline dot */}
                                 <span
-                                    className={`absolute -left-[7px] mt-1 flex h-3.5 w-3.5 items-center justify-center rounded-full ring-2 ring-white ${dotClass(entry.action)}`}
+                                    className={`absolute -left-[7px] mt-1 flex h-3.5 w-3.5 items-center justify-center rounded-full ring-2 ring-card ${dotClass(entry.action)}`}
                                 />
                                 <div className="flex items-baseline gap-2 flex-wrap">
                                     <span className="text-sm text-foreground leading-snug">

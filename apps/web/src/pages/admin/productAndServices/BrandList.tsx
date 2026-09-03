@@ -356,7 +356,7 @@ const BrandList: FC = () => {
                                         onChange={() => updateStatus(brandItem)}
                                     />
                                     <div className="relative w-11 h-6 bg-gray-200 peer-checked:bg-primary rounded-full peer-focus:ring-2 peer-focus:ring-ring transition-all duration-300">
-                                        <div className={`absolute top-0.5 left-1 w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 ${brandItem.status ? 'translate-x-full' : ''}`}></div>
+                                        <div className={`absolute top-0.5 left-1 w-5 h-5 bg-surface-white rounded-full shadow-md transform transition-transform duration-300 ${brandItem.status ? 'translate-x-full' : ''}`}></div>
                                     </div>
                                 </label>
                             ]}
@@ -414,7 +414,7 @@ const BrandList: FC = () => {
                             value={brand.brand_name || ''}
                             onChange={(e) => setBrand({ ...brand, brand_name: e.target.value })}
                             placeholder="Enter brand name"
-                            className="w-full text-gray-950  bg-white  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-ring focus:border-primary"
+                            className="w-full text-gray-950  bg-card  px-4 py-2 border border-gray-300  rounded-md text-sm focus:ring-ring focus:border-primary"
                         />
                         {formErrors.brand_name && <p className="text-destructive text-xs mt-1">{formErrors.brand_name}</p>}
                     </div>

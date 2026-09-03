@@ -272,8 +272,8 @@ const ProductList: FC = () => {
                                 className={
                                     'px-3 py-1 text-sm rounded-full border cursor-pointer ' +
                                     (inventoryFilter === opt.value
-                                        ? 'bg-primary text-white border-primary'
-                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50')
+                                        ? 'bg-primary text-primary-foreground border-primary'
+                                        : 'bg-card text-gray-700 border-gray-300 hover:bg-gray-50')
                                 }
                             >
                                 {opt.label}
@@ -301,7 +301,7 @@ const ProductList: FC = () => {
                                     (() => {
                                         // Items that don't track inventory have no stock badge.
                                         if (!product.enable_inventory) {
-                                            return <span className="text-xs text-gray-400">—</span>;
+                                            return <span className="text-xs text-gray-600">—</span>;
                                         }
                                         const qty = product.stock ?? 0;
                                         const alertQty = product.alert_quantity ?? 0;
@@ -319,7 +319,7 @@ const ProductList: FC = () => {
                                                 </Badge>
                                             );
                                         }
-                                        return <span className="text-xs text-gray-500">{qty}</span>;
+                                        return <span className="text-xs text-gray-700">{qty}</span>;
                                     })(),
                                     <span onClick={(e) => e.stopPropagation()}><Switch name={`status-${product.id}`} checked={product.status} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleStausChange(product.id, e.target.checked)} disabled={!hasPermission(permissions, 'product-services', 'edit')} /></span>,
                                 ]}

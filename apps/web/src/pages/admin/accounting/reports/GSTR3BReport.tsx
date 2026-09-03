@@ -54,23 +54,23 @@ function TaxBlockRow({
   return (
     <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
       <div>
-        <div className="text-xs text-gray-500">Taxable Value</div>
+        <div className="text-xs text-gray-700">Taxable Value</div>
         <div className="font-medium"><Cell value={block.taxableValue} /></div>
       </div>
       <div>
-        <div className="text-xs text-gray-500">CGST</div>
+        <div className="text-xs text-gray-700">CGST</div>
         <div className="font-medium"><Cell value={block.cgst} /></div>
       </div>
       <div>
-        <div className="text-xs text-gray-500">SGST</div>
+        <div className="text-xs text-gray-700">SGST</div>
         <div className="font-medium"><Cell value={block.sgst} /></div>
       </div>
       <div>
-        <div className="text-xs text-gray-500">IGST</div>
+        <div className="text-xs text-gray-700">IGST</div>
         <div className="font-medium"><Cell value={block.igst} /></div>
       </div>
       <div>
-        <div className="text-xs text-gray-500">CESS</div>
+        <div className="text-xs text-gray-700">CESS</div>
         <div className="font-medium"><Cell value={block.cess} /></div>
       </div>
     </div>
@@ -126,7 +126,7 @@ responseType: 'blob'
   }, []);
 
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-white">
+    <div className="p-6 max-w-4xl mx-auto bg-card">
       <PageHeader title="GSTR-3B">
         <button type="button" onClick={() => window.print()} className="px-3 py-1 text-sm border rounded">
           Print / Save PDF
@@ -150,17 +150,17 @@ responseType: 'blob'
           onChange={(d) => setTo(d ? dateToYmdString(d) : '')}
           label="To"
         />
-        <button type="button" onClick={load} className="px-3 py-1 text-sm bg-primary text-white rounded">
+        <button type="button" onClick={load} className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded">
           Reload
         </button>
       </div>
 
-      {loading && <p className="text-gray-500">Loading…</p>}
+      {loading && <p className="text-gray-700">Loading…</p>}
       {error && <p className="text-destructive">{error}</p>}
 
       {data && (
         <div className="space-y-4 text-sm">
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-gray-600">
             Period: {formatDate(data.period.from)} —{' '}
             {formatDate(data.period.to)}
           </div>
@@ -201,19 +201,19 @@ responseType: 'blob'
             <h2 className="font-medium mb-2">6.1 Tax Payable</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <div>
-                <div className="text-xs text-gray-500">CGST</div>
+                <div className="text-xs text-gray-700">CGST</div>
                 <div className="font-medium">{data['6.1_taxPayable'].cgst.toFixed(2)}</div>
               </div>
               <div>
-                <div className="text-xs text-gray-500">SGST</div>
+                <div className="text-xs text-gray-700">SGST</div>
                 <div className="font-medium">{data['6.1_taxPayable'].sgst.toFixed(2)}</div>
               </div>
               <div>
-                <div className="text-xs text-gray-500">IGST</div>
+                <div className="text-xs text-gray-700">IGST</div>
                 <div className="font-medium">{data['6.1_taxPayable'].igst.toFixed(2)}</div>
               </div>
               <div>
-                <div className="text-xs text-gray-500">CESS</div>
+                <div className="text-xs text-gray-700">CESS</div>
                 <div className="font-medium">{data['6.1_taxPayable'].cess.toFixed(2)}</div>
               </div>
             </div>

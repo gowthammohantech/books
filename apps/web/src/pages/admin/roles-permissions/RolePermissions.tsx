@@ -324,7 +324,7 @@ const RolePermissions: React.FC = () => {
                     {isSaving ? "Saving..." : "Save Changes"}
                 </Button>
             </PageHeader>
-            <div className="flex flex-1 items-center bg-white shadow-sm rounded-xl border border-border mb-6">
+            <div className="flex flex-1 items-center bg-card shadow-sm rounded-xl border border-border mb-6">
                 <p className="font-bold text-gray-950 p-4 flex-1">Role Name: {allRolePermissions && allRolePermissions.roleName || ""}</p>
                 <div className="w-64 pr-4">
                     <Select
@@ -339,11 +339,11 @@ const RolePermissions: React.FC = () => {
                 {modules && modules.length > 0 && (
                     modules.map((module, moduleIndex) => (
                         <div key={moduleIndex} className="permissions mb-6">
-                            <div className="bg-white shadow-sm rounded-xl border border-border">
+                            <div className="bg-card shadow-sm rounded-xl border border-border">
                                 {/* Header */}
                                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
                                     <h2 className="font-bold text-gray-950">{module.moduleName}</h2>
-                                    <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                                    <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
                                         <CustomCheckbox
                                             checked={module.children.length > 0 && module.children.every(child => child.permissions.allowAll)}
                                             onChange={() => handleModuleAllowAllChange(moduleIndex)}

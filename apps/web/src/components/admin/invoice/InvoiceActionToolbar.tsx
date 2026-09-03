@@ -36,7 +36,7 @@ import InvoicePaymentModal from "@pages/admin/invoices/InvoicePaymentModal";
 import AddBankTransactionModal from "./AddBankTransactionModal";
 import InvoiceStatusBadge from "@components/admin/InvoiceStatusBadge";
 import PrintMenu from "@components/print/PrintMenu";
-import { Button } from "@components/ui";
+import { Button, Indicator } from '@components/ui';
 
 interface InvoiceActionToolbarProps {
     invoiceId: string;
@@ -85,7 +85,7 @@ const Dropdown: React.FC<{ label: string; icon: React.ReactNode; children: React
             </Button>
             {open && (
                 <div
-                    className="absolute z-30 mt-1 min-w-[13.125rem] rounded-xl border border-border bg-white py-1 shadow-lg"
+                    className="absolute z-30 mt-1 min-w-[13.125rem] rounded-xl border border-border bg-popover py-1 shadow-lg"
                     onClick={() => setOpen(false)}
                 >
                     {children}
@@ -339,7 +339,7 @@ const InvoiceActionToolbar: React.FC<InvoiceActionToolbarProps> = ({
     const canConvert = invoiceType === "PROFORMA" && !isConverted;
 
     return (
-        <div className="sticky top-0 z-20 -mx-4 px-4 py-3 mb-4 bg-white/95 backdrop-blur border-b border-border">
+        <div className="sticky top-0 z-20 -mx-4 px-4 py-3 mb-4 bg-card/95 backdrop-blur border-b border-border">
             <div className="flex flex-wrap items-center gap-2">
                 {/* Status + primary (Save / Edit) */}
                 <InvoiceStatusBadge
@@ -462,13 +462,9 @@ const InvoiceActionToolbar: React.FC<InvoiceActionToolbarProps> = ({
                         });
                         const meta = DISPLAY_STATUS_META[ds];
                         return (
-                            <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${
-                                    meta?.classes ?? 'bg-muted text-muted-foreground'
-                                }`}
-                            >
+                            <Indicator hue={meta?.hue ?? 'gray'}>
                                 {meta?.label ?? status}
-                            </span>
+                            </Indicator>
                         );
                     })()}
                     <span className="text-muted-foreground">

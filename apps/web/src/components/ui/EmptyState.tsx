@@ -132,7 +132,7 @@ const EmptyState = ({
       <Illustration art={art} px={s.art} />
       <p className={`font-medium text-gray-700 ${s.title}`}>{title}</p>
       {description && (
-        <p className={`max-w-sm text-gray-500 ${s.description}`}>{description}</p>
+        <p className={`max-w-sm text-gray-700 ${s.description}`}>{description}</p>
       )}
       {action && <div className={s.action}>{action}</div>}
     </div>
@@ -225,7 +225,7 @@ export const EmptyStateHero = ({
         {title}
       </h2>
 
-      {description && <p className="mt-3 text-gray-500">{description}</p>}
+      {description && <p className="mt-3 text-gray-700">{description}</p>}
 
       {bullets && bullets.length > 0 && (
         <ul className="mt-6 space-y-3">
@@ -240,7 +240,7 @@ export const EmptyStateHero = ({
               >
                 <Check size={12} strokeWidth={3} />
               </span>
-              <span className="text-sm text-gray-600">{bullet}</span>
+              <span className="text-sm text-gray-700">{bullet}</span>
             </li>
           ))}
         </ul>

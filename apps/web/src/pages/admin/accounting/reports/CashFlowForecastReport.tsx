@@ -56,7 +56,7 @@ export default function CashFlowForecastReport() {
   }, []);
 
   return (
-    <div className="p-6 max-w-5xl mx-auto bg-white">
+    <div className="p-6 max-w-5xl mx-auto bg-card">
       <PageHeader title="Cash Flow Forecast">
         <Button type="button" variant="white" size="md" leftIcon={<Printer size={14} />} onClick={() => window.print()}>
           Print / Save PDF
@@ -65,7 +65,7 @@ export default function CashFlowForecastReport() {
 
       <div className="flex items-end gap-4 mb-6 print:hidden">
         <div>
-          <label className="block text-xs text-gray-500">Horizon (months)</label>
+          <label className="block text-xs text-gray-700">Horizon (months)</label>
           <select
             value={months}
             onChange={(e) => setMonths(Number(e.target.value) as MonthsOption)}

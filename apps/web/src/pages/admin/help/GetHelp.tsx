@@ -114,7 +114,7 @@ const GetHelp = () => {
                                 </h2>
                                 <ExternalLink
                                     size={14}
-                                    className="text-gray-400 shrink-0"
+                                    className="text-gray-600 shrink-0"
                                     aria-hidden="true"
                                 />
                             </div>
@@ -160,7 +160,7 @@ const GetHelp = () => {
                                 <>
                                     <a
                                         href={mailtoHref}
-                                        className="inline-flex items-center gap-2 mt-5 px-4 py-2 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+                                        className="inline-flex items-center gap-2 mt-5 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
                                     >
                                         <LifeBuoy size={16} />
                                         Report a problem

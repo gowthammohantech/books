@@ -267,7 +267,7 @@ const ReportCenter = () => {
                                     <tr
                                         key={report.id}
                                         onClick={() => open(report)}
-                                        className="cursor-pointer border-b border-border transition-colors hover:bg-accent/60"
+                                        className="cursor-pointer border-b border-border transition-colors hover:bg-highlight"
                                     >
                                         <td className="px-3 py-2">
                                             <button

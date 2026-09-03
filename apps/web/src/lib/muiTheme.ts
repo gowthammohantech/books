@@ -36,8 +36,10 @@ export const muiTheme = createTheme({
   },
 
   shape: {
-    // Matches --radius-md, the app's control radius.
-    borderRadius: 6,
+    // Matches --radius (8px), the ERPNext control radius. The old value of 6
+    // claimed to match --radius-md, which is calc(--radius - 2px) — it did,
+    // but --radius-md is the popover radius, not the control one.
+    borderRadius: 8,
   },
 
   typography: {
@@ -49,20 +51,27 @@ export const muiTheme = createTheme({
     // the same control: token border, brand focus ring, no MUI-blue.
     MuiOutlinedInput: {
       styleOverrides: {
+        // Filled and borderless, matching fieldControlClasses(). MUI always
+        // renders the notched outline, so it is made transparent rather than
+        // removed — deleting it would break the label notch geometry.
         root: {
-          backgroundColor: themeColor("card"),
+          backgroundColor: themeColor("control-bg"),
+          borderRadius: 8,
           "& .MuiOutlinedInput-notchedOutline": {
-            borderColor: themeColor("border"),
+            borderColor: "transparent",
           },
           "&:hover .MuiOutlinedInput-notchedOutline": {
-            borderColor: themeColor("primary"),
+            borderColor: "transparent",
+          },
+          "&.Mui-focused": {
+            boxShadow: `0 0 0 2px ${themeColor("focus-neutral")}`,
           },
           "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-            borderColor: themeColor("primary"),
+            borderColor: "transparent",
             borderWidth: 1,
           },
           "&.Mui-disabled": {
-            backgroundColor: themeColor("muted"),
+            backgroundColor: themeColor("control-bg-on-gray"),
           },
         },
         input: {

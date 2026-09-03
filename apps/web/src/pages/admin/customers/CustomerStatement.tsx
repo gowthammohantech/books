@@ -81,7 +81,7 @@ export default function CustomerStatement() {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto bg-white">
+    <div className="p-6 max-w-5xl mx-auto bg-card">
       <PageHeader title="Customer Statement">
         <Button type="button" variant="white" size="md" leftIcon={<Printer size={14} />} onClick={() => window.print()}>
           Print / Save PDF
@@ -115,9 +115,9 @@ export default function CustomerStatement() {
         <>
           <div className="border rounded p-4 mb-4">
             <div className="text-lg font-medium">{data.customer?.name ?? '—'}</div>
-            <div className="text-sm text-gray-500">{data.customer?.email ?? ''}</div>
-            <div className="text-sm text-gray-500">{data.customer?.phone ?? ''}</div>
-            <div className="text-xs text-gray-400 mt-2">
+            <div className="text-sm text-gray-700">{data.customer?.email ?? ''}</div>
+            <div className="text-sm text-gray-700">{data.customer?.phone ?? ''}</div>
+            <div className="text-xs text-gray-600 mt-2">
               Period: {formatDate(data.period.from)} — {formatDate(data.period.to)}
             </div>
             {data.byCurrency.length > 1 && (

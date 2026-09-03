@@ -41,12 +41,12 @@ const DeleteConfirmationModal = ({
                 role="dialog"
                 aria-modal="true"
             >
-                <div className="relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+                <div className="relative w-full max-w-md rounded-lg bg-card p-6 shadow-xl">
                     {/* Close Button */}
                     <button
                         onClick={onClose}
                         disabled={isDeleting}
-                        className="absolute top-2 right-2 rounded-full p-1 text-gray-500 hover:bg-gray-100 cursor-pointer"
+                        className="absolute top-2 right-2 rounded-full p-1 text-gray-700 hover:bg-gray-100 cursor-pointer"
                         aria-label="Close"
                     >
                         <X size={20} />
@@ -67,7 +67,7 @@ const DeleteConfirmationModal = ({
                         </h3>
 
                         {/* Message */}
-                        <div className="mt-2 text-sm font-medium text-gray-600">
+                        <div className="mt-2 text-sm font-medium text-gray-700">
                             {message}
                         </div>
                     </div>
@@ -78,7 +78,7 @@ const DeleteConfirmationModal = ({
                             type="button"
                             onClick={onClose}
                             disabled={isDeleting}
-                            className="w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                            className="w-full rounded-md border border-gray-300 bg-card px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                         >
                             Cancel
                         </button>
@@ -86,7 +86,7 @@ const DeleteConfirmationModal = ({
                             type="button"
                             onClick={onConfirm}
                             disabled={isDeleting}
-                            className="flex w-full items-center justify-center rounded-md border border-transparent bg-destructive px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-destructive/90 focus:outline-none focus:ring-2 focus:ring-destructive focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-destructive disabled:opacity-50 cursor-pointer"
+                            className="flex w-full items-center justify-center rounded-md border border-transparent bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground shadow-sm hover:bg-destructive/90 focus:outline-none focus:ring-2 focus:ring-destructive focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-destructive disabled:opacity-50 cursor-pointer"
                         >
                             {isDeleting ? (
                                 <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />

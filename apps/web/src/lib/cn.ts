@@ -8,7 +8,7 @@ import { twMerge } from "tailwind-merge";
  * literal — `` `${BASE} ${VARIANTS[variant]} ${className}` `` — which appends
  * but cannot override: two conflicting utilities both survive into the class
  * attribute and the winner is decided by CSS source order, not by the order
- * the caller wrote them. So `<Button className="bg-white">` was not reliably
+ * the caller wrote them. So `<Button className="bg-card">` was not reliably
  * white. `cn()` drops the losing utility instead, making caller overrides
  * behave the way call sites already assume they do.
  *

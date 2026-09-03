@@ -24,9 +24,9 @@ const ActiveFilterBanner: React.FC<Props> = ({ filters, onClear }) => {
             {filters.map((f) => (
                 <span
                     key={f.label}
-                    className="inline-flex items-center rounded-full bg-white border border-accent px-2 py-0.5 text-xs text-gray-700"
+                    className="inline-flex items-center rounded-full bg-card border border-accent px-2 py-0.5 text-xs text-gray-700"
                 >
-                    <span className="text-gray-500 mr-1">{f.label}:</span>
+                    <span className="text-gray-700 mr-1">{f.label}:</span>
                     {f.value}
                 </span>
             ))}

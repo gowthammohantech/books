@@ -33,7 +33,7 @@ function renderRows(
 ) {
   const entries = Object.entries(buckets).filter(([k]) => k !== 'TOTAL');
   if (entries.length === 0) {
-    return <div className="text-xs text-gray-400">No tax components in period.</div>;
+    return <div className="text-xs text-gray-600">No tax components in period.</div>;
   }
   return entries.map(([kind, amt]) => (
     <div key={kind} className="flex justify-between">
@@ -76,7 +76,7 @@ export default function TaxSummaryReport() {
   }, []);
 
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-white">
+    <div className="p-6 max-w-4xl mx-auto bg-card">
       <PageHeader title="Tax Summary">
         <button type="button" onClick={() => window.print()} className="px-3 py-1 text-sm border rounded">
           Print / Save PDF
@@ -94,17 +94,17 @@ export default function TaxSummaryReport() {
           onChange={(d) => setTo(d ? dateToYmdString(d) : '')}
           label="To"
         />
-        <button type="button" onClick={load} className="px-3 py-1 text-sm bg-primary text-white rounded">
+        <button type="button" onClick={load} className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded">
           Reload
         </button>
       </div>
 
-      {loading && <p className="text-gray-500">Loading…</p>}
+      {loading && <p className="text-gray-700">Loading…</p>}
       {error && <p className="text-destructive">{error}</p>}
 
       {data && (
         <div className="space-y-4 text-sm">
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-gray-600">
             Period: {formatDate(data.period.from)} —{' '}
             {formatDate(data.period.to)}
           </div>

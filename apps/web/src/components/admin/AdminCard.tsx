@@ -27,7 +27,7 @@ const AdminCard: React.FC<AdminCardProps> = ({
 
     return (
         <div
-            className={`flex gap-3 p-4 bg-white border border-border rounded-xl shadow-sm ${className}`}
+            className={`flex gap-3 p-4 bg-card border border-border rounded-xl shadow-sm ${className}`}
         >
             {/* Logo */}
             <div className="w-15 h-15 flex items-center justify-center rounded bg-muted border border-border">
@@ -39,7 +39,7 @@ const AdminCard: React.FC<AdminCardProps> = ({
                         onError={() => setImgError(true)}
                     />
                 ) : (
-                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-primary text-white font-bold text-xl">
+                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xl">
                         {firstLetter || "?"}
                     </div>
                 )}

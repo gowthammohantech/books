@@ -118,7 +118,7 @@ const PaymentHistoryPanel: React.FC<PaymentHistoryPanelProps> = ({ invoiceId, on
     };
 
     return (
-        <div className="font-sans max-w-5xl mx-auto mt-8 mb-4 bg-white rounded-xl border border-border shadow-sm">
+        <div className="font-sans max-w-5xl mx-auto mt-8 mb-4 bg-card rounded-xl border border-border shadow-sm">
             {/* Card header */}
             <div className="px-4 py-3 border-b border-border">
                 <h2 className="text-lg font-semibold text-foreground">Payment History</h2>
@@ -127,7 +127,7 @@ const PaymentHistoryPanel: React.FC<PaymentHistoryPanelProps> = ({ invoiceId, on
             {/* Table */}
             <div className="overflow-x-auto">
                 {loading ? (
-                    <div className="p-6 text-center text-sm text-gray-500">Loading payments…</div>
+                    <div className="p-6 text-center text-sm text-gray-700">Loading payments…</div>
                 ) : payments.length === 0 ? (
                     <EmptyState size="compact" art="cash-payment" title="No payments recorded" />
                 ) : (
@@ -138,7 +138,7 @@ const PaymentHistoryPanel: React.FC<PaymentHistoryPanelProps> = ({ invoiceId, on
                                     (h) => (
                                         <th
                                             key={h}
-                                            className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap"
+                                            className="px-3 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide whitespace-nowrap"
                                         >
                                             {h}
                                         </th>
@@ -146,9 +146,9 @@ const PaymentHistoryPanel: React.FC<PaymentHistoryPanelProps> = ({ invoiceId, on
                                 )}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 bg-white">
+                        <tbody className="divide-y divide-gray-100 bg-card">
                             {payments.map((p) => (
-                                <tr key={p.id} className={p.isVoided ? 'bg-gray-50 text-gray-400' : ''}>
+                                <tr key={p.id} className={p.isVoided ? 'bg-gray-50 text-gray-600' : ''}>
                                     {/* Date */}
                                     <td className="px-3 py-2 whitespace-nowrap">{formatDate(p.received_on)}</td>
 
@@ -191,7 +191,7 @@ const PaymentHistoryPanel: React.FC<PaymentHistoryPanelProps> = ({ invoiceId, on
                                     <td className="px-3 py-2 whitespace-nowrap text-right">
                                         {p.isVoided ? (
                                             <span
-                                                className="text-xs text-gray-400 cursor-default"
+                                                className="text-xs text-gray-600 cursor-default"
                                                 title={`Voided by ${fullName(p.voidedBy)} on ${formatDate(p.voidedAt)}${p.voidReason ? `: ${p.voidReason}` : ''}`}
                                             >
                                                 {p.voidReason ? `"${p.voidReason}"` : 'No reason provided'}

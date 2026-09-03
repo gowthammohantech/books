@@ -1,7 +1,7 @@
 import { Building2, Warehouse } from "lucide-react";
 
 import SmartDropdown from "@components/admin/SmartDropdown";
-import { Badge, FormField } from "@components/ui";
+import { Badge, FormField, fieldControlClasses } from '@components/ui';
 import { taxIdPromptFor } from "@lib/countryTaxId";
 import type {
     SetupCountry,
@@ -172,7 +172,7 @@ const StepCompanyProfile: React.FC<StepCompanyProfileProps> = ({
                                     disabled={!data.country}
                                     placeholder="State or province"
                                     onChange={(e) => onPatch({ state: e.target.value, stateId: "" })}
-                                    className="w-full rounded-md border border-border bg-muted px-3 py-2 text-[0.8125rem] text-foreground outline-none transition-colors min-h-[2.25rem] coarse:min-h-[2.75rem] placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+                                    className={fieldControlClasses()}
                                 />
                             )
                         }

@@ -360,7 +360,7 @@ const LeaveTypes: React.FC = () => {
                         <select
                             value={employeeId}
                             onChange={(e) => setEmployeeId(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-card focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                             <option value="">Select employee…</option>
                             {staffOptions.map((s) => (
@@ -373,7 +373,7 @@ const LeaveTypes: React.FC = () => {
                         <select
                             value={year}
                             onChange={(e) => setYear(Number(e.target.value))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-card focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                             {YEARS.map((y) => (
                                 <option key={y} value={y}>{y}</option>
@@ -383,13 +383,13 @@ const LeaveTypes: React.FC = () => {
                 </div>
 
                 {!employeeId ? (
-                    <p className="py-4 text-center text-sm font-medium text-gray-500">
+                    <p className="py-4 text-center text-sm font-medium text-gray-700">
                         Select an employee to view and edit allocations.
                     </p>
                 ) : loadingAlloc ? (
                     <div className="py-6 text-center"><LoaderSpinner /></div>
                 ) : allocRows.length === 0 ? (
-                    <p className="py-4 text-center text-sm font-medium text-gray-500">
+                    <p className="py-4 text-center text-sm font-medium text-gray-700">
                         No active leave types to allocate.
                     </p>
                 ) : (

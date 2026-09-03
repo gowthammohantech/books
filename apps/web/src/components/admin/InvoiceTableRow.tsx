@@ -357,7 +357,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
     };
 
     return (
-        <tr className="bg-white text-gray-950 border-b border-gray-200">
+        <tr className="bg-card text-gray-950 border-b border-gray-200">
             {/* Product Name Search/Manual */}
             <td className="p-3 font-medium">
                 <div className="relative w-full" ref={searchRef}>
@@ -376,10 +376,10 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
                     {showDropdown && (
                         <ul
                             ref={dropdownRef}
-                            className="absolute top-full left-0 w-full bg-white border border-gray-200 z-10 max-h-48 overflow-auto rounded-md shadow-lg"
+                            className="absolute top-full left-0 w-full bg-popover border border-gray-200 z-10 max-h-48 overflow-auto rounded-md shadow-lg"
                         >
                             {isLoadingProducts ? (
-                                <li className="p-3 text-center text-sm text-gray-500">Loading...</li>
+                                <li className="p-3 text-center text-sm text-gray-700">Loading...</li>
                             ) : products.length > 0 ? (
                                 products.map((p, index) => {
                                     const isTracked = p.item_type === 'Product' && !!p.enable_inventory;
@@ -408,7 +408,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
                                                 )}
                                                 <div className="font-medium text-gray-800">{p.name}</div>
                                             </div>
-                                            <div className="text-xs text-gray-500 flex items-center gap-2">
+                                            <div className="text-xs text-gray-700 flex items-center gap-2">
                                                 {showRate && (
                                                     <span>Rate: {formatMoney(p.prices.selling, currencyCode)}</span>
                                                 )}
@@ -420,7 +420,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
                                                             p.stock!.quantity <= p.stock!.alert_quantity ? (
                                                                 <Badge color="warning">Low stock: {p.stock!.quantity}</Badge>
                                                             ) : (
-                                                                <span className="text-gray-500">Qty: {p.stock!.quantity}</span>
+                                                                <span className="text-gray-700">Qty: {p.stock!.quantity}</span>
                                                             )
                                                         )
                                                     )
@@ -430,7 +430,7 @@ const InvoiceTableRow: React.FC<InvoiceTableRowProps> = ({
                                     );
                                 })
                             ) : (
-                                <li className="p-3 text-center text-sm text-gray-500">
+                                <li className="p-3 text-center text-sm text-gray-700">
                                     No results for "{searchInput}"
                                 </li>
                             )}

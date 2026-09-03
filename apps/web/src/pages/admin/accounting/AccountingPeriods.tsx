@@ -268,7 +268,7 @@ const AccountingPeriods: React.FC = () => {
 
             {showModal && (
                 <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setShowModal(false)}>
-                    <div className="bg-white rounded-md p-6 w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-card rounded-md p-6 w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
                         <h3 className="text-lg font-semibold mb-4">{editingId ? "Edit Period" : "Add Period"}</h3>
                         <form onSubmit={handleSubmit} className="space-y-3">
                             <div>

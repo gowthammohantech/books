@@ -265,7 +265,7 @@ const RecurringInvoiceList: React.FC = () => {
                 <button
                     type="button"
                     onClick={() => navigate('/recurring-schedules/new')}
-                    className="bg-primary hover:bg-primary/90 text-white text-sm font-medium px-4 py-2 rounded-md"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium px-4 py-2 rounded-md"
                 >
                     New Recurring Invoice
                 </button>
@@ -361,7 +361,7 @@ const RecurringInvoiceList: React.FC = () => {
                     onClick={() => setViewingOccurrencesOf(null)}
                 >
                     <div
-                        className="bg-white rounded-md p-4 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+                        className="bg-card rounded-md p-4 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <h3 className="text-lg font-medium mb-3">

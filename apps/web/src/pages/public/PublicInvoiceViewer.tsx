@@ -32,9 +32,9 @@ export default function PublicInvoiceViewer() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  if (loading) return <div className="p-6 text-gray-600">Loading…</div>;
+  if (loading) return <div className="p-6 text-gray-700">Loading…</div>;
   if (error) return <div className="p-6 text-destructive">{error}</div>;
-  if (!data) return <div className="p-6 text-gray-600">No data.</div>;
+  if (!data) return <div className="p-6 text-gray-700">No data.</div>;
 
   const items = Array.isArray(data.items)
     ? (data.items as Array<{
@@ -57,7 +57,7 @@ export default function PublicInvoiceViewer() {
   const hasTaxCol = items.some((item) => typeof item.tax === 'number' || typeof item.totalTax === 'number');
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white text-sm text-gray-600 print:p-0">
+    <div className="max-w-3xl mx-auto p-6 bg-card text-sm text-gray-700 print:p-0">
       {logoSrc && (
         <div className="mb-4">
           <img src={logoSrc} alt={company?.companyName || 'logo'} className="h-12 max-w-[11.25rem] object-contain" />
@@ -72,14 +72,14 @@ export default function PublicInvoiceViewer() {
         <div className="flex justify-between text-sm">
           <div>
             <div className="font-medium">{data.company?.companyName}</div>
-            <div className="text-gray-600">{data.company?.address}</div>
-            <div className="text-gray-600">{data.company?.email}</div>
-            {taxId && <div className="text-gray-600">{taxId.label}: {taxId.value}</div>}
+            <div className="text-gray-700">{data.company?.address}</div>
+            <div className="text-gray-700">{data.company?.email}</div>
+            {taxId && <div className="text-gray-700">{taxId.label}: {taxId.value}</div>}
           </div>
           <div className="text-right">
-            <div className="text-gray-600">#{data.invoiceNumber}</div>
-            <div className="text-gray-600">{formatDate(data.invoiceDate)}</div>
-            <div className="text-gray-600">Due {formatDate(data.dueDate)}</div>
+            <div className="text-gray-700">#{data.invoiceNumber}</div>
+            <div className="text-gray-700">{formatDate(data.invoiceDate)}</div>
+            <div className="text-gray-700">Due {formatDate(data.dueDate)}</div>
           </div>
         </div>
       </div>
@@ -87,7 +87,7 @@ export default function PublicInvoiceViewer() {
       <div className="mb-4 text-sm">
         <div className="font-medium">Bill to:</div>
         <div>{data.customer?.name}</div>
-        <div className="text-gray-600">{data.customer?.email}</div>
+        <div className="text-gray-700">{data.customer?.email}</div>
       </div>
 
       <table className="w-full text-sm mb-4">
@@ -148,7 +148,7 @@ export default function PublicInvoiceViewer() {
                   href={o.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
                 >
                   Pay with {o.name}
                 </a>
@@ -174,7 +174,7 @@ export default function PublicInvoiceViewer() {
             <a href={link} target="_blank" rel="noopener noreferrer">
               <QRCodeSVG value={link} size={128} />
             </a>
-            <p className="text-xs text-gray-600 mt-2">Scan or tap to pay via UPI</p>
+            <p className="text-xs text-gray-700 mt-2">Scan or tap to pay via UPI</p>
           </div>
         );
       })()}
@@ -183,11 +183,11 @@ export default function PublicInvoiceViewer() {
       {data.bank && (data.bank.accountHoldername || data.bank.bankName || data.bank.accountNumber || data.bank.IFSCCode || data.bank.branchName) && (
         <div className="mt-6 border-t pt-4 text-sm">
           <div className="font-medium mb-1">Bank Details</div>
-          {data.bank.accountHoldername && <div className="text-gray-600">Account Holder : {data.bank.accountHoldername}</div>}
-          {data.bank.bankName && <div className="text-gray-600">Bank : {data.bank.bankName}</div>}
-          {data.bank.accountNumber && <div className="text-gray-600">Account # : {data.bank.accountNumber}</div>}
-          {data.bank.IFSCCode && <div className="text-gray-600">IFSC : {data.bank.IFSCCode}</div>}
-          {data.bank.branchName && <div className="text-gray-600">Branch : {data.bank.branchName}</div>}
+          {data.bank.accountHoldername && <div className="text-gray-700">Account Holder : {data.bank.accountHoldername}</div>}
+          {data.bank.bankName && <div className="text-gray-700">Bank : {data.bank.bankName}</div>}
+          {data.bank.accountNumber && <div className="text-gray-700">Account # : {data.bank.accountNumber}</div>}
+          {data.bank.IFSCCode && <div className="text-gray-700">IFSC : {data.bank.IFSCCode}</div>}
+          {data.bank.branchName && <div className="text-gray-700">Branch : {data.bank.branchName}</div>}
         </div>
       )}
 
@@ -195,7 +195,7 @@ export default function PublicInvoiceViewer() {
       {data.notes && (
         <div className="mt-6 border-t pt-4 text-sm">
           <div className="font-medium mb-1">Notes</div>
-          <p className="text-gray-600 whitespace-pre-line">{data.notes}</p>
+          <p className="text-gray-700 whitespace-pre-line">{data.notes}</p>
         </div>
       )}
 
@@ -203,7 +203,7 @@ export default function PublicInvoiceViewer() {
       {data.termsAndCondition && (
         <div className="mt-6 border-t pt-4 text-sm">
           <div className="font-medium mb-1">Terms &amp; Conditions</div>
-          <p className="text-gray-600 whitespace-pre-line">{data.termsAndCondition}</p>
+          <p className="text-gray-700 whitespace-pre-line">{data.termsAndCondition}</p>
         </div>
       )}
     </div>

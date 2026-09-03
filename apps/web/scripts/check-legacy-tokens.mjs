@@ -17,13 +17,24 @@ const ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "
 const SRC = join(ROOT, "src");
 const SCANNED = /\.(tsx?|css)$/;
 
-// Nothing is exempt. The compat bridge has been deleted, so a legacy class
-// name no longer resolves to anything — every file must be clean.
+// No file is excluded from scanning. Individual rules carry their own
+// `allowIn` where an exemption is real rather than convenient: the token
+// gallery must render every ramp including the banned ones, and print/email
+// output is outside the token system by necessity (a printed page is
+// physically white; email clients strip var()).
 const EXCLUDED = [];
 
 /** Utility prefixes a color token can appear behind, e.g. `hover:text-heading`. */
 const PREFIXES =
   "text|bg|border|ring|divide|placeholder|from|via|to|fill|stroke|outline|decoration|accent|caret|shadow";
+
+/**
+ * The token gallery is the reference page: its whole job is to render every
+ * ramp and every variant on one screen, including the ones the app itself is
+ * not allowed to reach for. Exempting it here is what keeps a blank swatch —
+ * the only signal an unregistered Tailwind token gives — visible at all.
+ */
+const GALLERY = /^apps\/web\/src\/pages\/dev\/TokenGallery\.tsx$/;
 
 /** Matches `<utility>-<token>` at a class-token boundary, variants included. */
 const color = (token) =>
@@ -58,7 +69,11 @@ const RULES = [
     id: "purple-ramp",
     enabled: true,
     stage: "3a",
-    hint: "purple-600 -> primary, purple-700 -> primary/90, purple-50/100/200 -> accent.",
+    hint:
+      "purple-600 -> primary, purple-700 -> primary/90, purple-50/100/200 -> accent. " +
+      "The ERPNext palette does define a real purple ramp, but it is a category " +
+      "tint only — reach for it through a semantic token, never as brand.",
+    allowIn: GALLERY,
     // The utility prefix has to be part of the match: the character before
     // "purple" is always the "-" of "bg-"/"text-"/"ring-", which a bare
     // (?<![\w-]) lookbehind rejects — so the rule silently found nothing.
@@ -104,6 +119,103 @@ const RULES = [
     stage: "3e",
     hint: "-danger / -danger-soft -> -destructive / -destructive/10",
     pattern: color("danger(?:-soft)?"),
+  },
+
+  {
+    id: "gray-text-light-steps",
+    enabled: true,
+    stage: "E2",
+    hint:
+      "The ERPNext gray ramp is about one step lighter than the old one through " +
+      "the middle, so these no longer carry text: gray-500 is 2.85:1 on white and " +
+      "gray-400 is 1.83:1. Body text is text-gray-700 (7.81:1); the faintest text " +
+      "tier is text-gray-600, which is ERPNext's own --text-light.",
+    // 600 is deliberately NOT banned. It is the third tier — timestamps, hints,
+    // em-dash placeholders — and measures 4.17:1, under AA for body copy. That is
+    // ERPNext's shipped value and a large improvement on the 2.66:1 these sites
+    // had before, but it is a real deviation: see check-contrast.mjs, which
+    // records it rather than letting it pass silently.
+    // `disabled:` is excluded from the variant chain. WCAG 1.4.3 exempts
+    // disabled controls from contrast, and ERPNext's own disabled field is
+    // #999 on #ededed — gray-500 is the faithful value there, not a mistake.
+    pattern: /(?<![\w-])(?<!disabled:)(?:(?!disabled:)[a-z0-9-]+:)*text-gray-(?:400|500)(?![\w-])/g,
+    allowIn: GALLERY,
+  },
+
+  {
+    id: "hardcoded-control-height",
+    enabled: true,
+    stage: "E5",
+    hint:
+      "min-h-[2.25rem] and min-h-[2.5rem] are the pre-28px control heights. " +
+      "Heights belong to Button's SIZES map and fieldControlClasses(); a " +
+      "control that sets its own sits proud of every toolbar it lands in.",
+    // Deliberately narrow. An earlier version also flagged bare h-9 / h-10,
+    // which caught avatars, logos and skeletons — a rule with false positives
+    // gets ignored, and then it guards nothing. Those call sites are real
+    // debt (they are taller than the 28px scale, though the base-layer floor
+    // keeps them legal) but sorting a control from a layout box needs eyes,
+    // so they are not pretended to be covered here.
+    pattern: /(?<![\w-])(?:[a-z0-9-]+:)*min-h-\[2(?:\.25|\.5)rem\](?![\w-])/g,
+    // Button and FormField OWN the control heights; the literals are the point.
+    allowIn:
+      /^apps\/web\/src\/(?:components\/ui\/(?:Button|FormField)\.tsx|pages\/dev\/TokenGallery\.tsx)$/,
+  },
+  {
+    id: "badge-className-override",
+    enabled: true,
+    stage: "E6",
+    hint:
+      "Pill geometry is owned by <Indicator>. A padding, radius or font-size " +
+      "class on a badge is a sixth badge system starting to grow back — pass a " +
+      "hue, or add a variant to Indicator.",
+    pattern:
+      /<(?:Badge|Indicator|StatusBadge|InvoiceStatusBadge|PaymentModeBadge|TransactionTypeBadge)\b[^>]*className=["'][^"']*(?:px-|py-|rounded-|text-\[|h-\d)/g,
+    allowIn: GALLERY,
+  },
+  {
+    id: "raw-white-black",
+    // Still disabled: 7 sites remain, and all seven sit on a stock hue rather
+    // than a token (violet gradient chat bubbles, avatar tints, a blue-600
+    // drop zone, three group-hover fills on the petty-cash stat cards). They
+    // are the same call sites stock-hue-classes below is waiting on, so the
+    // two rules turn on together.
+    enabled: false,
+    stage: "E7",
+    hint:
+      "bg-white -> bg-card (a surface), bg-popover (an overlay), or " +
+      "bg-surface-white (must stay white when a dark theme lands). " +
+      "text-white -> the -foreground token matching its own background.",
+    // bg-black/NN is deliberately allowed: a modal scrim is black at every
+    // theme, and there is no token that should ever make it otherwise.
+    pattern:
+      /(?<![\w-])(?:[a-z0-9-]+:)*(?:(?:bg|text|border|ring|divide|from|via|to)-white|(?:text|border|ring|divide|from|via|to)-black|bg-black)(?![\w-]|\/)/g,
+    // Print and email are outside the token system by necessity: a printed page
+    // is physically white, and email clients strip var(). See emailPalette.
+    allowIn:
+      /^apps\/web\/src\/(?:pages\/admin\/[\w-]+\/\w*Template\w*\.tsx|pages\/admin\/[\w-]+\/Email\w+\.tsx|components\/print\/|components\/auth\/InvoicePaper\/|pages\/dev\/TokenGallery\.tsx)/,
+  },
+  {
+    id: "stock-hue-classes",
+    // Still disabled: 156 occurrences across 110 places. These are no longer
+    // the WRONG colour — the ramps are registered at the stock hue names, so
+    // bg-green-100 is already ERPNext's #e4f5e9 — they are just not semantic.
+    // That is why this stage is safely deferrable: nothing looks broken while
+    // it waits. Worst first: PettyCashList (hand-rolled gradient stat cards,
+    // which have no ERPNext equivalent and need a design call), Banking,
+    // AiChatPanel, ProfileImage (which is literally the avatar-tint primitive
+    // and should move to --{hue}-avatar-bg).
+    enabled: false,
+    stage: "E8",
+    hint:
+      "Stock Tailwind hue classes. These now resolve to the ERPNext ramps, so " +
+      "they are no longer the wrong colour — but status meaning belongs in " +
+      "<Indicator hue>, and a raw tint belongs to bg-tint-{hue}/text-on-{hue}.",
+    pattern: new RegExp(
+      String.raw`(?<![\w-])(?:${PREFIXES})-(?:red|green|blue|yellow|orange|amber|purple|violet|pink|teal|cyan|indigo|emerald|rose|sky|lime|fuchsia|slate|zinc|neutral|stone)-(?:50|100|200|300|400|500|600|700|800|900|950)(?![\w-])`,
+      "g",
+    ),
+    allowIn: GALLERY,
   },
 
   // ---- Keeps the animated-icon chunk boundary honest. ----

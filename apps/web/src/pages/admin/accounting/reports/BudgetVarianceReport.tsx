@@ -84,7 +84,7 @@ export default function BudgetVarianceReport() {
   }, []);
 
   return (
-    <div className="p-6 max-w-5xl mx-auto bg-white">
+    <div className="p-6 max-w-5xl mx-auto bg-card">
       <PageHeader title="Budget Variance">
         <Button type="button" variant="white" size="md" leftIcon={<Printer size={14} />} onClick={() => window.print()}>
           Print / Save PDF

@@ -107,7 +107,7 @@ const Tabs = ({
                     "text-[0.8125rem] font-medium transition-colors",
                     "disabled:opacity-60 disabled:cursor-not-allowed",
                     selected
-                      ? "bg-white text-primary shadow-sm"
+                      ? "bg-card text-primary shadow-sm"
                       : "text-muted-foreground hover:text-foreground",
                   ].join(" ")
                 : [

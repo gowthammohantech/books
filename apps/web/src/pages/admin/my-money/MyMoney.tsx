@@ -74,7 +74,7 @@ interface SectionHeaderProps {
 const SectionHeader: React.FC<SectionHeaderProps> = ({ title, summary }) => (
   <div className="flex items-center justify-between mb-2">
     <h2 className="text-lg font-semibold text-gray-700">{title}</h2>
-    <div className="text-sm text-gray-500">{summary}</div>
+    <div className="text-sm text-gray-700">{summary}</div>
   </div>
 );
 
@@ -157,7 +157,7 @@ const MyMoney: React.FC = () => {
 
   const tabBase = 'px-4 py-2 text-sm font-medium border-b-2 transition-colors duration-150 cursor-pointer';
   const tabActive = 'border-primary text-primary';
-  const tabInactive = 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
+  const tabInactive = 'border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300';
 
   const theadClass = 'bg-gray-100 text-xs uppercase text-muted-foreground';
   const thClass = 'px-4 py-3 text-left border-b border-border';
@@ -173,7 +173,7 @@ const MyMoney: React.FC = () => {
       {/* Scope summary (descriptive, follows the selected person + tax year) */}
       {data && (
         <div className="flex items-center justify-end">
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-gray-700">
             {data.user.name} &bull; Tax year {data.taxYear.label} ({fmtDate(data.taxYear.start)} – {fmtDate(data.taxYear.end)})
           </span>
         </div>
@@ -182,11 +182,11 @@ const MyMoney: React.FC = () => {
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500">Person</label>
+          <label className="text-xs font-medium text-gray-700">Person</label>
           <select
             value={selectedUserId}
             onChange={(e) => setSelectedUserId(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-ring bg-white min-w-[11.25rem]"
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-ring bg-card min-w-[11.25rem]"
           >
             {users.map((u) => (
               <option key={u.id} value={u.id}>{u.name || u.id}</option>
@@ -195,11 +195,11 @@ const MyMoney: React.FC = () => {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500">Tax Year</label>
+          <label className="text-xs font-medium text-gray-700">Tax Year</label>
           <select
             value={selectedTaxYear}
             onChange={(e) => setSelectedTaxYear(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-ring bg-white"
+            className="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-ring bg-card"
           >
             {TAX_YEARS.map((ty) => (
               <option key={ty.value} value={ty.value}>{ty.label}</option>
@@ -216,7 +216,7 @@ const MyMoney: React.FC = () => {
 
       {/* Content */}
       {!loading && !error && data && (
-        <div className="bg-white rounded-xl shadow-sm border border-border">
+        <div className="bg-card rounded-xl shadow-sm border border-border">
           {/* Tab bar */}
           <div className="flex border-b border-gray-200 overflow-x-auto">
             {tabs.map((t) => (
@@ -246,7 +246,7 @@ const MyMoney: React.FC = () => {
                 />
 
                 {/* Payroll run entries */}
-                <h3 className="text-sm font-semibold text-gray-600 mt-2 mb-1">Payroll runs</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mt-2 mb-1">Payroll runs</h3>
                 <div className="overflow-x-auto border border-border rounded-md">
                   <table className="w-full border-collapse">
                     <thead className={theadClass}>
@@ -288,7 +288,7 @@ const MyMoney: React.FC = () => {
                 </div>
 
                 {/* Direct salary payments (legacy) */}
-                <h3 className="text-sm font-semibold text-gray-600 mt-6 mb-1">Direct salary payments</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mt-6 mb-1">Direct salary payments</h3>
                 <div className="overflow-x-auto border border-border rounded-md">
                   <table className="w-full border-collapse">
                     <thead className={theadClass}>

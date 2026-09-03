@@ -242,7 +242,7 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="flex items-start gap-4 mb-4">
                     {/* Image Preview or Default */}
-                    <div className="relative w-20 h-20 border border-gray-300 rounded-md flex items-center justify-center overflow-hidden bg-white">
+                    <div className="relative w-20 h-20 border border-gray-300 rounded-md flex items-center justify-center overflow-hidden bg-card">
                         {formData.profile_image_preview_url ? (
                             <img
                                 src={formData.profile_image_preview_url}
@@ -250,18 +250,18 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                                 className="w-full h-full object-cover rounded"
                             />
                         ) : (
-                            <span className="text-xl text-gray-400"><Image /></span>
+                            <span className="text-xl text-gray-600"><Image /></span>
                         )}
 
                         {/* Delete Button on Preview */}
                         {formData.profile_image_preview_url && (
                             <button
                                 type="button"
-                                className="absolute top-[0px] right-[-1px] bg-white border border-destructive text-white rounded-full p-1 shadow-md hover:bg-destructive hover:border-white transition duration-200"
+                                className="absolute top-[0px] right-[-1px] bg-card border border-destructive text-destructive-foreground rounded-full p-1 shadow-md hover:bg-destructive hover:border-destructive transition duration-200"
                                 onClick={handleImageDelete}
                                 title="Remove Image"
                             >
-                                <Trash2Icon size={14} className="text-destructive hover:text-white cursor-pointer" />
+                                <Trash2Icon size={14} className="text-destructive hover:text-destructive-foreground cursor-pointer" />
                             </button>
                         )}
                     </div>
@@ -276,13 +276,13 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                                 className="hidden"
                                 id="imageUpload"
                             />
-                            <span className="inline-flex items-center bg-primary hover:bg-primary/90 text-white text-sm px-4 py-2 rounded-md transition duration-200 cursor-pointer">
+                            <span className="inline-flex items-center bg-primary hover:bg-primary/90 text-primary-foreground text-sm px-4 py-2 rounded-md transition duration-200 cursor-pointer">
                                 <Image size={16} className="mr-2" />
                                 Upload Image
                             </span>
 
                         </label>
-                        <p className="text-xs text-gray-500 mt-1">JPG or PNG format, not exceeding 5MB.</p>
+                        <p className="text-xs text-gray-700 mt-1">JPG or PNG format, not exceeding 5MB.</p>
                     </div>
                 </div>
 
@@ -370,9 +370,9 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                                 onClick={togglePasswordVisibility}
                             >
                                 {showPassword ? (
-                                    <Eye size={16} className="text-gray-500" />
+                                    <Eye size={16} className="text-gray-700" />
                                 ) : (
-                                    <EyeClosed size={16} className="text-gray-500" />
+                                    <EyeClosed size={16} className="text-gray-700" />
                                 )}
                             </span>
                         </div>
@@ -396,9 +396,9 @@ const StaffForm: React.FC<StaffFormProps> = ({ isOpen, onClose, onSuccess, editI
                                 onClick={toggleConfirmPasswordVisibility}
                             >
                                 {showConfirmPassword ? (
-                                    <Eye size={16} className="text-gray-500" />
+                                    <Eye size={16} className="text-gray-700" />
                                 ) : (
-                                    <EyeClosed size={16} className="text-gray-500" />
+                                    <EyeClosed size={16} className="text-gray-700" />
                                 )}
                             </span>
                         </div>

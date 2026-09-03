@@ -254,7 +254,7 @@ const MyLeave: React.FC = () => {
                                 <select
                                     value={leaveTypeId}
                                     onChange={(e) => setLeaveTypeId(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-card focus:outline-none focus:ring-2 focus:ring-ring"
                                 >
                                     <option value="">Select leave type…</option>
                                     {types.map((t) => (
@@ -265,7 +265,7 @@ const MyLeave: React.FC = () => {
                                     ))}
                                 </select>
                                 {leaveTypeId && (
-                                    <p className="mt-1 text-xs text-gray-500">
+                                    <p className="mt-1 text-xs text-gray-700">
                                         {selectedType && !selectedType.paid ? (
                                             <>Unpaid leave — does not deduct from a balance.</>
                                         ) : selectedBalance ? (
@@ -292,7 +292,7 @@ const MyLeave: React.FC = () => {
                                     onChange={(e) =>
                                         setDefaultPortion(e.target.value as LeavePortion)
                                     }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-card focus:outline-none focus:ring-2 focus:ring-ring"
                                 >
                                     {PORTION_OPTIONS.map((p) => (
                                         <option key={p.value} value={p.value}>
@@ -301,7 +301,7 @@ const MyLeave: React.FC = () => {
                                     ))}
                                 </select>
                                 {defaultPortion !== 'FULL' && (
-                                    <p className="mt-1 text-xs text-gray-500">
+                                    <p className="mt-1 text-xs text-gray-700">
                                         Applies a half day to every date in the range.
                                     </p>
                                 )}
@@ -335,7 +335,7 @@ const MyLeave: React.FC = () => {
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
                                 placeholder="Optional — add a note for your approver."
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-950 bg-card focus:outline-none focus:ring-2 focus:ring-ring"
                             />
                         </div>
                         <div className="flex justify-end pt-2">
@@ -358,7 +358,7 @@ const MyLeave: React.FC = () => {
                         <select
                             value={year}
                             onChange={(e) => setYear(Number(e.target.value))}
-                            className="px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-950 bg-white focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="px-2 py-1 border border-gray-300 rounded-md text-xs text-gray-950 bg-card focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                             {YEARS.map((y) => (
                                 <option key={y} value={y}>
@@ -373,7 +373,7 @@ const MyLeave: React.FC = () => {
                             <LoaderSpinner />
                         </div>
                     ) : balances.length === 0 ? (
-                        <p className="py-4 text-center text-sm font-medium text-gray-500">
+                        <p className="py-4 text-center text-sm font-medium text-gray-700">
                             No balances allocated for {year}.
                         </p>
                     ) : (
@@ -395,19 +395,19 @@ const MyLeave: React.FC = () => {
                                     </div>
                                     <div className="grid grid-cols-3 gap-2 text-center text-xs">
                                         <div>
-                                            <div className="text-gray-400">Allocated</div>
+                                            <div className="text-gray-600">Allocated</div>
                                             <div className="font-semibold text-gray-800">
                                                 {fmtDays(b.allocated + b.carriedOver)}
                                             </div>
                                         </div>
                                         <div>
-                                            <div className="text-gray-400">Used</div>
+                                            <div className="text-gray-600">Used</div>
                                             <div className="font-semibold text-gray-800">
                                                 {fmtDays(b.used)}
                                             </div>
                                         </div>
                                         <div>
-                                            <div className="text-gray-400">Remaining</div>
+                                            <div className="text-gray-600">Remaining</div>
                                             <div className="font-semibold text-primary">
                                                 {fmtDays(b.remaining)}
                                             </div>
@@ -451,7 +451,7 @@ const MyLeave: React.FC = () => {
                                                 {r.leaveType?.name}
                                             </div>
                                             {r.leaveType && !r.leaveType.paid && (
-                                                <div className="text-xs text-gray-400">Unpaid</div>
+                                                <div className="text-xs text-gray-600">Unpaid</div>
                                             )}
                                         </td>
                                         <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
@@ -474,7 +474,7 @@ const MyLeave: React.FC = () => {
                                                 </div>
                                             )}
                                         </td>
-                                        <td className="px-4 py-3 text-gray-600 max-w-[15rem]">
+                                        <td className="px-4 py-3 text-gray-700 max-w-[15rem]">
                                             {r.reason || <span className="text-gray-300">—</span>}
                                         </td>
                                         <td className="px-4 py-3 text-right">

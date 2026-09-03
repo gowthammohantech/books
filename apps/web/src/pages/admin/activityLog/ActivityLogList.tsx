@@ -169,7 +169,7 @@ const ActivityLogList: React.FC = () => {
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Search summary / entity…"
           onKeyDown={(e) => { if (e.key === "Enter") setParam({ search: searchInput }); }}
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white"
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-card"
         />
         <input
           type="text"
@@ -177,12 +177,12 @@ const ActivityLogList: React.FC = () => {
           onChange={(e) => setEntityTypeInput(e.target.value)}
           placeholder="Entity type (e.g. Invoice)"
           onKeyDown={(e) => { if (e.key === "Enter") setParam({ entityType: entityTypeInput }); }}
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white"
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-card"
         />
         <select
           value={action}
           onChange={(e) => setParam({ action: e.target.value })}
-          className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-white"
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm bg-card"
         >
           {ACTIONS.map((a) => (
             <option key={a} value={a}>{a || "All actions"}</option>
@@ -219,7 +219,7 @@ const ActivityLogList: React.FC = () => {
                 <td colSpan={6} className="px-8 py-3">
                   <table className="text-xs w-full">
                     <thead>
-                      <tr className="text-gray-500">
+                      <tr className="text-gray-700">
                         <th className="text-left py-1 pr-6">Field</th>
                         <th className="text-left py-1 pr-6">Old</th>
                         <th className="text-left py-1">New</th>

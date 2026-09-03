@@ -189,7 +189,7 @@ const AdminRegister: React.FC = () => {
                             First Name <span className="text-destructive">*</span>
                         </label>
                         <div className="relative">
-                            <User className="absolute left-3 top-3 text-gray-400" size={18} />
+                            <User className="absolute left-3 top-3 text-gray-600" size={18} />
                             <input
                                 type="text"
                                 placeholder="Enter your first name"
@@ -209,7 +209,7 @@ const AdminRegister: React.FC = () => {
                             Last Name <span className="text-destructive">*</span>
                         </label>
                         <div className="relative">
-                            <User className="absolute left-3 top-3 text-gray-400" size={18} />
+                            <User className="absolute left-3 top-3 text-gray-600" size={18} />
                             <input
                                 type="text"
                                 placeholder="Enter your last name"
@@ -229,7 +229,7 @@ const AdminRegister: React.FC = () => {
                             Organization / company name <span className="text-destructive">*</span>
                         </label>
                         <div className="relative">
-                            <Building2 className="absolute left-3 top-3 text-gray-400" size={18} />
+                            <Building2 className="absolute left-3 top-3 text-gray-600" size={18} />
                             <input
                                 type="text"
                                 placeholder="Enter your company name"
@@ -249,7 +249,7 @@ const AdminRegister: React.FC = () => {
                             Email <span className="text-destructive">*</span>
                         </label>
                         <div className="relative">
-                            <Mail className="absolute left-3 top-3 text-gray-400" size={18} />
+                            <Mail className="absolute left-3 top-3 text-gray-600" size={18} />
                             <input
                                 type="email"
                                 placeholder="Enter your email"
@@ -269,7 +269,7 @@ const AdminRegister: React.FC = () => {
                             Phone <em className="text-destructive">*</em>
                         </label>
                         <div className="relative">
-                            <Phone className="absolute left-3 top-3 text-gray-400" size={18} />
+                            <Phone className="absolute left-3 top-3 text-gray-600" size={18} />
                             <input
                                 type="text"
                                 placeholder="Enter your phone number"
@@ -289,7 +289,7 @@ const AdminRegister: React.FC = () => {
                             Password <span className="text-destructive">*</span>
                         </label>
                         <div className="relative">
-                            <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
+                            <Lock className="absolute left-3 top-3 text-gray-600" size={18} />
                             <input
                                 type={showPassword ? "text" : "password"}
                                 placeholder="Enter your password"
@@ -303,7 +303,7 @@ const AdminRegister: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-3 text-gray-500 hover:text-primary"
+                                className="absolute right-3 top-3 text-gray-700 hover:text-primary"
                             >
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
@@ -316,7 +316,7 @@ const AdminRegister: React.FC = () => {
                             Confirm Password <span className="text-destructive">*</span>
                         </label>
                         <div className="relative">
-                            <Lock className="absolute left-3 top-3 text-gray-400" size={18} />
+                            <Lock className="absolute left-3 top-3 text-gray-600" size={18} />
                             <input
                                 type={showConfirmPassword ? "text" : "password"}
                                 placeholder="Re-enter your password"
@@ -330,7 +330,7 @@ const AdminRegister: React.FC = () => {
                             <button
                                 type="button"
                                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                className="absolute right-3 top-3 text-gray-500 hover:text-primary"
+                                className="absolute right-3 top-3 text-gray-700 hover:text-primary"
                             >
                                 {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
@@ -342,7 +342,7 @@ const AdminRegister: React.FC = () => {
                         <button
                             type="submit"
                             disabled={isSaving}
-                            className={`flex items-center justify-center gap-2 w-[20rem] max-w-full px-6 bg-primary hover:bg-primary/90 text-white font-medium text-sm py-3 rounded-lg transition-all duration-200 shadow-sm ${isSaving ? "opacity-60 cursor-not-allowed" : ""
+                            className={`flex items-center justify-center gap-2 w-[20rem] max-w-full px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm py-3 rounded-lg transition-all duration-200 shadow-sm ${isSaving ? "opacity-60 cursor-not-allowed" : ""
                                 }`}
                         >
                             {isSaving ? (

@@ -103,7 +103,7 @@ const CreateJournalEntry: React.FC = () => {
         <div className="space-y-5">
             <PageHeader title="New Journal Entry" />
 
-            <div className="bg-white rounded-md border border-gray-100 p-5 space-y-4">
+            <div className="bg-card rounded-md border border-gray-100 p-5 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <DateInput

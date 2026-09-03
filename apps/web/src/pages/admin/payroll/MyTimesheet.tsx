@@ -377,7 +377,7 @@ const MyTimesheet: React.FC = () => {
     const saveIndicator = () => {
         if (!editable) return null;
         const map: Record<SaveState, { text: string; cls: string }> = {
-            idle: { text: 'All changes saved', cls: 'text-gray-400' },
+            idle: { text: 'All changes saved', cls: 'text-gray-600' },
             saving: { text: 'Saving…', cls: 'text-amber-600' },
             saved: { text: 'Saved', cls: 'text-green-600' },
             error: { text: 'Save failed', cls: 'text-destructive' }
@@ -404,7 +404,7 @@ const MyTimesheet: React.FC = () => {
             <PageHeader title="My Timesheet">{submitAction}</PageHeader>
 
             {/* ── Week picker ── */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="bg-card border border-gray-200 rounded-lg p-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                     <Button
                         variant="white"
@@ -441,7 +441,7 @@ const MyTimesheet: React.FC = () => {
                     </Button>
                 </div>
                 <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-700">
                         {formatDate(weekStart)} – {formatDate(weekEnd)}
                     </span>
                     {status && <Badge color={STATUS_COLORS[status]}>{status}</Badge>}
@@ -461,14 +461,14 @@ const MyTimesheet: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h2 className="text-sm font-semibold text-gray-700">Projects</h2>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-gray-700 mt-0.5">
                         Enter hours worked per day (decimal, e.g. 7.5). Use{' '}
                         <span className="font-medium">+ Add project</span> to add a row, or the
                         trash icon to remove one.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Plus size={14} className="text-gray-400" />
+                    <Plus size={14} className="text-gray-600" />
                     <select
                         aria-label="Add a project to your timesheet"
                         value=""
@@ -478,7 +478,7 @@ const MyTimesheet: React.FC = () => {
                             if (id) handleJoinProject(id);
                             e.target.value = '';
                         }}
-                        className="border border-gray-300 rounded-md px-3 py-1.5 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring disabled:bg-gray-50 disabled:text-gray-400"
+                        className="border border-gray-300 rounded-md px-3 py-1.5 text-sm text-gray-950 focus:outline-none focus:ring-1 focus:ring-ring disabled:bg-gray-50 disabled:text-gray-600"
                     >
                         <option value="">
                             {availableProjects.length === 0
@@ -498,13 +498,13 @@ const MyTimesheet: React.FC = () => {
             </div>
 
             {/* ── Grid ── */}
-            <div className="bg-white border border-border rounded-md overflow-x-auto">
+            <div className="bg-card border border-border rounded-md overflow-x-auto">
                 {loading ? (
                     <div className="py-10">
                         <LoaderSpinner />
                     </div>
                 ) : projects.length === 0 ? (
-                    <div className="text-center py-10 text-gray-500 text-sm">
+                    <div className="text-center py-10 text-gray-700 text-sm">
                         You are not an active member of any projects this week.
                     </div>
                 ) : (
@@ -514,7 +514,7 @@ const MyTimesheet: React.FC = () => {
                                 <th className="px-4 py-2 text-left sticky left-0 bg-gray-100 z-10" />
                                 <th
                                     colSpan={7}
-                                    className="px-2 py-2 text-center text-[0.6875rem] font-semibold tracking-wide text-gray-500"
+                                    className="px-2 py-2 text-center text-[0.6875rem] font-semibold tracking-wide text-gray-700"
                                 >
                                     Hours per day
                                 </th>
@@ -534,7 +534,7 @@ const MyTimesheet: React.FC = () => {
                                             className="px-2 py-3 text-center border-b border-border min-w-[5.5rem] align-top"
                                         >
                                             <div>{DAY_LABELS[i]}</div>
-                                            <div className="text-[0.6875rem] font-normal text-gray-400">
+                                            <div className="text-[0.6875rem] font-normal text-gray-600">
                                                 {d.getDate()}/{d.getMonth() + 1}
                                             </div>
                                             {holiday && (
@@ -567,13 +567,13 @@ const MyTimesheet: React.FC = () => {
                         <tbody>
                             {projects.map((p) => (
                                 <tr key={p.id} className="border-b border-border hover:bg-gray-50">
-                                    <td className="px-4 py-3 sticky left-0 bg-white z-10">
+                                    <td className="px-4 py-3 sticky left-0 bg-card z-10">
                                         <div className="flex items-start justify-between gap-2">
                                             <div>
                                                 <div className="font-medium text-gray-900">
                                                     {p.name}
                                                 </div>
-                                                <div className="text-xs text-gray-400">{p.code}</div>
+                                                <div className="text-xs text-gray-600">{p.code}</div>
                                             </div>
                                             {editable && (
                                                 <Button
@@ -613,11 +613,11 @@ const MyTimesheet: React.FC = () => {
                                                         onChange={(e) =>
                                                             updateCell(key, { hours: e.target.value })
                                                         }
-                                                        className="w-16 border border-gray-300 rounded px-2 py-1 text-center text-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:bg-gray-50 disabled:text-gray-500"
+                                                        className="w-16 border border-gray-300 rounded px-2 py-1 text-center text-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:bg-gray-50 disabled:text-gray-700"
                                                     />
                                                     <div className="flex items-center gap-1">
                                                         <label
-                                                            className="flex items-center gap-0.5 text-[0.6875rem] text-gray-500"
+                                                            className="flex items-center gap-0.5 text-[0.6875rem] text-gray-700"
                                                             title="Billable"
                                                         >
                                                             <input
@@ -644,7 +644,7 @@ const MyTimesheet: React.FC = () => {
                                                             className={`p-0.5 rounded ${
                                                                 hasNote
                                                                     ? 'text-primary'
-                                                                    : 'text-gray-300 hover:text-gray-500'
+                                                                    : 'text-gray-300 hover:text-gray-700'
                                                             }`}
                                                         >
                                                             <StickyNote size={12} />
@@ -664,7 +664,7 @@ const MyTimesheet: React.FC = () => {
                                                                     })
                                                                 }
                                                                 onBlur={() => setOpenNoteKey(null)}
-                                                                className="absolute z-20 -left-12 mt-1 w-40 border border-gray-300 rounded p-1 text-xs shadow-lg bg-white focus:outline-none focus:ring-1 focus:ring-ring"
+                                                                className="absolute z-20 -left-12 mt-1 w-40 border border-gray-300 rounded p-1 text-xs shadow-lg bg-popover focus:outline-none focus:ring-1 focus:ring-ring"
                                                             />
                                                         </div>
                                                     )}

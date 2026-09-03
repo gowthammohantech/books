@@ -69,7 +69,7 @@ export const TiptapEditor = ({ value, onChange, onEditorReady }: TiptapEditorPro
     content: value,
     editorProps: {
       attributes: {
-        class: 'prose bg-white text-gray-950 max-w-none focus:outline-none p-4',
+        class: 'prose bg-card text-gray-950 max-w-none focus:outline-none p-4',
       },
     },
     onUpdate: ({ editor }) => {

@@ -27,7 +27,7 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
             className={`flex gap-3 p-4 bg-gray-50 border border-gray-200 rounded-md ${className}`}
         >
             {/* Avatar */}
-            <div className="w-15 h-15 flex items-center justify-center rounded bg-white border border-gray-200">
+            <div className="w-15 h-15 flex items-center justify-center rounded bg-card border border-gray-200">
                 {shouldShowFallback ? (
                     defaultImage ? (
                         <img
@@ -36,7 +36,7 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
                             className="w-12 h-12 object-contain"
                         />
                     ) : (
-                        <div className="w-12 h-12 flex items-center justify-center rounded-full bg-primary text-white font-bold text-xl">
+                        <div className="w-12 h-12 flex items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xl">
                             {firstLetter || "?"}
                         </div>
                     )
@@ -56,12 +56,12 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
                     {name}
                 </h4>
                 {email && (
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-700">
                         <span className="font-semibold">Email :</span> {email}
                     </p>
                 )}
                 {phone && (
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-700">
                         <span className="font-semibold">Phone :</span> {phone}
                     </p>
                 )}

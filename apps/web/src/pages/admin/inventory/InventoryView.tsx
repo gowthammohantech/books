@@ -115,7 +115,7 @@ const InventoryView: React.FC = () => {
                     <Button variant="white" onClick={() => navigate("/inventory")}>Back</Button>
                 </PageHeader>
                 <Card>
-                    <div className="py-10 text-center text-gray-500">Inventory item not found.</div>
+                    <div className="py-10 text-center text-gray-700">Inventory item not found.</div>
                 </Card>
             </div>
         );
@@ -132,7 +132,7 @@ const InventoryView: React.FC = () => {
 
     const detail = (label: string, value: React.ReactNode) => (
         <div className="space-y-1">
-            <div className="text-xs uppercase tracking-wide text-gray-500">{label}</div>
+            <div className="text-xs uppercase tracking-wide text-gray-700">{label}</div>
             <div className="text-sm font-semibold text-gray-950">{value}</div>
         </div>
     );
@@ -144,7 +144,7 @@ const InventoryView: React.FC = () => {
                     <span className="inline-flex items-baseline gap-2">
                         <span className="capitalize">{data.productId?.name || "Inventory Item"}</span>
                         {data.productId?.code && (
-                            <span className="text-sm font-normal text-gray-500">{data.productId.code}</span>
+                            <span className="text-sm font-normal text-gray-700">{data.productId.code}</span>
                         )}
                     </span>
                 }
@@ -207,11 +207,11 @@ const InventoryView: React.FC = () => {
                                     const stockAfter = Number(h.quantity ?? 0) + adj;
                                     return (
                                         <tr key={h.id} className="border-b border-border hover:bg-gray-50">
-                                            <td className="px-4 py-3 text-gray-600">{formatDateTime(h.createdAt)}</td>
-                                            <td className="px-4 py-3 text-gray-600 capitalize">{refTypeLabel(h.referenceType, h.notes)}</td>
+                                            <td className="px-4 py-3 text-gray-700">{formatDateTime(h.createdAt)}</td>
+                                            <td className="px-4 py-3 text-gray-700 capitalize">{refTypeLabel(h.referenceType, h.notes)}</td>
                                             <td className="px-4 py-3 text-center">{getAdjustmentDisplay(adj)}</td>
                                             <td className="px-4 py-3 text-gray-950 font-medium text-center">{stockAfter}</td>
-                                            <td className="px-4 py-3 text-gray-600">{h.notes || "—"}</td>
+                                            <td className="px-4 py-3 text-gray-700">{h.notes || "—"}</td>
                                         </tr>
                                     );
                                 })

@@ -703,7 +703,7 @@ const BankTransactionList: React.FC = () => {
 
             {/* Bank-scoped summary header: name + balance + in-balance badge */}
             {bankId && (
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-white px-4 py-3 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
                     <div className="flex items-center gap-6">
                         <div>
                             <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -770,7 +770,7 @@ const BankTransactionList: React.FC = () => {
                                 className={
                                     "inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-xs font-semibold " +
                                     (isActive
-                                        ? "bg-primary text-white"
+                                        ? "bg-primary text-primary-foreground"
                                         : "bg-muted text-muted-foreground")
                                 }
                             >
@@ -952,7 +952,7 @@ const BankTransactionList: React.FC = () => {
                                             {explainStatusLabel(tx.explainStatus)}
                                         </Badge>
                                         {tx.autoPosted && (
-                                            <Badge color="info" variant="soft" className="self-start text-[0.6875rem] px-2 py-0.5">
+                                            <Badge color="info" variant="soft" className="self-start">
                                                 Auto-posted
                                             </Badge>
                                         )}
@@ -978,7 +978,7 @@ const BankTransactionList: React.FC = () => {
                                                 >
                                                     {tx.proposal.label}
                                                 </span>
-                                                <Badge color="primary" variant="soft" className="self-start text-[0.6875rem] px-2 py-0.5">
+                                                <Badge color="primary" variant="soft" className="self-start">
                                                     {tx.proposal.confidence ?? "—"}
                                                     {tx.proposal.score !== null &&
                                                         tx.proposal.score !== undefined &&

@@ -140,7 +140,7 @@ const JournalEntryList: React.FC = () => {
                 />
                 <Link
                     to="/accounting/journal-entries/new"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90"
                 >
                     <CirclePlusIcon size={16} /> Add Journal Entry
                 </Link>
@@ -210,15 +210,15 @@ const JournalEntryList: React.FC = () => {
 
             {viewing && (
                 <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center" onClick={() => setViewing(null)}>
-                    <div className="bg-white rounded-md p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-card rounded-md p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                         <h3 className="text-lg font-semibold mb-3">Journal Entry {viewing.entryNumber}</h3>
                         {!viewingDetail && <LoaderSpinner />}
                         {viewingDetail && (
                             <div className="space-y-3">
                                 <div className="grid grid-cols-2 gap-2 text-sm">
-                                    <div><span className="text-gray-500">Date:</span> {formatDate(viewingDetail.entryDate)}</div>
-                                    <div><span className="text-gray-500">Reference:</span> {viewingDetail.reference ?? "—"}</div>
-                                    <div className="col-span-2"><span className="text-gray-500">Description:</span> {viewingDetail.description ?? "—"}</div>
+                                    <div><span className="text-gray-700">Date:</span> {formatDate(viewingDetail.entryDate)}</div>
+                                    <div><span className="text-gray-700">Reference:</span> {viewingDetail.reference ?? "—"}</div>
+                                    <div className="col-span-2"><span className="text-gray-700">Description:</span> {viewingDetail.description ?? "—"}</div>
                                 </div>
                                 <table className="w-full text-sm border-collapse">
                                     <thead className="bg-gray-100">
