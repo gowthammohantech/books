@@ -563,7 +563,13 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
     const authUserId = requireTenantId(req);
     const body = req.body as Record<string, unknown>;
 
-    const purchaseOrderId = body.purchaseOrderId as string | undefined;
+    // The create form posts an empty string for an untouched PO field. `?? null` does not
+    // catch that, and '' written into the FK column violates Purchase_purchaseOrderId_fkey.
+    const rawPurchaseOrderId = body.purchaseOrderId;
+    const purchaseOrderId =
+      typeof rawPurchaseOrderId === 'string' && rawPurchaseOrderId.trim()
+        ? rawPurchaseOrderId.trim()
+        : null;
     // SECURITY: always use the authenticated tenant id — never trust body.tenantId.
     const tenantId = authUserId;
     const billFrom = body.billFrom as string;
@@ -688,6 +694,19 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
     const docTreatmentP: TaxTreatment =
       validatedBodyTreatmentP ?? contactDefaultTaxTreatment ?? 'STANDARD';
 
+    // A linked purchase order must exist inside this tenant. Without the check a stale or
+    // cross-tenant id reaches Prisma as a raw foreign key violation instead of a 404.
+    if (purchaseOrderId) {
+      const ownedPurchaseOrder = await prisma.purchaseOrder.findFirst({
+        where: { id: purchaseOrderId, tenantId, isDeleted: false },
+        select: { id: true },
+      });
+      if (!ownedPurchaseOrder) {
+        res.status(404).json({ success: false, message: 'Purchase Order not found' });
+        return;
+      }
+    }
+
     // Validate bill from user (buyer). Supplier validation is conditional (null when contact-based).
     const [billFromUser, supplier] = await Promise.all([
       prisma.user.findUnique({ where: { id: billFrom } }),
@@ -778,7 +797,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
       const created = await tx.purchase.create({
         data: {
           purchaseId: purchaseIdString,
-          purchaseOrderId: purchaseOrderId ?? null,
+          purchaseOrderId,
           // Contact-aware: write contactId (new path) or supplierId (legacy). Both nullable.
           supplierId: resolvedSupplierId,
           ...(resolvedContactId ? { contactId: resolvedContactId } : {}),
@@ -828,7 +847,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
               ? 'cancelled'
               : 'pending';
         await tx.purchaseOrder.updateMany({
-          where: { id: purchaseOrderId },
+          where: { id: purchaseOrderId, tenantId },
           data: { status: poStatus },
         });
       }
