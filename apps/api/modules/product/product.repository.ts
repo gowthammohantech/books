@@ -24,6 +24,7 @@
  */
 import type { Prisma, PrismaClient, Product } from '@prisma/client';
 
+import { readCustomFieldValues } from '../../lib/customFieldValues';
 import { prisma } from '../../lib/prisma';
 
 /**
@@ -261,6 +262,29 @@ export class ProductRepository {
       include: { tax_rates: true },
       orderBy: { createdAt: 'desc' },
       take,
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Custom fields
+  // -------------------------------------------------------------------------
+
+  /**
+   * A product's custom-field values, keyed by field slug.
+   *
+   * `readCustomFieldValues` takes the client as its first argument, so routing
+   * it through here keeps the controller free of any Prisma handle at all —
+   * which is the property that makes "the repository is the only place Prisma is
+   * touched" checkable by grep rather than by reading.
+   *
+   * The moduleSlug matches the requirePermission slug on the product routes.
+   */
+  async readCustomFields(tenantId: string, recordId: string): Promise<Record<string, unknown>> {
+    return await readCustomFieldValues(this.db, {
+      module: 'product',
+      tenantId,
+      recordId,
+      moduleSlug: 'product-services',
     });
   }
 

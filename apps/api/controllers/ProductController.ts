@@ -1,12 +1,19 @@
 import type { Request, Response } from 'express';
 import type { Prisma, Product } from '@prisma/client';
 
-import { prisma } from '../lib/prisma';
 import { resolveDefaultCurrencyCode } from '../lib/defaultCurrency';
 import { requireTenantId, requireActingUserId } from '../lib/tenantScope';
-import { insertCustomFieldValues, readCustomFieldValues } from '../lib/customFieldValues';
+import { insertCustomFieldValues } from '../lib/customFieldValues';
 import { resolveProductTaxRate } from '../lib/tax/resolveProductTaxRate';
 import { productRepository as repo } from '../modules/product/product.repository';
+import {
+  productService as service,
+  parseBoolFlag,
+  deriveItemType,
+} from '../modules/product/product.service';
+// Re-exported: the helpers moved to the service, but ProductController.spec.ts
+// imports them from here and they are part of this module's public surface.
+export { parseBoolFlag, deriveItemType } from '../modules/product/product.service';
 
 // uploadProductFields now uses .any() to accept customField_<id> uploads too.
 // req.files is a flat Express.Multer.File[] array; extract named fields manually.
@@ -26,19 +33,6 @@ function extractProductFiles(req: Request): {
 
 function uploadPath(file?: Express.Multer.File): string | null {
   return file ? `/uploads/products/${file.filename}` : null;
-}
-
-/** Truthy multipart/JSON boolean flag ('true' | '1' | true | 1 → true). */
-export function parseBoolFlag(v: unknown): boolean {
-  return v === true || v === 'true' || v === '1' || v === 1;
-}
-
-// Items unification (spec 2026-07-12 §4A): the Product/Service question is
-// derived from inventory tracking when the payload omits item_type. An explicit
-// item_type still wins (legacy API compat); Service still forces inventory off.
-export function deriveItemType(explicit: unknown, enableInventory: boolean): 'Product' | 'Service' {
-  if (explicit === 'Product' || explicit === 'Service') return explicit;
-  return enableInventory ? 'Product' : 'Service';
 }
 
 function formatProductResponse(
@@ -119,14 +113,12 @@ function formatProductResponse(
 export async function createProduct(req: Request, res: Response): Promise<void> {
   try {
     const { filesArray, product_image, gallery_images } = extractProductFiles(req);
-
     const body = req.body as Record<string, string | undefined>;
 
-    const enableInventoryFlag = parseBoolFlag(body.enable_inventory);
-    const itemType = deriveItemType(body.item_type, enableInventoryFlag);
-    const isService = itemType === 'Service';
-
     // P3.5: validate valuationMethod — WAC or FIFO only.
+    // Answered here rather than thrown as a BadRequestError, because this
+    // response carries no `success` key and routing it through the central
+    // handler would add one — a visible API change hiding in a refactor.
     const rawValuationMethod = body.valuationMethod as string | undefined;
     if (rawValuationMethod !== undefined && rawValuationMethod !== 'WAC' && rawValuationMethod !== 'FIFO') {
       res.status(400).json({ message: 'Invalid valuationMethod. Must be WAC or FIFO.' });
@@ -138,90 +130,22 @@ export async function createProduct(req: Request, res: Response): Promise<void> 
       (typeof body.currencyCode === 'string' && body.currencyCode ? body.currencyCode : null) ??
       (await resolveDefaultCurrencyCode(requireTenantId(req)));
 
-    const userId = requireActingUserId(req);
     const tenantId = requireTenantId(req);
 
-    // Unified tax (spec 2026-07-12 §4B): prefer the new direct rate id; keep
-    // accepting the legacy `tax` (TaxGroup id). When neither is sent, default
-    // to the tenant's active 0% NONE rate (seeded at onboarding), if any.
-    let productTaxRateId: string | null =
-      body.taxRateId && String(body.taxRateId).trim() ? (body.taxRateId as string) : null;
-    if (!productTaxRateId && !body.tax) {
-      const noneRate = await repo.findDefaultNoneTaxRate(tenantId);
-      productTaxRateId = noneRate?.id ?? null;
-    }
-
-    const created = await repo.transaction(async (tx) => {
-      const productCode = body.code && String(body.code).trim()
-        ? (body.code as string)
-        : await repo.generateUniqueCode(tx, tenantId);
-
-      const newProduct = await repo.createProduct(tx, {
-          tenantId,
-          item_type: itemType,
-          name: body.name as string,
-          code: productCode,
-          categoryId: body.category ? (body.category as string) : null,
-          brandId: body.brand ? (body.brand as string) : null,
-          unitId: body.unit && String(body.unit).trim() ? (body.unit as string) : null,
-          selling_price: Number(body.selling_price ?? 0),
-          purchase_price: Number(body.purchase_price ?? 0),
-          discount_type: (body.discount_type as string) || 'Fixed',
-          discount_value: Number(body.discount_value ?? 0),
-          taxGroupId: body.tax ? (body.tax as string) : null,
-          taxRateId: productTaxRateId,
-          barcode: body.barcode && String(body.barcode).trim() ? (body.barcode as string) : null,
-          alert_quantity: isService ? 0 : Number(body.alert_quantity ?? 0),
-          description: (body.description || body.name) as string,
-          product_image: product_image ?? '',
-          gallery_images: gallery_images,
-          // Services are consumable: never tracked in inventory.
-          enable_inventory: isService ? false : enableInventoryFlag,
-          stock: isService ? 0 : Number(body.stock ?? 0),
-          status: body.status !== 'false',
-          // P3.5: valuation method (WAC default → unchanged for existing products)
-          ...(rawValuationMethod ? { valuationMethod: rawValuationMethod } : {}),
-          // PC.1: currency the product is priced in
-        ...(productCurrencyCode ? { currencyCode: productCurrencyCode } : {}),
-      });
-
-      // Inventory side-effect: create an Inventory row whenever enable_inventory
-      // is on (stock may legitimately be 0 — an opening balance of zero still
-      // needs a tracked row, otherwise later stock-in has nothing to update).
-      // The row's `tenantId` MUST be the workspace, not the acting user —
-      // invoice COGS reads scope inventory by tenant, so a per-user id here
-      // would hide stock from other admins in the same workspace. `createdBy`
-      // inside inventory_history keeps per-person attribution.
-      if (newProduct.enable_inventory && req.user) {
-        await repo.createInventory(tx, {
-            productId: newProduct.id,
-            quantity: newProduct.stock,
-            tenantId: requireTenantId(req),
-            inventory_history: [
-              {
-                unitId: newProduct.unitId,
-                quantity: newProduct.stock,
-                type: 'stock_in',
-                adjustment: newProduct.stock,
-                notes: 'Initial stock entry',
-                createdBy: userId,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-              },
-            ] as unknown as Prisma.InputJsonValue,
-        });
-      }
-
-      await insertCustomFieldValues(tx, {
-        module: 'product',
-        recordId: newProduct.id,
-        customFields: req.body.customFields,
-        files: filesArray,
-        tenantId: requireTenantId(req),
-      });
-
-      return newProduct;
+    const created = await service.create({
+      tenantId,
+      actingUserId: requireActingUserId(req),
+      hasActor: Boolean(req.user),
+      body,
+      // Off the raw body, not the string-typed alias: it may be an array.
+      rawCustomFields: req.body.customFields,
+      files: filesArray,
+      productImage: product_image,
+      galleryImages: gallery_images,
+      currencyCode: productCurrencyCode,
+      valuationMethod: rawValuationMethod,
     });
+
 
     const populated = await repo.findForCreateResponse(created.id, tenantId);
 
@@ -272,14 +196,9 @@ export async function getAllProducts(req: Request, res: Response): Promise<void>
     // Batch-fetch live Inventory rows for this page of products (no N+1).
     const productIds = products.map((p) => p.id);
     const inventoryRows = await repo.findInventoryForProducts(productIds, tenantId);
-    const inventoryByProductId = new Map(inventoryRows.map((r) => [r.productId, r.quantity]));
-
-    const productsWithLiveStock = products.map((p) => ({
-      ...p,
-      stock: inventoryByProductId.has(p.id) ? inventoryByProductId.get(p.id) : p.stock,
-      alert_quantity: p.alert_quantity,
-      tax_rate: resolveProductTaxRate(p),
-    }));
+    const productsWithLiveStock = service
+      .mergeLiveStock(products, inventoryRows)
+      .map((p) => ({ ...p, tax_rate: resolveProductTaxRate(p) }));
 
     res.status(200).json({
       success: true,
@@ -324,12 +243,7 @@ export async function getProductById(req: Request, res: Response): Promise<void>
       return;
     }
 
-    const customFields = await readCustomFieldValues(prisma, {
-      module: 'product',
-      tenantId: requireTenantId(req),
-      recordId: id,
-      moduleSlug: 'product-services',
-    });
+    const customFields = await repo.readCustomFields(requireTenantId(req), id);
 
     // Return live Inventory.quantity instead of frozen Product.stock.
     // Keep the same `stock` field shape so existing callers are unaffected.
@@ -479,43 +393,14 @@ export async function updateProduct(req: Request, res: Response): Promise<void> 
 
     const userId = requireActingUserId(req);
 
-    const updated = await repo.transaction(async (tx) => {
-      const result = await repo.updateProduct(tx, id, data);
-
-      // Backfill: if inventory tracking is now on but the product has no
-      // Inventory row yet (e.g. created before tracking was enabled, or before
-      // the #6 fix), create one scoped to the tenant. Stock may be 0.
-      if (result.enable_inventory && req.user) {
-        const existingInventory = await repo.findInventoryInTx(tx, result.id, requireTenantId(req));
-        if (!existingInventory) {
-          await repo.createInventory(tx, {
-              productId: result.id,
-              quantity: result.stock,
-              tenantId: requireTenantId(req),
-              inventory_history: [
-                {
-                  unitId: result.unitId,
-                  quantity: result.stock,
-                  type: 'stock_in',
-                  adjustment: result.stock,
-                  notes: 'Initial stock entry',
-                  createdBy: userId,
-                  createdAt: new Date().toISOString(),
-                  updatedAt: new Date().toISOString(),
-                },
-              ] as unknown as Prisma.InputJsonValue,
-          });
-        }
-      }
-
-      await insertCustomFieldValues(tx, {
-        module: 'product',
-        recordId: result.id,
-        customFields: req.body.customFields,
-        files: filesArray,
-        tenantId: requireTenantId(req),
-      });
-      return result;
+    const updated = await service.update({
+      id,
+      tenantId: requireTenantId(req),
+      actingUserId: requireActingUserId(req),
+      hasActor: Boolean(req.user),
+      data,
+      rawCustomFields: req.body.customFields,
+      files: filesArray,
     });
 
     res.status(200).json({

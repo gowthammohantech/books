@@ -15,6 +15,7 @@ export default defineConfig({
       'prisma/**/*.spec.ts',
       'core/**/*.spec.ts',
       'config/**/*.spec.ts',
+      'modules/**/*.spec.ts',
     ],
     // Register ts-node before test files run so that plain-JS CJS controllers
     // (e.g. externalController.js) can require TS source files at test time.
