@@ -1,6 +1,8 @@
+import type { Request } from 'express';
 import { body, ValidationChain } from 'express-validator';
 
 import { prisma } from '../../../lib/prisma';
+import { isTenantMember } from '../../../lib/tenantMembers';
 
 export const purchaseValidator: ValidationChain[] = [
   // body('purchaseOrderId')
@@ -78,9 +80,12 @@ export const supplierPaymentValidator: ValidationChain[] = [
 
   body('userId')
     .notEmpty().withMessage('User ID is required')
-    .custom(async (value: string) => {
-      const user = await prisma.user.findUnique({ where: { id: value } });
-      if (!user) {
+    .custom(async (value: string, { req }) => {
+      // Membership, not mere existence: an id from another workspace satisfies
+      // the foreign key but must not be accepted here. `User` is the one model
+      // the tenant guard cannot cover, so this is done by hand.
+      const tenantId = (req as Request).tenantId;
+      if (!tenantId || !(await isTenantMember(value, tenantId))) {
         throw new Error('User not found');
       }
       return true;

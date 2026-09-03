@@ -36,15 +36,9 @@ export async function createRole(req: Request, res: Response): Promise<void> {
       errors.defaultRoute = 'Default route cannot be empty';
     }
 
-    // Validate user existence
-    const user = await prisma.user.findUnique({ where: { id: tenantId } });
-    if (!user) {
-      res.status(422).json({
-        message: 'Validation failed',
-        errors: { user: 'User not found' },
-      });
-      return;
-    }
+    // (The old "validate user existence" check read `id: tenantId` and so
+    // rejected role creation with a 422 in every workspace created through
+    // POST /api/auth/tenants. `protect` already established membership.)
 
     if (!errors.roleName && roleName) {
       // Scoped to this tenant: two workspaces may each have a "Sales" role.
@@ -173,8 +167,12 @@ export async function listUsersByRole(req: Request, res: Response): Promise<void
   try {
     const { roleId } = req.params as { roleId: string };
     const search = ((req.query.search as string) ?? '').trim();
+    const tenantId = requireTenantId(req);
 
-    const role = await prisma.role.findUnique({ where: { id: roleId } });
+    // Scoped explicitly. `Role` IS in TENANT_MODELS, but the guard ships in
+    // `warn` (see lib/tenantGuard.ts), so an unscoped findUnique is only safe
+    // in a mode this install is not running.
+    const role = await prisma.role.findFirst({ where: { id: roleId, tenantId } });
     if (!role) {
       res.status(404).json({
         success: false,
@@ -188,7 +186,7 @@ export async function listUsersByRole(req: Request, res: Response): Promise<void
     // workspace-scoped: a Role belongs to exactly one tenant, so only that
     // tenant's memberships can name it.
     const where: Prisma.UserWhereInput = {
-      memberships: { some: { roleId } },
+      memberships: { some: { roleId, tenantId } },
     };
 
     if (search !== '') {

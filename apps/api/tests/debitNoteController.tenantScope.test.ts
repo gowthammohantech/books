@@ -53,7 +53,9 @@ vi.mock('../lib/prisma', () => {
         count: mockDebitNoteCount,
       },
       purchase: { findFirst: mockPurchaseFindFirst },
-      user: { findUnique: mockUserFindUnique },
+      // findFirst as well as findUnique: the bill-from check now goes through
+      // lib/tenantMembers (isTenantMember -> user.findFirst).
+      user: { findUnique: mockUserFindUnique, findFirst: mockUserFindUnique },
       contact: { findFirst: mockContactFindFirst },
       supplier: { findFirst: vi.fn().mockResolvedValue(null) },
       currency: { findFirst: vi.fn().mockResolvedValue({ code: 'USD' }) },

@@ -32,6 +32,7 @@ import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
 import { resolveProductTaxRate } from '../../../lib/tax/resolveProductTaxRate';
 import { currentActorId } from '../../../lib/actor';
+import { tenantMemberWhere, assertBillFromMember, handleForeignTenantUser } from '../../../lib/tenantMembers';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 import { sendMail } from '../../../utils/mailer';
@@ -254,7 +255,10 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
 
     const billFromId = body.billFrom as string;
     const legacySupplierId = ((body.supplierId ?? body.billTo) as string | undefined) ?? null;
-    const bodyUserId = (body.tenantId as string) ?? tenantId;
+    // (`body.tenantId` is deliberately ignored below: the workspace is whichever
+    // one the caller is authenticated into. It used to be
+    // `(body.tenantId as string) ?? tenantId`, so a request could name the
+    // tenant its purchase order was filed under.)
     const incomingContactId = typeof body.contactId === 'string' && body.contactId ? body.contactId : null;
 
     if (!incomingContactId && !legacySupplierId) {
@@ -292,17 +296,15 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
       }
     }
 
-    const [user, billFromUser, supplier] = await Promise.all([
-      prisma.user.findUnique({ where: { id: bodyUserId } }),
-      billFromId ? prisma.user.findUnique({ where: { id: billFromId } }) : Promise.resolve(null),
+    // billFrom is validated BY MEMBERSHIP (it used to be a bare existence
+    // check, which accepted another workspace's user). The dropped `user`
+    // lookup read the TENANT id as a user id — non-null only in a workspace
+    // created by `register`, and never a meaningful check on this write.
+    const [, supplier] = await Promise.all([
+      assertBillFromMember(billFromId, tenantId, { message: 'Invalid bill from user' }),
       resolvedSupplierId ? prisma.supplier.findFirst({ where: { id: resolvedSupplierId, isDeleted: false } }) : Promise.resolve(null),
     ]);
 
-    if (!user) throw new Error('Invalid user ID');
-    if (!billFromUser) {
-      res.status(422).json({ message: 'Invalid bill from user' });
-      return;
-    }
     if (resolvedSupplierId && !supplier) {
       res.status(422).json({ message: 'Invalid supplier' });
       return;
@@ -403,7 +405,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
           signatureId: signType === 'digitalSignature' ? ((body.signatureId as string) ?? null) : null,
           signatureImage: signType === 'eSignature' && req.file ? req.file.path : null,
           signatureName: signType === 'eSignature' ? ((body.signatureName as string) ?? null) : null,
-          tenantId: bodyUserId,
+          tenantId,
           billFrom: billFromId,
           billTo: null,
           convert_type: convertType,
@@ -413,7 +415,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
         },
       });
 
-      await insertCustomFieldValues(tx, created.id, bodyUserId, body.customFields, files);
+      await insertCustomFieldValues(tx, created.id, tenantId, body.customFields, files);
 
       return created;
     });
@@ -445,6 +447,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
         });
     }
   } catch (err) {
+    if (handleForeignTenantUser(res, err)) return;
     if (handleUnauthorized(res, err)) return;
     console.error('Create purchase order error:', err);
     res.status(500).json({
@@ -471,7 +474,15 @@ export async function listUsersByType(req: Request, res: Response): Promise<void
       return;
     }
 
-    const where: Prisma.UserWhereInput = { user_type: Number(type) };
+    // `User` is off the tenant guard (a person belongs to N workspaces, so
+    // there is no `User.tenantId` to filter on), so the scoping is by hand.
+    // Without it this picker returns every user on the installation — email,
+    // phone, address and balance included — to any authenticated caller.
+    const tenantId = requireTenantId(req);
+    const where: Prisma.UserWhereInput = {
+      ...tenantMemberWhere(tenantId),
+      user_type: Number(type),
+    };
 
     if (search) {
       where.OR = [
@@ -509,6 +520,7 @@ export async function listUsersByType(req: Request, res: Response): Promise<void
       })),
     });
   } catch (err) {
+    if (handleUnauthorized(res, err)) return;
     console.error('Error listing users:', err);
     res.status(500).json({
       success: false,
@@ -526,7 +538,12 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params as { id: string };
 
-    const user = await prisma.user.findUnique({ where: { id } });
+    // Scoped by membership, not just by id: an unscoped findUnique would hand
+    // back any user row on the installation to any authenticated caller.
+    const tenantId = requireTenantId(req);
+    const user = await prisma.user.findFirst({
+      where: { ...tenantMemberWhere(tenantId), id },
+    });
 
     if (!user) {
       res.status(404).json({
@@ -566,6 +583,7 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
       data: responseData,
     });
   } catch (err) {
+    if (handleUnauthorized(res, err)) return;
     console.error('Error fetching user:', err);
     res.status(500).json({
       success: false,
@@ -1489,27 +1507,19 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
     const body = req.body as Record<string, unknown>;
     const tenantId = requireTenantId(req);
 
-    const existingOrder = await prisma.purchaseOrder.findUnique({ where: { id } });
+    // Scoped: an unscoped findUnique let a caller update any workspace's order.
+    const existingOrder = await prisma.purchaseOrder.findFirst({ where: { id, tenantId } });
     if (!existingOrder) {
       res.status(404).json({ message: 'Purchase order not found' });
-      return;
-    }
-
-    const bodyUserId = (body.tenantId as string) ?? existingOrder.tenantId;
-    const user = await prisma.user.findUnique({ where: { id: bodyUserId } });
-    if (!user) {
-      res.status(422).json({ message: 'Invalid user ID' });
       return;
     }
 
     const billFrom = body.billFrom as string | undefined;
 
     if (billFrom) {
-      const billFromUser = await prisma.user.findUnique({ where: { id: billFrom } });
-      if (!billFromUser) {
-        res.status(422).json({ message: 'Invalid bill from user', errors: { billFrom: 'Invalid bill from user' } });
-        return;
-      }
+      // By membership: the old existence-only check accepted another
+      // workspace's user as this order's Bill From.
+      await assertBillFromMember(billFrom, tenantId, { message: 'Invalid bill from user' });
     }
 
     // Party resolution (contact-aware, mirrors createPurchaseOrder):
@@ -1691,9 +1701,9 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
       if (existingOrder.billTo) updateData.billToUser = { disconnect: true };
     }
 
-    if (body.tenantId) {
-      updateData.tenant = { connect: { id: bodyUserId } };
-    }
+    // `body.tenantId` is deliberately ignored: a purchase order does not move
+    // between workspaces, and honouring it would have let a request hand its
+    // order to another tenant.
 
     if (body.bank !== undefined) {
       if (body.bank) updateData.bank = { connect: { id: body.bank as string } };
@@ -1749,7 +1759,7 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
         await tx.customFieldValue.deleteMany({
           where: { tenantId, module: 'purchaseOrder', recordId: id },
         });
-        await insertCustomFieldValues(tx, id, bodyUserId, customFields, files);
+        await insertCustomFieldValues(tx, id, tenantId, customFields, files);
       }
 
       return updated;
@@ -1793,6 +1803,7 @@ export async function updatePurchaseOrder(req: Request, res: Response): Promise<
     // tenantId param is acknowledged but not used after permission check
     void tenantId;
   } catch (err) {
+    if (handleForeignTenantUser(res, err)) return;
     if (handleUnauthorized(res, err)) return;
     console.error(err);
     res.status(500).json({

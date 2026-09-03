@@ -31,6 +31,7 @@ import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
 import { sendMail } from '../../../utils/mailer';
 
 import { prisma } from '../../../lib/prisma';
+import { assertBillFromMember, handleForeignTenantUser } from '../../../lib/tenantMembers';
 import {
   tenantScope,
   requireTenantId,
@@ -707,17 +708,14 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
       }
     }
 
-    // Validate bill from user (buyer). Supplier validation is conditional (null when contact-based).
-    const [billFromUser, supplier] = await Promise.all([
-      prisma.user.findUnique({ where: { id: billFrom } }),
+    // Validate bill from user (buyer) BY MEMBERSHIP, not by mere existence.
+    // Supplier validation is conditional (null when contact-based).
+    const [, supplier] = await Promise.all([
+      assertBillFromMember(billFrom, tenantId, { message: 'Invalid bill from user' }),
       resolvedSupplierId
         ? prisma.supplier.findFirst({ where: { id: resolvedSupplierId, isDeleted: false } })
         : Promise.resolve(null),
     ]);
-    if (!billFromUser) {
-      res.status(422).json({ message: 'Invalid bill from user' });
-      return;
-    }
     if (resolvedSupplierId && !supplier) {
       res.status(422).json({ message: 'Invalid supplier' });
       return;
@@ -922,6 +920,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
       }
     }
   } catch (err) {
+    if (handleForeignTenantUser(res, err)) return;
     if (handleUnauthorized(res, err)) return;
     if (handleLedgerError(res, err)) return;
     if (handleNumberConflict(res, err, 'purchaseId')) return;
@@ -1174,17 +1173,14 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
       resolvedContactId = contactRow ? contactRow.id : null;
     }
 
-    // Validate bill from user (buyer). Supplier validated only on the legacy path.
-    const [billFromUser, supplier] = await Promise.all([
-      prisma.user.findUnique({ where: { id: billFrom } }),
+    // Validate bill from user (buyer) BY MEMBERSHIP. Supplier validated only on
+    // the legacy path.
+    const [, supplier] = await Promise.all([
+      assertBillFromMember(billFrom, tenantId, { message: 'Invalid bill from user' }),
       resolvedSupplierId
         ? prisma.supplier.findFirst({ where: { id: resolvedSupplierId, isDeleted: false } })
         : Promise.resolve(null),
     ]);
-    if (!billFromUser) {
-      res.status(422).json({ message: 'Invalid bill from user' });
-      return;
-    }
     if (resolvedSupplierId && !supplier) {
       res.status(422).json({ message: 'Invalid supplier' });
       return;
@@ -1463,6 +1459,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
       }
     }
   } catch (err) {
+    if (handleForeignTenantUser(res, err)) return;
     if (handleUnauthorized(res, err)) return;
     if (handlePendingApproval(res, err)) return;
     if (handleLedgerError(res, err)) return;

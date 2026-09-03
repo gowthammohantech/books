@@ -155,14 +155,9 @@ export async function createBankDetail(req: Request, res: Response): Promise<voi
         ? String(currencyCode).trim().toUpperCase()
         : await resolveDefaultCurrencyCode(requireTenantId(req));
 
-    const user = await prisma.user.findUnique({ where: { id: tenantId } });
-    if (!user) {
-      res.status(404).json({
-        success: false,
-        message: 'User not found',
-      });
-      return;
-    }
+    // (No owner-existence check: the old `user.findUnique({ id: tenantId })`
+    // treated the tenant id as a user id, which holds only for the first
+    // workspace. `protect` already proved the caller is a member.)
 
     const result = await prisma.$transaction(async (tx) => {
       const bankDetail = await tx.bankDetail.create({

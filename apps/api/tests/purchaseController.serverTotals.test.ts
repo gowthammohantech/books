@@ -24,7 +24,7 @@ vi.mock('../lib/prisma', () => {
   const db: Record<string, unknown> = {
     contact: { findFirst: mocks.contactFindFirst },
     companySettings: { findFirst: mocks.companySettingsFindFirst },
-    user: { findUnique: mocks.userFindUnique },
+    user: { findUnique: mocks.userFindUnique, findFirst: mocks.userFindUnique },
     supplier: { findFirst: vi.fn().mockResolvedValue(null) },
     product: { findFirst: vi.fn().mockResolvedValue(null) },
     purchase: { create: mocks.purchaseCreate },

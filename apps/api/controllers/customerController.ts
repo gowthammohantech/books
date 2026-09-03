@@ -121,12 +121,9 @@ export async function createCustomer(req: Request, res: Response): Promise<void>
       currencyCode: rawCurrencyCode,
     } = req.body as Record<string, unknown>;
 
-    const user = await prisma.user.findUnique({ where: { id: tenantId } });
-    if (!user) {
-      tryUnlink(req.file?.path);
-      res.status(404).json({ success: false, message: 'User not found' });
-      return;
-    }
+    // (No owner-existence check: `user.findUnique({ id: tenantId })` treats the
+    // tenant id as a user id, true only for a workspace created by `register`.
+    // `protect` has already established the caller's membership.)
 
     const existing = await prisma.customer.findFirst({
       where: { tenantId, email: email as string },
@@ -207,11 +204,7 @@ export async function createMinimalCustomer(req: Request, res: Response): Promis
       return;
     }
 
-    const user = await prisma.user.findUnique({ where: { id: tenantId } });
-    if (!user) {
-      res.status(404).json({ success: false, message: 'User not found' });
-      return;
-    }
+    // (Same as createCustomer: no tenant-id-as-user-id existence check.)
 
     const existing = await prisma.customer.findFirst({
       where: { tenantId, email },

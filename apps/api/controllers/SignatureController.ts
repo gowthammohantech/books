@@ -59,15 +59,8 @@ export async function createSignature(req: Request, res: Response): Promise<void
         ? markAsDefault === 'true'
         : Boolean(markAsDefault);
 
-    const user = await prisma.user.findUnique({ where: { id: tenantId } });
-    if (!user) {
-      tryUnlink(req.file?.path);
-      res.status(404).json({
-        success: false,
-        message: 'User not found',
-      });
-      return;
-    }
+    // (No tenant-id-as-user-id existence check — it 404'd in any workspace
+    // whose id is not also its owner's User.id. `protect` proved membership.)
 
     if (!req.file) {
       res.status(422).json({

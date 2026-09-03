@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
 
 import { prisma } from '../../../lib/prisma';
+import { tenantMemberWhere } from '../../../lib/tenantMembers';
 import {
   tenantScope,
   requireTenantId,
@@ -152,9 +153,18 @@ export async function listInventory(req: Request, res: Response): Promise<void> 
 export async function getInventoryHistory(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params as { id: string };
+    const tenantId = requireTenantId(req);
 
-    const inventory = await prisma.inventory.findUnique({
-      where: { id },
+    // Scoped. This was `findUnique({ where: { id } })` on a route param, so any
+    // workspace's inventory row — quantity on hand, average cost, valuation
+    // method, alert quantity and the whole movement history, plus the product
+    // name and code through the include — was readable by id. `inventory:view`
+    // is held in the CALLER's workspace and does not gate the row.
+    // `Inventory` is in TENANT_MODELS, so the guard would also catch this once
+    // TENANT_GUARD_MODE flips to `enforce`; the explicit filter is the fix, the
+    // guard is defence in depth.
+    const inventory = await prisma.inventory.findFirst({
+      where: { id, tenantId },
       include: {
         product: {
           include: {
@@ -203,13 +213,15 @@ export async function getInventoryHistory(req: Request, res: Response): Promise<
     const [users, units] = await Promise.all([
       createdByIds.length > 0
         ? prisma.user.findMany({
-            where: { id: { in: createdByIds } },
+            // Membership-filtered: the ids come from tenant-scoped rows, so this
+            // relies on an FK never crossing tenants. Cheap to not rely on it.
+            where: { ...tenantMemberWhere(tenantId), id: { in: createdByIds } },
             select: { id: true, firstName: true, lastName: true, email: true },
           })
         : Promise.resolve([] as { id: string; firstName: string; lastName: string | null; email: string }[]),
       unitIds.length > 0
         ? prisma.unit.findMany({
-            where: { tenantId: requireTenantId(req), id: { in: unitIds } },
+            where: { tenantId, id: { in: unitIds } },
             select: { id: true, unit_name: true },
           })
         : Promise.resolve([] as { id: string; unit_name: string }[]),

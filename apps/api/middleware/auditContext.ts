@@ -45,6 +45,8 @@ export async function auditContextMiddleware(
   let userName = 'system';
   if (userId) {
     try {
+      // @user-scope: self — `userId` is the JWT subject being labelled for the
+      // audit trail, resolved before any tenant is known.
       const u = await prisma.user.findUnique({
         where: { id: userId },
         select: { firstName: true, lastName: true, email: true },

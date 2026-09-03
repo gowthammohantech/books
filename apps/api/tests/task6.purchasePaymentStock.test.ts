@@ -55,7 +55,7 @@ vi.mock('../lib/prisma', () => {
       update: m.purchaseUpdate,
       findMany: m.purchaseFindMany,
     },
-    user: { findUnique: m.userFindUnique },
+    user: { findUnique: m.userFindUnique, findFirst: m.userFindUnique },
     contact: { findFirst: m.contactFindFirst },
     supplier: { findFirst: m.supplierFindFirst },
     product: { findFirst: m.productFindUnique, findMany: m.productFindMany },

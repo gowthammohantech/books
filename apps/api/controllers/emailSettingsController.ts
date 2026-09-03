@@ -9,6 +9,7 @@ import { prisma } from '../lib/prisma';
 import { requireTenantId, UnauthorizedError } from '../lib/tenantScope';
 import { sendPrismaError } from '../middleware/prismaError';
 import { encryptSecret } from '../lib/emailSecret';
+import { tenantOwnerUserId } from '../lib/actor';
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -272,7 +273,14 @@ export async function sendTestEmail(req: Request, res: Response): Promise<void> 
 
     let recipient = (req.body as { to?: string }).to?.trim();
     if (!recipient && tenantId) {
-      const u = await prisma.user.findUnique({ where: { id: tenantId }, select: { email: true } });
+      // The fallback recipient is the workspace OWNER. Looking the owner up by
+      // `id: tenantId` only worked for a workspace created by `register`, which
+      // reuses its owner's User.id; elsewhere it produced no recipient and a
+      // spurious 400.
+      const ownerUserId = await tenantOwnerUserId(tenantId);
+      const u = ownerUserId
+        ? await prisma.user.findUnique({ where: { id: ownerUserId }, select: { email: true } })
+        : null;
       recipient = u?.email ?? undefined;
     }
     if (!recipient) {

@@ -130,7 +130,12 @@ export async function invoiceActivity(req: Request, res: Response): Promise<void
 
     // Build the audit-log where clause:
     // (entityType='Invoice' AND entityId=<id>) OR (entityType='InvoicePayment' AND entityId IN paymentIds)
+    // `AuditLog` is unguarded, so this `tenantId` is the only filter on the
+    // clause itself. Without it the ownership precheck above (invoice.findFirst
+    // by { id, tenantId }) is the sole thing keeping the trail in-tenant — safe
+    // today, silently broken the day that precheck is refactored away.
     const where: Prisma.AuditLogWhereInput = {
+      tenantId,
       OR: [
         { entityType: 'Invoice', entityId: id },
         ...(paymentIds.length > 0

@@ -144,7 +144,11 @@ export async function purchaseActivity(
 
     // Build the audit-log where clause:
     // (entityType='Purchase' AND entityId=<id>) OR (entityType='SupplierPayment' AND entityId IN paymentIds)
+    // As in invoicePaymentController: `AuditLog` is unguarded, so the clause
+    // carries the tenant filter itself rather than leaning on the ownership
+    // precheck above it.
     const where: Prisma.AuditLogWhereInput = {
+      tenantId,
       OR: [
         { entityType: 'Purchase', entityId: id },
         ...(paymentIds.length > 0

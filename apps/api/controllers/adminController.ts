@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import type { Prisma } from '@prisma/client';
 
 import { prisma } from '../lib/prisma';
-import { requireTenantId, requireActingUserId, UnauthorizedError } from '../lib/tenantScope';
+import { requireActingUserId, UnauthorizedError } from '../lib/tenantScope';
 
 function handleUnauthorized(res: Response, err: unknown): boolean {
   if (err instanceof UnauthorizedError) {
@@ -14,8 +14,15 @@ function handleUnauthorized(res: Response, err: unknown): boolean {
 
 export async function dashboard(req: Request, res: Response): Promise<void> {
   try {
-    const userId = requireTenantId(req);
-    const userData = await prisma.user.findUnique({ where: { id: userId } });
+    // The dashboard shows the signed-in person's profile, so this is the ACTING
+    // user, not the tenant. Reading the TENANT id as a user id returned null —
+    // `user: null` in the response — in every workspace whose id is not also its
+    // owner's User.id.
+    // @user-scope: self. The id is the JWT subject, so no membership filter can
+    // narrow it further.
+    const userData = await prisma.user.findUnique({
+      where: { id: requireActingUserId(req) },
+    });
     res.json({
       message: 'Admin dashboard',
       user: userData,
@@ -103,6 +110,7 @@ export async function getProfile(req: Request, res: Response): Promise<void> {
     // staff must read their own profile, not the company owner's.
     const userId = requireActingUserId(req);
 
+    // @user-scope: self, as above.
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {

@@ -23,6 +23,9 @@ const { captured, mocks } = vi.hoisted(() => ({
 vi.mock('../lib/prisma', () => {
   const db: Record<string, unknown> = {
     generalSetting: { findUnique: vi.fn().mockResolvedValue(null), upsert: vi.fn().mockResolvedValue({}) },
+    // createInvoice validates `billFrom` through lib/tenantMembers
+    // (isTenantMember -> user.findFirst); a member resolves here.
+    user: { findFirst: vi.fn().mockResolvedValue({ id: 'billfrom-user' }) },
     invoice: { findFirst: vi.fn().mockResolvedValue(null), create: mocks.invoiceCreate },
     contact: { findFirst: mocks.contactFindFirst },
     companySettings: { findFirst: mocks.companySettingsFindFirst },

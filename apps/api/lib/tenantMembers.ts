@@ -103,3 +103,74 @@ export async function listTenantMemberIds(tenantId: string): Promise<string[]> {
   });
   return rows.map((r) => r.id);
 }
+
+/**
+ * A request supplied a `User` id that belongs to another workspace.
+ *
+ * Carries the responding status code because the ten call sites this replaces
+ * did not agree on one (404 on the invoice/credit-note/challan paths, 422 on
+ * the purchase paths) and the front ends key off those. Uniformity is not worth
+ * an API change in a security fix.
+ */
+export class ForeignTenantUserError extends Error {
+  constructor(
+    readonly field: string,
+    readonly status: number = 422,
+    message = `Invalid ${field} user`,
+  ) {
+    super(message);
+    this.name = 'ForeignTenantUserError';
+  }
+}
+
+/**
+ * `billFrom` (and its siblings `approvedBy`, `salesPerson`, ...) are `User`
+ * foreign keys taken straight from the request body. Every one of the ten write
+ * paths that accepted them checked only that the id EXISTS — `user.findUnique({
+ * where: { id } })` — never that the person belongs to the workspace.
+ *
+ * That is the whole cross-tenant write: point `billFrom` at another company's
+ * user and the document read path renders their name, email, phone and address
+ * onto your invoice through the `billFromUser` relation include.
+ *
+ * The reason it slipped is visible in creditNoteController, where the two
+ * lookups sat side by side — the `Invoice` one scoped by `tenantId` because
+ * `Invoice` is guarded, the `User` one not, because `User` is the one model the
+ * guard cannot cover (see the module header).
+ *
+ * Throws {@link ForeignTenantUserError} for a missing, soft-deleted, or
+ * foreign-tenant id alike: the caller must not learn which.
+ */
+export async function assertBillFromMember(
+  userId: string | null | undefined,
+  tenantId: string,
+  opts: { field?: string; status?: number; message?: string } = {},
+): Promise<string> {
+  const field = opts.field ?? 'billFrom';
+  const fail = () => {
+    throw new ForeignTenantUserError(field, opts.status ?? 422, opts.message);
+  };
+  if (!userId || typeof userId !== 'string') fail();
+  if (!(await isTenantMember(userId as string, tenantId))) fail();
+  return userId as string;
+}
+
+/**
+ * Catch-block companion for {@link assertBillFromMember}. Returns true when it
+ * has answered the request, mirroring the `handleUnauthorized` helpers the
+ * controllers already carry.
+ */
+export function handleForeignTenantUser(
+  res: { status: (code: number) => { json: (body: unknown) => unknown } },
+  err: unknown,
+): boolean {
+  if (err instanceof ForeignTenantUserError) {
+    res.status(err.status).json({
+      success: false,
+      message: err.message,
+      errors: { [err.field]: err.message },
+    });
+    return true;
+  }
+  return false;
+}

@@ -39,6 +39,7 @@ import { nextCentreDocumentNumber, peekCentreDocumentNumber } from '../../../lib
 import { sendMail } from '../../../utils/mailer';
 
 import { prisma } from '../../../lib/prisma';
+import { assertBillFromMember, handleForeignTenantUser } from '../../../lib/tenantMembers';
 import {
   tenantScope,
   requireTenantId,
@@ -769,6 +770,12 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
     // docCostCenterId is resolved earlier, above normaliseItems, so lines inherit it.
     const docProjectId = typeof body.projectId === 'string' && body.projectId ? body.projectId : null;
 
+    // `billFrom` is a User FK written straight from the body below. It had no
+    // validation at all, so an id from any other workspace was accepted and the
+    // read path then rendered that person's name, email, phone and address onto
+    // this invoice via the `billFromUser` include.
+    await assertBillFromMember(body.billFrom as string, tenantId, { status: 404 });
+
     // Signature handling
     const signType = (body.sign_type as string) ?? 'none';
     let signatureImage: string | null = null;
@@ -1070,6 +1077,7 @@ export async function createInvoice(req: Request, res: Response): Promise<void> 
       data: invoice,
     });
   } catch (err) {
+    if (handleForeignTenantUser(res, err)) return;
     if (handleUnauthorized(res, err)) return;
     if (err instanceof UnknownCostCentreError) {
       res.status(400).json({ message: err.message, errors: { costCenterId: err.message } });
@@ -1416,6 +1424,12 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
     const enforcedItems = enforcedInvoice.items;
     const enforcedTotal = docTreatment === 'STANDARD' ? finalTotal : finalTaxable + enforcedVat - finalDiscount;
 
+    // Same as createInvoice: a supplied `billFrom` must be a member of this
+    // workspace. Absent, the existing value is kept below and not re-checked.
+    if (typeof body.billFrom === 'string' && body.billFrom) {
+      await assertBillFromMember(body.billFrom, tenantId, { status: 404 });
+    }
+
     // Signature handling
     const signType = (body.sign_type as string) ?? existing.sign_type;
     let signatureImage: string | null = existing.signatureImage;
@@ -1661,6 +1675,7 @@ export async function updateInvoice(req: Request, res: Response): Promise<void> 
 
     res.status(200).json({ message: 'Invoice updated successfully', data: updated });
   } catch (err) {
+    if (handleForeignTenantUser(res, err)) return;
     if (handleUnauthorized(res, err)) return;
     if (err instanceof UnknownCostCentreError) {
       res.status(400).json({ message: err.message, errors: { costCenterId: err.message } });

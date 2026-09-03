@@ -77,6 +77,9 @@ const {
 vi.mock('../lib/prisma', () => {
   const db = {
     generalSetting: { findUnique: m.generalSettingFindUnique, upsert: m.generalSettingUpsert },
+    // createInvoice validates `billFrom` through lib/tenantMembers
+    // (isTenantMember -> user.findFirst); a member resolves here.
+    user: { findFirst: vi.fn().mockResolvedValue({ id: 'billfrom-user' }) },
     invoice: { findFirst: m.invoiceFindFirst, create: m.invoiceCreate, update: m.invoiceUpdate },
     contact: { findFirst: m.contactFindFirst },
     customer: { findFirst: m.customerFindFirst },

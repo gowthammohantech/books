@@ -79,13 +79,12 @@ export async function createSupplier(req: Request, res: Response): Promise<void>
       countryId,
     } = req.body as Record<string, unknown>;
 
-    // Sanity: the owning user must exist.
-    const owner = await prisma.user.findUnique({ where: { id: tenantId } });
-    if (!owner) {
-      tryUnlink(req.file?.path);
-      res.status(404).json({ success: false, message: 'User not found' });
-      return;
-    }
+    // (No owner-existence check here. It used to read
+    // `user.findUnique({ id: tenantId })`, which only ever resolved because the
+    // first workspace reuses its owner's User.id; in a workspace created via
+    // POST /api/auth/tenants the id is an ordinary uuid, no user matches, and
+    // supplier creation 404'd. `protect` has already established that the
+    // caller holds a membership here, which is the real precondition.)
 
     const balanceNum = asNumber(balance, 0);
     const resolvedBalanceType: SupplierBalanceType | null =

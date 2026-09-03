@@ -141,11 +141,11 @@ export async function createOrUpdateGeneralSetting(req: Request, res: Response):
       return;
     }
 
-    const user = await prisma.user.findUnique({ where: { id: tenantId } });
-    if (!user) {
-      res.status(404).json({ success: false, message: 'User not found' });
-      return;
-    }
+    // `createdBy`/`updatedBy` below are ACTOR columns, so they take the person
+    // who made the request. This used to load `user.findUnique({ id: tenantId })`
+    // and stamp that row's id — which resolved only because the first workspace
+    // reuses its owner's User.id, and 404'd the whole write in any other.
+    const actingUserId = requireActingUserId(req);
 
     const results: Array<Record<string, unknown>> = [];
 
@@ -169,7 +169,7 @@ export async function createOrUpdateGeneralSetting(req: Request, res: Response):
           data: {
             value: value as Prisma.InputJsonValue,
             groupSlug,
-            updatedBy: user.id,
+            updatedBy: actingUserId,
           },
         });
 
@@ -187,8 +187,8 @@ export async function createOrUpdateGeneralSetting(req: Request, res: Response):
             key,
             value: value as Prisma.InputJsonValue,
             groupSlug,
-            createdBy: user.id,
-            updatedBy: user.id,
+            createdBy: actingUserId,
+            updatedBy: actingUserId,
           },
         });
 
@@ -981,6 +981,7 @@ export async function updateCompanySetup(req: Request, res: Response): Promise<v
     //
     // The row is consulted only for fallback contact details on the create
     // branch below, so a miss is not fatal and must not 404.
+    // @user-scope: self — the acting user's own row.
     const user = await prisma.user.findUnique({ where: { id: requireActingUserId(req) } });
 
     const {

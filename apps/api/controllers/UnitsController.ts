@@ -5,9 +5,6 @@ import { prisma } from '../lib/prisma';
 import { requireTenantId } from '../lib/tenantScope';
 import { insertCustomFieldValues, readCustomFieldValues } from '../lib/customFieldValues';
 
-// Unit is a global lookup table — no tenantId column, so tenantScope() does
-// not apply here.
-
 // @desc Get all units (paginated, search)
 export async function getUnits(req: Request, res: Response): Promise<void> {
   try {

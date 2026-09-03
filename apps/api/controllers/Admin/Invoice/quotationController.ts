@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client';
 import type { Quotation, QuotationStatus, Customer } from '@prisma/client';
 
 import { prisma } from '../../../lib/prisma';
+import { tenantMemberWhere } from '../../../lib/tenantMembers';
 import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
 import { tenantScope, requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
@@ -215,17 +216,18 @@ export async function createQuotation(req: Request, res: Response): Promise<void
       }
     }
 
-    // billFrom is a User FK — validate it
-    const [user, billFrom] = await Promise.all([
-      prisma.user.findUnique({ where: { id: tenantId } }),
-      prisma.user.findUnique({ where: { id: billFromId } }),
-    ]);
+    // billFrom is a User FK — it must be a MEMBER of this workspace, not merely
+    // a row that exists. (The dropped second lookup read `id: tenantId`, which
+    // is a User id only in a workspace created by `register`; in any other it
+    // was null and threw 'Invalid user ID' on every quotation.)
+    const billFrom = await prisma.user.findFirst({
+      where: { ...tenantMemberWhere(tenantId), id: billFromId },
+    });
     // Also fetch legacy billTo customer for email sending (only on legacy path)
     const billToCustomer = resolvedCustomerId
       ? await prisma.customer.findUnique({ where: { id: resolvedCustomerId } })
       : null;
 
-    if (!user) throw new Error('Invalid user ID');
     if (!billFrom) throw new Error('Invalid bill from user ID');
 
     const signType = (body.sign_type as string) ?? 'none';

@@ -5,8 +5,9 @@ import type { DebitNoteStatus, SignType } from '@prisma/client';
 import { validationResult } from 'express-validator';
 
 import { prisma } from '../../../lib/prisma';
+import { assertBillFromMember, handleForeignTenantUser } from '../../../lib/tenantMembers';
 import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
-import { tenantScope, requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
+import { tenantScope, requireTenantId, requireActingUserId, UnauthorizedError } from '../../../lib/tenantScope';
 import {
   nextDocumentNumber,
   withDocumentNumberRetry,
@@ -273,12 +274,9 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
       return;
     }
 
-    // Bill-from is your company (a User).
-    const billFromUser = await prisma.user.findUnique({ where: { id: billFromId } });
-    if (!billFromUser) {
-      res.status(422).json({ message: 'Invalid bill from user ID' });
-      return;
-    }
+    // Bill-from is your company (a User) — so it must be a member of THIS
+    // workspace, not merely a row that exists.
+    await assertBillFromMember(billFromId, tenantId, { message: 'Invalid bill from user ID' });
 
     // Bill-to party: new path = body.billToContactId; legacy path = body.billTo as supplierId.
     let resolvedBillToContactId: string | null = incomingBillToContactId;
@@ -540,6 +538,7 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
       }
     }
   } catch (err) {
+    if (handleForeignTenantUser(res, err)) return;
     if (handleUnauthorized(res, err)) return;
     if (handleLedgerError(res, err)) return;
     if (handleNumberConflict(res, err, 'debitNoteId')) return;
@@ -971,12 +970,15 @@ export async function updateDebitNoteStatus(req: Request, res: Response): Promis
     // Validate approver if requested
     let approvedByConnect: string | undefined;
     if (body.approvedBy || status === ('approved' as unknown as DebitNoteStatus)) {
-      const approverId = (body.approvedBy as string) || tenantId;
-      const approver = await prisma.user.findUnique({ where: { id: approverId } });
-      if (!approver) {
-        res.status(422).json({ success: false, message: 'Invalid approved by user ID' });
-        return;
-      }
+      // `approvedBy` is an ACTOR column: the person approving. Defaulting it to
+      // `tenantId` only ever resolved because the first workspace reuses its
+      // owner's User.id; and the existence-only check accepted another
+      // company's user as this document's approver.
+      const approverId = (body.approvedBy as string) || requireActingUserId(req);
+      await assertBillFromMember(approverId, tenantId, {
+        field: 'approvedBy',
+        message: 'Invalid approved by user ID',
+      });
       approvedByConnect = approverId;
     }
 
@@ -1175,6 +1177,7 @@ export async function updateDebitNoteStatus(req: Request, res: Response): Promis
       data: responseData,
     });
   } catch (err) {
+    if (handleForeignTenantUser(res, err)) return;
     if (handleUnauthorized(res, err)) return;
     if (handleLedgerError(res, err)) return;
     console.error('Error updating debit note status:', err);

@@ -47,7 +47,7 @@ vi.mock('../lib/prisma', () => {
     contact: { findFirst: m.contactFindFirst },
     invoice: { findFirst: m.invoiceFindFirst, update: m.invoiceUpdate },
     invoicePayment: { aggregate: m.invoicePaymentAggregate },
-    user: { findUnique: m.userFindUnique },
+    user: { findUnique: m.userFindUnique, findFirst: m.userFindUnique },
     taxGroup: { findMany: m.taxGroupFindMany },
     creditNote: {
       findFirst: m.cnFindFirst,

@@ -335,15 +335,9 @@ export async function createReminder(req: Request, res: Response): Promise<void>
       manualReminderData?: unknown;
     };
 
-    // Validate user exists
-    const user = await prisma.user.findUnique({ where: { id: tenantId } });
-    if (!user) {
-      res.status(404).json({
-        success: false,
-        message: 'User not found',
-      });
-      return;
-    }
+    // (The old "validate user exists" check looked up `id: tenantId`, which is
+    // a user id only in the first workspace; elsewhere it 404'd every reminder.
+    // `protect` already established membership.)
 
     // Get user's company
     const company = await prisma.companySettings.findFirst({ where: { tenantId } });
@@ -459,11 +453,7 @@ export async function createReminderQuotation(req: Request, res: Response): Prom
       manualReminderData?: unknown;
     };
 
-    const user = await prisma.user.findUnique({ where: { id: tenantId } });
-    if (!user) {
-      res.status(404).json({ success: false, message: 'User not found' });
-      return;
-    }
+    // (Same as above: no tenant-id-as-user-id existence check.)
 
     const company = await prisma.companySettings.findFirst({ where: { tenantId } });
     if (!company) {

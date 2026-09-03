@@ -49,6 +49,8 @@ export const updateProfileValidator: (ValidationChain | RequestHandler)[] = [
     .isEmail()
     .withMessage('Must be a valid email')
     .custom(async (value: string, { req }) => {
+      // @user-scope: global by design — email is unique across the whole
+      // installation, so this uniqueness check must NOT be tenant-filtered.
       const user = await prisma.user.findUnique({ where: { email: value } });
       const currentUserId =
         typeof (req as Request).user === 'string' ? ((req as Request).user as string) : '';

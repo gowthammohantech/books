@@ -4,6 +4,7 @@ import type { DeliveryChallanStatus } from '@prisma/client';
 import { validationResult } from 'express-validator';
 
 import { prisma } from '../../../lib/prisma';
+import { assertBillFromMember, handleForeignTenantUser } from '../../../lib/tenantMembers';
 import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
 import { requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
@@ -186,12 +187,10 @@ export async function createDeliveryChallan(req: Request, res: Response): Promis
       }
     }
 
-    // billFrom is a User FK — validate it
-    const user = await prisma.user.findUnique({ where: { id: tenantId } });
-    if (!user) {
-      res.status(404).json({ message: 'User not found' });
-      return;
-    }
+    // billFrom is a User FK — validate IT, by membership. The check here used to
+    // look up `id: tenantId` instead, which both failed to validate billFrom and
+    // 404'd outright in any workspace whose id is not also its owner's User.id.
+    await assertBillFromMember(billFromId, tenantId, { status: 404, message: 'Bill From user not found' });
 
     const signType = (body.sign_type as string) ?? 'none';
     let signatureImage: string | null = null;
@@ -267,6 +266,7 @@ export async function createDeliveryChallan(req: Request, res: Response): Promis
 
     res.status(201).json({ message: 'Delivery challan created successfully', data: challan });
   } catch (err) {
+    if (handleForeignTenantUser(res, err)) return;
     if (handleUnauthorized(res, err)) return;
     console.error('Create delivery challan error:', err);
     res.status(500).json({
@@ -459,7 +459,15 @@ export async function updateDeliveryChallan(req: Request, res: Response): Promis
         }
       }
     }
-    if (body.billFrom !== undefined) data.billFromUser = { connect: { id: body.billFrom as string } };
+    if (body.billFrom !== undefined) {
+      // Same membership check as the create path — a bare `connect` accepts any
+      // company's user id that satisfies the foreign key.
+      await assertBillFromMember(body.billFrom as string, tenantId, {
+        status: 404,
+        message: 'Bill From user not found',
+      });
+      data.billFromUser = { connect: { id: body.billFrom as string } };
+    }
     if (body.challanDate !== undefined) data.challanDate = safeDate(body.challanDate) ?? existing.challanDate;
     if (body.referenceNo !== undefined) data.referenceNo = (body.referenceNo as string) ?? '';
     // C3: collect items + totals, apply treatment enforcement together.
@@ -536,6 +544,7 @@ export async function updateDeliveryChallan(req: Request, res: Response): Promis
     });
     res.status(200).json({ message: 'Delivery challan updated successfully', data: updated });
   } catch (err) {
+    if (handleForeignTenantUser(res, err)) return;
     if (handleUnauthorized(res, err)) return;
     console.error('Update delivery challan error:', err);
     res.status(500).json({

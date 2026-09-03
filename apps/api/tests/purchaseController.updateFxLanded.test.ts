@@ -56,7 +56,7 @@ vi.mock('../lib/prisma', () => {
   const db: Record<string, unknown> = {
     purchase: { findFirst: mocks.purchaseFindFirst },
     contact: { findFirst: mocks.contactFindFirst },
-    user: { findUnique: mocks.userFindUnique },
+    user: { findUnique: mocks.userFindUnique, findFirst: mocks.userFindUnique },
     supplier: { findFirst: mocks.supplierFindFirst },
     $transaction: vi.fn(async (fn: (t: unknown) => Promise<unknown>) => fn(tx)),
   };

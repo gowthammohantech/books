@@ -6,6 +6,7 @@ import { validationResult } from 'express-validator';
 import { tenantOwnerInclude, tenantOwner } from '../../../lib/tenantOwner';
 import { resolveDisplayName } from '../../../lib/contacts/contactIdentity';
 import { prisma } from '../../../lib/prisma';
+import { assertBillFromMember, handleForeignTenantUser } from '../../../lib/tenantMembers';
 import { resolveDefaultCurrencyCode } from '../../../lib/defaultCurrency';
 import { tenantScope, requireTenantId, UnauthorizedError } from '../../../lib/tenantScope';
 import {
@@ -227,17 +228,16 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
     // Tenant scope: findFirst with { id, tenantId } (findUnique can't carry extra
     // filters). Guard the falsy id explicitly — an undefined id in findFirst
     // would silently drop the filter and match an arbitrary tenant invoice.
-    const [invoice, billFromUser] = await Promise.all([
+    const [invoice] = await Promise.all([
       invoiceId ? prisma.invoice.findFirst({ where: { id: invoiceId, tenantId } }) : Promise.resolve(null),
-      prisma.user.findUnique({ where: { id: billFromId } }),
+      // Scoped the same way, by hand: `User` is off the guard, so membership is
+      // the filter. It used to be a bare findUnique on the id, which accepted
+      // any company's user as this document's "Bill From".
+      assertBillFromMember(billFromId, tenantId, { status: 404, message: 'Bill From user not found' }),
     ]);
 
     if (!invoice) {
       res.status(404).json({ message: 'Invoice not found' });
-      return;
-    }
-    if (!billFromUser) {
-      res.status(404).json({ message: 'Bill From user not found' });
       return;
     }
 
@@ -423,6 +423,7 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
       }
     }
   } catch (err) {
+    if (handleForeignTenantUser(res, err)) return;
     if (handleUnauthorized(res, err)) return;
     if (handleLedgerError(res, err)) return;
     if (handleNumberConflict(res, err, 'creditNoteNumber')) return;
@@ -828,11 +829,10 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
       'STANDARD';
 
     if (body.billFrom) {
-      const billFromUser = await prisma.user.findUnique({ where: { id: body.billFrom as string } });
-      if (!billFromUser) {
-        res.status(404).json({ message: 'Bill From user not found' });
-        return;
-      }
+      await assertBillFromMember(body.billFrom as string, tenantId, {
+        status: 404,
+        message: 'Bill From user not found',
+      });
     }
     // Contact-first party resolution (mirrors invoiceController.updateInvoice).
     // The contact-first picker sends a Contact id in body.billTo; writing that
@@ -1068,6 +1068,7 @@ export async function updateCreditNote(req: Request, res: Response): Promise<voi
     });
     res.status(200).json({ message: 'Credit note updated successfully', data: updated });
   } catch (err) {
+    if (handleForeignTenantUser(res, err)) return;
     if (handleUnauthorized(res, err)) return;
     if (handleLedgerError(res, err)) return;
     console.error('Update credit note error:', err);

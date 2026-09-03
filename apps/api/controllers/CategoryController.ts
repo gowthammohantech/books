@@ -5,9 +5,6 @@ import { prisma } from '../lib/prisma';
 import { requireTenantId } from '../lib/tenantScope';
 import { insertCustomFieldValues, readCustomFieldValues } from '../lib/customFieldValues';
 
-// Category is a global lookup table — no tenantId column, so tenantScope()
-// does not apply here.
-
 // Attach an absolute image URL the frontend can render directly. Stored value
 // is just the filename; built from the request host (https behind trust proxy).
 function withImageUrl<T extends { category_image: string | null }>(req: Request, c: T) {
