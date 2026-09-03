@@ -67,11 +67,16 @@ vi.mock('@prisma/client', async () => {
 
   const userOf = (m: Membership) => store.users.find((u) => u.id === m.userId);
 
-  const PrismaClient = vi.fn(() => ({
-    tenant: {
+  // A CLASS, not `vi.fn(() => ({...}))`. prisma/seedRoles.ts does
+  // `new PrismaClient()` at module scope, and Vitest 4 refuses to construct a
+  // vi.fn whose implementation is an arrow function — it throws
+  // "is not a constructor" during collection, before a single test registers.
+  // This is the shape seedRoles.owner.test.ts already uses and passes with.
+  class PrismaClient {
+    tenant = {
       findMany: vi.fn(async () => store.tenants.map((t) => ({ id: t.id }))),
-    },
-    role: {
+    };
+    role = {
       findFirst: vi.fn(async (args: { where: { tenantId?: string; roleName?: { equals?: string } } }) => {
         const name = args.where.roleName?.equals?.toLowerCase();
         return (
@@ -88,11 +93,11 @@ vi.mock('@prisma/client', async () => {
         store.roles.push(role);
         return role;
       }),
-    },
-    module: {
+    };
+    module = {
       findMany: vi.fn(async () => store.modules.map((m) => ({ id: m.id }))),
-    },
-    permission: {
+    };
+    permission = {
       count: vi.fn(async (args: { where: { roleId: string } }) =>
         store.perms.filter((p) => p.roleId === args.where.roleId).length),
       findMany: vi.fn(async (args: { where: { roleId: string } }) =>
@@ -110,8 +115,8 @@ vi.mock('@prisma/client', async () => {
         }
         return { count };
       }),
-    },
-    tenantMembership: {
+    };
+    tenantMembership = {
       updateMany: vi.fn(async (args: {
         where: {
           tenantId: string;
@@ -140,8 +145,8 @@ vi.mock('@prisma/client', async () => {
           .filter((m) => m.tenantId === args.where.tenantId
             && (args.where.isOwner === undefined || m.isOwner === args.where.isOwner))
           .map((m) => ({ userId: m.userId }))),
-    },
-    user: {
+    };
+    user = {
       updateMany: vi.fn(async (args: {
         where: { id?: { in: string[] }; NOT?: { roleId?: string } };
         data: { roleId: string };
@@ -155,9 +160,9 @@ vi.mock('@prisma/client', async () => {
         }
         return { count };
       }),
-    },
-    $disconnect: vi.fn(async () => {}),
-  }));
+    };
+    $disconnect = vi.fn(async () => {});
+  }
 
   return { PrismaClient, __store: store };
 });
