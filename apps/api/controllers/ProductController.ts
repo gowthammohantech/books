@@ -6,6 +6,7 @@ import { resolveDefaultCurrencyCode } from '../lib/defaultCurrency';
 import { requireTenantId, requireActingUserId } from '../lib/tenantScope';
 import { insertCustomFieldValues, readCustomFieldValues } from '../lib/customFieldValues';
 import { resolveProductTaxRate } from '../lib/tax/resolveProductTaxRate';
+import { productRepository as repo } from '../modules/product/product.repository';
 
 // uploadProductFields now uses .any() to accept customField_<id> uploads too.
 // req.files is a flat Express.Multer.File[] array; extract named fields manually.
@@ -25,24 +26,6 @@ function extractProductFiles(req: Request): {
 
 function uploadPath(file?: Express.Multer.File): string | null {
   return file ? `/uploads/products/${file.filename}` : null;
-}
-
-// A product always needs a unique `code` (machine identity, decoupled from the
-// now-non-unique description). Generate one when the caller omits it.
-async function generateUniqueProductCode(
-  tx: Prisma.TransactionClient,
-  tenantId: string,
-): Promise<string> {
-  for (let i = 0; i < 5; i += 1) {
-    const candidate = `PROD-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
-     
-    const clash = await tx.product.findFirst({
-      where: { tenantId, code: candidate },
-      select: { id: true },
-    });
-    if (!clash) return candidate;
-  }
-  return `PROD-${Date.now().toString(36).toUpperCase()}`;
 }
 
 /** Truthy multipart/JSON boolean flag ('true' | '1' | true | 1 → true). */
@@ -164,21 +147,16 @@ export async function createProduct(req: Request, res: Response): Promise<void> 
     let productTaxRateId: string | null =
       body.taxRateId && String(body.taxRateId).trim() ? (body.taxRateId as string) : null;
     if (!productTaxRateId && !body.tax) {
-      const noneRate = await prisma.taxRate.findFirst({
-        where: { tenantId, regime: 'NONE', isActive: true, isDeleted: false },
-        orderBy: { createdAt: 'asc' },
-        select: { id: true },
-      });
+      const noneRate = await repo.findDefaultNoneTaxRate(tenantId);
       productTaxRateId = noneRate?.id ?? null;
     }
 
-    const created = await prisma.$transaction(async (tx) => {
+    const created = await repo.transaction(async (tx) => {
       const productCode = body.code && String(body.code).trim()
         ? (body.code as string)
-        : await generateUniqueProductCode(tx, tenantId);
+        : await repo.generateUniqueCode(tx, tenantId);
 
-      const newProduct = await tx.product.create({
-        data: {
+      const newProduct = await repo.createProduct(tx, {
           tenantId,
           item_type: itemType,
           name: body.name as string,
@@ -204,8 +182,7 @@ export async function createProduct(req: Request, res: Response): Promise<void> 
           // P3.5: valuation method (WAC default → unchanged for existing products)
           ...(rawValuationMethod ? { valuationMethod: rawValuationMethod } : {}),
           // PC.1: currency the product is priced in
-          ...(productCurrencyCode ? { currencyCode: productCurrencyCode } : {}),
-        },
+        ...(productCurrencyCode ? { currencyCode: productCurrencyCode } : {}),
       });
 
       // Inventory side-effect: create an Inventory row whenever enable_inventory
@@ -216,8 +193,7 @@ export async function createProduct(req: Request, res: Response): Promise<void> 
       // would hide stock from other admins in the same workspace. `createdBy`
       // inside inventory_history keeps per-person attribution.
       if (newProduct.enable_inventory && req.user) {
-        await tx.inventory.create({
-          data: {
+        await repo.createInventory(tx, {
             productId: newProduct.id,
             quantity: newProduct.stock,
             tenantId: requireTenantId(req),
@@ -233,7 +209,6 @@ export async function createProduct(req: Request, res: Response): Promise<void> 
                 updatedAt: new Date().toISOString(),
               },
             ] as unknown as Prisma.InputJsonValue,
-          },
         });
       }
 
@@ -248,20 +223,7 @@ export async function createProduct(req: Request, res: Response): Promise<void> 
       return newProduct;
     });
 
-    const populated = await prisma.product.findFirst({
-      where: { id: created.id, tenantId },
-      include: {
-        category: { select: { id: true, category_name: true } },
-        brand: { select: { id: true, brand_name: true } },
-        unit: { select: { id: true, unit_name: true, short_name: true } },
-        taxGroup: {
-          include: {
-            tax_rates: { select: { id: true, name: true, rate: true, isActive: true, isDeleted: true, regime: true } },
-          },
-        },
-        taxRate: { select: { id: true, name: true, rate: true } },
-      },
-    });
+    const populated = await repo.findForCreateResponse(created.id, tenantId);
 
     res.status(201).json({
       message: 'Product created successfully',
@@ -303,36 +265,13 @@ export async function getAllProducts(req: Request, res: Response): Promise<void>
     const tenantId = requireTenantId(req);
 
     const [total, products] = await Promise.all([
-      prisma.product.count({ where }),
-      prisma.product.findMany({
-        where,
-        include: {
-          category: { select: { id: true, category_name: true } },
-          brand: { select: { id: true, brand_name: true } },
-          unit: { select: { id: true, unit_name: true, short_name: true } },
-          taxGroup: {
-            select: {
-              id: true,
-              tax_name: true,
-              tax_rates: {
-                select: { id: true, name: true, rate: true, isActive: true, isDeleted: true, regime: true },
-              },
-            },
-          },
-          taxRate: { select: { id: true, name: true, rate: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
+      repo.countProducts(where),
+      repo.listProducts({ where, skip: (page - 1) * limit, take: limit }),
     ]);
 
     // Batch-fetch live Inventory rows for this page of products (no N+1).
     const productIds = products.map((p) => p.id);
-    const inventoryRows = await prisma.inventory.findMany({
-      where: { productId: { in: productIds }, tenantId },
-      select: { productId: true, quantity: true },
-    });
+    const inventoryRows = await repo.findInventoryForProducts(productIds, tenantId);
     const inventoryByProductId = new Map(inventoryRows.map((r) => [r.productId, r.quantity]));
 
     const productsWithLiveStock = products.map((p) => ({
@@ -376,22 +315,8 @@ export async function getProductById(req: Request, res: Response): Promise<void>
     const tenantId = requireTenantId(req);
 
     const [product, inventoryRow] = await Promise.all([
-      prisma.product.findFirst({
-        where: { id, tenantId },
-        include: {
-          category: true,
-          brand: true,
-          unit: true,
-          taxGroup: {
-            include: { tax_rates: true },
-          },
-          taxRate: { select: { id: true, name: true, rate: true } },
-        },
-      }),
-      prisma.inventory.findFirst({
-        where: { productId: id, tenantId },
-        select: { quantity: true },
-      }),
+      repo.findDetail(id, tenantId),
+      repo.findInventoryQuantity(id, tenantId),
     ]);
 
     if (!product) {
@@ -427,9 +352,7 @@ export async function getProductById(req: Request, res: Response): Promise<void>
 export async function updateProduct(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params as { id: string };
-    const existing = await prisma.product.findFirst({
-      where: { id, tenantId: requireTenantId(req) },
-    });
+    const existing = await repo.findOwned(id, requireTenantId(req));
 
     if (!existing) {
       res.status(404).json({ message: 'Product not found' });
@@ -556,19 +479,16 @@ export async function updateProduct(req: Request, res: Response): Promise<void> 
 
     const userId = requireActingUserId(req);
 
-    const updated = await prisma.$transaction(async (tx) => {
-      const result = await tx.product.update({ where: { id }, data });
+    const updated = await repo.transaction(async (tx) => {
+      const result = await repo.updateProduct(tx, id, data);
 
       // Backfill: if inventory tracking is now on but the product has no
       // Inventory row yet (e.g. created before tracking was enabled, or before
       // the #6 fix), create one scoped to the tenant. Stock may be 0.
       if (result.enable_inventory && req.user) {
-        const existingInventory = await tx.inventory.findFirst({
-          where: { productId: result.id, tenantId: requireTenantId(req) },
-        });
+        const existingInventory = await repo.findInventoryInTx(tx, result.id, requireTenantId(req));
         if (!existingInventory) {
-          await tx.inventory.create({
-            data: {
+          await repo.createInventory(tx, {
               productId: result.id,
               quantity: result.stock,
               tenantId: requireTenantId(req),
@@ -584,7 +504,6 @@ export async function updateProduct(req: Request, res: Response): Promise<void> 
                   updatedAt: new Date().toISOString(),
                 },
               ] as unknown as Prisma.InputJsonValue,
-            },
           });
         }
       }
@@ -619,19 +538,12 @@ export async function deleteProduct(req: Request, res: Response): Promise<void> 
   try {
     const tenantId = requireTenantId(req);
     const { id } = req.params as { id: string };
-    const existing = await prisma.product.findFirst({ where: { id, tenantId } });
+    const existing = await repo.findOwned(id, tenantId);
     if (!existing) {
       res.status(404).json({ message: 'Product not found' });
       return;
     }
-    // Cascade-delete dependent rows (Inventory) before the product. The
-    // Mongoose original was a `findByIdAndDelete` (no FK constraints); Postgres
-    // enforces them. We mirror the original "hard delete" semantic by
-    // wiping the dependent inventory rows first inside a transaction.
-    await prisma.$transaction([
-      prisma.inventory.deleteMany({ where: { productId: id, tenantId } }),
-      prisma.product.delete({ where: { id } }),
-    ]);
+    await repo.deleteWithInventory(id, tenantId);
     res.status(200).json({ message: 'Product deleted successfully' });
   } catch (err) {
     console.error('Error deleting product:', err);
@@ -662,11 +574,7 @@ export async function getAllProductCategories(req: Request, res: Response): Prom
     if (status === undefined) where.status = true;
     else where.status = status === 'true';
 
-    const categories = await prisma.category.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: search ? undefined : 10,
-    });
+    const categories = await repo.listCategories(where, search ? undefined : 10);
 
     const formatted = categories.map((c) => ({
       id: c.id,
@@ -706,11 +614,7 @@ export async function getAllProductBrands(req: Request, res: Response): Promise<
     if (status === undefined) where.status = true;
     else where.status = status === 'true';
 
-    const brands = await prisma.brand.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: search ? undefined : 10,
-    });
+    const brands = await repo.listBrands(where, search ? undefined : 10);
 
     const formatted = brands.map((b) => ({
       id: b.id,
@@ -755,11 +659,7 @@ export async function getAllUnits(req: Request, res: Response): Promise<void> {
     if (status === undefined) where.status = true;
     else where.status = status === 'true';
 
-    const units = await prisma.unit.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: search ? undefined : 10,
-    });
+    const units = await repo.listUnits(where, search ? undefined : 10);
 
     const formatted = units.map((u) => ({
       id: u.id,
@@ -799,12 +699,7 @@ export async function getAllTaxGroups(req: Request, res: Response): Promise<void
     if (status === undefined) where.status = true;
     else where.status = status === 'true';
 
-    const taxes = await prisma.taxGroup.findMany({
-      where,
-      include: { tax_rates: true },
-      orderBy: { createdAt: 'desc' },
-      take: search ? undefined : 10,
-    });
+    const taxes = await repo.listTaxGroups(where, search ? undefined : 10);
 
     const formatted = taxes.map((tax) => ({
       id: tax.id,
@@ -856,10 +751,7 @@ export async function listCostLayers(req: Request, res: Response): Promise<void>
       return;
     }
 
-    const layers = await prisma.inventoryCostLayer.findMany({
-      where: { tenantId, productId, isDeleted: false },
-      orderBy: { receivedAt: 'asc' },
-    });
+    const layers = await repo.listCostLayers(tenantId, productId);
 
     res.status(200).json({
       success: true,
