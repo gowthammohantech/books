@@ -34,7 +34,7 @@ import { resolveProductTaxRate } from '../../../lib/tax/resolveProductTaxRate';
 import { currentActorId } from '../../../lib/actor';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-import { sendMail } from '../../../utils/mailer';
+import { sendMail, isEmailConfigured } from '../../../utils/mailer';
 
 type Tx = Prisma.TransactionClient;
 
@@ -423,7 +423,7 @@ export async function createPurchaseOrder(req: Request, res: Response): Promise<
       data: purchaseOrder,
     });
 
-    if (supplier?.supplier_email && process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD) {
+    if (supplier?.supplier_email && (await isEmailConfigured())) {
       sendMail({
           to: supplier.supplier_email,
           subject: 'New Purchase Order Created',

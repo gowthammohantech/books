@@ -44,7 +44,7 @@ import {
 } from '../../../lib/lineDimensions';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-import { sendMail } from '../../../utils/mailer';
+import { sendMail, isEmailConfigured } from '../../../utils/mailer';
 
 type Tx = Prisma.TransactionClient;
 
@@ -404,7 +404,7 @@ export async function createCreditNote(req: Request, res: Response): Promise<voi
     res.status(201).json({ message: 'Credit note created successfully', data: creditNote });
 
     // Optional email (best-effort; billToCustomer is null on the contact path so guard it)
-    if (billToCustomer && billToCustomer.email && process.env.SMTP_EMAIL) {
+    if (billToCustomer && billToCustomer.email && (await isEmailConfigured())) {
       try {
         await sendMail({
           to: billToCustomer.email,

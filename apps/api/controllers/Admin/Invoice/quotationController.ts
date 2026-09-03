@@ -27,7 +27,7 @@ import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-import { sendMail } from '../../../utils/mailer';
+import { sendMail, isEmailConfigured } from '../../../utils/mailer';
 
 type Tx = Prisma.TransactionClient;
 
@@ -324,7 +324,7 @@ export async function createQuotation(req: Request, res: Response): Promise<void
     });
 
     // Optional email if status is 'sent' — only when legacy billTo customer resolved
-    if (quotation.status === 'sent' && billToCustomer?.email && process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD) {
+    if (quotation.status === 'sent' && billToCustomer?.email && (await isEmailConfigured())) {
       try {
         const fromName = `${billFrom.firstName ?? ''} ${billFrom.lastName ?? ''}`.trim() || 'Your Company';
         await sendMail({

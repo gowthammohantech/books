@@ -28,7 +28,7 @@ import { parseTaxTreatment } from '../../../lib/tax/taxTreatment';
 import type { TaxTreatment } from '../../../lib/tax/taxTreatment';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports, import/order
-import { sendMail } from '../../../utils/mailer';
+import { sendMail, isEmailConfigured } from '../../../utils/mailer';
 
 import { prisma } from '../../../lib/prisma';
 import {
@@ -880,7 +880,7 @@ export async function createPurchase(req: Request, res: Response): Promise<void>
     });
 
     // Fire-and-forget email — sent to the supplier (only when legacy supplier row exists)
-    if (supplier && supplier.supplier_email && process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD) {
+    if (supplier && supplier.supplier_email && (await isEmailConfigured())) {
       try {
         await sendMail({
           to: supplier.supplier_email,
@@ -1421,7 +1421,7 @@ export async function updatePurchase(req: Request, res: Response): Promise<void>
 
     // Fire-and-forget email — sent to the legacy supplier when present.
     // Contact-based purchases carry no legacy supplier row, so skip (guarded by ?.).
-    if (supplier?.supplier_email && process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD) {
+    if (supplier?.supplier_email && (await isEmailConfigured())) {
       try {
         await sendMail({
           to: supplier.supplier_email,

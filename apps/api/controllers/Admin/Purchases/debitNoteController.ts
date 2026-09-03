@@ -41,7 +41,7 @@ import {
 import { applyStockAdjustment, resolveRestockUnitCost } from '../../../lib/inventory/stockAdjust';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-import { sendMail } from '../../../utils/mailer';
+import { sendMail, isEmailConfigured } from '../../../utils/mailer';
 
 type Tx = Prisma.TransactionClient;
 
@@ -519,7 +519,7 @@ export async function createDebitNote(req: Request, res: Response): Promise<void
     });
 
     // Optional email (best-effort)
-    if (billToSupplier?.supplier_email && process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD) {
+    if (billToSupplier?.supplier_email && (await isEmailConfigured())) {
       try {
         const toName = billToSupplier?.supplier_name ?? '';
         await sendMail({

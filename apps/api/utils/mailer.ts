@@ -155,6 +155,31 @@ export const sendMail = async (options: SendMailOptions): Promise<unknown> => {
 };
 
 /**
+ * Can this install actually send an email right now?
+ *
+ * Callers that only send opportunistically — "email the supplier IF email is
+ * set up" — need to know before they build a message. Six of them were asking
+ * `process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD`, which was wrong three
+ * ways: it misses the SMTP_USER / SMTP_PASS aliases that `buildTransport` below
+ * accepts and that docker/.env.example actually ships, it ignores SMTP_HOST
+ * (so the guard could pass and the send still throw), and — the big one — it
+ * ignores the Resend/SMTP/Nodemailer providers configured through Settings
+ * entirely, so an install that set email up in the UI still sent nothing.
+ *
+ * Resolved through the same loadActiveSettings + buildTransport path `sendMail`
+ * uses, so this answer cannot drift from what a send would actually do. Building
+ * a transport opens no connection; that happens on sendMail.
+ */
+export const isEmailConfigured = async (): Promise<boolean> => {
+  try {
+    buildTransport(await loadActiveSettings());
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
  * Lets the controller clear the cache right after a settings change so the
  * next email uses the new provider without waiting for the TTL.
  */
